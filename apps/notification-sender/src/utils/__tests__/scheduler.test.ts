@@ -65,7 +65,7 @@ describe("Scheduler", () => {
       scheduler.start();
 
       // Wait for the setTimeout to execute
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
     });
@@ -77,15 +77,15 @@ describe("Scheduler", () => {
       scheduler.start();
 
       // Wait for immediate execution
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(task).toHaveBeenCalledTimes(1);
 
       // Advance 5 minutes (300000 ms)
-      await vi.advanceTimersByTime(5 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(2);
 
       // Advance another 5 minutes
-      await vi.advanceTimersByTime(5 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(3);
     });
 
@@ -98,7 +98,7 @@ describe("Scheduler", () => {
       scheduler.start();
 
       // Wait for the setTimeout to execute
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
       expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
@@ -117,17 +117,17 @@ describe("Scheduler", () => {
       scheduler.start();
 
       // First execution - fails
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(task).toHaveBeenCalledTimes(1);
       expect(scheduler.isActive()).toBe(true);
 
       // Second execution - succeeds
-      await vi.advanceTimersByTime(5 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(2);
       expect(scheduler.isActive()).toBe(true);
 
       // Third execution - succeeds
-      await vi.advanceTimersByTime(5 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(3);
       expect(scheduler.isActive()).toBe(true);
 
@@ -143,13 +143,13 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
       
       // Resolve the task
       resolveTask!();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(scheduler.isActive()).toBe(true);
     });
@@ -164,17 +164,17 @@ describe("Scheduler", () => {
       scheduler1.start();
       scheduler2.start();
 
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(task1).toHaveBeenCalledTimes(1);
       expect(task2).toHaveBeenCalledTimes(1);
 
       // After 1 minute - only scheduler1 should run
-      await vi.advanceTimersByTime(1 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(1 * 60 * 1000);
       expect(task1).toHaveBeenCalledTimes(2);
       expect(task2).toHaveBeenCalledTimes(1);
 
       // After 9 more minutes (10 total) - both should have run
-      await vi.advanceTimersByTime(9 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(9 * 60 * 1000);
       expect(task1).toHaveBeenCalledTimes(11);
       expect(task2).toHaveBeenCalledTimes(2);
     });
@@ -221,7 +221,7 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 0);
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
       expect(scheduler.isActive()).toBe(true);
@@ -232,12 +232,12 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 1440); // 24 hours
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
 
       // Advance 24 hours
-      await vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(2);
     });
 
@@ -246,13 +246,13 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(task).toHaveBeenCalledTimes(1);
 
       scheduler.stop();
 
       // Advance time - task should not be called again
-      await vi.advanceTimersByTime(10 * 60 * 1000);
+      await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(1);
     });
 
@@ -265,7 +265,7 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
       expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
@@ -279,7 +279,7 @@ describe("Scheduler", () => {
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
-      await vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
       // Should not throw error since non-promise is awaitable
@@ -365,7 +365,7 @@ describe("createInactivityScheduler", () => {
     scheduler.start();
 
     // Wait for immediate execution
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
     expect(consoleSpy).toHaveBeenCalledWith("Running inactivity check...");
@@ -381,7 +381,7 @@ describe("createInactivityScheduler", () => {
     const scheduler = createInactivityScheduler(checkFunction, 5);
 
     scheduler.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
     expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
@@ -396,15 +396,15 @@ describe("createInactivityScheduler", () => {
     scheduler.start();
 
     // First execution
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(checkFunction).toHaveBeenCalledTimes(1);
 
     // Second execution after 5 minutes
-    await vi.advanceTimersByTime(5 * 60 * 1000);
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(checkFunction).toHaveBeenCalledTimes(2);
 
     // Third execution after another 5 minutes
-    await vi.advanceTimersByTime(5 * 60 * 1000);
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(checkFunction).toHaveBeenCalledTimes(3);
   });
 
@@ -415,7 +415,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction1 = vi.fn().mockResolvedValue([1, 2, 3]);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", [1, 2, 3]);
     scheduler1.stop();
 
@@ -423,7 +423,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction2 = vi.fn().mockResolvedValue(null);
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", null);
     scheduler2.stop();
 
@@ -431,7 +431,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction3 = vi.fn().mockResolvedValue(undefined);
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", undefined);
     scheduler3.stop();
 
@@ -445,7 +445,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction1 = vi.fn().mockResolvedValue(42);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", 42);
     scheduler1.stop();
 
@@ -453,7 +453,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction2 = vi.fn().mockResolvedValue("completed");
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", "completed");
     scheduler2.stop();
 
@@ -461,7 +461,7 @@ describe("createInactivityScheduler", () => {
     const checkFunction3 = vi.fn().mockResolvedValue(true);
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
-    await vi.advanceTimersByTime(0);
+    await vi.advanceTimersByTimeAsync(0);
     expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", true);
     scheduler3.stop();
 

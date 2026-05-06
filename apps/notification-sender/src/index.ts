@@ -29,53 +29,61 @@ export function main() {
     SUPABASE_SERVICE_ROLE_KEY,
   );
 
+  const handleNotification = async (
+    payload: RealtimePostgresInsertPayload<NotificationRow>,
+  ): Promise<void> => {
+    const id = payload.new.id;
+    try {
+      await client.notificationSender.trackDeliveryStart.mutate({
+        notificationId: id,
+      });
+
+      const mobile =
+        await client.notificationSender.sendMobileNotifications.mutate({
+          notificationId: id,
+        });
+      console.log("Delivery summary:", { mobile });
+
+      await client.notificationSender.trackDeliveryComplete.mutate({
+        notificationId: id,
+        totalRecipients: mobile.total,
+        successCount: mobile.sent,
+        failureCount: mobile.failed,
+        errors: mobile.success ? null : "Some deliveries failed",
+      });
+    } catch (err) {
+      console.error("Failed handling Notification INSERT:", err);
+
+      try {
+        await client.notificationSender.trackDeliveryFailure.mutate({
+          notificationId: id,
+          error: err instanceof Error ? err : String(err),
+        });
+      } catch (trackErr) {
+        console.error("Failed to track delivery failure:", trackErr);
+      }
+    }
+  };
+
   const channel = supabase
     .channel("public:Notification:insert")
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "Notification" },
-      async (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
-        const id = payload.new.id;
-        try {
-          await client.notificationSender.trackDeliveryStart.mutate({
-            notificationId: id,
-          });
-
-          const mobile =
-            await client.notificationSender.sendMobileNotifications.mutate({
-              notificationId: id,
-            });
-          console.log("Delivery summary:", { mobile });
-
-          await client.notificationSender.trackDeliveryComplete.mutate({
-            notificationId: id,
-            totalRecipients: mobile.total,
-            successCount: mobile.sent,
-            failureCount: mobile.failed,
-            errors: mobile.success ? null : "Some deliveries failed",
-          });
-        } catch (err) {
-          console.error("Failed handling Notification INSERT:", err);
-
-          try {
-            await client.notificationSender.trackDeliveryFailure.mutate({
-              notificationId: id,
-              error: err instanceof Error ? err : String(err),
-            });
-          } catch (trackErr) {
-            console.error("Failed to track delivery failure:", trackErr);
-          }
-        }
+      (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
+        // Intentionally not awaiting - Realtime callback must be synchronous
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        handleNotification(payload);
       },
     )
     .subscribe((status) => {
       console.log("Realtime channel status:", status);
     });
 
-  process.on("SIGINT", async () => {
+  process.on("SIGINT", () => {
     console.log("Shutting down...");
-    await supabase.removeChannel(channel);
-    await cleanup();
+    void supabase.removeChannel(channel);
+    void cleanup();
     process.exit(0);
   });
 }
