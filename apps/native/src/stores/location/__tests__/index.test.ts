@@ -2,8 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type * as indexModule from "../index";
 
 jest.mock("../locationStore", () => ({
-  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
-  setLocationServerUpdater: jest.fn((_fn: unknown) => {}),
+  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => undefined) },
+  setLocationServerUpdater: jest.fn((_fn: unknown) => undefined),
 }));
 
 jest.mock("../locationHooks", () => ({

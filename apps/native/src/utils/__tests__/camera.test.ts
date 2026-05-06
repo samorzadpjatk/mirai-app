@@ -2,9 +2,9 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { ImagePickerAsset } from "expo-image-picker";
 
 // Mock expo-image-manipulator
-type ManipulateResult = { uri: string; width: number; height: number };
-type SaveResult = { uri: string; width: number; height: number };
-type RenderResult = { saveAsync: jest.Mock<() => Promise<SaveResult>>; release: jest.Mock };
+interface ManipulateResult { uri: string; width: number; height: number }
+interface SaveResult { uri: string; width: number; height: number }
+interface RenderResult { saveAsync: jest.Mock<() => Promise<SaveResult>>; release: jest.Mock }
 
 const mockManipulateAsync = jest.fn<
   (uri: string, actions: unknown[], options: unknown) => Promise<ManipulateResult | Error>

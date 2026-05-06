@@ -38,10 +38,10 @@ jest.mock("@mirai-app/trpc/client", () => ({
 // Mock React Query
 interface MockInfiniteQueryResult {
   data: {
-    pages: Array<{
-      trips: Array<{ id: string; name: string; startDate: string; endDate: string }>;
+    pages: {
+      trips: { id: string; name: string; startDate: string; endDate: string }[];
       pagination: { hasMore: boolean; offset: number; limit: number };
-    }>;
+    }[];
   } | null;
   isLoading: boolean;
   isRefetching: boolean;

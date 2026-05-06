@@ -5,7 +5,7 @@ import * as Location from "expo-location";
 
 jest.mock("react-native", () => ({
   Alert: {
-    alert: jest.fn((_title: string, _message?: string) => {}),
+    alert: jest.fn((_title: string, _message?: string) => undefined),
   },
   Linking: {
     openSettings: jest.fn(() => Promise.resolve()),

@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type * as indexModule from "../index";
 
 jest.mock("@mirai-app/shared", () => ({
-  mapStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
+  mapStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => undefined) },
 }));
 
 jest.mock("../mapHooks", () => ({
@@ -11,10 +11,10 @@ jest.mock("../mapHooks", () => ({
 }));
 
 jest.mock("../mapOverlayStore", () => ({
-  mapOverlayStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
+  mapOverlayStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => undefined) },
   useMapOverlayStore: jest.fn(() => ({})),
   MapOverlayProvider: jest.fn(() => null),
-  setMapOverlayExternals: jest.fn((_externals: unknown) => {}),
+  setMapOverlayExternals: jest.fn((_externals: unknown) => undefined),
 }));
 
 import {
