@@ -1,7 +1,9 @@
 import type { ExpoPushMessage, ExpoPushTicket, ExpoPushReceipt } from "expo-server-sdk";
 
 export class Expo {
-  constructor(_options?: { accessToken?: string }) {}
+  constructor(_options?: { accessToken?: string }) {
+    // Mock constructor - parameter prefixed with underscore to indicate intentional non-use
+  }
 
   static isExpoPushToken(token: string): boolean {
     return token.startsWith("ExponentPushToken[") || token.startsWith("ExpoPushToken[");
@@ -18,15 +20,17 @@ export class Expo {
   async sendPushNotificationsAsync(
     messages: ExpoPushMessage[]
   ): Promise<ExpoPushTicket[]> {
+    await Promise.resolve();
     return messages.map((message) => ({
       status: "ok",
-      id: `ticket-${message.to}`,
+      id: `ticket-${String(message.to)}`,
     }));
   }
 
   async getPushNotificationReceiptsAsync(
     _ticketIds: string[]
   ): Promise<Record<string, ExpoPushReceipt>> {
+    await Promise.resolve();
     return {};
   }
 }
