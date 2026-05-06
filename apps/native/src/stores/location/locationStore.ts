@@ -146,7 +146,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         );
       }
 
-      return status as LocationPermissionStatus;
+      return status;
     } catch (error) {
       console.error("Failed to request location permissions:", error);
       set({ permissionStatus: "denied" });

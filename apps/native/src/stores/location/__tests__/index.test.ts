@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type * as indexModule from "../index";
 
 jest.mock("../locationStore", () => ({
   locationStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
@@ -80,23 +81,23 @@ describe("stores/location/index exports", () => {
 
   describe("store type exports", () => {
     it("should have LocationStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have LocationState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have LocationActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have LocationPermissionStatus type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
   });
 
@@ -119,8 +120,8 @@ describe("stores/location/index exports", () => {
     });
 
     it("should maintain consistent export structure", () => {
-      const indexModule = require("../index");
-      const exportKeys = Object.keys(indexModule);
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      const exportKeys = Object.keys(actualModule);
       expect(exportKeys).toContain("locationStore");
       expect(exportKeys).toContain("setLocationServerUpdater");
       expect(exportKeys).toContain("useLocationContext");

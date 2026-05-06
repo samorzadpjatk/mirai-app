@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { useJudgement } from "../index";
 
 jest.mock("@mirai-app/shared", () => ({
   ReviewStatus: {
@@ -12,8 +13,6 @@ jest.mock("@mirai-app/shared", () => ({
 jest.mock("../useJudgement", () => ({
   useJudgement: jest.fn(() => ({})),
 }));
-
-import { useJudgement } from "../index";
 
 describe("stores/judgement/index exports", () => {
   beforeEach(() => {
@@ -32,25 +31,13 @@ describe("stores/judgement/index exports", () => {
     });
   });
 
-  describe("type exports", () => {
-    it("should have ReviewStatus type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have Submission type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-  });
-
   describe("edge cases - module structure", () => {
     it("should export useJudgement as function", () => {
       expect(typeof useJudgement).toBe("function");
     });
 
-    it("should maintain consistent export structure", () => {
-      const indexModule = require("../index");
+    it("should maintain consistent export structure", async () => {
+      const indexModule: Record<string, unknown> = await import("../index");
       const exportKeys = Object.keys(indexModule);
       expect(exportKeys).toContain("useJudgement");
     });

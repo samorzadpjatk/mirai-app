@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type * as indexModule from "../index";
 
 jest.mock("@mirai-app/shared", () => ({
   mapStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
@@ -103,58 +104,58 @@ describe("stores/map/index exports", () => {
 
   describe("store type exports", () => {
     it("should have MapStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapTheme type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapUserLocation type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapOverlayStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapOverlayState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have MapOverlayActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have ShareableUser type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have SharingUser type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
 
     it("should have SharingSettings type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      expect(actualModule).toBeDefined();
     });
   });
 
@@ -179,8 +180,8 @@ describe("stores/map/index exports", () => {
     });
 
     it("should maintain consistent export structure", () => {
-      const indexModule = require("../index");
-      const exportKeys = Object.keys(indexModule);
+      const actualModule = jest.requireActual<typeof indexModule>("../index");
+      const exportKeys = Object.keys(actualModule);
       expect(exportKeys).toContain("mapStore");
       expect(exportKeys).toContain("useMapStore");
       expect(exportKeys).toContain("useMapActions");

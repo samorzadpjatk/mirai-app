@@ -2,7 +2,6 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { locationStore, setLocationServerUpdater } from "../locationStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
-import { Alert } from "react-native";
 
 jest.mock("react-native", () => ({
   Alert: {
@@ -12,6 +11,14 @@ jest.mock("react-native", () => ({
     openSettings: jest.fn(() => Promise.resolve()),
   },
 }));
+
+// Get typed mock references using jest.requireMock to avoid unbound-method errors
+const mockReactNative: {
+  Alert: { alert: jest.Mock };
+  Linking: { openSettings: jest.Mock };
+} = jest.requireMock("react-native");
+const mockAlert = mockReactNative.Alert.alert;
+const mockOpenSettings = mockReactNative.Linking.openSettings;
 
 describe("locationStore", () => {
   beforeEach(() => {
@@ -212,7 +219,7 @@ describe("locationStore", () => {
       const { toggleLocationSharing } = locationStore.getState();
       await toggleLocationSharing();
 
-      expect(Alert.alert).toHaveBeenCalled();
+      expect(mockAlert).toHaveBeenCalled();
     });
   });
 
@@ -251,7 +258,7 @@ describe("locationStore", () => {
       const { toggleBackgroundLocationUpdates } = locationStore.getState();
       await toggleBackgroundLocationUpdates();
 
-      expect(Alert.alert).toHaveBeenCalledWith(
+      expect(mockAlert).toHaveBeenCalledWith(
         "Enable Location Sharing",
         expect.any(String)
       );
@@ -298,18 +305,16 @@ describe("locationStore", () => {
       const { openSystemLocationSettings } = locationStore.getState();
       await openSystemLocationSettings();
 
-      const { Linking } = require("react-native");
-      expect(Linking.openSettings).toHaveBeenCalled();
+      expect(mockOpenSettings).toHaveBeenCalled();
     });
 
     it("should handle errors gracefully", async () => {
-      const { Linking } = require("react-native");
-      Linking.openSettings.mockRejectedValueOnce(new Error("Cannot open settings"));
+      mockOpenSettings.mockRejectedValueOnce(new Error("Cannot open settings"));
 
       const { openSystemLocationSettings } = locationStore.getState();
       await openSystemLocationSettings();
 
-      expect(Alert.alert).toHaveBeenCalledWith(
+      expect(mockAlert).toHaveBeenCalledWith(
         "Settings Unavailable",
         expect.any(String)
       );

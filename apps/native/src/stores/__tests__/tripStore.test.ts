@@ -339,7 +339,7 @@ describe("tripStore", () => {
     });
 
     it("should maintain state consistency", () => {
-      const states: Array<ReturnType<typeof useTripStore.getState>> = [];
+      const states: ReturnType<typeof useTripStore.getState>[] = [];
 
       useTripStore.setState({ selectedTripId: "trip-1" });
       states.push(useTripStore.getState());

@@ -1,4 +1,15 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import {
+  mapStore,
+  judgementStore,
+  useJudgementStore,
+  locationStore,
+  useJudgement,
+  useLocationContext,
+  useLocationStore,
+  useMapStore,
+  useMapActions,
+} from "../index";
 
 jest.mock("@mirai-app/shared", () => ({
   mapStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
@@ -20,18 +31,6 @@ jest.mock("../map", () => ({
   useMapStore: jest.fn(() => ({})),
   useMapActions: jest.fn(() => ({})),
 }));
-
-import {
-  mapStore,
-  judgementStore,
-  useJudgementStore,
-  locationStore,
-  useJudgement,
-  useLocationContext,
-  useLocationStore,
-  useMapStore,
-  useMapActions,
-} from "../index";
 
 describe("stores/index exports", () => {
   beforeEach(() => {
@@ -88,78 +87,6 @@ describe("stores/index exports", () => {
     it("should export useMapActions hook", () => {
       expect(useMapActions).toBeDefined();
       expect(typeof useMapActions).toBe("function");
-    });
-  });
-
-  describe("store type exports", () => {
-    it("should have MapStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have MapState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have MapActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have MapTheme type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have MapUserLocation type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have JudgementState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have JudgementActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have JudgementStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have ReviewStatus type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have Submission type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have LocationStore type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have LocationState type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have LocationActions type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
-    });
-
-    it("should have LocationPermissionStatus type available", () => {
-      const indexModule = require("../index");
-      expect(indexModule).toBeDefined();
     });
   });
 
@@ -226,8 +153,8 @@ describe("stores/index exports", () => {
       expect(typeof useJudgement).toBe("function");
     });
 
-    it("should maintain consistent export structure", () => {
-      const indexModule = require("../index");
+    it("should maintain consistent export structure", async () => {
+      const indexModule: Record<string, unknown> = await import("../index");
       const exportKeys = Object.keys(indexModule);
       expect(exportKeys).toContain("mapStore");
       expect(exportKeys).toContain("judgementStore");

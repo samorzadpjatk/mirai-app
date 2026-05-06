@@ -1,5 +1,4 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import React from "react";
 import { renderHook } from "@testing-library/react-native";
 import { useJudgement } from "../useJudgement";
 import { judgementStore } from "../judgementStores";

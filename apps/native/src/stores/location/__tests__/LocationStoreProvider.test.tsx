@@ -8,7 +8,7 @@ import { locationStore, setLocationServerUpdater } from "../locationStore";
 const mockAlert = jest.fn();
 
 jest.mock("react-native", () => {
-  const actual = jest.requireActual("react-native");
+  const actual: typeof import("react-native") = jest.requireActual("react-native");
   return {
     ...actual,
     Alert: {
@@ -26,7 +26,7 @@ const mockTRPC = {
       })),
     },
     updateSharingSettings: {
-      mutationOptions: jest.fn((options: unknown) => ({
+      mutationOptions: jest.fn((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void }) => ({
         mutationKey: ["location", "updateSharingSettings"],
         ...options,
       })),
@@ -72,9 +72,11 @@ describe("LocationStoreProvider", () => {
       error: null,
     });
 
-    mockUseMutation.mockImplementation((options: any) => ({
+    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void }) => ({
       mutateAsync: jest.fn(async (input: unknown) => {
-        await options?.onSuccess?.(undefined, input, undefined);
+        if (options.onSuccess) {
+          await options.onSuccess(undefined, input, undefined);
+        }
         return undefined;
       }),
       mutate: jest.fn(),
