@@ -117,7 +117,7 @@ export function createMockSupabaseClient(
     },
   };
 
-  return { ...mockClient, ...overrides };
+  return { ...mockClient, ...overrides } as unknown as SupabaseClient;
 }
 
 /**
