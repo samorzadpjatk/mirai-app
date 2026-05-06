@@ -278,7 +278,7 @@ describe("Backend Server API", () => {
 
   describe("Server Lifecycle", () => {
     it("should start and stop server", async () => {
-      const { server, start, stop } = createServer({
+      const { server, start: _start, stop } = createServer({
         dev: true,
         port: 3005,
         prefix: "/api/trpc",
@@ -336,7 +336,7 @@ describe("Backend Server API", () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it("should handle missing environment variables gracefully", async () => {
+    it("should handle missing environment variables gracefully", () => {
       delete process.env.SUPABASE_URL;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
       delete process.env.DATABASE_URL;

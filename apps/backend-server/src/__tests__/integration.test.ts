@@ -1,6 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
-import type { ServerOptions } from "../server";
-import type { FastifyRequest } from "fastify";
+import { describe, it, expect, vi, afterAll, beforeEach } from "vitest";
 
 describe("Server Integration Tests", () => {
   const originalEnv = process.env;
