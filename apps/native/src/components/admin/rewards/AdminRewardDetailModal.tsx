@@ -400,7 +400,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
               {reward.purchases.length > 0 ? (
                 <View style={{ gap: spacing.sm }}>
                   {reward.purchases.map((purchase) => {
-                    const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
+                    const status = (purchase.status ?? "BOUGHT");
                     const statusInfo = purchaseStatusMeta[status] ?? purchaseStatusMeta.BOUGHT;
                     const purchaserName =
                       `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();

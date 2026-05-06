@@ -91,6 +91,6 @@ export async function setCachedTripById<T>(
   trip: T,
 ): Promise<void> {
   const detailsMap = await readJson<TripDetailsCacheMap>(TRIP_DETAILS_CACHE_KEY, {});
-  detailsMap[tripId] = trip as unknown;
+  detailsMap[tripId] = trip;
   await writeJson(TRIP_DETAILS_CACHE_KEY, detailsMap);
 }

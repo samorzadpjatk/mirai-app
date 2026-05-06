@@ -102,7 +102,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
         ) : (
           <View style={{ gap: 12 }}>
             {purchases.map((purchase) => {
-              const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
+              const status = (purchase.status ?? "BOUGHT");
               const statusInfo = statusMeta[status] ?? statusMeta.BOUGHT;
               const purchaserName = `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
               const isUpdating = updateMyPurchaseStatus.isPending;

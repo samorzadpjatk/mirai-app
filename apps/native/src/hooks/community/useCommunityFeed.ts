@@ -178,7 +178,7 @@ export const useCommunityFeed = ({
     onSuccess: (result, _variables, context) => {
       applyReactionSummaryToFeed(
         result.activityId,
-        result.reactionsSummary as CommunityFeedActivity["reactionsSummary"],
+        result.reactionsSummary,
         context?.queryKey,
       );
     },

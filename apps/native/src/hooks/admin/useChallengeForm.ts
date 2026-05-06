@@ -89,7 +89,7 @@ export function useChallengeForm({
     startTime: null,
     endTime: null,
     votingDurationValue: "",
-    votingDurationUnit: "HOURS" as VotingDurationUnit,
+    votingDurationUnit: "HOURS",
     targetLocation: null,
     qrCodeValue: "",
     textExpectedPhrase: "",

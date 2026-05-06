@@ -69,7 +69,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
     void (async () => {
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
-        setPermissionStatus(status as LocationPermissionStatus);
+        setPermissionStatus(status);
       } catch (error) {
         console.warn("Failed to check location permissions:", error);
         setPermissionStatus("denied");
@@ -80,7 +80,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
   const requestLocationPermissions = useCallback(async (): Promise<LocationPermissionStatus> => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      setPermissionStatus(status as LocationPermissionStatus);
+      setPermissionStatus(status);
       
       if (status !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
@@ -89,7 +89,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         );
       }
       
-      return status as LocationPermissionStatus;
+      return status;
     } catch (error) {
       console.error("Failed to request location permissions:", error);
       setPermissionStatus("denied");
