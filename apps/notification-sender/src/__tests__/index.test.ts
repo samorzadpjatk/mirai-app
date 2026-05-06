@@ -31,8 +31,7 @@ vi.mock("@mirai-app/supabase", async () => {
   };
 });
 
-vi.mock("@mirai-app/trpc/client", async () => {
-  const { vi } = await import("vitest");
+vi.mock("@mirai-app/trpc/client", () => {
   return {
     getTRPCClient: (...args: unknown[]) => {
       mockGetTRPCClient(...args);
@@ -403,7 +402,7 @@ describe("Notification Sender - Notification Processing", () => {
 
     const payloadHandler = async (payload: { new: { id: string | number } }) => {
       if (!rawHandler) return;
-      rawHandler(payload);
+      await rawHandler(payload);
       await new Promise((resolve) => setImmediate(resolve));
     };
 
