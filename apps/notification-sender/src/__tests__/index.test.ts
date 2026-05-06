@@ -285,15 +285,16 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should remove channel and cleanup on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
     let sigintHandler: (() => Promise<void>) | undefined;
     const capturedChannel = { on: mockChannelOn, subscribe: mockChannelSubscribe };
 
-    processOnSpy.mockImplementation((event: string, handler: () => Promise<void>) => {
+    processOnSpy.mockImplementation(((event: string | symbol, handler: (...args: unknown[]) => void) => {
       if (event === "SIGINT") {
-        sigintHandler = handler;
+        sigintHandler = handler as () => Promise<void>;
       }
-    });
+      return process;
+    }) as (event: string | symbol, listener: (...args: unknown[]) => void) => NodeJS.Process);
 
     mockCreateSupabaseClient.mockImplementationOnce(() => ({
       channel: vi.fn().mockReturnValue(capturedChannel),
@@ -336,15 +337,16 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should log shutdown message on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
     let sigintHandler: (() => Promise<void>) | undefined;
 
-    processOnSpy.mockImplementation((event: string, handler: () => Promise<void>) => {
+    processOnSpy.mockImplementation(((event: string | symbol, handler: (...args: unknown[]) => void) => {
       if (event === "SIGINT") {
-        sigintHandler = handler;
+        sigintHandler = handler as () => Promise<void>;
       }
-    });
+      return process;
+    }) as (event: string | symbol, listener: (...args: unknown[]) => void) => NodeJS.Process);
 
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
@@ -373,7 +375,7 @@ describe("Notification Sender - Notification Processing", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null | undefined) => never);
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
@@ -598,7 +600,7 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle empty payload gracefully", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
-    await payloadHandler({ new: {} });
+    await payloadHandler({ new: {} as { id: string | number } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: undefined });
   });
 });

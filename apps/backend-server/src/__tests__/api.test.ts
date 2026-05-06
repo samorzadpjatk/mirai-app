@@ -593,7 +593,7 @@ describe("Server Lifecycle", () => {
       host: "127.0.0.1",
     });
 
-    const listenSpy = vi.spyOn(server, "listen").mockResolvedValue("");
+    const listenSpy = vi.spyOn(server, "listen").mockResolvedValue(undefined);
 
     await start();
 
@@ -841,7 +841,7 @@ describe("Server Configuration Edge Cases", () => {
       host: "127.0.0.1",
     });
 
-    const listenSpy = vi.spyOn(server, "listen").mockResolvedValue("");
+    const listenSpy = vi.spyOn(server, "listen").mockResolvedValue(undefined);
 
     await start();
     expect(listenSpy).toHaveBeenCalledWith({ port: 65000, host: "127.0.0.1" });

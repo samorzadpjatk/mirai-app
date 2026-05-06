@@ -9,7 +9,8 @@ export type AuthChangeEvent =
   | "TOKEN_REFRESHED"
   | "USER_UPDATED"
   | "PASSWORD_RECOVERY"
-  | "INITIAL_SESSION";
+  | "INITIAL_SESSION"
+  | "MFA_CHALLENGE_VERIFIED";
 
 export interface SupabaseClient {
   auth: {

@@ -1,13 +1,14 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type { Mock } from "jest-mock";
 
-const mockGetItemAsync = jest.fn();
-const mockSetItemAsync = jest.fn();
-const mockDeleteItemAsync = jest.fn();
+const mockGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
+const mockSetItemAsync = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
+const mockDeleteItemAsync = jest.fn() as Mock<(key: string) => Promise<void>>;
 
 jest.mock("expo-secure-store", () => ({
-  getItemAsync: (...args: unknown[]) => mockGetItemAsync(...args),
-  setItemAsync: (...args: unknown[]) => mockSetItemAsync(...args),
-  deleteItemAsync: (...args: unknown[]) => mockDeleteItemAsync(...args),
+  getItemAsync: (...args: [string]) => mockGetItemAsync(...args),
+  setItemAsync: (...args: [string, string]) => mockSetItemAsync(...args),
+  deleteItemAsync: (...args: [string]) => mockDeleteItemAsync(...args),
 }));
 
 import { authStorage } from "~/services/storage/storage";

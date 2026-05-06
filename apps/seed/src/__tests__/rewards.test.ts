@@ -88,7 +88,7 @@ describe("rewards", () => {
       const result = await loadRewardConfigs("/test/assets/dev", "rewards/list.yaml");
 
       expect(result).toHaveLength(1);
-      expect(result[0].name).toBe("Valid Reward");
+      expect(result[0]!.name).toBe("Valid Reward");
     });
 
     it("should throw error if parsed content is not an array", async () => {

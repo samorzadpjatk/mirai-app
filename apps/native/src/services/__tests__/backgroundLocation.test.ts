@@ -1,9 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import type { Mock } from "jest-mock";
 
 // Mock expo-location
-const mockHasStartedLocationUpdatesAsync = jest.fn();
-const mockStartLocationUpdatesAsync = jest.fn();
-const mockStopLocationUpdatesAsync = jest.fn();
+const mockHasStartedLocationUpdatesAsync = jest.fn() as Mock<(taskName: string) => Promise<boolean>>;
+const mockStartLocationUpdatesAsync = jest.fn() as Mock<(taskName: string, options: Record<string, unknown>) => Promise<void>>;
+const mockStopLocationUpdatesAsync = jest.fn() as Mock<(taskName: string) => Promise<void>>;
 
 jest.mock("expo-location", () => ({
   Accuracy: {
@@ -12,21 +13,21 @@ jest.mock("expo-location", () => ({
   ActivityType: {
     Other: 0,
   },
-  hasStartedLocationUpdatesAsync: (...args: unknown[]) =>
+  hasStartedLocationUpdatesAsync: (...args: [string]) =>
     mockHasStartedLocationUpdatesAsync(...args),
-  startLocationUpdatesAsync: (...args: unknown[]) =>
+  startLocationUpdatesAsync: (...args: [string, Record<string, unknown>]) =>
     mockStartLocationUpdatesAsync(...args),
-  stopLocationUpdatesAsync: (...args: unknown[]) =>
+  stopLocationUpdatesAsync: (...args: [string]) =>
     mockStopLocationUpdatesAsync(...args),
 }));
 
 // Mock AsyncStorage
-const mockGetItem = jest.fn();
-const mockSetItem = jest.fn();
+const mockGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
+const mockSetItem = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
-  getItem: (...args: unknown[]) => mockGetItem(...args),
-  setItem: (...args: unknown[]) => mockSetItem(...args),
+  getItem: (...args: [string]) => mockGetItem(...args),
+  setItem: (...args: [string, string]) => mockSetItem(...args),
 }));
 
 import {

@@ -2,9 +2,15 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { ImagePickerAsset } from "expo-image-picker";
 
 // Mock expo-image-manipulator
-const mockManipulateAsync = jest.fn();
-const mockSaveAsync = jest.fn();
-const mockRenderAsync = jest.fn();
+type ManipulateResult = { uri: string; width: number; height: number };
+type SaveResult = { uri: string; width: number; height: number };
+type RenderResult = { saveAsync: jest.Mock<() => Promise<SaveResult>>; release: jest.Mock };
+
+const mockManipulateAsync = jest.fn<
+  (uri: string, actions: unknown[], options: unknown) => Promise<ManipulateResult | Error>
+>();
+const mockSaveAsync = jest.fn<() => Promise<SaveResult>>();
+const mockRenderAsync = jest.fn<() => Promise<RenderResult>>();
 const mockRelease = jest.fn();
 const mockManipulateContext = {
   resize: jest.fn().mockReturnThis(),
@@ -17,7 +23,8 @@ const mockManipulateContext = {
 };
 
 jest.mock("expo-image-manipulator", () => ({
-  manipulateAsync: (...args: unknown[]) => mockManipulateAsync(...args),
+  manipulateAsync: (uri: string, actions: unknown[], options: unknown) =>
+    mockManipulateAsync(uri, actions, options),
   ImageManipulator: {
     manipulate: jest.fn().mockReturnValue(mockManipulateContext),
   },

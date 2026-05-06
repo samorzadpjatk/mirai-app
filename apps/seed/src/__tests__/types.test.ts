@@ -323,8 +323,8 @@ describe("types", () => {
       };
 
       expect(info.resources).toHaveLength(2);
-      expect(info.resources[0].type).toBe("hero_image");
-      expect(info.resources[1].type).toBe("map");
+      expect(info.resources[0]!.type).toBe("hero_image");
+      expect(info.resources[1]!.type).toBe("map");
     });
 
     it("should create TripInfoConfig with insurance", () => {

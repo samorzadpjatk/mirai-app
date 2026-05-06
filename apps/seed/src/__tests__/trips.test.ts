@@ -332,7 +332,7 @@ describe("trips", () => {
         { email: "existing@test.com", firstName: "Existing", lastName: "User", role: "user" },
       ];
 
-      const existingAuthUser = { id: "auth-existing", email: "existing@test.com" };
+      const existingAuthUser = { id: "auth-existing", email: "existing@test.com" } as SupabaseUser;
       const dbUser = { id: "db-existing", authUserId: "auth-existing", role: "USER" };
 
       mockReadTextFile.mockResolvedValue("csv content");
@@ -417,7 +417,7 @@ describe("trips", () => {
         { email: "user@test.com", firstName: "User", lastName: "Test", role: "admin" },
       ];
 
-      const authUser = { id: "auth-1", email: "user@test.com" };
+      const authUser = { id: "auth-1", email: "user@test.com" } as SupabaseUser;
       const dbUser = { id: "db-1", authUserId: "auth-1", role: "USER" };
 
       mockReadTextFile.mockResolvedValue("csv content");
@@ -667,7 +667,7 @@ describe("trips", () => {
         { email: "  spaced@test.com  ", firstName: "Spaced", lastName: "Email", role: "user" },
       ];
 
-      const authUser = { id: "auth-1", email: "spaced@test.com" };
+      const authUser = { id: "auth-1", email: "spaced@test.com" } as SupabaseUser;
       const dbUser = { id: "db-1", authUserId: "auth-1", role: "USER" };
 
       mockReadTextFile.mockResolvedValue("csv content");

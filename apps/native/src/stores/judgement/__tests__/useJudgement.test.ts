@@ -3,9 +3,9 @@ import { renderHook } from "@testing-library/react-native";
 import { useJudgement } from "../useJudgement";
 import { judgementStore } from "../judgementStores";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseTRPC = jest.fn();
+const mockUseQuery = jest.fn<ReturnType<typeof import("@tanstack/react-query").useQuery>, Parameters<typeof import("@tanstack/react-query").useQuery>>();
+const mockUseMutation = jest.fn<ReturnType<typeof import("@tanstack/react-query").useMutation>, Parameters<typeof import("@tanstack/react-query").useMutation>>();
+const mockUseTRPC = jest.fn<ReturnType<typeof import("@mirai-app/trpc/client").useTRPC>, []>();
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),

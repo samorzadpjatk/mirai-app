@@ -38,11 +38,11 @@ jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: () => mockTRPC,
 }));
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockInvalidateQueries = jest.fn();
+const mockUseQuery = jest.fn<ReturnType<typeof import("@tanstack/react-query").useQuery>, Parameters<typeof import("@tanstack/react-query").useQuery>>();
+const mockUseMutation = jest.fn<ReturnType<typeof import("@tanstack/react-query").useMutation>, Parameters<typeof import("@tanstack/react-query").useMutation>>();
+const mockInvalidateQueries = jest.fn<Promise<void>, [unknown]>();
 const mockQueryClient = {
-  invalidateQueries: (...args: unknown[]) => mockInvalidateQueries(...args),
+  invalidateQueries: (...args: [unknown]) => mockInvalidateQueries(...args),
 };
 
 jest.mock("@tanstack/react-query", () => ({
@@ -72,14 +72,18 @@ describe("LocationStoreProvider", () => {
       error: null,
     });
 
-    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void> }) => ({
+    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void>; onError?: (error: unknown) => void }) => ({
       mutateAsync: jest.fn(async (input: unknown) => {
-        if (options.onSuccess) {
+        if (options?.onSuccess) {
           await options.onSuccess(undefined, input, undefined);
         }
         return undefined;
       }),
-      mutate: jest.fn(),
+      mutate: jest.fn((input: unknown) => {
+        if (options?.onSuccess) {
+          void options.onSuccess(undefined, input, undefined);
+        }
+      }),
       isPending: false,
     }));
   });

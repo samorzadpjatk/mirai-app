@@ -55,7 +55,7 @@ jest.mock("~/components/common/ui", () => {
 });
 
 describe("EditUserModal", () => {
-  const mockUser = { id: "user-1", firstName: "John", lastName: "Doe", email: "john@example.com", role: "USER" as const, wristNumber: 123, houseNumber: 456, isBanned: false, bannedUntil: null, groupId: "group-1" };
+  const mockUser = { id: "user-1", firstName: "John", lastName: "Doe", email: "john@example.com", role: "USER" as const, wristNumber: "123", houseNumber: "456", isBanned: false, bannedUntil: null, groupId: "group-1", tripId: "trip-1" };
   beforeEach(() => { jest.clearAllMocks(); });
 
   it("renders the edit user modal", () => {

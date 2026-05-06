@@ -21,7 +21,7 @@ describe("File System Utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBunFile = vi.fn();
-    (globalThis as unknown as { Bun: { file: typeof mockBunFile } }).Bun = {
+    (globalThis as unknown as { Bun: { file: typeof mockBunFile; Glob: ReturnType<typeof vi.fn> } }).Bun = {
       file: mockBunFile,
       Glob: vi.fn(),
     };

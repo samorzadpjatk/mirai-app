@@ -65,7 +65,20 @@ jest.mock("~/components/common/ui", () => {
 });
 
 describe("EditChallengeModal", () => {
-  const mockChallenge = { id: "challenge-1", tripId: "trip-1", title: "Test Challenge", description: "Test description", points: 100, icon: "star", category: "standard" as const, status: "draft" as const, createdAt: new Date(), updatedAt: new Date() };
+  const mockChallenge = {
+    id: "challenge-1",
+    tripId: "trip-1",
+    title: "Test Challenge",
+    description: "Test description",
+    points: 100,
+    icon: "star",
+    category: "standard" as const,
+    status: "draft" as const,
+    submissionType: "IMAGE" as const,
+    scoringCategory: "JUDGED_STAFF" as const,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
   beforeEach(() => { jest.clearAllMocks(); });
 
   it("renders the edit challenge form", () => {

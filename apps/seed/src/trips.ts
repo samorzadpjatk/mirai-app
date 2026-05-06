@@ -6,6 +6,7 @@ import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
+import type { Role } from "@mirai-app/db";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -103,7 +104,7 @@ export const seedTrip = async (
         'user': 'USER'
       };
       
-      const dbRole = roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER';
+      const dbRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       try {
         dbUser = await prisma.user.create({
@@ -128,7 +129,7 @@ export const seedTrip = async (
         'user': 'USER'
       };
       
-      const expectedRole = roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER';
+      const expectedRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       if (dbUser.role !== expectedRole) {
         dbUser = await prisma.user.update({

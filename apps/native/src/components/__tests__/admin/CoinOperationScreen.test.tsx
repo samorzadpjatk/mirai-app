@@ -127,7 +127,7 @@ describe("CoinOperationScreen", () => {
 
   it("renders group summary", () => {
     const { getByTestId, getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
-    expect(getByTestId("screen-title").props.children).toBe("Add Coins");
+    expect(getByTestId("screen-title")!.props.children).toBe("Add Coins");
     expect(getByDisplayValue("Test Group")).toBeTruthy();
     expect(getByDisplayValue("100 coins")).toBeTruthy();
   });

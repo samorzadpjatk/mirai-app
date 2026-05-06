@@ -1,24 +1,25 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { TripListItem } from "~/components/trips/list/types";
+import type { Mock } from "jest-mock";
 
-const mockSecureGetItemAsync = jest.fn();
-const mockSecureSetItemAsync = jest.fn();
-const mockSecureDeleteItemAsync = jest.fn();
+const mockSecureGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
+const mockSecureSetItemAsync = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
+const mockSecureDeleteItemAsync = jest.fn() as Mock<(key: string) => Promise<void>>;
 
-const mockAsyncGetItem = jest.fn();
-const mockAsyncSetItem = jest.fn();
-const mockAsyncRemoveItem = jest.fn();
+const mockAsyncGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
+const mockAsyncSetItem = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
+const mockAsyncRemoveItem = jest.fn() as Mock<(key: string) => Promise<void>>;
 
 jest.mock("expo-secure-store", () => ({
-  getItemAsync: (...args: unknown[]) => mockSecureGetItemAsync(...args),
-  setItemAsync: (...args: unknown[]) => mockSecureSetItemAsync(...args),
-  deleteItemAsync: (...args: unknown[]) => mockSecureDeleteItemAsync(...args),
+  getItemAsync: (...args: [string]) => mockSecureGetItemAsync(...args),
+  setItemAsync: (...args: [string, string]) => mockSecureSetItemAsync(...args),
+  deleteItemAsync: (...args: [string]) => mockSecureDeleteItemAsync(...args),
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
-  getItem: (...args: unknown[]) => mockAsyncGetItem(...args),
-  setItem: (...args: unknown[]) => mockAsyncSetItem(...args),
-  removeItem: (...args: unknown[]) => mockAsyncRemoveItem(...args),
+  getItem: (...args: [string]) => mockAsyncGetItem(...args),
+  setItem: (...args: [string, string]) => mockAsyncSetItem(...args),
+  removeItem: (...args: [string]) => mockAsyncRemoveItem(...args),
 }));
 
 import {
@@ -189,7 +190,7 @@ describe("Selected Trip Storage", () => {
       const newTrip = createMockTrip("trip-1", "Trip 1");
       await upsertCachedTripListItem(newTrip);
 
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripListItem[];
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripListItem[];
       expect(storedData).toHaveLength(1);
       expect(storedData[0]?.id).toBe("trip-1");
     });
@@ -201,7 +202,7 @@ describe("Selected Trip Storage", () => {
       const newTrip = createMockTrip("trip-2", "Trip 2");
       await upsertCachedTripListItem(newTrip);
 
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripListItem[];
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripListItem[];
       expect(storedData).toHaveLength(2);
     });
 
@@ -215,7 +216,7 @@ describe("Selected Trip Storage", () => {
       const updatedTrip = createMockTrip("trip-1", "New Name");
       await upsertCachedTripListItem(updatedTrip);
 
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripListItem[];
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripListItem[];
       expect(storedData).toHaveLength(2);
       const trip1 = storedData.find((t: TripListItem) => t.id === "trip-1");
       expect(trip1?.name).toBe("New Name");
@@ -240,7 +241,7 @@ describe("Selected Trip Storage", () => {
       await upsertCachedTripListItem(updatedTrip as TripListItem);
 
       type TripWithDescription = TripListItem & { description?: string };
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripWithDescription[];
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripWithDescription[];
       const trip1 = storedData[0];
       expect(trip1?.name).toBe("New Name");
       expect(trip1?.description).toBe("Old Description");
@@ -305,7 +306,7 @@ describe("Selected Trip Storage", () => {
       await setCachedTripById("trip-1", trip);
 
       type TripDetailsMap = Record<string, Record<string, string>>;
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripDetailsMap;
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripDetailsMap;
       expect(storedData["trip-1"]).toEqual(trip);
     });
 
@@ -319,7 +320,7 @@ describe("Selected Trip Storage", () => {
       await setCachedTripById("trip-2", newTrip);
 
       type TripDetailsMap = Record<string, { id: string; name: string }>;
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripDetailsMap;
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripDetailsMap;
       expect(storedData["trip-1"]).toBeDefined();
       expect(storedData["trip-2"]).toBeDefined();
     });
@@ -334,7 +335,7 @@ describe("Selected Trip Storage", () => {
       await setCachedTripById("trip-1", updatedTrip);
 
       type TripDetailsMap = Record<string, { id: string; name: string }>;
-      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0][1]) as TripDetailsMap;
+      const storedData = JSON.parse(mockAsyncSetItem.mock.calls[0]![1]!) as TripDetailsMap;
       expect(storedData["trip-1"]?.name).toBe("New Name");
     });
 

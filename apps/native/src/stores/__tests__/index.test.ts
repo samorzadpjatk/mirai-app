@@ -12,13 +12,13 @@ import {
 } from "../index";
 
 jest.mock("@mirai-app/shared", () => ({
-  mapStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
-  judgementStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
+  mapStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
+  judgementStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
   useJudgementStore: jest.fn(() => ({})),
 }));
 
 jest.mock("../location", () => ({
-  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
+  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
   useLocationContext: jest.fn(() => ({})),
   useLocationStore: jest.fn(() => ({})),
 }));

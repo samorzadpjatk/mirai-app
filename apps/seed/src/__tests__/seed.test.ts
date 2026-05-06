@@ -148,7 +148,7 @@ describe("runSeed", () => {
   });
 
   it("should handle sponsor seeding errors gracefully", async () => {
-    const tripWithSponsors: TripConfig = { ...mockTrips[0], sponsors: "sponsors/test.yaml" };
+    const tripWithSponsors = { ...mockTrips[0], sponsors: "sponsors/test.yaml" } as TripConfig;
     const { loadTripConfigs } = await import("../tripConfigs");
     (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithSponsors]);
     const { seedSponsors } = await import("../sponsors");
@@ -164,7 +164,7 @@ describe("runSeed", () => {
   });
 
   it("should handle reward seeding errors gracefully", async () => {
-    const tripWithRewards: TripConfig = { ...mockTrips[0], rewards: "rewards/test.yaml" };
+    const tripWithRewards = { ...mockTrips[0], rewards: "rewards/test.yaml" } as TripConfig;
     const { loadTripConfigs } = await import("../tripConfigs");
     (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithRewards]);
     const { seedRewards } = await import("../rewards");
@@ -180,7 +180,7 @@ describe("runSeed", () => {
   });
 
   it("should handle trip info seeding errors gracefully", async () => {
-    const tripWithInfo: TripConfig = { ...mockTrips[0], info: "info/test.yaml" };
+    const tripWithInfo = { ...mockTrips[0], info: "info/test.yaml" } as TripConfig;
     const { loadTripConfigs } = await import("../tripConfigs");
     (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce([tripWithInfo]);
     const { seedTripInfo } = await import("../tripInfo");

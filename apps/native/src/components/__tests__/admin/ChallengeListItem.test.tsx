@@ -11,7 +11,7 @@ describe("ChallengeListItem", () => {
     description: "Test description",
     basePoints: 100,
     status: "active",
-  };
+  } as const;
 
   const mockOnDelete = jest.fn();
   const mockOnDeletePress = jest.fn();

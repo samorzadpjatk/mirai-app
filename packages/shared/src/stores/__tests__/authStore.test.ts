@@ -278,7 +278,12 @@ describe("Auth Store", () => {
         access_token: "new-token",
       };
 
-      authStateCallback?.("SIGNED_IN", newSession);
+      if (authStateCallback) {
+        (authStateCallback as (event: AuthChangeEvent, session: SupabaseSession | null) => void)(
+          "SIGNED_IN",
+          newSession
+        );
+      }
 
       await flushPromises();
 
@@ -308,7 +313,12 @@ describe("Auth Store", () => {
       await flushPromises();
 
       // Simulate sign out
-      authStateCallback?.("SIGNED_OUT", null);
+      if (authStateCallback) {
+        (authStateCallback as (event: AuthChangeEvent, session: SupabaseSession | null) => void)(
+          "SIGNED_OUT",
+          null
+        );
+      }
 
       const state = authStore.getState();
       expect(state.user).toBeNull();

@@ -182,7 +182,7 @@ describe("AdminRewardsModal", () => {
       const { getByTestId } = renderWithProviders(
         <AdminRewardsModal {...defaultProps} />
       );
-      expect(getByTestId("modal-title").children[0]).toBe("New Reward");
+      expect(getByTestId("modal-title")!.children![0]).toBe("New Reward");
     });
 
     it("should not render when not visible", () => {
@@ -257,8 +257,8 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Branded T-shirt");
-      expect(inputs[0].props.value).toBe("Branded T-shirt");
+      fireEvent.changeText(inputs[0]!, "Branded T-shirt");
+      expect(inputs[0]!.props.value).toBe("Branded T-shirt");
     });
 
     it("should update description when typing", () => {
@@ -266,8 +266,8 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[1], "A cool branded t-shirt");
-      expect(inputs[1].props.value).toBe("A cool branded t-shirt");
+      fireEvent.changeText(inputs[1]!, "A cool branded t-shirt");
+      expect(inputs[1]!.props.value).toBe("A cool branded t-shirt");
     });
 
     it("should update available quantity when typing", () => {
@@ -275,8 +275,8 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[2], "50");
-      expect(inputs[2].props.value).toBe("50");
+      fireEvent.changeText(inputs[2]!, "50");
+      expect(inputs[2]!.props.value).toBe("50");
     });
 
     it("should update coin cost when typing", () => {
@@ -284,8 +284,8 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[3], "10");
-      expect(inputs[3].props.value).toBe("10");
+      fireEvent.changeText(inputs[3]!, "10");
+      expect(inputs[3]!.props.value).toBe("10");
     });
 
     it("should handle numeric keyboard for quantity field", () => {
@@ -323,10 +323,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -344,10 +344,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -377,10 +377,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "0");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "0");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -398,10 +398,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "150");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "150");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -419,10 +419,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "abc");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "abc");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -440,10 +440,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "A test description");
-      fireEvent.changeText(inputs[2], "50");
-      fireEvent.changeText(inputs[3], "10");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "A test description");
+      fireEvent.changeText(inputs[2]!, "50");
+      fireEvent.changeText(inputs[3]!, "10");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -466,10 +466,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -484,10 +484,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -502,18 +502,18 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(inputs[0].props.value).toBe("");
-        expect(inputs[1].props.value).toBe("");
-        expect(inputs[2].props.value).toBe("");
-        expect(inputs[3].props.value).toBe("");
+        expect(inputs[0]!.props.value).toBe("");
+        expect(inputs[1]!.props.value).toBe("");
+        expect(inputs[2]!.props.value).toBe("");
+        expect(inputs[3]!.props.value).toBe("");
       });
     });
 
@@ -525,10 +525,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -591,7 +591,7 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(addImagesButton);
 
       await waitFor(() => {
-        const uploadArgs = uploadedArgs[0];
+        const uploadArgs = uploadedArgs[0]!;
 
         expect(uploadArgs.storagePath).toContain("rewards/");
         expect(uploadArgs.fileUri).toBe("file:///test/image.jpg");
@@ -652,10 +652,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -673,10 +673,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "1");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "1");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -693,10 +693,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "10");
-      fireEvent.changeText(inputs[3], "100");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "10");
+      fireEvent.changeText(inputs[3]!, "100");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -713,10 +713,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "0");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "0");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -733,10 +733,10 @@ describe("AdminRewardsModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Test Reward");
-      fireEvent.changeText(inputs[1], "Description");
-      fireEvent.changeText(inputs[2], "999999");
-      fireEvent.changeText(inputs[3], "5");
+      fireEvent.changeText(inputs[0]!, "Test Reward");
+      fireEvent.changeText(inputs[1]!, "Description");
+      fireEvent.changeText(inputs[2]!, "999999");
+      fireEvent.changeText(inputs[3]!, "5");
 
       fireEvent.press(getByTestId("primary-button"));
 

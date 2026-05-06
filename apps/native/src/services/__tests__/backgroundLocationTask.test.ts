@@ -1,24 +1,34 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { LocationObject } from "expo-location";
+import type { Mock } from "jest-mock";
 
 // Require helper for the module under test (using require for Jest compatibility)
 function loadBackgroundLocationTask(): unknown {
   return require("~/services/background/backgroundLocationTask");
 }
 
-const mockDefineTask = jest.fn();
-const mockGetItem = jest.fn();
-const mockGetSession = jest.fn();
-const mockMutate = jest.fn();
-const mockCleanup = jest.fn();
-const mockGetTRPCClient = jest.fn();
+const mockDefineTask = jest.fn() as Mock<(taskName: string, handler: (props: {
+  data?: { locations?: LocationObject[] };
+  error?: Error | null;
+}) => Promise<void>) => void>;
+const mockGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
+const mockGetSession = jest.fn() as Mock<() => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>>;
+const mockMutate = jest.fn() as Mock<(data: Record<string, unknown>) => Promise<void>>;
+const mockCleanup = jest.fn() as Mock<() => Promise<void>>;
+const mockGetTRPCClient = jest.fn() as Mock<(httpUrl: string, wsUrl: string, token: string) => {
+  client: { location: { updateLocation: { mutate: typeof mockMutate } } };
+  cleanup: typeof mockCleanup;
+}>;
 
 jest.mock("expo-task-manager", () => ({
-  defineTask: (...args: unknown[]) => mockDefineTask(...args),
+  defineTask: (...args: [string, (props: {
+    data?: { locations?: LocationObject[] };
+    error?: Error | null;
+  }) => Promise<void>]) => mockDefineTask(...args),
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
-  getItem: (...args: unknown[]) => mockGetItem(...args),
+  getItem: (...args: [string]) => mockGetItem(...args),
   setItem: jest.fn(),
   removeItem: jest.fn(),
 }));
@@ -26,13 +36,13 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 jest.mock("@mirai-app/supabase", () => ({
   createSupabaseClient: jest.fn(() => ({
     auth: {
-      getSession: (...args: unknown[]) => mockGetSession(...args),
+      getSession: (...args: []) => mockGetSession(...args),
     },
   })),
 }));
 
 jest.mock("@mirai-app/trpc/client", () => ({
-  getTRPCClient: (...args: unknown[]) => mockGetTRPCClient(...args),
+  getTRPCClient: (...args: [string, string, string]) => mockGetTRPCClient(...args),
 }));
 
 jest.mock("~/services/storage/storage", () => ({
@@ -94,7 +104,7 @@ describe("Background Location Task", () => {
 
       const calls = mockDefineTask.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
-      taskHandler = calls[0][1];
+      taskHandler = calls[0]![1]!;
     });
 
     it("should handle task error", async () => {

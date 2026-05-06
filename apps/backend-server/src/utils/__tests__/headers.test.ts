@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { IncomingHttpHeaders } from "http";
 import { fastifyHeadersToFetchHeaders } from "../headers";
 
 describe("fastifyHeadersToFetchHeaders", () => {
@@ -88,7 +89,7 @@ describe("fastifyHeadersToFetchHeaders", () => {
         "x-mixed": ["valid", 123, null, undefined, "also-valid"],
       };
 
-      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as Record<string, unknown[]>);
+      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as unknown as IncomingHttpHeaders);
 
       expect(fetchHeaders.get("x-mixed")).toBe("valid, also-valid");
     });
@@ -116,7 +117,7 @@ describe("fastifyHeadersToFetchHeaders", () => {
         "x-count": 42,
       };
 
-      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as Record<string, unknown>);
+      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as unknown as IncomingHttpHeaders);
 
       expect(fetchHeaders.get("content-length")).toBe("1024");
       expect(fetchHeaders.get("x-count")).toBe("42");
@@ -128,7 +129,7 @@ describe("fastifyHeadersToFetchHeaders", () => {
         "x-bool-false": false,
       };
 
-      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as Record<string, unknown>);
+      const fetchHeaders = fastifyHeadersToFetchHeaders(fastifyHeaders as unknown as IncomingHttpHeaders);
 
       expect(fetchHeaders.get("x-bool-true")).toBe("true");
       expect(fetchHeaders.get("x-bool-false")).toBe("false");

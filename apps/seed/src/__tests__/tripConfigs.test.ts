@@ -75,8 +75,8 @@ users: users/trip2.csv
       const result = await loadTripConfigs("/test/assets/dev");
 
       expect(result).toHaveLength(2);
-      expect(result[0].key).toBe("trip-1");
-      expect(result[1].key).toBe("trip-2");
+      expect(result[0]!.key).toBe("trip-1");
+      expect(result[1]!.key).toBe("trip-2");
     });
 
     it("should filter out non-YAML files", async () => {
@@ -105,8 +105,8 @@ users: users/test.csv
       const result = await loadTripConfigs("/test/assets/dev");
 
       expect(result).toHaveLength(2);
-      expect(result[0].key).toBe("yaml-trip");
-      expect(result[1].key).toBe("yml-trip");
+      expect(result[0]!.key).toBe("yaml-trip");
+      expect(result[1]!.key).toBe("yml-trip");
     });
 
     it("should skip invalid configs missing required fields", async () => {
@@ -130,7 +130,7 @@ name: Invalid Trip
       const result = await loadTripConfigs("/test/assets/dev");
 
       expect(result).toHaveLength(1);
-      expect(result[0].key).toBe("valid-trip");
+      expect(result[0]!.key).toBe("valid-trip");
     });
 
     it("should skip configs missing key", async () => {
@@ -221,11 +221,11 @@ info: info/details.yaml
       const result = await loadTripConfigs("/test/assets/dev");
 
       expect(result).toHaveLength(1);
-      expect(result[0].description).toBe("A complete trip configuration");
-      expect(result[0].background).toBe("images/background.jpg");
-      expect(result[0].rewards).toBe("rewards/list.yaml");
-      expect(result[0].sponsors).toBe("sponsors/list.yaml");
-      expect(result[0].info).toBe("info/details.yaml");
+      expect(result[0]!.description).toBe("A complete trip configuration");
+      expect(result[0]!.background).toBe("images/background.jpg");
+      expect(result[0]!.rewards).toBe("rewards/list.yaml");
+      expect(result[0]!.sponsors).toBe("sponsors/list.yaml");
+      expect(result[0]!.info).toBe("info/details.yaml");
     });
 
     it("should handle empty YAML files", async () => {
@@ -274,7 +274,7 @@ users: users/prod.csv
 
       const result = await loadTripConfigs("/test/assets/prod");
 
-      expect(result[0].key).toBe("prod-trip");
+      expect(result[0]!.key).toBe("prod-trip");
       expect(mockJoinPath).toHaveBeenCalledWith("/test/assets/prod", "config");
     });
   });

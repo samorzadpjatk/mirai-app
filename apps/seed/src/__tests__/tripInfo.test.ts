@@ -85,7 +85,7 @@ describe("tripInfo", () => {
       const result = await loadTripInfoConfig("/test/assets/dev", "info/trip.yaml");
 
       expect(result.resources).toHaveLength(2);
-      expect(result.resources[0].type).toBe("hero_image");
+      expect(result.resources[0]!.type).toBe("hero_image");
       expect(result.insurance?.label).toBe("Insurance");
     });
 

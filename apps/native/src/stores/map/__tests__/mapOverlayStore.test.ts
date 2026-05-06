@@ -113,8 +113,8 @@ describe("mapOverlayStore", () => {
       it("should set users array", () => {
         const { setUsers } = mapOverlayStore.getState();
         const mockUsers = [
-          { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], firstName: "John" },
-          { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], firstName: "Jane" },
+          { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], name: "John", lastActiveAt: Date.now() },
+          { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], name: "Jane", lastActiveAt: Date.now() },
         ];
         
         setUsers(mockUsers);
@@ -156,7 +156,8 @@ describe("mapOverlayStore", () => {
         const mockUser = { 
           id: "user-1", 
           coordinate: [52.2297, 21.0122] as [number, number],
-          firstName: "John"
+          name: "John",
+          lastActiveAt: Date.now()
         };
         
         selectUser(mockUser);
@@ -174,7 +175,9 @@ describe("mapOverlayStore", () => {
         const { selectUser, deselectUser } = mapOverlayStore.getState();
         const mockUser = { 
           id: "user-1", 
-          coordinate: [52.2297, 21.0122] as [number, number] 
+          coordinate: [52.2297, 21.0122] as [number, number],
+          name: "John",
+          lastActiveAt: Date.now()
         };
         
         selectUser(mockUser);
@@ -190,7 +193,9 @@ describe("mapOverlayStore", () => {
         const { selectUser, backToList } = mapOverlayStore.getState();
         const mockUser = { 
           id: "user-1", 
-          coordinate: [52.2297, 21.0122] as [number, number] 
+          coordinate: [52.2297, 21.0122] as [number, number],
+          name: "John",
+          lastActiveAt: Date.now()
         };
         
         selectUser(mockUser);
@@ -470,7 +475,9 @@ describe("mapOverlayStore", () => {
         const { handleMapUserPress } = mapOverlayStore.getState();
         const mockUser = { 
           id: "user-1", 
-          coordinate: [52.2297, 21.0122] as [number, number] 
+          coordinate: [52.2297, 21.0122] as [number, number],
+          name: "John",
+          lastActiveAt: Date.now()
         };
         
         handleMapUserPress(mockUser);
@@ -507,8 +514,8 @@ describe("mapOverlayStore", () => {
       const state = mapOverlayStore.getState();
 
       const mockUsers = [
-        { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], firstName: "John" },
-        { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], firstName: "Jane" },
+        { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], name: "John", lastActiveAt: Date.now() },
+        { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], name: "Jane", lastActiveAt: Date.now() },
       ];
       state.setUsers(mockUsers);
       expect(mapOverlayStore.getState().users).toEqual(mockUsers);
@@ -526,7 +533,8 @@ describe("mapOverlayStore", () => {
       const mockUser = { 
         id: "user-1", 
         coordinate: [52.2297, 21.0122] as [number, number],
-        firstName: "John"
+        name: "John",
+        lastActiveAt: Date.now()
       };
       state.selectUser(mockUser);
       

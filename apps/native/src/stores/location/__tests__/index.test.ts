@@ -2,8 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type * as indexModule from "../index";
 
 jest.mock("../locationStore", () => ({
-  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn() },
-  setLocationServerUpdater: jest.fn(),
+  locationStore: { getState: jest.fn(() => ({})), setState: jest.fn((_partial: unknown) => {}) },
+  setLocationServerUpdater: jest.fn((_fn: unknown) => {}),
 }));
 
 jest.mock("../locationHooks", () => ({
@@ -147,7 +147,7 @@ describe("stores/location/index exports", () => {
     });
 
     it("should support server updater injection", () => {
-      const mockUpdater = jest.fn();
+      const mockUpdater = jest.fn<(input: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<void>>();
       setLocationServerUpdater(mockUpdater);
       expect(setLocationServerUpdater).toHaveBeenCalledWith(mockUpdater);
     });

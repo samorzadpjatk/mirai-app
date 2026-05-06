@@ -125,7 +125,7 @@ describe("Server Integration Tests", () => {
       expect(typeof start).toBe("function");
       expect(typeof stop).toBe("function");
 
-      const listenSpy = vi.spyOn(server, "listen").mockResolvedValue("");
+      const listenSpy = vi.spyOn(server, "listen").mockResolvedValue(undefined);
       await start();
       expect(listenSpy).toHaveBeenCalledWith({ port: 3104, host: "127.0.0.1" });
       await stop();
@@ -230,7 +230,7 @@ describe("Server Integration Tests", () => {
         host: "127.0.0.1",
       });
 
-      const listenSpy = vi.spyOn(server, "listen").mockResolvedValue("");
+      const listenSpy = vi.spyOn(server, "listen").mockResolvedValue(undefined);
 
       await start();
       expect(listenSpy).toHaveBeenCalledTimes(1);

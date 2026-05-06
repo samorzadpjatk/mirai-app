@@ -43,7 +43,7 @@ describe("createBaseSupabaseClient", () => {
   it("should configure default auth options", () => {
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -60,7 +60,7 @@ describe("createBaseSupabaseClient", () => {
   it("should configure realtime options with eventsPerSecond", () => {
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -84,7 +84,7 @@ describe("createBaseSupabaseClient", () => {
 
     createBaseSupabaseClient(mockUrl, mockAnonKey, customOptions);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -110,7 +110,7 @@ describe("createBaseSupabaseClient", () => {
 
     createBaseSupabaseClient(mockUrl, mockAnonKey, customOptions);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -128,7 +128,7 @@ describe("createBaseSupabaseClient", () => {
   it("should handle empty options object", () => {
     createBaseSupabaseClient(mockUrl, mockAnonKey, {});
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -188,7 +188,7 @@ describe("createBaseSupabaseClient", () => {
   });
 
   it("should preserve additional options passed to auth", () => {
-    const customOptions: SupabaseClientOptions = {
+    const customOptions = {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -197,11 +197,11 @@ describe("createBaseSupabaseClient", () => {
         flowType: "pkce" as const,
         debug: true,
       },
-    };
+    } as SupabaseClientOptions;
 
     createBaseSupabaseClient(mockUrl, mockAnonKey, customOptions);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -228,7 +228,7 @@ describe("createBaseSupabaseClient", () => {
 
     createBaseSupabaseClient(mockUrl, mockAnonKey, customOptions);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(
@@ -256,7 +256,7 @@ describe("createBaseSupabaseClient", () => {
 
     createBaseSupabaseClient(mockUrl, mockAnonKey, customOptions);
 
-    const callArgs = vi.mocked(createClient).mock.calls[0];
+    const callArgs = vi.mocked(createClient).mock.calls[0]!;
     const options = callArgs[2];
 
     expect(options).toEqual(

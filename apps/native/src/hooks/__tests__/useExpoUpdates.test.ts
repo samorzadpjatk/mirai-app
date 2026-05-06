@@ -14,7 +14,14 @@ jest.mock("expo-updates", () => {
 });
 
 // Get typed references to mocked functions using requireMock
-const mockedUpdates = jest.requireMock("expo-updates");
+interface MockedExpoUpdates {
+  checkForUpdateAsync: jest.Mock<Promise<{ isAvailable: boolean }>, []>;
+  fetchUpdateAsync: jest.Mock<Promise<void>, []>;
+  reloadAsync: jest.Mock<Promise<void>, []>;
+  isEnabled: boolean;
+}
+
+const mockedUpdates = jest.requireMock("expo-updates") as MockedExpoUpdates;
 const mockCheckForUpdateAsync = mockedUpdates.checkForUpdateAsync;
 const mockFetchUpdateAsync = mockedUpdates.fetchUpdateAsync;
 const mockReloadAsync = mockedUpdates.reloadAsync;

@@ -24,7 +24,19 @@ jest.mock("@mirai-app/shared", () => ({
   },
 }));
 
-const mockUseQuery = jest.fn();
+interface MockQueryOptions {
+  enabled?: boolean;
+}
+
+interface MockQueryResult {
+  data: unknown;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  refetch: jest.Mock;
+}
+
+const mockUseQuery = jest.fn<MockQueryResult, [MockQueryOptions]>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
@@ -107,7 +119,7 @@ describe("useTripResources", () => {
       expect(result.current.resources).toHaveLength(3);
     });
 
-    expect(result.current.resources[0].type).toBe(TRIP_RESOURCE_TYPES.HERO_IMAGE);
+    expect(result.current.resources[0]!.type).toBe(TRIP_RESOURCE_TYPES.HERO_IMAGE);
     expect(result.current.insurance).toEqual(resourcesData.insurance);
   });
 
@@ -265,19 +277,19 @@ describe("useTripResources", () => {
       expect(result.current.resources).toHaveLength(7);
     });
 
-    expect(result.current.getResource("HERO_IMAGE")?.type).toBe(TRIP_RESOURCE_TYPES.HERO_IMAGE);
-    expect(result.current.getResource("MAP_BG_IMAGE")?.type).toBe(TRIP_RESOURCE_TYPES.MAP_BG_IMAGE);
-    expect(result.current.getResource("INTERACTIVE_MAP")?.type).toBe(TRIP_RESOURCE_TYPES.INTERACTIVE_MAP);
-    expect(result.current.getResource("PDF_MAP")?.type).toBe(TRIP_RESOURCE_TYPES.PDF_MAP);
-    expect(result.current.getResource("INFOPACK")?.type).toBe(TRIP_RESOURCE_TYPES.INFOPACK);
-    expect(result.current.getResource("WHATSAPP")?.type).toBe(TRIP_RESOURCE_TYPES.WHATSAPP);
-    expect(result.current.getResource("SOS")?.type).toBe(TRIP_RESOURCE_TYPES.SOS);
+    expect(result.current.getResource("HERO_IMAGE")!.type).toBe(TRIP_RESOURCE_TYPES.HERO_IMAGE);
+    expect(result.current.getResource("MAP_BG_IMAGE")!.type).toBe(TRIP_RESOURCE_TYPES.MAP_BG_IMAGE);
+    expect(result.current.getResource("INTERACTIVE_MAP")!.type).toBe(TRIP_RESOURCE_TYPES.INTERACTIVE_MAP);
+    expect(result.current.getResource("PDF_MAP")!.type).toBe(TRIP_RESOURCE_TYPES.PDF_MAP);
+    expect(result.current.getResource("INFOPACK")!.type).toBe(TRIP_RESOURCE_TYPES.INFOPACK);
+    expect(result.current.getResource("WHATSAPP")!.type).toBe(TRIP_RESOURCE_TYPES.WHATSAPP);
+    expect(result.current.getResource("SOS")!.type).toBe(TRIP_RESOURCE_TYPES.SOS);
   });
 
   it("should disable query when tripId is empty string", () => {
-    let capturedOptions: { enabled?: boolean } = {};
+    let capturedOptions: MockQueryOptions = {};
 
-    mockUseQuery.mockImplementation((options: { enabled?: boolean }) => {
+    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
       capturedOptions = options;
       return {
         data: null,
@@ -294,9 +306,9 @@ describe("useTripResources", () => {
   });
 
   it("should enable query when tripId is provided", () => {
-    let capturedOptions: { enabled?: boolean } = {};
+    let capturedOptions: MockQueryOptions = {};
 
-    mockUseQuery.mockImplementation((options: { enabled?: boolean }) => {
+    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
       capturedOptions = options;
       return {
         data: null,

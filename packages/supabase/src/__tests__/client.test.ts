@@ -52,7 +52,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, mockStorage);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -71,7 +71,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
 
       expect(options.auth?.storage).toBeDefined();
@@ -95,7 +95,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -127,7 +127,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, mockCustomStorage);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -150,7 +150,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
       const storage = options.auth?.storage;
 
@@ -170,7 +170,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
       const storage = options.auth?.storage;
 
@@ -187,7 +187,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
       const storage = options.auth?.storage;
 
@@ -206,7 +206,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
       const storage = options.auth?.storage;
 
@@ -231,7 +231,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, undefined, customOptions);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -260,7 +260,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, mockStorage, customOptions);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -286,7 +286,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, undefined, customOptions);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -304,7 +304,7 @@ describe("createSupabaseClient", () => {
     it("should handle empty options object", () => {
       createSupabaseClient(mockUrl, mockKey, undefined, {});
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -321,7 +321,7 @@ describe("createSupabaseClient", () => {
     it("should handle undefined options", () => {
       createSupabaseClient(mockUrl, mockKey, undefined, undefined);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -346,7 +346,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, undefined, customOptions);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2] as SupabaseClientOptions;
 
       expect(options.auth?.autoRefreshToken).toBe(false);
@@ -365,7 +365,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, asyncStorage);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(
@@ -386,7 +386,7 @@ describe("createSupabaseClient", () => {
 
       createSupabaseClient(mockUrl, mockKey, syncStorage);
 
-      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0];
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
       const options = callArgs[2];
 
       expect(options).toEqual(

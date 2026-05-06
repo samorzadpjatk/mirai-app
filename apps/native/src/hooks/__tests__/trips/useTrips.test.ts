@@ -3,8 +3,8 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useTrips } from "../../trips/useTrips";
 
 // Mock the storage functions
-const mockGetCachedTrips = jest.fn();
-const mockSetCachedTrips = jest.fn();
+const mockGetCachedTrips = jest.fn<Promise<unknown[]>, []>();
+const mockSetCachedTrips = jest.fn<Promise<void>, [unknown[]]>();
 
 jest.mock("~/services/storage/selectedTripStorage", () => ({
   getCachedTrips: () => mockGetCachedTrips(),
@@ -36,7 +36,24 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock React Query
-const mockUseInfiniteQuery = jest.fn();
+interface MockInfiniteQueryResult {
+  data: {
+    pages: Array<{
+      trips: Array<{ id: string; name: string; startDate: string; endDate: string }>;
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }>;
+  } | null;
+  isLoading: boolean;
+  isRefetching: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: jest.Mock;
+  isError: boolean;
+  error: Error | null;
+  refetch: jest.Mock;
+}
+
+const mockUseInfiniteQuery = jest.fn<MockInfiniteQueryResult, []>();
 
 jest.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
@@ -96,8 +113,8 @@ describe("useTrips", () => {
       expect(result.current.trips).toHaveLength(1);
     });
 
-    expect(result.current.trips[0].id).toBe("trip-1");
-    expect(result.current.trips[0].name).toBe("Cached Trip 1");
+    expect(result.current.trips[0]!.id).toBe("trip-1");
+    expect(result.current.trips[0]!.name).toBe("Cached Trip 1");
   });
 
   it("should return trips from API after loading", async () => {
@@ -138,7 +155,7 @@ describe("useTrips", () => {
     });
 
     expect(result.current.trips).toHaveLength(1);
-    expect(result.current.trips[0].id).toBe("trip-2");
+    expect(result.current.trips[0]!.id).toBe("trip-2");
   });
 
   it("should handle error state", () => {
@@ -289,8 +306,8 @@ describe("useTrips", () => {
       expect(result.current.trips).toHaveLength(2);
     });
 
-    expect(result.current.trips[0].id).toBe("trip-1");
-    expect(result.current.trips[1].id).toBe("trip-2");
+    expect(result.current.trips[0]!.id).toBe("trip-1");
+    expect(result.current.trips[1]!.id).toBe("trip-2");
   });
 
   it("should prioritize API data over cached data", async () => {
@@ -329,7 +346,7 @@ describe("useTrips", () => {
     });
 
     // API data should take precedence
-    expect(result.current.trips[0].id).toBe("trip-api");
+    expect(result.current.trips[0]!.id).toBe("trip-api");
   });
 
   it("should call refetch when requested", async () => {

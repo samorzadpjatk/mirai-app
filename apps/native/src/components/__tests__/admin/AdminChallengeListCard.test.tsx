@@ -94,7 +94,7 @@ describe("AdminChallengeListCard", () => {
     );
 
     const deleteButtons = getAllByText("trash");
-    fireEvent.press(deleteButtons[0]);
+    fireEvent.press(deleteButtons[0]!);
     expect(mockOnDelete).toHaveBeenCalledWith(mockChallenge.id);
   });
 

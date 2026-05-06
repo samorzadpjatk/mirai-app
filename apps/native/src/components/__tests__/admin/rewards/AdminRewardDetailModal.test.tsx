@@ -314,7 +314,7 @@ describe("AdminRewardDetailModal", () => {
       const { getByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} />
       );
-      expect(getByTestId("modal-title").children[0]).toBe("Reward Details");
+      expect(getByTestId("modal-title")!.children![0]).toBe("Reward Details");
     });
 
     it("should not render when rewardId is null", () => {
@@ -380,10 +380,10 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      expect(inputs[0].props.value).toBe("Test Reward");
-      expect(inputs[1].props.value).toBe("A test reward description");
-      expect(inputs[2].props.value).toBe("50");
-      expect(inputs[3].props.value).toBe("10");
+      expect(inputs[0]!.props.value).toBe("Test Reward");
+      expect(inputs[1]!.props.value).toBe("A test reward description");
+      expect(inputs[2]!.props.value).toBe("50");
+      expect(inputs[3]!.props.value).toBe("10");
     });
 
     it("should update name field when typing", () => {
@@ -391,8 +391,8 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Updated Reward Name");
-      expect(inputs[0].props.value).toBe("Updated Reward Name");
+      fireEvent.changeText(inputs[0]!, "Updated Reward Name");
+      expect(inputs[0]!.props.value).toBe("Updated Reward Name");
     });
 
     it("should update description field when typing", () => {
@@ -400,8 +400,8 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[1], "Updated description");
-      expect(inputs[1].props.value).toBe("Updated description");
+      fireEvent.changeText(inputs[1]!, "Updated description");
+      expect(inputs[1]!.props.value).toBe("Updated description");
     });
 
     it("should update available quantity when typing", () => {
@@ -409,8 +409,8 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[2], "100");
-      expect(inputs[2].props.value).toBe("100");
+      fireEvent.changeText(inputs[2]!, "100");
+      expect(inputs[2]!.props.value).toBe("100");
     });
 
     it("should update coin cost when typing", () => {
@@ -418,8 +418,8 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[3], "20");
-      expect(inputs[3].props.value).toBe("20");
+      fireEvent.changeText(inputs[3]!, "20");
+      expect(inputs[3]!.props.value).toBe("20");
     });
   });
 
@@ -430,7 +430,7 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "");
+      fireEvent.changeText(inputs[0]!, "");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -445,7 +445,7 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[3], "0");
+      fireEvent.changeText(inputs[3]!, "0");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -460,7 +460,7 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[3], "150");
+      fireEvent.changeText(inputs[3]!, "150");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -475,10 +475,10 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const inputs = getAllByTestId("text-input");
-      fireEvent.changeText(inputs[0], "Updated Reward");
-      fireEvent.changeText(inputs[1], "Updated description");
-      fireEvent.changeText(inputs[2], "75");
-      fireEvent.changeText(inputs[3], "15");
+      fireEvent.changeText(inputs[0]!, "Updated Reward");
+      fireEvent.changeText(inputs[1]!, "Updated description");
+      fireEvent.changeText(inputs[2]!, "75");
+      fireEvent.changeText(inputs[3]!, "15");
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -778,7 +778,7 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const acceptButton = getAllByText("Accept")[0];
+      const acceptButton = getAllByText("Accept")[0]!;
       fireEvent.press(acceptButton);
 
       await waitFor(() => {
@@ -805,7 +805,7 @@ describe("AdminRewardDetailModal", () => {
         fireEvent.changeText(collectionInput, "Pick up at HQ");
       }
 
-      const acceptButton = getAllByText("Accept")[0];
+      const acceptButton = getAllByText("Accept")[0]!;
       fireEvent.press(acceptButton);
 
       await waitFor(() => {
@@ -824,7 +824,7 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const cancelButtons = getAllByText("Cancel + refund");
-      fireEvent.press(cancelButtons[0]);
+      fireEvent.press(cancelButtons[0]!);
 
       await waitFor(() => {
         expect(mockUpdatePurchaseStatusMutateAsync).toHaveBeenCalledWith(
@@ -1015,7 +1015,7 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} rewardId="original-cost-reward" />
       );
       const inputs = getAllByTestId("text-input");
-      expect(inputs[3].props.value).toBe("15");
+      expect(inputs[3]!.props.value).toBe("15");
     });
 
     it("should handle purchase with unknown group", () => {
@@ -1046,7 +1046,7 @@ describe("AdminRewardDetailModal", () => {
       );
 
       const cancelButtons = getAllByText("Cancel + refund");
-      fireEvent.press(cancelButtons[0]);
+      fireEvent.press(cancelButtons[0]!);
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Status update failed");

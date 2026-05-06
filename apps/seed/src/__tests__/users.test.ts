@@ -30,8 +30,8 @@ user@example.com,Regular,User,user`;
 
       const result = parseUsersCsv(csv);
 
-      expect(result[0].role).toBe("admin");
-      expect(result[1].role).toBe("user");
+      expect(result[0]!.role).toBe("admin");
+      expect(result[1]!.role).toBe("user");
     });
 
     it("should trim whitespace from values", () => {
@@ -67,7 +67,7 @@ solo@example.com,Solo,User`;
       const result = parseUsersCsv(csv);
 
       expect(result).toHaveLength(1);
-      expect(result[0].email).toBe("solo@example.com");
+      expect(result[0]!.email).toBe("solo@example.com");
     });
 
     it("should handle empty CSV (only headers)", () => {
@@ -103,8 +103,8 @@ user.name@example.co.uk,UK,User`;
 
       const result = parseUsersCsv(csv);
 
-      expect(result[0].email).toBe("user+tag@example.com");
-      expect(result[1].email).toBe("user.name@example.co.uk");
+      expect(result[0]!.email).toBe("user+tag@example.com");
+      expect(result[1]!.email).toBe("user.name@example.co.uk");
     });
 
     it("should handle names with spaces", () => {
@@ -113,8 +113,8 @@ john@example.com,John Paul,Doe Smith`;
 
       const result = parseUsersCsv(csv);
 
-      expect(result[0].firstName).toBe("John Paul");
-      expect(result[0].lastName).toBe("Doe Smith");
+      expect(result[0]!.firstName).toBe("John Paul");
+      expect(result[0]!.lastName).toBe("Doe Smith");
     });
 
     it("should handle unicode characters", () => {
@@ -124,9 +124,9 @@ josé@example.com,José,García
 
       const result = parseUsersCsv(csv);
 
-      expect(result[0].firstName).toBe("José");
-      expect(result[0].lastName).toBe("García");
-      expect(result[1].email).toBe("用户@example.com");
+      expect(result[0]!.firstName).toBe("José");
+      expect(result[0]!.lastName).toBe("García");
+      expect(result[1]!.email).toBe("用户@example.com");
     });
 
     it("should handle empty values", () => {
@@ -135,10 +135,10 @@ partial@example.com,,,user`;
 
       const result = parseUsersCsv(csv);
 
-      expect(result[0].email).toBe("partial@example.com");
-      expect(result[0].firstName).toBe("");
-      expect(result[0].lastName).toBe("");
-      expect(result[0].role).toBe("user");
+      expect(result[0]!.email).toBe("partial@example.com");
+      expect(result[0]!.firstName).toBe("");
+      expect(result[0]!.lastName).toBe("");
+      expect(result[0]!.role).toBe("user");
     });
 
     it("should handle Windows line endings", () => {
@@ -147,7 +147,7 @@ partial@example.com,,,user`;
       const result = parseUsersCsv(csv);
 
       expect(result).toHaveLength(1);
-      expect(result[0].email).toBe("win@example.com");
+      expect(result[0]!.email).toBe("win@example.com");
     });
 
     it("should handle many users", () => {
@@ -160,7 +160,7 @@ partial@example.com,,,user`;
       const result = parseUsersCsv(csv);
 
       expect(result).toHaveLength(100);
-      expect(result[50].email).toBe("user50@example.com");
+      expect(result[50]!.email).toBe("user50@example.com");
     });
   });
 });

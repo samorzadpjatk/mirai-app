@@ -160,9 +160,9 @@ describe("TripInfo Types", () => {
       ];
 
       expect(resources).toHaveLength(3);
-      expect(resources[0].type).toBe("hero_image");
-      expect(resources[1].type).toBe("pdf_map");
-      expect(resources[2].type).toBe("sos");
+      expect(resources[0]!.type).toBe("hero_image");
+      expect(resources[1]!.type).toBe("pdf_map");
+      expect(resources[2]!.type).toBe("sos");
     });
 
     it("should work in switch statements", () => {
@@ -298,7 +298,7 @@ describe("TripInfo Types", () => {
       };
 
       expect(trip.resources).toHaveLength(2);
-      expect(trip.resources[0].type).toBe("hero_image");
+      expect(trip.resources[0]!.type).toBe("hero_image");
     });
 
     it("should work with utility types", () => {

@@ -114,7 +114,7 @@ describe("useShareModal", () => {
   });
 
   it("should call updateSharing and reset on confirm", async () => {
-    const mockUpdateSharing = jest.fn().mockResolvedValue(undefined);
+    const mockUpdateSharing = jest.fn<(userIds: string[]) => Promise<void>>().mockResolvedValue(undefined);
 
     const { result } = renderHook(() =>
       useShareModal({
@@ -141,7 +141,7 @@ describe("useShareModal", () => {
 
   it("should handle updateSharing error gracefully", async () => {
     const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn());
-    const mockUpdateSharing = jest.fn().mockRejectedValue(new Error("Update failed"));
+    const mockUpdateSharing = jest.fn<(userIds: string[]) => Promise<void>>().mockRejectedValue(new Error("Update failed"));
 
     const { result } = renderHook(() =>
       useShareModal({
@@ -181,7 +181,7 @@ describe("useShareModal", () => {
   });
 
   it("should deduplicate user IDs on confirm", async () => {
-    const mockUpdateSharing = jest.fn().mockResolvedValue(undefined);
+    const mockUpdateSharing = jest.fn<(userIds: string[]) => Promise<void>>().mockResolvedValue(undefined);
 
     const { result } = renderHook(() =>
       useShareModal({
@@ -207,7 +207,7 @@ describe("useShareModal", () => {
   });
 
   it("should handle empty initial sharingUserIds", async () => {
-    const mockUpdateSharing = jest.fn().mockResolvedValue(undefined);
+    const mockUpdateSharing = jest.fn<(userIds: string[]) => Promise<void>>().mockResolvedValue(undefined);
 
     const { result } = renderHook(() =>
       useShareModal({

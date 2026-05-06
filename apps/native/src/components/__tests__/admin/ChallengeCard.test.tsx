@@ -21,6 +21,8 @@ interface Challenge {
   icon: string;
   category: "standard" | "wintegral" | "photo";
   status: "active" | "draft";
+  submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
+  scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
 }
 
 describe("Admin ChallengeCard", () => {
@@ -33,6 +35,8 @@ describe("Admin ChallengeCard", () => {
     icon: "star",
     category: "standard",
     status: "active",
+    submissionType: "IMAGE",
+    scoringCategory: "JUDGED_STAFF",
   };
 
   it("renders challenge data", () => {
