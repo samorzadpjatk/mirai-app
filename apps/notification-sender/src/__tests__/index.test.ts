@@ -125,7 +125,7 @@ describe("Notification Sender - Main Error Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     mockCreateSupabaseClient.mockImplementationOnce(() => {
-      throw "string error";
+      throw new Error("string error");
     });
 
     const { main } = await import("../index");
@@ -153,6 +153,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     expect(mockCreateSupabaseClient).toHaveBeenCalledWith(
@@ -169,6 +170,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     expect(mockGetTRPCClient).toHaveBeenCalledWith(
@@ -184,6 +186,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     expect(mockChannelOn).toBeDefined();
@@ -205,9 +208,9 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   it("should log realtime channel status", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    let subscribeCallback: Function | undefined;
-    mockChannelSubscribe.mockImplementation((callback: Function) => {
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    let subscribeCallback: ((status: string) => void) | undefined;
+    mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
     });
 
@@ -216,6 +219,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     if (subscribeCallback) {
@@ -227,9 +231,9 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   it("should handle different channel statuses", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    let subscribeCallback: Function | undefined;
-    mockChannelSubscribe.mockImplementation((callback: Function) => {
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    let subscribeCallback: ((status: string) => void) | undefined;
+    mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
     });
 
@@ -238,6 +242,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     if (subscribeCallback) {
@@ -272,6 +277,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     expect(mockChannelSubscribe).toBeDefined();
@@ -279,11 +285,11 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should remove channel and cleanup on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as (code?: number) => never);
-    let sigintHandler: Function | undefined;
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    let sigintHandler: (() => Promise<void>) | undefined;
     const capturedChannel = { on: mockChannelOn, subscribe: mockChannelSubscribe };
 
-    processOnSpy.mockImplementation((event: string, handler: Function) => {
+    processOnSpy.mockImplementation((event: string, handler: () => Promise<void>) => {
       if (event === "SIGINT") {
         sigintHandler = handler;
       }
@@ -311,6 +317,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     expect(sigintHandler).toBeDefined();
@@ -329,11 +336,11 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should log shutdown message on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as (code?: number) => never);
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    let sigintHandler: Function | undefined;
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    let sigintHandler: (() => Promise<void>) | undefined;
 
-    processOnSpy.mockImplementation((event: string, handler: Function) => {
+    processOnSpy.mockImplementation((event: string, handler: () => Promise<void>) => {
       if (event === "SIGINT") {
         sigintHandler = handler;
       }
@@ -344,6 +351,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
     if (sigintHandler) {
@@ -361,13 +369,13 @@ describe("Notification Sender - SIGINT Handling", () => {
 describe("Notification Sender - Notification Processing", () => {
   const originalEnv = process.env;
 
-  async function setupTest(mobileResponse?: object) {
+  async function setupTest(mobileResponse?: { total: number; sent: number; failed: number; success: boolean }) {
     vi.resetModules();
     vi.clearAllMocks();
 
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as (code?: number) => never);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: number) => never);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
 
     process.env = { ...originalEnv };
     process.env.TRPC_HOST = "localhost:2022";
@@ -376,7 +384,7 @@ describe("Notification Sender - Notification Processing", () => {
 
     mockChannelOn.mockReturnValue({ subscribe: vi.fn() });
     mockTrackDeliveryStart.mockResolvedValue(undefined);
-    mockSendMobileNotifications.mockResolvedValue(mobileResponse || {
+    mockSendMobileNotifications.mockResolvedValue(mobileResponse ?? {
       total: 10,
       sent: 8,
       failed: 2,
@@ -386,9 +394,11 @@ describe("Notification Sender - Notification Processing", () => {
     mockTrackDeliveryFailure.mockResolvedValue(undefined);
 
     const { main } = await import("../index");
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
-    const payloadHandler = mockChannelOn.mock.calls[0]?.[2];
+    type PayloadHandler = (payload: { new: { id: string | number } }) => void;
+    const payloadHandler = mockChannelOn.mock.calls[0]?.[2] as PayloadHandler | undefined;
 
     return { payloadHandler, processExitSpy, consoleErrorSpy, consoleLogSpy };
   }
@@ -402,6 +412,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: "notif-123" });
   });
@@ -410,6 +421,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockSendMobileNotifications).toHaveBeenCalledWith({ notificationId: "notif-123" });
   });
@@ -418,6 +430,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 8, failed: 2, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -432,6 +445,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler, consoleLogSpy } = await setupTest({ total: 10, sent: 8, failed: 2, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleLogSpy).toHaveBeenCalledWith("Delivery summary:", {
       mobile: {
@@ -447,6 +461,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 10, failed: 0, success: true });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -461,6 +476,7 @@ describe("Notification Sender - Notification Processing", () => {
     const { payloadHandler } = await setupTest({ total: 10, sent: 5, failed: 5, success: false });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryComplete).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -477,12 +493,13 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockTrackDeliveryStart.mockRejectedValueOnce(new Error("Start failed"));
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
-      notificationId: "notif-123",
-      error: expect.any(Error),
-    });
+    interface TrackFailureCall { notificationId: string; error: Error }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    expect(trackFailureCall?.notificationId).toBe("notif-123");
+    expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });
 
   it("should handle errors during mobile notification sending", async () => {
@@ -490,12 +507,13 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(new Error("Send failed"));
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
-      notificationId: "notif-123",
-      error: expect.any(Error),
-    });
+    interface TrackFailureCall { notificationId: string; error: Error }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    expect(trackFailureCall?.notificationId).toBe("notif-123");
+    expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });
 
   it("should handle errors during delivery completion tracking", async () => {
@@ -503,12 +521,13 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockTrackDeliveryComplete.mockRejectedValueOnce(new Error("Complete failed"));
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
-      notificationId: "notif-123",
-      error: expect.any(Error),
-    });
+    interface TrackFailureCall { notificationId: string; error: Error }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    expect(trackFailureCall?.notificationId).toBe("notif-123");
+    expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });
 
   it("should handle non-Error exceptions", async () => {
@@ -516,6 +535,7 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce("string error");
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -528,6 +548,7 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(null);
     const mockPayload = { new: { id: "notif-123" } };
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler(mockPayload);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledWith({
       notificationId: "notif-123",
@@ -548,8 +569,11 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle multiple notifications in sequence", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-1" } });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-2" } });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-3" } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledTimes(3);
     expect(mockSendMobileNotifications).toHaveBeenCalledTimes(3);
@@ -563,8 +587,11 @@ describe("Notification Sender - Notification Processing", () => {
       .mockResolvedValueOnce({ total: 10, sent: 10, failed: 0, success: true })
       .mockRejectedValueOnce(new Error("Second failed"))
       .mockResolvedValueOnce({ total: 10, sent: 5, failed: 5, success: false });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-1" } });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-2" } });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "notif-3" } });
     expect(mockTrackDeliveryComplete).toHaveBeenCalledTimes(2);
     expect(mockTrackDeliveryFailure).toHaveBeenCalledTimes(1);
@@ -573,8 +600,10 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle payload with different ID formats", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: 123 } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: 123 });
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: { id: "uuid-string" } });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: "uuid-string" });
   });
@@ -582,6 +611,7 @@ describe("Notification Sender - Notification Processing", () => {
   it("should handle empty payload gracefully", async () => {
     const { payloadHandler } = await setupTest();
     if (!payloadHandler) return;
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await payloadHandler({ new: {} });
     expect(mockTrackDeliveryStart).toHaveBeenCalledWith({ notificationId: undefined });
   });
