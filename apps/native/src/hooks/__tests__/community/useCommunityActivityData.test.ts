@@ -22,7 +22,17 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock React Query
-const mockUseQuery = jest.fn();
+interface QueryOptions {
+  queryKey: string[];
+  queryFn?: () => Promise<unknown>;
+}
+
+interface QueryResult {
+  data: unknown;
+  isLoading: boolean;
+}
+
+const mockUseQuery = jest.fn<(options: QueryOptions) => QueryResult>();
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
@@ -686,7 +696,7 @@ describe("useCommunityActivityData", () => {
     if (capturedQueryFn) {
       const result = await capturedQueryFn();
       expect(result).toBeDefined();
-      const tripData = (result as Record<string, Array<{ image: null }>>)["trip-1"];
+      const tripData = (result as Record<string, { image: null }[]>)["trip-1"];
       expect(tripData[0].image).toBeNull();
     }
   });

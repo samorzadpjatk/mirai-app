@@ -190,7 +190,7 @@ describe("useTrips", () => {
     expect(result.current.hasNextPage).toBe(true);
   });
 
-  it("should call fetchNextPage when requested", () => {
+  it("should call fetchNextPage when requested", async () => {
     const fetchNextPage = jest.fn();
     mockGetCachedTrips.mockResolvedValue([]);
 
@@ -208,7 +208,7 @@ describe("useTrips", () => {
 
     const { result } = renderHook(() => useTrips());
 
-    result.current.fetchNextPage();
+    await result.current.fetchNextPage();
 
     expect(fetchNextPage).toHaveBeenCalled();
   });
@@ -332,7 +332,7 @@ describe("useTrips", () => {
     expect(result.current.trips[0].id).toBe("trip-api");
   });
 
-  it("should call refetch when requested", () => {
+  it("should call refetch when requested", async () => {
     const refetch = jest.fn();
     mockGetCachedTrips.mockResolvedValue([]);
 
@@ -350,7 +350,7 @@ describe("useTrips", () => {
 
     const { result } = renderHook(() => useTrips());
 
-    result.current.refetch();
+    await result.current.refetch();
 
     expect(refetch).toHaveBeenCalled();
   });

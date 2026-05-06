@@ -6,7 +6,7 @@ const mockUseQuery = jest.fn();
 const mockUseTRPC = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args) => mockUseQuery(...args),
+  useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
 jest.mock("@mirai-app/trpc/client", () => ({
@@ -22,7 +22,7 @@ describe("useGroupDetails", () => {
     },
     group: {
       getById: {
-        queryOptions: jest.fn((params, options) => ({ 
+        queryOptions: jest.fn((params: { id: string } | undefined, options: Record<string, unknown> | undefined) => ({ 
           queryKey: ["group", "getById", params?.id],
           ...options 
         })),

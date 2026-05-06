@@ -9,8 +9,8 @@ const mockUseTRPC = jest.fn();
 const mockInvalidateGroupQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args) => mockUseQuery(...args),
-  useMutation: (...args) => mockUseMutation(...args),
+  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
@@ -19,7 +19,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@mirai-app/trpc/client/query", () => ({
-  invalidateGroupQueries: (...args) => mockInvalidateGroupQueries(...args),
+  invalidateGroupQueries: (...args: unknown[]) => mockInvalidateGroupQueries(...args),
 }));
 
 describe("useGroupEditor", () => {
@@ -30,25 +30,25 @@ describe("useGroupEditor", () => {
   const mockTrpc = {
     group: {
       getById: {
-        queryOptions: jest.fn((params, options) => ({
+        queryOptions: jest.fn((params: { id: string } | undefined, options: Record<string, unknown> | undefined) => ({
           queryKey: ["group", "getById", params?.id],
           ...options,
         })),
       },
       update: {
-        mutationOptions: jest.fn((options) => ({
+        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
           mutationKey: ["group", "update"],
           ...options,
         })),
       },
       assignUserToGroup: {
-        mutationOptions: jest.fn((options) => ({
+        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
           mutationKey: ["group", "assignUserToGroup"],
           ...options,
         })),
       },
       removeUserFromGroup: {
-        mutationOptions: jest.fn((options) => ({
+        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
           mutationKey: ["group", "removeUserFromGroup"],
           ...options,
         })),
@@ -483,9 +483,9 @@ describe("useGroupEditor", () => {
         isLoading: false,
       });
 
-      let onSuccessCallback = null;
-      mockUseMutation.mockImplementation((options) => {
-        onSuccessCallback = options?.onSuccess;
+      let onSuccessCallback: (() => Promise<void>) | null = null;
+      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+        onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: mockMutateAsync,
           isPending: false,
@@ -502,15 +502,15 @@ describe("useGroupEditor", () => {
     });
 
     it("should invalidate group queries after assign success", async () => {
-      let onSuccessCallback = null;
+      let onSuccessCallback: (() => Promise<void>) | null = null;
 
       mockUseQuery.mockReturnValue({
         data: { id: "group-123", name: "Test" },
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation((options) => {
-        onSuccessCallback = options?.onSuccess;
+      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+        onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn().mockResolvedValue({ success: true }),
           isPending: false,
@@ -527,15 +527,15 @@ describe("useGroupEditor", () => {
     });
 
     it("should invalidate group queries after remove success", async () => {
-      let onSuccessCallback = null;
+      let onSuccessCallback: (() => Promise<void>) | null = null;
 
       mockUseQuery.mockReturnValue({
         data: { id: "group-123", name: "Test", trip: { id: "trip-1" } },
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation((options) => {
-        onSuccessCallback = options?.onSuccess;
+      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+        onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn().mockResolvedValue({ success: true }),
           isPending: false,

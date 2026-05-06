@@ -3,9 +3,9 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useFileUpload } from "../../files/useFileUpload";
 
 // Mock tus-js-client
-const mockUploadStart = jest.fn();
-const mockUploadAbort = jest.fn().mockResolvedValue(undefined);
-const mockFindPreviousUploads = jest.fn().mockResolvedValue([]);
+const mockUploadStart = jest.fn<() => void>();
+const mockUploadAbort = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
+const mockFindPreviousUploads = jest.fn<() => Promise<unknown[]>>().mockResolvedValue([]);
 
 jest.mock("tus-js-client", () => ({
   Upload: jest.fn().mockImplementation(() => ({
@@ -16,7 +16,7 @@ jest.mock("tus-js-client", () => ({
 }));
 
 // Mock expo-file-system
-const mockFileExists = jest.fn().mockReturnValue(true);
+const mockFileExists = jest.fn<() => boolean>().mockReturnValue(true);
 const mockFileSize = 1024;
 
 jest.mock("expo-file-system", () => ({
@@ -26,8 +26,16 @@ jest.mock("expo-file-system", () => ({
   })),
 }));
 
-// Mock tRPC client
-const mockCreateUploadUrl = jest.fn();
+// Mock tRPC client - using interface for complex return type
+interface UploadTicket {
+  resumableUrl: string;
+  bucket: string;
+  objectPath: string;
+  token: string;
+  storagePath: string;
+}
+
+const mockCreateUploadUrl = jest.fn<(args: { storagePath: string; upsert?: boolean }) => Promise<UploadTicket>>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPCClient: jest.fn(() => ({
@@ -40,13 +48,15 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock Supabase
-const mockGetSession = jest.fn().mockResolvedValue({
+interface SessionData {
   data: {
     session: {
-      access_token: "mock-access-token",
-    },
-  },
-});
+      access_token: string;
+    } | null;
+  };
+}
+
+const mockGetSession = jest.fn<() => Promise<SessionData>>();
 
 jest.mock("@mirai-app/supabase/react", () => ({
   useSupabaseClient: jest.fn(() => ({
@@ -57,7 +67,7 @@ jest.mock("@mirai-app/supabase/react", () => ({
 }));
 
 // Mock tusUrlStorage
-const mockRemoveUpload = jest.fn().mockResolvedValue(undefined);
+const mockRemoveUpload = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
 jest.mock("~/services/storage/tusUrlStorage", () => ({
   tusUrlStorage: jest.fn(() => ({
@@ -66,10 +76,10 @@ jest.mock("~/services/storage/tusUrlStorage", () => ({
 }));
 
 // Mock global fetch
-const mockFetch = jest.fn().mockResolvedValue({
-  blob: jest.fn().mockResolvedValue(new Blob(["test content"])),
+const mockFetch = jest.fn<() => Promise<{ blob: () => Promise<Blob> }>>().mockResolvedValue({
+  blob: jest.fn<() => Promise<Blob>>().mockResolvedValue(new Blob(["test content"])),
 });
-global.fetch = mockFetch;
+global.fetch = mockFetch as unknown as typeof global.fetch;
 
 describe("useFileUpload", () => {
   beforeEach(() => {
@@ -93,7 +103,7 @@ describe("useFileUpload", () => {
     expect(result.current.result).toBeNull();
   });
 
-  it("should reset state when reset is called", async () => {
+  it("should reset state when reset is called", () => {
     const { result } = renderHook(() => useFileUpload());
 
     act(() => {
@@ -157,7 +167,7 @@ describe("useFileUpload", () => {
       expect(result.current.status).toBe("uploading");
     });
 
-    uploadPromise.catch(() => {});
+    uploadPromise.catch(() => { /* noop */ });
   });
 
   it("should track upload progress", async () => {
@@ -176,7 +186,7 @@ describe("useFileUpload", () => {
         storagePath: "test/file.jpg",
         fileUri: "file:///test/file.jpg",
         contentType: "image/jpeg",
-      }).catch(() => {});
+      }).catch(() => { /* noop */ });
     });
 
     await waitFor(() => {
@@ -184,7 +194,7 @@ describe("useFileUpload", () => {
     });
   });
 
-  it("should abort upload when abort is called", async () => {
+  it("should abort upload when abort is called", () => {
     const { result } = renderHook(() => useFileUpload());
 
     act(() => {
@@ -221,7 +231,7 @@ describe("useFileUpload", () => {
       });
     });
 
-    uploadPromise.catch(() => {});
+    uploadPromise.catch(() => { /* noop */ });
   });
 
   it("should handle upsert option", async () => {
@@ -249,10 +259,10 @@ describe("useFileUpload", () => {
       });
     });
 
-    uploadPromise.catch(() => {});
+    uploadPromise.catch(() => { /* noop */ });
   });
 
-  it("should handle upload abort during retry", async () => {
+  it("should handle upload abort during retry", () => {
     mockCreateUploadUrl.mockResolvedValue({
       resumableUrl: "https://example.com/upload",
       bucket: "test-bucket",
@@ -268,7 +278,7 @@ describe("useFileUpload", () => {
         storagePath: "test/file.jpg",
         fileUri: "file:///test/file.jpg",
         contentType: "image/jpeg",
-      }).catch(() => {});
+      }).catch(() => { /* noop */ });
     });
 
     act(() => {
@@ -294,7 +304,7 @@ describe("useFileUpload", () => {
         storagePath: "test/file.jpg",
         fileUri: "file:///test/file.jpg",
         contentType: "image/jpeg",
-      }).catch(() => {});
+      }).catch(() => { /* noop */ });
     });
 
     await waitFor(() => {

@@ -77,7 +77,7 @@ describe("useExpoUpdates", () => {
 
   it("should handle check for updates error", async () => {
     mockCheckForUpdateAsync.mockRejectedValue(new Error("Network error"));
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn());
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -107,7 +107,7 @@ describe("useExpoUpdates", () => {
 
   it("should handle download error", async () => {
     mockFetchUpdateAsync.mockRejectedValue(new Error("Download failed"));
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn());
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -133,25 +133,25 @@ describe("useExpoUpdates", () => {
     expect(result.current.downloadProgress).toBe(0);
   });
 
-  it("should set downloading state during update", async () => {
-    mockFetchUpdateAsync.mockImplementation(() => new Promise(() => {}));
+  it("should set downloading state during update", () => {
+    mockFetchUpdateAsync.mockImplementation(() => new Promise((_resolve) => { /* noop */ }));
 
     const { result } = renderHook(() => useExpoUpdates());
 
-    act(() => {
-      result.current.startUpdate();
+    void act(async () => {
+      await result.current.startUpdate();
     });
 
     expect(result.current.isDownloading).toBe(true);
   });
 
-  it("should set checking state during check", async () => {
-    mockCheckForUpdateAsync.mockImplementation(() => new Promise(() => {}));
+  it("should set checking state during check", () => {
+    mockCheckForUpdateAsync.mockImplementation(() => new Promise((_resolve) => { /* noop */ }));
 
     const { result } = renderHook(() => useExpoUpdates());
 
-    act(() => {
-      result.current.checkForUpdates();
+    void act(async () => {
+      await result.current.checkForUpdates();
     });
 
     expect(result.current.isChecking).toBe(true);

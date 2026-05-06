@@ -3,9 +3,9 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useNotifications } from "../../notifications/useNotifications";
 
 // Mock expo-notifications
-const mockGetPermissionsAsync = jest.fn();
-const mockRequestPermissionsAsync = jest.fn();
-const mockGetExpoPushTokenAsync = jest.fn();
+const mockGetPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockRequestPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockGetExpoPushTokenAsync = jest.fn<(opts: { projectId?: string }) => Promise<{ data: string }>>();
 
 jest.mock("expo-notifications", () => ({
   getPermissionsAsync: () => mockGetPermissionsAsync(),
@@ -30,12 +30,13 @@ jest.mock("expo-constants", () => ({
 }));
 
 // Mock react-native
-const mockAlert = jest.fn();
-const mockLinkingOpenSettings = jest.fn();
+interface AlertButton { text: string; style?: string; onPress?: () => void }
+const mockAlert = jest.fn<(title: string, message: string, buttons: AlertButton[]) => void>();
+const mockLinkingOpenSettings = jest.fn<() => Promise<void>>();
 
 jest.mock("react-native", () => ({
   Alert: {
-    alert: (...args: unknown[]) => mockAlert(...args),
+    alert: (...args: [string, string, AlertButton[]]) => mockAlert(...args),
   },
   Linking: {
     openSettings: () => mockLinkingOpenSettings(),
@@ -215,7 +216,7 @@ describe("useNotifications", () => {
   });
 
   it("should subscribe when toggling and not subscribed", async () => {
-    const mockSubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: { isSubscribed: false, subscriptions: [] },
@@ -240,7 +241,7 @@ describe("useNotifications", () => {
   });
 
   it("should unsubscribe when toggling and already subscribed", async () => {
-    const mockUnsubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockUnsubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -319,7 +320,7 @@ describe("useNotifications", () => {
     const alertCalls = mockAlert.mock.calls;
     expect(alertCalls.length).toBeGreaterThan(0);
 
-    const alertButtons = alertCalls[0][2] as Array<{ text: string; onPress?: () => void }>;
+    const alertButtons = alertCalls[0][2] as { text: string; onPress?: () => void }[];
     const openSettingsButton = alertButtons.find((b) => b.text === "Open Settings");
 
     if (openSettingsButton?.onPress) {
@@ -335,7 +336,7 @@ describe("useNotifications", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn().mockRejectedValue(new Error("Subscribe failed")),
+      mutateAsync: jest.fn<() => Promise<never>>().mockRejectedValue(new Error("Subscribe failed")),
       isPending: false,
     });
 
@@ -343,7 +344,7 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
-    await act(async () => {
+    act(() => {
       result.current.onTogglePress();
     });
 
@@ -373,7 +374,7 @@ describe("useNotifications", () => {
   });
 
   it("should handle multiple subscriptions when unsubscribing", async () => {
-    const mockUnsubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockUnsubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -437,7 +438,7 @@ describe("useNotifications", () => {
 
     mockGetPermissionsAsync.mockRejectedValue(new Error("Permission check failed"));
 
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
     renderHook(() => useNotifications());
 

@@ -297,8 +297,8 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(1);
     });
 
-    await act(async () => {
-      await result.current.handleToggleHeart("activity-1");
+    act(() => {
+      result.current.handleToggleHeart("activity-1");
     });
 
     expect(mockMutateAsync).toHaveBeenCalledWith({ activityId: "activity-1" });
@@ -431,10 +431,10 @@ describe("useCommunityFeed", () => {
       nextCursor: null,
     });
 
-    mockUseInfiniteQuery.mockImplementation(({ queryFn }) => {
+    mockUseInfiniteQuery.mockImplementation(({ queryFn }: { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> }) => {
       // Simulate calling the queryFn
       if (queryFn) {
-        queryFn({ pageParam: null }).catch(() => {});
+        queryFn({ pageParam: null }).catch(() => { /* noop */ });
       }
       return {
         data: {
@@ -475,11 +475,11 @@ describe("useCommunityFeed", () => {
     });
   });
 
-  it("should return empty activities when no trip selected via queryFn", async () => {
-    mockUseInfiniteQuery.mockImplementation(({ queryFn }) => {
+  it("should return empty activities when no trip selected via queryFn", () => {
+    mockUseInfiniteQuery.mockImplementation(({ queryFn }: { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> }) => {
       // Simulate calling queryFn with no trip
       if (queryFn) {
-        queryFn({ pageParam: null }).catch(() => {});
+        queryFn({ pageParam: null }).catch(() => { /* noop */ });
       }
       return {
         data: {
@@ -512,7 +512,7 @@ describe("useCommunityFeed", () => {
     expect(result.current.filteredActivities).toEqual([]);
   });
 
-  it("should handle applyReactionSummaryToFeed with queryKeyOverride", async () => {
+  it("should handle applyReactionSummaryToFeed with queryKeyOverride", () => {
     const mockActivities = [
       {
         id: "activity-1",
@@ -525,8 +525,6 @@ describe("useCommunityFeed", () => {
         },
       },
     ];
-
-    const customQueryKey = ["custom-feed", "trip-1"];
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
@@ -591,7 +589,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }) => {
+    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
       capturedOnMutate = onMutate;
       return {
         mutateAsync: jest.fn().mockResolvedValue({
@@ -633,7 +631,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }) => {
+    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
       capturedOnMutate = onMutate;
       return {
         mutateAsync: jest.fn(),
@@ -654,7 +652,7 @@ describe("useCommunityFeed", () => {
     }
   });
 
-  it("should handle onError rollback", async () => {
+  it("should handle onError rollback", () => {
     let capturedOnError: ((error: Error, variables: { activityId: string }, context: unknown) => void) | undefined;
     const previousData = {
       pages: [
@@ -680,7 +678,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onError }) => {
+    mockUseMutation.mockImplementation(({ onError }: { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void }) => {
       capturedOnError = onError;
       return {
         mutateAsync: jest.fn().mockRejectedValue(new Error("Toggle failed")),
@@ -704,7 +702,7 @@ describe("useCommunityFeed", () => {
     }
   });
 
-  it("should handle onError when no context provided", async () => {
+  it("should handle onError when no context provided", () => {
     let capturedOnError: ((error: Error, variables: { activityId: string }, context: unknown) => void) | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
@@ -715,7 +713,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onError }) => {
+    mockUseMutation.mockImplementation(({ onError }: { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void }) => {
       capturedOnError = onError;
       return {
         mutateAsync: jest.fn(),
@@ -737,7 +735,7 @@ describe("useCommunityFeed", () => {
     }
   });
 
-  it("should handle onSuccess with server response", async () => {
+  it("should handle onSuccess with server response", () => {
     let capturedOnSuccess: ((result: unknown, variables: { activityId: string }, context: unknown) => void) | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
@@ -762,7 +760,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onSuccess }) => {
+    mockUseMutation.mockImplementation(({ onSuccess }: { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void }) => {
       capturedOnSuccess = onSuccess;
       return {
         mutateAsync: jest.fn().mockResolvedValue({
@@ -801,7 +799,7 @@ describe("useCommunityFeed", () => {
     }
   });
 
-  it("should handle onSuccess when no context provided", async () => {
+  it("should handle onSuccess when no context provided", () => {
     let capturedOnSuccess: ((result: unknown, variables: { activityId: string }, context: unknown) => void) | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
@@ -812,7 +810,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onSuccess }) => {
+    mockUseMutation.mockImplementation(({ onSuccess }: { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void }) => {
       capturedOnSuccess = onSuccess;
       return {
         mutateAsync: jest.fn(),
@@ -893,8 +891,8 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(1);
     });
 
-    await act(async () => {
-      await result.current.handleToggleHeart("activity-1");
+    act(() => {
+      result.current.handleToggleHeart("activity-1");
     });
   });
 
@@ -946,8 +944,8 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(1);
     });
 
-    await act(async () => {
-      await result.current.handleToggleHeart("activity-1");
+    act(() => {
+      result.current.handleToggleHeart("activity-1");
     });
   });
 
@@ -1029,7 +1027,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }) => {
+    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
       capturedOnMutate = onMutate;
       return {
         mutateAsync: jest.fn().mockResolvedValue({

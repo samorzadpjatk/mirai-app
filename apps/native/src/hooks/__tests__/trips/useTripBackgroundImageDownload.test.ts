@@ -75,7 +75,7 @@ describe("useTripBackgroundImageDownload", () => {
   });
 
   it("should indicate loading during download", async () => {
-    mockDownload.mockImplementation(() => new Promise(() => {}));
+    mockDownload.mockImplementation(() => new Promise(() => { /* noop - pending promise for loading state */ }));
 
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
@@ -155,7 +155,7 @@ describe("useTripBackgroundImageDownload", () => {
     });
 
     const { result, rerender } = renderHook(
-      ({ path }) => useTripBackgroundImageDownload(path),
+      ({ path }: { path: string }) => useTripBackgroundImageDownload(path),
       {
         initialProps: { path: "trips/backgrounds/trip-1.jpg" },
       }
@@ -184,7 +184,7 @@ describe("useTripBackgroundImageDownload", () => {
 
 
 
-  it("should handle component unmount gracefully", async () => {
+  it("should handle component unmount gracefully", () => {
     const abortError = new Error("component unmounted");
     mockDownload.mockRejectedValue(abortError);
 
@@ -207,7 +207,7 @@ describe("useTripBackgroundImageDownload", () => {
     consoleSpy.mockRestore();
   });
 
-  it("should reflect download status from useFileDownload", async () => {
+  it("should reflect download status from useFileDownload", () => {
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
       status: "loading",

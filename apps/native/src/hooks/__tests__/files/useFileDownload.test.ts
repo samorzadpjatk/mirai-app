@@ -2,25 +2,31 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
 import { useFileDownload, deleteCachedDownload } from "../../files/useFileDownload";
 
-const mockDownloadFileAsync = jest.fn().mockResolvedValue({
+interface DownloadResult {
+  uri: string;
+  type: string;
+  size: number;
+}
+
+const mockDownloadFileAsync = jest.fn<() => Promise<DownloadResult>>().mockResolvedValue({
   uri: "file:///cache/downloads/test-file.jpg",
   type: "image/jpeg",
   size: 1024,
 });
 
-const mockDirectoryExists = jest.fn().mockReturnValue(true);
-const mockDirectoryCreate = jest.fn();
-const mockFileExists = jest.fn().mockReturnValue(false);
-const mockFileDelete = jest.fn();
+const mockDirectoryExists = jest.fn<() => boolean>().mockReturnValue(true);
+const mockDirectoryCreate = jest.fn<() => void>();
+const mockFileExists = jest.fn<() => boolean>().mockReturnValue(false);
+const mockFileDelete = jest.fn<() => Promise<void>>();
 
 jest.mock("expo-file-system", () => ({
   Directory: jest.fn().mockImplementation(() => ({
-    exists: mockDirectoryExists(),
+    exists: mockDirectoryExists,
     create: mockDirectoryCreate,
   })),
   File: Object.assign(
     jest.fn().mockImplementation(() => ({
-      exists: mockFileExists(),
+      exists: mockFileExists,
       delete: mockFileDelete,
       type: "image/jpeg",
       size: 1024,
@@ -37,10 +43,14 @@ jest.mock("expo-crypto", () => ({
   CryptoDigestAlgorithm: {
     SHA256: "SHA256",
   },
-  digestStringAsync: jest.fn().mockResolvedValue("abc123hash"),
+  digestStringAsync: jest.fn<() => Promise<string>>().mockResolvedValue("abc123hash"),
 }));
 
-const mockCreateDownloadUrl = jest.fn();
+interface DownloadUrlResult {
+  signedUrl: string;
+}
+
+const mockCreateDownloadUrl = jest.fn<() => Promise<DownloadUrlResult>>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPCClient: jest.fn(() => ({
@@ -90,7 +100,7 @@ describe("useFileDownload", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("should set loading status when download starts", async () => {
+  it("should set loading status when download starts", () => {
     mockFileExists.mockReturnValue(false);
     mockCreateDownloadUrl.mockResolvedValue({
       signedUrl: "https://example.com/signed-file.jpg",
@@ -102,7 +112,7 @@ describe("useFileDownload", () => {
       result.current.download({
         storagePath: "test/file.jpg",
         expiresInSeconds: 3600,
-      }).catch(() => {});
+      }).catch(() => { /* noop */ });
     });
 
     expect(result.current.status).toBe("loading");

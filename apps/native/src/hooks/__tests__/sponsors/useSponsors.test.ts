@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { renderHook } from "@testing-library/react-native";
 import {
   useSponsors,
   useSponsorById,

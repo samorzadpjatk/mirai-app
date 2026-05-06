@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { renderHook, act } from "@testing-library/react-native";
 import { useMapActions } from "../../map/useMapActions";
 
 const mockMutateAsync = jest.fn();

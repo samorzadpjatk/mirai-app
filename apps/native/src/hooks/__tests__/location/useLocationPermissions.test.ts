@@ -10,8 +10,8 @@ const mockUseMutation = jest.fn();
 const mockInvalidateQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: function(...args: unknown[]) { return mockUseQuery.apply(this, args); },
-  useMutation: function(...args: unknown[]) { return mockUseMutation.apply(this, args); },
+  useQuery: function(...args: unknown[]) { return mockUseQuery.apply(this, args) as unknown; },
+  useMutation: function(...args: unknown[]) { return mockUseMutation.apply(this, args) as unknown; },
   useQueryClient: jest.fn(function() {
     return {
       invalidateQueries: mockInvalidateQueries,
@@ -33,7 +33,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@mirai-app/trpc/client/query", () => ({
-  invalidateLocationQueries: jest.fn(async function(queryClient: unknown) {
+  invalidateLocationQueries: jest.fn(async function(queryClient: { invalidateQueries: () => Promise<void> }) {
     await queryClient.invalidateQueries();
   }),
 }));
@@ -105,7 +105,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle AsyncStorage errors gracefully", async () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
     const mockGetItem = AsyncStorage.getItem as jest.Mock;
     mockGetItem.mockRejectedValueOnce(new Error("Storage error"));
 
@@ -129,7 +129,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle permission check errors", async () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
     mockGetForegroundPermissions.mockRejectedValueOnce(new Error("Permission check failed"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -169,7 +169,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle permission request errors", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     mockRequestForeground.mockRejectedValueOnce(new Error("Request failed"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -256,7 +256,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle toggle location sharing errors", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     mockMutateAsync.mockRejectedValueOnce(new Error("Server error"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -362,7 +362,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should not update local state before server confirmation when toggling", async () => {
-    mockMutateAsync.mockImplementation(() => new Promise(() => {}));
+    mockMutateAsync.mockImplementation(() => new Promise(() => { /* never resolves */ }));
 
     const { result } = renderHook(() => useLocationPermissions());
 
@@ -372,8 +372,8 @@ describe("useLocationPermissions", () => {
 
     const initialState = result.current.isLocationSharingEnabled;
 
-    act(() => {
-      result.current.toggleLocationSharing(true);
+    await act(async () => {
+      await result.current.toggleLocationSharing(true);
     });
 
     expect(result.current.isLocationSharingEnabled).toBe(initialState);

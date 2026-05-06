@@ -287,7 +287,7 @@ describe("useTripDetails", () => {
     expect(result.current.isTripPast).toBe(false);
   });
 
-  it("should call refetchTrip when requested", () => {
+  it("should call refetchTrip when requested", async () => {
     mockGetCachedTripById.mockResolvedValue(null);
     const refetch = jest.fn();
 
@@ -306,7 +306,7 @@ describe("useTripDetails", () => {
 
     const { result } = renderHook(() => useTripDetails("trip-1"));
 
-    result.current.refetchTrip();
+    await result.current.refetchTrip();
 
     expect(refetch).toHaveBeenCalled();
   });
@@ -431,12 +431,16 @@ describe("useTripDetails", () => {
       };
     });
 
-    const { result, rerender } = renderHook(({ tripId }) => useTripDetails(tripId), {
+    const { result, rerender } = renderHook(({ tripId }: { tripId: string }) => useTripDetails(tripId), {
       initialProps: { tripId: "trip-1" },
     });
 
+    interface TripWithId {
+      id: string;
+    }
+
     await waitFor(() => {
-      expect(result.current.trip?.id).toBe("trip-1");
+      expect((result.current.trip as TripWithId | null)?.id).toBe("trip-1");
     });
 
     // Change to different trip

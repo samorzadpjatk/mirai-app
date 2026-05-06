@@ -142,7 +142,7 @@ describe("useTripResources", () => {
     expect(result.current.error).toBe(error);
   });
 
-  it("should call refetch when requested", () => {
+  it("should call refetch when requested", async () => {
     const refetch = jest.fn();
 
     mockUseQuery.mockReturnValue({
@@ -155,7 +155,7 @@ describe("useTripResources", () => {
 
     const { result } = renderHook(() => useTripResources("trip-1"));
 
-    result.current.refetch();
+    await result.current.refetch();
 
     expect(refetch).toHaveBeenCalled();
   });

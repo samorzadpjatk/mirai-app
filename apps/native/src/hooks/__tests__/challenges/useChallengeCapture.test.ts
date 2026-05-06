@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { renderHook, act } from "@testing-library/react-native";
 import { useChallengeCapture } from "../../challenges/useChallengeCapture";
 
 // Mock expo-image-picker
@@ -885,7 +885,7 @@ describe("useChallengeCapture", () => {
     const alertCalls = mockAlert.mock.calls;
     expect(alertCalls.length).toBeGreaterThan(0);
 
-    const alertButtons = alertCalls[0][2] as Array<{ text: string; onPress?: () => void }>;
+    const alertButtons = alertCalls[0][2] as { text: string; onPress?: () => void }[];
     const viewChallengesButton = alertButtons.find((b) => b.text === "View Challenges");
 
     if (viewChallengesButton?.onPress) {

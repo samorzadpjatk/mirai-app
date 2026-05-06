@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { renderHook, act } from "@testing-library/react-native";
 import { useMapSharing } from "../../map/useMapSharing";
 
 const mockUseQuery = jest.fn();
@@ -7,8 +7,12 @@ const mockUseMutation = jest.fn();
 const mockAlertAlert = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: function() { return mockUseQuery.apply(this, arguments); },
-  useMutation: function() { return mockUseMutation.apply(this, arguments); },
+  useQuery: function(...args: unknown[]): unknown {
+    return mockUseQuery.apply(this, args);
+  },
+  useMutation: function(...args: unknown[]): unknown {
+    return mockUseMutation.apply(this, args);
+  },
 }));
 
 jest.mock("@mirai-app/trpc/client", () => ({
@@ -18,13 +22,13 @@ jest.mock("@mirai-app/trpc/client", () => ({
         queryOptions: jest.fn(() => ({ queryKey: ["sharing-settings"] })),
       },
       getAllUsersForSharing: {
-        queryOptions: jest.fn((input) => ({ queryKey: ["users-for-sharing", input] })),
+        queryOptions: jest.fn((input: unknown) => ({ queryKey: ["users-for-sharing", input] })),
       },
       updateSharingSettings: {
-        mutationOptions: jest.fn((options) => ({ options })),
+        mutationOptions: jest.fn((options: unknown) => ({ options })),
       },
       removeUserFromSharing: {
-        mutationOptions: jest.fn((options) => ({ options })),
+        mutationOptions: jest.fn((options: unknown) => ({ options })),
       },
     },
   })),
@@ -32,7 +36,9 @@ jest.mock("@mirai-app/trpc/client", () => ({
 
 jest.mock("react-native", () => ({
   Alert: {
-    alert: function() { return mockAlertAlert.apply(this, arguments); },
+    alert: function(...args: unknown[]): void {
+      mockAlertAlert.apply(this, args);
+    },
   },
 }));
 
@@ -196,8 +202,8 @@ describe("useMapSharing", () => {
     expect(mockRefetchSharing).toHaveBeenCalled();
   });
 
-  it("should show alert when updateSharing fails", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  it("should show alert when updateSharing fails", () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     const error = new Error("Update failed");
     mockMutateAsync.mockRejectedValue(error);
     mockUseMutation.mockReturnValue({
@@ -208,7 +214,7 @@ describe("useMapSharing", () => {
     renderHook(() => useMapSharing(false, null));
 
     // Get the onError callback from the mutation options passed to useMutation
-    const mutationOptions = mockUseMutation.mock.calls[0][0];
+    const mutationOptions = mockUseMutation.mock.calls[0]?.[0] as { options?: { onError?: (error: Error) => void } } | undefined;
     const onErrorCallback = mutationOptions?.options?.onError;
     if (onErrorCallback) {
       onErrorCallback(error);
@@ -270,8 +276,8 @@ describe("useMapSharing", () => {
     expect(mockRefetchSharing).toHaveBeenCalled();
   });
 
-  it("should show alert when removeUser fails", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  it("should show alert when removeUser fails", () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     const error = new Error("Remove failed");
     mockUseMutation
       .mockReturnValueOnce({
@@ -286,7 +292,7 @@ describe("useMapSharing", () => {
     renderHook(() => useMapSharing(false, null));
 
     // Get the onError callback from the second mutation options (removeUser)
-    const mutationOptions = mockUseMutation.mock.calls[1][0];
+    const mutationOptions = mockUseMutation.mock.calls[1]?.[0] as { options?: { onError?: (error: Error) => void } } | undefined;
     const onErrorCallback = mutationOptions?.options?.onError;
     if (onErrorCallback) {
       onErrorCallback(error);

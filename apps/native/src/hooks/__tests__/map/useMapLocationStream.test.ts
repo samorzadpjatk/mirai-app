@@ -1,42 +1,72 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { renderHook, act } from "@testing-library/react-native";
 import { useMapLocationStream } from "../../map/useMapLocationStream";
 
 const mockUseSubscription = jest.fn();
 const mockRandomUUID = jest.fn();
 
+// Type for subscription options
+interface SubscriptionOptions {
+  input: {
+    connectionId: string;
+    radiusKm?: number;
+    latitude?: number;
+    longitude?: number;
+  };
+  options: {
+    enabled: boolean;
+    onData: (data: unknown) => void;
+    onError?: (error: unknown) => void;
+  };
+}
+
+// Type for useLocationContext mock
+interface LocationContextValue {
+  canViewOthersLocations: boolean;
+}
+
+const mockUseLocationContext = jest.fn<LocationContextValue, []>();
+
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
     location: {
       getFriendsLocationsStream: {
-        subscriptionOptions: jest.fn((input, options) => ({
+        subscriptionOptions: jest.fn((input: unknown, options: unknown) => ({
           input,
           options,
         })),
       },
     },
   })),
-  useSubscription: function() { return mockUseSubscription.apply(this, arguments); },
+  useSubscription: function (options: SubscriptionOptions): undefined {
+    mockUseSubscription(options);
+    return undefined;
+  },
 }));
 
 jest.mock("expo-crypto", () => ({
-  randomUUID: function() { return mockRandomUUID(); },
+  randomUUID: function (): string {
+    const result = mockRandomUUID() as string;
+    return result;
+  },
 }));
 
 jest.mock("~/stores/location", () => ({
-  useLocationContext: jest.fn(() => ({
-    canViewOthersLocations: true,
-  })),
+  useLocationContext: (): LocationContextValue => {
+    const result = mockUseLocationContext() as LocationContextValue;
+    return result;
+  },
 }));
 
 describe("useMapLocationStream", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRandomUUID.mockReturnValue("test-connection-id");
+    mockUseLocationContext.mockReturnValue({ canViewOthersLocations: true });
   });
 
   it("should initialize with empty locations and users data", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -45,7 +75,7 @@ describe("useMapLocationStream", () => {
   });
 
   it("should generate a unique connectionId", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     renderHook(() => useMapLocationStream(true));
 
@@ -53,12 +83,12 @@ describe("useMapLocationStream", () => {
   });
 
   it("should call useSubscription with correct options when enabled", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     renderHook(() => useMapLocationStream(true));
 
     expect(mockUseSubscription).toHaveBeenCalled();
-    const subscriptionCall = mockUseSubscription.mock.calls[0];
+    const subscriptionCall = mockUseSubscription.mock.calls[0] as [SubscriptionOptions];
     expect(subscriptionCall[0].input).toMatchObject({
       connectionId: "test-connection-id",
       radiusKm: undefined,
@@ -68,37 +98,36 @@ describe("useMapLocationStream", () => {
   });
 
   it("should enable subscription when enabled is true and canViewOthersLocations is true", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     renderHook(() => useMapLocationStream(true));
 
-    const subscriptionCall = mockUseSubscription.mock.calls[0];
+    const subscriptionCall = mockUseSubscription.mock.calls[0] as [SubscriptionOptions];
     expect(subscriptionCall[0].options.enabled).toBe(true);
   });
 
   it("should disable subscription when enabled is false", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     renderHook(() => useMapLocationStream(false));
 
-    const subscriptionCall = mockUseSubscription.mock.calls[0];
+    const subscriptionCall = mockUseSubscription.mock.calls[0] as [SubscriptionOptions];
     expect(subscriptionCall[0].options.enabled).toBe(false);
   });
 
   it("should disable subscription when canViewOthersLocations is false", () => {
-    const { useLocationContext } = require("~/stores/location");
-    useLocationContext.mockReturnValue({ canViewOthersLocations: false });
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseLocationContext.mockReturnValue({ canViewOthersLocations: false });
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     renderHook(() => useMapLocationStream(true));
 
-    const subscriptionCall = mockUseSubscription.mock.calls[0];
+    const subscriptionCall = mockUseSubscription.mock.calls[0] as [SubscriptionOptions];
     expect(subscriptionCall[0].options.enabled).toBe(false);
   });
 
   it("should handle upsert event and add location", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -132,7 +161,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle upsert event with partial user data", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -161,7 +190,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle upsert event without user data", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -190,7 +219,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle delete event and remove location", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -230,7 +259,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle delete event with missing userId gracefully", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -267,7 +296,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle multiple upsert events for different users", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -307,7 +336,7 @@ describe("useMapLocationStream", () => {
 
   it("should update existing location on upsert", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 
@@ -351,10 +380,10 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle subscription errors", () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     let onErrorCallback: ((error: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
-      onErrorCallback = options.options.onError;
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
+      onErrorCallback = options.options.onError ?? null;
     });
 
     renderHook(() => useMapLocationStream(true));
@@ -371,10 +400,10 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle UNAUTHORIZED errors as warnings", () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
     let onErrorCallback: ((error: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
-      onErrorCallback = options.options.onError;
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
+      onErrorCallback = options.options.onError ?? null;
     });
 
     renderHook(() => useMapLocationStream(true));
@@ -393,7 +422,7 @@ describe("useMapLocationStream", () => {
   });
 
   it("should expose setUsersData for manual updates", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -401,7 +430,7 @@ describe("useMapLocationStream", () => {
   });
 
   it("should allow manual updates to usersData via setUsersData", () => {
-    mockUseSubscription.mockImplementation(() => {});
+    mockUseSubscription.mockImplementation(() => { /* noop */ });
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -418,10 +447,10 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle non-Error objects in error callback", () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
     let onErrorCallback: ((error: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
-      onErrorCallback = options.options.onError;
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
+      onErrorCallback = options.options.onError ?? null;
     });
 
     renderHook(() => useMapLocationStream(true));
@@ -437,7 +466,7 @@ describe("useMapLocationStream", () => {
 
   it("should handle upsert with empty user name", () => {
     let onDataCallback: ((data: unknown) => void) | null = null;
-    mockUseSubscription.mockImplementation((options) => {
+    mockUseSubscription.mockImplementation((options: SubscriptionOptions) => {
       onDataCallback = options.options.onData;
     });
 

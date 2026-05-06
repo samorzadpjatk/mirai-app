@@ -3,11 +3,9 @@ import { renderHook, act } from "@testing-library/react-native";
 import { usePanelAnimation } from "../../ui/usePanelAnimation";
 
 // Mock react-native-reanimated
-const mockWithTiming = jest.fn((value) => value);
-
 jest.mock("react-native-reanimated", () => ({
-  useSharedValue: jest.fn((initial) => ({ value: initial })),
-  withTiming: jest.fn((value, config) => value),
+  useSharedValue: jest.fn((initial: number) => ({ value: initial })),
+  withTiming: jest.fn((value: number) => value),
 }));
 
 describe("usePanelAnimation", () => {

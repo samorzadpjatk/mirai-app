@@ -3,9 +3,9 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useAutoPushSubscription } from "../../notifications/useAutoPushSubscription";
 
 // Mock expo-notifications
-const mockGetPermissionsAsync = jest.fn();
-const mockRequestPermissionsAsync = jest.fn();
-const mockGetExpoPushTokenAsync = jest.fn();
+const mockGetPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockRequestPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockGetExpoPushTokenAsync = jest.fn<(opts?: { projectId?: string }) => Promise<{ data: string | null }>>();
 
 jest.mock("expo-notifications", () => ({
   getPermissionsAsync: () => mockGetPermissionsAsync(),
@@ -177,7 +177,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should auto-subscribe when permission is granted", async () => {
-    const mockSubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -214,7 +214,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should request permission when undetermined", async () => {
-    const mockSubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -314,7 +314,7 @@ describe("useAutoPushSubscription", () => {
 
   it("should handle missing push token", async () => {
     const mockSubscribe = jest.fn();
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -348,7 +348,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should handle subscription errors gracefully", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -383,7 +383,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should only attempt once per user", async () => {
-    const mockSubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -420,7 +420,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should attempt again for different user", async () => {
-    const mockSubscribe = jest.fn().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -476,7 +476,7 @@ describe("useAutoPushSubscription", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn().mockResolvedValue({ success: true }),
+      mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
       isPending: false,
     });
 
@@ -501,7 +501,7 @@ describe("useAutoPushSubscription", () => {
 
   it("should handle invalid token data", async () => {
     const mockSubscribe = jest.fn();
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
 
     mockUseAuth.mockReturnValue({
       session: {

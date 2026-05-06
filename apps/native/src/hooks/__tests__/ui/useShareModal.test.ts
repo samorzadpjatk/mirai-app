@@ -140,7 +140,7 @@ describe("useShareModal", () => {
   });
 
   it("should handle updateSharing error gracefully", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn());
     const mockUpdateSharing = jest.fn().mockRejectedValue(new Error("Update failed"));
 
     const { result } = renderHook(() =>

@@ -8,7 +8,7 @@ const mockUseTRPC = jest.fn();
 const mockInvalidateGroupQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useMutation: (...args) => mockUseMutation(...args),
+  useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
@@ -17,7 +17,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@mirai-app/trpc/client/query", () => ({
-  invalidateGroupQueries: (...args) => mockInvalidateGroupQueries(...args),
+  invalidateGroupQueries: (...args: unknown[]) => mockInvalidateGroupQueries(...args),
 }));
 
 describe("useCreateGroup", () => {
@@ -28,7 +28,7 @@ describe("useCreateGroup", () => {
   const mockTrpc = {
     group: {
       create: {
-        mutationOptions: jest.fn((options) => ({
+        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
           mutationKey: ["group", "create"],
           ...options,
         })),
@@ -200,10 +200,10 @@ describe("useCreateGroup", () => {
 
   describe("mutation success callback", () => {
     it("should invalidate group queries after successful creation", async () => {
-      let onSuccessCallback = null;
+      let onSuccessCallback: (() => Promise<void>) | null = null;
 
-      mockUseMutation.mockImplementation((options) => {
-        onSuccessCallback = options?.onSuccess;
+      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+        onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn().mockResolvedValue({ id: "new-group" }),
           isPending: false,
@@ -220,10 +220,10 @@ describe("useCreateGroup", () => {
     });
 
     it("should invalidate queries with correct queryClient", async () => {
-      let onSuccessCallback = null;
+      let onSuccessCallback: (() => Promise<void>) | null = null;
 
-      mockUseMutation.mockImplementation((options) => {
-        onSuccessCallback = options?.onSuccess;
+      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+        onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn().mockResolvedValue({ id: "new-group" }),
           isPending: false,

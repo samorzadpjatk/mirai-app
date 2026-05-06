@@ -2,14 +2,14 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act, waitFor } from "@testing-library/react-native";
 import { useSelectedTrip } from "../../trips/useSelectedTrip";
 
-const mockGetSelectedTripIdFromStorage = jest.fn();
-const mockSetSelectedTripIdInStorage = jest.fn();
-const mockClearSelectedTripIdInStorage = jest.fn();
+const mockGetSelectedTripIdFromStorage: jest.MockedFunction<() => Promise<string | null>> = jest.fn();
+const mockSetSelectedTripIdInStorage: jest.MockedFunction<(id: string | null) => Promise<void>> = jest.fn();
+const mockClearSelectedTripIdInStorage: jest.MockedFunction<() => Promise<void>> = jest.fn();
 
 jest.mock("~/services/storage/selectedTripStorage", () => ({
-  getSelectedTripIdFromStorage: () => mockGetSelectedTripIdFromStorage(),
-  setSelectedTripIdInStorage: (id: string) => mockSetSelectedTripIdInStorage(id),
-  clearSelectedTripIdInStorage: () => mockClearSelectedTripIdInStorage(),
+  getSelectedTripIdFromStorage: (): Promise<string | null> => mockGetSelectedTripIdFromStorage(),
+  setSelectedTripIdInStorage: (id: string | null): Promise<void> => mockSetSelectedTripIdInStorage(id),
+  clearSelectedTripIdInStorage: (): Promise<void> => mockClearSelectedTripIdInStorage(),
 }));
 
 const mockUseQuery = jest.fn();
@@ -218,7 +218,7 @@ describe("useSelectedTrip", () => {
 
     mockUseMutation.mockImplementation(() => ({
       mutate: (tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
-        mockSetSelectedTripIdInStorage(tripId).then(() => {
+        void mockSetSelectedTripIdInStorage(tripId).then(() => {
           if (options?.onSuccess) {
             options.onSuccess(tripId);
           }
@@ -230,7 +230,7 @@ describe("useSelectedTrip", () => {
 
     const { result } = renderHook(() => useSelectedTrip());
 
-    await act(async () => {
+    act(() => {
       result.current.setSelectedTripId("trip-secure");
     });
 
@@ -245,7 +245,7 @@ describe("useSelectedTrip", () => {
     mockUseMutation.mockImplementation(() => ({
       mutate: (tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
         if (tripId === null) {
-          mockClearSelectedTripIdInStorage().then(() => {
+          void mockClearSelectedTripIdInStorage().then(() => {
             if (options?.onSuccess) {
               options.onSuccess(null);
             }
@@ -263,7 +263,7 @@ describe("useSelectedTrip", () => {
 
     const { result } = renderHook(() => useSelectedTrip());
 
-    await act(async () => {
+    act(() => {
       result.current.setSelectedTripId(null);
     });
 
@@ -326,7 +326,7 @@ describe("useSelectedTrip", () => {
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
           if (capturedMutationFn) {
-            capturedMutationFn(tripId).then((result) => {
+            void capturedMutationFn(tripId).then((result) => {
               if (options?.onSuccess) {
                 options.onSuccess(result);
               }
@@ -359,7 +359,7 @@ describe("useSelectedTrip", () => {
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
           if (capturedMutationFn) {
-            capturedMutationFn(tripId).then((result) => {
+            void capturedMutationFn(tripId).then((result) => {
               if (options?.onSuccess) {
                 options.onSuccess(result);
               }
@@ -382,7 +382,7 @@ describe("useSelectedTrip", () => {
     }
   });
 
-  it("should handle onSuccess callback in mutation", async () => {
+  it("should handle onSuccess callback in mutation", () => {
     mockSetSelectedTripIdInStorage.mockResolvedValue(undefined);
 
     let capturedOnSuccess: ((data: string | null) => void) | undefined;
@@ -391,7 +391,7 @@ describe("useSelectedTrip", () => {
       capturedOnSuccess = config.onSuccess;
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
-          mockSetSelectedTripIdInStorage(tripId).then(() => {
+          void mockSetSelectedTripIdInStorage(tripId).then(() => {
             const onSuccessCallback = options?.onSuccess ?? capturedOnSuccess;
             if (onSuccessCallback) {
               onSuccessCallback(tripId);
@@ -423,7 +423,7 @@ describe("useSelectedTrip", () => {
     mockUseMutation.mockImplementation(() => ({
       mutate: jest.fn((tripId: string | null, options?: { onError?: (error: unknown) => void }) => {
         capturedOnError = options?.onError;
-        mockSetSelectedTripIdInStorage(tripId).catch((err) => {
+        void mockSetSelectedTripIdInStorage(tripId).catch((err: Error) => {
           if (options?.onError) {
             options.onError(err);
           }
@@ -453,11 +453,11 @@ describe("useSelectedTrip", () => {
 
   it("should handle setSelectedTripId with callback execution", async () => {
     const mutateMock = jest.fn((tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => {
-      mockSetSelectedTripIdInStorage(tripId).then(() => {
+      void mockSetSelectedTripIdInStorage(tripId).then(() => {
         if (options?.onSuccess) {
           options.onSuccess();
         }
-      }).catch((err) => {
+      }).catch((err: Error) => {
         if (options?.onError) {
           options.onError(err);
         }
@@ -472,7 +472,7 @@ describe("useSelectedTrip", () => {
 
     const { result } = renderHook(() => useSelectedTrip());
 
-    await act(async () => {
+    act(() => {
       result.current.setSelectedTripId("trip-callback");
     });
 

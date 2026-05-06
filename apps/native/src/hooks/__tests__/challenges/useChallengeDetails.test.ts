@@ -3,10 +3,6 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useChallengeDetails } from "../../challenges/useChallengeDetails";
 
 // Mock tRPC
-const mockChallengeGetByIdQuery = jest.fn(() => ({
-  queryKey: ["challenge", "getById"],
-}));
-
 const mockUserGetMyQuery = jest.fn(() => ({
   queryKey: ["user", "getMy"],
 }));

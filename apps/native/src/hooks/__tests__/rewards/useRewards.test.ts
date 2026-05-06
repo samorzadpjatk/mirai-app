@@ -80,7 +80,7 @@ describe("useRewards", () => {
     mockUseTRPC.mockReturnValue({
       reward: {
         getByTrip: {
-          queryOptions: jest.fn((_, options) => ({
+          queryOptions: jest.fn((_tripId: string, options: { enabled?: boolean }) => ({
             queryKey: ["reward", "getByTrip", ""],
             enabled: options?.enabled,
           })),
@@ -164,7 +164,7 @@ describe("useAdminRewards", () => {
     expect(result.current.data[1].id).toBe("reward-2");
   });
 
-  it("should handle pagination", () => {
+  it("should handle pagination", async () => {
     mockUseTRPC.mockReturnValue({
       reward: {
         getByTripAdmin: {
@@ -199,7 +199,7 @@ describe("useAdminRewards", () => {
 
     expect(result.current.hasNextPage).toBe(true);
 
-    result.current.fetchNextPage();
+    await result.current.fetchNextPage();
 
     expect(fetchNextPage).toHaveBeenCalled();
   });
@@ -243,7 +243,7 @@ describe("useReward", () => {
     mockUseTRPC.mockReturnValue({
       reward: {
         getById: {
-          queryOptions: jest.fn((_, options) => ({
+          queryOptions: jest.fn((_id: string, options: { enabled?: boolean }) => ({
             queryKey: ["reward", "getById", ""],
             enabled: options?.enabled,
           })),

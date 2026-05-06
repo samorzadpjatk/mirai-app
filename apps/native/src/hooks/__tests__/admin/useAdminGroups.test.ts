@@ -62,7 +62,22 @@ jest.mock("@mirai-app/trpc/client/query", () => ({
 }));
 
 // Mock React Query
-const mockUseInfiniteQuery = jest.fn();
+interface InfiniteQueryOptions {
+  enabled?: boolean;
+}
+
+interface InfiniteQueryResult {
+  data: unknown;
+  isLoading: boolean;
+  isRefetching: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: jest.Mock;
+  refetch: jest.Mock;
+  enabled?: boolean;
+}
+
+const mockUseInfiniteQuery = jest.fn<(options: InfiniteQueryOptions) => InfiniteQueryResult>();
 const mockUseQuery = jest.fn();
 const mockUseMutation = jest.fn();
 const mockGetQueryClient = jest.fn(() => ({

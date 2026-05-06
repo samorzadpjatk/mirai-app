@@ -7,7 +7,7 @@ const mockUseTRPC = jest.fn();
 const mockUseTRPCClient = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args) => mockUseInfiniteQuery(...args),
+  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
 }));
 
 jest.mock("@mirai-app/trpc/client", () => ({

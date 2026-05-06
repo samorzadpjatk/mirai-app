@@ -44,8 +44,8 @@ describe("usePartnerImageDownload", () => {
     });
   });
 
-  it("should indicate loading state during download", async () => {
-    mockDownload.mockImplementation(() => new Promise(() => {}));
+  it("should indicate loading state during download", () => {
+    mockDownload.mockImplementation(() => new Promise((_resolve) => { /* noop */ }));
 
     const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
 

@@ -193,7 +193,7 @@ describe("useAdminTrips", () => {
     const { result } = renderHook(() => useAdminTrips());
 
     act(() => {
-      result.current.fetchNextPage();
+      void result.current.fetchNextPage();
     });
 
     expect(mockFetchNextPage).toHaveBeenCalled();
@@ -214,7 +214,7 @@ describe("useAdminTrips", () => {
     const { result } = renderHook(() => useAdminTrips());
 
     act(() => {
-      result.current.refetch();
+      void result.current.refetch();
     });
 
     expect(mockRefetch).toHaveBeenCalled();

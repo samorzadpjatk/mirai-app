@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { renderHook, act } from "@testing-library/react-native";
 import { useMapSelectedUser } from "../../map/useMapSelectedUser";
 import type { UserLocation } from "~/components/map/UserMap";
 
@@ -164,7 +164,7 @@ describe("useMapSelectedUser", () => {
   });
 
   it("should handle stopSharing error gracefully", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn());
     mockUpdateSharing.mockRejectedValue(new Error("Update failed"));
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
@@ -195,7 +195,7 @@ describe("useMapSelectedUser", () => {
 
   it("should update selectedUser when users array changes", () => {
     const { result, rerender } = renderHook(
-      ({ users }) => useMapSelectedUser({ ...defaultArgs, users }),
+      ({ users }: { users: UserLocation[] }) => useMapSelectedUser({ ...defaultArgs, users }),
       { initialProps: { users: mockUsers } }
     );
 
@@ -257,7 +257,7 @@ describe("useMapSelectedUser", () => {
 
   it("should memoize selectedUser", () => {
     const { result, rerender } = renderHook(
-      ({ users }) => useMapSelectedUser({ ...defaultArgs, users }),
+      ({ users }: { users: UserLocation[] }) => useMapSelectedUser({ ...defaultArgs, users }),
       { initialProps: { users: mockUsers } }
     );
 
@@ -265,7 +265,7 @@ describe("useMapSelectedUser", () => {
       result.current.selectUser(mockUsers[1]);
     });
 
-    const firstSelectedUser = result.current.selectedUser;
+    const firstSelectedUser: UserLocation | null = result.current.selectedUser;
 
     rerender({ users: mockUsers });
 

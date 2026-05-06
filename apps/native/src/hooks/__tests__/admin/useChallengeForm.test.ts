@@ -65,17 +65,17 @@ jest.mock("~/components/admin/challenges/challengeFormConstants", () => ({
     { value: "HIDDEN", label: "Hidden" },
     { value: "ACTIVE", label: "Active" },
   ],
-  toVotingDurationHours: jest.fn((value, unit) => {
+  toVotingDurationHours: jest.fn((value: string | null, unit: string) => {
     if (!value) return null;
     const num = parseInt(value, 10);
     if (unit === "DAYS") return num * 24;
     return num;
   }),
   toVotingDurationDraft: jest.fn(() => ({ value: "", unit: "HOURS" })),
-  formatTime: jest.fn((date) => (date ? "12:00" : "")),
-  formatIso: jest.fn((date) => (date ? date.toISOString() : "")),
+  formatTime: jest.fn((date: Date | null) => (date ? "12:00" : "")),
+  formatIso: jest.fn((date: Date | null) => (date ? date.toISOString() : "")),
   inferRecurringDaysFromWindow: jest.fn(() => "7"),
-  toOptionalInt: jest.fn((value) => {
+  toOptionalInt: jest.fn((value: string | null) => {
     if (!value) return null;
     const num = parseInt(value, 10);
     return isNaN(num) ? null : num;
