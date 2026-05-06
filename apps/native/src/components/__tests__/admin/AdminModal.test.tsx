@@ -1,21 +1,25 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { Text, TouchableOpacity } from "react-native";
+import { Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminModal, AdminModalButton } from "../../admin/AdminModal";
 
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: any) => {
-    const { Text, TouchableOpacity, View } = require("react-native");
+  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => {
     if (!visible) return null;
     return (
-      <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}>
-          <Text>Close</Text>
-        </TouchableOpacity>
+      <div>
+        <span>{title}</span>
+        <button type="button" onClick={onClose}>Close</button>
         {children}
-      </View>
+      </div>
     );
   },
 }));

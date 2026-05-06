@@ -1,47 +1,39 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { Text } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalUserItem } from "../../map/modals/MapModalUserItem";
 
-jest.mock("~/components/common/ui", () => ({
-  ThemedListItem: function MockThemedListItem({
-    title,
-    subtitle,
-    leftAvatar,
-    rightElement,
-    onPress,
-    disabled,
-    selected,
-    bordered,
-  }: {
-    title: string;
-    subtitle?: string;
-    leftAvatar?: { name: string; imageUrl?: string | null };
-    rightElement?: React.ReactNode;
-    onPress?: () => void;
-    disabled?: boolean;
-    selected?: boolean;
-    bordered?: boolean;
-  }) {
-    const React = require("react");
-    const { View, Text, TouchableOpacity } = require("react-native");
-    return React.createElement(
-      TouchableOpacity,
-      {
-        testID: "themed-list-item",
-        onPress,
-        disabled,
-        "data-selected": selected,
-        "data-bordered": bordered,
-      },
-      React.createElement(Text, { testID: "item-title" }, title),
-      subtitle && React.createElement(Text, { testID: "item-subtitle" }, subtitle),
-      leftAvatar && React.createElement(Text, { testID: "item-avatar" }, leftAvatar.name),
-      rightElement
-    );
-  },
-}));
+jest.mock("~/components/common/ui", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { createElement } = require("react");
+  const { TouchableOpacity, Text } = require("react-native");
+
+  return {
+    ThemedListItem: (props) =>
+      createElement(
+        TouchableOpacity,
+        {
+          testID: "themed-list-item",
+          onPress: props.onPress,
+          disabled: props.disabled,
+          "data-selected": props.selected,
+          "data-bordered": props.bordered,
+        },
+        createElement(Text, { testID: "item-title" }, props.title),
+        props.subtitle
+          ? createElement(Text, { testID: "item-subtitle" }, props.subtitle)
+          : null,
+        props.leftAvatar
+          ? createElement(Text, { testID: "item-avatar" }, props.leftAvatar.name)
+          : null,
+        props.rightElement
+      ),
+  };
+  /* eslint-enable */
+});
 
 describe("MapModalUserItem", () => {
   it("should render with name", () => {

@@ -1,4 +1,5 @@
 import React from "react";
+import { Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AlertsEmptyState } from "../../alerts/AlertsEmptyState";
 
@@ -9,7 +10,6 @@ jest.mock("~/components/common/ui", () => ({
     subtitle: string; 
     iconOpacity: number;
   }) => {
-    const { Text } = require("react-native");
     return (
       <>
         <Text testID="empty-state-icon">{icon}</Text>

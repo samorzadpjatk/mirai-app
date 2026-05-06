@@ -1,8 +1,14 @@
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, type TouchableOpacityProps, type ViewStyle } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FilterChip } from "../../common/ui/FilterChip";
+
+interface ChipStyle extends ViewStyle {
+  borderColor?: string;
+  backgroundColor?: string;
+  opacity?: number;
+}
 
 describe("FilterChip", () => {
   it("should render with label", () => {
@@ -29,14 +35,11 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          borderColor: expect.any(String),
-          backgroundColor: expect.any(String),
-        }),
-      ])
-    );
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    const styles = touchableProps.style as ChipStyle[];
+    const styleObj = styles[0]!;
+    expect(styleObj.borderColor).toEqual(expect.any(String));
+    expect(styleObj.backgroundColor).toEqual(expect.any(String));
   });
 
   it("should apply unselected style when selected is false", () => {
@@ -45,14 +48,11 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          borderColor: expect.any(String),
-          backgroundColor: expect.any(String),
-        }),
-      ])
-    );
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    const styles = touchableProps.style as ChipStyle[];
+    const styleObj = styles[0]!;
+    expect(styleObj.borderColor).toEqual(expect.any(String));
+    expect(styleObj.backgroundColor).toEqual(expect.any(String));
   });
 
   it("should render icon when provided", () => {
@@ -94,11 +94,9 @@ describe("FilterChip", () => {
     );
 
     const countText = getByText("5");
-    expect(countText.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ color: expect.any(String) }),
-      ])
-    );
+    const countTextStyle = countText.props.style as ChipStyle[];
+    const styleObj = countTextStyle[0]!;
+    expect(styleObj.color).toEqual(expect.any(String));
   });
 
   it("should be disabled when disabled prop is true", () => {
@@ -108,7 +106,8 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.disabled).toBe(true);
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    expect(touchableProps.disabled).toBe(true);
   });
 
   it("should apply disabled style when disabled", () => {
@@ -117,7 +116,9 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.style).toEqual(
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    const styles = touchableProps.style as ChipStyle[];
+    expect(styles).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ opacity: 0.6 }),
       ])
@@ -131,7 +132,8 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.style).toEqual(
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    expect(touchableProps.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
@@ -176,8 +178,9 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.accessibilityRole).toBe("button");
-    expect(touchable.props.accessibilityLabel).toBe("Filter by category");
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    expect(touchableProps.accessibilityRole).toBe("button");
+    expect(touchableProps.accessibilityLabel).toBe("Filter by category");
   });
 
   it("should use default accessibility label when not provided", () => {
@@ -186,7 +189,8 @@ describe("FilterChip", () => {
     );
 
     const touchable = UNSAFE_getByType(TouchableOpacity);
-    expect(touchable.props.accessibilityLabel).toBeUndefined();
+    const touchableProps = touchable.props as TouchableOpacityProps;
+    expect(touchableProps.accessibilityLabel).toBeUndefined();
   });
 
   it("should handle zero count", () => {

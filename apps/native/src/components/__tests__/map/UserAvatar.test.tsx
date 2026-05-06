@@ -4,6 +4,40 @@ import { Image } from "expo-image";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UserAvatar } from "../../map/ui/UserAvatar";
 
+interface AvatarStyle {
+  width?: number;
+  height?: number;
+  borderRadius?: number;
+  backgroundColor?: string;
+  fontSize?: number;
+}
+
+interface AvatarTestInstance {
+  props: {
+    source?: { uri?: string };
+    onError?: (() => void) | undefined;
+    style?: AvatarStyle | readonly AvatarStyle[];
+  };
+}
+
+function asAvatarTestInstance(instance: unknown): AvatarTestInstance {
+  return instance as AvatarTestInstance;
+}
+
+function asAvatarTestInstances(instances: unknown): AvatarTestInstance[] {
+  return instances as AvatarTestInstance[];
+}
+
+function getStyles(
+  style: AvatarStyle | readonly AvatarStyle[] | undefined
+): readonly AvatarStyle[] {
+  if (!style) {
+    return [];
+  }
+
+  return (Array.isArray(style) ? style : [style]) as readonly AvatarStyle[];
+}
+
 describe("UserAvatar", () => {
   it("should render image when imageUrl is provided", () => {
     const { UNSAFE_getByType } = renderWithProviders(
@@ -14,9 +48,11 @@ describe("UserAvatar", () => {
       />
     );
 
-    const image = UNSAFE_getByType(Image);
+    const image = asAvatarTestInstance(UNSAFE_getByType(Image));
     expect(image).toBeTruthy();
-    expect(image.props.source.uri).toBe("https://example.com/avatar.jpg");
+    expect(image.props.source).toMatchObject({
+      uri: "https://example.com/avatar.jpg",
+    });
   });
 
   it("should render initials when imageUrl is not provided", () => {
@@ -60,9 +96,7 @@ describe("UserAvatar", () => {
   });
 
   it("should render question mark for empty name", () => {
-    const { getByText } = renderWithProviders(
-      <UserAvatar name="" size={50} />
-    );
+    const { getByText } = renderWithProviders(<UserAvatar name="" size={50} />);
 
     expect(getByText("?")).toBeTruthy();
   });
@@ -84,12 +118,8 @@ describe("UserAvatar", () => {
       />
     );
 
-    const image = UNSAFE_getByType(Image);
-    expect(image.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ width: 60, height: 60, borderRadius: 30 }),
-      ])
-    );
+    const image = asAvatarTestInstance(UNSAFE_getByType(Image));
+    expect(image).toHaveStyle({ width: 60, height: 60, borderRadius: 30 });
   });
 
   it("should apply correct size to initials container", () => {
@@ -97,12 +127,8 @@ describe("UserAvatar", () => {
       <UserAvatar name="John Doe" size={60} />
     );
 
-    const container = UNSAFE_getByType(View);
-    expect(container.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ width: 60, height: 60, borderRadius: 30 }),
-      ])
-    );
+    const container = asAvatarTestInstance(UNSAFE_getByType(View));
+    expect(container).toHaveStyle({ width: 60, height: 60, borderRadius: 30 });
   });
 
   it("should render initials with correct font size", () => {
@@ -110,10 +136,8 @@ describe("UserAvatar", () => {
       <UserAvatar name="John Doe" size={50} />
     );
 
-    const text = UNSAFE_getByType(Text);
-    expect(text.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ fontSize: 20 })])
-    );
+    const text = asAvatarTestInstance(UNSAFE_getByType(Text));
+    expect(text).toHaveStyle({ fontSize: 20 });
   });
 
   it("should generate consistent background color for same name", () => {
@@ -124,12 +148,12 @@ describe("UserAvatar", () => {
       </>
     );
 
-    const containers = UNSAFE_getAllByType(View);
-    const firstBg = containers[0].props.style.find(
-      (s: Record<string, string>) => s?.backgroundColor
+    const containers = asAvatarTestInstances(UNSAFE_getAllByType(View));
+    const firstBg = getStyles(containers[0]?.props.style).find(
+      (style) => style.backgroundColor
     )?.backgroundColor;
-    const secondBg = containers[1].props.style.find(
-      (s: Record<string, string>) => s?.backgroundColor
+    const secondBg = getStyles(containers[1]?.props.style).find(
+      (style) => style.backgroundColor
     )?.backgroundColor;
 
     expect(firstBg).toBe(secondBg);
@@ -143,12 +167,12 @@ describe("UserAvatar", () => {
       </>
     );
 
-    const containers = UNSAFE_getAllByType(View);
-    const firstBg = containers[0].props.style.find(
-      (s: Record<string, string>) => s?.backgroundColor
+    const containers = asAvatarTestInstances(UNSAFE_getAllByType(View));
+    const firstBg = getStyles(containers[0]?.props.style).find(
+      (style) => style.backgroundColor
     )?.backgroundColor;
-    const secondBg = containers[1].props.style.find(
-      (s: Record<string, string>) => s?.backgroundColor
+    const secondBg = getStyles(containers[1]?.props.style).find(
+      (style) => style.backgroundColor
     )?.backgroundColor;
 
     expect(firstBg).not.toBe(secondBg);
@@ -159,12 +183,8 @@ describe("UserAvatar", () => {
       <UserAvatar name="John Doe" />
     );
 
-    const container = UNSAFE_getByType(View);
-    expect(container.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ width: 38, height: 38, borderRadius: 19 }),
-      ])
-    );
+    const container = asAvatarTestInstance(UNSAFE_getByType(View));
+    expect(container).toHaveStyle({ width: 38, height: 38, borderRadius: 19 });
   });
 
   it("should handle image error gracefully", () => {
@@ -176,7 +196,7 @@ describe("UserAvatar", () => {
       />
     );
 
-    const image = UNSAFE_getByType(Image);
+    const image = asAvatarTestInstance(UNSAFE_getByType(Image));
     expect(image.props.onError).toBeDefined();
   });
 });

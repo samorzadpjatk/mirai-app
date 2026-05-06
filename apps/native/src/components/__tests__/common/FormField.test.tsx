@@ -1,7 +1,11 @@
 import React from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, TextInput, View, type TextProps } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FormField } from "../../common/ui/FormField";
+
+interface TextElement {
+  props: TextProps;
+}
 
 describe("FormField", () => {
   it("should render with label", () => {
@@ -134,11 +138,11 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const textElements = UNSAFE_getAllByType(Text);
+    const textElements = UNSAFE_getAllByType(Text) as TextElement[];
     const labelTexts = textElements.map((el) =>
       typeof el.props.children === "string"
         ? el.props.children
-        : el.props.children?.[0]
+        : (el.props.children as string[])?.[0]
     );
     expect(labelTexts).toContain("Complex Field");
     expect(getByText("Select an option")).toBeTruthy();
@@ -160,11 +164,11 @@ describe("FormField", () => {
       </>
     );
 
-    const labels = UNSAFE_getAllByType(Text);
+    const labels = UNSAFE_getAllByType(Text) as TextElement[];
     const labelTexts = labels.map((label) => 
       typeof label.props.children === "string" 
         ? label.props.children 
-        : label.props.children[0]
+        : (label.props.children as string[])[0]
     );
     
     expect(labelTexts).toContain("First Name");

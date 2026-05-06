@@ -7,7 +7,7 @@ import { EditGroupFormFields } from "../../../../trips/groups/edit/EditGroupForm
 describe("EditGroupFormFields", () => {
   it("should render group name label", () => {
     const { getByText } = renderWithProviders(
-      <EditGroupFormFields groupName="" onChangeName={() => {}} />
+      <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     expect(getByText("Group Name")).toBeTruthy();
@@ -15,7 +15,7 @@ describe("EditGroupFormFields", () => {
 
   it("should render with empty group name", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupFormFields groupName="" onChangeName={() => {}} />
+      <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);
@@ -24,7 +24,7 @@ describe("EditGroupFormFields", () => {
 
   it("should render with provided group name", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupFormFields groupName="Existing Group" onChangeName={() => {}} />
+      <EditGroupFormFields groupName="Existing Group" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);
@@ -63,7 +63,7 @@ describe("EditGroupFormFields", () => {
 
   it("should have correct placeholder text", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupFormFields groupName="" onChangeName={() => {}} />
+      <EditGroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);

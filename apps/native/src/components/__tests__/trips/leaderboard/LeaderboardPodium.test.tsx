@@ -1,16 +1,16 @@
 import React from "react";
-import { Text } from "react-native";
+import type { Text as TextType } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardPodium } from "../../../trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
 
 jest.mock("@expo/vector-icons", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
+  const MockReact = jest.requireActual<typeof React>("react");
+  const { Text: MockText } = jest.requireActual<{ Text: typeof TextType }>("react-native");
   return {
     Ionicons: ({ name }: { name: string }) =>
-      React.createElement(Text, { testID: `icon-${name}` }, name),
+      MockReact.createElement(MockText, { testID: `icon-${name}` }, name),
   };
 });
 

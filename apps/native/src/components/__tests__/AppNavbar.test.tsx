@@ -10,8 +10,8 @@ describe("AppNavbar", () => {
   });
 
   it("renders logo component", () => {
-    const { UNSAFE_getAllByType } = render(<AppNavbar />);
-    
+    render(<AppNavbar />);
+
     expect(screen.getByText("PJapp")).toBeTruthy();
   });
 

@@ -6,7 +6,7 @@ jest.mock("~/stores/judgement", () => ({
   useJudgement: jest.fn(),
 }));
 
-const mockUseJudgement = require("~/stores/judgement").useJudgement as jest.Mock;
+const mockUseJudgement = jest.fn();
 
 describe("JudgementHeader", () => {
   const defaultProps = { tripId: "trip-1", challengeId: "challenge-1" };

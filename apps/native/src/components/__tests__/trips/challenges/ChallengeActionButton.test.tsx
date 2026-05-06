@@ -6,7 +6,7 @@ import { ChallengeActionButton } from "../../../trips/challenges/ChallengeAction
 describe("ChallengeActionButton", () => {
   it("should render with default label when not loading", () => {
     const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={false} onPress={() => {}} />
+      <ChallengeActionButton isLoading={false} onPress={jest.fn()} />
     );
 
     expect(getByText("Take Challenge Photo")).toBeTruthy();
@@ -16,7 +16,7 @@ describe("ChallengeActionButton", () => {
     const { getByText } = renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
-        onPress={() => {}}
+        onPress={jest.fn()}
         label="Submit Challenge"
       />
     );
@@ -26,7 +26,7 @@ describe("ChallengeActionButton", () => {
 
   it("should show loading label when isLoading is true", () => {
     const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={() => {}} />
+      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
     );
 
     expect(getByText("Loading...")).toBeTruthy();
@@ -44,7 +44,7 @@ describe("ChallengeActionButton", () => {
 
   it("should render loading state correctly", () => {
     const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={() => {}} />
+      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
     );
 
     expect(getByText("Loading...")).toBeTruthy();
@@ -54,7 +54,7 @@ describe("ChallengeActionButton", () => {
     const { getByText } = renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
-        onPress={() => {}}
+        onPress={jest.fn()}
         disabled={true}
       />
     );
@@ -66,7 +66,7 @@ describe("ChallengeActionButton", () => {
     const { getByText } = renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
-        onPress={() => {}}
+        onPress={jest.fn()}
         iconName="camera-outline"
       />
     );
@@ -76,7 +76,7 @@ describe("ChallengeActionButton", () => {
 
   it("should apply loading styles when isLoading is true", () => {
     const { getByText } = renderWithProviders(
-      <ChallengeActionButton isLoading={true} onPress={() => {}} />
+      <ChallengeActionButton isLoading={true} onPress={jest.fn()} />
     );
 
     expect(getByText("Loading...")).toBeTruthy();
@@ -86,7 +86,7 @@ describe("ChallengeActionButton", () => {
     const { getByText } = renderWithProviders(
       <ChallengeActionButton
         isLoading={false}
-        onPress={() => {}}
+        onPress={jest.fn()}
         disabled={true}
       />
     );

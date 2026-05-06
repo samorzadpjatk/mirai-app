@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { NotificationScheduleCard } from "../../notifications/NotificationScheduleCard";
@@ -29,10 +29,14 @@ jest.mock("@mirai-app/trpc/client", () => ({
   }),
 }));
 
+interface MutationOptions {
+  onSuccess?: () => void;
+}
+
 jest.mock("@tanstack/react-query", () => {
   return {
-    useMutation: jest.fn((options) => ({
-      mutate: jest.fn((args) => {
+    useMutation: jest.fn((options: MutationOptions | undefined) => ({
+      mutate: jest.fn(() => {
         if (options?.onSuccess) {
           options.onSuccess();
         }
@@ -52,15 +56,22 @@ jest.mock("@tanstack/react-query", () => {
   };
 });
 
+interface AlertButton {
+  style?: string;
+  onPress?: () => void;
+}
+
+const mockAlert = jest.fn((title: string, message: string, buttons: AlertButton[]) => {
+  const deleteButton = buttons?.find((b) => b.style === "destructive");
+  if (deleteButton?.onPress) {
+    deleteButton.onPress();
+  }
+});
+
 jest.mock("react-native", () => ({
-  ...jest.requireActual("react-native"),
+  TouchableOpacity: jest.fn(),
   Alert: {
-    alert: jest.fn((title: string, message: string, buttons: Array<{ style?: string; onPress?: () => void }>) => {
-      const deleteButton = buttons?.find((b) => b.style === "destructive");
-      if (deleteButton?.onPress) {
-        deleteButton.onPress();
-      }
-    }),
+    alert: mockAlert,
   },
 }));
 
@@ -68,10 +79,6 @@ jest.mock("~/utils/format", () => ({
   formatRelativeTime: () => "2 hours ago",
   formatDate: (date: string) => new Date(date).toLocaleDateString(),
 }));
-
-
-
-
 
 const mockSchedule = {
   id: "schedule-1",
@@ -198,8 +205,7 @@ describe("NotificationScheduleCard", () => {
     const buttons = UNSAFE_getAllByType(TouchableOpacity);
     fireEvent.press(buttons[1]);
 
-    const { Alert } = require("react-native");
-    expect(Alert.alert).toHaveBeenCalledWith(
+    expect(mockAlert).toHaveBeenCalledWith(
       "Delete Schedule?",
       expect.any(String),
       expect.arrayContaining([

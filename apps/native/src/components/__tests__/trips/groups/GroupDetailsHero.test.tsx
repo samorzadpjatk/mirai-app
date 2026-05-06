@@ -1,4 +1,6 @@
 import React from "react";
+import type { ReactTestInstance } from "react-test-renderer";
+import { Image, View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupDetailsHero } from "../../../trips/groups/details/GroupDetailsHero";
 
@@ -17,7 +19,9 @@ describe("GroupDetailsHero", () => {
         imageUrl="https://example.com/group-image.jpg"
       />
     );
-    const image = UNSAFE_getByType(require("react-native").Image);
+    const image = UNSAFE_getByType(Image) as ReactTestInstance & {
+      props: { source: { uri: string } };
+    };
     expect(image).toBeTruthy();
     expect(image.props.source.uri).toBe("https://example.com/group-image.jpg");
   });
@@ -48,7 +52,7 @@ describe("GroupDetailsHero", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupDetailsHero name="Test Group" />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 

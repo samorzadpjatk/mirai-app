@@ -1,19 +1,36 @@
 import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import AdminRewardsModal from "../../../admin/rewards/AdminRewardsModal";
 import * as ImagePicker from "expo-image-picker";
+import type * as ReactNative from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-const mockMutateAsync = jest.fn();
-const mockUpload = jest.fn();
+import AdminRewardsModal from "../../../admin/rewards/AdminRewardsModal";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
+
+const mockMutateAsync: jest.MockedFunction<() => Promise<unknown>> = jest.fn();
+const uploadedArgs: UploadArgs[] = [];
+const mockUpload: jest.MockedFunction<(args: UploadArgs) => Promise<unknown>> = jest.fn((args) => {
+  uploadedArgs.push(args);
+  return Promise.resolve({});
+});
 const mockOnClose = jest.fn();
 
-jest.mock("react-native", () => ({
-  ...jest.requireActual("react-native"),
-  Alert: {
-    alert: jest.fn(),
-  },
-}));
+interface UploadArgs {
+  storagePath: string;
+  fileUri: string;
+  contentType: string;
+}
+
+jest.mock("react-native", () => {
+  const actual: typeof ReactNative = jest.requireActual("react-native");
+
+  return {
+    ...actual,
+    Alert: {
+      alert: jest.fn(),
+    },
+  };
+});
 
 jest.mock("~/hooks/rewards", () => ({
   useCreateReward: () => ({
@@ -39,88 +56,96 @@ jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(),
 }));
 
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
+interface AppModalFooterProps {
+  primaryLabel: string;
+  onPrimary: () => void;
+  isPrimaryLoading: boolean;
+  secondaryLabel: string;
+  onSecondary: () => void;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}
+
+interface ThemedTextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
+  multiline?: boolean;
+}
+
+interface LocationPickerProps {
+  visible: boolean;
+  onClose: () => void;
+  onLocationSelected: (location: { latitude: number; longitude: number }) => void;
+}
+
+const mockLaunchImageLibraryAsync = jest.mocked(ImagePicker.launchImageLibraryAsync);
+
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: function MockAppModalShell(props: {
-    children: React.ReactNode;
-    visible: boolean;
-    title: string;
-    onClose: () => void;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    if (!props.visible) return null;
-    return React.createElement(
-      View,
-      { testID: "modal-shell" },
-      React.createElement(Text, { testID: "modal-title" }, props.title),
-      props.children
-    );
-  },
-  AppModalFooter: function MockAppModalFooter(props: {
-    primaryLabel: string;
-    onPrimary: () => void;
-    isPrimaryLoading: boolean;
-    secondaryLabel: string;
-    onSecondary: () => void;
-  }) {
-    const React = require("react");
-    const { View, Text, TouchableOpacity } = require("react-native");
-    return React.createElement(
-      View,
-      { testID: "modal-footer" },
-      React.createElement(
-        TouchableOpacity,
-        { testID: "primary-button", onPress: props.onPrimary },
-        React.createElement(
-          Text,
-          null,
-          props.isPrimaryLoading ? "Loading..." : props.primaryLabel
-        )
-      ),
-      React.createElement(
-        TouchableOpacity,
-        { testID: "secondary-button", onPress: props.onSecondary },
-        React.createElement(Text, null, props.secondaryLabel)
-      )
-    );
-  },
-  FormField: function MockFormField(props: {
-    children: React.ReactNode;
-    label: string;
-    required?: boolean;
-    style?: object;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    return React.createElement(
-      View,
-      { testID: "form-field", style: props.style },
-      React.createElement(
-        Text,
-        { testID: "field-label" },
-        `${props.label}${props.required ? " *" : ""}`
-      ),
-      props.children
-    );
-  },
-  ThemedTextInput: function MockThemedTextInput(props: {
-    placeholder?: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    keyboardType?: string;
-    multiline?: boolean;
-  }) {
-    const React = require("react");
-    const { TextInput } = require("react-native");
-    return React.createElement(TextInput, {
-      testID: "text-input",
-      placeholder: props.placeholder,
-      value: props.value,
-      onChangeText: props.onChangeText,
-      keyboardType: props.keyboardType,
-      multiline: props.multiline,
-    });
-  },
+  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+    !visible ? null : (
+      <View testID="modal-shell">
+        <Text testID="modal-title">{title}</Text>
+        <TouchableOpacity testID="close-button" onPress={onClose}>
+          <Text>Close</Text>
+        </TouchableOpacity>
+        {children}
+      </View>
+    ),
+  AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) => (
+    <View testID="modal-footer">
+      <TouchableOpacity testID="primary-button" onPress={onPrimary}>
+        <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
+        <Text>{secondaryLabel}</Text>
+      </TouchableOpacity>
+    </View>
+  ),
+  FormField: ({ children, label, required }: FormFieldProps) => (
+    <View testID="form-field">
+      <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
+      {children}
+    </View>
+  ),
+  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
+    <TextInput
+      testID="text-input"
+      placeholder={placeholder}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+      multiline={multiline}
+    />
+  ),
+}));
+
+jest.mock("../../map/LocationPicker", () => ({
+  LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
+    !visible ? null : (
+      <View>
+        <TouchableOpacity
+          onPress={() => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 })}
+        >
+          <Text>Select Location</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onClose}>
+          <Text>Close Location Picker</Text>
+        </TouchableOpacity>
+      </View>
+    ),
 }));
 
 describe("AdminRewardsModal", () => {
@@ -287,7 +312,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -309,7 +333,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -325,7 +348,6 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -344,7 +366,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "0");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -366,7 +387,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "150");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -388,7 +408,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "abc");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -410,7 +429,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "50");
       fireEvent.changeText(inputs[3], "10");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -437,7 +455,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -456,7 +473,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -475,7 +491,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -499,7 +514,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -520,7 +534,7 @@ describe("AdminRewardsModal", () => {
 
   describe("image handling", () => {
     it("should handle image picker cancellation", async () => {
-      (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+      mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: true,
         assets: [],
       });
@@ -543,7 +557,7 @@ describe("AdminRewardsModal", () => {
     });
 
     it("should handle image upload success", async () => {
-      (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+      mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: false,
         assets: [
           {
@@ -561,18 +575,16 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(addImagesButton);
 
       await waitFor(() => {
-        expect(mockUpload).toHaveBeenCalledWith(
-          expect.objectContaining({
-            storagePath: expect.stringContaining("rewards/"),
-            fileUri: "file:///test/image.jpg",
-            contentType: "image/jpeg",
-          })
-        );
+        const uploadArgs = uploadedArgs[0];
+
+        expect(uploadArgs.storagePath).toContain("rewards/");
+        expect(uploadArgs.fileUri).toBe("file:///test/image.jpg");
+        expect(uploadArgs.contentType).toBe("image/jpeg");
       });
     });
 
     it("should handle image upload error", async () => {
-      (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+      mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: false,
         assets: [
           {
@@ -587,7 +599,6 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const addImagesButton = getByText("Add images");
       fireEvent.press(addImagesButton);
 
@@ -597,7 +608,7 @@ describe("AdminRewardsModal", () => {
     });
 
     it("should handle multiple image selection", async () => {
-      (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+      mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: false,
         assets: [
           { uri: "file:///test/image1.jpg", fileName: "image1.jpg" },
@@ -630,7 +641,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -652,7 +662,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "1");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -673,7 +682,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "10");
       fireEvent.changeText(inputs[3], "100");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -694,7 +702,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "0");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -715,7 +722,6 @@ describe("AdminRewardsModal", () => {
       fireEvent.changeText(inputs[2], "999999");
       fireEvent.changeText(inputs[3], "5");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {

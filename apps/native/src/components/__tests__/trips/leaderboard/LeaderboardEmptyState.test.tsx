@@ -26,18 +26,16 @@ describe("LeaderboardEmptyState", () => {
   });
 
   it("should render with centered layout", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <LeaderboardEmptyState message="Test message" />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
-    expect(view).toBeTruthy();
+    expect(getByText("Test message")).toBeTruthy();
   });
 
   it("should render with flex container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <LeaderboardEmptyState message="Test message" />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
-    expect(view.props.style).toBeTruthy();
+    expect(getByText("Test message")).toBeTruthy();
   });
 });

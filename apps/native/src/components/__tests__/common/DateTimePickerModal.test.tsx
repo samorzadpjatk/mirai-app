@@ -1,10 +1,26 @@
 import React from "react";
-import { Modal, Pressable, Text, TouchableOpacity, Platform } from "react-native";
+import { Modal, Pressable, Platform } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { DateTimePickerModal } from "../../common/ui/DateTimePickerModal";
 
 jest.mock("@react-native-community/datetimepicker", () => "RNDateTimePicker");
+
+// Type definitions for React element props
+interface DateTimePickerElement {
+  props: {
+    value: Date;
+    mode: string;
+    display: string;
+    onChange: (event: { type: string }, date?: Date) => void;
+  };
+}
+
+interface PressableElement {
+  props: {
+    onPress?: () => void;
+  };
+}
 
 describe("DateTimePickerModal", () => {
   const mockDate = new Date("2024-01-15T10:30:00");
@@ -15,8 +31,8 @@ describe("DateTimePickerModal", () => {
         visible={false}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
@@ -32,8 +48,8 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
@@ -49,8 +65,8 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
@@ -71,7 +87,7 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
+        onConfirm={() => { /* noop */ }}
         onCancel={onCancel}
       />
     );
@@ -90,7 +106,7 @@ describe("DateTimePickerModal", () => {
         value={mockDate}
         mode="date"
         onConfirm={onConfirm}
-        onCancel={() => {}}
+        onCancel={() => { /* noop */ }}
       />
     );
 
@@ -107,7 +123,7 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
+        onConfirm={() => { /* noop */ }}
         onCancel={onCancel}
       />
     );
@@ -125,81 +141,81 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.mode).toBe("date");
   });
 
   it("should handle time mode", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="time"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.mode).toBe("time");
   });
 
   it("should handle datetime mode on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="datetime"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.mode).toBe("datetime");
   });
 
   it("should handle datetime mode on Android (fallback to date)", () => {
     Object.defineProperty(Platform, "OS", { value: "android" });
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="datetime"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.mode).toBe("date");
   });
 
   it("should pass correct value to DateTimePicker", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const testDate = new Date("2024-06-20T15:45:00");
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={testDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.value).toEqual(testDate);
   });
 
@@ -212,7 +228,7 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
+        onConfirm={() => { /* noop */ }}
         onCancel={onCancel}
       />
     );
@@ -229,14 +245,14 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const pressables = UNSAFE_getAllByType(Pressable);
+    const pressables = UNSAFE_getAllByType(Pressable) as PressableElement[];
     const cardPressable = pressables.find(
-      (p) => p.props.onPress && p.props.onPress.toString().includes("stopPropagation")
+      (p: PressableElement) => p.props.onPress?.toString().includes("stopPropagation")
     );
     expect(cardPressable).toBeTruthy();
   });
@@ -250,14 +266,14 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     dateTimePicker.props.onChange({}, newDate);
-    
+
     expect(dateTimePicker).toBeTruthy();
   });
 
@@ -270,14 +286,14 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
+        onConfirm={() => { /* noop */ }}
         onCancel={onCancel}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     dateTimePicker.props.onChange({ type: "dismissed" }, undefined);
-    
+
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -297,44 +313,44 @@ describe("DateTimePickerModal", () => {
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     dateTimePicker.props.onChange({ type: "set" }, newDate);
-    
+
     expect(onConfirm).toHaveBeenCalledWith(newDate);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it("should use spinner display on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.display).toBe("spinner");
   });
 
   it("should use default display on Android", () => {
     Object.defineProperty(Platform, "OS", { value: "android" });
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker.props.display).toBe("default");
   });
 
@@ -346,8 +362,8 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
@@ -357,12 +373,12 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={newDate}
         mode="time"
-        onConfirm={() => {}}
-        onCancel={() => {}}
+        onConfirm={() => { /* noop */ }}
+        onCancel={() => { /* noop */ }}
       />
     );
 
-    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker");
+    const dateTimePicker = UNSAFE_getByType("RNDateTimePicker") as DateTimePickerElement;
     expect(dateTimePicker).toBeTruthy();
   });
 });

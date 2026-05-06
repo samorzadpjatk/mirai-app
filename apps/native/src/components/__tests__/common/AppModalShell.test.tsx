@@ -4,13 +4,15 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AppModalShell } from "../../common/ui/AppModalShell";
 
+const noop = (): void => undefined;
+
 describe("AppModalShell", () => {
   it("should render when visible is true", () => {
     const { getByText } = renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
       >
         <Text>Modal Content</Text>
       </AppModalShell>
@@ -60,7 +62,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
       >
         <Text>Content</Text>
       </AppModalShell>
@@ -76,7 +78,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
         variant="pageSheet"
       >
         <Text>Content</Text>
@@ -94,7 +96,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
         maxHeight="60%"
       >
         <Text>Content</Text>
@@ -110,7 +112,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
         maxWidth={400}
       >
         <Text>Content</Text>
@@ -127,7 +129,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
         contentStyle={customStyle}
       >
         <Text>Content</Text>
@@ -167,9 +169,15 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const pressables = UNSAFE_getAllByType(Pressable);
-    const contentPressable = pressables.find(
-      (p) => p.props.onPress && p.props.onPress.toString().includes("stopPropagation")
+    interface PressableLike {
+      props: {
+        onPress?: () => void;
+      };
+    }
+
+    const pressables = UNSAFE_getAllByType(Pressable) as PressableLike[];
+    const contentPressable = pressables.find((p) =>
+      p.props.onPress?.toString().includes("stopPropagation")
     );
     expect(contentPressable).toBeTruthy();
   });
@@ -179,7 +187,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Complex Modal"
-        onClose={() => {}}
+        onClose={noop}
       >
         <View>
           <Text>Header</Text>
@@ -199,7 +207,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
       >
         <Text>Content</Text>
       </AppModalShell>
@@ -214,7 +222,7 @@ describe("AppModalShell", () => {
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={noop}
       >
         <Text>Content</Text>
       </AppModalShell>

@@ -1,4 +1,5 @@
 import React from "react";
+import { ActivityIndicator, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersPicker } from "../../../trips/groups/create/MembersPicker";
@@ -88,7 +89,7 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const activityIndicator = UNSAFE_getByType(require("react-native").ActivityIndicator);
+    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
     expect(activityIndicator).toBeTruthy();
   });
 
@@ -102,7 +103,7 @@ describe("MembersPicker", () => {
       />
     );
     const memberItems = getAllByText(/JD|JS|B/);
-    fireEvent.press(memberItems[0].parent?.parent?.parent || memberItems[0]);
+    fireEvent.press(memberItems[0].parent?.parent?.parent ?? memberItems[0]);
     expect(mockOnToggleMember).toHaveBeenCalled();
   });
 
@@ -116,7 +117,7 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const views = UNSAFE_getAllByType(require("react-native").View);
+    const views = UNSAFE_getAllByType(View);
     expect(views.length).toBeGreaterThan(0);
   });
 

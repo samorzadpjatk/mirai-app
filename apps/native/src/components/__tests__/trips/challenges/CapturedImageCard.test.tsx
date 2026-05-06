@@ -3,6 +3,8 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { CapturedImageCard } from "../../../trips/challenges/CapturedImageCard";
 
+const noop = (): void => void 0;
+
 describe("CapturedImageCard", () => {
   const mockImageUri = "file:///path/to/captured/image.jpg";
 
@@ -10,8 +12,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 
@@ -22,8 +24,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 
@@ -36,7 +38,7 @@ describe("CapturedImageCard", () => {
       <CapturedImageCard
         imageUri={mockImageUri}
         onRetake={onRetake}
-        onDone={() => {}}
+        onDone={noop}
       />
     );
 
@@ -49,7 +51,7 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
+        onRetake={noop}
         onDone={onDone}
       />
     );
@@ -62,8 +64,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 
@@ -75,8 +77,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 
@@ -88,8 +90,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={mockImageUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 
@@ -102,8 +104,8 @@ describe("CapturedImageCard", () => {
     const { getByText } = renderWithProviders(
       <CapturedImageCard
         imageUri={differentUri}
-        onRetake={() => {}}
-        onDone={() => {}}
+        onRetake={noop}
+        onDone={noop}
       />
     );
 

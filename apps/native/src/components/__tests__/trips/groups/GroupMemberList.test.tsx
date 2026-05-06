@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupMemberList } from "../../../trips/groups/details/GroupMemberList";
@@ -102,7 +103,7 @@ describe("GroupMemberList", () => {
   });
 
   it("should expand to show all members when 'View All' is pressed", () => {
-    const { getByText, queryByText } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <GroupMemberList members={mockMembers} />
     );
     const viewAllButton = getByText("View All");
@@ -127,7 +128,7 @@ describe("GroupMemberList", () => {
     const { UNSAFE_getAllByType } = renderWithProviders(
       <GroupMemberList members={mockMembers} />
     );
-    const views = UNSAFE_getAllByType(require("react-native").View);
+    const views = UNSAFE_getAllByType(View);
     expect(views.length).toBeGreaterThan(0);
   });
 

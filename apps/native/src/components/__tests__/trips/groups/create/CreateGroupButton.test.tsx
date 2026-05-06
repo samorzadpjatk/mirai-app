@@ -7,7 +7,7 @@ import { CreateGroupButton } from "../../../../trips/groups/create/CreateGroupBu
 describe("CreateGroupButton", () => {
   it("should render with 'Create Group' label", () => {
     const { getByText } = renderWithProviders(
-      <CreateGroupButton isSubmitting={false} onPress={() => {}} />
+      <CreateGroupButton isSubmitting={false} onPress={jest.fn()} />
     );
 
     expect(getByText("Create Group")).toBeTruthy();
@@ -25,7 +25,7 @@ describe("CreateGroupButton", () => {
 
   it("should show loading indicator when isSubmitting is true", () => {
     const { queryByText, UNSAFE_getByType } = renderWithProviders(
-      <CreateGroupButton isSubmitting={true} onPress={() => {}} />
+      <CreateGroupButton isSubmitting={true} onPress={jest.fn()} />
     );
 
     expect(queryByText("Create Group")).toBeNull();

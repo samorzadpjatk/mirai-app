@@ -1,18 +1,17 @@
 import React from "react";
+import { Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripBanner } from "../../trips/TripBanner";
 
 const mockUseTripStore = jest.fn();
 
 jest.mock("~/stores/tripStore", () => ({
-  useTripStore: () => mockUseTripStore(),
+  useTripStore: (): ReturnType<typeof mockUseTripStore> => mockUseTripStore(),
 }));
 
 jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { Text } = require("react-native");
-    return React.createElement(Text, { testID: `icon-${name}` }, name);
+  Ionicons: function MockIonicons({ name }: { name: string; size: number; color: string }) {
+    return <Text testID={`icon-${name}`}>{name}</Text>;
   },
 }));
 

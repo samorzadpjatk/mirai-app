@@ -4,10 +4,8 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapOverlay } from "../../map/overlays/MapOverlay";
 
 jest.mock("expo-linear-gradient", () => ({
-  LinearGradient: function MockLinearGradient({ children, colors }: { children: React.ReactNode; colors: string[] }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "linear-gradient", colors }, children);
+  LinearGradient: function MockLinearGradient({ children }: { children: React.ReactNode; colors: string[] }) {
+    return <View testID="linear-gradient">{children}</View>;
   },
 }));
 

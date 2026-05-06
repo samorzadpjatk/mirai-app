@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditGroupButton } from "../../../../trips/groups/details/EditGroupButton";
@@ -7,7 +7,7 @@ import { EditGroupButton } from "../../../../trips/groups/details/EditGroupButto
 describe("EditGroupButton", () => {
   it("should render floating action button", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     expect(UNSAFE_getByType(TouchableOpacity)).toBeTruthy();
@@ -25,7 +25,7 @@ describe("EditGroupButton", () => {
 
   it("should have correct accessibility label", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -34,7 +34,7 @@ describe("EditGroupButton", () => {
 
   it("should have correct accessibility role", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -43,7 +43,7 @@ describe("EditGroupButton", () => {
 
   it("should use correct activeOpacity", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -62,7 +62,7 @@ describe("EditGroupButton", () => {
 
   it("should render with create icon", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -71,7 +71,7 @@ describe("EditGroupButton", () => {
 
   it("should use correct icon size", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <EditGroupButton onPress={() => {}} />
+      <EditGroupButton onPress={jest.fn()} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);

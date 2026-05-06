@@ -1,6 +1,5 @@
 import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
@@ -9,11 +8,24 @@ jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(),
 }));
 
+const mockUseQuery = jest.fn();
+jest.mock("@tanstack/react-query", () => {
+  const actual = jest.requireActual("@tanstack/react-query") as typeof import("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: (...args: unknown[]) => mockUseQuery(...args) as ReturnType<typeof actual.useQuery>,
+  };
+});
+
 describe("SubmissionImageCard", () => {
-  const mockSubmission = {
+  interface Submission {
+    imagePath: string;
+    groupName: string;
+  }
+  const mockSubmission: Submission = {
     imagePath: "submission-images/group-a.jpg",
     groupName: "Group A",
-  } as any;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -29,10 +41,10 @@ describe("SubmissionImageCard", () => {
   });
 
   it("renders the title and group name", () => {
-    jest.spyOn(require("@tanstack/react-query"), "useQuery").mockReturnValue({
+    mockUseQuery.mockReturnValue({
       data: { signedUrl: "https://example.com/image.jpg" },
       isLoading: false,
-    } as any);
+    });
 
     const { getByText } = renderWithProviders(
       <SubmissionImageCard submission={mockSubmission} title="Submission" />
@@ -43,10 +55,10 @@ describe("SubmissionImageCard", () => {
   });
 
   it("calls onPress when pressed", async () => {
-    jest.spyOn(require("@tanstack/react-query"), "useQuery").mockReturnValue({
+    mockUseQuery.mockReturnValue({
       data: { signedUrl: "https://example.com/image.jpg" },
       isLoading: false,
-    } as any);
+    });
     const onPress = jest.fn();
 
     const { getByText } = renderWithProviders(
@@ -62,10 +74,10 @@ describe("SubmissionImageCard", () => {
   });
 
   it("shows a fallback initial when the image is unavailable", () => {
-    jest.spyOn(require("@tanstack/react-query"), "useQuery").mockReturnValue({
+    mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
-    } as any);
+    });
 
     const { getByText } = renderWithProviders(
       <SubmissionImageCard submission={mockSubmission} title="Submission" />

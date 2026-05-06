@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsList } from "../../../trips/groups/GroupsList";
@@ -105,7 +106,7 @@ describe("GroupsList", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupsList groups={mockGroups} onSelectGroup={mockOnSelectGroup} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 });

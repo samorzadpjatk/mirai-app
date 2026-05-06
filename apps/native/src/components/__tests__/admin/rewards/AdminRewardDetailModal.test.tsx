@@ -3,6 +3,7 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import AdminRewardDetailModal from "../../../admin/rewards/AdminRewardDetailModal";
 import * as ImagePicker from "expo-image-picker";
+import { View, Text, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from "react-native";
 
 const mockMutateAsync = jest.fn();
 const mockDeleteMutateAsync = jest.fn();
@@ -12,7 +13,8 @@ const mockUpload = jest.fn();
 const mockOnClose = jest.fn();
 
 jest.mock("react-native", () => {
-  const actualRN = jest.requireActual("react-native");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actualRN = jest.requireActual<typeof import("react-native")>("react-native");
   return {
     ...actualRN,
     Alert: {
@@ -195,15 +197,40 @@ jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(),
 }));
 
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
+interface AppModalFooterProps {
+  primaryLabel: string;
+  onPrimary: () => void;
+  isPrimaryLoading: boolean;
+  isPrimaryDisabled?: boolean;
+  secondaryLabel: string;
+  onSecondary: () => void;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+  style?: object;
+}
+
+interface ThemedTextInputProps {
+  placeholder?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  keyboardType?: string;
+  multiline?: boolean;
+  editable?: boolean;
+}
+
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: function MockAppModalShell(props: {
-    children: React.ReactNode;
-    visible: boolean;
-    title: string;
-    onClose: () => void;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
+  AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
     if (!props.visible) return null;
     return React.createElement(
       View,
@@ -212,16 +239,7 @@ jest.mock("~/components/common/ui", () => ({
       props.children
     );
   },
-  AppModalFooter: function MockAppModalFooter(props: {
-    primaryLabel: string;
-    onPrimary: () => void;
-    isPrimaryLoading: boolean;
-    isPrimaryDisabled?: boolean;
-    secondaryLabel: string;
-    onSecondary: () => void;
-  }) {
-    const React = require("react");
-    const { View, Text, TouchableOpacity } = require("react-native");
+  AppModalFooter: function MockAppModalFooter(props: AppModalFooterProps) {
     return React.createElement(
       View,
       { testID: "modal-footer" },
@@ -245,14 +263,7 @@ jest.mock("~/components/common/ui", () => ({
       )
     );
   },
-  FormField: function MockFormField(props: {
-    children: React.ReactNode;
-    label: string;
-    required?: boolean;
-    style?: object;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
+  FormField: function MockFormField(props: FormFieldProps) {
     return React.createElement(
       View,
       { testID: "form-field", style: props.style },
@@ -264,16 +275,7 @@ jest.mock("~/components/common/ui", () => ({
       props.children
     );
   },
-  ThemedTextInput: function MockThemedTextInput(props: {
-    placeholder?: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    keyboardType?: string;
-    multiline?: boolean;
-    editable?: boolean;
-  }) {
-    const React = require("react");
-    const { TextInput } = require("react-native");
+  ThemedTextInput: function MockThemedTextInput(props: ThemedTextInputProps) {
     return React.createElement(TextInput, {
       testID: "text-input",
       placeholder: props.placeholder,
@@ -320,7 +322,6 @@ describe("AdminRewardDetailModal", () => {
       const { UNSAFE_getByType } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} rewardId="loading-reward" />
       );
-      const ActivityIndicator = require("react-native").ActivityIndicator;
       const indicators = UNSAFE_getByType(ActivityIndicator);
       expect(indicators).toBeTruthy();
     });
@@ -425,7 +426,6 @@ describe("AdminRewardDetailModal", () => {
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[0], "");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -441,7 +441,6 @@ describe("AdminRewardDetailModal", () => {
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[3], "0");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -457,7 +456,6 @@ describe("AdminRewardDetailModal", () => {
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[3], "150");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -476,7 +474,6 @@ describe("AdminRewardDetailModal", () => {
       fireEvent.changeText(inputs[2], "75");
       fireEvent.changeText(inputs[3], "15");
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -496,7 +493,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -509,7 +505,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -524,7 +519,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
@@ -539,7 +533,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByTestId("secondary-button"));
 
       await waitFor(() => {
@@ -556,14 +549,13 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
-      let alertCallbacks: Array<{ onPress?: () => void }> = [];
+      let alertCallbacks: { onPress?: () => void }[] = [];
       (Alert.alert as jest.Mock).mockImplementation((
         _title: string,
         _message: string,
-        buttons?: Array<{ onPress?: () => void }>
+        buttons?: { onPress?: () => void }[]
       ) => {
-        alertCallbacks = buttons || [];
+        alertCallbacks = buttons ?? [];
       });
 
       fireEvent.press(getByTestId("secondary-button"));
@@ -572,7 +564,7 @@ describe("AdminRewardDetailModal", () => {
         expect(alertCallbacks.length).toBeGreaterThan(0);
       });
 
-      const deleteButton = alertCallbacks.find((b: any) => b.text === "Delete");
+      const deleteButton = alertCallbacks.find((b: { text?: string; onPress?: () => void }) => b.text === "Delete");
       if (deleteButton?.onPress) {
         deleteButton.onPress();
       }
@@ -587,20 +579,19 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
-      let alertCallbacks: Array<{ onPress?: () => void }> = [];
+      let alertCallbacks: { onPress?: () => void }[] = [];
       (Alert.alert as jest.Mock).mockImplementation((
         _title: string,
         _message: string,
-        buttons?: Array<{ onPress?: () => void }>
+        buttons?: { onPress?: () => void }[]
       ) => {
-        alertCallbacks = buttons || [];
+        alertCallbacks = buttons ?? [];
       });
 
       fireEvent.press(getByTestId("secondary-button"));
 
       await waitFor(() => {
-        const deleteButton = alertCallbacks.find((b: any) => b.text === "Delete");
+        const deleteButton = alertCallbacks.find((b: { text?: string; onPress?: () => void }) => b.text === "Delete");
         if (deleteButton?.onPress) {
           deleteButton.onPress();
         }
@@ -616,20 +607,19 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
-      let alertCallbacks: Array<{ onPress?: () => void }> = [];
+      let alertCallbacks: { onPress?: () => void }[] = [];
       (Alert.alert as jest.Mock).mockImplementation((
         _title: string,
         _message: string,
-        buttons?: Array<{ onPress?: () => void }>
+        buttons?: { onPress?: () => void }[]
       ) => {
-        alertCallbacks = buttons || [];
+        alertCallbacks = buttons ?? [];
       });
 
       fireEvent.press(getByTestId("secondary-button"));
 
       await waitFor(() => {
-        const deleteButton = alertCallbacks.find((b: any) => b.text === "Delete");
+        const deleteButton = alertCallbacks.find((b: { text?: string; onPress?: () => void }) => b.text === "Delete");
         if (deleteButton?.onPress) {
           deleteButton.onPress();
         }
@@ -647,20 +637,19 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
-      let alertCallbacks: Array<{ onPress?: () => void }> = [];
+      let alertCallbacks: { onPress?: () => void }[] = [];
       (Alert.alert as jest.Mock).mockImplementation((
         _title: string,
         _message: string,
-        buttons?: Array<{ onPress?: () => void }>
+        buttons?: { onPress?: () => void }[]
       ) => {
-        alertCallbacks = buttons || [];
+        alertCallbacks = buttons ?? [];
       });
 
       fireEvent.press(getByTestId("secondary-button"));
 
       await waitFor(() => {
-        const deleteButton = alertCallbacks.find((b: any) => b.text === "Delete");
+        const deleteButton = alertCallbacks.find((b: { text?: string; onPress?: () => void }) => b.text === "Delete");
         if (deleteButton?.onPress) {
           deleteButton.onPress();
         }
@@ -692,7 +681,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByText("Hide reward"));
 
       await waitFor(() => {
@@ -708,7 +696,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} rewardId="hidden-reward" />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByText("Unhide reward"));
 
       await waitFor(() => {
@@ -724,7 +711,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByText("Hide reward"));
 
       await waitFor(() => {
@@ -737,7 +723,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} rewardId="hidden-reward" />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByText("Unhide reward"));
 
       await waitFor(() => {
@@ -787,7 +772,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const acceptButton = getAllByText("Accept")[0];
       fireEvent.press(acceptButton);
 
@@ -815,7 +799,6 @@ describe("AdminRewardDetailModal", () => {
         fireEvent.changeText(collectionInput, "Pick up at HQ");
       }
 
-      const { Alert } = require("react-native");
       const acceptButton = getAllByText("Accept")[0];
       fireEvent.press(acceptButton);
 
@@ -834,7 +817,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const cancelButtons = getAllByText("Cancel + refund");
       fireEvent.press(cancelButtons[0]);
 
@@ -870,7 +852,6 @@ describe("AdminRewardDetailModal", () => {
       const { UNSAFE_getByType } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} />
       );
-      const Image = require("react-native").Image;
       const images = UNSAFE_getByType(Image);
       expect(images).toBeTruthy();
     });
@@ -926,6 +907,7 @@ describe("AdminRewardDetailModal", () => {
       await waitFor(() => {
         expect(mockUpload).toHaveBeenCalledWith(
           expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             storagePath: expect.stringContaining("rewards/"),
             fileUri: "file:///new/image.jpg",
             contentType: "image/jpeg",
@@ -951,7 +933,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const changeImageButton = getByText("Change image");
       fireEvent.press(changeImageButton);
 
@@ -965,7 +946,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const removeImageButton = getByText("Remove image");
       fireEvent.press(removeImageButton);
 
@@ -982,7 +962,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const removeImageButton = getByText("Remove image");
       fireEvent.press(removeImageButton);
 
@@ -1001,7 +980,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const removeImageButton = getByText("Remove image");
       fireEvent.press(removeImageButton);
 
@@ -1035,6 +1013,7 @@ describe("AdminRewardDetailModal", () => {
     });
 
     it("should handle purchase with unknown group", () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const mockRewardUnknownGroup = {
         ...mockReward,
         purchases: [
@@ -1060,7 +1039,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       const cancelButtons = getAllByText("Cancel + refund");
       fireEvent.press(cancelButtons[0]);
 
@@ -1076,7 +1054,6 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />
       );
 
-      const { Alert } = require("react-native");
       fireEvent.press(getByText("Hide reward"));
 
       await waitFor(() => {

@@ -4,10 +4,12 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AppModalFooter } from "../../common/ui/AppModalFooter";
 
+const noop = (): void => undefined;
+
 describe("AppModalFooter", () => {
   it("should render primary button with label", () => {
     const { getByText } = renderWithProviders(
-      <AppModalFooter primaryLabel="Save" onPrimary={() => {}} />
+      <AppModalFooter primaryLabel="Save" onPrimary={noop} />
     );
 
     expect(getByText("Save")).toBeTruthy();
@@ -27,9 +29,9 @@ describe("AppModalFooter", () => {
     const { getByText } = renderWithProviders(
       <AppModalFooter
         primaryLabel="Save"
-        onPrimary={() => {}}
+        onPrimary={noop}
         secondaryLabel="Cancel"
-        onSecondary={() => {}}
+        onSecondary={noop}
       />
     );
 
@@ -42,7 +44,7 @@ describe("AppModalFooter", () => {
     const { getByText } = renderWithProviders(
       <AppModalFooter
         primaryLabel="Save"
-        onPrimary={() => {}}
+        onPrimary={noop}
         secondaryLabel="Cancel"
         onSecondary={onSecondary}
       />
@@ -54,7 +56,7 @@ describe("AppModalFooter", () => {
 
   it("should not render secondary button when secondary props are incomplete", () => {
     const { queryByText } = renderWithProviders(
-      <AppModalFooter primaryLabel="Save" onPrimary={() => {}} onSecondary={() => {}} />
+      <AppModalFooter primaryLabel="Save" onPrimary={noop} onSecondary={noop} />
     );
 
     expect(queryByText("Cancel")).toBeNull();
@@ -62,7 +64,7 @@ describe("AppModalFooter", () => {
 
   it("should hide the primary label while loading", () => {
     const { queryByText } = renderWithProviders(
-      <AppModalFooter primaryLabel="Save" onPrimary={() => {}} isPrimaryLoading />
+      <AppModalFooter primaryLabel="Save" onPrimary={noop} isPrimaryLoading />
     );
 
     expect(queryByText("Save")).toBeNull();
@@ -70,7 +72,7 @@ describe("AppModalFooter", () => {
 
   it("should render children content", () => {
     const { getByText } = renderWithProviders(
-      <AppModalFooter primaryLabel="Save" onPrimary={() => {}}>
+      <AppModalFooter primaryLabel="Save" onPrimary={noop}>
         <Text>Additional Info</Text>
       </AppModalFooter>
     );

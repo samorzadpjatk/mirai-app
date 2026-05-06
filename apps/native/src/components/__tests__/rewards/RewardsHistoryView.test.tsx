@@ -64,25 +64,28 @@ jest.mock("~/hooks/rewards", () => ({
   useUpdateMyRewardPurchaseStatus: () => mockUseUpdateMyRewardPurchaseStatus(),
 }));
 
+import { View } from "react-native";
+
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
+    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
 }));
 
-jest.mock("react-native", () => ({
-  ...jest.requireActual("react-native"),
-  Alert: {
-    alert: jest.fn((title: string, message: string, buttons?: Array<{ text: string; style?: string; onPress?: () => void }>) => {
-      if (buttons) {
-        const destructiveButton = buttons.find((button) => button.style === "destructive");
-        destructiveButton?.onPress?.();
-      }
-    }),
-  },
-}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native") as typeof import("react-native");
+  return {
+    ...actual,
+    Alert: {
+      alert: jest.fn((title: string, message: string, buttons?: { text: string; style?: string; onPress?: () => void }[]) => {
+        if (buttons) {
+          const destructiveButton = buttons.find((button) => button.style === "destructive");
+          destructiveButton?.onPress?.();
+        }
+      }),
+    },
+  };
+});
 
 describe("RewardsHistoryView", () => {
   beforeEach(() => {

@@ -2,27 +2,41 @@ import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import ChallengeCard from "../../admin/challenges/ChallengeCard";
+import { Text } from "react-native";
 
-jest.mock("@expo/vector-icons", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return { Ionicons: ({ name }: { name: string }) => React.createElement(Text, null, name) };
-});
+interface IoniconsProps {
+  name: string;
+}
+
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
+}));
+
+interface Challenge {
+  id: string;
+  tripId: string;
+  title: string;
+  description: string;
+  points: number;
+  icon: string;
+  category: "standard" | "wintegral" | "photo";
+  status: "active" | "draft";
+}
 
 describe("Admin ChallengeCard", () => {
-  const baseChallenge = {
+  const baseChallenge: Challenge = {
     id: "challenge-1",
     tripId: "trip-1",
     title: "Test Challenge",
     description: "Test description",
     points: 100,
     icon: "star",
-    category: "standard" as const,
-    status: "active" as const,
+    category: "standard",
+    status: "active",
   };
 
   it("renders challenge data", () => {
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge as any} />);
+    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge} />);
     expect(getByText("Test Challenge")).toBeTruthy();
     expect(getByText("100 PTS")).toBeTruthy();
     expect(getByText(/Campus/)).toBeTruthy();
@@ -30,14 +44,14 @@ describe("Admin ChallengeCard", () => {
   });
 
   it("shows draft label", () => {
-    const draft = { ...baseChallenge, status: "draft" as const };
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={draft as any} />);
+    const draft: Challenge = { ...baseChallenge, status: "draft" };
+    const { getByText } = renderWithProviders(<ChallengeCard challenge={draft} />);
     expect(getByText(/DRAFT/)).toBeTruthy();
   });
 
   it("maps special icons", () => {
-    const wintegral = { ...baseChallenge, category: "wintegral" as const, icon: "eco" };
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={wintegral as any} />);
+    const wintegral: Challenge = { ...baseChallenge, category: "wintegral", icon: "eco" };
+    const { getByText } = renderWithProviders(<ChallengeCard challenge={wintegral} />);
     expect(getByText("leaf")).toBeTruthy();
     expect(getByText(/Trip/)).toBeTruthy();
   });
@@ -45,7 +59,7 @@ describe("Admin ChallengeCard", () => {
   it("calls edit and delete handlers", () => {
     const onEdit = jest.fn();
     const onDelete = jest.fn();
-    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge as any} onEdit={onEdit} onDelete={onDelete} />);
+    const { getByText } = renderWithProviders(<ChallengeCard challenge={baseChallenge} onEdit={onEdit} onDelete={onDelete} />);
     fireEvent.press(getByText("create"));
     fireEvent.press(getByText("trash"));
     expect(onEdit).toHaveBeenCalledWith(baseChallenge);

@@ -1,4 +1,5 @@
 import React from "react";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapScreenOverlay } from "../../map/overlays/MapScreenOverlay";
 
@@ -13,6 +14,16 @@ const mockGetLocationContext = jest.fn(() => ({
   canViewOthersLocations: true,
 }));
 
+interface MockAnimatedViewProps {
+  children?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
+interface MockGestureDetectorProps {
+  children?: React.ReactNode;
+  gesture: unknown;
+}
+
 jest.mock("~/stores/map", () => ({
   useMapOverlayStore: () => mockGetMapOverlayStore(),
 }));
@@ -24,60 +35,40 @@ jest.mock("~/stores/location", () => ({
 jest.mock("react-native-reanimated", () => ({
   __esModule: true,
   default: {
-    View: function MockAnimatedView({ children, style }: { children?: React.ReactNode; style?: object }) {
-      const React = require("react");
-      const { View } = require("react-native");
-      return React.createElement(View, { testID: "animated-view", style }, children);
-    },
+    View: ({ children, style }: MockAnimatedViewProps) => (
+      <View testID="animated-view" style={style}>
+        {children}
+      </View>
+    ),
   },
 }));
 
 jest.mock("react-native-gesture-handler", () => ({
-  GestureDetector: function MockGestureDetector({ children }: { children: React.ReactNode }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "gesture-detector" }, children);
-  },
+  GestureDetector: ({ children, gesture }: MockGestureDetectorProps) => (
+    <View testID="gesture-detector" accessibilityLabel={String(gesture)}>
+      {children}
+    </View>
+  ),
 }));
 
 jest.mock("~/components/map/MapActionButtons", () => ({
-  MapActionButtons: function MockMapActionButtons() {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "map-action-buttons" });
-  },
+  MapActionButtons: () => <View testID="map-action-buttons" />,
 }));
 
 jest.mock("~/components/map/modals/ManageSharingModal", () => ({
-  ManageSharingModal: function MockManageSharingModal() {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "manage-sharing-modal" });
-  },
+  ManageSharingModal: () => <View testID="manage-sharing-modal" />,
 }));
 
 jest.mock("~/components/map/modals/ShareLocationModal", () => ({
-  ShareLocationModal: function MockShareLocationModal() {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "share-location-modal" });
-  },
+  ShareLocationModal: () => <View testID="share-location-modal" />,
 }));
 
 jest.mock("~/components/map/ui/SelectedUserCard", () => ({
-  SelectedUserCard: function MockSelectedUserCard() {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "selected-user-card" });
-  },
+  SelectedUserCard: () => <View testID="selected-user-card" />,
 }));
 
 jest.mock("~/components/map/panels/UsersListPanel", () => ({
-  UsersListPanel: function MockUsersListPanel() {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: "users-list-panel" });
-  },
+  UsersListPanel: () => <View testID="users-list-panel" />,
 }));
 
 describe("MapScreenOverlay", () => {
@@ -150,7 +141,6 @@ describe("MapScreenOverlay", () => {
 
     const { getByTestId } = renderWithProviders(<MapScreenOverlay />);
 
-    const animatedView = getByTestId("animated-view");
-    expect(animatedView.props.style[1]).toEqual({ backgroundColor: "red" });
+    expect(getByTestId("animated-view")).toHaveStyle({ backgroundColor: "red" });
   });
 });

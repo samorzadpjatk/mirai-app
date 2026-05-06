@@ -1,9 +1,11 @@
 import React from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, Text, TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripPickerModal } from "../../common/TripPickerModal";
 import type { TripListItem } from "../../trips/list/types";
+
+const noop = jest.fn();
 
 describe("TripPickerModal", () => {
   const mockTrips: TripListItem[] = [
@@ -12,12 +14,16 @@ describe("TripPickerModal", () => {
     { id: "3", name: "Trip to Tokyo", startDate: new Date(), endDate: new Date() },
   ];
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should have Modal with visible=false when not visible", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <TripPickerModal
         visible={false}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
       />
     );
@@ -30,8 +36,8 @@ describe("TripPickerModal", () => {
     const { getByText } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
       />
     );
@@ -43,8 +49,8 @@ describe("TripPickerModal", () => {
     const { getByText } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
       />
     );
@@ -60,7 +66,7 @@ describe("TripPickerModal", () => {
       <TripPickerModal
         visible={true}
         onClose={onClose}
-        onSelectTrip={() => {}}
+        onSelectTrip={noop}
         trips={mockTrips}
       />
     );
@@ -92,8 +98,8 @@ describe("TripPickerModal", () => {
     const { UNSAFE_getAllByType } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
         selectedTripId="2"
       />
@@ -107,8 +113,8 @@ describe("TripPickerModal", () => {
     const { getByText } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={[]}
       />
     );
@@ -120,8 +126,8 @@ describe("TripPickerModal", () => {
     const { queryByText } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={[]}
         isLoading={true}
       />
@@ -134,8 +140,8 @@ describe("TripPickerModal", () => {
     const { getByText } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
         isFetchingMore={true}
       />
@@ -149,8 +155,8 @@ describe("TripPickerModal", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <TripPickerModal
         visible={true}
-        onClose={() => {}}
-        onSelectTrip={() => {}}
+        onClose={noop}
+        onSelectTrip={noop}
         trips={mockTrips}
         onLoadMore={onLoadMore}
       />

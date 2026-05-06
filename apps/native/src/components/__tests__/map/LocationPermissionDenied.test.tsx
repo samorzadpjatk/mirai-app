@@ -1,19 +1,17 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { LocationPermissionDenied } from "../../map/LocationPermissionDenied";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
+    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
 }));
 
 describe("LocationPermissionDenied", () => {
   it("should render full message by default", () => {
-    const { getByText, UNSAFE_getByType } = renderWithProviders(<LocationPermissionDenied />);
+    const { getByText } = renderWithProviders(<LocationPermissionDenied />);
 
     expect(getByText("Location Sharing Disabled")).toBeTruthy();
     expect(getByText(/Location sharing has been turned off/)).toBeTruthy();

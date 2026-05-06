@@ -31,7 +31,7 @@ describe("GroupManagementCard", () => {
 
   it("renders group summary", () => {
     const { getByText } = renderWithProviders(
-      <GroupManagementCard group={mockGroup as any} onEdit={mockOnEdit} />
+      <GroupManagementCard group={mockGroup} onEdit={mockOnEdit} />
     );
 
     expect(getByText("Test Group")).toBeTruthy();
@@ -42,7 +42,7 @@ describe("GroupManagementCard", () => {
 
   it("calls onEdit when edit is pressed", () => {
     const { getByText } = renderWithProviders(
-      <GroupManagementCard group={mockGroup as any} onEdit={mockOnEdit} />
+      <GroupManagementCard group={mockGroup} onEdit={mockOnEdit} />
     );
 
     fireEvent.press(getByText("Edit"));
@@ -52,7 +52,7 @@ describe("GroupManagementCard", () => {
   it("falls back to unassigned organizer text", () => {
     const { getByText } = renderWithProviders(
       <GroupManagementCard
-        group={{ ...mockGroup, organizer: null } as any}
+        group={{ ...mockGroup, organizer: null }}
         onEdit={mockOnEdit}
       />
     );

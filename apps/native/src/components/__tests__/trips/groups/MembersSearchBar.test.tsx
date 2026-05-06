@@ -1,7 +1,10 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersSearchBar } from "../../../trips/groups/create/MembersSearchBar";
+
+const searchPlaceholder = "Search by name";
 
 describe("MembersSearchBar", () => {
   const mockOnChangeText = jest.fn();
@@ -11,45 +14,40 @@ describe("MembersSearchBar", () => {
   });
 
   it("should render search input", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput).toBeTruthy();
+    expect(getByPlaceholderText(searchPlaceholder)).toBeTruthy();
   });
 
   it("should render with placeholder text", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.placeholder).toBe("Search by name");
+    expect(getByPlaceholderText(searchPlaceholder)).toBeTruthy();
   });
 
   it("should display current value", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByDisplayValue } = renderWithProviders(
       <MembersSearchBar value="test query" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.value).toBe("test query");
+    expect(getByDisplayValue("test query")).toBeTruthy();
   });
 
   it("should call onChangeText when text changes", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    fireEvent.changeText(textInput, "new search");
+    fireEvent.changeText(getByPlaceholderText(searchPlaceholder), "new search");
     expect(mockOnChangeText).toHaveBeenCalledTimes(1);
     expect(mockOnChangeText).toHaveBeenCalledWith("new search");
   });
 
   it("should handle empty value", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.value).toBe("");
+    expect(getByPlaceholderText(searchPlaceholder)).toHaveProp("value", "");
   });
 
   it("should render search icon", () => {
@@ -63,7 +61,6 @@ describe("MembersSearchBar", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
-    expect(view).toBeTruthy();
+    expect(UNSAFE_getByType(View)).toBeTruthy();
   });
 });

@@ -1,4 +1,6 @@
 import React from "react";
+import { ActivityIndicator, Image, TouchableOpacity, View } from "react-native";
+import type { ReactTestInstance } from "react-test-renderer";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupImagePicker } from "../../../trips/groups/GroupImagePicker";
@@ -55,7 +57,9 @@ describe("GroupImagePicker", () => {
         onPickImage={mockOnPickImage}
       />
     );
-    const image = UNSAFE_getByType(require("react-native").Image);
+    const image = UNSAFE_getByType(Image) as ReactTestInstance & {
+      props: { source: { uri: string } };
+    };
     expect(image).toBeTruthy();
     expect(image.props.source.uri).toBe("https://example.com/image.jpg");
   });
@@ -64,7 +68,7 @@ describe("GroupImagePicker", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    const touchable = UNSAFE_getByType(require("react-native").TouchableOpacity);
+    const touchable = UNSAFE_getByType(TouchableOpacity);
     fireEvent.press(touchable);
     expect(mockOnPickImage).toHaveBeenCalledTimes(1);
   });
@@ -77,7 +81,7 @@ describe("GroupImagePicker", () => {
         isUploading={true}
       />
     );
-    const activityIndicator = UNSAFE_getByType(require("react-native").ActivityIndicator);
+    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
     expect(activityIndicator).toBeTruthy();
   });
 
@@ -112,7 +116,7 @@ describe("GroupImagePicker", () => {
         isUploading={true}
       />
     );
-    const touchable = UNSAFE_getByType(require("react-native").TouchableOpacity);
+    const touchable = UNSAFE_getByType(TouchableOpacity);
     expect(touchable.props.disabled).toBe(true);
   });
 
@@ -127,7 +131,7 @@ describe("GroupImagePicker", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 });

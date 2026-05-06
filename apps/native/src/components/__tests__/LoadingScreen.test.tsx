@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "./helpers/renderWithProviders";
 import LoadingScreen from "../LoadingScreen";
 
@@ -17,8 +17,8 @@ describe("LoadingScreen", () => {
   });
 
   it("renders activity indicator", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(<LoadingScreen />);
-    
+    renderWithProviders(<LoadingScreen />);
+
     expect(screen.getByText("Loading...")).toBeTruthy();
   });
 

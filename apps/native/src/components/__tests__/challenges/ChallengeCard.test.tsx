@@ -1,15 +1,21 @@
-import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeCard } from "../../challenges/ChallengeCard";
 import { ChallengeStatus, type Challenge } from "../../../types/challenges";
 
+interface IoniconsProps {
+  name: string;
+}
+
 jest.mock("@expo/vector-icons", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const React = jest.requireActual<typeof import("react")>("react");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
+
   return {
-    Ionicons: ({ name }: { name: string }) => React.createElement(Text, { testID: `icon-${name}` }, name),
+    Ionicons: ({ name }: IoniconsProps) => <Text testID={`icon-${name}`}>{name}</Text>,
   };
 });
 

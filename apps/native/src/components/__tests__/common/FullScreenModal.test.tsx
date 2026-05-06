@@ -10,7 +10,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <Text>Modal Content</Text>
       </FullScreenModal>
@@ -43,7 +43,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <Text>Modal Content</Text>
       </FullScreenModal>
@@ -61,7 +61,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <Text>Modal Content</Text>
       </FullScreenModal>
@@ -75,7 +75,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <View>
           <Text>Child 1</Text>
@@ -92,8 +92,8 @@ describe("FullScreenModal", () => {
     const { getByText, UNSAFE_getByType } = renderWithProviders(
       <FullScreenModal
         visible={true}
-        title="My Modal Title"
-        onClose={() => {}}
+        title="Test Modal"
+        onClose={() => { /* noop */ }}
       >
         <Text>Content</Text>
       </FullScreenModal>
@@ -125,7 +125,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <Text>Content</Text>
       </FullScreenModal>
@@ -140,7 +140,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <Text>Content</Text>
       </FullScreenModal>
@@ -155,7 +155,7 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Complex Modal"
-        onClose={() => {}}
+        onClose={() => { /* noop */ }}
       >
         <View>
           <Text>Section 1</Text>

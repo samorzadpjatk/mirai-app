@@ -1,4 +1,5 @@
 import React from "react";
+import { ActivityIndicator, View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeUploadProgressCard } from "../../../trips/challenges/ChallengeUploadProgressCard";
 
@@ -14,7 +15,7 @@ describe("ChallengeUploadProgressCard", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <ChallengeUploadProgressCard />
     );
-    const activityIndicator = UNSAFE_getByType(require("react-native").ActivityIndicator);
+    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
     expect(activityIndicator).toBeTruthy();
   });
 
@@ -71,7 +72,7 @@ describe("ChallengeUploadProgressCard", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <ChallengeUploadProgressCard progress={0.5} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 
@@ -79,7 +80,7 @@ describe("ChallengeUploadProgressCard", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <ChallengeUploadProgressCard progress={0.5} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view.props.style).toBeTruthy();
   });
 });

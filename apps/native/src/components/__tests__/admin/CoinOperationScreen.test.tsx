@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CoinOperationScreen } from "../../admin/coins/CoinOperationScreen";
@@ -8,7 +8,20 @@ const mockAlert = jest.spyOn(Alert, "alert");
 const mockBack = jest.fn();
 const mockAddCoins = jest.fn();
 const mockRemoveCoins = jest.fn();
-let mockParams: Record<string, string> = { tripId: "trip-1", groupId: "group-1", groupName: "Test Group", groupCoins: "100" };
+
+interface MockSearchParams {
+  tripId: string;
+  groupId: string;
+  groupName: string;
+  groupCoins: string;
+}
+
+let mockParams: MockSearchParams = {
+  tripId: "trip-1",
+  groupId: "group-1",
+  groupName: "Test Group",
+  groupCoins: "100",
+};
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => mockParams,
@@ -16,36 +29,90 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("~/hooks/admin/useAdminCoins", () => ({
-  useAdminCoins: () => ({ addCoins: mockAddCoins, removeCoins: mockRemoveCoins, isAddingCoins: false, isRemovingCoins: false }),
+  useAdminCoins: () => ({
+    addCoins: mockAddCoins,
+    removeCoins: mockRemoveCoins,
+    isAddingCoins: false,
+    isRemovingCoins: false,
+  }),
 }));
 
-jest.mock("expo-status-bar", () => {
-  return { __esModule: true, StatusBar: () => null };
-});
+jest.mock("expo-status-bar", () => ({
+  __esModule: true,
+  StatusBar: () => null,
+}));
 
-jest.mock("~/components/admin/AdminHeader", () => {
-  const React = require("react");
-  const { Text, View } = require("react-native");
-  return { __esModule: true, AdminHeader: ({ title, subtitle }: any) => React.createElement(View, null, React.createElement(Text, { testID: "screen-title" }, title), React.createElement(Text, null, subtitle)) };
-});
+interface AdminHeaderProps {
+  title: string;
+  subtitle?: string;
+}
 
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { Text, TextInput, View } = require("react-native");
-  return {
-    FormField: ({ children, label, required }: any) => React.createElement(View, null, React.createElement(Text, null, `${label}${required ? "*" : ""}`), children),
-    ThemedTextInput: ({ value, onChangeText, placeholder, editable, ...props }: any) => React.createElement(TextInput, { value, onChangeText, placeholder, editable, ...props }),
-  };
-});
+jest.mock("~/components/admin/AdminHeader", () => ({
+  __esModule: true,
+  AdminHeader: ({ title, subtitle }: AdminHeaderProps) => (
+    <View>
+      <Text testID="screen-title">{title}</Text>
+      {subtitle ? <Text>{subtitle}</Text> : null}
+    </View>
+  ),
+}));
 
-jest.mock("~/components/common/buttons/PrimaryLoadingButton", () => {
-  const React = require("react");
-  const { Pressable, Text } = require("react-native");
-  return { __esModule: true, PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: any) => React.createElement(Pressable, { onPress, disabled: disabled || isLoading }, React.createElement(Text, null, isLoading ? "Loading..." : label)) };
-});
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}
+
+interface ThemedTextInputProps extends React.ComponentProps<typeof TextInput> {
+  value?: string;
+  onChangeText?: (text: string) => void;
+}
+
+jest.mock("~/components/common/ui", () => ({
+  FormField: ({ children, label, required }: FormFieldProps) => (
+    <View>
+      <Text>{`${label}${required ? "*" : ""}`}</Text>
+      {children}
+    </View>
+  ),
+  ThemedTextInput: ({ value, onChangeText, placeholder, editable, ...props }: ThemedTextInputProps) => (
+    <TextInput
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      editable={editable}
+      {...props}
+    />
+  ),
+}));
+
+interface PrimaryLoadingButtonProps {
+  label: string;
+  onPress: () => void;
+  isLoading?: boolean;
+  disabled?: boolean;
+}
+
+jest.mock("~/components/common/buttons/PrimaryLoadingButton", () => ({
+  __esModule: true,
+  PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (
+    <Pressable onPress={onPress} disabled={disabled ?? isLoading}>
+      <Text>{isLoading ? "Loading..." : label}</Text>
+    </Pressable>
+  ),
+}));
 
 describe("CoinOperationScreen", () => {
-  beforeEach(() => { jest.clearAllMocks(); mockAlert.mockClear(); mockParams = { tripId: "trip-1", groupId: "group-1", groupName: "Test Group", groupCoins: "100" }; });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAlert.mockClear();
+    mockParams = {
+      tripId: "trip-1",
+      groupId: "group-1",
+      groupName: "Test Group",
+      groupCoins: "100",
+    };
+  });
 
   it("renders group summary", () => {
     const { getByTestId, getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
@@ -56,7 +123,7 @@ describe("CoinOperationScreen", () => {
 
   it("adds coins", async () => {
     mockAddCoins.mockResolvedValueOnce(undefined);
-    const { getByPlaceholderText, getByText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "50");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Bonus");
     fireEvent.press(getAllByText("Add Coins")[1]);
@@ -65,7 +132,7 @@ describe("CoinOperationScreen", () => {
 
   it("removes coins", async () => {
     mockRemoveCoins.mockResolvedValueOnce(undefined);
-    const { getByPlaceholderText, getByText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="remove" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="remove" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "25");
     fireEvent.changeText(getByPlaceholderText("Describe why you are removing coins"), "Penalty");
     fireEvent.press(getAllByText("Remove Coins")[1]);
@@ -74,7 +141,7 @@ describe("CoinOperationScreen", () => {
 
   it("shows missing params error", () => {
     mockParams = { tripId: "", groupId: "", groupName: "", groupCoins: "0" };
-    const { getByPlaceholderText, getByText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "10");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Reason");
     fireEvent.press(getAllByText("Add Coins")[1]);

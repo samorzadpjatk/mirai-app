@@ -4,6 +4,8 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripCard } from "../../../trips/list/TripCard";
 import type { TripListItem } from "../../../trips/list/types";
 
+const noop = (): void => void 0;
+
 jest.mock("~/hooks/trips/useTripBackgroundImageDownload", () => ({
   useTripBackgroundImageDownload: () => ({ imageUrl: null }),
 }));
@@ -45,7 +47,7 @@ const mockFutureTrip: TripListItem = {
 describe("TripCard", () => {
   it("should render trip name", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockTrip} onPress={() => {}} />
+      <TripCard trip={mockTrip} onPress={noop} />
     );
 
     expect(getByText("Summer Adventure")).toBeTruthy();
@@ -53,7 +55,7 @@ describe("TripCard", () => {
 
   it("should render trip description", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockTrip} onPress={() => {}} />
+      <TripCard trip={mockTrip} onPress={noop} />
     );
 
     expect(getByText("An amazing summer trip")).toBeTruthy();
@@ -61,7 +63,7 @@ describe("TripCard", () => {
 
   it("should render trip dates", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockTrip} onPress={() => {}} />
+      <TripCard trip={mockTrip} onPress={noop} />
     );
 
     expect(getByText(/Jul 1, 2024/)).toBeTruthy();
@@ -76,7 +78,7 @@ describe("TripCard", () => {
     };
 
     const { getByText } = renderWithProviders(
-      <TripCard trip={ongoingTrip} onPress={() => {}} />
+      <TripCard trip={ongoingTrip} onPress={noop} />
     );
 
     expect(getByText("Ongoing")).toBeTruthy();
@@ -84,7 +86,7 @@ describe("TripCard", () => {
 
   it("should display correct status for past trip", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockPastTrip} onPress={() => {}} />
+      <TripCard trip={mockPastTrip} onPress={noop} />
     );
 
     expect(getByText("Past")).toBeTruthy();
@@ -92,7 +94,7 @@ describe("TripCard", () => {
 
   it("should display correct status for upcoming trip", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockFutureTrip} onPress={() => {}} />
+      <TripCard trip={mockFutureTrip} onPress={noop} />
     );
 
     expect(getByText("Upcoming")).toBeTruthy();
@@ -100,7 +102,7 @@ describe("TripCard", () => {
 
   it("should display group count", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockTrip} onPress={() => {}} />
+      <TripCard trip={mockTrip} onPress={noop} />
     );
 
     expect(getByText("2 groups")).toBeTruthy();
@@ -108,7 +110,7 @@ describe("TripCard", () => {
 
   it("should display singular group text when only one group", () => {
     const { getByText } = renderWithProviders(
-      <TripCard trip={mockPastTrip} onPress={() => {}} />
+      <TripCard trip={mockPastTrip} onPress={noop} />
     );
 
     expect(getByText("1 group")).toBeTruthy();
@@ -127,7 +129,7 @@ describe("TripCard", () => {
   it("should not render description when not provided", () => {
     const tripWithoutDescription = { ...mockTrip, description: undefined };
     const { queryByText } = renderWithProviders(
-      <TripCard trip={tripWithoutDescription} onPress={() => {}} />
+      <TripCard trip={tripWithoutDescription} onPress={noop} />
     );
 
     expect(queryByText("An amazing summer trip")).toBeNull();
@@ -135,7 +137,7 @@ describe("TripCard", () => {
 
   it("should not render groups text when no groups", () => {
     const { queryByText } = renderWithProviders(
-      <TripCard trip={mockFutureTrip} onPress={() => {}} />
+      <TripCard trip={mockFutureTrip} onPress={noop} />
     );
 
     expect(queryByText(/group/)).toBeNull();

@@ -4,10 +4,12 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { PrimaryAddButton } from "../../common/buttons/PrimaryAddButton";
 
+const noop = (): void => undefined;
+
 describe("PrimaryAddButton", () => {
   it("should render with default label", () => {
     const { getByText } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} />
+      <PrimaryAddButton onPress={noop} />
     );
 
     expect(getByText("Add New")).toBeTruthy();
@@ -15,7 +17,7 @@ describe("PrimaryAddButton", () => {
 
   it("should render with custom label", () => {
     const { getByText } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Create Item" />
+      <PrimaryAddButton onPress={noop} label="Create Item" />
     );
 
     expect(getByText("Create Item")).toBeTruthy();
@@ -33,7 +35,7 @@ describe("PrimaryAddButton", () => {
 
   it("should have disabled prop when disabled is true", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Disabled" disabled={true} />
+      <PrimaryAddButton onPress={noop} label="Disabled" disabled={true} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -42,7 +44,7 @@ describe("PrimaryAddButton", () => {
 
   it("should not have disabled prop when disabled is false", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Enabled" disabled={false} />
+      <PrimaryAddButton onPress={noop} label="Enabled" disabled={false} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -52,7 +54,7 @@ describe("PrimaryAddButton", () => {
   it("should apply custom style", () => {
     const customStyle = { marginTop: 20 };
     const { UNSAFE_getByType } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Styled" style={customStyle} />
+      <PrimaryAddButton onPress={noop} label="Styled" style={customStyle} />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -65,7 +67,7 @@ describe("PrimaryAddButton", () => {
     const customTextStyle = { fontSize: 18 };
     const { getByText } = renderWithProviders(
       <PrimaryAddButton
-        onPress={() => {}}
+        onPress={noop}
         label="Styled Text"
         textStyle={customTextStyle}
       />
@@ -80,7 +82,7 @@ describe("PrimaryAddButton", () => {
   it("should use custom activeOpacity", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <PrimaryAddButton
-        onPress={() => {}}
+        onPress={noop}
         label="Opacity"
         activeOpacity={0.5}
       />
@@ -92,7 +94,7 @@ describe("PrimaryAddButton", () => {
 
   it("should use default activeOpacity when not specified", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Default" />
+      <PrimaryAddButton onPress={noop} label="Default" />
     );
 
     const button = UNSAFE_getByType(TouchableOpacity);
@@ -101,7 +103,7 @@ describe("PrimaryAddButton", () => {
 
   it("should render with add-circle icon", () => {
     const { UNSAFE_getAllByType } = renderWithProviders(
-      <PrimaryAddButton onPress={() => {}} label="Add" />
+      <PrimaryAddButton onPress={noop} label="Add" />
     );
 
     const icons = UNSAFE_getAllByType(Text);

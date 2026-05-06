@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProfileHeader } from "../../profile/ProfileHeader";
 
@@ -49,13 +49,13 @@ jest.mock("~/hooks/files", () => ({
 
 jest.mock("expo-image", () => ({
   Image: function MockImage(props: { source: { uri: string }; style: Record<string, unknown> }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, {
-      testID: "profile-image",
-      "data-uri": props.source?.uri,
-      style: props.style,
-    });
+    return (
+      <View
+        testID="profile-image"
+        data-uri={props.source?.uri}
+        style={props.style}
+      />
+    );
   },
 }));
 

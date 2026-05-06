@@ -119,21 +119,24 @@ jest.mock("~/hooks/trips", () => ({
   useTripDetails: (tripId: string) => mockUseTripDetails(tripId),
 }));
 
+import { View } from "react-native";
+
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
+    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
 }));
 
-jest.mock("react-native", () => ({
-  ...jest.requireActual("react-native"),
-  Alert: {
-    alert: jest.fn(),
-  },
-  useWindowDimensions: () => ({ width: 375, height: 812 }),
-}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native") as typeof import("react-native");
+  return {
+    ...actual,
+    Alert: {
+      alert: jest.fn(),
+    },
+    useWindowDimensions: () => ({ width: 375, height: 812 }),
+  };
+});
 
 describe("RewardsView", () => {
   beforeEach(() => {

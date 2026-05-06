@@ -7,7 +7,7 @@ import { GroupFormFields } from "../../../../trips/groups/create/GroupFormFields
 describe("GroupFormFields", () => {
   it("should render group name label", () => {
     const { getByText } = renderWithProviders(
-      <GroupFormFields groupName="" onChangeName={() => {}} />
+      <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     expect(getByText("Group Name")).toBeTruthy();
@@ -15,7 +15,7 @@ describe("GroupFormFields", () => {
 
   it("should render with empty group name", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <GroupFormFields groupName="" onChangeName={() => {}} />
+      <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);
@@ -24,7 +24,7 @@ describe("GroupFormFields", () => {
 
   it("should render with provided group name", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <GroupFormFields groupName="Test Group" onChangeName={() => {}} />
+      <GroupFormFields groupName="Test Group" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);
@@ -63,7 +63,7 @@ describe("GroupFormFields", () => {
 
   it("should have correct placeholder text", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <GroupFormFields groupName="" onChangeName={() => {}} />
+      <GroupFormFields groupName="" onChangeName={jest.fn()} />
     );
 
     const input = UNSAFE_getByType(TextInput);

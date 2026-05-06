@@ -1,7 +1,16 @@
 import React from "react";
+import { Text, TextInput, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsSearchBar } from "../../../trips/groups/GroupsSearchBar";
+
+interface IoniconsProps {
+  name: string;
+}
+
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
+}));
 
 describe("GroupsSearchBar", () => {
   const mockOnChangeText = jest.fn();
@@ -14,32 +23,33 @@ describe("GroupsSearchBar", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput).toBeTruthy();
+
+    expect(UNSAFE_getByType(TextInput)).toBeTruthy();
   });
 
   it("should render with placeholder text", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.placeholder).toBe("Search groups by name...");
+
+    expect(getByPlaceholderText("Search groups by name...")).toBeTruthy();
   });
 
   it("should display current value", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByDisplayValue } = renderWithProviders(
       <GroupsSearchBar value="test query" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.value).toBe("test query");
+
+    expect(getByDisplayValue("test query")).toBeTruthy();
   });
 
   it("should call onChangeText when text changes", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByPlaceholderText } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    fireEvent.changeText(textInput, "new search");
+
+    fireEvent.changeText(getByPlaceholderText("Search groups by name..."), "new search");
+
     expect(mockOnChangeText).toHaveBeenCalledTimes(1);
     expect(mockOnChangeText).toHaveBeenCalledWith("new search");
   });
@@ -48,14 +58,15 @@ describe("GroupsSearchBar", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const textInput = UNSAFE_getByType(require("react-native").TextInput);
-    expect(textInput.props.value).toBe("");
+
+    expect(UNSAFE_getByType(TextInput).props.value).toBe("");
   });
 
   it("should handle search icon", () => {
     const { getByText } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
+
     expect(getByText("search")).toBeTruthy();
   });
 
@@ -63,7 +74,7 @@ describe("GroupsSearchBar", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
-    expect(view).toBeTruthy();
+
+    expect(UNSAFE_getByType(View)).toBeTruthy();
   });
 });

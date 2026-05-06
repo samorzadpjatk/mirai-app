@@ -1,4 +1,5 @@
 import React from "react";
+import type { ReactTestInstance } from "react-test-renderer";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupCard } from "../../../trips/groups/GroupCard";
@@ -98,7 +99,9 @@ describe("GroupCard", () => {
     const { getByTestId } = renderWithProviders(
       <GroupCard group={groupWithImage} onPress={mockOnPress} />
     );
-    const image = getByTestId("group-image");
+    const image = getByTestId("group-image") as ReactTestInstance & {
+      props: { source: { uri: string } };
+    };
     expect(image).toBeTruthy();
     expect(image.props.source.uri).toBe("https://example.com/image.jpg");
   });

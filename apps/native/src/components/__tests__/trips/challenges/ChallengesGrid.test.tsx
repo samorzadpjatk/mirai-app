@@ -4,8 +4,9 @@ import { ChallengesGrid } from "../../../trips/challenges/ChallengesGrid";
 
 describe("ChallengesGrid", () => {
   it("should render empty state when no challenges", () => {
+    const noop = () => undefined;
     const { getByText } = renderWithProviders(
-      <ChallengesGrid challenges={[]} onSelectChallenge={() => {}} />
+      <ChallengesGrid challenges={[]} onSelectChallenge={noop} />
     );
 
     expect(getByText("No challenges available yet")).toBeTruthy();

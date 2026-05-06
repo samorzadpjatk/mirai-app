@@ -51,9 +51,7 @@ jest.mock("~/stores/location", () => ({
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
+    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
 }));
 

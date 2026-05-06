@@ -1,26 +1,34 @@
 import React from "react";
+import { View } from "react-native";
+import type * as ReactNative from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeHeroCard } from "../../../trips/challenges/ChallengeHeroCard";
 
+interface ImageBackgroundMockProps {
+  children?: React.ReactNode;
+}
+
+interface LinearGradientMockProps {
+  children?: React.ReactNode;
+}
+
 jest.mock("react-native", () => {
-  const React = require("react");
-  const actual = jest.requireActual("react-native");
+  const actual: typeof ReactNative = jest.requireActual("react-native");
+
+  function ImageBackgroundMock({ children }: ImageBackgroundMockProps) {
+    return <View>{children}</View>;
+  }
+
   return {
     ...actual,
-    ImageBackground: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(actual.View, null, children),
+    ImageBackground: ImageBackgroundMock,
   };
 });
 
-jest.mock("expo-linear-gradient", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return {
-    __esModule: true,
-    LinearGradient: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(View, null, children),
-  };
-});
+jest.mock("expo-linear-gradient", () => ({
+  __esModule: true,
+  LinearGradient: ({ children }: LinearGradientMockProps) => <View>{children}</View>,
+}));
 
 describe("ChallengeHeroCard", () => {
   const baseProps = {

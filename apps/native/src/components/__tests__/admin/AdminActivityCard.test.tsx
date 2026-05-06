@@ -11,10 +11,27 @@ describe("AdminActivityCard", () => {
   const now = new Date("2026-01-01T12:00:00.000Z").getTime();
   const spy = jest.spyOn(Date, "now").mockReturnValue(now);
 
-  const baseActivity = {
+  interface SubmissionActivity {
+    group: { name: string };
+  }
+
+  interface Activity {
+    id: string;
+    tripId: string;
+    activityType: "submission";
+    title: string;
+    description: string;
+    imageUrl: string;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: Date;
+    submissionActivity: SubmissionActivity;
+  }
+
+  const baseActivity: Activity = {
     id: "activity-1",
     tripId: "trip-1",
-    activityType: "submission" as const,
+    activityType: "submission",
     title: "Test Activity",
     description: "This is a test description",
     imageUrl: "https://example.com/image.jpg",
@@ -24,7 +41,7 @@ describe("AdminActivityCard", () => {
     submissionActivity: {
       group: { name: "Test Group" },
     },
-  } as any;
+  };
 
   const callbacks = {
     onEdit: jest.fn(),

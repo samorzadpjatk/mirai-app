@@ -10,7 +10,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Click Me"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
       />
     );
 
@@ -36,7 +36,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Loading"
         isLoading={true}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
       />
     );
 
@@ -49,7 +49,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Loading"
         isLoading={true}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
       />
     );
 
@@ -62,7 +62,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Disabled"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
         disabled={true}
       />
     );
@@ -76,7 +76,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Enabled"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
         disabled={false}
       />
     );
@@ -91,7 +91,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Styled"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
         style={customStyle}
       />
     );
@@ -108,7 +108,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Styled Text"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
         textStyle={customTextStyle}
       />
     );
@@ -124,7 +124,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Opacity"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
         activeOpacity={0.5}
       />
     );
@@ -138,7 +138,7 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Default Opacity"
         isLoading={false}
-        onPress={() => {}}
+        onPress={() => { /* noop */ }}
       />
     );
 

@@ -4,11 +4,13 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FloatingActionButton } from "../../common/FloatingActionButton";
 
+const noop = (): void => undefined;
+
 describe("FloatingActionButton", () => {
   it("should render with icon", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add item"
       />
@@ -34,7 +36,7 @@ describe("FloatingActionButton", () => {
   it("should have disabled prop when disabled is true", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
         disabled={true}
@@ -48,7 +50,7 @@ describe("FloatingActionButton", () => {
   it("should not have disabled prop when disabled is false", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
         disabled={false}
@@ -63,7 +65,7 @@ describe("FloatingActionButton", () => {
     const customStyle = { bottom: 100, right: 20 };
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
         style={customStyle}
@@ -79,7 +81,7 @@ describe("FloatingActionButton", () => {
   it("should render icon with custom size", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
         iconSize={48}
@@ -92,7 +94,7 @@ describe("FloatingActionButton", () => {
   it("should render icon with default size", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
       />
@@ -104,7 +106,7 @@ describe("FloatingActionButton", () => {
   it("should use custom activeOpacity", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
         activeOpacity={0.5}
@@ -118,7 +120,7 @@ describe("FloatingActionButton", () => {
   it("should use default activeOpacity when not specified", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
       />
@@ -131,7 +133,7 @@ describe("FloatingActionButton", () => {
   it("should have correct accessibility role and label", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <FloatingActionButton
-        onPress={() => {}}
+        onPress={noop}
         iconName="add"
         accessibilityLabel="Add new item"
       />

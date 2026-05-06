@@ -37,7 +37,7 @@ describe("NotificationCard", () => {
   it("renders notification summary and actions", () => {
     const { getByText, getAllByText } = renderWithProviders(
       <NotificationCard
-        notification={mockNotification as any}
+        notification={mockNotification}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
       />
@@ -58,7 +58,7 @@ describe("NotificationCard", () => {
   it("calls retry and delete handlers", () => {
     const { getByText } = renderWithProviders(
       <NotificationCard
-        notification={mockNotification as any}
+        notification={mockNotification}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
       />
@@ -82,7 +82,7 @@ describe("NotificationCard", () => {
 
     const { getByText } = renderWithProviders(
       <NotificationCard
-        notification={notificationWithNoFailures as any}
+        notification={notificationWithNoFailures}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
       />
@@ -94,7 +94,7 @@ describe("NotificationCard", () => {
   it("shows loading states", () => {
     const { getByText } = renderWithProviders(
       <NotificationCard
-        notification={mockNotification as any}
+        notification={mockNotification}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
         isRetrying
@@ -114,7 +114,7 @@ describe("NotificationCard", () => {
 
     const { getByText } = renderWithProviders(
       <NotificationCard
-        notification={notificationWithoutCreatorName as any}
+        notification={notificationWithoutCreatorName}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
       />

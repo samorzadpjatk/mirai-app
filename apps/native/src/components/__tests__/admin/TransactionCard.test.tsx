@@ -25,7 +25,7 @@ describe("TransactionCard", () => {
 
   it("renders transaction details", () => {
     const { getByText } = renderWithProviders(
-      <TransactionCard transaction={mockTransaction as any} />
+      <TransactionCard transaction={mockTransaction} />
     );
 
     expect(getByText("Test Group")).toBeTruthy();
@@ -37,7 +37,7 @@ describe("TransactionCard", () => {
   it("renders negative amounts with a minus sign", () => {
     const { getByText } = renderWithProviders(
       <TransactionCard
-        transaction={{ ...mockTransaction, amount: -25 } as any}
+        transaction={{ ...mockTransaction, amount: -25 }}
       />
     );
 

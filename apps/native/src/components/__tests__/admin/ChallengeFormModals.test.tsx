@@ -1,82 +1,89 @@
 import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormModals } from "../../admin/challenges/ChallengeFormModals";
 
-jest.mock("~/components/common/ui/DateTimePickerModal", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity, View } = require("react-native");
-  return {
-    DateTimePickerModal: ({ visible, onConfirm, onCancel }: any) => {
-      if (!visible) return null;
-      return React.createElement(
-        View,
-        null,
-        React.createElement(Text, null, "DateTimePickerModal"),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: () => onConfirm(new Date("2024-01-01T12:00:00.000Z")) },
-          React.createElement(Text, null, "Confirm date"),
-        ),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: onCancel },
-          React.createElement(Text, null, "Cancel date"),
-        ),
-      );
-    },
-  };
-});
+interface DateTimePickerModalProps {
+  visible: boolean;
+  onConfirm: (date: Date) => void;
+  onCancel: () => void;
+}
 
-jest.mock("~/components/common/QrScannerModal", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity, View } = require("react-native");
-  return {
-    QrScannerModal: ({ visible, onClose, onScan }: any) => {
-      if (!visible) return null;
-      return React.createElement(
-        View,
-        null,
-        React.createElement(Text, null, "QrScannerModal"),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: () => onScan("QR-123") },
-          React.createElement(Text, null, "Scan QR"),
-        ),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: onClose },
-          React.createElement(Text, null, "Close scanner"),
-        ),
-      );
-    },
-  };
-});
+jest.mock("~/components/common/ui/DateTimePickerModal", () => ({
+  DateTimePickerModal: ({ visible, onConfirm, onCancel }: DateTimePickerModalProps) => {
+    if (!visible) return null;
+    return React.createElement(
+      View,
+      null,
+      React.createElement(Text, null, "DateTimePickerModal"),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: () => onConfirm(new Date("2024-01-01T12:00:00.000Z")) },
+        React.createElement(Text, null, "Confirm date"),
+      ),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: onCancel },
+        React.createElement(Text, null, "Cancel date"),
+      ),
+    );
+  },
+}));
 
-jest.mock("~/components/map/LocationPicker", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity, View } = require("react-native");
-  return {
-    LocationPicker: ({ visible, onClose, onLocationSelected }: any) => {
-      if (!visible) return null;
-      return React.createElement(
-        View,
-        null,
-        React.createElement(Text, null, "LocationPicker"),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: () => onLocationSelected({ latitude: 50, longitude: 20 }) },
-          React.createElement(Text, null, "Select location"),
-        ),
-        React.createElement(
-          TouchableOpacity,
-          { onPress: onClose },
-          React.createElement(Text, null, "Close location"),
-        ),
-      );
-    },
-  };
-});
+interface QrScannerModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onScan: (data: string) => void;
+}
+
+jest.mock("~/components/common/QrScannerModal", () => ({
+  QrScannerModal: ({ visible, onClose, onScan }: QrScannerModalProps) => {
+    if (!visible) return null;
+    return React.createElement(
+      View,
+      null,
+      React.createElement(Text, null, "QrScannerModal"),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: () => onScan("QR-123") },
+        React.createElement(Text, null, "Scan QR"),
+      ),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: onClose },
+        React.createElement(Text, null, "Close scanner"),
+      ),
+    );
+  },
+}));
+
+interface LocationPickerProps {
+  visible: boolean;
+  onClose: () => void;
+  onLocationSelected: (location: { latitude: number; longitude: number }) => void;
+}
+
+jest.mock("~/components/map/LocationPicker", () => ({
+  LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) => {
+    if (!visible) return null;
+    return React.createElement(
+      View,
+      null,
+      React.createElement(Text, null, "LocationPicker"),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: () => onLocationSelected({ latitude: 50, longitude: 20 }) },
+        React.createElement(Text, null, "Select location"),
+      ),
+      React.createElement(
+        TouchableOpacity,
+        { onPress: onClose },
+        React.createElement(Text, null, "Close location"),
+      ),
+    );
+  },
+}));
 
 describe("ChallengeFormModals", () => {
   const updateForm = jest.fn();
@@ -114,7 +121,7 @@ describe("ChallengeFormModals", () => {
           activeSelect: "status",
           showLocationPicker: true,
           isQrScannerOpen: true,
-        } as any}
+        } as unknown as typeof baseFormState}
       />
     );
 
@@ -132,7 +139,7 @@ describe("ChallengeFormModals", () => {
           activePicker: "startTime",
           showLocationPicker: true,
           isQrScannerOpen: true,
-        } as any}
+        } as unknown as typeof baseFormState}
       />
     );
 
@@ -157,7 +164,7 @@ describe("ChallengeFormModals", () => {
         formState={{
           ...baseFormState,
           activeSelect: "status",
-        } as any}
+        } as unknown as typeof baseFormState}
       />
     );
 

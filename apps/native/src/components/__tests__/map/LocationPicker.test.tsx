@@ -7,21 +7,30 @@ const mockOnLocationSelected = jest.fn();
 const mockOnClose = jest.fn();
 
 jest.mock("@maplibre/maplibre-react-native", () => {
-  const React = require("react");
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { forwardRef, useImperativeHandle, createElement } = require("react");
   const { View } = require("react-native");
 
-  const Camera = React.forwardRef((_props, ref) => {
-    React.useImperativeHandle(ref, () => ({ setCamera: jest.fn() }));
-    return React.createElement(View, { testID: "camera" });
+  const Camera = forwardRef((_, ref) => {
+    useImperativeHandle(ref, () => ({ setCamera: jest.fn() }));
+    return createElement(View, { testID: "camera" });
   });
 
+  const MapView = (props) => createElement(View, { testID: "map-view" }, props.children);
+  const MarkerView = (props) => createElement(View, { testID: "marker-view" }, props.children);
+  const RasterSource = (props) => createElement(View, { testID: "raster-source" }, props.children);
+  const RasterLayer = () => createElement(View, { testID: "raster-layer" });
+
   return {
-    MapView: ({ children }: { children?: React.ReactNode }) => React.createElement(View, { testID: "map-view" }, children),
+    MapView,
     Camera,
-    MarkerView: ({ children }: { children?: React.ReactNode }) => React.createElement(View, { testID: "marker-view" }, children),
-    RasterSource: ({ children }: { children?: React.ReactNode }) => React.createElement(View, { testID: "raster-source" }, children),
-    RasterLayer: () => React.createElement(View, { testID: "raster-layer" }),
+    MarkerView,
+    RasterSource,
+    RasterLayer,
   };
+  /* eslint-enable */
 });
 
 jest.mock("expo-location", () => ({
@@ -34,21 +43,37 @@ jest.mock("expo-location", () => ({
 }));
 
 jest.mock("react-native-safe-area-context", () => {
-  const React = require("react");
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { createElement } = require("react");
   const { View } = require("react-native");
+
+  const SafeAreaProvider = (props) => createElement(View, null, props.children);
+
   return {
-    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children),
+    SafeAreaProvider,
     useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
   };
+  /* eslint-enable */
 });
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { createElement } = require("react");
+  const { View } = require("react-native");
+
+  return {
+    Ionicons: (props) =>
+      createElement(View, {
+        testID: `icon-${props.name}`,
+        style: { width: props.size, height: props.size, color: props.color },
+      }),
+  };
+  /* eslint-enable */
+});
 
 describe("LocationPicker", () => {
   beforeEach(() => {

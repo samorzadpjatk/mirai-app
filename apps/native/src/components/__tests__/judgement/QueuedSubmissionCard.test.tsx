@@ -2,9 +2,10 @@ import React from "react";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { QueuedSubmissionCard } from "../../judgement/QueuedSubmissionCard";
 
+import { Text } from "react-native";
+
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name }: { name: string }) => {
-    const { Text } = require("react-native");
     return <Text>{name}</Text>;
   },
 }));

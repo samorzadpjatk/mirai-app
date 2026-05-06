@@ -1,24 +1,79 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateScheduleModal, EditScheduleModal, DeleteScheduleModal } from "../../admin/schedules/ScheduleModals";
+import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 
-jest.mock("~/components/admin/AdminModal", () => {
-  const React = require("react");
-  const { Pressable, Text, View } = require("react-native");
-  return {
-    AdminModal: ({ children, visible, title, onClose, actions }: any) => (!visible ? null : React.createElement(View, null, React.createElement(Text, null, title), React.createElement(Pressable, { onPress: onClose }, React.createElement(Text, null, "Close")), children, actions)),
-    AdminModalButton: ({ title, onPress, disabled, loading }: any) => React.createElement(Pressable, { onPress, disabled: disabled || loading }, React.createElement(Text, null, loading ? "Loading..." : title)),
-  };
-});
+interface AdminModalProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+  actions?: React.ReactNode;
+}
 
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { Text, TextInput, View } = require("react-native");
-  return {
-    FormField: ({ children, label, required }: any) => React.createElement(View, null, React.createElement(Text, null, `${label}${required ? "*" : ""}`), children),
-    ThemedTextInput: ({ value, onChangeText, placeholder, ...props }: any) => React.createElement(TextInput, { value, onChangeText, placeholder, ...props }),
-  };
+interface AdminModalButtonProps {
+  title: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}
+
+type ThemedTextInputProps = React.ComponentProps<typeof TextInput>;
+
+jest.mock("~/components/admin/AdminModal", () => ({
+  AdminModal: ({ children, visible, title, onClose, actions }: AdminModalProps) =>
+    !visible ? null : (
+      <View>
+        <Text>{title}</Text>
+        <Pressable onPress={onClose}>
+          <Text>Close</Text>
+        </Pressable>
+        {children}
+        {actions}
+      </View>
+    ),
+  AdminModalButton: ({ title, onPress, disabled, loading }: AdminModalButtonProps) => (
+    <Pressable onPress={onPress} disabled={(disabled ?? false) || (loading ?? false)}>
+      <Text>{loading ? "Loading..." : title}</Text>
+    </Pressable>
+  ),
+}));
+
+jest.mock("~/components/common/ui", () => ({
+  FormField: ({ children, label, required }: FormFieldProps) => (
+    <View>
+      <Text>{`${label}${required ? "*" : ""}`}</Text>
+      {children}
+    </View>
+  ),
+  ThemedTextInput: ({ value, onChangeText, placeholder, ...props }: ThemedTextInputProps) => (
+    <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} {...props} />
+  ),
+}));
+
+const createSchedule = (overrides: Partial<NotificationSchedule> = {}): NotificationSchedule => ({
+  id: "schedule-1",
+  name: "Old name",
+  message: "Old message",
+  triggerTime: "08:00",
+  isActive: true,
+  createdAt: "2024-01-01T00:00:00.000Z",
+  startDate: "2024-01-01T00:00:00.000Z",
+  endDate: "2024-01-02T00:00:00.000Z",
+  executionCount: 0,
+  isRecurring: false,
+  hour: 8,
+  minute: 0,
+  notificationType: "custom",
+  ...overrides,
 });
 
 describe("Schedule modals", () => {
@@ -34,8 +89,8 @@ describe("Schedule modals", () => {
 
   it("updates a schedule", () => {
     const onUpdateSchedule = jest.fn();
-    const schedule = { id: "schedule-1", name: "Old name", message: "Old message", triggerTime: "08:00" };
-    const { getByPlaceholderText, getByText } = renderWithProviders(<EditScheduleModal visible={true} onClose={jest.fn()} schedule={schedule as any} onUpdateSchedule={onUpdateSchedule} isUpdating={false} />);
+    const schedule = createSchedule();
+    const { getByPlaceholderText, getByText } = renderWithProviders(<EditScheduleModal visible={true} onClose={jest.fn()} schedule={schedule} onUpdateSchedule={onUpdateSchedule} isUpdating={false} />);
     fireEvent.changeText(getByPlaceholderText("Enter schedule name..."), "Updated name");
     fireEvent.changeText(getByPlaceholderText("Enter notification message..."), "Updated message");
     fireEvent.changeText(getByPlaceholderText("e.g., 09:00, 14:30"), "10:30");
@@ -45,8 +100,8 @@ describe("Schedule modals", () => {
 
   it("deletes a schedule", () => {
     const onDeleteSchedule = jest.fn();
-    const schedule = { id: "schedule-1", name: "Schedule to Delete" };
-    const { getByText } = renderWithProviders(<DeleteScheduleModal visible={true} onClose={jest.fn()} schedule={schedule as any} onDeleteSchedule={onDeleteSchedule} isDeleting={false} />);
+    const schedule = createSchedule({ name: "Schedule to Delete" });
+    const { getByText } = renderWithProviders(<DeleteScheduleModal visible={true} onClose={jest.fn()} schedule={schedule} onDeleteSchedule={onDeleteSchedule} isDeleting={false} />);
     fireEvent.press(getByText("Delete"));
     expect(onDeleteSchedule).toHaveBeenCalledWith("schedule-1");
   });

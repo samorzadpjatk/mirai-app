@@ -1,22 +1,24 @@
 import React from "react";
+import { View } from "react-native";
+import type { ViewProps } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProgressBar } from "../../challenges/ProgressBar";
 
-jest.mock("react-native-reanimated", () => {
-  const React = require("react");
-  const RN = require("react-native");
-  return {
-    __esModule: true,
-    useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
-    useAnimatedStyle: jest.fn().mockReturnValue({ width: "50%" }),
-    withTiming: jest.fn().mockReturnValue(50),
-    interpolate: jest.fn().mockReturnValue(50),
-    default: {
-      View: (props: any) => React.createElement(RN.View, { testID: "progress-fill", ...props }),
-    },
-    View: (props: any) => React.createElement(RN.View, { testID: "progress-fill", ...props }),
-  };
-});
+interface AnimatedViewProps extends ViewProps {
+  testID?: string;
+}
+
+jest.mock("react-native-reanimated", () => ({
+  __esModule: true,
+  useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
+  useAnimatedStyle: jest.fn().mockReturnValue({ width: "50%" }),
+  withTiming: jest.fn().mockReturnValue(50),
+  interpolate: jest.fn().mockReturnValue(50),
+  default: {
+    View: (props: AnimatedViewProps) => React.createElement(View, { testID: "progress-fill", ...props }),
+  },
+  View: (props: AnimatedViewProps) => React.createElement(View, { testID: "progress-fill", ...props }),
+}));
 
 describe("ProgressBar", () => {
   it("renders the progress fill", () => {

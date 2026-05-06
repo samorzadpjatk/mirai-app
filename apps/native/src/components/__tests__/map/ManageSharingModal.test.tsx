@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ManageSharingModal } from "../../map/modals/ManageSharingModal";
@@ -24,38 +24,43 @@ jest.mock("~/stores/map", () => ({
   useMapOverlayStore: () => mockGetMapOverlayStore(),
 }));
 
-jest.mock("~/components/map/modals/MapModalShell", () => ({
-  MapModalShell: function MockMapModalShell({ children, visible, onClose, title }: {
-    children: React.ReactNode;
-    visible: boolean;
-    onClose: () => void;
-    title: string;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    if (!visible) return null;
-    return React.createElement(View, { testID: "modal-shell" },
-      React.createElement(Text, { testID: "modal-title" }, title),
-      children
-    );
-  },
-}));
+jest.mock("~/components/map/modals/MapModalShell", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { createElement } = require("react");
+  const { View, Text } = require("react-native");
 
-jest.mock("~/components/map/modals/MapModalUserItem", () => ({
-  MapModalUserItem: function MockMapModalUserItem({ name, subtitle, rightElement }: {
-    name: string;
-    subtitle?: string;
-    rightElement?: React.ReactNode;
-  }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    return React.createElement(View, { testID: "user-item" },
-      React.createElement(Text, { testID: "user-name" }, name),
-      subtitle && React.createElement(Text, { testID: "user-subtitle" }, subtitle),
-      rightElement
-    );
-  },
-}));
+  return {
+    MapModalShell: function MockMapModalShell(props) {
+      if (!props.visible) return null;
+      return createElement(View, { testID: "modal-shell" },
+        createElement(Text, { testID: "modal-title" }, props.title),
+        props.children
+      );
+    },
+  };
+  /* eslint-enable */
+});
+
+jest.mock("~/components/map/modals/MapModalUserItem", () => {
+  /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment,
+       @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return,
+       @typescript-eslint/no-unsafe-member-access */
+  const { createElement } = require("react");
+  const { View, Text } = require("react-native");
+
+  return {
+    MapModalUserItem: function MockMapModalUserItem(props) {
+      return createElement(View, { testID: "user-item" },
+        createElement(Text, { testID: "user-name" }, props.name),
+        props.subtitle && createElement(Text, { testID: "user-subtitle" }, props.subtitle),
+        props.rightElement
+      );
+    },
+  };
+  /* eslint-enable */
+});
 
 describe("ManageSharingModal", () => {
   beforeEach(() => {

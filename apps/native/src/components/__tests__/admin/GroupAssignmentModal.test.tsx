@@ -1,13 +1,31 @@
 import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupAssignmentModal } from "../../admin/groups/GroupAssignmentModal";
+import type { Group, User } from "~/hooks/admin/useAdminUsers";
+
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
+interface GroupAssignmentResult {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  tripId: string;
+  groupId: string | null;
+  userId: string;
+  wristNumber: string | null;
+  houseNumber: string | null;
+}
 
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: any) => {
-    const { Text, TouchableOpacity, View } = require("react-native");
-    if (!visible) return null;
-    return (
+  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+    !visible ? null : (
       <View>
         <Text>{title}</Text>
         <TouchableOpacity onPress={onClose}>
@@ -15,26 +33,38 @@ jest.mock("~/components/common/ui", () => ({
         </TouchableOpacity>
         {children}
       </View>
-    );
-  },
+    ),
 }));
 
 describe("GroupAssignmentModal", () => {
-  const groups = [
+  const groups: Group[] = [
     { id: "group-1", name: "Group One" },
     { id: "group-2", name: "Group Two" },
-  ] as any;
+  ];
 
-  const user = {
+  const user: User = {
     id: "user-1",
     firstName: "John",
     lastName: "Doe",
     email: "john@example.com",
-    group: { name: "Current Group" },
-  } as any;
+    role: "ADMIN",
+    tripId: "trip-1",
+    group: { id: "group-current", name: "Current Group" },
+  };
 
   const onClose = jest.fn();
-  const onAssign = jest.fn().mockResolvedValue({ id: "assignment-1" });
+  const onAssign = jest.fn((userId: string, groupId: string) =>
+    Promise.resolve({
+      id: "assignment-1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      tripId: "trip-1",
+      groupId,
+      userId,
+      wristNumber: null,
+      houseNumber: null,
+    } satisfies GroupAssignmentResult),
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();

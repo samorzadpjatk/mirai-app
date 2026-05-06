@@ -24,7 +24,8 @@ describe("LeaderboardListItem", () => {
     const groupWithImage = { ...mockGroup, image: "https://example.com/image.jpg" };
     const { UNSAFE_getByType } = renderWithProviders(<LeaderboardListItem group={groupWithImage} onPress={mockOnPress} />);
     const image = UNSAFE_getByType(Image);
-    expect(image.props.source.uri).toBe("https://example.com/image.jpg");
+    const source = image.props.source as { uri: string };
+    expect(source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("calls onPress when pressed", () => {

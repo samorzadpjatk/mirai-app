@@ -7,7 +7,7 @@ import { SaveGroupButton } from "../../../../trips/groups/edit/SaveGroupButton";
 describe("SaveGroupButton", () => {
   it("should render with 'Save Changes' label", () => {
     const { getByText } = renderWithProviders(
-      <SaveGroupButton isSubmitting={false} onPress={() => {}} />
+      <SaveGroupButton isSubmitting={false} onPress={jest.fn()} />
     );
 
     expect(getByText("Save Changes")).toBeTruthy();
@@ -25,7 +25,7 @@ describe("SaveGroupButton", () => {
 
   it("should show loading indicator when isSubmitting is true", () => {
     const { queryByText, UNSAFE_getByType } = renderWithProviders(
-      <SaveGroupButton isSubmitting={true} onPress={() => {}} />
+      <SaveGroupButton isSubmitting={true} onPress={jest.fn()} />
     );
 
     expect(queryByText("Save Changes")).toBeNull();

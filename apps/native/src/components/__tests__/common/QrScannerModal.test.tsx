@@ -1,32 +1,54 @@
 import React from "react";
-import { Modal, Pressable, Text, View, Alert } from "react-native";
+import { Alert, Modal, View } from "react-native";
 import { fireEvent, waitFor } from "@testing-library/react-native";
+import { useCameraPermissions } from "expo-camera";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { QrScannerModal } from "../../common/QrScannerModal";
 
+interface CameraPermission {
+  granted: boolean;
+}
+
+interface BarcodeScannedEvent {
+  data: string;
+}
+
+interface CameraViewMockProps {
+  facing: "back" | "front";
+  barcodeScannerSettings: { barcodeTypes: "qr"[] };
+  onBarcodeScanned?: (event: BarcodeScannedEvent) => void | Promise<void>;
+}
+
+const MockCameraView = ({ facing, barcodeScannerSettings, onBarcodeScanned }: CameraViewMockProps) =>
+  React.createElement(View, {
+    testID: "camera-view",
+    facing,
+    barcodeScannerSettings,
+    onBarcodeScanned,
+  });
+
 jest.mock("expo-camera", () => ({
-  CameraView: "CameraView",
+  CameraView: MockCameraView,
   useCameraPermissions: jest.fn(),
 }));
 
-const mockUseCameraPermissions = jest.requireMock("expo-camera").useCameraPermissions;
+const mockUseCameraPermissions = useCameraPermissions as jest.MockedFunction<typeof useCameraPermissions>;
+const mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+
+const createPermissionRequest = () => jest.fn<Promise<CameraPermission>, []>(() => Promise.resolve({ granted: true }));
 
 describe("QrScannerModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseCameraPermissions.mockReturnValue([
-      { granted: true },
-      jest.fn(() => Promise.resolve({ granted: true })),
-    ]);
+    mockAlert.mockClear();
+    mockUseCameraPermissions.mockReturnValue([{ granted: true }, createPermissionRequest()] as ReturnType<
+      typeof useCameraPermissions
+    >);
   });
 
   it("should render when visible is true", () => {
     const { getByText } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     expect(getByText("Scan QR code")).toBeTruthy();
@@ -36,8 +58,8 @@ describe("QrScannerModal", () => {
     const { getByText } = renderWithProviders(
       <QrScannerModal
         visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
+        onClose={() => { /* noop */ }}
+        onScan={() => { /* noop */ }}
         title="Custom Scanner Title"
       />
     );
@@ -47,11 +69,7 @@ describe("QrScannerModal", () => {
 
   it("should render with default instruction text", () => {
     const { getByText } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     expect(getByText("Point camera at QR code to scan.")).toBeTruthy();
@@ -61,8 +79,8 @@ describe("QrScannerModal", () => {
     const { getByText } = renderWithProviders(
       <QrScannerModal
         visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
+        onClose={() => { /* noop */ }}
+        onScan={() => { /* noop */ }}
         instructionText="Custom instructions here"
       />
     );
@@ -73,11 +91,7 @@ describe("QrScannerModal", () => {
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
     const { getByText } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={onClose}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={onClose} onScan={() => { /* noop */ }} />
     );
 
     fireEvent.press(getByText("Close"));
@@ -86,29 +100,20 @@ describe("QrScannerModal", () => {
 
   it("should render CameraView when permission is granted", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
+    const cameraView = UNSAFE_getByType(MockCameraView);
     expect(cameraView).toBeTruthy();
   });
 
   it("should render permission request UI when permission is not granted", () => {
-    mockUseCameraPermissions.mockReturnValue([
-      { granted: false },
-      jest.fn(() => Promise.resolve({ granted: true })),
-    ]);
+    mockUseCameraPermissions.mockReturnValue([{ granted: false }, createPermissionRequest()] as ReturnType<
+      typeof useCameraPermissions
+    >);
 
     const { getByText } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     expect(getByText("Camera permission is required to scan QR codes.")).toBeTruthy();
@@ -116,18 +121,13 @@ describe("QrScannerModal", () => {
   });
 
   it("should request permission when Grant Permission button is pressed", async () => {
-    const requestPermission = jest.fn(() => Promise.resolve({ granted: true }));
-    mockUseCameraPermissions.mockReturnValue([
-      { granted: false },
-      requestPermission,
-    ]);
+    const requestPermission = createPermissionRequest();
+    mockUseCameraPermissions.mockReturnValue([{ granted: false }, requestPermission] as ReturnType<
+      typeof useCameraPermissions
+    >);
 
     const { getByText } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     fireEvent.press(getByText("Grant Permission"));
@@ -137,22 +137,23 @@ describe("QrScannerModal", () => {
   });
 
   it("should handle barcode scan and call onScan", async () => {
-    const onScan = jest.fn(() => Promise.resolve());
+    const onScan = jest.fn<Promise<void>, [string]>(() => Promise.resolve());
     const onClose = jest.fn();
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={onClose}
-        onScan={onScan}
-      />
+      <QrScannerModal visible={true} onClose={onClose} onScan={onScan} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
-    const barcodeHandler = cameraView.props.onBarcodeScanned;
-    
+    const cameraView = UNSAFE_getByType(MockCameraView);
+    const cameraProps = cameraView.props as CameraViewMockProps;
+    const barcodeHandler = cameraProps.onBarcodeScanned;
+
+    if (!barcodeHandler) {
+      throw new Error("Expected barcode handler to be defined");
+    }
+
     await barcodeHandler({ data: "test-qr-data" });
-    
+
     await waitFor(() => {
       expect(onScan).toHaveBeenCalledWith("test-qr-data");
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -160,111 +161,105 @@ describe("QrScannerModal", () => {
   });
 
   it("should handle scan error and show alert", async () => {
-    const onScan = jest.fn(() => Promise.reject(new Error("Invalid QR")));
+    const onScan = jest.fn<Promise<void>, [string]>(() => Promise.reject(new Error("Invalid QR")));
     const onClose = jest.fn();
-    
+
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={onClose}
-        onScan={onScan}
-      />
+      <QrScannerModal visible={true} onClose={onClose} onScan={onScan} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
-    const barcodeHandler = cameraView.props.onBarcodeScanned;
-    
+    const cameraView = UNSAFE_getByType(MockCameraView);
+    const cameraProps = cameraView.props as CameraViewMockProps;
+    const barcodeHandler = cameraProps.onBarcodeScanned;
+
+    if (!barcodeHandler) {
+      throw new Error("Expected barcode handler to be defined");
+    }
+
     await barcodeHandler({ data: "invalid-data" });
-    
+
     await waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
-      expect(Alert.alert).toHaveBeenCalledWith("Invalid QR code", "Invalid QR");
+      expect(mockAlert).toHaveBeenCalledWith("Invalid QR code", "Invalid QR");
     });
   });
 
   it("should apply correct Modal props", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     const modal = UNSAFE_getByType(Modal);
-    expect(modal.props.animationType).toBe("slide");
-    expect(modal.props.visible).toBe(true);
+    const modalProps = modal.props as React.ComponentProps<typeof Modal>;
+    expect(modalProps.animationType).toBe("slide");
+    expect(modalProps.visible).toBe(true);
   });
 
   it("should handle onRequestClose", () => {
-    const onClose = jest.fn();
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={onClose}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
     const modal = UNSAFE_getByType(Modal);
-    expect(typeof modal.props.onRequestClose).toBe("function");
+    const modalProps = modal.props as React.ComponentProps<typeof Modal>;
+    expect(typeof modalProps.onRequestClose).toBe("function");
   });
 
   it("should pass correct barcode settings to CameraView", () => {
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={() => {}}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
-    expect(cameraView.props.facing).toBe("back");
-    expect(cameraView.props.barcodeScannerSettings).toEqual({ barcodeTypes: ["qr"] });
+    const cameraView = UNSAFE_getByType(MockCameraView);
+    const cameraProps = cameraView.props as CameraViewMockProps;
+    expect(cameraProps.facing).toBe("back");
+    expect(cameraProps.barcodeScannerSettings).toEqual({ barcodeTypes: ["qr"] });
   });
 
   it("should disable barcode scanning when scanOncePerSession and already scanned", async () => {
-    const onScan = jest.fn(() => Promise.resolve());
-    
+    const onScan = jest.fn<Promise<void>, [string]>(() => Promise.resolve());
+
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={onScan}
-        scanOncePerSession={true}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={onScan} scanOncePerSession={true} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
-    
-    await cameraView.props.onBarcodeScanned({ data: "first-scan" });
-    
+    const cameraView = UNSAFE_getByType(MockCameraView);
+    const cameraProps = cameraView.props as CameraViewMockProps;
+    const barcodeHandler = cameraProps.onBarcodeScanned;
+
+    if (!barcodeHandler) {
+      throw new Error("Expected barcode handler to be defined");
+    }
+
+    await barcodeHandler({ data: "first-scan" });
+
     await waitFor(() => {
       expect(onScan).toHaveBeenCalledTimes(1);
     });
 
-    const updatedCameraView = UNSAFE_getByType("CameraView");
-    expect(updatedCameraView.props.onBarcodeScanned).toBeUndefined();
+    const updatedCameraView = UNSAFE_getByType(MockCameraView);
+    const updatedCameraProps = updatedCameraView.props as CameraViewMockProps;
+    expect(updatedCameraProps.onBarcodeScanned).toBeUndefined();
   });
 
   it("should allow multiple scans when scanOncePerSession is false", async () => {
-    const onScan = jest.fn(() => Promise.resolve());
-    
+    const onScan = jest.fn<Promise<void>, [string]>(() => Promise.resolve());
+
     const { UNSAFE_getByType } = renderWithProviders(
-      <QrScannerModal
-        visible={true}
-        onClose={() => {}}
-        onScan={onScan}
-        scanOncePerSession={false}
-      />
+      <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={onScan} scanOncePerSession={false} />
     );
 
-    const cameraView = UNSAFE_getByType("CameraView");
-    
-    await cameraView.props.onBarcodeScanned({ data: "first-scan" });
-    await cameraView.props.onBarcodeScanned({ data: "second-scan" });
-    
+    const cameraView = UNSAFE_getByType(MockCameraView);
+    const cameraProps = cameraView.props as CameraViewMockProps;
+    const barcodeHandler = cameraProps.onBarcodeScanned;
+
+    if (!barcodeHandler) {
+      throw new Error("Expected barcode handler to be defined");
+    }
+
+    await barcodeHandler({ data: "first-scan" });
+    await barcodeHandler({ data: "second-scan" });
+
     await waitFor(() => {
       expect(onScan).toHaveBeenCalledTimes(2);
     });

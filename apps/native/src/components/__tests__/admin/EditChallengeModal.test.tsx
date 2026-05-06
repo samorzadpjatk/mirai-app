@@ -1,4 +1,5 @@
-import React from "react";
+import type React from "react";
+import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import EditChallengeModal from "../../admin/challenges/EditChallengeModal";
@@ -13,27 +14,52 @@ jest.mock("~/hooks/admin", () => ({
   useAdminChallenges: () => ({ updateChallenge: mockUpdateChallenge }),
 }));
 
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { View, Text, TouchableOpacity, TextInput } = require("react-native");
-  return {
-    AppModalShell: ({ children, visible, title, onClose }: { children: React.ReactNode; visible: boolean; title: string; onClose: () => void; }) => visible ? (
-      <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
-        {children}
-      </View>
-    ) : null,
-    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: { primaryLabel: string; onPrimary: () => void; secondaryLabel: string; onSecondary: () => void; isPrimaryLoading?: boolean; }) => (
-      <View>
-        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
-      </View>
-    ),
-    FormField: ({ children, label, required }: { children: React.ReactNode; label: string; required?: boolean; }) => (<View><Text>{label}{required ? "*" : ""}</Text>{children}</View>),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: { value: string; onChangeText: (text: string) => void; placeholder?: string; keyboardType?: string; multiline?: boolean; }) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as any} multiline={multiline} onChangeText={onChangeText} />),
-  };
-});
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
+interface AppModalFooterProps {
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel: string;
+  onSecondary: () => void;
+  isPrimaryLoading?: boolean;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+}
+
+interface ThemedTextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: string;
+  multiline?: boolean;
+}
+
+jest.mock("~/components/common/ui", () => ({
+  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
+    <View>
+      <Text>{title}</Text>
+      <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
+      {children}
+    </View>
+  ) : null,
+  AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
+    <View>
+      <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
+      <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
+    </View>
+  ),
+  FormField: ({ children, label, required }: FormFieldProps) => (<View><Text>{label}{required ? "*" : ""}</Text>{children}</View>),
+  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as "default" | "numeric" | "email-address" | "phone-pad"} multiline={multiline} onChangeText={onChangeText} />),
+}));
 
 describe("EditChallengeModal", () => {
   const mockChallenge = { id: "challenge-1", tripId: "trip-1", title: "Test Challenge", description: "Test description", points: 100, icon: "star", category: "standard" as const, status: "draft" as const, createdAt: new Date(), updatedAt: new Date() };

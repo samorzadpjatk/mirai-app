@@ -1,5 +1,15 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateScheduleModal } from "../../notifications/CreateScheduleModal";
@@ -45,6 +55,46 @@ const mockUseQueryClient = jest.fn(() => ({
   invalidateQueries: mockInvalidateQueries,
 }));
 
+interface UseMutationOptions {
+  onSuccess?: () => void;
+}
+
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+}
+
+interface AppModalFooterProps {
+  primaryLabel: string;
+  onPrimary: () => void;
+  isPrimaryLoading: boolean;
+  isPrimaryDisabled: boolean;
+  secondaryLabel: string;
+  onSecondary: () => void;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+  required?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
+
+interface ThemedTextInputProps {
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  keyboardType?: TextInputProps["keyboardType"];
+}
+
+interface SegmentedOptionProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}
+
 jest.mock("@tanstack/react-query", () => {
   return {
     QueryClient: class MockQueryClient {
@@ -72,24 +122,20 @@ jest.mock("@tanstack/react-query", () => {
       getQueryData = jest.fn();
       getQueriesData = jest.fn();
       setQueriesData = jest.fn();
-      setQueryDefaults = jest.fn();
       getQueryState = jest.fn();
       removeQueries = jest.fn();
       removeQueryCache = jest.fn();
       setMutationCache = jest.fn();
-      getMutationCache = jest.fn();
       executeMutation = jest.fn();
       getLogger = jest.fn(() => ({ log: jest.fn(), error: jest.fn() }));
       defaultOptions = {};
     },
-    QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+    QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     useQueryClient: () => mockUseQueryClient(),
-    useMutation: jest.fn((options) => ({
-      mutate: jest.fn((args) => {
+    useMutation: jest.fn((options: UseMutationOptions | undefined) => ({
+      mutate: jest.fn((args: unknown) => {
         mockMutate(args);
-        if (options?.onSuccess) {
-          options.onSuccess();
-        }
+        options?.onSuccess?.();
       }),
       isPending: false,
       error: null,
@@ -98,76 +144,55 @@ jest.mock("@tanstack/react-query", () => {
 });
 
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: function MockAppModalShell(props: { children: React.ReactNode; visible: boolean; title: string }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    if (!props.visible) return null;
-    return React.createElement(View, { testID: "modal-shell" },
-      React.createElement(Text, { testID: "modal-title" }, props.title),
-      props.children
-    );
-  },
-  AppModalFooter: function MockAppModalFooter(props: {
-    primaryLabel: string;
-    onPrimary: () => void;
-    isPrimaryLoading: boolean;
-    isPrimaryDisabled: boolean;
-    secondaryLabel: string;
-    onSecondary: () => void;
-  }) {
-    const React = require("react");
-    const { View, Text, TouchableOpacity } = require("react-native");
-    return React.createElement(View, { testID: "modal-footer" },
-      React.createElement(
-        TouchableOpacity,
-        { testID: "primary-button", onPress: props.onPrimary, disabled: props.isPrimaryDisabled },
-        React.createElement(Text, null, props.isPrimaryLoading ? "Loading..." : props.primaryLabel)
-      ),
-      React.createElement(
-        TouchableOpacity,
-        { testID: "secondary-button", onPress: props.onSecondary },
-        React.createElement(Text, null, props.secondaryLabel)
-      )
-    );
-  },
-  FormField: function MockFormField(props: { children: React.ReactNode; label: string; required?: boolean; style?: object }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    return React.createElement(View, { testID: "form-field", style: props.style },
-      React.createElement(Text, { testID: "field-label" }, `${props.label}${props.required ? " *" : ""}`),
-      props.children
-    );
-  },
-  ThemedTextInput: function MockThemedTextInput(props: {
-    placeholder: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    keyboardType?: string;
-  }) {
-    const React = require("react");
-    const { TextInput } = require("react-native");
-    return React.createElement(TextInput, {
-      testID: "text-input",
-      placeholder: props.placeholder,
-      value: props.value,
-      onChangeText: props.onChangeText,
-      keyboardType: props.keyboardType,
-    });
-  },
-  SegmentedOption: function MockSegmentedOption(props: {
-    label: string;
-    selected: boolean;
-    onPress: () => void;
-    style?: object;
-  }) {
-    const React = require("react");
-    const { TouchableOpacity, Text } = require("react-native");
-    return React.createElement(
-      TouchableOpacity,
-      { testID: `segment-${props.label}`, onPress: props.onPress, "data-selected": props.selected, style: props.style },
-      React.createElement(Text, null, props.label)
-    );
-  },
+  AppModalShell: ({ children, visible, title }: AppModalShellProps) =>
+    !visible ? null : (
+      <View testID="modal-shell">
+        <Text testID="modal-title">{title}</Text>
+        {children}
+      </View>
+    ),
+  AppModalFooter: ({
+    primaryLabel,
+    onPrimary,
+    isPrimaryLoading,
+    isPrimaryDisabled,
+    secondaryLabel,
+    onSecondary,
+  }: AppModalFooterProps) => (
+    <View testID="modal-footer">
+      <TouchableOpacity testID="primary-button" onPress={onPrimary} disabled={isPrimaryDisabled}>
+        <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
+        <Text>{secondaryLabel}</Text>
+      </TouchableOpacity>
+    </View>
+  ),
+  FormField: ({ children, label, required, style }: FormFieldProps) => (
+    <View testID="form-field" style={style}>
+      <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
+      {children}
+    </View>
+  ),
+  ThemedTextInput: ({ placeholder, value, onChangeText, keyboardType }: ThemedTextInputProps) => (
+    <TextInput
+      testID="text-input"
+      placeholder={placeholder}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+    />
+  ),
+  SegmentedOption: ({ label, selected, onPress, style }: SegmentedOptionProps) => (
+    <TouchableOpacity
+      testID={`segment-${label}`}
+      onPress={onPress}
+      data-selected={selected}
+      style={style}
+    >
+      <Text>{label}</Text>
+    </TouchableOpacity>
+  ),
 }));
 
 describe("CreateScheduleModal", () => {
@@ -258,6 +283,7 @@ describe("CreateScheduleModal", () => {
     const { getByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(getByTestId("secondary-button"));
+
     expect(mockOnClose).toHaveBeenCalled();
   });
 
@@ -279,14 +305,12 @@ describe("CreateScheduleModal", () => {
   });
 
   it("should select trip when ranking type is active", () => {
-    const { getByTestId, getAllByTestId } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    const { getByTestId, getByText } = renderWithProviders(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(getByTestId("segment-Ranking Update"));
 
-    const tripSegments = getAllByTestId(/segment-/).filter((el) =>
-      el.props.testID?.includes("Summer") || el.props.testID?.includes("Winter")
-    );
-    expect(tripSegments.length).toBeGreaterThan(0);
+    expect(getByText("Summer Trip 2024")).toBeTruthy();
+    expect(getByText("Winter Trip 2024")).toBeTruthy();
   });
 
   it("should show no trips message when trips array is empty", () => {

@@ -12,21 +12,21 @@ jest.mock("~/stores/judgement/judgementStores", () => ({
   },
 }));
 
+import { View } from "react-native";
+
 jest.mock("~/components/judgement/JudgementHeader", () => ({
   JudgementHeader: () => {
-    const { View } = require("react-native");
     return <View testID="judgement-header" />;
   },
 }));
 
 jest.mock("~/components/judgement/CardStack", () => ({
   CardStack: () => {
-    const { View } = require("react-native");
     return <View testID="card-stack" />;
   },
 }));
 
-const mockUseJudgement = require("~/stores/judgement").useJudgement as jest.Mock;
+const mockUseJudgement = (jest.requireMock("~/stores/judgement") as { useJudgement: jest.Mock }).useJudgement;
 
 describe("JudgementContent", () => {
   const defaultProps = { tripId: "trip-1", challengeId: "challenge-1" };

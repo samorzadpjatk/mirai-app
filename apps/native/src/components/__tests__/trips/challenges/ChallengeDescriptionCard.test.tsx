@@ -18,7 +18,8 @@ describe("ChallengeDescriptionCard", () => {
   it("renders an image when imageUrl is provided", () => {
     const { UNSAFE_getByType } = renderWithProviders(<ChallengeDescriptionCard description="Test description" imageUrl="https://example.com/image.jpg" />);
     const image = UNSAFE_getByType(Image);
-    expect(image.props.source.uri).toBe("https://example.com/image.jpg");
+    const source = image.props.source as { uri: string };
+    expect(source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("does not render an image when imageUrl is missing", () => {

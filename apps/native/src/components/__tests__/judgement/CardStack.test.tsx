@@ -60,31 +60,19 @@ jest.mock("@expo/vector-icons", () => ({
 }));
 
 jest.mock("~/components/judgement/QueuedSubmissionCard", () => ({
-  QueuedSubmissionCard: () => {
-    const { View } = require("react-native");
-    return <View testID="queued-card" />;
-  },
+  QueuedSubmissionCard: () => <View testID="queued-card" />,
 }));
 
 jest.mock("~/components/judgement/CurrentSubmissionCard", () => ({
-  CurrentSubmissionCard: () => {
-    const { View } = require("react-native");
-    return <View testID="current-card" />;
-  },
+  CurrentSubmissionCard: () => <View testID="current-card" />,
 }));
 
 jest.mock("~/components/judgement/EmptyStateCard", () => ({
-  EmptyStateCard: () => {
-    const { View } = require("react-native");
-    return <View testID="empty-card" />;
-  },
+  EmptyStateCard: () => <View testID="empty-card" />,
 }));
 
 jest.mock("~/components/judgement/ActionBar", () => ({
-  ActionBar: () => {
-    const { View } = require("react-native");
-    return <View testID="action-bar" />;
-  },
+  ActionBar: () => <View testID="action-bar" />,
 }));
 
 describe("CardStack", () => {

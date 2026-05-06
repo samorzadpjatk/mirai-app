@@ -1,8 +1,19 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, type ViewProps, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SafeAreaTop } from "../../SafeAreaWrapper";
+
+interface ViewElement {
+  props: ViewProps;
+}
+
+interface ViewStyleWithPadding extends ViewStyle {
+  paddingTop?: number;
+  paddingHorizontal?: number;
+  backgroundColor?: string;
+  marginBottom?: number;
+}
 
 jest.mock("react-native-safe-area-context", () => ({
   SafeAreaProvider: "SafeAreaProvider",
@@ -163,8 +174,8 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = UNSAFE_getByType(View);
-    const styles = view.props.style;
+    const view = UNSAFE_getByType(View) as ViewElement;
+    const styles = view.props.style as ViewStyleWithPadding[];
     expect(styles).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "blue" }),

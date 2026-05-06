@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsListHeader } from "../../../trips/groups/GroupsListHeader";
 
@@ -53,7 +54,7 @@ describe("GroupsListHeader", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <GroupsListHeader title="All Groups" count={10} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 });

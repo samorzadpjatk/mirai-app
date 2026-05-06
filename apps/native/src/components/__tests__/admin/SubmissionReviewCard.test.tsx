@@ -1,13 +1,12 @@
 import React from "react";
+import { Text } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionReviewCard } from "../../admin/challenges/SubmissionReviewCard";
 
-jest.mock("@expo/vector-icons", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return { Ionicons: ({ name }: { name: string }) => React.createElement(Text, null, name) };
-});
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+}));
 
 const mockDownload = jest.fn();
 const mockReset = jest.fn();

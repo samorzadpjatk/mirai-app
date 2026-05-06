@@ -1,4 +1,4 @@
-import { Reward, RewardListItem, CreateRewardInput, UpdateRewardInput, RewardPurchase } from "../../rewards/types";
+import { type Reward, type RewardListItem, type CreateRewardInput, type UpdateRewardInput, type RewardPurchase } from "../../rewards/types";
 
 describe("Rewards Types", () => {
   describe("Reward interface", () => {
@@ -305,7 +305,7 @@ describe("Rewards Types", () => {
     });
 
     it("should accept all status types", () => {
-      const statuses: Array<RewardPurchase["status"]> = ["BOUGHT", "ACCEPTED", "IN_DELIVERY", "CANCELLED", "DELIVERED"];
+      const statuses: RewardPurchase["status"][] = ["BOUGHT", "ACCEPTED", "IN_DELIVERY", "CANCELLED", "DELIVERED"];
 
       statuses.forEach((status) => {
         const purchase: RewardPurchase = {

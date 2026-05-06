@@ -1,60 +1,79 @@
 import React from "react";
-import { Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { fireEvent, waitFor, act } from "@testing-library/react-native";
+import { Text, View } from "react-native";
+import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
+import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 
-const mockTakePictureAsync = jest.fn();
+interface TakePictureOptions {
+  quality: number;
+  exif: boolean;
+  mirror: boolean;
+  skipProcessing: boolean;
+}
 
-jest.mock("expo-camera", () => ({
-  CameraView: function CameraView(props: any) {
-    const React = require("react");
-    const { View } = require("react-native");
+interface CapturedPicture {
+  uri: string;
+  format: "jpeg" | "png";
+}
 
+interface CameraViewHandle {
+  takePictureAsync: (options: TakePictureOptions) => Promise<CapturedPicture>;
+}
+
+interface CameraViewProps {
+  testID?: string;
+}
+
+interface AppModalShellProps {
+  visible: boolean;
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}
+
+type UsePhotoHandler = (photo: { uri: string; mimeType: "image/jpeg" | "image/png" }) => Promise<void> | void;
+
+const mockTakePictureAsync: jest.MockedFunction<(
+  options: TakePictureOptions,
+) => Promise<CapturedPicture>> = jest.fn();
+const mockOnUsePhoto: jest.MockedFunction<UsePhotoHandler> = jest.fn();
+const mockOnClose = jest.fn<void, []>();
+
+jest.mock("expo-camera", () => {
+  const MockCameraView = React.forwardRef<CameraViewHandle, CameraViewProps>(function MockCameraView(
+    _props,
+    ref,
+  ) {
     React.useImperativeHandle(
-      props.ref,
+      ref,
       () => ({
         takePictureAsync: mockTakePictureAsync,
       }),
-      []
+      [],
     );
 
-    return React.createElement(View, {
-      testID: "camera-view",
-      ...props,
-    });
-  },
-}));
+    return <View testID="camera-view" />;
+  });
+
+  return {
+    CameraView: MockCameraView,
+  };
+});
 
 jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({
-    visible,
-    title,
-    children,
-    onClose,
-  }: {
-    visible: boolean;
-    title: string;
-    children: React.ReactNode;
-    onClose: () => void;
-  }) => {
-    const React = require("react");
-    const { View, Text } = require("react-native");
+  AppModalShell: ({ visible, title, children, onClose: _onClose }: AppModalShellProps) => {
     if (!visible) return null;
-    return React.createElement(
-      View,
-      { testID: "modal-shell" },
-      React.createElement(Text, { testID: "modal-title" }, title),
-      children
+
+    return (
+      <View testID="modal-shell">
+        <Text testID="modal-title">{title}</Text>
+        {children}
+      </View>
     );
   },
 }));
 
-const { PhotoCaptureModal } = require("~/components/camera/PhotoCaptureModal");
-
 describe("PhotoCaptureModal", () => {
-  const mockOnClose = jest.fn();
-  const mockOnUsePhoto = jest.fn();
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockTakePictureAsync.mockResolvedValue({
@@ -103,7 +122,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -127,7 +146,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -148,7 +167,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -174,7 +193,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -185,11 +204,15 @@ describe("PhotoCaptureModal", () => {
       fireEvent.press(getByText("Use Photo"));
 
       await waitFor(() => {
-        expect(mockOnUsePhoto).toHaveBeenCalledWith({
-          uri: expect.any(String),
-          mimeType: "image/jpeg",
-        });
+        expect(mockOnUsePhoto).toHaveBeenCalledWith(
+          expect.objectContaining({
+            mimeType: "image/jpeg",
+          })
+        );
       });
+
+      const capturedPhoto = mockOnUsePhoto.mock.calls[0]?.[0];
+      expect(capturedPhoto?.uri).toEqual(expect.any(String));
     });
 
     it("should handle PNG format", async () => {
@@ -202,7 +225,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -226,7 +249,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} quality={0.5} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -244,7 +267,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} quality={undefined} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 
@@ -269,7 +292,7 @@ describe("PhotoCaptureModal", () => {
         <PhotoCaptureModal {...defaultProps} />
       );
 
-      await act(async () => {
+      act(() => {
         fireEvent.press(getByText("camera"));
       });
 

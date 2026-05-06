@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormFields } from "../../admin/challenges/ChallengeFormFields";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 
 const mockUpdateForm = jest.fn();
 const mockHandlePickImage = jest.fn();
@@ -54,22 +55,38 @@ const mockFormState = {
   formatTime: (value: Date) => value.toLocaleTimeString(),
 };
 
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { View, Text, TextInput, TouchableOpacity } = require("react-native");
-  return {
-    FormField: ({ children, label }: { children: React.ReactNode; label: string; }) => (<View><Text>{label}</Text>{children}</View>),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: { value: string; onChangeText: (text: string) => void; placeholder?: string; keyboardType?: string; multiline?: boolean; }) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as any} multiline={multiline} onChangeText={onChangeText} />),
-    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: { label: string; onPress: () => void; isLoading?: boolean; disabled?: boolean; }) => (<TouchableOpacity onPress={onPress} disabled={isLoading || disabled}><Text>{label}</Text></TouchableOpacity>),
-  };
-});
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+}
+
+interface ThemedTextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: string;
+  multiline?: boolean;
+}
+
+interface PrimaryLoadingButtonProps {
+  label: string;
+  onPress: () => void;
+  isLoading?: boolean;
+  disabled?: boolean;
+}
+
+jest.mock("~/components/common/ui", () => ({
+  FormField: ({ children, label }: FormFieldProps) => (<View><Text>{label}</Text>{children}</View>),
+  ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />),
+  PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (<TouchableOpacity onPress={onPress} disabled={(isLoading ?? false) || (disabled ?? false)}><Text>{label}</Text></TouchableOpacity>),
+}));
 
 describe("ChallengeFormFields", () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   it("renders the current form values", () => {
     const { getByText, getByDisplayValue } = renderWithProviders(
-      <ChallengeFormFields formState={mockFormState as any} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
     expect(getByText("Edit Challenge")).toBeTruthy();
@@ -80,7 +97,7 @@ describe("ChallengeFormFields", () => {
 
   it("updates base points through updateForm", () => {
     const { getByDisplayValue } = renderWithProviders(
-      <ChallengeFormFields formState={mockFormState as any} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
     fireEvent.changeText(getByDisplayValue("50"), "120");
@@ -89,7 +106,7 @@ describe("ChallengeFormFields", () => {
 
   it("opens the submission type selector", () => {
     const { getByText } = renderWithProviders(
-      <ChallengeFormFields formState={mockFormState as any} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
     );
 
     fireEvent.press(getByText("Text"));
@@ -99,7 +116,7 @@ describe("ChallengeFormFields", () => {
   it("calls onSave from the primary button", () => {
     const onSave = jest.fn();
     const { getByText } = renderWithProviders(
-      <ChallengeFormFields formState={mockFormState as any} onSave={onSave} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields formState={mockFormState} onSave={onSave} saveButtonText="Save Changes" isSaving={false} />
     );
 
     fireEvent.press(getByText("Save Changes"));

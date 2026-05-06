@@ -1,4 +1,5 @@
 import React from "react";
+import { Alert, Image } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ExistingSubmissionCard } from "../../../trips/challenges/ExistingSubmissionCard";
@@ -78,8 +79,9 @@ describe("ExistingSubmissionCard", () => {
       />
     );
 
-    const image = UNSAFE_getByType(require("react-native").Image);
-    expect(image.props.source.uri).toBe("local-preview-uri");
+    const image = UNSAFE_getByType(Image);
+    const source = image.props.source as { uri: string };
+    expect(source.uri).toBe("local-preview-uri");
   });
 
   it("asks for confirmation before withdrawing", () => {
@@ -88,6 +90,6 @@ describe("ExistingSubmissionCard", () => {
     );
 
     fireEvent.press(getByText("Withdraw submission"));
-    expect(require("react-native").Alert.alert).toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalled();
   });
 });

@@ -1,5 +1,6 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UsersListPanel } from "../../map/panels/UsersListPanel";
 
@@ -37,39 +38,50 @@ jest.mock("~/stores/map", () => ({
   useMapOverlayStore: () => mockGetMapOverlayStore(),
 }));
 
+interface UserAvatarProps {
+  name: string;
+  imageUrl?: string | null;
+  size: number;
+}
+
 jest.mock("~/components/map/ui/UserAvatar", () => ({
-  UserAvatar: function MockUserAvatar(props: { name: string; imageUrl?: string | null; size: number }) {
-    const React = require("react");
-    const { View, Text } = require("react-native");
-    return React.createElement(
-      View,
-      { testID: "user-avatar", style: { width: props.size, height: props.size } },
-      React.createElement(Text, null, props.name.charAt(0))
-    );
-  },
+  UserAvatar: ({ name, size }: UserAvatarProps) => (
+    <View testID="user-avatar" style={{ width: size, height: size }}>
+      <Text>{name.charAt(0)}</Text>
+    </View>
+  ),
 }));
 
 jest.mock("~/utils/format", () => ({
   formatRelativeTime: () => "2 hours ago",
 }));
 
+interface MockAnimatedViewProps {
+  children?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
 jest.mock("react-native-reanimated", () => ({
   __esModule: true,
   default: {
-    View: function MockAnimatedView({ children, style }: { children?: React.ReactNode; style?: object }) {
-      const React = require("react");
-      const { View } = require("react-native");
-      return React.createElement(View, { testID: "animated-view", style }, children);
-    },
+    View: ({ children, style }: MockAnimatedViewProps) => (
+      <View testID="animated-view" style={style}>
+        {children}
+      </View>
+    ),
   },
 }));
 
+interface MockIoniconsProps {
+  name: string;
+  size: number;
+  color: string;
+}
+
 jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-    const React = require("react");
-    const { View } = require("react-native");
-    return React.createElement(View, { testID: `icon-${name}`, style: { width: size, height: size, color } });
-  },
+  Ionicons: ({ name, size, color }: MockIoniconsProps) => (
+    <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />
+  ),
 }));
 
 describe("UsersListPanel", () => {
@@ -116,22 +128,37 @@ describe("UsersListPanel", () => {
 
   it("calls onToggleExpand when the header is pressed", () => {
     const { getByText } = renderWithProviders(<UsersListPanel />);
+    const headerPressable = getByText("People").parent;
 
-    fireEvent.press(getByText("People").parent as any);
+    if (!headerPressable) {
+      throw new Error("Header pressable not found");
+    }
+
+    fireEvent.press(headerPressable);
     expect(mockOnToggleExpand).toHaveBeenCalled();
   });
 
   it("calls onManagePress when manage button is pressed", () => {
     const { getByTestId } = renderWithProviders(<UsersListPanel />);
+    const manageButton = getByTestId("icon-settings-outline").parent;
 
-    fireEvent.press(getByTestId("icon-settings-outline").parent as any, { stopPropagation: jest.fn() });
+    if (!manageButton) {
+      throw new Error("Manage button not found");
+    }
+
+    fireEvent.press(manageButton, { stopPropagation: jest.fn() });
     expect(mockOnManagePress).toHaveBeenCalled();
   });
 
   it("calls onAddPress when add button is pressed", () => {
     const { getByTestId } = renderWithProviders(<UsersListPanel />);
+    const addButton = getByTestId("icon-add").parent;
 
-    fireEvent.press(getByTestId("icon-add").parent as any, { stopPropagation: jest.fn() });
+    if (!addButton) {
+      throw new Error("Add button not found");
+    }
+
+    fireEvent.press(addButton, { stopPropagation: jest.fn() });
     expect(mockOnAddPress).toHaveBeenCalled();
   });
 
@@ -154,13 +181,24 @@ describe("UsersListPanel", () => {
 
   it("calls onSelectUser for other users only", () => {
     const { getByText } = renderWithProviders(<UsersListPanel />);
+    const otherUserRow = getByText("Jane Smith").parent?.parent?.parent;
 
-    fireEvent.press(getByText("Jane Smith").parent?.parent?.parent as any);
+    if (!otherUserRow) {
+      throw new Error("Other user row not found");
+    }
+
+    fireEvent.press(otherUserRow);
     expect(mockOnSelectUser).toHaveBeenCalledWith(
       expect.objectContaining({ id: "user-2", name: "Jane Smith" })
     );
 
-    fireEvent.press(getByText("Me").parent?.parent?.parent as any);
+    const currentUserRow = getByText("Me").parent?.parent?.parent;
+
+    if (!currentUserRow) {
+      throw new Error("Current user row not found");
+    }
+
+    fireEvent.press(currentUserRow);
     expect(mockOnSelectUser).toHaveBeenCalledTimes(1);
   });
 
@@ -177,7 +215,10 @@ describe("UsersListPanel", () => {
 
     const { getByTestId } = renderWithProviders(<UsersListPanel />);
 
-    const animatedView = getByTestId("animated-view");
+    const animatedView = getByTestId("animated-view") as unknown as {
+      props: { style: [StyleProp<ViewStyle>, StyleProp<ViewStyle>] };
+    };
+
     expect(animatedView.props.style[0]).toEqual(expect.objectContaining({ overflow: "hidden" }));
     expect(animatedView.props.style[1]).toEqual({ opacity: 0.5 });
   });

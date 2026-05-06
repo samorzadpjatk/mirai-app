@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import AdminRewardDetailModal from "../../admin/rewards/AdminRewardDetailModal";
@@ -47,28 +47,59 @@ jest.mock("~/hooks/files", () => ({
   useFileUpload: () => ({ upload: mockUpload, status: "idle" }),
 }));
 
+interface AppModalShellProps {
+  children: React.ReactNode;
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+}
+
+interface AppModalFooterProps {
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel: string;
+  onSecondary: () => void;
+  isPrimaryLoading?: boolean;
+}
+
+interface FormFieldProps {
+  children: React.ReactNode;
+  label: string;
+}
+
+interface ThemedTextInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
+  multiline?: boolean;
+}
+
 jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { View, Text, TouchableOpacity, TextInput } = require("react-native");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const React = jest.requireActual<typeof import("react")>("react");
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual<typeof import("react-native")>("react-native");
+
   return {
-    AppModalShell: ({ children, visible, title, onClose }: { children: React.ReactNode; visible: boolean; title: string; onClose: () => void; }) => visible ? (
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
       <View>
         <Text>{title}</Text>
         <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
         {children}
       </View>
     ) : null,
-    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: { primaryLabel: string; onPrimary: () => void; secondaryLabel: string; onSecondary: () => void; isPrimaryLoading?: boolean; }) => (
+    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
       <View>
         <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
         <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
       </View>
     ),
-    FormField: ({ children, label }: { children: React.ReactNode; label: string; }) => (
+    FormField: ({ children, label }: FormFieldProps) => (
       <View><Text>{label}</Text>{children}</View>
     ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: { value: string; onChangeText: (text: string) => void; placeholder?: string; keyboardType?: string; multiline?: boolean; }) => (
-      <TextInput value={value} placeholder={placeholder} keyboardType={keyboardType as any} multiline={multiline} onChangeText={onChangeText} />
+    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
+      <TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />
     ),
   };
 });
@@ -77,7 +108,7 @@ describe("AdminRewardDetailModal", () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   it("renders the reward details view", () => {
-    const { getByText, getByDisplayValue } = renderWithProviders(<AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />);
+    const { getByDisplayValue } = renderWithProviders(<AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />);
     expect(getByDisplayValue("Test Reward")).toBeTruthy();
     expect(getByDisplayValue("Test description")).toBeTruthy();
     expect(getByDisplayValue("10")).toBeTruthy();

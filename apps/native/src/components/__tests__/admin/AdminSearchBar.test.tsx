@@ -1,14 +1,12 @@
 import React from "react";
+import { Text } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminSearchBar } from "../../admin/AdminSearchBar";
 
-jest.mock("@expo/vector-icons", () => {
-  const React = require("react");
-  return {
-    Ionicons: ({ name }: { name: string }) => React.createElement("Text", null, name),
-  };
-});
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+}));
 
 describe("AdminSearchBar", () => {
   const mockFields = [

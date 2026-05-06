@@ -1,8 +1,15 @@
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, type ScrollViewProps, type ViewStyle } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FilterChipRow } from "../../common/ui/FilterChipRow";
 import { FilterChip } from "../../common/ui/FilterChip";
+
+interface ContentContainerStyle extends ViewStyle {
+  flexDirection?: 'row' | 'column';
+  alignItems?: 'center' | 'flex-start' | 'flex-end' | 'stretch' | 'baseline';
+  gap?: number;
+  paddingRight?: number;
+}
 
 describe("FilterChipRow", () => {
   it("should render children", () => {
@@ -48,16 +55,13 @@ describe("FilterChipRow", () => {
     );
 
     const scrollView = UNSAFE_getByType(ScrollView);
-    expect(scrollView.props.contentContainerStyle).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          flexDirection: "row",
-          alignItems: "center",
-          gap: expect.any(Number),
-          paddingRight: expect.any(Number),
-        }),
-      ])
-    );
+    const scrollViewProps = scrollView.props as ScrollViewProps;
+    const contentContainerStyle = scrollViewProps.contentContainerStyle as ContentContainerStyle[];
+    const styleObj = contentContainerStyle[0]!;
+    expect(styleObj.flexDirection).toBe("row");
+    expect(styleObj.alignItems).toBe("center");
+    expect(styleObj.gap).toEqual(expect.any(Number));
+    expect(styleObj.paddingRight).toEqual(expect.any(Number));
   });
 
   it("should apply custom horizontal spacing", () => {
@@ -68,7 +72,8 @@ describe("FilterChipRow", () => {
     );
 
     const scrollView = UNSAFE_getByType(ScrollView);
-    expect(scrollView.props.contentContainerStyle).toEqual(
+    const scrollViewProps = scrollView.props as ScrollViewProps;
+    expect(scrollViewProps.contentContainerStyle).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ gap: 20 }),
       ])
@@ -84,7 +89,8 @@ describe("FilterChipRow", () => {
     );
 
     const scrollView = UNSAFE_getByType(ScrollView);
-    expect(scrollView.props.contentContainerStyle).toEqual(
+    const scrollViewProps = scrollView.props as ScrollViewProps;
+    expect(scrollViewProps.contentContainerStyle).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
@@ -146,9 +152,10 @@ describe("FilterChipRow", () => {
     );
 
     const scrollView = UNSAFE_getByType(ScrollView);
-    const contentStyle = scrollView.props.contentContainerStyle;
+    const scrollViewProps = scrollView.props as ScrollViewProps;
+    const contentStyle = scrollViewProps.contentContainerStyle as ContentContainerStyle[];
     const hasRowDirection = contentStyle.some(
-      (s: Record<string, string>) => s?.flexDirection === "row"
+      (s: ContentContainerStyle) => s?.flexDirection === "row"
     );
     expect(hasRowDirection).toBe(true);
   });

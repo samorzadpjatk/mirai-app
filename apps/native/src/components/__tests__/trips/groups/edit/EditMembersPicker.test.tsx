@@ -2,7 +2,6 @@ import React from "react";
 import {
   ActivityIndicator,
   ScrollView,
-  Text,
   TouchableOpacity,
 } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
@@ -43,7 +42,7 @@ describe("EditMembersPicker", () => {
         participants={[]}
         selectedMembers={new Set()}
         isLoading={true}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -56,7 +55,7 @@ describe("EditMembersPicker", () => {
         participants={mockParticipants}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -71,7 +70,7 @@ describe("EditMembersPicker", () => {
         participants={mockParticipants}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -86,7 +85,7 @@ describe("EditMembersPicker", () => {
         participants={[]}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -116,7 +115,7 @@ describe("EditMembersPicker", () => {
         participants={mockParticipants}
         selectedMembers={selectedMembers}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -163,7 +162,7 @@ describe("EditMembersPicker", () => {
         participants={mockParticipants}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -189,7 +188,7 @@ describe("EditMembersPicker", () => {
         participants={participantsWithNoNames}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -213,7 +212,7 @@ describe("EditMembersPicker", () => {
         participants={participantsWithSingleName}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -268,7 +267,7 @@ describe("EditMembersPicker", () => {
         participants={mockParticipants}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 
@@ -292,7 +291,7 @@ describe("EditMembersPicker", () => {
         participants={participantsWithUndefined}
         selectedMembers={new Set()}
         isLoading={false}
-        onToggleMember={() => {}}
+        onToggleMember={jest.fn()}
       />
     );
 

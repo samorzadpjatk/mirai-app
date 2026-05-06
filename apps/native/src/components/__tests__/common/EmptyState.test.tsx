@@ -1,8 +1,15 @@
 import React from "react";
-import { Modal, Pressable, Text, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { View, type ViewProps, type ViewStyle } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { EmptyState } from "../../common/ui/EmptyState";
+
+interface ViewElement {
+  props: ViewProps;
+}
+
+interface ViewStyleWithOpacity extends ViewStyle {
+  opacity?: number;
+}
 
 describe("EmptyState", () => {
   it("should render with title", () => {
@@ -69,11 +76,11 @@ describe("EmptyState", () => {
       <EmptyState title="No Data" icon="search" iconOpacity={0.8} />
     );
 
-    const views = UNSAFE_getAllByType(View);
+    const views = UNSAFE_getAllByType(View) as ViewElement[];
     const iconWrapper = views.find((v) => {
-      const styles = v.props.style;
+      const styles = v.props.style as ViewStyleWithOpacity | ViewStyleWithOpacity[];
       if (Array.isArray(styles)) {
-        return styles.some((s: Record<string, number>) => s?.opacity === 0.8);
+        return styles.some((s: ViewStyleWithOpacity) => s?.opacity === 0.8);
       }
       return styles?.opacity === 0.8;
     });
@@ -85,11 +92,11 @@ describe("EmptyState", () => {
       <EmptyState title="No Data" icon="search" />
     );
 
-    const views = UNSAFE_getAllByType(View);
+    const views = UNSAFE_getAllByType(View) as ViewElement[];
     const iconWrapper = views.find((v) => {
-      const styles = v.props.style;
+      const styles = v.props.style as ViewStyleWithOpacity | ViewStyleWithOpacity[];
       if (Array.isArray(styles)) {
-        return styles.some((s: Record<string, number>) => s?.opacity === 0.5);
+        return styles.some((s: ViewStyleWithOpacity) => s?.opacity === 0.5);
       }
       return styles?.opacity === 0.5;
     });

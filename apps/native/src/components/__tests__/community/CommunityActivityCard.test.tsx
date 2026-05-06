@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
-import { CommunityActivityCard, CommunityFeedActivity } from "../../community/CommunityActivityCard";
+import { CommunityActivityCard, type CommunityFeedActivity } from "../../community/CommunityActivityCard";
 
 describe("CommunityActivityCard", () => {
   const baseActivity: CommunityFeedActivity = {
@@ -140,7 +140,7 @@ describe("CommunityActivityCard", () => {
       imageUrl: "https://example.com/image.jpg",
     };
 
-    const { UNSAFE_getAllByType } = render(<CommunityActivityCard activity={activityWithImage} />);
+    render(<CommunityActivityCard activity={activityWithImage} />);
     
     expect(screen.getByText("Test Activity")).toBeTruthy();
   });
@@ -223,7 +223,7 @@ describe("CommunityActivityCard", () => {
   });
 
   it("renders with avatarUri when provided", () => {
-    const { UNSAFE_getAllByType } = render(
+    render(
       <CommunityActivityCard activity={baseActivity} avatarUri="https://example.com/avatar.jpg" />
     );
 

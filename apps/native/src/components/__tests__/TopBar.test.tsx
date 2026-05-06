@@ -51,7 +51,7 @@ describe("TopBar", () => {
   });
 
   it("renders with user image when provided", () => {
-    const { UNSAFE_getAllByType } = render(
+    render(
       <TopBar
         user={{ name: "John Doe", image: "https://example.com/avatar.jpg" }}
         isAuthenticated={true}

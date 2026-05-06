@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from "react-native";
+import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";
 
@@ -82,7 +82,7 @@ describe("AssignedGroupsCard", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <AssignedGroupsCard groups={mockGroups} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 

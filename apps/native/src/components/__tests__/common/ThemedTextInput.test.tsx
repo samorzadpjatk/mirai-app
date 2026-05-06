@@ -1,7 +1,11 @@
 import React from "react";
-import { TextInput } from "react-native";
+import { TextInput, type TextInputProps } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ThemedTextInput } from "../../common/ui/ThemedTextInput";
+
+interface TextInputStyle {
+  borderColor?: string;
+}
 
 describe("ThemedTextInput", () => {
   it("should render with placeholder", () => {
@@ -28,9 +32,11 @@ describe("ThemedTextInput", () => {
     );
 
     const input = UNSAFE_getByType(TextInput);
-    expect(input.props.style).toEqual(
+    const inputProps = input.props as TextInputProps;
+    const inputStyle = inputProps.style as TextInputStyle[];
+    expect(inputStyle).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ borderColor: expect.any(String) }),
+        expect.objectContaining({ borderColor: expect.any(String) as string }),
       ])
     );
   });
@@ -41,9 +47,9 @@ describe("ThemedTextInput", () => {
     );
 
     const input = UNSAFE_getByType(TextInput);
-    const styles = input.props.style;
+    const styles = input.props.style as TextInputStyle[];
     const hasErrorBorder = styles.some(
-      (s: Record<string, string>) => s?.borderColor === "danger"
+      (s: TextInputStyle) => s?.borderColor === "danger"
     );
     expect(hasErrorBorder).toBe(false);
   });
@@ -67,7 +73,8 @@ describe("ThemedTextInput", () => {
     );
 
     const input = UNSAFE_getByType(TextInput);
-    input.props.onChangeText("new text");
+    const inputProps = input.props as TextInputProps;
+    inputProps.onChangeText?.("new text");
     expect(onChangeText).toHaveBeenCalledWith("new text");
   });
 

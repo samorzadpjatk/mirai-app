@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeNotFoundState } from "../../../trips/challenges/ChallengeNotFoundState";
@@ -31,7 +32,7 @@ describe("ChallengeNotFoundState", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 

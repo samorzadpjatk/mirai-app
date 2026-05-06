@@ -1,4 +1,5 @@
 import React from "react";
+import { View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardRankingsSection } from "../../../trips/leaderboard/LeaderboardRankingsSection";
@@ -110,7 +111,7 @@ describe("LeaderboardRankingsSection", () => {
     const { UNSAFE_getByType } = renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    const view = UNSAFE_getByType(require("react-native").View);
+    const view = UNSAFE_getByType(View);
     expect(view).toBeTruthy();
   });
 

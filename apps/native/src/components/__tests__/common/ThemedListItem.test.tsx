@@ -1,8 +1,13 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, type PressableProps, type ViewStyle } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ThemedListItem } from "../../common/ui/ThemedListItem";
+
+interface PressableStyle extends ViewStyle {
+  backgroundColor?: string;
+  borderColor?: string;
+}
 
 describe("ThemedListItem", () => {
   it("should render with title", () => {
@@ -65,13 +70,15 @@ describe("ThemedListItem", () => {
     );
 
     const pressable = UNSAFE_getByType(Pressable);
-    expect(typeof pressable.props.style).toBe("function");
-    const resolvedStyle = pressable.props.style({ pressed: false });
+    const pressableProps = pressable.props as PressableProps;
+    expect(typeof pressableProps.style).toBe("function");
+    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
+    const resolvedStyle = styleFn({ pressed: false });
     expect(resolvedStyle).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundColor: expect.any(String),
-          borderColor: expect.any(String),
+          backgroundColor: expect.any(String) as string,
+          borderColor: expect.any(String) as string,
         }),
       ])
     );
@@ -83,11 +90,13 @@ describe("ThemedListItem", () => {
     );
 
     const pressable = UNSAFE_getByType(Pressable);
-    expect(typeof pressable.props.style).toBe("function");
-    const resolvedStyle = pressable.props.style({ pressed: false });
+    const pressableProps = pressable.props as PressableProps;
+    expect(typeof pressableProps.style).toBe("function");
+    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
+    const resolvedStyle = styleFn({ pressed: false });
     expect(resolvedStyle).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ borderColor: expect.any(String) }),
+        expect.objectContaining({ borderColor: expect.any(String) as string }),
       ])
     );
   });
@@ -133,8 +142,10 @@ describe("ThemedListItem", () => {
     );
 
     const pressable = UNSAFE_getByType(Pressable);
-    expect(typeof pressable.props.style).toBe("function");
-    const resolvedStyle = pressable.props.style({ pressed: false });
+    const pressableProps = pressable.props as PressableProps;
+    expect(typeof pressableProps.style).toBe("function");
+    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
+    const resolvedStyle = styleFn({ pressed: false });
     expect(resolvedStyle).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
@@ -142,7 +153,7 @@ describe("ThemedListItem", () => {
 
   it("should render with all props combined", () => {
     const onPress = jest.fn();
-    const { getByText, UNSAFE_getByType } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <ThemedListItem
         title="Complete Item"
         subtitle="With all features"

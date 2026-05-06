@@ -1,16 +1,19 @@
 import React from "react";
+import type * as ReactNative from "react-native";
 import { fireEvent } from "@testing-library/react-native";
+import { TouchableOpacity } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengesGridItem } from "../../../trips/challenges/ChallengesGridItem";
 import type { ChallengeListItem } from "../../../trips/challenges/types";
 
 jest.mock("react-native", () => {
-  const React = require("react");
-  const actual = jest.requireActual("react-native");
+  const actual: typeof ReactNative = jest.requireActual("react-native");
+  const MockReact: typeof React = jest.requireActual("react");
+
   return {
     ...actual,
-    ImageBackground: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(actual.View, null, children),
+    ImageBackground: ({ children }: { children?: React.ReactNode }) =>
+      MockReact.createElement(actual.View, {}, children),
   };
 });
 
@@ -54,7 +57,7 @@ describe("ChallengesGridItem", () => {
       <ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />
     );
 
-    fireEvent.press(UNSAFE_getByType(require("react-native").TouchableOpacity));
+    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
     expect(mockOnPress).toHaveBeenCalledWith(baseChallenge);
   });
 
@@ -64,7 +67,7 @@ describe("ChallengesGridItem", () => {
       <ChallengesGridItem challenge={lockedChallenge} onPress={mockOnPress} />
     );
 
-    expect(UNSAFE_getByType(require("react-native").TouchableOpacity).props.disabled).toBe(true);
+    expect(UNSAFE_getByType(TouchableOpacity).props.disabled).toBe(true);
     expect(getByText("Locked")).toBeTruthy();
   });
 

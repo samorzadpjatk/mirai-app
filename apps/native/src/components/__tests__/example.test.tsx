@@ -22,9 +22,7 @@ describe("EmptyState", () => {
   });
 
   it("renders with icon when provided", () => {
-    const { UNSAFE_getByType } = render(
-      <EmptyState title="Empty" icon="search-outline" />
-    );
+    render(<EmptyState title="Empty" icon="search-outline" />);
 
     expect(screen.getByText("Empty")).toBeTruthy();
   });

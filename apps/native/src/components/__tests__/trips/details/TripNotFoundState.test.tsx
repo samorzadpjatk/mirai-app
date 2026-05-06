@@ -6,7 +6,7 @@ import { TripNotFoundState } from "../../../trips/details/TripNotFoundState";
 describe("TripNotFoundState", () => {
   it("should render error message", () => {
     const { getByText } = renderWithProviders(
-      <TripNotFoundState onGoBack={() => {}} />
+      <TripNotFoundState onGoBack={jest.fn()} />
     );
 
     expect(getByText("Trip not found")).toBeTruthy();
@@ -14,7 +14,7 @@ describe("TripNotFoundState", () => {
 
   it("should render go back link", () => {
     const { getByText } = renderWithProviders(
-      <TripNotFoundState onGoBack={() => {}} />
+      <TripNotFoundState onGoBack={jest.fn()} />
     );
 
     expect(getByText("Go back")).toBeTruthy();
@@ -32,7 +32,7 @@ describe("TripNotFoundState", () => {
 
   it("should render in centered container", () => {
     const { getByText } = renderWithProviders(
-      <TripNotFoundState onGoBack={() => {}} />
+      <TripNotFoundState onGoBack={jest.fn()} />
     );
 
     expect(getByText("Trip not found")).toBeTruthy();
