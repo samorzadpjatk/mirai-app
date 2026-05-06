@@ -4,21 +4,30 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminTile } from "../../admin/AdminTile";
 
-const mockPush = jest.fn();
+jest.mock("expo-router", () => {
+  const mockPush = jest.fn();
+  return {
+    useRouter: jest.fn(() => ({
+      push: mockPush,
+    })),
+  };
+});
 
-jest.mock("expo-router", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+  };
+});
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
-}));
+const getMockPush = () => {
+  const { useRouter } = jest.requireMock("expo-router");
+  return useRouter().push;
+};
 
 describe("AdminTile", () => {
   beforeEach(() => {
-    mockPush.mockClear();
+    getMockPush().mockClear();
   });
 
   it("renders with title and subtitle", () => {
@@ -65,7 +74,7 @@ describe("AdminTile", () => {
 
     fireEvent.press(getByTestId("admin-tile"));
     expect(onPress).toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(getMockPush()).not.toHaveBeenCalled();
   });
 
   it("navigates to route when pressed with route and tripId", () => {
@@ -82,7 +91,7 @@ describe("AdminTile", () => {
     );
 
     fireEvent.press(getByTestId("admin-tile"));
-    expect(mockPush).toHaveBeenCalledWith({
+    expect(getMockPush()).toHaveBeenCalledWith({
       pathname: "/users",
       params: { tripId: "trip-123" },
     });
@@ -100,7 +109,7 @@ describe("AdminTile", () => {
     );
 
     fireEvent.press(getByTestId("admin-tile"));
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(getMockPush()).not.toHaveBeenCalled();
   });
 
   it("does not navigate when tripId is not provided", () => {
@@ -116,7 +125,7 @@ describe("AdminTile", () => {
     );
 
     fireEvent.press(getByTestId("admin-tile"));
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(getMockPush()).not.toHaveBeenCalled();
   });
 
   it("applies custom accent colors", () => {

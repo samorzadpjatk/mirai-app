@@ -19,32 +19,38 @@ const mockDirectoryCreate = jest.fn<() => void>();
 const mockFileExists = jest.fn<() => boolean>().mockReturnValue(false);
 const mockFileDelete = jest.fn<() => Promise<void>>();
 
-jest.mock("expo-file-system", () => ({
-  Directory: jest.fn().mockImplementation(() => ({
-    exists: mockDirectoryExists,
-    create: mockDirectoryCreate,
-  })),
-  File: Object.assign(
-    jest.fn().mockImplementation(() => ({
-      exists: mockFileExists,
-      delete: mockFileDelete,
-      type: "image/jpeg",
-      size: 1024,
-      uri: "file:///cache/downloads/test-file.jpg",
+jest.mock("expo-file-system", () => {
+  const { jest } = require("@jest/globals");
+  return {
+    Directory: jest.fn().mockImplementation(() => ({
+      exists: mockDirectoryExists,
+      create: mockDirectoryCreate,
     })),
-    { downloadFileAsync: mockDownloadFileAsync }
-  ),
-  Paths: {
-    cache: "/cache",
-  },
-}));
+    File: Object.assign(
+      jest.fn().mockImplementation(() => ({
+        exists: mockFileExists,
+        delete: mockFileDelete,
+        type: "image/jpeg",
+        size: 1024,
+        uri: "file:///cache/downloads/test-file.jpg",
+      })),
+      { downloadFileAsync: mockDownloadFileAsync }
+    ),
+    Paths: {
+      cache: "/cache",
+    },
+  };
+});
 
-jest.mock("expo-crypto", () => ({
-  CryptoDigestAlgorithm: {
-    SHA256: "SHA256",
-  },
-  digestStringAsync: jest.fn<() => Promise<string>>().mockResolvedValue("abc123hash"),
-}));
+jest.mock("expo-crypto", () => {
+  const { jest } = require("@jest/globals");
+  return {
+    CryptoDigestAlgorithm: {
+      SHA256: "SHA256",
+    },
+    digestStringAsync: jest.fn<() => Promise<string>>().mockResolvedValue("abc123hash"),
+  };
+});
 
 interface DownloadUrlResult {
   signedUrl: string;
@@ -52,15 +58,18 @@ interface DownloadUrlResult {
 
 const mockCreateDownloadUrl = jest.fn<() => Promise<DownloadUrlResult>>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPCClient: jest.fn(() => ({
-    storage: {
-      createDownloadUrl: {
-        query: mockCreateDownloadUrl,
+jest.mock("@mirai-app/trpc/client", () => {
+  const { jest } = require("@jest/globals");
+  return {
+    useTRPCClient: jest.fn(() => ({
+      storage: {
+        createDownloadUrl: {
+          query: mockCreateDownloadUrl,
+        },
       },
-    },
-  })),
-}));
+    })),
+  };
+});
 
 describe("useFileDownload", () => {
   beforeEach(() => {

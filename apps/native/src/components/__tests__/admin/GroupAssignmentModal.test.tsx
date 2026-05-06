@@ -5,13 +5,6 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupAssignmentModal } from "../../admin/groups/GroupAssignmentModal";
 import type { Group, User } from "~/hooks/admin/useAdminUsers";
 
-interface AppModalShellProps {
-  children: React.ReactNode;
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-}
-
 interface GroupAssignmentResult {
   id: string;
   createdAt: Date;
@@ -23,18 +16,21 @@ interface GroupAssignmentResult {
   houseNumber: string | null;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-    !visible ? null : (
-      <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}>
-          <Text>Close</Text>
-        </TouchableOpacity>
-        {children}
-      </View>
-    ),
-}));
+jest.mock("~/components/common/ui", () => {
+  const { View, Text, TouchableOpacity } = require("react-native");
+  return {
+    AppModalShell: (props: { children: React.ReactNode; visible: boolean; title: string; onClose: () => void }) =>
+      !props.visible ? null : (
+        <View>
+          <Text>{props.title}</Text>
+          <TouchableOpacity onPress={props.onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
+          {props.children}
+        </View>
+      ),
+  };
+});
 
 describe("GroupAssignmentModal", () => {
   const groups: Group[] = [

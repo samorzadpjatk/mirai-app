@@ -4,9 +4,12 @@ import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionReviewCard } from "../../admin/challenges/SubmissionReviewCard";
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+  };
+});
 
 const mockDownload = jest.fn();
 const mockReset = jest.fn();

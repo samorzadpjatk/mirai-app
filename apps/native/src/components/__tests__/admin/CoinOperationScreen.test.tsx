@@ -16,15 +16,17 @@ interface MockSearchParams {
   groupCoins: string;
 }
 
-let mockParams: MockSearchParams = {
-  tripId: "trip-1",
-  groupId: "group-1",
-  groupName: "Test Group",
-  groupCoins: "100",
+const mockParamsWrapper = {
+  current: {
+    tripId: "trip-1",
+    groupId: "group-1",
+    groupName: "Test Group",
+    groupCoins: "100",
+  } as MockSearchParams,
 };
 
 jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => mockParams,
+  useLocalSearchParams: () => mockParamsWrapper.current,
   useRouter: () => ({ back: mockBack }),
 }));
 
@@ -47,15 +49,18 @@ interface AdminHeaderProps {
   subtitle?: string;
 }
 
-jest.mock("~/components/admin/AdminHeader", () => ({
-  __esModule: true,
-  AdminHeader: ({ title, subtitle }: AdminHeaderProps) => (
-    <View>
-      <Text testID="screen-title">{title}</Text>
-      {subtitle ? <Text>{subtitle}</Text> : null}
-    </View>
-  ),
-}));
+jest.mock("~/components/admin/AdminHeader", () => {
+  const { View, Text } = require("react-native");
+  return {
+    __esModule: true,
+    AdminHeader: ({ title, subtitle }: AdminHeaderProps) => (
+      <View>
+        <Text testID="screen-title">{title}</Text>
+        {subtitle ? <Text>{subtitle}</Text> : null}
+      </View>
+    ),
+  };
+});
 
 interface FormFieldProps {
   children: React.ReactNode;
@@ -68,23 +73,26 @@ interface ThemedTextInputProps extends React.ComponentProps<typeof TextInput> {
   onChangeText?: (text: string) => void;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  FormField: ({ children, label, required }: FormFieldProps) => (
-    <View>
-      <Text>{`${label}${required ? "*" : ""}`}</Text>
-      {children}
-    </View>
-  ),
-  ThemedTextInput: ({ value, onChangeText, placeholder, editable, ...props }: ThemedTextInputProps) => (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      editable={editable}
-      {...props}
-    />
-  ),
-}));
+jest.mock("~/components/common/ui", () => {
+  const { View, Text, TextInput } = require("react-native");
+  return {
+    FormField: ({ children, label, required }: FormFieldProps) => (
+      <View>
+        <Text>{`${label}${required ? "*" : ""}`}</Text>
+        {children}
+      </View>
+    ),
+    ThemedTextInput: ({ value, onChangeText, placeholder, editable, ...props }: ThemedTextInputProps) => (
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        editable={editable}
+        {...props}
+      />
+    ),
+  };
+});
 
 interface PrimaryLoadingButtonProps {
   label: string;
@@ -93,20 +101,23 @@ interface PrimaryLoadingButtonProps {
   disabled?: boolean;
 }
 
-jest.mock("~/components/common/buttons/PrimaryLoadingButton", () => ({
-  __esModule: true,
-  PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (
-    <Pressable onPress={onPress} disabled={disabled ?? isLoading}>
-      <Text>{isLoading ? "Loading..." : label}</Text>
-    </Pressable>
-  ),
-}));
+jest.mock("~/components/common/buttons/PrimaryLoadingButton", () => {
+  const { Pressable, Text } = require("react-native");
+  return {
+    __esModule: true,
+    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (
+      <Pressable onPress={onPress} disabled={disabled ?? isLoading}>
+        <Text>{isLoading ? "Loading..." : label}</Text>
+      </Pressable>
+    ),
+  };
+});
 
 describe("CoinOperationScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAlert.mockClear();
-    mockParams = {
+    mockParamsWrapper.current = {
       tripId: "trip-1",
       groupId: "group-1",
       groupName: "Test Group",
@@ -140,7 +151,7 @@ describe("CoinOperationScreen", () => {
   });
 
   it("shows missing params error", () => {
-    mockParams = { tripId: "", groupId: "", groupName: "", groupCoins: "0" };
+    mockParamsWrapper.current = { tripId: "", groupId: "", groupName: "", groupCoins: "0" };
     const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "10");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Reason");

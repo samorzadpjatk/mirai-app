@@ -4,25 +4,30 @@ import { Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminModal, AdminModalButton } from "../../admin/AdminModal";
 
-interface AppModalShellProps {
-  children: React.ReactNode;
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-}
+jest.mock("~/components/common/ui", () => {
+  const React = require("react");
+  const { View, Text, Pressable } = require("react-native");
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => {
-    if (!visible) return null;
-    return (
-      <div>
-        <span>{title}</span>
-        <button type="button" onClick={onClose}>Close</button>
-        {children}
-      </div>
-    );
-  },
-}));
+  return {
+    AppModalShell: ({ children, visible, title, onClose }: {
+      children: React.ReactNode;
+      visible: boolean;
+      title: string;
+      onClose: () => void;
+    }) => {
+      if (!visible) return null;
+      return (
+        <View>
+          <Text>{title}</Text>
+          <Pressable onPress={onClose}>
+            <Text>Close</Text>
+          </Pressable>
+          {children}
+        </View>
+      );
+    },
+  };
+});
 
 describe("AdminModal", () => {
   it("renders visible content", () => {

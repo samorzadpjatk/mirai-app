@@ -5,7 +5,10 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminSearchBar } from "../../admin/AdminSearchBar";
 
 jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+  Ionicons: ({ name }: { name: string }) => {
+    const { Text } = require("react-native");
+    return <Text>{name}</Text>;
+  },
 }));
 
 describe("AdminSearchBar", () => {

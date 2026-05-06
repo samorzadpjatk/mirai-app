@@ -4,11 +4,18 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { NotificationCard } from "../../alerts/NotificationCard";
 import type { NotificationItem } from "~/types/notifications";
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size?: number; color?: string }) {
-    return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    Ionicons: function MockIonicons({ name, size, color }: { name: string; size?: number; color?: string }) {
+      return React.createElement(View, {
+        testID: `icon-${name}`,
+        style: { width: size, height: size, color },
+      });
+    },
+  };
+});
 
 const mockNotification: NotificationItem = {
   id: "1",

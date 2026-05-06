@@ -3,39 +3,55 @@ import { View, Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CurrentSubmissionCard } from "../../judgement/CurrentSubmissionCard";
 
-jest.mock("react-native-reanimated", () => ({
-  useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
-  useAnimatedStyle: jest.fn().mockReturnValue({}),
-  withSpring: jest.fn().mockReturnValue({ value: 0 }),
-  withTiming: jest.fn().mockReturnValue({ value: 0 }),
-  interpolate: jest.fn().mockReturnValue(0),
-  Extrapolation: { CLAMP: "clamp" },
-  View: ({ children, style }: { children: React.ReactNode; style?: object }) => (
-    <View style={style}>{children}</View>
-  ),
-  default: {
+jest.mock("react-native-reanimated", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
+    useAnimatedStyle: jest.fn().mockReturnValue({}),
+    withSpring: jest.fn().mockReturnValue({ value: 0 }),
+    withTiming: jest.fn().mockReturnValue({ value: 0 }),
+    interpolate: jest.fn().mockReturnValue(0),
+    Extrapolation: { CLAMP: "clamp" },
     View: ({ children, style }: { children: React.ReactNode; style?: object }) => (
       <View style={style}>{children}</View>
     ),
-  },
-}));
+    default: {
+      View: ({ children, style }: { children: React.ReactNode; style?: object }) => (
+        <View style={style}>{children}</View>
+      ),
+    },
+  };
+});
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) => <Text>{name}</Text>,
+  };
+});
 
-jest.mock("expo-image", () => ({
-  Image: ({ source }: { source: { uri: string } }) => <Text testID="image">{source.uri}</Text>,
-}));
+jest.mock("expo-image", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    Image: ({ source }: { source: { uri: string } }) => <Text testID="image">{source.uri}</Text>,
+  };
+});
 
 jest.mock("~/utils/validation", () => ({
   formatDate: jest.fn().mockReturnValue("Jan 15, 2024"),
   getInitials: jest.fn().mockReturnValue("GN"),
 }));
 
-jest.mock("~/components/judgement/SubmissionAssetPreview", () => ({
-  SubmissionAssetPreview: () => <View testID="asset-preview" />,
-}));
+jest.mock("~/components/judgement/SubmissionAssetPreview", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    SubmissionAssetPreview: () => <View testID="asset-preview" />,
+  };
+});
 
 const mockSubmission = {
   id: "sub-1",

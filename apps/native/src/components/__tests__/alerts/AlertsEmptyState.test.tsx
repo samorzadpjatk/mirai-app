@@ -3,23 +3,26 @@ import { Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AlertsEmptyState } from "../../alerts/AlertsEmptyState";
 
-jest.mock("~/components/common/ui", () => ({
-  EmptyState: ({ icon, title, subtitle, iconOpacity }: { 
-    icon: string; 
-    title: string; 
-    subtitle: string; 
-    iconOpacity: number;
-  }) => {
-    return (
-      <>
-        <Text testID="empty-state-icon">{icon}</Text>
-        <Text testID="empty-state-title">{title}</Text>
-        <Text testID="empty-state-subtitle">{subtitle}</Text>
-        <Text testID="empty-state-opacity">{iconOpacity}</Text>
-      </>
-    );
-  },
-}));
+jest.mock("~/components/common/ui", () => {
+  const { Text } = require("react-native");
+  return {
+    EmptyState: ({ icon, title, subtitle, iconOpacity }: {
+      icon: string;
+      title: string;
+      subtitle: string;
+      iconOpacity: number;
+    }) => {
+      return (
+        <>
+          <Text testID="empty-state-icon">{icon}</Text>
+          <Text testID="empty-state-title">{title}</Text>
+          <Text testID="empty-state-subtitle">{subtitle}</Text>
+          <Text testID="empty-state-opacity">{iconOpacity}</Text>
+        </>
+      );
+    },
+  };
+});
 
 describe("AlertsEmptyState", () => {
   it("should render with title and message", () => {

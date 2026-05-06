@@ -5,27 +5,35 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import AddChallengeModal from "../../admin/challenges/AddChallengeModal";
 
 const mockAlert = jest.spyOn(Alert, "alert");
-const mockCreateChallenge = jest.fn();
-const mockTrips = [
-  { id: "trip-1", name: "Trip One" },
-  { id: "trip-2", name: "Trip Two" },
-];
 
-jest.mock("~/hooks/trips", () => ({
-  useTrips: () => ({ trips: mockTrips, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: jest.fn() }),
-}));
+jest.mock("~/hooks/trips", () => {
+  const mockTrips = [
+    { id: "trip-1", name: "Trip One" },
+    { id: "trip-2", name: "Trip Two" },
+  ];
+  return {
+    useTrips: () => ({ trips: mockTrips, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: jest.fn() }),
+  };
+});
 
-jest.mock("~/hooks/admin", () => ({
-  useAdminChallenges: () => ({ createChallenge: mockCreateChallenge }),
-}));
+jest.mock("~/hooks/admin", () => {
+  const mockCreateChallenge = jest.fn();
+  return {
+    useAdminChallenges: () => ({ createChallenge: mockCreateChallenge }),
+  };
+});
 
 interface IoniconsProps {
   name: string;
 }
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
+  };
+});
 
 interface AppModalShellProps {
   children: React.ReactNode;
@@ -54,26 +62,30 @@ interface ThemedTextInputProps {
   placeholder: string;
 }
 
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-    !visible ? null : React.createElement(View, null,
-      React.createElement(Text, null, title),
-      React.createElement(Pressable, { onPress: onClose }, React.createElement(Text, null, "Close")),
-      children
-    ),
-  AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) =>
-    React.createElement(View, null,
-      React.createElement(Pressable, { onPress: onPrimary, disabled: isPrimaryLoading }, React.createElement(Text, null, primaryLabel)),
-      React.createElement(Pressable, { onPress: onSecondary }, React.createElement(Text, null, secondaryLabel))
-    ),
-  FormField: ({ children, label, required }: FormFieldProps) =>
-    React.createElement(View, null,
-      React.createElement(Text, null, `${label}${required ? "*" : ""}`),
-      children
-    ),
-  ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) =>
-    React.createElement(TextInput, { value, onChangeText, placeholder }),
-}));
+jest.mock("~/components/common/ui", () => {
+  const React = require("react");
+  const { View, Text, Pressable, TextInput } = require("react-native");
+  return {
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+      !visible ? null : React.createElement(View, null,
+        React.createElement(Text, null, title),
+        React.createElement(Pressable, { onPress: onClose }, React.createElement(Text, null, "Close")),
+        children
+      ),
+    AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) =>
+      React.createElement(View, null,
+        React.createElement(Pressable, { onPress: onPrimary, disabled: isPrimaryLoading }, React.createElement(Text, null, primaryLabel)),
+        React.createElement(Pressable, { onPress: onSecondary }, React.createElement(Text, null, secondaryLabel))
+      ),
+    FormField: ({ children, label, required }: FormFieldProps) =>
+      React.createElement(View, null,
+        React.createElement(Text, null, `${label}${required ? "*" : ""}`),
+        children
+      ),
+    ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) =>
+      React.createElement(TextInput, { value, onChangeText, placeholder }),
+  };
+});
 
 interface LocationPickerProps {
   visible: boolean;
@@ -81,17 +93,21 @@ interface LocationPickerProps {
   onLocationSelected: (location: { latitude: number; longitude: number }) => void;
 }
 
-jest.mock("../../map/LocationPicker", () => ({
-  LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
-    !visible ? null : React.createElement(View, null,
-      React.createElement(Pressable, { onPress: () => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 }) },
-        React.createElement(Text, null, "Select Location")
+jest.mock("../../map/LocationPicker", () => {
+  const React = require("react");
+  const { View, Pressable, Text } = require("react-native");
+  return {
+    LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
+      !visible ? null : React.createElement(View, null,
+        React.createElement(Pressable, { onPress: () => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 }) },
+          React.createElement(Text, null, "Select Location")
+        ),
+        React.createElement(Pressable, { onPress: onClose },
+          React.createElement(Text, null, "Close Location Picker")
+        )
       ),
-      React.createElement(Pressable, { onPress: onClose },
-        React.createElement(Text, null, "Close Location Picker")
-      )
-    ),
-}));
+  };
+});
 
 describe("AddChallengeModal", () => {
   beforeEach(() => { jest.clearAllMocks(); mockAlert.mockClear(); });

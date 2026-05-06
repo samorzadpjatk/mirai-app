@@ -4,11 +4,14 @@ import { QueuedSubmissionCard } from "../../judgement/QueuedSubmissionCard";
 
 import { Text } from "react-native";
 
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: { name: string }) => {
-    return <Text>{name}</Text>;
-  },
-}));
+jest.mock("@expo/vector-icons", () => {
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) => {
+      return <Text>{name}</Text>;
+    },
+  };
+});
 
 jest.mock("~/utils/validation", () => ({
   getInitials: jest.fn().mockReturnValue("TG"),

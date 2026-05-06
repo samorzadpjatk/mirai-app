@@ -2,15 +2,15 @@ import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import ChallengeCard from "../../admin/challenges/ChallengeCard";
-import { Text } from "react-native";
 
-interface IoniconsProps {
-  name: string;
-}
-
-jest.mock("@expo/vector-icons", () => ({
-  Ionicons: ({ name }: IoniconsProps) => React.createElement(Text, null, name),
-}));
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    Ionicons: ({ name }: { name: string }) =>
+      React.createElement(Text, null, name),
+  };
+});
 
 interface Challenge {
   id: string;

@@ -16,12 +16,14 @@ import { View } from "react-native";
 
 jest.mock("~/components/judgement/JudgementHeader", () => ({
   JudgementHeader: () => {
+    const { View } = require("react-native");
     return <View testID="judgement-header" />;
   },
 }));
 
 jest.mock("~/components/judgement/CardStack", () => ({
   CardStack: () => {
+    const { View } = require("react-native");
     return <View testID="card-stack" />;
   },
 }));

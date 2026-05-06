@@ -2,52 +2,36 @@ import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateUserModal } from "../../admin/users/CreateUserModal";
-import { Text, TouchableOpacity, View, TextInput } from "react-native";
 
-interface AppModalShellProps {
-  children: React.ReactNode;
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-}
+jest.mock("~/components/common/ui", () => {
+  const { Text, TouchableOpacity, View, TextInput } = require("react-native");
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
-
-interface ThemedTextInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-}
-
-jest.mock("~/components/common/ui", () => ({
-  AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => {
-    if (!visible) return null;
-    return (
-      <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}>
-          <Text>Close</Text>
-        </TouchableOpacity>
-        {children}
-      </View>
-    );
-  },
-  FormField: ({ children, label, required }: FormFieldProps) => {
-    return (
-      <View>
-        <Text>{required ? `${label}*` : label}</Text>
-        {children}
-      </View>
-    );
-  },
-  ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) => {
-    return <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />;
-  },
-}));
+  return {
+    AppModalShell: ({ children, visible, title, onClose }: any) => {
+      if (!visible) return null;
+      return (
+        <View>
+          <Text>{title}</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
+          {children}
+        </View>
+      );
+    },
+    FormField: ({ children, label, required }: any) => {
+      return (
+        <View>
+          <Text>{required ? `${label}*` : label}</Text>
+          {children}
+        </View>
+      );
+    },
+    ThemedTextInput: ({ value, onChangeText, placeholder }: any) => {
+      return <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />;
+    },
+  };
+});
 
 describe("CreateUserModal", () => {
   const onClose = jest.fn();
