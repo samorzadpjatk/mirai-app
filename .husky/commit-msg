@@ -3,7 +3,9 @@ npx commitlint --edit "$1" || exit 1
 # Auto sign-off commit for DCO compliance
 # Adds Signed-off-by line automatically if not present
 COMMIT_MSG_FILE="$1"
-SIGN_OFF_LINE="Signed-off-by: User1 <user1@email.test>"
+GIT_NAME="$(git config user.name)"
+GIT_EMAIL="$(git config user.email)"
+SIGN_OFF_LINE="Signed-off-by: ${GIT_NAME} <${GIT_EMAIL}>"
 
 # Check if the sign-off line is already in the commit message
 if ! grep -q "^Signed-off-by:" "$COMMIT_MSG_FILE"; then
