@@ -33,9 +33,9 @@ export function EmptyState({
   iconOpacity = 0.5,
 }: EmptyStateProps) {
   return (
-    <View style={[styles.emptyState, style]}>
+    <View testID="empty-state-container" style={[styles.emptyState, style]}>
       {icon && (
-        <View style={[styles.emptyIcon, { opacity: iconOpacity }]}>
+        <View testID="empty-state-icon-wrapper" style={[styles.emptyIcon, { opacity: iconOpacity }]}>
           <Ionicons name={icon} size={iconSize} color={iconColor} />
         </View>
       )}

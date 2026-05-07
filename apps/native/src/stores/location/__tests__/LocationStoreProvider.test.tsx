@@ -1,22 +1,9 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import React from "react";
-import { Text } from "react-native";
+import { Alert, Text } from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 import { LocationStoreProvider } from "../LocationStoreProvider";
 import { locationStore, setLocationServerUpdater } from "../locationStore";
-
-const mockAlert = jest.fn();
-
-jest.mock("react-native", () => {
-  const actual = jest.requireActual("react-native");
-  return {
-    ...actual,
-    Alert: {
-      ...actual.Alert,
-      alert: (...args: unknown[]) => mockAlert(...args),
-    },
-  };
-});
 
 const mockTRPC = {
   location: {
@@ -54,6 +41,7 @@ jest.mock("@tanstack/react-query", () => ({
 describe("LocationStoreProvider", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     setLocationServerUpdater(null);
     locationStore.setState({
       isLocationSharingEnabled: false,

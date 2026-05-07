@@ -35,6 +35,7 @@ export function ChallengesGridItem({
 
   return (
     <TouchableOpacity
+      testID="challenge-card"
       onPress={() => onPress(challenge)}
       disabled={isLocked}
       style={[styles.card, cardStatusStyle, isLocked && styles.cardLocked]}

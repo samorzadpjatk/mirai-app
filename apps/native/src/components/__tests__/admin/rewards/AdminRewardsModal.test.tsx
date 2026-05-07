@@ -16,17 +16,6 @@ interface UploadArgs {
 const uploadedArgs: UploadArgs[] = [];
 const mockOnClose = jest.fn();
 
-jest.mock("react-native", () => {
-  const actual: typeof ReactNative = jest.requireActual("react-native");
-
-  return {
-    ...actual,
-    Alert: {
-      alert: jest.fn(),
-    },
-  };
-});
-
 const mockMutateAsync = jest.fn();
 const mockUpload = jest.fn();
 
@@ -163,6 +152,7 @@ jest.mock("~/components/map/LocationPicker", () => {
 describe("AdminRewardsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     uploadedArgs.length = 0;
     mockMutateAsync.mockResolvedValue({});
     mockUpload.mockImplementation((args: UploadArgs) => {

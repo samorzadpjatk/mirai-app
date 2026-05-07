@@ -20,12 +20,13 @@ export function FullScreenModal({ visible, title, onClose, children }: FullScree
       presentationStyle="fullScreen"
       statusBarTranslucent
       onRequestClose={onClose}
+      testID="fullscreen-modal"
     >
       <View style={styles.container}>
         <SafeAreaTop style={styles.safeArea}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
+            <Pressable onPress={onClose} style={styles.closeButton} testID="fullscreen-modal-close">
               <Ionicons name="close" size={24} color={colors.white} />
             </Pressable>
           </View>

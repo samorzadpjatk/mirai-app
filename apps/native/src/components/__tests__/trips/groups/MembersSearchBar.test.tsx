@@ -1,6 +1,5 @@
 import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersSearchBar } from "../../../trips/groups/create/MembersSearchBar";
 
@@ -58,9 +57,9 @@ describe("MembersSearchBar", () => {
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <MembersSearchBar value="" onChangeText={mockOnChangeText} />
     );
-    expect(UNSAFE_getByType(View)).toBeTruthy();
+    expect(screen.getByTestId("members-search-bar-container")).toBeOnTheScreen();
   });
 });

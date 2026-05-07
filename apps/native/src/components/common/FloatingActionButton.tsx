@@ -15,6 +15,7 @@ interface FloatingActionButtonProps {
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   activeOpacity?: number;
+  testID?: string;
 }
 
 export function FloatingActionButton({
@@ -25,6 +26,7 @@ export function FloatingActionButton({
   disabled = false,
   style,
   activeOpacity = 0.7,
+  testID,
 }: FloatingActionButtonProps) {
   return (
     <TouchableOpacity
@@ -34,6 +36,7 @@ export function FloatingActionButton({
       activeOpacity={activeOpacity}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
     >
       <Ionicons name={iconName} size={iconSize} color={colors.backgroundDark} />
     </TouchableOpacity>

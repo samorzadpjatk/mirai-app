@@ -128,7 +128,7 @@ export function CreateScheduleModal({
       onClose={onClose}
       variant="pageSheet"
     >
-      <ScrollView style={{ padding: spacing.lg }}>
+      <ScrollView testID="schedule-modal-scrollview" style={{ padding: spacing.lg }}>
         <Text style={{ color: colors.textSecondary, marginBottom: spacing.lg }}>
           Schedule a notification to be sent at specific times
         </Text>
@@ -210,7 +210,7 @@ export function CreateScheduleModal({
                     disabled={isFetchingNextPage}
                   >
                     {isFetchingNextPage ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
+                      <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
                     ) : (
                       <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
                         Load more trips

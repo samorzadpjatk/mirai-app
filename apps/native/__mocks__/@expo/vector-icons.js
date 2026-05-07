@@ -1,34 +1,44 @@
-// Manual mock for @expo/vector-icons to avoid babel transformation issues
-// This file is used by jest automatically when @expo/vector-icons is imported
+import { createElement } from "react";
+import { Text } from "react-native";
 
-const React = require("react");
-const { Text } = require("react-native");
-
-// Create a mock icon component that renders text with the icon name
-function createMockIconComponent(displayName) {
-  const MockIcon = function MockIcon(props) {
-    return React.createElement(Text, {
-      testID: `icon-${props.name || "unknown"}`,
-      accessibilityLabel: props.name || "unknown",
-      children: props.name || "unknown",
-    });
-  };
-  MockIcon.displayName = displayName;
+/**
+ * Create a mock icon component for a specific icon set
+ * @param {string} iconSetName - The display name for the icon component
+ * @returns {React.Component} A mock icon component that renders the icon name as text
+ */
+const createIconSetMock = (iconSetName) => {
+  const MockIcon = ({ name, testID, ...props }) =>
+    createElement(
+      Text,
+      { testID: testID || `icon-${name}`, ...props },
+      name
+    );
+  MockIcon.displayName = iconSetName;
   return MockIcon;
-}
-
-module.exports = {
-  Ionicons: createMockIconComponent("Ionicons"),
-  MaterialIcons: createMockIconComponent("MaterialIcons"),
-  MaterialCommunityIcons: createMockIconComponent("MaterialCommunityIcons"),
-  FontAwesome: createMockIconComponent("FontAwesome"),
-  FontAwesome5: createMockIconComponent("FontAwesome5"),
-  Feather: createMockIconComponent("Feather"),
-  AntDesign: createMockIconComponent("AntDesign"),
-  Entypo: createMockIconComponent("Entypo"),
-  EvilIcons: createMockIconComponent("EvilIcons"),
-  Foundation: createMockIconComponent("Foundation"),
-  Octicons: createMockIconComponent("Octicons"),
-  SimpleLineIcons: createMockIconComponent("SimpleLineIcons"),
-  Zocial: createMockIconComponent("Zocial"),
 };
+
+/**
+ * Global mock for @expo/vector-icons
+ * 
+ * This mock prevents React act() warnings by avoiding async font loading
+ * and renders icon names as text for testability.
+ * 
+ * Benefits:
+ * - Eliminates "An update to Icon inside a test was not wrapped in act(...)" warnings
+ * - Makes icon names queryable via getByText("icon-name")
+ * - Provides testIDs for icon querying
+ */
+export const Ionicons = createIconSetMock("Ionicons");
+export const MaterialIcons = createIconSetMock("MaterialIcons");
+export const Feather = createIconSetMock("Feather");
+export const FontAwesome = createIconSetMock("FontAwesome");
+export const AntDesign = createIconSetMock("AntDesign");
+export const EvilIcons = createIconSetMock("EvilIcons");
+export const Entypo = createIconSetMock("Entypo");
+export const Foundation = createIconSetMock("Foundation");
+export const MaterialCommunityIcons = createIconSetMock("MaterialCommunityIcons");
+export const Octicons = createIconSetMock("Octicons");
+export const Zocial = createIconSetMock("Zocial");
+export const SimpleLineIcons = createIconSetMock("SimpleLineIcons");
+export const Fontisto = createIconSetMock("Fontisto");
+export function createIconSet() { return createIconSetMock("CustomIconSet"); }

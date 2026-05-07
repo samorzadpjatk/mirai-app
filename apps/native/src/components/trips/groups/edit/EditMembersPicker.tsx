@@ -36,8 +36,8 @@ export function EditMembersPicker({
 }: EditMembersPickerProps) {
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View testID="edit-members-picker-loading" style={styles.loadingContainer}>
+        <ActivityIndicator testID="edit-members-picker-indicator" size="large" color={colors.primary} />
       </View>
     );
   }
@@ -45,6 +45,7 @@ export function EditMembersPicker({
   return (
     <View style={styles.memberListContainer}>
       <ScrollView
+        testID="edit-members-picker-scroll"
         style={styles.memberListScroll}
         showsVerticalScrollIndicator={false}
       >
@@ -59,6 +60,7 @@ export function EditMembersPicker({
             return (
               <TouchableOpacity
                 key={participant.user.id}
+                testID={`member-item-${participant.user.id}`}
                 style={styles.memberItem}
                 onPress={() => onToggleMember(participant.user.id)}
                 activeOpacity={0.7}

@@ -3,13 +3,17 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useExpoUpdates } from "../useExpoUpdates";
 
 // Mock expo-updates with factory that doesn't reference outer scope
+const mockIsEnabled = { value: false };
+
 jest.mock("expo-updates", () => {
   const { jest: jestMock } = require("@jest/globals");
   return {
     checkForUpdateAsync: jestMock.fn(),
     fetchUpdateAsync: jestMock.fn(),
     reloadAsync: jestMock.fn(),
-    isEnabled: false,
+    get isEnabled() {
+      return mockIsEnabled.value;
+    },
   };
 });
 
@@ -33,6 +37,7 @@ describe("useExpoUpdates", () => {
     mockFetchUpdateAsync.mockReset().mockResolvedValue(undefined);
     mockReloadAsync.mockReset().mockResolvedValue(undefined);
     (global as unknown as { __DEV__: boolean }).__DEV__ = false;
+    mockIsEnabled.value = false;
   });
 
   it("should initialize with default state", async () => {
@@ -41,10 +46,11 @@ describe("useExpoUpdates", () => {
     const { result } = renderHook(() => useExpoUpdates());
 
     await waitFor(() => {
-      expect(result.current.isChecking).toBe(false);
+      expect(result.current.isInitialized).toBe(true);
     });
 
     expect(result.current.isUpdateAvailable).toBe(false);
+    expect(result.current.isChecking).toBe(false);
     expect(result.current.isDownloading).toBe(false);
     expect(result.current.downloadProgress).toBe(0);
     expect(result.current.showUpdatePopup).toBe(false);
@@ -239,22 +245,24 @@ describe("useExpoUpdates", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it.skip("should auto-check for updates on mount in production - useEffect timing issue", async () => {
-    mockedUpdates.isEnabled = true;
+  it("should auto-check for updates on mount in production", async () => {
+    mockIsEnabled.value = true;
     mockCheckForUpdateAsync.mockResolvedValue({ isAvailable: false });
-    renderHook(() => useExpoUpdates());
-    await waitFor(() => expect(mockCheckForUpdateAsync).toHaveBeenCalled());
-    mockedUpdates.isEnabled = false;
+
+    const { result } = renderHook(() => useExpoUpdates());
+
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
+    expect(mockCheckForUpdateAsync).toHaveBeenCalled();
   });
 
   it("should not auto-check for updates in development", async () => {
-    mockedUpdates.isEnabled = true;
+    mockIsEnabled.value = true;
     (global as unknown as { __DEV__: boolean }).__DEV__ = true;
     mockCheckForUpdateAsync.mockResolvedValue({ isAvailable: false });
 
-    renderHook(() => useExpoUpdates());
+    const { result } = renderHook(() => useExpoUpdates());
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
 
     expect(mockCheckForUpdateAsync).not.toHaveBeenCalled();
   });

@@ -283,7 +283,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
 
         {isLoading || !reward ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
           </View>
         ) : (
           <View style={{ flex: 1 }}>
@@ -291,6 +291,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
             {previewImage && (
               <View style={{ marginBottom: spacing.lg }}>
                 <Image
+                  testID="reward-image"
                   source={{ uri: previewImage }}
                   style={{ width: "100%", aspectRatio: 1, borderRadius: borderRadius.md, backgroundColor: colors.cardDark }}
                   resizeMode="cover"

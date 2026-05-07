@@ -3,8 +3,8 @@ import { colors } from "~/styles";
 
 export function ChallengesLoadingState() {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
+    <View testID="challenges-loading-container" style={styles.container}>
+      <ActivityIndicator testID="challenges-loading-indicator" size="large" color={colors.primary} />
     </View>
   );
 }

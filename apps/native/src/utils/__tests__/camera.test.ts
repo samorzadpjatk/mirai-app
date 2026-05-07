@@ -1,6 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { ImagePickerAsset } from "expo-image-picker";
 
+import { Alert, Platform } from "react-native";
+
 // Mock expo-image-manipulator
 interface ManipulateResult { uri: string; width: number; height: number }
 interface SaveResult { uri: string; width: number; height: number }
@@ -39,21 +41,13 @@ jest.mock("expo-image-manipulator", () => ({
   },
 }));
 
-// Mock react-native Platform
-jest.mock("react-native", () => ({
-  Platform: {
-    OS: "ios",
-    select: (obj: { ios?: unknown; android?: unknown; default?: unknown }) =>
-      obj.ios ?? obj.default,
-  },
-}));
-
 // Import after mocks
 import { normalizeCameraAsset } from "../camera";
 
 describe("Camera Utilities", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockManipulateAsync.mockResolvedValue({
       uri: "manipulated://result.jpg",
       width: 800,

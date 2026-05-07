@@ -73,12 +73,12 @@ describe("QueuedSubmissionCard", () => {
   });
 
   it("should apply maxCardHeight", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByTestId } = renderWithProviders(
       <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={400} />
     );
 
-    const view = UNSAFE_getByType("View");
-    expect(view).toBeTruthy();
+    const card = getByTestId("queued-submission-card");
+    expect(card).toBeTruthy();
   });
 
   it("should render with different group names", () => {

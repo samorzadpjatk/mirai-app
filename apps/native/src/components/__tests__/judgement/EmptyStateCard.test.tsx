@@ -37,11 +37,11 @@ describe("EmptyStateCard", () => {
   });
 
   it("should apply maxCardHeight", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByTestId } = renderWithProviders(
       <EmptyStateCard maxCardHeight={400} />
     );
 
-    const view = UNSAFE_getByType("View");
+    const view = getByTestId("empty-state-card");
     expect(view).toBeTruthy();
   });
 

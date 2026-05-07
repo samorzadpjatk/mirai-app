@@ -167,8 +167,7 @@ describe("MapScreenOverlay", () => {
     renderWithProviders(<MapScreenOverlay />);
 
     const animatedView = screen.getByTestId("animated-view");
-    // Style is an array: [styles.detailCard, panelStyle]
-    expect(animatedView.props.style[1]).toMatchObject({
+    expect(animatedView.props.style).toMatchObject({
       backgroundColor: "red",
     });
   });

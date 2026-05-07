@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import { useMapSharing } from "../../map/useMapSharing";
 
 const mockUseQuery = jest.fn();
@@ -34,13 +35,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
   })),
 }));
 
-jest.mock("react-native", () => ({
-  Alert: {
-    alert: function(...args: unknown[]): void {
-      mockAlertAlert.apply(this, args);
-    },
-  },
-}));
+
 
 describe("useMapSharing", () => {
   const mockRefetchSharing = jest.fn();
@@ -49,6 +44,7 @@ describe("useMapSharing", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(mockAlertAlert);
     mockUseQuery.mockReturnValue({
       data: null,
       refetch: mockRefetchSharing,

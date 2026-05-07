@@ -50,7 +50,7 @@ describe("TopBar", () => {
     expect(screen.getByText("JS")).toBeTruthy();
   });
 
-  it("renders with user image when provided", () => {
+  it("renders user name and image when provided", () => {
     render(
       <TopBar
         user={{ name: "John Doe", image: "https://example.com/avatar.jpg" }}
@@ -61,10 +61,11 @@ describe("TopBar", () => {
     );
 
     expect(screen.getByText("John Doe")).toBeTruthy();
+    expect(screen.getByLabelText("User avatar")).toBeTruthy();
   });
 
-  it("renders home button", () => {
-    const { UNSAFE_getAllByType } = render(
+  it("renders sign in button when not authenticated", () => {
+    render(
       <TopBar
         isAuthenticated={false}
         onHomePress={mockOnHomePress}
@@ -72,8 +73,7 @@ describe("TopBar", () => {
       />
     );
 
-    const touchables = UNSAFE_getAllByType("TouchableOpacity");
-    expect(touchables.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Sign In")).toBeTruthy();
   });
 
   it("calls onSignPress when sign button is pressed", () => {
@@ -121,7 +121,7 @@ describe("TopBar", () => {
     expect(screen.getByText("M")).toBeTruthy();
   });
 
-  it("renders with null user name", () => {
+  it("renders sign out button when authenticated with null user name", () => {
     render(
       <TopBar
         user={{ name: null, image: null }}
@@ -134,7 +134,7 @@ describe("TopBar", () => {
     expect(screen.getByText("Sign Out")).toBeTruthy();
   });
 
-  it("renders with empty user object when authenticated", () => {
+  it("renders sign out button when authenticated with empty user object", () => {
     render(
       <TopBar
         user={{}}

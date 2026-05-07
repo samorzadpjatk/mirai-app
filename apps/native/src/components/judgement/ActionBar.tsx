@@ -15,6 +15,7 @@ const ActionBar = ({
   return (
     <View style={viewStyles.actions}>
       <TouchableOpacity
+        testID="reject-button"
         style={[viewStyles.actionButton, viewStyles.rejectButton]}
         disabled={disabled}
         onPress={onReject}
@@ -28,6 +29,7 @@ const ActionBar = ({
       </View>
 
       <TouchableOpacity
+        testID="approve-button"
         style={[viewStyles.actionButton, viewStyles.approveButton]}
         disabled={disabled}
         onPress={onApprove}

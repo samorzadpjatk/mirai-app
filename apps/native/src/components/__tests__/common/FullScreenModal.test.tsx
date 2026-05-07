@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FullScreenModal } from "../../common/ui/FullScreenModal";
@@ -22,7 +22,7 @@ describe("FullScreenModal", () => {
 
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -32,14 +32,12 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    const pressables = UNSAFE_getAllByType(Pressable);
-    expect(pressables.length).toBeGreaterThan(0);
-    fireEvent.press(pressables[pressables.length - 1]!);
+    fireEvent.press(screen.getByTestId("fullscreen-modal-close"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("should render with correct Modal props", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -49,7 +47,7 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("fullscreen-modal");
     expect(modal.props.animationType).toBe("slide");
     expect(modal.props.transparent).toBe(false);
     expect(modal.props.presentationStyle).toBe("fullScreen");
@@ -89,7 +87,7 @@ describe("FullScreenModal", () => {
   });
 
   it("should render header with title", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -100,13 +98,12 @@ describe("FullScreenModal", () => {
     );
 
     expect(screen.getByText("Test Modal")).toBeOnTheScreen();
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("fullscreen-modal")).toBeOnTheScreen();
   });
 
   it("should handle onRequestClose", () => {
     const onClose = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -116,12 +113,12 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("fullscreen-modal");
     expect(modal.props.onRequestClose).toBe(onClose);
   });
 
   it("should render with SafeAreaTop wrapper", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -131,12 +128,11 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("fullscreen-modal")).toBeOnTheScreen();
   });
 
   it("should apply correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FullScreenModal
         visible={true}
         title="Test Modal"
@@ -146,8 +142,7 @@ describe("FullScreenModal", () => {
       </FullScreenModal>
     );
 
-    const modal = UNSAFE_getByType(Modal);
-    expect(modal).toBeTruthy();
+    expect(screen.getByTestId("fullscreen-modal")).toBeOnTheScreen();
   });
 
   it("should render complex nested content", () => {

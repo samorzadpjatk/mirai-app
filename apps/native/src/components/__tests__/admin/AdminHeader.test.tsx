@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { Text } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminHeader } from "../../admin/AdminHeader";
@@ -19,24 +19,24 @@ describe("AdminHeader", () => {
   });
 
   it("renders back button when showBackButton is true", () => {
-    const view = renderWithProviders(<AdminHeader title="Test Title" showBackButton />);
+    renderWithProviders(<AdminHeader title="Test Title" showBackButton />);
 
-    expect(view.UNSAFE_getAllByType(TouchableOpacity)).toHaveLength(1);
+    expect(screen.getAllByTestId("back-button")).toHaveLength(1);
   });
 
   it("does not render back button when showBackButton is false", () => {
-    const view = renderWithProviders(<AdminHeader title="Test Title" showBackButton={false} />);
+    renderWithProviders(<AdminHeader title="Test Title" showBackButton={false} />);
 
-    expect(view.UNSAFE_queryAllByType(TouchableOpacity)).toHaveLength(0);
+    expect(screen.queryAllByTestId("back-button")).toHaveLength(0);
   });
 
   it("calls onBackPress when back button is pressed", () => {
     const onBackPress = jest.fn();
-    const view = renderWithProviders(
+    renderWithProviders(
       <AdminHeader title="Test Title" showBackButton onBackPress={onBackPress} />
     );
 
-    fireEvent.press(view.UNSAFE_getByType(TouchableOpacity));
+    fireEvent.press(screen.getByTestId("back-button"));
     expect(onBackPress).toHaveBeenCalled();
   });
 

@@ -19,7 +19,7 @@ export default function LoadingScreen({
         <View
           style={[styles.mainContent, { paddingTop: insets.top + spacing.lg }]}
         >
-          <ActivityIndicator size="large" color="#00ced1" />
+          <ActivityIndicator size="large" color="#00ced1" accessibilityLabel="Loading indicator" />
           <Text style={styles.message}>{message}</Text>
         </View>
       </View>

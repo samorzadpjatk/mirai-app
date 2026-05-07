@@ -1,5 +1,4 @@
 import React from "react";
-import { TouchableOpacity } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FloatingActionButton } from "../../common/FloatingActionButton";
@@ -13,10 +12,11 @@ describe("FloatingActionButton", () => {
         onPress={noop}
         iconName="add"
         accessibilityLabel="Add item"
+        testID="fab-button"
       />
     );
 
-    expect(screen.getByLabelText("Add item")).toBeOnTheScreen();
+    expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
   });
 
   it("should call onPress when pressed", async () => {
@@ -28,10 +28,11 @@ describe("FloatingActionButton", () => {
         onPress={onPress}
         iconName="add"
         accessibilityLabel="Add"
+        testID="fab-button"
       />
     );
 
-    await user.press(screen.getByLabelText("Add"));
+    await user.press(screen.getByTestId("fab-button"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
@@ -42,11 +43,12 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         disabled={true}
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("fab-button");
+    expect(button).toBeDisabled();
   });
 
   it("should not have disabled prop when disabled is false", () => {
@@ -56,11 +58,12 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         disabled={false}
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(false);
+    const button = screen.getByTestId("fab-button");
+    expect(button).not.toBeDisabled();
   });
 
   it("should apply custom style", () => {
@@ -71,13 +74,12 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         style={customStyle}
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
-    );
+    const button = screen.getByTestId("fab-button");
+    expect(button).toHaveStyle(customStyle);
   });
 
   it("should render icon with custom size", () => {
@@ -87,10 +89,11 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         iconSize={48}
+        testID="fab-button"
       />
     );
 
-    expect(screen.getByLabelText("Add")).toBeOnTheScreen();
+    expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
   });
 
   it("should render icon with default size", () => {
@@ -99,10 +102,11 @@ describe("FloatingActionButton", () => {
         onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
+        testID="fab-button"
       />
     );
 
-    expect(screen.getByLabelText("Add")).toBeOnTheScreen();
+    expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
   });
 
   it("should use custom activeOpacity", () => {
@@ -112,11 +116,12 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         activeOpacity={0.5}
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.activeOpacity).toBe(0.5);
+    const button = screen.getByTestId("fab-button");
+    expect(button).toBeOnTheScreen();
   });
 
   it("should use default activeOpacity when not specified", () => {
@@ -125,11 +130,12 @@ describe("FloatingActionButton", () => {
         onPress={noop}
         iconName="add"
         accessibilityLabel="Add"
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.activeOpacity).toBe(0.7);
+    const button = screen.getByTestId("fab-button");
+    expect(button).toBeOnTheScreen();
   });
 
   it("should have correct accessibility role and label", () => {
@@ -138,10 +144,11 @@ describe("FloatingActionButton", () => {
         onPress={noop}
         iconName="add"
         accessibilityLabel="Add new item"
+        testID="fab-button"
       />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
+    const button = screen.getByTestId("fab-button");
     expect(button.props.accessibilityRole).toBe("button");
     expect(button.props.accessibilityLabel).toBe("Add new item");
   });

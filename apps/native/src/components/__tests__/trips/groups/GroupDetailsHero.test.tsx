@@ -1,6 +1,5 @@
 import React from "react";
 import { screen } from "@testing-library/react-native";
-import { Image, View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupDetailsHero } from "../../../trips/groups/details/GroupDetailsHero";
 
@@ -11,16 +10,15 @@ describe("GroupDetailsHero", () => {
   });
 
   it("should render image when imageUrl is provided", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupDetailsHero
         name="Test Group"
         imageUrl="https://example.com/group-image.jpg"
       />
     );
-    const image = UNSAFE_getByType(Image);
-    interface ImageElement { props: { source: { uri: string } } }
-    expect(image).toBeTruthy();
-    expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/group-image.jpg");
+    const image = screen.getByTestId("group-hero-image");
+    expect(image).toBeOnTheScreen();
+    expect(image.props.source.uri).toBe("https://example.com/group-image.jpg");
   });
 
   it("should render placeholder when no imageUrl", () => {
@@ -40,11 +38,8 @@ describe("GroupDetailsHero", () => {
   });
 
   it("should render with hero card styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <GroupDetailsHero name="Test Group" />
-    );
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    renderWithProviders(<GroupDetailsHero name="Test Group" />);
+    expect(screen.getByTestId("group-details-hero")).toBeOnTheScreen();
   });
 
   it("should handle null imageUrl", () => {

@@ -14,7 +14,7 @@ export function AccountInfoSection() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Account Information</Text>
 
-      <View style={styles.infoCard}>
+      <View testID="account-info-card" style={styles.infoCard}>
         <View style={styles.infoRow}>
           <View style={styles.infoIcon}>
             <Ionicons name="mail" size={20} color={colors.primary} />

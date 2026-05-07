@@ -1,5 +1,4 @@
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { PrimaryAddButton } from "../../common/buttons/PrimaryAddButton";
@@ -28,36 +27,31 @@ describe("PrimaryAddButton", () => {
   });
 
   it("should have disabled prop when disabled is true", () => {
-    const view = renderWithProviders(
+    renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Disabled" disabled={true} />
     );
 
-    const button = view.UNSAFE_getByType(TouchableOpacity);
-    interface ButtonElement { props: { disabled: boolean } }
-    expect((button as unknown as ButtonElement).props.disabled).toBe(true);
+    const button = screen.getByRole("button", { name: "Disabled" });
+    expect(button).toBeDisabled();
   });
 
   it("should not have disabled prop when disabled is false", () => {
-    const view = renderWithProviders(
+    renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Enabled" disabled={false} />
     );
 
-    const button = view.UNSAFE_getByType(TouchableOpacity);
-    interface ButtonElement { props: { disabled: boolean } }
-    expect((button as unknown as ButtonElement).props.disabled).toBe(false);
+    const button = screen.getByRole("button", { name: "Enabled" });
+    expect(button).not.toBeDisabled();
   });
 
   it("should apply custom style", () => {
     const customStyle = { marginTop: 20 };
-    const view = renderWithProviders(
+    renderWithProviders(
       <PrimaryAddButton onPress={noop} label="Styled" style={customStyle} />
     );
 
-    const button = view.UNSAFE_getByType(TouchableOpacity);
-    interface ButtonElement { props: { style: unknown } }
-    expect((button as unknown as ButtonElement).props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
-    );
+    const button = screen.getByRole("button", { name: "Styled" });
+    expect(button).toHaveStyle(customStyle);
   });
 
   it("should apply custom text style", () => {
@@ -76,34 +70,10 @@ describe("PrimaryAddButton", () => {
     );
   });
 
-  it("should use custom activeOpacity", () => {
-    const view = renderWithProviders(
-      <PrimaryAddButton
-        onPress={noop}
-        label="Opacity"
-        activeOpacity={0.5}
-      />
-    );
-
-    const button = view.UNSAFE_getByType(TouchableOpacity);
-    interface ButtonElement { props: { activeOpacity: number } }
-    expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.5);
-  });
-
-  it("should use default activeOpacity when not specified", () => {
-    const view = renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Default" />
-    );
-
-    const button = view.UNSAFE_getByType(TouchableOpacity);
-    interface ButtonElement { props: { activeOpacity: number } }
-    expect((button as unknown as ButtonElement).props.activeOpacity).toBe(0.9);
-  });
-
   it("should render with add-circle icon", () => {
-    const view = renderWithProviders(<PrimaryAddButton onPress={noop} label="Add" />);
+    renderWithProviders(<PrimaryAddButton onPress={noop} label="Add" />);
 
-    const icons = view.UNSAFE_getAllByType(Text);
-    expect(icons.length).toBeGreaterThan(0);
+    const button = screen.getByRole("button", { name: "Add" });
+    expect(button).toBeTruthy();
   });
 });

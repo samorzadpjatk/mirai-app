@@ -67,8 +67,7 @@ describe("AdminModalButton", () => {
     const onPress = jest.fn();
     const { getByText } = renderWithProviders(<AdminModalButton title="Disabled" onPress={onPress} disabled />);
 
-    expect(getByText("Disabled").parent).toBeTruthy();
-    expect(getByText("Disabled").parent?.parent?.props.disabled ?? getByText("Disabled").parent?.props.disabled).toBe(true);
+    fireEvent.press(getByText("Disabled"));
     expect(onPress).not.toHaveBeenCalled();
   });
 

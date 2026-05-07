@@ -1,21 +1,9 @@
 import React from "react";
-import type * as ReactNative from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { TouchableOpacity } from "react-native";
+import { Alert } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengesGridItem } from "../../../trips/challenges/ChallengesGridItem";
 import type { ChallengeListItem } from "../../../trips/challenges/types";
-
-jest.mock("react-native", () => {
-  const actual: typeof ReactNative = jest.requireActual("react-native");
-  const MockReact: typeof React = jest.requireActual("react");
-
-  return {
-    ...actual,
-    ImageBackground: ({ children }: { children?: React.ReactNode }) =>
-      MockReact.createElement(actual.View, {}, children),
-  };
-});
 
 describe("ChallengesGridItem", () => {
   const baseChallenge: ChallengeListItem = {
@@ -37,6 +25,7 @@ describe("ChallengesGridItem", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
   });
 
   it("renders the main labels", () => {
@@ -53,21 +42,22 @@ describe("ChallengesGridItem", () => {
   });
 
   it("calls onPress with the challenge", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />
     );
 
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    fireEvent.press(screen.getByTestId("challenge-card"));
     expect(mockOnPress).toHaveBeenCalledWith(baseChallenge);
   });
 
   it("is disabled and shows a lock icon when locked", () => {
     const lockedChallenge = { ...baseChallenge, status: "locked" as const };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ChallengesGridItem challenge={lockedChallenge} onPress={mockOnPress} />
     );
 
-    expect(UNSAFE_getByType(TouchableOpacity).props.disabled).toBe(true);
+    const card = screen.getByTestId("challenge-card");
+    expect(card.props.accessibilityState?.disabled).toBe(true);
     expect(screen.getByText("Locked")).toBeOnTheScreen();
   });
 

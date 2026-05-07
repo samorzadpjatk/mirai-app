@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator, TouchableOpacity } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { SaveGroupButton } from "../../../../trips/groups/edit/SaveGroupButton";
@@ -25,23 +24,24 @@ describe("SaveGroupButton", () => {
     renderWithProviders(<SaveGroupButton isSubmitting={true} onPress={jest.fn()} />);
 
     expect(screen.queryByText("Save Changes")).toBeNull();
-    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.getByTestId("save-group-button-loading-indicator")).toBeTruthy();
   });
 
   it("should be disabled when isSubmitting is true", () => {
     const onPress = jest.fn();
     renderWithProviders(<SaveGroupButton isSubmitting={true} onPress={onPress} />);
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("save-group-button");
+    expect(button).toBeDisabled();
   });
 
-  it("should not call onPress when button is disabled during submission", () => {
+  it("should have disabled prop when isSubmitting is true", () => {
     const onPress = jest.fn();
+
     renderWithProviders(<SaveGroupButton isSubmitting={true} onPress={onPress} />);
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("save-group-button");
+    expect(button).toBeDisabled();
   });
 
   it("should enable button when isSubmitting changes from true to false", async () => {
@@ -51,8 +51,8 @@ describe("SaveGroupButton", () => {
       <SaveGroupButton isSubmitting={true} onPress={onPress} />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("save-group-button");
+    expect(button).toBeDisabled();
 
     rerender(<SaveGroupButton isSubmitting={false} onPress={onPress} />);
 
@@ -72,8 +72,8 @@ describe("SaveGroupButton", () => {
 
     rerender(<SaveGroupButton isSubmitting={true} onPress={onPress} />);
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("save-group-button");
+    expect(button).toBeDisabled();
   });
 
   it("should handle multiple rapid presses when enabled", async () => {
@@ -95,12 +95,12 @@ describe("SaveGroupButton", () => {
       <SaveGroupButton isSubmitting={false} onPress={onPress} />
     );
 
-    let button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(false);
+    let button = screen.getByTestId("save-group-button");
+    expect(button).toBeEnabled();
 
     rerender(<SaveGroupButton isSubmitting={true} onPress={onPress} />);
 
-    button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    button = screen.getByTestId("save-group-button");
+    expect(button).toBeDisabled();
   });
 });

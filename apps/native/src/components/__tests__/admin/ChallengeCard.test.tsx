@@ -53,7 +53,7 @@ describe("Admin ChallengeCard", () => {
     expect(screen.getByText(/DRAFT/)).toBeTruthy();
   });
 
-  it("maps special icons", () => {
+  it("maps special icons and displays category label for wintegral challenges", () => {
     const wintegral: Challenge = { ...baseChallenge, category: "wintegral", icon: "eco" };
     renderWithProviders(<ChallengeCard challenge={wintegral} />);
     expect(screen.getByText("leaf")).toBeTruthy();

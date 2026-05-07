@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Modal, ScrollView, View } from "react-native";
+import { Alert, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsView from "../../rewards/RewardsView";
@@ -128,20 +128,10 @@ jest.mock("@expo/vector-icons", () => {
   };
 });
 
-jest.mock("react-native", () => {
-  const actual = jest.requireActual("react-native") as typeof import("react-native");
-  return {
-    ...actual,
-    Alert: {
-      alert: jest.fn(),
-    },
-    useWindowDimensions: () => ({ width: 375, height: 812 }),
-  };
-});
-
 describe("RewardsView", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockUseRewards.mockReturnValue({ data: [], isLoading: false, error: null, refetch: mockRefetch });
     mockUseMyGroup.mockReturnValue({ group: null });
     mockUseTripDetails.mockReturnValue({ isTripPast: false });
@@ -153,10 +143,10 @@ describe("RewardsView", () => {
   it("renders loading state", () => {
     mockUseRewards.mockReturnValue({ data: [], isLoading: true, error: null, refetch: mockRefetch });
 
-    const { getByText, UNSAFE_getAllByType } = renderWithProviders(<RewardsView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     expect(getByText("Loading rewards...")).toBeTruthy();
-    expect(UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThanOrEqual(1);
+    expect(getByTestId("loading-indicator")).toBeTruthy();
   });
 
   it("renders error state", () => {
@@ -207,11 +197,11 @@ describe("RewardsView", () => {
     mockUseRewards.mockReturnValue({ data: [baseReward()], isLoading: false, error: null, refetch: mockRefetch });
     mockUseMyGroup.mockReturnValue({ group: { id: "group-1", name: "Team A", coins: 500 } });
 
-    const { getAllByText, UNSAFE_getAllByType } = renderWithProviders(<RewardsView {...defaultProps} />);
+    const { getAllByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     fireEvent.press(getAllByText("Claim reward")[0]);
 
-    expect(UNSAFE_getAllByType(Modal).length).toBeGreaterThanOrEqual(1);
+    expect(getByTestId("purchase-modal")).toBeTruthy();
   });
 
   it("shows sold out, insufficient coins, and only leader states", () => {
@@ -251,10 +241,9 @@ describe("RewardsView", () => {
   it("renders refresh control and image placeholder icon", () => {
     mockUseRewards.mockReturnValue({ data: [baseReward({ image: null, images: [] })], isLoading: false, error: null, refetch: mockRefetch });
 
-    const { UNSAFE_getAllByType, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
+    const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
-    const scrollViews = UNSAFE_getAllByType(ScrollView);
-    expect(scrollViews.some((sv: { props: { refreshControl?: unknown } }) => !!sv.props.refreshControl)).toBe(true);
+    expect(getByTestId("rewards-scroll-view")).toBeTruthy();
     expect(getByTestId("icon-gift-outline")).toBeTruthy();
   });
 

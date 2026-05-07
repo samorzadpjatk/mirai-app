@@ -18,6 +18,7 @@ export function SafeAreaTop({ children, style }: SafeAreaTopProps) {
 
   return (
     <View
+      testID="safe-area-top"
       style={[
         style,
         {

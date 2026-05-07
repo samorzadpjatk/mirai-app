@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";
@@ -70,9 +69,8 @@ describe("AssignedGroupsCard", () => {
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<AssignedGroupsCard groups={mockGroups} />);
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    renderWithProviders(<AssignedGroupsCard groups={mockGroups} />);
+    expect(screen.getByTestId("assigned-groups-card")).toBeOnTheScreen();
   });
 
   it("should handle single group", () => {

@@ -1,4 +1,4 @@
-// Imagine your lint finds a bug in expo-file-system lib (https://github.com/expo/expo/issues/41737)
+
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
@@ -7,7 +7,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
     },

@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupMemberList } from "../../../trips/groups/details/GroupMemberList";
@@ -125,11 +124,11 @@ describe("GroupMemberList", () => {
   });
 
   it("should apply leader styling to leader members", () => {
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <GroupMemberList members={mockMembers} />
     );
-    const views = UNSAFE_getAllByType(View);
-    expect(views.length).toBeGreaterThan(0);
+    const leaderAvatars = screen.getAllByTestId("leader-avatar");
+    expect(leaderAvatars.length).toBeGreaterThan(0);
   });
 
   it("should render with leader role in primary color", () => {

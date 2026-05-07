@@ -1,5 +1,4 @@
 import React from "react";
-import { Image } from "react-native";
 import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeDescriptionCard } from "../../../trips/challenges/ChallengeDescriptionCard";
@@ -17,15 +16,15 @@ describe("ChallengeDescriptionCard", () => {
   });
 
   it("renders an image when imageUrl is provided", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<ChallengeDescriptionCard description="Test description" imageUrl="https://example.com/image.jpg" />);
-    const image = UNSAFE_getByType(Image);
-    const source = image.props.source as { uri: string };
-    expect(source.uri).toBe("https://example.com/image.jpg");
+    renderWithProviders(<ChallengeDescriptionCard description="Test description" imageUrl="https://example.com/image.jpg" />);
+    const image = screen.getByTestId("challenge-image");
+    expect(image).toBeOnTheScreen();
+    expect(image.props.source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("does not render an image when imageUrl is missing", () => {
-    const { UNSAFE_queryByType } = renderWithProviders(<ChallengeDescriptionCard description="Test description" />);
-    expect(UNSAFE_queryByType(Image)).toBeNull();
+    renderWithProviders(<ChallengeDescriptionCard description="Test description" />);
+    expect(screen.queryByTestId("challenge-image")).toBeNull();
   });
 
   it("keeps an empty string description empty", () => {

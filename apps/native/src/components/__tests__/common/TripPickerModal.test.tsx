@@ -1,5 +1,4 @@
 import React from "react";
-import { Modal, ScrollView, Text, TouchableOpacity } from "react-native";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripPickerModal } from "../../common/TripPickerModal";
@@ -18,7 +17,7 @@ describe("TripPickerModal", () => {
     jest.clearAllMocks();
   });
 
-  it("should have Modal with visible=false when not visible", () => {
+  it("should not render modal content when not visible", () => {
     renderWithProviders(
       <TripPickerModal
         visible={false}
@@ -28,8 +27,8 @@ describe("TripPickerModal", () => {
       />
     );
 
-    const modal = screen.UNSAFE_getByType(Modal);
-    expect(modal.props.visible).toBe(false);
+    // When visible=false, Modal doesn't render children, so content is not in tree
+    expect(screen.queryByText("Select trip")).toBeNull();
   });
 
   it("should render when visible is true", () => {
@@ -71,9 +70,8 @@ describe("TripPickerModal", () => {
       />
     );
 
-    const touchables = screen.UNSAFE_getAllByType(TouchableOpacity);
-    expect(touchables.length).toBeGreaterThan(0);
-    fireEvent.press(touchables[0]!);
+    const closeButton = screen.getByTestId("close-button");
+    fireEvent.press(closeButton);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -106,8 +104,8 @@ describe("TripPickerModal", () => {
       />
     );
 
-    const textElements = screen.UNSAFE_getAllByType(Text);
-    expect(textElements.length).toBeGreaterThan(0);
+    const checkmark = screen.getByTestId("checkmark-icon");
+    expect(checkmark).toBeOnTheScreen();
   });
 
   it("should show empty state when no trips available", () => {
@@ -163,7 +161,7 @@ describe("TripPickerModal", () => {
       />
     );
 
-    const scrollView = screen.UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("trip-list-scrollview");
     fireEvent.scroll(scrollView, {
       nativeEvent: {
         contentOffset: { y: 500 },

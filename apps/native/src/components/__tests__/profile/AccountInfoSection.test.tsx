@@ -95,10 +95,9 @@ describe("AccountInfoSection", () => {
   });
 
   it("should render info card container", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<AccountInfoSection />);
+    const { getByTestId } = renderWithProviders(<AccountInfoSection />);
 
-    const container = UNSAFE_getByType(View);
-    expect(container).toBeTruthy();
+    expect(getByTestId("account-info-card")).toBeTruthy();
   });
 
   it("should render info row with icon and content", () => {

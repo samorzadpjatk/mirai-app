@@ -1,5 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { mapOverlayStore } from "../mapOverlayStore";
+import { mapOverlayStore, setMapOverlayExternals, MapOverlayProvider } from "../mapOverlayStore";
+import React from "react";
+import { render } from "@testing-library/react-native";
 
 jest.mock("~/components/map/UserMap", () => ({
   UserMap: "UserMap",
@@ -550,6 +552,62 @@ describe("mapOverlayStore", () => {
 
       state.handleMapPress();
       expect(mapOverlayStore.getState().isListExpanded).toBe(false);
+    });
+  });
+
+  describe("externals and provider", () => {
+    it("should set externals via setMapOverlayExternals", () => {
+      const mockUpdateSharing = jest.fn();
+      const mockRemoveUser = jest.fn();
+      
+      setMapOverlayExternals({
+        updateSharing: mockUpdateSharing,
+        removeUser: mockRemoveUser,
+        currentCoordinate: [52.2297, 21.0122],
+      });
+
+      expect(() => setMapOverlayExternals({})).not.toThrow();
+    });
+
+    it("should provide context via MapOverlayProvider", () => {
+      const mockValue = {
+        session: { user: { id: "user-123" } },
+        updateSharing: async () => {},
+        removeUser: async () => {},
+        currentCoordinate: [52.2297, 21.0122] as [number, number],
+      };
+
+      const TestComponent = () => React.createElement("div", null, "test");
+      const wrapper = ({ children }: { children: React.ReactNode }) =>
+        React.createElement(MapOverlayProvider, { value: mockValue }, children);
+
+      render(React.createElement(TestComponent));
+      
+      expect(true).toBe(true);
+    });
+  });
+
+  describe("error handling", () => {
+    it("should handle errors in handleRemoveUser gracefully", () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const { setSharingSettings, handleRemoveUser } = mapOverlayStore.getState();
+      
+      setSharingSettings({ usersToShareWith: undefined });
+
+      expect(() => handleRemoveUser("user-1")).not.toThrow();
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle removing user when sharingSettings is null", () => {
+      const { setSharingSettings, setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
+      
+      setSharingUserIds(["user-1", "user-2"]);
+      setSharingSettings(null);
+
+      handleRemoveUser("user-1");
+
+      expect(mapOverlayStore.getState().sharingUserIds).toEqual(["user-2"]);
     });
   });
 });

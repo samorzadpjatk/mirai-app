@@ -72,6 +72,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
           <View key={member.id} style={styles.memberCard}>
             <View style={styles.memberInfo}>
               <View
+                testID={member.isLeader ? "leader-avatar" : "member-avatar"}
                 style={[styles.avatar, member.isLeader && styles.avatarLeader]}
               >
                 <MemberAvatar member={member} />

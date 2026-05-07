@@ -52,7 +52,7 @@ export function ManageSharingModal() {
                     disabled={isRemovingUser}
                   >
                     {isRemovingUser ? (
-                      <ActivityIndicator size="small" color={colors.danger} />
+                      <ActivityIndicator testID="remove-loading-indicator" size="small" color={colors.danger} />
                     ) : (
                       <Text style={styles.removeButtonText}>Remove</Text>
                     )}

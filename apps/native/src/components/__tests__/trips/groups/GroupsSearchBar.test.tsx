@@ -77,10 +77,10 @@ describe("GroupsSearchBar", () => {
   });
 
   it("should render with correct container styling", () => {
-    const view = renderWithProviders(
+    renderWithProviders(
       <GroupsSearchBar value="" onChangeText={mockOnChangeText} />
     );
 
-    expect(view.UNSAFE_getByType(View)).toBeTruthy();
+    expect(screen.getByTestId("groups-search-bar-container")).toBeTruthy();
   });
 });

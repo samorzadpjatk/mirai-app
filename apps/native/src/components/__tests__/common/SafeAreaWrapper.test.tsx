@@ -1,13 +1,9 @@
 import React from "react";
-import { View, Text, type ViewProps, type ViewStyle } from "react-native";
+import { View, Text, type ViewStyle } from "react-native";
 import { screen } from "@testing-library/react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SafeAreaTop } from "../../SafeAreaWrapper";
-
-interface ViewElement {
-  props: ViewProps;
-}
 
 interface ViewStyleWithPadding extends ViewStyle {
   paddingTop?: number;
@@ -59,7 +55,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 44 }),
@@ -74,7 +70,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 54 }),
@@ -96,7 +92,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 0 }),
@@ -118,7 +114,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ paddingTop: 59 }),
@@ -134,7 +130,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "red" }),
@@ -150,7 +146,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View);
+    const view = screen.getByTestId("safe-area-top");
     expect(view).toBeTruthy();
   });
 
@@ -175,7 +171,7 @@ describe("SafeAreaTop", () => {
       </SafeAreaTop>
     );
 
-    const view = screen.UNSAFE_getByType(View) as ViewElement;
+    const view = screen.getByTestId("safe-area-top");
     const styles = view.props.style as ViewStyleWithPadding[];
     expect(styles).toEqual(
       expect.arrayContaining([

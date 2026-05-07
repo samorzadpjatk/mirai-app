@@ -11,10 +11,8 @@ describe("ChallengeUploadProgressCard", () => {
   });
 
   it("should render ActivityIndicator", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ChallengeUploadProgressCard />
-    );
-    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
+    renderWithProviders(<ChallengeUploadProgressCard />);
+    const activityIndicator = screen.getByTestId("upload-progress-indicator");
     expect(activityIndicator).toBeTruthy();
   });
 
@@ -54,18 +52,14 @@ describe("ChallengeUploadProgressCard", () => {
   });
 
   it("should render progress bar track", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={0.5} />
-    );
-    const view = UNSAFE_getByType(View);
+    renderWithProviders(<ChallengeUploadProgressCard progress={0.5} />);
+    const view = screen.getByTestId("progress-track");
     expect(view).toBeTruthy();
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <ChallengeUploadProgressCard progress={0.5} />
-    );
-    const view = UNSAFE_getByType(View);
+    renderWithProviders(<ChallengeUploadProgressCard progress={0.5} />);
+    const view = screen.getByTestId("upload-progress-card");
     expect(view.props.style).toBeTruthy();
   });
 });

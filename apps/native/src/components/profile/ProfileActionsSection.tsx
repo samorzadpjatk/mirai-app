@@ -157,7 +157,7 @@ export function ProfileActionsSection({
           </Text>
         </View>
         {isUpdatingBackgroundLocation ? (
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator testID="background-location-indicator" size="small" color={colors.primary} />
         ) : (
           <View style={[styles.activeBadge, !isBackgroundDisplayedOn && styles.offBadge]}>
             <Text

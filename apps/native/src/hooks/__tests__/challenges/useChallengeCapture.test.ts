@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
 import { useChallengeCapture } from "../../challenges/useChallengeCapture";
+import { Alert } from "react-native";
 
 // Mock expo-image-picker
 const mockLaunchImageLibraryAsync = jest.fn();
@@ -20,15 +21,6 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
-}));
-
-// Mock react-native
-const mockAlert = jest.fn();
-
-jest.mock("react-native", () => ({
-  Alert: {
-    alert: (...args: unknown[]) => mockAlert(...args),
-  },
 }));
 
 // Mock tRPC
@@ -99,6 +91,7 @@ jest.mock("~/hooks/files", () => ({
 describe("useChallengeCapture", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
   });
 
   it("should return initial state", () => {
@@ -230,7 +223,7 @@ describe("useChallengeCapture", () => {
     });
 
     expect(mockUploadFn).toHaveBeenCalled();
-    expect(mockAlert).toHaveBeenCalledWith(
+    expect(Alert.alert).toHaveBeenCalledWith(
       "Submission sent",
       expect.stringContaining("Zgłoszenie zostało wysłane"),
       expect.any(Array)
@@ -258,7 +251,7 @@ describe("useChallengeCapture", () => {
       await result.current.submitCapturedPhoto(photo, "Test Challenge", 10);
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Missing trip or challenge information.");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Missing trip or challenge information.");
   });
 
   it("should show error when challengeId is missing", async () => {
@@ -282,7 +275,7 @@ describe("useChallengeCapture", () => {
       await result.current.submitCapturedPhoto(photo, "Test Challenge", 10);
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Missing trip or challenge information.");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Missing trip or challenge information.");
   });
 
   it("should show error when user is not part of trip", async () => {
@@ -306,7 +299,7 @@ describe("useChallengeCapture", () => {
       await result.current.submitCapturedPhoto(photo, "Test Challenge", 10);
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "User is not part of the trip.");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "User is not part of the trip.");
   });
 
   it("should show error when group info is missing", async () => {
@@ -333,7 +326,7 @@ describe("useChallengeCapture", () => {
       await result.current.submitCapturedPhoto(photo, "Test Challenge", 10);
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Missing group information.");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Missing group information.");
   });
 
   it("should handle upload failure and cleanup", async () => {
@@ -376,7 +369,7 @@ describe("useChallengeCapture", () => {
       tripId: "trip-123",
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Upload Failed", "Upload failed");
+    expect(Alert.alert).toHaveBeenCalledWith("Upload Failed", "Upload failed");
   });
 
   it("should pick image from gallery successfully", async () => {
@@ -472,7 +465,7 @@ describe("useChallengeCapture", () => {
       await result.current.pickImageFromGallery();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Failed to pick image");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Failed to pick image");
   });
 
   it("should pick video from gallery successfully", async () => {
@@ -537,7 +530,7 @@ describe("useChallengeCapture", () => {
       await result.current.pickVideoFromGallery();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Failed to pick video");
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Failed to pick video");
   });
 
   it("should submit video asset successfully", async () => {
@@ -882,7 +875,7 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset, "Challenge", 10);
     });
 
-    const alertCalls = mockAlert.mock.calls;
+    const alertCalls = (Alert.alert as jest.Mock).mock.calls;
     expect(alertCalls.length).toBeGreaterThan(0);
 
     const alertButtons = alertCalls[0][2] as { text: string; onPress?: () => void }[];
@@ -973,7 +966,7 @@ describe("useChallengeCapture", () => {
     });
 
     // Should still show upload error even if cleanup fails
-    expect(mockAlert).toHaveBeenCalledWith("Upload Failed", "Upload failed");
+    expect(Alert.alert).toHaveBeenCalledWith("Upload Failed", "Upload failed");
   });
 
   it("should handle m4v video format", async () => {

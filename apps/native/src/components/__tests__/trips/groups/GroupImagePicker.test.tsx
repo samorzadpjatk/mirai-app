@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator, Image, TouchableOpacity, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupImagePicker } from "../../../trips/groups/GroupImagePicker";
@@ -50,36 +49,34 @@ describe("GroupImagePicker", () => {
   });
 
   it("should render image when imageUri is provided", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri="https://example.com/image.jpg"
         onPickImage={mockOnPickImage}
       />
     );
-    const image = UNSAFE_getByType(Image);
-    interface ImageElement { props: { source: { uri: string } } }
-    expect(image).toBeTruthy();
-    expect((image as unknown as ImageElement).props.source.uri).toBe("https://example.com/image.jpg");
+    const image = screen.getByTestId("group-image-picker-image");
+    expect(image).toBeOnTheScreen();
+    expect(image.props.source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("should call onPickImage when pressed", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    fireEvent.press(screen.getByTestId("group-image-picker-touchable"));
     expect(mockOnPickImage).toHaveBeenCalledTimes(1);
   });
 
   it("should show uploading state with ActivityIndicator", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri={null}
         onPickImage={mockOnPickImage}
         isUploading={true}
       />
     );
-    const activityIndicator = UNSAFE_getByType(ActivityIndicator);
-    expect(activityIndicator).toBeTruthy();
+    expect(screen.getByTestId("group-image-picker-activity-indicator")).toBeOnTheScreen();
   });
 
   it("should show uploading text when isUploading is true", () => {
@@ -106,16 +103,15 @@ describe("GroupImagePicker", () => {
   });
 
   it("should disable touchable when isUploading is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker
         imageUri={null}
         onPickImage={mockOnPickImage}
         isUploading={true}
       />
     );
-    const touchable = UNSAFE_getByType(TouchableOpacity);
-    interface TouchableElement { props: { disabled: boolean } }
-    expect((touchable as unknown as TouchableElement).props.disabled).toBe(true);
+    const touchable = screen.getByTestId("group-image-picker-touchable");
+    expect(touchable.props.accessibilityState?.disabled).toBe(true);
   });
 
   it("should render camera icon in badge", () => {
@@ -126,10 +122,9 @@ describe("GroupImagePicker", () => {
   });
 
   it("should render with correct container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupImagePicker imageUri={null} onPickImage={mockOnPickImage} />
     );
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("group-image-picker-container")).toBeOnTheScreen();
   });
 });

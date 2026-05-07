@@ -19,13 +19,13 @@ describe("LoadingScreen", () => {
   it("renders activity indicator", () => {
     renderWithProviders(<LoadingScreen />);
 
-    expect(screen.getByText("Loading...")).toBeTruthy();
+    expect(screen.getByLabelText("Loading indicator")).toBeTruthy();
   });
 
-  it("renders with empty message", () => {
-    renderWithProviders(<LoadingScreen message="" />);
+  it("uses default message when no message prop provided", () => {
+    renderWithProviders(<LoadingScreen />);
 
-    expect(screen.getByText("")).toBeTruthy();
+    expect(screen.getByText("Loading...")).toBeTruthy();
   });
 
   it("renders with long message", () => {

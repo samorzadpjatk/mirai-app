@@ -172,6 +172,8 @@ cd apps/native && bun run test
 cd apps/native && bun run test:ci
 ```
 
+For detailed testing documentation, troubleshooting, and configuration details, see [TESTING.md](../../TESTING.md).
+
 ## More Information
 
 - [Expo Documentation](https://docs.expo.dev/)

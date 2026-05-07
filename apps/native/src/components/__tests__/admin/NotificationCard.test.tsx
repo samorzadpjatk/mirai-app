@@ -88,7 +88,11 @@ describe("NotificationCard", () => {
       />
     );
 
-    expect(getByText("Retry").parent?.parent?.props.disabled).toBe(true);
+    // Check that retry button is disabled by verifying it has disabled styling
+    // The button applies opacity style when disabled
+    const retryButton = getByText("Retry").parent?.parent;
+    expect(retryButton).toBeTruthy();
+    expect(retryButton?.props.style).toMatchObject({ opacity: 0.5 });
   });
 
   it("shows loading states", () => {

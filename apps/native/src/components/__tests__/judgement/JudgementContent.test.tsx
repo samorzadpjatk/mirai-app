@@ -56,7 +56,7 @@ describe("JudgementContent", () => {
 
   it("should render loading indicator when isLoading is true", () => {
     mockUseJudgement.mockReturnValueOnce({ isLoading: true });
-    const { UNSAFE_getByType } = renderWithProviders(<JudgementContent tripId="trip-1" challengeId="challenge-1" />);
-    expect(UNSAFE_getByType("ActivityIndicator")).toBeTruthy();
+    const { getByTestId } = renderWithProviders(<JudgementContent tripId="trip-1" challengeId="challenge-1" />);
+    expect(getByTestId("judgement-loading")).toBeTruthy();
   });
 });

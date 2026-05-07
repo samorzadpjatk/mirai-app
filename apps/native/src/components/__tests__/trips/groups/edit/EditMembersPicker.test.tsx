@@ -46,7 +46,7 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.getByTestId("edit-members-picker-indicator")).toBeTruthy();
   });
 
   it("should render participants list when not loading", () => {
@@ -119,8 +119,9 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    const touchables = screen.UNSAFE_getAllByType(TouchableOpacity);
-    expect(touchables.length).toBe(3);
+    expect(screen.getByTestId("member-item-user-1")).toBeTruthy();
+    expect(screen.getByTestId("member-item-user-2")).toBeTruthy();
+    expect(screen.getByTestId("member-item-user-3")).toBeTruthy();
   });
 
   it("should disable organizer from being toggled", () => {
@@ -150,10 +151,8 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    const touchables = screen.UNSAFE_getAllByType(TouchableOpacity);
-    const organizerTouchable = touchables[0];
-
-    expect(organizerTouchable.props.disabled).toBe(true);
+    const organizerTouchable = screen.getByTestId("member-item-user-1");
+    expect(organizerTouchable).toBeDisabled();
   });
 
   it("should display initials for participants", () => {
@@ -271,7 +270,7 @@ describe("EditMembersPicker", () => {
       />
     );
 
-    expect(screen.UNSAFE_getByType(ScrollView)).toBeTruthy();
+    expect(screen.getByTestId("edit-members-picker-scroll")).toBeTruthy();
   });
 
   it("should handle participants with undefined names", () => {

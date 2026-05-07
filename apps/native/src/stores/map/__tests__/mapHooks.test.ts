@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
-import { useMapStore } from "../mapHooks";
+import { useMapStore, useMapActions } from "../mapHooks";
 import { mapStore } from "../mapStore";
 
 describe("mapHooks", () => {
@@ -207,15 +207,185 @@ describe("mapHooks", () => {
 
     it("should call handleMapPress action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.handleMapPress));
-      
+
       act(() => {
         mapStore.setState({ isListExpanded: true });
       });
-      
+
       act(() => {
         result.current();
       });
-      
+
+      expect(mapStore.getState().isListExpanded).toBe(false);
+    });
+  });
+
+  describe("useMapActions", () => {
+    it("should return stable action references across renders", () => {
+      const { result, rerender } = renderHook(() => useMapActions());
+
+      const firstRender = result.current;
+      rerender();
+      const secondRender = result.current;
+
+      expect(firstRender.selectUser).toBe(secondRender.selectUser);
+      expect(firstRender.deselectUser).toBe(secondRender.deselectUser);
+      expect(firstRender.backToList).toBe(secondRender.backToList);
+      expect(firstRender.toggleListExpansion).toBe(secondRender.toggleListExpansion);
+    });
+
+    it("should return object with all expected actions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      expect(typeof result.current.selectUser).toBe("function");
+      expect(typeof result.current.deselectUser).toBe("function");
+      expect(typeof result.current.backToList).toBe("function");
+      expect(typeof result.current.toggleListExpansion).toBe("function");
+      expect(typeof result.current.collapseList).toBe("function");
+      expect(typeof result.current.setShowManageModal).toBe("function");
+      expect(typeof result.current.setFollowMode).toBe("function");
+      expect(typeof result.current.setFocusedCoordinate).toBe("function");
+      expect(typeof result.current.toggleTheme).toBe("function");
+      expect(typeof result.current.recenter).toBe("function");
+      expect(typeof result.current.handleMapUserPress).toBe("function");
+      expect(typeof result.current.handleMapPress).toBe("function");
+    });
+
+    it("should call selectUser through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.selectUser("user-123", [52.2297, 21.0122]);
+      });
+
+      expect(mapStore.getState().selectedUserId).toBe("user-123");
+    });
+
+    it("should call deselectUser through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        mapStore.setState({ selectedUserId: "user-123" });
+      });
+
+      act(() => {
+        result.current.deselectUser();
+      });
+
+      expect(mapStore.getState().selectedUserId).toBeNull();
+    });
+
+    it("should call backToList through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        mapStore.setState({ selectedUserId: "user-123", showUsersList: false });
+      });
+
+      act(() => {
+        result.current.backToList();
+      });
+
+      expect(mapStore.getState().showUsersList).toBe(true);
+    });
+
+    it("should call toggleListExpansion through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.toggleListExpansion();
+      });
+
+      expect(mapStore.getState().isListExpanded).toBe(true);
+    });
+
+    it("should call collapseList through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        mapStore.setState({ isListExpanded: true });
+      });
+
+      act(() => {
+        result.current.collapseList();
+      });
+
+      expect(mapStore.getState().isListExpanded).toBe(false);
+    });
+
+    it("should call setShowManageModal through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.setShowManageModal(true);
+      });
+
+      expect(mapStore.getState().showManageModal).toBe(true);
+    });
+
+    it("should call setFollowMode through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.setFollowMode("user");
+      });
+
+      expect(mapStore.getState().followMode).toBe("user");
+    });
+
+    it("should call setFocusedCoordinate through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.setFocusedCoordinate([40.7128, -74.006]);
+      });
+
+      expect(mapStore.getState().focusedCoordinate).toEqual([40.7128, -74.006]);
+    });
+
+    it("should call toggleTheme through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      expect(mapStore.getState().mapTheme).toBe("dark");
+
+      act(() => {
+        result.current.toggleTheme();
+      });
+
+      expect(mapStore.getState().mapTheme).toBe("light");
+    });
+
+    it("should call recenter through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.recenter([52.2297, 21.0122]);
+      });
+
+      expect(mapStore.getState().focusedCoordinate).toEqual([52.2297, 21.0122]);
+    });
+
+    it("should call handleMapUserPress through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        result.current.handleMapUserPress("user-456", [48.8566, 2.3522]);
+      });
+
+      expect(mapStore.getState().selectedUserId).toBe("user-456");
+    });
+
+    it("should call handleMapPress through useMapActions", () => {
+      const { result } = renderHook(() => useMapActions());
+
+      act(() => {
+        mapStore.setState({ isListExpanded: true });
+      });
+
+      act(() => {
+        result.current.handleMapPress();
+      });
+
       expect(mapStore.getState().isListExpanded).toBe(false);
     });
   });

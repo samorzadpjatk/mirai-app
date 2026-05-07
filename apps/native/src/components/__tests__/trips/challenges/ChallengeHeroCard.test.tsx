@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, Alert } from "react-native";
 import type * as ReactNative from "react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeHeroCard } from "../../../trips/challenges/ChallengeHeroCard";
@@ -11,19 +11,6 @@ interface ImageBackgroundMockProps {
 interface LinearGradientMockProps {
   children?: React.ReactNode;
 }
-
-jest.mock("react-native", () => {
-  const actual: typeof ReactNative = jest.requireActual("react-native");
-
-  function ImageBackgroundMock({ children }: ImageBackgroundMockProps) {
-    return <actual.View>{children}</actual.View>;
-  }
-
-  return {
-    ...actual,
-    ImageBackground: ImageBackgroundMock,
-  };
-});
 
 jest.mock("expo-linear-gradient", () => {
   const { View } = jest.requireActual("react-native");
@@ -39,6 +26,11 @@ describe("ChallengeHeroCard", () => {
     points: 100,
     isSelected: false,
   };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  });
 
   it("renders the hero labels", () => {
     const { getByText } = renderWithProviders(<ChallengeHeroCard {...baseProps} />);

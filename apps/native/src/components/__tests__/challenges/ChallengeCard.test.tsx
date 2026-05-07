@@ -1,4 +1,3 @@
-import { TouchableOpacity } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeCard } from "../../challenges/ChallengeCard";
@@ -59,15 +58,15 @@ describe("ChallengeCard", () => {
 
   it("calls onPress when unlocked", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(<ChallengeCard challenge={mockChallenge} onPress={onPress} />);
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    renderWithProviders(<ChallengeCard challenge={mockChallenge} onPress={onPress} />);
+    fireEvent.press(screen.getByTestId("challenge-card"));
     expect(onPress).toHaveBeenCalledWith(mockChallenge);
   });
 
   it("does not call onPress when locked", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} onPress={onPress} />);
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} onPress={onPress} />);
+    fireEvent.press(screen.getByTestId("challenge-card"));
     expect(onPress).not.toHaveBeenCalled();
   });
 

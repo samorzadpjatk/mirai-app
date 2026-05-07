@@ -15,6 +15,7 @@ export interface FilterChipProps {
   count?: number;
   disabled?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
   style?: ViewStyle;
   textStyle?: TextStyle;
   countPillStyle?: ViewStyle;
@@ -30,6 +31,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   count,
   disabled = false,
   accessibilityLabel,
+  testID,
   style,
   textStyle,
   countPillStyle,
@@ -39,6 +41,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
 
   return (
     <TouchableOpacity
+      testID={testID ?? "filter-chip"}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}

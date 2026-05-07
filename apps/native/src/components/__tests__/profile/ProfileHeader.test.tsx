@@ -77,9 +77,9 @@ describe("ProfileHeader", () => {
   });
 
   it("should render with default state when no user data", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<ProfileHeader />);
+    const { getByTestId } = renderWithProviders(<ProfileHeader />);
 
-    const container = UNSAFE_getByType(View);
+    const container = getByTestId("profile-header");
     expect(container).toBeTruthy();
   });
 

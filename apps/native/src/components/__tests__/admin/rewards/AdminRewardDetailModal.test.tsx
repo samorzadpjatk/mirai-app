@@ -3,7 +3,7 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import AdminRewardDetailModal from "../../../admin/rewards/AdminRewardDetailModal";
 import * as ImagePicker from "expo-image-picker";
-import { View, Text, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
 
 const mockMutateAsync = jest.fn();
 const mockDeleteMutateAsync = jest.fn();
@@ -11,17 +11,6 @@ const mockSetHiddenMutateAsync = jest.fn();
 const mockUpdatePurchaseStatusMutateAsync = jest.fn();
 const mockUpload = jest.fn();
 const mockOnClose = jest.fn();
-
-jest.mock("react-native", () => {
-   
-  const actualRN = jest.requireActual<typeof import("react-native")>("react-native");
-  return {
-    ...actualRN,
-    Alert: {
-      alert: jest.fn(),
-    },
-  };
-});
 
 const mockReward = {
   id: "reward-123",
@@ -297,6 +286,7 @@ jest.mock("~/components/common/ui", () => {
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockMutateAsync.mockResolvedValue({});
     mockDeleteMutateAsync.mockResolvedValue({});
     mockSetHiddenMutateAsync.mockResolvedValue({});
@@ -325,11 +315,10 @@ describe("AdminRewardDetailModal", () => {
     });
 
     it("should show loading state when data is loading", () => {
-      const { UNSAFE_getByType } = renderWithProviders(
+      const { getByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} rewardId="loading-reward" />
       );
-      const indicators = UNSAFE_getByType(ActivityIndicator);
-      expect(indicators).toBeTruthy();
+      expect(getByTestId("loading-indicator")).toBeTruthy();
     });
 
     it("should render reward creation info", () => {
@@ -855,11 +844,10 @@ describe("AdminRewardDetailModal", () => {
 
   describe("image handling", () => {
     it("should render reward image when available", () => {
-      const { UNSAFE_getByType } = renderWithProviders(
+      const { getByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} />
       );
-      const images = UNSAFE_getByType(Image);
-      expect(images).toBeTruthy();
+      expect(getByTestId("reward-image")).toBeTruthy();
     });
 
     it("should handle image picker for changing image", async () => {

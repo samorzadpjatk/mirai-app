@@ -41,6 +41,7 @@ export function AppModalShell({
       animationType={isPageSheet ? "slide" : "fade"}
       presentationStyle={isPageSheet ? "pageSheet" : undefined}
       onRequestClose={onClose}
+      testID="app-modal"
     >
       {isPageSheet ? (
         <View style={styles.pageSheetContainer}>
@@ -57,10 +58,11 @@ export function AppModalShell({
           </View>
         </View>
       ) : (
-        <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalOverlay} onPress={onClose} testID="app-modal-overlay">
           <Pressable
             style={[styles.modalContent, { maxHeight }, maxWidth ? { maxWidth } : undefined]}
             onPress={(event) => event.stopPropagation()}
+            testID="app-modal-content"
           >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{title}</Text>

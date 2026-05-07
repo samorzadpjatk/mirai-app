@@ -3,14 +3,19 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
-import * as ReactQuery from "@tanstack/react-query";
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(),
 }));
 
 const mockUseQuery = jest.fn();
-jest.spyOn(ReactQuery, "useQuery").mockImplementation((...args: unknown[]) => mockUseQuery(...args) as ReturnType<typeof ReactQuery.useQuery>);
+jest.mock("@tanstack/react-query", () => {
+  const actual = jest.requireActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  };
+});
 
 describe("SubmissionImageCard", () => {
   interface Submission {

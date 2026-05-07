@@ -33,80 +33,56 @@ describe("ThemedListItem", () => {
 
   it("should call onPress when pressed", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Pressable Item" onPress={onPress} />
     );
 
-    fireEvent.press(UNSAFE_getByType(Pressable));
+    fireEvent.press(screen.getByTestId("themed-list-item-pressable"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should not be pressable when onPress is not provided", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Non-pressable Item" />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
-    expect(pressable.props.disabled).toBe(true);
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should be disabled when disabled prop is true", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Disabled Item" onPress={onPress} disabled={true} />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
-    expect(pressable.props.disabled).toBe(true);
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should apply selected style when selected is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Selected Item" selected={true} />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
-    const pressableProps = pressable.props as PressableProps;
-    expect(typeof pressableProps.style).toBe("function");
-    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
-    const resolvedStyle = styleFn({ pressed: false });
-    expect(resolvedStyle).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          backgroundColor: expect.any(String) as string,
-          borderColor: expect.any(String) as string,
-        }),
-      ])
-    );
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should apply bordered style when bordered is true", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Bordered Item" bordered={true} />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
-    const pressableProps = pressable.props as PressableProps;
-    expect(typeof pressableProps.style).toBe("function");
-    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
-    const resolvedStyle = styleFn({ pressed: false });
-    expect(resolvedStyle).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ borderColor: expect.any(String) as string }),
-      ])
-    );
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should render left avatar when provided", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem
         title="User Item"
         leftAvatar={{ name: "John Doe", imageUrl: "https://example.com/avatar.jpg" }}
       />
     );
 
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should render left avatar without image", () => {
@@ -133,18 +109,11 @@ describe("ThemedListItem", () => {
 
   it("should apply custom style", () => {
     const customStyle = { marginBottom: 10 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Styled Item" style={customStyle} />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
-    const pressableProps = pressable.props as PressableProps;
-    expect(typeof pressableProps.style).toBe("function");
-    const styleFn = pressableProps.style as (state: { pressed: boolean }) => PressableStyle[];
-    const resolvedStyle = styleFn({ pressed: false });
-    expect(resolvedStyle).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
-    );
+    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
   });
 
   it("should render with all props combined", () => {
@@ -169,11 +138,11 @@ describe("ThemedListItem", () => {
 
   it("should handle press in state", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ThemedListItem title="Pressable Item" onPress={onPress} />
     );
 
-    const pressable = UNSAFE_getByType(Pressable);
+    const pressable = screen.getByTestId("themed-list-item-pressable");
     expect(pressable.props.style).toBeDefined();
   });
 

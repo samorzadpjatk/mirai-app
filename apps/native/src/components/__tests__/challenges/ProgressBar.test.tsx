@@ -26,8 +26,14 @@ jest.mock("react-native-reanimated", () => {
 });
 
 describe("ProgressBar", () => {
-  it("renders the progress fill", () => {
+  it("renders the progress fill with correct width style", () => {
     renderWithProviders(<ProgressBar progress={50} />);
-    expect(screen.getByTestId("progress-fill")).toBeTruthy();
+    const progressFill = screen.getByTestId("progress-fill");
+    expect(progressFill).toBeTruthy();
+    expect(progressFill.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ width: "50%" })
+      ])
+    );
   });
 });

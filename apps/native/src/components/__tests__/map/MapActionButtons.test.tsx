@@ -1,5 +1,4 @@
 import React from "react";
-import { TouchableOpacity, Pressable, ActivityIndicator } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapActionButtons } from "../../map/MapActionButtons";
@@ -55,33 +54,32 @@ describe("MapActionButtons", () => {
   it("should render location toggle button", () => {
     renderWithProviders(<MapActionButtons />);
 
-    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("location-toggle-button")).toBeOnTheScreen();
   });
 
   it("should render theme toggle button", () => {
     renderWithProviders(<MapActionButtons />);
 
-    expect(screen.UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("icon-sunny")).toBeOnTheScreen();
   });
 
   it("should render recenter button when location sharing is enabled", () => {
     renderWithProviders(<MapActionButtons />);
 
-    expect(screen.UNSAFE_getAllByType(Pressable).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("icon-locate")).toBeOnTheScreen();
   });
 
   it("should render background toggle with correct status", () => {
     renderWithProviders(<MapActionButtons />);
 
     expect(screen.getByText("Background")).toBeOnTheScreen();
-    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("background-toggle-button")).toBeOnTheScreen();
   });
 
   it("should call toggleLocationSharing when location toggle is pressed", () => {
     renderWithProviders(<MapActionButtons />);
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(buttons[1]);
+    fireEvent.press(screen.getByTestId("location-toggle-button"));
 
     expect(mockToggleLocationSharing).toHaveBeenCalled();
   });
@@ -89,8 +87,7 @@ describe("MapActionButtons", () => {
   it("should call toggleBackgroundLocationUpdates when background toggle is pressed", () => {
     renderWithProviders(<MapActionButtons />);
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(buttons[0]);
+    fireEvent.press(screen.getByTestId("background-toggle-button"));
 
     expect(mockToggleBackgroundLocation).toHaveBeenCalled();
   });
@@ -98,8 +95,7 @@ describe("MapActionButtons", () => {
   it("should call toggleTheme when theme button is pressed", () => {
     renderWithProviders(<MapActionButtons />);
 
-    const pressables = screen.UNSAFE_getAllByType(Pressable);
-    fireEvent.press(pressables[0]);
+    fireEvent.press(screen.getByTestId("theme-toggle-button"));
 
     expect(mockToggleTheme).toHaveBeenCalled();
   });
@@ -107,8 +103,7 @@ describe("MapActionButtons", () => {
   it("should call onRecenter when recenter button is pressed", () => {
     renderWithProviders(<MapActionButtons />);
 
-    const pressables = screen.UNSAFE_getAllByType(Pressable);
-    fireEvent.press(pressables[1]);
+    fireEvent.press(screen.getByTestId("recenter-button"));
 
     expect(mockOnRecenter).toHaveBeenCalled();
   });
@@ -126,8 +121,7 @@ describe("MapActionButtons", () => {
 
     renderWithProviders(<MapActionButtons />);
 
-    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
-    expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("location-loading-indicator")).toBeOnTheScreen();
   });
 
   it("should show loading indicator when updating background location", () => {
@@ -143,8 +137,7 @@ describe("MapActionButtons", () => {
 
     renderWithProviders(<MapActionButtons />);
 
-    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
-    expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("background-loading-indicator")).toBeOnTheScreen();
   });
 
   it("should disable background toggle when location sharing is disabled", () => {
@@ -162,9 +155,8 @@ describe("MapActionButtons", () => {
 
     expect(screen.getByText("Background")).toBeOnTheScreen();
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    const backgroundButton = buttons[0];
-    expect(backgroundButton.props.disabled).toBe(true);
+    const backgroundButton = screen.getByTestId("background-toggle-button");
+    expect(backgroundButton).toBeDisabled();
   });
 
   it("should show background toggle when background location is disabled", () => {
@@ -197,8 +189,7 @@ describe("MapActionButtons", () => {
 
     renderWithProviders(<MapActionButtons />);
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    const locationButton = buttons[1];
-    expect(locationButton.props.disabled).toBe(true);
+    const locationButton = screen.getByTestId("location-toggle-button");
+    expect(locationButton).toBeDisabled();
   });
 });

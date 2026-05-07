@@ -24,7 +24,7 @@ const JudgementContent = ({ tripId, challengeId }: JudgementContentProps) => {
   if (isLoading) {
     return (
       <View style={[viewStyles.container, viewStyles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator testID="judgement-loading" size="large" color={colors.primary} />
       </View>
     );
   }

@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionAssetPreview } from "../../judgement/SubmissionAssetPreview";
 import { useFileDownload } from "~/hooks/files";
@@ -93,8 +93,8 @@ describe("SubmissionAssetPreview", () => {
   it("should render image loading state", () => {
     mockUseFileDownload.mockReturnValueOnce(createState("loading", null)).mockReturnValueOnce(createState("idle", null));
 
-    const { UNSAFE_getByType } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
-    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    expect(getByTestId("image-loading")).toBeTruthy();
   });
 
   it("should render image when file is available", () => {
@@ -137,8 +137,8 @@ describe("SubmissionAssetPreview", () => {
   it("should render video loading state", () => {
     mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("loading", null));
 
-    const { UNSAFE_getByType } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
-    expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
+    expect(getByTestId("video-loading")).toBeTruthy();
   });
 
   it("should render video placeholder when no video file", () => {

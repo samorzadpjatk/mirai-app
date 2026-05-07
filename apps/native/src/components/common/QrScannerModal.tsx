@@ -78,6 +78,7 @@ export function QrScannerModal({
 
   return (
     <Modal
+      testID="qr-scanner-modal"
       visible={visible}
       animationType="slide"
       onRequestClose={handleClose}

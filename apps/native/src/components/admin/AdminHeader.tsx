@@ -23,6 +23,7 @@ export function AdminHeader({
       <View style={styles.headerLeft}>
         {showBackButton && (
           <TouchableOpacity
+            testID="back-button"
             style={styles.backButton}
             onPress={onBackPress}
             activeOpacity={0.7}

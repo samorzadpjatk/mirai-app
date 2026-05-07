@@ -30,6 +30,7 @@ describe("ExistingSubmissionCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDownloadedFileUri = "mock-uri";
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
   });
 
   it("renders submission details and withdraw action", () => {
@@ -70,7 +71,7 @@ describe("ExistingSubmissionCard", () => {
 
   it("renders the local preview when download file is missing", () => {
     mockDownloadedFileUri = null;
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <ExistingSubmissionCard
         submission={mockSubmission}
         isWithdrawing={false}
@@ -79,7 +80,7 @@ describe("ExistingSubmissionCard", () => {
       />
     );
 
-    const image = UNSAFE_getByType(Image);
+    const image = screen.getByLabelText("Submission preview");
     const source = image.props.source as { uri: string };
     expect(source.uri).toBe("local-preview-uri");
   });

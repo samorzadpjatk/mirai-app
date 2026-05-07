@@ -16,6 +16,7 @@ interface PrimaryAddButtonProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   activeOpacity?: number;
+  testID?: string;
 }
 
 export function PrimaryAddButton({
@@ -25,6 +26,7 @@ export function PrimaryAddButton({
   style,
   textStyle,
   activeOpacity = 0.9,
+  testID = "primary-add-button",
 }: PrimaryAddButtonProps) {
   return (
     <TouchableOpacity
@@ -32,6 +34,9 @@ export function PrimaryAddButton({
       disabled={disabled}
       style={[styles.button, disabled && styles.buttonDisabled, style]}
       activeOpacity={activeOpacity}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={testID}
     >
       <Ionicons name="add-circle" size={24} color={colors.backgroundDark} />
       <Text style={[styles.buttonText, textStyle]}>{label}</Text>

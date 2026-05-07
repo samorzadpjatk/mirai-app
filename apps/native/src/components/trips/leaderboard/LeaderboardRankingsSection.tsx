@@ -13,7 +13,7 @@ export function LeaderboardRankingsSection({
   onPressGroup,
 }: LeaderboardRankingsSectionProps) {
   return (
-    <View style={styles.container}>
+    <View testID="leaderboard-rankings-section" style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Full Rankings</Text>
         <Text style={styles.subtitle}>Global Standings</Text>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AppModalShell } from "../../common/ui/AppModalShell";
@@ -40,7 +40,7 @@ describe("AppModalShell", () => {
 
   it("should call onClose when overlay is pressed (card variant)", () => {
     const onClose = jest.fn();
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -51,14 +51,12 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const pressables = UNSAFE_getAllByType(Pressable);
-    expect(pressables.length).toBeGreaterThan(0);
-    fireEvent.press(pressables[0]!);
+    fireEvent.press(screen.getByTestId("app-modal-overlay"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("should render with card variant by default", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -68,13 +66,13 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal.props.transparent).toBe(true);
     expect(modal.props.animationType).toBe("fade");
   });
 
   it("should render with pageSheet variant", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -85,14 +83,14 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal.props.transparent).toBe(false);
     expect(modal.props.animationType).toBe("slide");
     expect(modal.props.presentationStyle).toBe("pageSheet");
   });
 
   it("should apply custom maxHeight", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -103,12 +101,12 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal).toBeTruthy();
   });
 
   it("should apply custom maxWidth", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -119,13 +117,13 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal).toBeTruthy();
   });
 
   it("should apply custom contentStyle", () => {
     const customStyle = { padding: 20 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -136,13 +134,13 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal).toBeTruthy();
   });
 
   it("should handle onRequestClose", () => {
     const onClose = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -152,34 +150,23 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal.props.onRequestClose).toBe(onClose);
   });
 
   it("should stop propagation when content is pressed", () => {
-    const onClose = jest.fn();
-    const { UNSAFE_getAllByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
-        onClose={onClose}
+        onClose={jest.fn()}
         variant="card"
       >
         <Text>Content</Text>
       </AppModalShell>
     );
 
-    interface PressableLike {
-      props: {
-        onPress?: () => void;
-      };
-    }
-
-    const pressables = UNSAFE_getAllByType(Pressable) as PressableLike[];
-    const contentPressable = pressables.find((p) =>
-      p.props.onPress?.toString().includes("stopPropagation")
-    );
-    expect(contentPressable).toBeTruthy();
+    expect(screen.getByTestId("app-modal-content")).toBeTruthy();
   });
 
   it("should render complex children", () => {
@@ -203,7 +190,7 @@ describe("AppModalShell", () => {
   });
 
   it("should render with default maxHeight", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <AppModalShell
         visible={true}
         title="Test Modal"
@@ -213,7 +200,7 @@ describe("AppModalShell", () => {
       </AppModalShell>
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("app-modal");
     expect(modal).toBeTruthy();
   });
 

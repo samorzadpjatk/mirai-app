@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, ScrollView } from "react-native";
+import { Alert } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsHistoryView from "../../rewards/RewardsHistoryView";
@@ -71,24 +71,10 @@ jest.mock("@expo/vector-icons", () => ({
   },
 }));
 
-jest.mock("react-native", () => {
-  const actual = jest.requireActual("react-native") as typeof import("react-native");
-  return {
-    ...actual,
-    Alert: {
-      alert: jest.fn((title: string, message: string, buttons?: { text: string; style?: string; onPress?: () => void }[]) => {
-        if (buttons) {
-          const destructiveButton = buttons.find((button) => button.style === "destructive");
-          destructiveButton?.onPress?.();
-        }
-      }),
-    },
-  };
-});
-
 describe("RewardsHistoryView", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockUseRewardPurchaseHistory.mockReturnValue({
       data: [],
       isLoading: false,
@@ -107,10 +93,10 @@ describe("RewardsHistoryView", () => {
   it("renders loading state", () => {
     mockUseRewardPurchaseHistory.mockReturnValue({ data: [], isLoading: true, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
 
-    const { getByText, UNSAFE_getAllByType } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
     expect(getByText("Loading claim history...")).toBeTruthy();
-    expect(UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThanOrEqual(1);
+    expect(getByTestId("loading-indicator")).toBeTruthy();
   });
 
   it("renders error state", () => {
@@ -174,6 +160,13 @@ describe("RewardsHistoryView", () => {
   it("handles cancel action", () => {
     mockUseRewardPurchaseHistory.mockReturnValue({ data: [basePurchase({ status: "BOUGHT" })], isLoading: false, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
 
+    jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
+      const destructiveButton = buttons?.find((b: { style?: string }) => b.style === "destructive");
+      if (destructiveButton?.onPress) {
+        destructiveButton.onPress();
+      }
+    });
+
     const { getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
     fireEvent.press(getByText("Cancel claim"));
@@ -193,12 +186,12 @@ describe("RewardsHistoryView", () => {
       refetch: mockRefetch,
     });
 
-    const { getByText, UNSAFE_getByType } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
     expect(getByText("Pickup details")).toBeTruthy();
     expect(getByText("Pickup at reception")).toBeTruthy();
     expect(getByText("Loading more claim history...")).toBeTruthy();
-    expect(UNSAFE_getByType(ScrollView)).toBeTruthy();
+    expect(getByTestId("rewards-scroll-view")).toBeTruthy();
   });
 
   it("renders refresh control and all status labels", () => {
@@ -219,9 +212,9 @@ describe("RewardsHistoryView", () => {
       refetch: mockRefetch,
     });
 
-    const { UNSAFE_getByType, getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByTestId, getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
-    expect(UNSAFE_getByType(ScrollView).props.refreshControl).toBeTruthy();
+    expect(getByTestId("rewards-scroll-view").props.refreshControl).toBeTruthy();
     expect(getByText("Bought")).toBeTruthy();
     expect(getByText("Accepted")).toBeTruthy();
     expect(getByText("In delivery")).toBeTruthy();

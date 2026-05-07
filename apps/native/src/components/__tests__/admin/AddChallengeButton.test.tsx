@@ -1,5 +1,4 @@
 import React from "react";
-import { TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AddChallengeButton } from "../../admin/challenges/AddChallengeButton";
@@ -15,11 +14,11 @@ describe("AddChallengeButton", () => {
 
   it("calls onPress when pressed", () => {
     const onPress = jest.fn();
-    const { UNSAFE_getByType } = renderWithProviders(
+    const { getByRole } = renderWithProviders(
       <AddChallengeButton onPress={onPress} />
     );
 
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    fireEvent.press(getByRole("button"));
     expect(onPress).toHaveBeenCalled();
   });
 });

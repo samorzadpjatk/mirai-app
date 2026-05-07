@@ -9,7 +9,7 @@ interface GroupsSearchBarProps {
 
 export function GroupsSearchBar({ value, onChangeText }: GroupsSearchBarProps) {
   return (
-    <View style={styles.searchContainer}>
+    <View testID="groups-search-bar-container" style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>
         <Ionicons
           name="search"

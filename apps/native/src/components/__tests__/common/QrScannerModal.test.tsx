@@ -169,22 +169,22 @@ describe("QrScannerModal", () => {
   });
 
   it("should apply correct Modal props", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("qr-scanner-modal");
     const modalProps = modal.props as React.ComponentProps<typeof Modal>;
     expect(modalProps.animationType).toBe("slide");
     expect(modalProps.visible).toBe(true);
   });
 
   it("should handle onRequestClose", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />
     );
 
-    const modal = UNSAFE_getByType(Modal);
+    const modal = screen.getByTestId("qr-scanner-modal");
     const modalProps = modal.props as React.ComponentProps<typeof Modal>;
     expect(typeof modalProps.onRequestClose).toBe("function");
   });

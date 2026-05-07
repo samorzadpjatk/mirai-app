@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { Alert, Linking } from "react-native";
 import { useNotifications } from "../../notifications/useNotifications";
 
 // Mock expo-notifications
@@ -29,14 +30,16 @@ jest.mock("expo-constants", () => ({
   },
 }));
 
-// Mock react-native
+// Mock react-native Alert and Linking
 interface AlertButton { text: string; style?: string; onPress?: () => void }
-const mockAlert = jest.fn<(title: string, message: string, buttons: AlertButton[]) => void>();
+const mockAlert = jest.fn<(title: string, message: string, buttons?: AlertButton[]) => void>();
 const mockLinkingOpenSettings = jest.fn<() => Promise<void>>();
 
 jest.mock("react-native", () => ({
   Alert: {
-    alert: (...args: [string, string, AlertButton[]]) => mockAlert(...args),
+    alert: (title: string, message: string, buttons?: AlertButton[]) => {
+      mockAlert(title, message, buttons);
+    },
   },
   Linking: {
     openSettings: () => mockLinkingOpenSettings(),
@@ -99,7 +102,7 @@ describe("useNotifications", () => {
     mockLinkingOpenSettings.mockResolvedValue(undefined);
   });
 
-  it("should return initial loading state", () => {
+  it("should return initial loading state", async () => {
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: true,
@@ -112,7 +115,9 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
-    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(true);
+    });
     expect(result.current.isSubscribed).toBe(false);
     expect(result.current.isSupported).toBe(true);
   });
@@ -142,7 +147,7 @@ describe("useNotifications", () => {
     expect(result.current.isSubscribedElsewhere).toBe(false);
   });
 
-  it("should detect subscription elsewhere when permission denied", () => {
+  it("should detect subscription elsewhere when permission denied", async () => {
     mockUseQuery.mockReturnValue({
       data: {
         isSubscribed: true,
@@ -160,8 +165,10 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
-    expect(result.current.isSubscribed).toBe(false);
-    expect(result.current.isSubscribedElsewhere).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isSubscribed).toBe(false);
+      expect(result.current.isSubscribedElsewhere).toBe(true);
+    });
   });
 
   it("should request permission successfully", async () => {
@@ -180,12 +187,16 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
+    // Wait for initial permission check to complete
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
     let permissionResult: string | undefined;
     await act(async () => {
       permissionResult = await result.current.requestPermission();
     });
 
-    expect(mockGetPermissionsAsync).toHaveBeenCalled();
     expect(mockRequestPermissionsAsync).toHaveBeenCalled();
     expect(permissionResult).toBe("granted");
   });
@@ -204,6 +215,14 @@ describe("useNotifications", () => {
     mockGetPermissionsAsync.mockResolvedValue({ status: "granted" });
 
     const { result } = renderHook(() => useNotifications());
+
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
+    // Reset the mock to check if it's called again during requestPermission
+    mockGetPermissionsAsync.mockClear();
 
     let permissionResult: string | undefined;
     await act(async () => {
@@ -231,6 +250,11 @@ describe("useNotifications", () => {
     mockGetPermissionsAsync.mockResolvedValue({ status: "granted" });
 
     const { result } = renderHook(() => useNotifications());
+
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
 
     await act(async () => {
       await result.current.toggleSubscription();
@@ -260,6 +284,11 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
     await act(async () => {
       await result.current.toggleSubscription();
     });
@@ -283,18 +312,25 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
     await act(async () => {
       await result.current.toggleSubscription();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Permission Required",
-      "Please enable notifications in your device settings",
-      expect.arrayContaining([
-        expect.objectContaining({ text: "Cancel", style: "cancel" }),
-        expect.objectContaining({ text: "Open Settings", onPress: expect.any(Function) }),
-      ])
-    );
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith(
+        "Permission Required",
+        "Please enable notifications in your device settings",
+        expect.arrayContaining([
+          expect.objectContaining({ text: "Cancel", style: "cancel" }),
+          expect.objectContaining({ text: "Open Settings", onPress: expect.any(Function) }),
+        ])
+      );
+    });
   });
 
   it("should open settings when alert button pressed", async () => {
@@ -313,8 +349,17 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
     await act(async () => {
       await result.current.toggleSubscription();
+    });
+
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalled();
     });
 
     const alertCalls = mockAlert.mock.calls;
@@ -344,16 +389,21 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
-    act(() => {
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
+
+    await act(async () => {
       result.current.onTogglePress();
     });
 
     await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith("Error", "Failed to update notification settings");
+      expect(mockAlert).toHaveBeenCalledWith("Error", "Failed to update notification settings", undefined);
     });
   });
 
-  it("should show test notification alert", () => {
+  it("should show test notification alert", async () => {
     mockUseQuery.mockReturnValue({
       data: { isSubscribed: false, subscriptions: [] },
       isLoading: false,
@@ -366,11 +416,18 @@ describe("useNotifications", () => {
 
     const { result } = renderHook(() => useNotifications());
 
+    // Wait for initial render to complete
+    await waitFor(() => {
+      expect(result.current.isSupported).toBe(true);
+    });
+
     act(() => {
       result.current.testNotification();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith("Test", "This would trigger a test notification flow");
+    await waitFor(() => {
+      expect(mockAlert).toHaveBeenCalledWith("Test", "This would trigger a test notification flow", undefined);
+    });
   });
 
   it("should handle multiple subscriptions when unsubscribing", async () => {
@@ -395,6 +452,11 @@ describe("useNotifications", () => {
     mockGetPermissionsAsync.mockResolvedValue({ status: "granted" });
 
     const { result } = renderHook(() => useNotifications());
+
+    // Wait for initial permission check
+    await waitFor(() => {
+      expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    });
 
     await act(async () => {
       await result.current.toggleSubscription();

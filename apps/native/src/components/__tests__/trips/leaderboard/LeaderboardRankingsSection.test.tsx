@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardRankingsSection } from "../../../trips/leaderboard/LeaderboardRankingsSection";
@@ -104,11 +103,10 @@ describe("LeaderboardRankingsSection", () => {
   });
 
   it("should render with container styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("leaderboard-rankings-section")).toBeOnTheScreen();
   });
 
   it("should mark current user group with YOUR GROUP badge", () => {

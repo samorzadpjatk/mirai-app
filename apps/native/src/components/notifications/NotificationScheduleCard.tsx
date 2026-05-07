@@ -74,14 +74,22 @@ export function NotificationScheduleCard({
           </Text>
         </View>
         <View style={styles.scheduleActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleToggle}>
+          <TouchableOpacity
+            testID="toggle-button"
+            style={styles.actionButton}
+            onPress={handleToggle}
+          >
             <Ionicons
               name={schedule.isActive ? "notifications" : "notifications-off"}
               size={16}
               color="#9ca3af"
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+          <TouchableOpacity
+            testID="delete-button"
+            style={styles.actionButton}
+            onPress={handleDelete}
+          >
             <Ionicons name="trash" size={16} color="#9ca3af" />
           </TouchableOpacity>
         </View>

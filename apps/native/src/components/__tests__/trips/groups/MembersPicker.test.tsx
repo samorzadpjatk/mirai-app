@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersPicker } from "../../../trips/groups/create/MembersPicker";
@@ -89,8 +88,8 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const activityIndicator = screen.UNSAFE_getByType(ActivityIndicator);
-    expect(activityIndicator).toBeTruthy();
+    const activityIndicator = screen.getByTestId("activity-indicator");
+    expect(activityIndicator).toBeOnTheScreen();
   });
 
   it("should call onToggleMember when a member is pressed", () => {
@@ -117,8 +116,10 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const views = screen.UNSAFE_getAllByType(View);
-    expect(views.length).toBeGreaterThan(0);
+    const checkboxes = screen.getAllByTestId(/checkbox-/);
+    expect(checkboxes.length).toBeGreaterThan(0);
+    const selectedCheckbox = screen.getByTestId("checkbox-inner-1");
+    expect(selectedCheckbox).toBeOnTheScreen();
   });
 
   it("should render empty state when no participants", () => {

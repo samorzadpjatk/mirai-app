@@ -38,11 +38,7 @@ jest.mock("@mirai-app/trpc/client/query", () => ({
   }),
 }));
 
-jest.mock("react-native", () => ({
-  Alert: {
-    alert: jest.fn(),
-  },
-}));
+
 
 describe("useLocationPermissions", () => {
   const mockMutateAsync = jest.fn();
@@ -51,6 +47,7 @@ describe("useLocationPermissions", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: false,

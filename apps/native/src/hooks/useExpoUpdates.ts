@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as Updates from 'expo-updates';
 
 interface UseExpoUpdatesReturn {
@@ -7,6 +7,7 @@ interface UseExpoUpdatesReturn {
   isDownloading: boolean;
   downloadProgress: number;
   showUpdatePopup: boolean;
+  isInitialized: boolean;
   checkForUpdates: () => Promise<void>;
   startUpdate: () => Promise<void>;
   skipUpdate: () => void;
@@ -20,10 +21,14 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const hasAutoChecked = useRef(false);
 
-  const checkForUpdates = useCallback(async () => {
+  const checkForUpdates = useCallback(async (isAutoCheck = false) => {
     if (__DEV__) {
-      // Skip update checks in development
+      if (isAutoCheck) {
+        setIsInitialized(true);
+      }
       return;
     }
 
@@ -42,6 +47,9 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       setError('Failed to check for updates');
     } finally {
       setIsChecking(false);
+      if (isAutoCheck) {
+        setIsInitialized(true);
+      }
     }
   }, []);
 
@@ -68,11 +76,12 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
     setDownloadProgress(0);
   }, []);
 
-  // Check for updates when the hook is first used
   useEffect(() => {
-    // Only check for updates if we're running in a production build
-    if (!__DEV__ && Updates.isEnabled) {
-      void checkForUpdates();
+    if (!__DEV__ && Updates.isEnabled && !hasAutoChecked.current) {
+      hasAutoChecked.current = true;
+      void checkForUpdates(true);
+    } else if (__DEV__ || !Updates.isEnabled) {
+      setIsInitialized(true);
     }
   }, [checkForUpdates]);
 
@@ -82,6 +91,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
     isDownloading,
     downloadProgress,
     showUpdatePopup,
+    isInitialized,
     checkForUpdates,
     startUpdate,
     skipUpdate,

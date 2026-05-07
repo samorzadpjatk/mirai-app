@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -10,7 +8,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateScheduleModal } from "../../notifications/CreateScheduleModal";
 
@@ -163,7 +161,7 @@ jest.mock("~/components/common/ui", () => {
     }: AppModalFooterProps) => (
       <View testID="modal-footer">
         <TouchableOpacity testID="primary-button" onPress={onPrimary} disabled={isPrimaryDisabled}>
-          <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
+          <Text testID="primary-button-text">{isPrimaryLoading ? "Loading..." : primaryLabel}{isPrimaryDisabled ? " [disabled]" : ""}</Text>
         </TouchableOpacity>
         <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
           <Text>{secondaryLabel}</Text>
@@ -189,10 +187,10 @@ jest.mock("~/components/common/ui", () => {
       <TouchableOpacity
         testID={`segment-${label}`}
         onPress={onPress}
-        data-selected={selected}
+        accessibilityState={{ selected }}
         style={style}
       >
-        <Text>{label}</Text>
+        <Text testID={`segment-${label}-text`}>{label}{selected ? ' (selected)' : ''}</Text>
       </TouchableOpacity>
     ),
   };
@@ -200,6 +198,7 @@ jest.mock("~/components/common/ui", () => {
 
 describe("CreateScheduleModal", () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     mockUseTrips.mockReturnValue({
       trips: [
@@ -212,86 +211,101 @@ describe("CreateScheduleModal", () => {
     });
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   const defaultProps = {
     isOpen: true,
     onClose: mockOnClose,
     onCreated: mockOnCreated,
   };
 
-  it("should render modal with title", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  const renderWithTimers = async (component: React.ReactElement) => {
+    const rendered = renderWithProviders(component);
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+    return rendered;
+  };
+
+  it("should render modal with title", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByTestId("modal-title").children[0]).toBe("Create Notification Schedule");
   });
 
-  it("should render description text", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render description text", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Schedule a notification to be sent at specific times")).toBeTruthy();
   });
 
-  it("should render schedule name field", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render schedule name field", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Schedule Name *")).toBeTruthy();
   });
 
-  it("should render notification type selection", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render notification type selection", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Notification Type")).toBeTruthy();
-    expect(screen.getByText("Custom Message")).toBeTruthy();
-    expect(screen.getByText("Ranking Update")).toBeTruthy();
+    expect(screen.getByText(/Custom Message/)).toBeTruthy();
+    expect(screen.getByText(/Ranking Update/)).toBeTruthy();
   });
 
-  it("should render custom message fields when custom type is selected", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render custom message fields when custom type is selected", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Notification Title *")).toBeTruthy();
     expect(screen.getByText("Notification Body *")).toBeTruthy();
   });
 
-  it("should render trip selection when ranking type is selected", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render trip selection when ranking type is selected", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.getByText("Trip *")).toBeTruthy();
-    expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
-    expect(screen.getByText("Winter Trip 2024")).toBeTruthy();
+    expect(screen.getByText(/Summer Trip 2024/)).toBeTruthy();
+    expect(screen.getByText(/Winter Trip 2024/)).toBeTruthy();
   });
 
-  it("should render date fields", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render date fields", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Start Date *")).toBeTruthy();
     expect(screen.getByText("End Date *")).toBeTruthy();
   });
 
-  it("should render time fields", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render time fields", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByText("Hour (0-23) *")).toBeTruthy();
     expect(screen.getByText("Minute (0-59) *")).toBeTruthy();
   });
 
-  it("should render footer buttons", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render footer buttons", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     expect(screen.getByTestId("primary-button")).toBeTruthy();
     expect(screen.getByTestId("secondary-button")).toBeTruthy();
   });
 
-  it("should call onClose when cancel button is pressed", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should call onClose when cancel button is pressed", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("secondary-button"));
 
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it("should update schedule name when typing", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should update schedule name when typing", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     const inputs = screen.getAllByTestId("text-input");
     fireEvent.changeText(inputs[0], "Daily Reminder");
@@ -299,24 +313,38 @@ describe("CreateScheduleModal", () => {
     expect(inputs[0].props.value).toBe("Daily Reminder");
   });
 
-  it("should switch notification type", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should switch notification type", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
+
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+
+    // Initially, custom message fields should be visible
+    expect(screen.getByText("Notification Title *")).toBeTruthy();
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
-    expect(screen.getByTestId("segment-Ranking Update").props["data-selected"]).toBe(true);
+    // After switching to ranking, trip selection should be visible
+    expect(screen.getByText("Trip *")).toBeTruthy();
   });
 
-  it("should select trip when ranking type is active", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should select trip when ranking type is active", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
-    expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
-    expect(screen.getByText("Winter Trip 2024")).toBeTruthy();
+    expect(screen.getByText(/Summer Trip 2024/)).toBeTruthy();
+    expect(screen.getByText(/Winter Trip 2024/)).toBeTruthy();
   });
 
-  it("should show no trips message when trips array is empty", () => {
+  it("should show no trips message when trips array is empty", async () => {
     mockUseTrips.mockReturnValue({
       trips: [],
       hasNextPage: false,
@@ -324,14 +352,17 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.getByText("(No trips available)")).toBeTruthy();
   });
 
-  it("should show load more button when hasNextPage is true", () => {
+  it("should show load more button when hasNextPage is true", async () => {
     mockUseTrips.mockReturnValue({
       trips: [{ id: "trip-1", name: "Trip 1" }],
       hasNextPage: true,
@@ -339,14 +370,17 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.getByText("Load more trips")).toBeTruthy();
   });
 
-  it("should call fetchNextPage when load more is pressed", () => {
+  it("should call fetchNextPage when load more is pressed", async () => {
     mockUseTrips.mockReturnValue({
       trips: [{ id: "trip-1", name: "Trip 1" }],
       hasNextPage: true,
@@ -354,15 +388,18 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
     fireEvent.press(screen.getByText("Load more trips"));
 
     expect(mockFetchNextPage).toHaveBeenCalled();
   });
 
-  it("should show loading indicator when fetching next page", () => {
+  it("should show loading indicator when fetching next page", async () => {
     mockUseTrips.mockReturnValue({
       trips: [{ id: "trip-1", name: "Trip 1" }],
       hasNextPage: true,
@@ -370,36 +407,46 @@ describe("CreateScheduleModal", () => {
       fetchNextPage: mockFetchNextPage,
     });
 
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     fireEvent.press(screen.getByTestId("segment-Ranking Update"));
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
-    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
-    expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
+    const loadingIndicator = screen.getByTestId("loading-indicator");
+    expect(loadingIndicator).toBeTruthy();
   });
 
-  it("should disable submit when required fields are empty", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should disable submit when required fields are empty", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
+
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
     const primaryButton = screen.getByTestId("primary-button");
-    expect(primaryButton.props.disabled).toBe(true);
+    expect(primaryButton.props.accessibilityState?.disabled ?? primaryButton.props.disabled).toBe(true);
   });
 
-  it("should not render when modal is closed", () => {
+  it("should not render when modal is closed", async () => {
     renderWithProviders(<CreateScheduleModal {...defaultProps} isOpen={false} />);
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.queryByTestId("modal-shell")).toBeNull();
   });
 
-  it("should render scroll view for content", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should render scroll view for content", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
-    const scrollView = screen.UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("schedule-modal-scrollview");
     expect(scrollView).toBeTruthy();
   });
 
-  it("should handle numeric input for hour", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should handle numeric input for hour", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     const inputs = screen.getAllByTestId("text-input");
     const hourInput = inputs.find((input) => input.props.keyboardType === "numeric");
@@ -407,8 +454,8 @@ describe("CreateScheduleModal", () => {
     expect(hourInput).toBeTruthy();
   });
 
-  it("should handle numeric input for minute", () => {
-    renderWithProviders(<CreateScheduleModal {...defaultProps} />);
+  it("should handle numeric input for minute", async () => {
+    await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     const inputs = screen.getAllByTestId("text-input");
     const numericInputs = inputs.filter((input) => input.props.keyboardType === "numeric");

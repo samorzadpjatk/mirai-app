@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, Text, type ScrollViewProps, type ViewStyle } from "react-native";
+import { Text, type ViewStyle } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FilterChipRow } from "../../common/ui/FilterChipRow";
@@ -26,36 +26,36 @@ describe("FilterChipRow", () => {
   });
 
   it("should render as horizontal ScrollView", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
-    expect(scrollView).toBeTruthy();
+    const scrollView = screen.getByTestId("filter-chip-row");
+    expect(scrollView).toBeOnTheScreen();
     expect(scrollView.props.horizontal).toBe(true);
   });
 
   it("should hide horizontal scroll indicator", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("filter-chip-row");
     expect(scrollView.props.showsHorizontalScrollIndicator).toBe(false);
   });
 
   it("should apply default gap styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("filter-chip-row");
     const scrollViewProps = scrollView.props as ScrollViewProps;
     const contentContainerStyle = scrollViewProps.contentContainerStyle as ContentContainerStyle[];
     const styleObj = contentContainerStyle[0]!;
@@ -66,15 +66,14 @@ describe("FilterChipRow", () => {
   });
 
   it("should apply custom horizontal spacing", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow horizontalSpacing={20}>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
-    const scrollViewProps = scrollView.props as ScrollViewProps;
-    expect(scrollViewProps.contentContainerStyle).toEqual(
+    const scrollView = screen.getByTestId("filter-chip-row");
+    expect(scrollView.props.contentContainerStyle).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ gap: 20 }),
       ])
@@ -83,15 +82,14 @@ describe("FilterChipRow", () => {
 
   it("should apply custom style", () => {
     const customStyle = { marginTop: 10 };
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow style={customStyle}>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
-    const scrollViewProps = scrollView.props as ScrollViewProps;
-    expect(scrollViewProps.contentContainerStyle).toEqual(
+    const scrollView = screen.getByTestId("filter-chip-row");
+    expect(scrollView.props.contentContainerStyle).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
   });
@@ -150,24 +148,24 @@ describe("FilterChipRow", () => {
   });
 
   it("should handle empty children gracefully", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow>
         <></>
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("filter-chip-row");
     expect(scrollView).toBeTruthy();
   });
 
   it("should apply correct flex direction", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
       </FilterChipRow>
     );
 
-    const scrollView = UNSAFE_getByType(ScrollView);
+    const scrollView = screen.getByTestId("filter-chip-row");
     const scrollViewProps = scrollView.props as ScrollViewProps;
     const contentStyle = scrollViewProps.contentContainerStyle as ContentContainerStyle[];
     const hasRowDirection = contentStyle.some(

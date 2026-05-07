@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { LocationPermissionDenied } from "../../map/LocationPermissionDenied";
 
@@ -46,16 +45,16 @@ describe("LocationPermissionDenied", () => {
   });
 
   it("should render container with correct structure", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<LocationPermissionDenied />);
+    const { getByTestId } = renderWithProviders(<LocationPermissionDenied />);
 
-    const container = UNSAFE_getByType(View);
+    const container = getByTestId("location-permission-denied");
     expect(container).toBeTruthy();
   });
 
   it("should render compact container with row direction", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<LocationPermissionDenied compact={true} />);
+    const { getByTestId } = renderWithProviders(<LocationPermissionDenied compact={true} />);
 
-    const container = UNSAFE_getByType(View);
+    const container = getByTestId("location-permission-denied-compact");
     expect(container).toBeTruthy();
   });
 });

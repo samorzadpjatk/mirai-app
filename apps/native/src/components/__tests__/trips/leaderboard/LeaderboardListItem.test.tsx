@@ -1,5 +1,4 @@
 import React from "react";
-import { Image, TouchableOpacity } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardListItem } from "../../../trips/leaderboard/LeaderboardListItem";
@@ -22,15 +21,15 @@ describe("LeaderboardListItem", () => {
 
   it("renders an image when available", () => {
     const groupWithImage = { ...mockGroup, image: "https://example.com/image.jpg" };
-    const { UNSAFE_getByType } = renderWithProviders(<LeaderboardListItem group={groupWithImage} onPress={mockOnPress} />);
-    const image = UNSAFE_getByType(Image);
+    renderWithProviders(<LeaderboardListItem group={groupWithImage} onPress={mockOnPress} />);
+    const image = screen.getByTestId("group-image");
     const source = image.props.source as { uri: string };
     expect(source.uri).toBe("https://example.com/image.jpg");
   });
 
   it("calls onPress when pressed", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<LeaderboardListItem group={mockGroup} onPress={mockOnPress} />);
-    fireEvent.press(UNSAFE_getByType(TouchableOpacity));
+    renderWithProviders(<LeaderboardListItem group={mockGroup} onPress={mockOnPress} />);
+    fireEvent.press(screen.getByTestId("leaderboard-item"));
     expect(mockOnPress).toHaveBeenCalledWith(mockGroup);
   });
 

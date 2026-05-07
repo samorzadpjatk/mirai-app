@@ -17,6 +17,7 @@ interface PrimaryLoadingButtonProps {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   activeOpacity?: number;
+  testID?: string;
 }
 
 export function PrimaryLoadingButton({
@@ -27,18 +28,20 @@ export function PrimaryLoadingButton({
   style,
   textStyle,
   activeOpacity = 0.9,
+  testID,
 }: PrimaryLoadingButtonProps) {
   const isDisabled = isLoading || disabled;
 
   return (
     <TouchableOpacity
+      testID={testID}
       style={[styles.button, shadows.primaryGlow, style]}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={activeOpacity}
     >
       {isLoading ? (
-        <ActivityIndicator size="small" color={colors.backgroundDark} />
+        <ActivityIndicator testID={`${testID}-loading-indicator`} size="small" color={colors.backgroundDark} />
       ) : (
         <Text style={[styles.buttonText, textStyle]}>{label}</Text>
       )}

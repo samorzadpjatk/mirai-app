@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProfileActionsSection } from "../../profile/ProfileActionsSection";
@@ -135,10 +134,10 @@ describe("ProfileActionsSection", () => {
       openSystemLocationSettings: mockOpenSystemLocationSettings,
     });
 
-    const { getByText, UNSAFE_getAllByType } = renderWithProviders(<ProfileActionsSection />);
+    const { getByText, getAllByTestId } = renderWithProviders(<ProfileActionsSection />);
 
     expect(getByText("Enable location sharing first")).toBeTruthy();
-    expect(UNSAFE_getAllByType(ActivityIndicator).length).toBeGreaterThanOrEqual(1);
+    expect(getAllByTestId("background-location-indicator").length).toBeGreaterThanOrEqual(1);
   });
 
   it("handles settings and sign out actions", async () => {

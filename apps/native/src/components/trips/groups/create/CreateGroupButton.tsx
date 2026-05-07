@@ -14,6 +14,7 @@ export function CreateGroupButton({
       label="Create Group"
       isLoading={isSubmitting}
       onPress={onPress}
+      testID="create-group-button"
     />
   );
 }

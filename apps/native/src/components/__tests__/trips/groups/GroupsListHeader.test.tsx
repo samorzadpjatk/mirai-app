@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsListHeader } from "../../../trips/groups/GroupsListHeader";
@@ -52,10 +51,9 @@ describe("GroupsListHeader", () => {
   });
 
   it("should render with row layout", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupsListHeader title="All Groups" count={10} />
     );
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("groups-list-header")).toBeOnTheScreen();
   });
 });

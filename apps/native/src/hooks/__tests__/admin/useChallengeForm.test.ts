@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import { useChallengeForm } from "../../admin/useChallengeForm";
 
 // Mock expo-image-picker
@@ -14,12 +15,6 @@ jest.mock("expo-image-picker", () => ({
 
 // Mock react-native Alert
 const mockAlert = jest.fn();
-
-jest.mock("react-native", () => ({
-  Alert: {
-    alert: (...args: unknown[]) => mockAlert(...args),
-  },
-}));
 
 // Mock useFileUpload hook
 const mockUpload = jest.fn();
@@ -87,6 +82,7 @@ describe("useChallengeForm", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(mockAlert);
   });
 
   it("should initialize with default form state", () => {

@@ -4,10 +4,6 @@ import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FormField } from "../../common/ui/FormField";
 
-interface TextElement {
-  props: TextProps;
-}
-
 describe("FormField", () => {
   it("should render with label", () => {
     renderWithProviders(
@@ -16,8 +12,7 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const labelText = screen.UNSAFE_getByType(Text);
-    expect(labelText.props.children).toContain("Email");
+    expect(screen.getByTestId("form-field-label")).toHaveTextContent("Email");
   });
 
   it("should render children", () => {
@@ -37,8 +32,8 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const labelContainer = screen.UNSAFE_getByType(Text);
-    expect(labelContainer.props.children).toContain("Username");
+    expect(screen.getByTestId("form-field-label")).toHaveTextContent("Username *");
+    expect(screen.getByTestId("form-field-required")).toBeOnTheScreen();
   });
 
   it("should not show required indicator when required is false", () => {
@@ -48,8 +43,8 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const labelContainer = screen.UNSAFE_getByType(Text);
-    expect(labelContainer.props.children).toContain("Optional Field");
+    expect(screen.getByTestId("form-field-label")).toHaveTextContent("Optional Field");
+    expect(screen.queryByTestId("form-field-required")).toBeNull();
   });
 
   it("should not show required indicator by default", () => {
@@ -59,8 +54,8 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const labelContainer = screen.UNSAFE_getByType(Text);
-    expect(labelContainer.props.children).toContain("Default Field");
+    expect(screen.getByTestId("form-field-label")).toHaveTextContent("Default Field");
+    expect(screen.queryByTestId("form-field-required")).toBeNull();
   });
 
   it("should render hint text when provided", () => {
@@ -70,6 +65,7 @@ describe("FormField", () => {
       </FormField>
     );
 
+    expect(screen.getByTestId("form-field-hint")).toHaveTextContent("Must be at least 8 characters");
     expect(screen.getByText("Must be at least 8 characters")).toBeOnTheScreen();
   });
 
@@ -80,7 +76,7 @@ describe("FormField", () => {
       </FormField>
     );
 
-    expect(screen.queryByText("Some hint")).toBeNull();
+    expect(screen.queryByTestId("form-field-hint")).toBeNull();
   });
 
   it("should render error text when provided", () => {
@@ -90,6 +86,7 @@ describe("FormField", () => {
       </FormField>
     );
 
+    expect(screen.getByTestId("form-field-error")).toHaveTextContent("Invalid email format");
     expect(screen.getByText("Invalid email format")).toBeOnTheScreen();
   });
 
@@ -100,7 +97,7 @@ describe("FormField", () => {
       </FormField>
     );
 
-    expect(screen.queryByText("Some error")).toBeNull();
+    expect(screen.queryByTestId("form-field-error")).toBeNull();
   });
 
   it("should render both hint and error when both provided", () => {
@@ -114,6 +111,8 @@ describe("FormField", () => {
       </FormField>
     );
 
+    expect(screen.getByTestId("form-field-hint")).toHaveTextContent("This is a hint");
+    expect(screen.getByTestId("form-field-error")).toHaveTextContent("This is an error");
     expect(screen.getByText("This is a hint")).toBeOnTheScreen();
     expect(screen.getByText("This is an error")).toBeOnTheScreen();
   });
@@ -126,7 +125,7 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const container = screen.UNSAFE_getByType(View);
+    const container = screen.getByTestId("form-field-container");
     expect(container.props.style).toEqual(
       expect.arrayContaining([expect.objectContaining(customStyle)])
     );
@@ -139,14 +138,8 @@ describe("FormField", () => {
       </FormField>
     );
 
-    const textElements = screen.UNSAFE_getAllByType(Text) as TextElement[];
-    const labelTexts = textElements.map((el) =>
-      typeof el.props.children === "string"
-        ? el.props.children
-        : (el.props.children as string[])?.[0]
-    );
-    expect(labelTexts).toContain("Complex Field");
-    expect(screen.getByText("Select an option")).toBeOnTheScreen();
+    expect(screen.getByTestId("form-field-label")).toHaveTextContent("Complex Field");
+    expect(screen.getByTestId("form-field-hint")).toHaveTextContent("Select an option");
     expect(screen.getByText("Child Component")).toBeOnTheScreen();
   });
 
@@ -165,16 +158,19 @@ describe("FormField", () => {
       </>
     );
 
-    const labels = screen.UNSAFE_getAllByType(Text) as TextElement[];
-    const labelTexts = labels.map((label) => 
-      typeof label.props.children === "string" 
-        ? label.props.children 
-        : (label.props.children as string[])[0]
-    );
-    
-    expect(labelTexts).toContain("First Name");
-    expect(labelTexts).toContain("Last Name");
-    expect(labelTexts).toContain("Bio");
+    // Get all labels by testID and verify their content
+    const labels = screen.getAllByTestId("form-field-label");
+    expect(labels).toHaveLength(3);
+    expect(labels[0]).toHaveTextContent("First Name *");
+    expect(labels[1]).toHaveTextContent("Last Name *");
+    expect(labels[2]).toHaveTextContent("Bio");
+
+    // Verify required indicators for first two fields
+    const requiredIndicators = screen.getAllByTestId("form-field-required");
+    expect(requiredIndicators).toHaveLength(2);
+
+    // Verify hint is rendered
+    expect(screen.getByTestId("form-field-hint")).toHaveTextContent("Optional");
     expect(screen.getByText("Optional")).toBeOnTheScreen();
   });
 });

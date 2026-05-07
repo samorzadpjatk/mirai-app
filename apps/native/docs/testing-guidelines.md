@@ -15,9 +15,9 @@ This project uses Jest with `jest-expo` configuration and React Native Testing L
 
 ### Key Configuration Files
 
-- `jest.config.cjs`: Main Jest configuration with Expo-compliant `transformIgnorePatterns`
-- `jest.setup.js`: Global mocks for Expo modules and React Native components
-- `jest.setup.console.js`: Console suppression for known warnings
+- `jest.config.cjs`: Main Jest configuration with Expo-compliant `transformIgnorePatterns` and ESM support for Jest 30+
+- `jest.setup.js`: Minimal setup with `@testing-library/jest-native` extensions
+- `babel.config.cjs`: Babel configuration with test environment preset for module transformation
 
 ## Writing Tests
 
@@ -181,17 +181,35 @@ describe("UserProfile", () => {
 
 ## Mocking
 
-### Global Mocks (jest.setup.js)
-
-The following are automatically mocked:
-
-- Expo modules (expo-image, expo-location, etc.)
-- React Native components (FlatList, Animated, etc.)
-- Third-party libraries (react-native-reanimated, react-native-gesture-handler)
-
 ### Component-Specific Mocks
 
-Mock dependencies in your test file:
+Mock dependencies in your test file as needed:
+
+```typescript
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+
+const mockGetItemAsync = jest.fn();
+const mockSetItemAsync = jest.fn();
+
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: (...args: [string]) => mockGetItemAsync(...args),
+  setItemAsync: (...args: [string, string]) => mockSetItemAsync(...args),
+  deleteItemAsync: jest.fn(),
+}));
+
+describe("MyComponent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should use secure storage", async () => {
+    mockGetItemAsync.mockResolvedValue("stored-value");
+    // Test code...
+  });
+});
+```
+
+For router mocks:
 
 ```typescript
 jest.mock("expo-router", () => ({
@@ -215,6 +233,81 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 // - QueryClientProvider for React Query
 // - SafeAreaProvider for safe area insets
 renderWithProviders(<MyComponent />);
+```
+
+### Adding testIDs for Reliable Queries
+
+When components use nested `Pressable` elements or when `UNSAFE_getByType` fails, add `testID` attributes:
+
+```typescript
+// Component implementation
+<Pressable testID="modal-overlay" onPress={onClose}>
+  <Pressable testID="modal-content" onPress={stopPropagation}>
+    {children}
+  </Pressable>
+</Pressable>
+
+// Test
+fireEvent.press(screen.getByTestId("modal-overlay"));
+expect(screen.getByTestId("modal-content")).toBeTruthy();
+```
+
+**Components with added testIDs:**
+- `DateTimePickerModal` - `datetime-picker-overlay`, `datetime-picker-card`
+- `FullScreenModal` - `fullscreen-modal-close`
+- `AppModalShell` - `app-modal-overlay`, `app-modal-content`
+- `ThemedListItem` - `themed-list-item-pressable`
+
+### Mocking Alert.alert with Callbacks
+
+When testing components that show Alert dialogs with buttons:
+
+```typescript
+const mockAlert = jest.fn();
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Connect mockAlert to the spy
+  jest.spyOn(Alert, 'alert').mockImplementation(mockAlert);
+});
+
+// For testing Alert button callbacks
+jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
+  const destructiveButton = buttons?.find((b) => b.style === "destructive");
+  if (destructiveButton?.onPress) {
+    destructiveButton.onPress();
+  }
+});
+```
+
+### Testing Philosophy: Behavior Over Implementation
+
+**❌ Don't test implementation details:**
+```typescript
+// BAD - Tests internal props that can change
+expect(button.props.activeOpacity).toBe(0.7);
+expect(pressable.props.style[1].opacity).toBe(0.5);
+```
+
+**✅ Do test user-facing behavior:**
+```typescript
+// GOOD - Tests what users see and do
+await user.press(button);
+expect(onPress).toHaveBeenCalledTimes(1);
+expect(screen.getByText("Success")).toBeTruthy();
+```
+
+When you find yourself checking internal props, reconsider: "What is the user trying to accomplish?" Test that instead.
+
+### Handling Style Assertions
+
+Styles in React Native can be arrays or objects. Use flexible matchers:
+
+```typescript
+// Flexible - works with both arrays and objects
+expect(element.props.style).toMatchObject({
+  backgroundColor: "red",
+});
 ```
 
 ### Testing Rerender
@@ -252,15 +345,25 @@ cd apps/native && bun run test:coverage
 - [React Native Testing Library](https://callstack.github.io/react-native-testing-library/)
 - [Jest Documentation](https://jestjs.io/)
 
-## Migration Notes
+## Configuration Notes
 
-Recent improvements to test compliance:
+### Jest 30+ Compatibility
 
-1. ✅ Updated Jest configuration with Expo-compliant patterns
-2. ✅ Removed react-test-renderer dependencies
-3. ✅ Migrated 25+ files to use `screen.*` queries
-4. ✅ Added accessibility props to components (AdminTile, GroupCard)
-5. ✅ Created Expo Router testing infrastructure
+The Jest configuration has been updated for Jest 30+ compatibility with Bun's `.bun/` cache structure:
+
+1. **transformIgnorePatterns**: Uses pattern matching that works with nested node_modules paths
+2. **babel.config.cjs**: Test environment preset properly transforms ES modules to CommonJS
+3. **react-test-renderer**: Version aligned with React version (19.2.0)
+
+### Troubleshooting
+
+For common test issues, see the comprehensive [Common Test Failure Patterns and Solutions section in TESTING.md](../../../TESTING.md), which includes:
+
+- `UNSAFE_getByType(Pressable)` returning "No instances found"
+- `Alert.alert` mocks not being called
+- Testing implementation details vs. behavior
+- Data attributes in React Native mocks
+- Style assertion issues with arrays vs objects
 
 ## Questions?
 

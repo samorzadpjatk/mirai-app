@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsList } from "../../../trips/groups/GroupsList";
@@ -103,10 +102,9 @@ describe("GroupsList", () => {
   });
 
   it("should render with correct list styling", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
+    renderWithProviders(
       <GroupsList groups={mockGroups} onSelectGroup={mockOnSelectGroup} />
     );
-    const view = UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    expect(screen.getByTestId("groups-list")).toBeOnTheScreen();
   });
 });

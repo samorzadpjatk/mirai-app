@@ -139,8 +139,7 @@ describe("ManageSharingModal", () => {
 
     renderWithProviders(<ManageSharingModal />);
 
-    const activityIndicators = screen.UNSAFE_getAllByType(ActivityIndicator);
-    expect(activityIndicators.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("remove-loading-indicator")).toBeOnTheScreen();
   });
 
   it("should handle user with partial name", () => {

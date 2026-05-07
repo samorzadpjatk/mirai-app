@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { Alert } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { NotificationScheduleCard } from "../../notifications/NotificationScheduleCard";
@@ -68,18 +68,6 @@ const mockAlert = jest.fn((title: string, message: string, buttons: AlertButton[
   }
 });
 
-jest.mock("react-native", () => {
-  const actual = jest.requireActual("react-native") as typeof import("react-native");
-  return {
-    ...actual,
-    Alert: {
-      alert: (title: string, message: string, buttons: AlertButton[]) => {
-        mockAlert(title, message, buttons);
-      },
-    },
-  };
-});
-
 jest.mock("~/utils/format", () => ({
   formatRelativeTime: () => "2 hours ago",
   formatDate: (date: string) => new Date(date).toLocaleDateString(),
@@ -107,9 +95,10 @@ const mockSchedule = {
 
 describe("NotificationScheduleCard", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation(mockAlert);
     mockMutateDelete.mockClear();
     mockMutateToggle.mockClear();
-    mockAlert.mockClear();
   });
 
   it("should render schedule name", () => {
@@ -164,31 +153,31 @@ describe("NotificationScheduleCard", () => {
   it("should render toggle button when active", () => {
     renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("toggle-button")).toBeTruthy();
   });
 
   it("should render delete button", () => {
     renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("delete-button")).toBeTruthy();
   });
 
   it("should call toggle mutation when toggle button is pressed", () => {
     renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(buttons[0]);
+    const toggleButton = screen.getByTestId("toggle-button");
+    fireEvent.press(toggleButton);
 
-    expect(buttons[0]).toBeTruthy();
+    expect(toggleButton).toBeTruthy();
   });
 
   it("should show delete confirmation when delete button is pressed", () => {
     renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
 
-    const buttons = screen.UNSAFE_getAllByType(TouchableOpacity);
-    fireEvent.press(buttons[1]);
+    const deleteButton = screen.getByTestId("delete-button");
+    fireEvent.press(deleteButton);
 
-    expect(mockAlert).toHaveBeenCalledWith(
+    expect(Alert.alert).toHaveBeenCalledWith(
       "Delete Schedule?",
       expect.any(String),
       expect.arrayContaining([
@@ -219,7 +208,7 @@ describe("NotificationScheduleCard - conditional states", () => {
 
     renderWithProviders(<NotificationScheduleCard schedule={inactiveSchedule} />);
 
-    expect(screen.UNSAFE_getAllByType(TouchableOpacity).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("toggle-button")).toBeTruthy();
   });
 
   it("should not render trip tag when trip is null", () => {

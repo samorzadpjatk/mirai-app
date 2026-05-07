@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeNotFoundState } from "../../../trips/challenges/ChallengeNotFoundState";
@@ -32,8 +31,8 @@ describe("ChallengeNotFoundState", () => {
     renderWithProviders(
       <ChallengeNotFoundState onGoBack={jest.fn()} />
     );
-    const view = screen.UNSAFE_getByType(View);
-    expect(view).toBeTruthy();
+    const container = screen.getByTestId("challenge-not-found-container");
+    expect(container).toBeOnTheScreen();
   });
 
   it("should render button with correct styling", () => {

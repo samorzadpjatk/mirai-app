@@ -1,5 +1,4 @@
 import React from "react";
-import { ActivityIndicator, TouchableOpacity } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { CreateGroupButton } from "../../../../trips/groups/create/CreateGroupButton";
@@ -31,7 +30,7 @@ describe("CreateGroupButton", () => {
     );
 
     expect(screen.queryByText("Create Group")).toBeNull();
-    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.getByTestId("create-group-button-loading-indicator")).toBeTruthy();
   });
 
   it("should be disabled when isSubmitting is true", () => {
@@ -39,19 +38,19 @@ describe("CreateGroupButton", () => {
       <CreateGroupButton isSubmitting={true} onPress={jest.fn()} />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("create-group-button");
+    expect(button).toBeDisabled();
   });
 
-  it("should not call onPress when button is disabled during submission", () => {
+  it("should have disabled prop when isSubmitting is true", () => {
     const onPress = jest.fn();
 
     renderWithProviders(
       <CreateGroupButton isSubmitting={true} onPress={onPress} />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("create-group-button");
+    expect(button).toBeDisabled();
   });
 
   it("should enable button when isSubmitting changes from true to false", async () => {
@@ -61,8 +60,8 @@ describe("CreateGroupButton", () => {
       <CreateGroupButton isSubmitting={true} onPress={onPress} />
     );
 
-    const button = screen.UNSAFE_getByType(TouchableOpacity);
-    expect(button.props.disabled).toBe(true);
+    const button = screen.getByTestId("create-group-button");
+    expect(button).toBeDisabled();
 
     rerender(<CreateGroupButton isSubmitting={false} onPress={onPress} />);
 

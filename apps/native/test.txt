@@ -1,0 +1,294 @@
+----------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------
+File                                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                 
+----------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------
+All files                               |   76.43 |    70.19 |   71.93 |   77.77 |                                                                   
+ src                                    |       0 |        0 |       0 |       0 |                                                                   
+  images.d.ts                           |       0 |        0 |       0 |       0 |                                                                   
+ src/components                         |     100 |    86.66 |     100 |     100 |                                                                   
+  AppNavbar.tsx                         |     100 |      100 |     100 |     100 |                                                                   
+  LoadingScreen.tsx                     |     100 |      100 |     100 |     100 |                                                                   
+  Logo.tsx                              |     100 |        0 |     100 |     100 | 10                                                                
+  SafeAreaWrapper.tsx                   |     100 |       75 |     100 |     100 | 25                                                                
+  TopBar.tsx                            |     100 |      100 |     100 |     100 |                                                                   
+ src/components/admin                   |   96.96 |    95.23 |     100 |   96.87 |                                                                   
+  AdminHeader.tsx                       |     100 |      100 |     100 |     100 |                                                                   
+  AdminModal.tsx                        |   91.66 |    90.47 |     100 |   91.66 | 81                                                                
+  AdminSearchBar.tsx                    |     100 |      100 |     100 |     100 |                                                                   
+  AdminStats.tsx                        |     100 |      100 |     100 |     100 |                                                                   
+  AdminTile.tsx                         |     100 |      100 |     100 |     100 |                                                                   
+ src/components/admin/activity          |   79.16 |     64.7 |     100 |      85 |                                                                   
+  AdminActivityCard.tsx                 |   79.16 |     64.7 |     100 |      85 | 62-64                                                             
+ src/components/admin/challenges        |    52.5 |    51.69 |   42.85 |   53.41 |                                                                   
+  AddChallengeButton.tsx                |     100 |      100 |     100 |     100 |                                                                   
+  AddChallengeModal.tsx                 |    60.6 |    71.42 |   66.66 |    60.6 | 60-86,109,148-180,251                                             
+  AdminChallengeListCard.tsx            |   73.91 |    48.83 |      50 |   73.91 | 54,58-68,80-82,286,297,304,312-314                                
+  ChallengeCard.tsx                     |     100 |    91.66 |     100 |     100 | 24                                                                
+  ChallengeFormFields.tsx               |   16.66 |     43.1 |   11.11 |   16.66 | 74-114,144-226,250-413                                            
+  ChallengeFormModals.tsx               |   68.18 |    68.75 |   54.54 |   68.18 | 47-53,64-68,77,79,101                                             
+  ChallengeListItem.tsx                 |      75 |      100 |      50 |      75 | 22,29                                                             
+  EditChallengeModal.tsx                |      50 |    42.85 |    37.5 |      50 | 45-60,105-151                                                     
+  SubmissionImageCard.tsx               |     100 |    77.77 |     100 |     100 | 46,63                                                             
+  SubmissionReviewCard.tsx              |   79.48 |    61.81 |   77.77 |   82.85 | 71,99-105                                                         
+  challengeFormConstants.ts             |       0 |        0 |       0 |       0 | 3-139                                                             
+ src/components/admin/coins             |   82.92 |    68.08 |    87.5 |   82.92 |                                                                   
+  CoinOperationScreen.tsx               |   82.92 |    68.08 |    87.5 |   82.92 | 56-57,60-61,73-78                                                 
+ src/components/admin/common            |     100 |      100 |     100 |     100 |                                                                   
+  AdminAddFab.tsx                       |     100 |      100 |     100 |     100 |                                                                   
+ src/components/admin/groups            |   81.25 |    79.68 |      92 |   88.13 |                                                                   
+  GroupAssignmentModal.tsx              |   86.66 |    86.36 |     100 |   92.85 | 35                                                                
+  GroupCard.tsx                         |     100 |       75 |     100 |     100 | 47                                                                
+  GroupManagementCard.tsx               |     100 |     62.5 |     100 |     100 | 17                                                                
+  GroupModals.tsx                       |      75 |    78.57 |   85.71 |   83.33 | 29-30,76,86-87,189                                                
+  GroupsSearchBar.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+ src/components/admin/notifications     |   82.85 |       75 |   92.85 |   89.65 |                                                                   
+  NotificationCard.tsx                  |   81.48 |    76.66 |     100 |   90.47 | 33-35                                                             
+  NotificationFilters.tsx               |    87.5 |       50 |   83.33 |    87.5 | 65                                                                
+ src/components/admin/rewards           |   86.84 |    75.78 |   71.15 |   90.53 |                                                                   
+  AdminRewardDetailModal.tsx            |   88.42 |    79.25 |   83.87 |   91.58 | 191-195,504-545                                                   
+  AdminRewardsModal.tsx                 |   84.05 |    67.27 |   52.38 |    88.7 | 160-165,218-234,269                                               
+ src/components/admin/schedules         |   77.55 |    84.61 |   81.25 |   79.16 |                                                                   
+  ScheduleCard.tsx                      |     100 |    86.66 |     100 |     100 | 52,91                                                             
+  ScheduleModals.tsx                    |   74.41 |    83.33 |   72.72 |   76.19 | 30,37-38,113-115,124,130,136-137                                  
+ src/components/admin/transactions      |   94.73 |    88.88 |   85.71 |   94.73 |                                                                   
+  TransactionCard.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  TransactionsFilters.tsx               |      80 |       75 |      75 |      80 | 52                                                                
+ src/components/admin/users             |   74.54 |    64.28 |   58.33 |      82 |                                                                   
+  CreateUserModal.tsx                   |   94.11 |     87.5 |     100 |     100 | 36                                                                
+  EditUserModal.tsx                     |   58.06 |    51.11 |   28.57 |   66.66 | 55-56,60-62,72,157-160                                            
+  UserCard.tsx                          |     100 |    88.23 |     100 |     100 | 13                                                                
+ src/components/alerts                  |     100 |    83.33 |     100 |     100 |                                                                   
+  AlertsEmptyState.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  AlertsHeader.tsx                      |     100 |      100 |     100 |     100 |                                                                   
+  AlertsPagination.tsx                  |     100 |       80 |     100 |     100 | 46-54                                                             
+  NotificationCard.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+ src/components/camera                  |   61.05 |     42.1 |      55 |   67.46 |                                                                   
+  PhotoCaptureModal.tsx                 |   61.05 |     42.1 |      55 |   67.46 | 41-57,65-67,72,131,136,176-179,210-235                            
+ src/components/challenges              |   94.59 |    92.85 |   88.88 |   97.22 |                                                                   
+  ChallengeCard.tsx                     |   96.77 |    92.68 |     100 |   96.77 | 74                                                                
+  ProgressBar.tsx                       |   83.33 |      100 |   66.66 |     100 |                                                                   
+ src/components/common                  |   91.11 |     87.5 |     100 |   95.34 |                                                                   
+  FloatingActionButton.tsx              |     100 |      100 |     100 |     100 |                                                                   
+  QrScannerModal.tsx                    |   88.88 |       80 |     100 |   94.11 | 61-65                                                             
+  TripPickerModal.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+ src/components/common/buttons          |     100 |      100 |     100 |     100 |                                                                   
+  PrimaryAddButton.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  PrimaryLoadingButton.tsx              |     100 |      100 |     100 |     100 |                                                                   
+ src/components/common/ui               |   80.76 |     86.4 |      80 |   80.39 |                                                                   
+  AppModalFooter.tsx                    |     100 |       90 |     100 |     100 | 30                                                                
+  AppModalShell.tsx                     |      75 |    91.66 |      50 |      75 | 64                                                                
+  DateTimePickerModal.tsx               |   57.14 |       50 |      50 |      55 | 66-73,97-107                                                      
+  EmptyState.tsx                        |     100 |      100 |     100 |     100 |                                                                   
+  FilterChip.tsx                        |     100 |    89.28 |     100 |     100 | 62,69,96                                                          
+  FilterChipRow.tsx                     |     100 |      100 |     100 |     100 |                                                                   
+  FormField.tsx                         |     100 |      100 |     100 |     100 |                                                                   
+  FullScreenModal.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  SegmentedOption.tsx                   |     100 |    77.77 |     100 |     100 | 24,34                                                             
+  ThemedCard.tsx                        |     100 |     87.5 |     100 |     100 | 38                                                                
+  ThemedListItem.tsx                    |     100 |    89.47 |     100 |     100 | 48                                                                
+  ThemedTextInput.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+ src/components/community               |   73.71 |    66.66 |   74.07 |   74.45 |                                                                   
+  CommunityActivityCard.tsx             |   73.71 |    66.66 |   74.07 |   74.45 | 129,150-158,163-165,208,295,304-307,340,389-406,416,477-529       
+ src/components/judgement               |   56.52 |    50.96 |    43.9 |   58.94 |                                                                   
+  ActionBar.tsx                         |     100 |      100 |     100 |     100 |                                                                   
+  CardStack.tsx                         |   31.03 |    15.21 |      15 |   33.33 | 60-61,65-67,76-83,90-102,112-116,123-154,158-159,169,178,223      
+  CurrentSubmissionCard.tsx             |     100 |    83.33 |     100 |     100 | 63                                                                
+  EmptyStateCard.tsx                    |     100 |      100 |     100 |     100 |                                                                   
+  JudgementContent.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  JudgementHeader.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  QueuedSubmissionCard.tsx              |     100 |      100 |     100 |     100 |                                                                   
+  SubmissionAssetPreview.tsx            |   81.81 |    77.27 |   57.14 |   84.31 | 44-45,54-58,84-85,89,119                                          
+ src/components/map                     |    32.8 |    46.26 |   32.14 |   35.65 |                                                                   
+  LocationPermissionDenied.tsx          |     100 |      100 |     100 |     100 |                                                                   
+  LocationPicker.tsx                    |   47.36 |       50 |   45.45 |   48.21 | 105,115,124-128,132,136-137,141-142,147-192,342                   
+  MapActionButtons.tsx                  |     100 |    97.43 |     100 |     100 | 116                                                               
+  UserMap.tsx                           |       0 |        0 |       0 |       0 | 97-328                                                            
+ src/components/map/modals              |   92.85 |    86.95 |      90 |   92.59 |                                                                   
+  ManageSharingModal.tsx                |    87.5 |       90 |      75 |    87.5 | 27                                                                
+  MapModalShell.tsx                     |     100 |      100 |     100 |     100 |                                                                   
+  MapModalUserItem.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  ShareLocationModal.tsx                |   94.44 |    83.33 |     100 |   94.11 | 87                                                                
+ src/components/map/overlays            |     100 |      100 |     100 |     100 |                                                                   
+  MapOverlay.tsx                        |     100 |      100 |     100 |     100 |                                                                   
+  MapScreenOverlay.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+ src/components/map/panels              |     100 |       90 |     100 |     100 |                                                                   
+  UsersListPanel.tsx                    |     100 |       90 |     100 |     100 | 86                                                                
+ src/components/map/ui                  |   94.44 |    77.77 |      80 |   96.96 |                                                                   
+  SelectedUserCard.tsx                  |   88.88 |    64.28 |     100 |     100 | 15-57                                                             
+  UserAvatar.tsx                        |   96.29 |     92.3 |      75 |      96 | 82                                                                
+ src/components/notifications           |   61.97 |    60.93 |      52 |   61.76 |                                                                   
+  CreateScheduleModal.tsx               |   61.11 |       50 |   56.25 |   60.78 | 57-60,69-85,98-104,149,190                                        
+  NotificationScheduleCard.tsx          |   73.33 |    94.44 |      50 |   73.33 | 21-26,34-39                                                       
+  NotificationsHeader.tsx               |       0 |        0 |       0 |       0 | 15-26                                                             
+ src/components/profile                 |   92.77 |    91.75 |      85 |      95 |                                                                   
+  AccountInfoSection.tsx                |     100 |      100 |     100 |     100 |                                                                   
+  AppInfoFooter.tsx                     |     100 |      100 |     100 |     100 |                                                                   
+  ProfileActionsSection.tsx             |   95.45 |    96.49 |    87.5 |   95.45 | 40                                                                
+  ProfileHeader.tsx                     |   90.56 |       85 |      80 |      94 | 96,124-125                                                        
+ src/components/rewards                 |   53.28 |    53.15 |   44.82 |   54.54 |                                                                   
+  RewardsHistoryView.tsx                |   67.64 |       60 |   66.66 |   67.64 | 46-55,90,120-123,146-149                                          
+  RewardsView.tsx                       |   48.54 |    51.03 |      35 |      50 | 51,58-84,90,93,101-126,132-133,137-138,147-149,276,381-593        
+  types.ts                              |       0 |        0 |       0 |       0 |                                                                   
+ src/components/trips                   |     100 |      100 |     100 |     100 |                                                                   
+  TripBanner.tsx                        |     100 |      100 |     100 |     100 |                                                                   
+  TripEndedBanner.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+ src/components/trips/challenges        |   72.94 |    69.68 |   69.66 |      75 |                                                                   
+  AssignedGroupsCard.tsx                |     100 |      100 |     100 |     100 |                                                                   
+  CapturedImageCard.tsx                 |     100 |      100 |     100 |     100 |                                                                   
+  ChallengeActionButton.tsx             |     100 |      100 |     100 |     100 |                                                                   
+  ChallengeCommunitySubmissionsCard.tsx |    54.8 |    56.41 |      50 |   56.25 | 45-47,131-136,142,148-159,164-171,204,215,234-323,349-350,411-432 
+  ChallengeDescriptionCard.tsx          |     100 |      100 |     100 |     100 |                                                                   
+  ChallengeDetailsCard.tsx              |   95.23 |    80.64 |     100 |      95 | 42                                                                
+  ChallengeHeroCard.tsx                 |     100 |    82.85 |     100 |     100 | 58,77-78,80,83,119                                                
+  ChallengeLoadingState.tsx             |     100 |      100 |     100 |     100 |                                                                   
+  ChallengeNotFoundState.tsx            |     100 |      100 |     100 |     100 |                                                                   
+  ChallengeTimeLeftCard.tsx             |   85.71 |    79.78 |   84.61 |   91.35 | 37,58,65,80-81,106,221                                            
+  ChallengeUploadProgressCard.tsx       |     100 |      100 |     100 |     100 |                                                                   
+  ChallengesGrid.tsx                    |      60 |       50 |      50 |      60 | 26-29                                                             
+  ChallengesGridItem.tsx                |   79.41 |    76.59 |     100 |   79.41 | 152-173,194-201,245                                               
+  ChallengesLoadingState.tsx            |     100 |      100 |     100 |     100 |                                                                   
+  ExistingSubmissionCard.tsx            |   87.87 |    74.28 |   77.77 |   89.28 | 66-67,93                                                          
+  GroupInfoCard.tsx                     |       0 |        0 |       0 |       0 | 25-86                                                             
+  TripNotFoundState.tsx                 |       0 |        0 |       0 |       0 | 11-18                                                             
+  challengeStyles.ts                    |   51.72 |       65 |     100 |      56 | 9,11,13,15,17,19,21,23,30-32                                      
+  types.ts                              |       0 |        0 |       0 |       0 |                                                                   
+ src/components/trips/details           |   32.14 |    26.31 |      25 |   32.69 |                                                                   
+  PartnersSection.tsx                   |       0 |        0 |       0 |       0 | 7-70                                                              
+  TripHeroCard.tsx                      |   93.33 |    86.66 |     100 |     100 | 19,64                                                             
+  TripNewsSection.tsx                   |       0 |        0 |       0 |       0 | 27-170                                                            
+  TripNotFoundState.tsx                 |     100 |      100 |     100 |     100 |                                                                   
+  TripQuickAccessGrid.tsx               |     100 |      100 |     100 |     100 |                                                                   
+ src/components/trips/groups            |      80 |      100 |      80 |      80 |                                                                   
+  GroupCard.tsx                         |     100 |      100 |     100 |     100 |                                                                   
+  GroupImagePicker.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  GroupsCreateButton.tsx                |       0 |      100 |       0 |       0 | 9-12                                                              
+  GroupsList.tsx                        |     100 |      100 |     100 |     100 |                                                                   
+  GroupsListHeader.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  GroupsLoadingState.tsx                |     100 |      100 |     100 |     100 |                                                                   
+  GroupsNoTripState.tsx                 |       0 |      100 |       0 |       0 | 9-19                                                              
+  GroupsSearchBar.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  types.ts                              |       0 |        0 |       0 |       0 |                                                                   
+ src/components/trips/groups/create     |   88.23 |      100 |   85.71 |   88.23 |                                                                   
+  CreateGroupButton.tsx                 |     100 |      100 |     100 |     100 |                                                                   
+  GroupCreateNoTripState.tsx            |       0 |      100 |       0 |       0 | 11-21                                                             
+  GroupFormFields.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  MembersPicker.tsx                     |     100 |      100 |     100 |     100 |                                                                   
+  MembersSearchBar.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+ src/components/trips/groups/details    |   30.84 |    56.89 |   34.14 |   31.68 |                                                                   
+  EditGroupButton.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  GroupApprovedChallenges.tsx           |       0 |        0 |       0 |       0 | 34-291                                                            
+  GroupDetailsHero.tsx                  |     100 |      100 |     100 |     100 |                                                                   
+  GroupDetailsLoadingState.tsx          |       0 |      100 |       0 |       0 | 5-12                                                              
+  GroupMemberList.tsx                   |   92.85 |    93.75 |     100 |    92.3 | 34                                                                
+  GroupNotFoundState.tsx                |       0 |      100 |       0 |       0 | 9-19                                                              
+  GroupStatsGrid.tsx                    |     100 |      100 |     100 |     100 |                                                                   
+  TransactionHistory.tsx                |     100 |      100 |     100 |     100 |                                                                   
+ src/components/trips/groups/edit       |   54.54 |      100 |      50 |   54.54 |                                                                   
+  EditGroupFormFields.tsx               |     100 |      100 |     100 |     100 |                                                                   
+  EditMembersPicker.tsx                 |     100 |      100 |     100 |     100 |                                                                   
+  EditMembersSearchBar.tsx              |       0 |      100 |       0 |       0 | 14-30                                                             
+  GroupEditLoadingState.tsx             |       0 |      100 |       0 |       0 | 5-12                                                              
+  GroupEditNoTripState.tsx              |       0 |      100 |       0 |       0 | 9-19                                                              
+  GroupEditNotFoundState.tsx            |       0 |      100 |       0 |       0 | 11-21                                                             
+  GroupEditPermissionState.tsx          |       0 |      100 |       0 |       0 | 13-23                                                             
+  SaveGroupButton.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+ src/components/trips/leaderboard       |   94.73 |    93.75 |     100 |   94.73 |                                                                   
+  LeaderboardEmptyState.tsx             |     100 |      100 |     100 |     100 |                                                                   
+  LeaderboardListItem.tsx               |     100 |      100 |     100 |     100 |                                                                   
+  LeaderboardPodium.tsx                 |    90.9 |    91.17 |     100 |    90.9 | 21                                                                
+  LeaderboardRankingsSection.tsx        |     100 |      100 |     100 |     100 |                                                                   
+  types.ts                              |       0 |        0 |       0 |       0 |                                                                   
+ src/components/trips/list              |      96 |    61.53 |     100 |   95.65 |                                                                   
+  TripCard.tsx                          |   95.23 |    61.53 |     100 |   94.73 | 82                                                                
+  TripsEmptyState.tsx                   |     100 |      100 |     100 |     100 |                                                                   
+  TripsHeader.tsx                       |     100 |      100 |     100 |     100 |                                                                   
+  types.ts                              |       0 |        0 |       0 |       0 |                                                                   
+ src/components/updates                 |       0 |        0 |       0 |       0 |                                                                   
+  UpdatePopup.tsx                       |       0 |        0 |       0 |       0 | 28-61                                                             
+ src/config                             |     100 |      100 |     100 |     100 |                                                                   
+  runtimeEnv.ts                         |     100 |      100 |     100 |     100 |                                                                   
+ src/hooks                              |   97.77 |    88.88 |     100 |   97.77 |                                                                   
+  useExpoUpdates.ts                     |   97.77 |    88.88 |     100 |   97.77 | 30                                                                
+ src/hooks/admin                        |   86.75 |    75.57 |   71.83 |   87.52 |                                                                   
+  useAdminChallenges.ts                 |   88.88 |    84.61 |      75 |      88 | 31,41,51                                                          
+  useAdminChallengesByTrip.ts           |   73.07 |     62.5 |      70 |   72.72 | 35-49,74                                                          
+  useAdminCoins.ts                      |   93.33 |      100 |      75 |   93.33 | 28                                                                
+  useAdminGroups.ts                     |   74.19 |    57.14 |   61.53 |   73.33 | 62-77,113,117,121                                                 
+  useAdminNotifications.ts              |      75 |    56.25 |   55.55 |   74.07 | 52-65,71,77                                                       
+  useAdminSchedules.ts                  |   85.29 |     92.3 |   66.66 |   84.84 | 52,55,58,61,64                                                    
+  useAdminTransactions.ts               |   66.66 |       50 |      60 |   64.28 | 43-57                                                             
+  useAdminTrips.ts                      |     100 |    88.88 |     100 |     100 | 27                                                                
+  useAdminUsers.ts                      |   72.72 |    55.55 |      50 |   72.22 | 83-100,116,119,122,125,128,131,134,137,140,143                    
+  useChallengeForm.ts                   |   99.17 |    83.43 |     100 |   99.12 | 160                                                               
+  useStaffVoting.ts                     |   88.82 |    68.81 |   80.76 |   92.35 | 47,299-319                                                        
+ src/hooks/challenges                   |   84.61 |    71.28 |   88.23 |   86.47 |                                                                   
+  useChallengeCapture.ts                |    81.2 |    62.36 |   88.23 |   83.68 | 35,38,68,79-84,88-94,276-277,281-282,289-290,320-332,385-386      
+  useChallengeDetails.ts                |     100 |      100 |     100 |     100 |                                                                   
+  useChallenges.ts                      |   90.32 |    77.17 |   86.66 |   91.22 | 27-41                                                             
+ src/hooks/community                    |   82.07 |    68.42 |   81.08 |   83.69 |                                                                   
+  useCommunityActivityData.ts           |     100 |      100 |     100 |     100 |                                                                   
+  useCommunityFeed.ts                   |   70.31 |    55.55 |   66.66 |   72.22 | 45-55,112,130-141,154                                             
+ src/hooks/files                        |   64.34 |    34.42 |      70 |   65.47 |                                                                   
+  useFileDownload.ts                    |   68.96 |    45.58 |     100 |   70.53 | 46,60,107,117,141-144,157,171-178,182-185,203-221,230-246         
+  useFileUpload.ts                      |   59.64 |    20.37 |   52.63 |   60.36 | 85,123,148-211,221-226,234-258                                    
+ src/hooks/groups                       |   87.27 |    76.66 |      80 |   86.53 |                                                                   
+  useCreateGroup.ts                     |     100 |      100 |     100 |     100 |                                                                   
+  useGroupDetails.ts                    |     100 |      100 |     100 |     100 |                                                                   
+  useGroupEditor.ts                     |    90.9 |      100 |   71.42 |      90 | 11,14                                                             
+  useGroups.ts                          |   72.22 |    41.66 |      75 |   70.58 | 30-44                                                             
+  useMyGroup.ts                         |     100 |      100 |     100 |     100 |                                                                   
+ src/hooks/location                     |   96.29 |      100 |   77.77 |   96.29 |                                                                   
+  useLocationPermissions.ts             |   96.29 |      100 |   77.77 |   96.29 | 34-35                                                             
+ src/hooks/map                          |     100 |    96.96 |     100 |     100 |                                                                   
+  useMapActions.ts                      |     100 |      100 |     100 |     100 |                                                                   
+  useMapLocationStream.ts               |     100 |       96 |     100 |     100 | 52                                                                
+  useMapSelectedUser.ts                 |     100 |      100 |     100 |     100 |                                                                   
+  useMapSharing.ts                      |     100 |      100 |     100 |     100 |                                                                   
+  useMapUsers.ts                        |     100 |    96.15 |     100 |     100 | 56                                                                
+ src/hooks/notifications                |   85.71 |    74.28 |   69.23 |   85.71 |                                                                   
+  useAutoPushSubscription.ts            |   83.92 |    69.09 |   83.33 |   83.92 | 21-29,34,55,75                                                    
+  useNotificationSchedules.ts           |   73.33 |      100 |   42.85 |   73.33 | 10-11,14-15                                                       
+  useNotifications.ts                   |   91.66 |     92.3 |   76.92 |   91.66 | 32,35,67-68                                                       
+ src/hooks/partners                     |   66.03 |    43.75 |     100 |   73.91 |                                                                   
+  usePartnerImageDownload.ts            |   66.03 |    43.75 |     100 |   73.91 | 60,65-71,79-80,86-91                                              
+ src/hooks/sponsors                     |     100 |      100 |     100 |     100 |                                                                   
+  useSponsors.ts                        |     100 |      100 |     100 |     100 |                                                                   
+ src/hooks/supabase                     |     100 |      100 |     100 |     100 |                                                                   
+  useSupabase.ts                        |     100 |      100 |     100 |     100 |                                                                   
+ src/hooks/trips                        |   87.24 |       80 |    93.1 |   91.04 |                                                                   
+  useSelectedTrip.ts                    |     100 |      100 |     100 |     100 |                                                                   
+  useTripBackgroundImageDownload.ts     |   79.24 |    68.75 |     100 |   84.78 | 60,65-71,79-80                                                    
+  useTripDetails.ts                     |   94.59 |       92 |     100 |     100 | 28,39                                                             
+  useTripResources.ts                   |     100 |      100 |     100 |     100 |                                                                   
+  useTrips.ts                           |   83.78 |    68.42 |      80 |   85.29 | 33-46                                                             
+ src/hooks/ui                           |     100 |      100 |     100 |     100 |                                                                   
+  usePanelAnimation.ts                  |     100 |      100 |     100 |     100 |                                                                   
+  useShareModal.ts                      |     100 |      100 |     100 |     100 |                                                                   
+ src/services/background                |     100 |      100 |     100 |     100 |                                                                   
+  backgroundLocationTask.ts             |     100 |      100 |     100 |     100 |                                                                   
+ src/services/location                  |     100 |      100 |     100 |     100 |                                                                   
+  backgroundLocation.ts                 |     100 |      100 |     100 |     100 |                                                                   
+  constants.ts                          |     100 |      100 |     100 |     100 |                                                                   
+ src/services/storage                   |     100 |      100 |     100 |     100 |                                                                   
+  selectedTripStorage.ts                |     100 |      100 |     100 |     100 |                                                                   
+  storage.ts                            |     100 |      100 |     100 |     100 |                                                                   
+  tusUrlStorage.ts                      |     100 |      100 |     100 |     100 |                                                                   
+ src/stores                             |     100 |      100 |     100 |     100 |                                                                   
+  tripStore.ts                          |     100 |      100 |     100 |     100 |                                                                   
+ src/stores/judgement                   |   96.55 |      100 |   91.66 |   95.91 |                                                                   
+  judgementStores.ts                    |   91.66 |      100 |    87.5 |      90 | 61                                                                
+  useJudgement.ts                       |   97.82 |      100 |   93.75 |   97.43 | 38                                                                
+ src/stores/location                    |   86.77 |    81.25 |   85.71 |   87.17 |                                                                   
+  LocationStoreProvider.tsx             |   75.86 |    58.33 |   88.88 |   76.92 | 34-40                                                             
+  locationHooks.ts                      |     100 |      100 |     100 |     100 |                                                                   
+  locationStore.ts                      |   89.88 |     87.5 |      80 |   89.77 | 193-206,220-233,241-242,284                                       
+ src/stores/map                         |   59.17 |    36.84 |   69.62 |   55.63 |                                                                   
+  mapHooks.ts                           |     100 |      100 |     100 |     100 |                                                                   
+  mapOverlayStore.ts                    |   37.27 |       25 |   51.02 |   36.36 | 211,251-408                                                       
+  mapStore.ts                           |     100 |      100 |     100 |     100 |                                                                   
+ src/utils                              |   93.25 |     85.9 |     100 |    92.5 |                                                                   
+  camera.ts                             |   88.57 |    81.39 |     100 |   87.23 | 93,96-112                                                         
+  format.ts                             |     100 |      100 |     100 |     100 |                                                                   
+  image.ts                              |     100 |    95.23 |     100 |     100 | 11                                                                
+  trip.ts                               |     100 |       80 |     100 |     100 | 14-15                                                             
+  validation.ts                         |     100 |    85.71 |     100 |     100 | 15-16                                                             
+----------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------
