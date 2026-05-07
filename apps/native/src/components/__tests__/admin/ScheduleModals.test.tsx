@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, type TextInput, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateScheduleModal, EditScheduleModal, DeleteScheduleModal } from "../../admin/schedules/ScheduleModals";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";

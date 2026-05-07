@@ -26,6 +26,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    "types": ["vitest"]
-  }
+    "types": ["vitest", "bun"]
+  },
+  "include": ["src/**/*", "*.ts", "src/types/**/*.d.ts"]
 }

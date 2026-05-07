@@ -304,7 +304,7 @@ describe("AdminRewardDetailModal", () => {
       const { getByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} />
       );
-      expect(getByTestId("modal-title")!.children![0]).toBe("Reward Details");
+      expect(getByTestId("modal-title").children[0]).toBe("Reward Details");
     });
 
     it("should not render when rewardId is null", () => {

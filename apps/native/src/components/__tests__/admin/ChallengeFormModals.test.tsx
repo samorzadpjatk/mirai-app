@@ -184,7 +184,7 @@ describe("ChallengeFormModals", () => {
           activeSelect: "status",
           showLocationPicker: true,
           isQrScannerOpen: true,
-        } as unknown as typeof baseFormState}
+        }}
       />
     );
 
@@ -202,7 +202,7 @@ describe("ChallengeFormModals", () => {
           activePicker: "startTime",
           showLocationPicker: true,
           isQrScannerOpen: true,
-        } as unknown as typeof baseFormState}
+        }}
       />
     );
 
@@ -227,7 +227,7 @@ describe("ChallengeFormModals", () => {
         formState={{
           ...baseFormState,
           activeSelect: "status",
-        } as unknown as typeof baseFormState}
+        }}
       />
     );
 

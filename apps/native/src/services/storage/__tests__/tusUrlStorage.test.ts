@@ -141,7 +141,7 @@ describe("TUS URL Storage", () => {
       expect(key).toBeTruthy();
       expect(mockSetItemAsync).toHaveBeenCalled();
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeDefined();
       expect(Object.keys(storedData.fingerprint1)).toHaveLength(1);
     });
@@ -159,7 +159,7 @@ describe("TUS URL Storage", () => {
       await storage.addUpload("fingerprint1", upload);
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(Object.keys(storedData.fingerprint1)).toHaveLength(2);
     });
 
@@ -176,7 +176,7 @@ describe("TUS URL Storage", () => {
       await storage.addUpload("fingerprint2", upload);
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeDefined();
       expect(storedData.fingerprint2).toBeDefined();
     });
@@ -234,7 +234,7 @@ describe("TUS URL Storage", () => {
       await storage.removeUpload("key1");
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1.key1).toBeUndefined();
       expect(storedData.fingerprint1.key2).toBeDefined();
     });
@@ -251,7 +251,7 @@ describe("TUS URL Storage", () => {
       await storage.removeUpload("key1");
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeUndefined();
     });
 
@@ -310,7 +310,7 @@ describe("TUS URL Storage", () => {
       await storage.removeUpload("key1");
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
-      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]!) as StorageData;
+      const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeUndefined();
       expect(storedData.fingerprint2.key1).toBeDefined();
     });

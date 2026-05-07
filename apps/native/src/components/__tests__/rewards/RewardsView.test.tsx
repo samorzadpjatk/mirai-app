@@ -120,7 +120,7 @@ jest.mock("~/hooks/trips", () => ({
 }));
 
 jest.mock("@expo/vector-icons", () => {
-  const { View } = jest.requireActual("react-native") as typeof import("react-native");
+  const { View } = jest.requireActual("react-native");
   return {
     Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
       return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;

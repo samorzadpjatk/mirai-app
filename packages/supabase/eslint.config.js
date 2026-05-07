@@ -1,6 +1,7 @@
 import baseConfig from "../../eslint.config.base.js";
+import tseslint from "typescript-eslint";
 
-export default [
+export default tseslint.config(
   ...baseConfig,
   {
     ignores: [
@@ -10,6 +11,15 @@ export default [
       "vitest.config.ts",
       "vitest.setup.ts",
     ],
+  },
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
   {
     files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
@@ -28,4 +38,4 @@ export default [
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
-];
+);

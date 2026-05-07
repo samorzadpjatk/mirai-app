@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, type TextInput, View } from "react-native";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CoinOperationScreen } from "../../admin/coins/CoinOperationScreen";
@@ -22,7 +22,7 @@ const mockParamsWrapper = {
     groupId: "group-1",
     groupName: "Test Group",
     groupCoins: "100",
-  } as MockSearchParams,
+  },
 };
 
 jest.mock("expo-router", () => ({
@@ -127,7 +127,7 @@ describe("CoinOperationScreen", () => {
 
   it("renders group summary", () => {
     const { getByTestId, getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
-    expect(getByTestId("screen-title")!.props.children).toBe("Add Coins");
+    expect(getByTestId("screen-title").props.children).toBe("Add Coins");
     expect(getByDisplayValue("Test Group")).toBeTruthy();
     expect(getByDisplayValue("100 coins")).toBeTruthy();
   });

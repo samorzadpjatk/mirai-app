@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Modal, View } from "react-native";
+import { Alert, type Modal, View } from "react-native";
 import { fireEvent, screen, userEvent, waitFor } from "@testing-library/react-native";
 import { useCameraPermissions } from "expo-camera";
 import { renderWithProviders } from "../helpers/renderWithProviders";

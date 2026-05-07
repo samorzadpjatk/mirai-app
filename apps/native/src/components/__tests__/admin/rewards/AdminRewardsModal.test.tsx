@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import * as ImagePicker from "expo-image-picker";
 import type * as ReactNative from "react-native";
@@ -172,7 +172,7 @@ describe("AdminRewardsModal", () => {
       const { getByTestId } = renderWithProviders(
         <AdminRewardsModal {...defaultProps} />
       );
-      expect(getByTestId("modal-title")!.children![0]).toBe("New Reward");
+      expect(getByTestId("modal-title").children[0]).toBe("New Reward");
     });
 
     it("should not render when not visible", () => {

@@ -121,8 +121,8 @@ describe("UserAvatar", () => {
     );
 
     const containers = screen.getAllByTestId("user-avatar-initials-container");
-    const firstStyle = (containers[0] as unknown as { props: { style: Array<{ backgroundColor?: string }> } }).props.style;
-    const secondStyle = (containers[1] as unknown as { props: { style: Array<{ backgroundColor?: string }> } }).props.style;
+    const firstStyle = (containers[0] as unknown as { props: { style: { backgroundColor?: string }[] } }).props.style;
+    const secondStyle = (containers[1] as unknown as { props: { style: { backgroundColor?: string }[] } }).props.style;
     const firstBg = firstStyle.find((s) => s.backgroundColor)?.backgroundColor;
     const secondBg = secondStyle.find((s) => s.backgroundColor)?.backgroundColor;
     expect(firstBg).toBe(secondBg);
@@ -137,8 +137,8 @@ describe("UserAvatar", () => {
     );
 
     const containers = screen.getAllByTestId("user-avatar-initials-container");
-    const firstStyle = (containers[0] as unknown as { props: { style: Array<{ backgroundColor?: string }> } }).props.style;
-    const secondStyle = (containers[1] as unknown as { props: { style: Array<{ backgroundColor?: string }> } }).props.style;
+    const firstStyle = (containers[0] as unknown as { props: { style: { backgroundColor?: string }[] } }).props.style;
+    const secondStyle = (containers[1] as unknown as { props: { style: { backgroundColor?: string }[] } }).props.style;
     const firstBg = firstStyle.find((s) => s.backgroundColor)?.backgroundColor;
     const secondBg = secondStyle.find((s) => s.backgroundColor)?.backgroundColor;
 

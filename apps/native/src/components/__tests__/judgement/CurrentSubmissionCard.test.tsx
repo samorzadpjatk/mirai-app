@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { View, Text } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CurrentSubmissionCard } from "../../judgement/CurrentSubmissionCard";

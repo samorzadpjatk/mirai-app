@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ReactNode } from "react";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateUserModal } from "../../admin/users/CreateUserModal";
@@ -7,7 +7,7 @@ jest.mock("~/components/common/ui", () => {
   const { Text, TouchableOpacity, View, TextInput } = require("react-native");
 
   return {
-    AppModalShell: ({ children, visible, title, onClose }: any) => {
+    AppModalShell: ({ children, visible, title, onClose }: { children: ReactNode; visible: boolean; title: string; onClose: () => void }) => {
       if (!visible) return null;
       return (
         <View>
@@ -19,7 +19,7 @@ jest.mock("~/components/common/ui", () => {
         </View>
       );
     },
-    FormField: ({ children, label, required }: any) => {
+    FormField: ({ children, label, required }: { children: ReactNode; label: string; required?: boolean }) => {
       return (
         <View>
           <Text>{required ? `${label}*` : label}</Text>
@@ -27,7 +27,7 @@ jest.mock("~/components/common/ui", () => {
         </View>
       );
     },
-    ThemedTextInput: ({ value, onChangeText, placeholder }: any) => {
+    ThemedTextInput: ({ value, onChangeText, placeholder }: { value: string; onChangeText: (text: string) => void; placeholder?: string }) => {
       return <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />;
     },
   };

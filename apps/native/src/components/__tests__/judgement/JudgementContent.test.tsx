@@ -28,7 +28,7 @@ jest.mock("~/components/judgement/CardStack", () => ({
   },
 }));
 
-const mockUseJudgement = (jest.requireMock("~/stores/judgement") as { useJudgement: jest.Mock }).useJudgement;
+const mockUseJudgement = (jest.requireMock("~/stores/judgement")).useJudgement;
 
 describe("JudgementContent", () => {
   const defaultProps = { tripId: "trip-1", challengeId: "challenge-1" };
