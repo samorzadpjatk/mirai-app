@@ -9,11 +9,49 @@ import { env } from "./config/env";
 import { readFile } from "./utils/fs";
 import { assetsRoot } from "./constants";
 
+function isTripResourceConfig(value: unknown): value is import("./types").TripResourceConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const resource = value as Record<string, unknown>;
+  return typeof resource.type === 'string' && typeof resource.label === 'string';
+}
+
+function isTripInsuranceStepConfig(value: unknown): value is import("./types").TripInsuranceStepConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const step = value as Record<string, unknown>;
+  return (
+    typeof step.stepNumber === 'number' &&
+    typeof step.title === 'string' &&
+    typeof step.text === 'string'
+  );
+}
+
+function isTripInsuranceConfig(value: unknown): value is import("./types").TripInsuranceConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const insurance = value as Record<string, unknown>;
+  return (
+    typeof insurance.label === 'string' &&
+    typeof insurance.phoneNumber === 'string' &&
+    typeof insurance.policyNumber === 'string' &&
+    Array.isArray(insurance.steps) &&
+    insurance.steps.every(isTripInsuranceStepConfig)
+  );
+}
+
+function isTripInfoConfig(value: unknown): value is TripInfoConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const info = value as Record<string, unknown>;
+  if (!Array.isArray(info.resources)) return false;
+  return info.resources.every(isTripResourceConfig);
+}
+
 export const loadTripInfoConfig = async (envRoot: string, infoPath: string): Promise<TripInfoConfig> => {
   const infoConfigPath = joinPath(envRoot, infoPath);
   const content = await readTextFile(infoConfigPath);
-  const parsed = yaml.parse(content) as TripInfoConfig;
-  return parsed || { resources: [] };
+  const parsed: unknown = yaml.parse(content);
+  if (isTripInfoConfig(parsed)) {
+    return parsed;
+  }
+  return { resources: [] };
 };
 
 export const seedTripInfo = async (
@@ -65,28 +103,29 @@ export const seedTripInfo = async (
             objectPath = resourceConfig.storagePath;
           }
           
-          const file = readFile(filePath);
-          const { error: uploadError } = await supabase.storage
+          const file: BunFile = readFile(filePath);
+          const uploadResult = await supabase.storage
             .from(bucketName)
             .upload(objectPath, file, {
               upsert: true,
             });
             
-          if (uploadError) {
-            console.warn(`✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadError.message}`);
+          if (uploadResult.error) {
+            console.warn(`✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadResult.error.message}`);
           } else {
             console.log(`✓ Uploaded file: ${resourceConfig.storagePath}`);
             
             // Get public URL for public bucket files
             if (bucketName === env.publicBucket) {
-              const { data: publicUrlData } = supabase.storage
+              const publicUrlResult = supabase.storage
                 .from(bucketName)
                 .getPublicUrl(objectPath);
-              publicUrl = publicUrlData.publicUrl;
+              publicUrl = publicUrlResult.data.publicUrl;
             }
           }
-        } catch (fileError) {
-          console.warn(`✗ Failed to process file ${resourceConfig.storagePath}:`, fileError);
+        } catch (fileError: unknown) {
+          const error = fileError instanceof Error ? fileError : new Error(String(fileError));
+          console.warn(`✗ Failed to process file ${resourceConfig.storagePath}:`, error);
         }
       }
 

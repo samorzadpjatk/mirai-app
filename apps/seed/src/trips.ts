@@ -22,30 +22,32 @@ export const seedTrip = async (
   if (tripConfig.background) {
     const backgroundAbsPath = joinPath(envRoot, tripConfig.background);
     try {
-      const backgroundFile = readFile(backgroundAbsPath);
-      const { size } = await backgroundFile.stat();
+      const backgroundFile: BunFile = readFile(backgroundAbsPath);
+      const fileStat = await backgroundFile.stat();
+      const size: number = fileStat.size;
       
       if (size > 0) {
         // Generate storage path: trips/{trip-key}/background.{ext}
         const ext = tripConfig.background.split('.').pop()?.toLowerCase() ?? 'jpg';
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
         
-        const { error } = await supabase.storage
+        const uploadResult = await supabase.storage
           .from(env.imageBucket)
           .upload(storagePath, backgroundFile, {
             upsert: true,
             contentType: `image/${ext}`,
           });
           
-        if (error) {
-          console.warn(`✗ Background upload failed for ${tripConfig.name}: ${error.message}`);
+        if (uploadResult.error) {
+          console.warn(`✗ Background upload failed for ${tripConfig.name}: ${uploadResult.error.message}`);
         } else {
           backgroundImagePath = storagePath;
           console.log(`✓ Uploaded background for ${tripConfig.name}: ${storagePath}`);
         }
       }
-    } catch (err) {
-      console.warn(`✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`, err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.warn(`✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`, error);
     }
   }
 

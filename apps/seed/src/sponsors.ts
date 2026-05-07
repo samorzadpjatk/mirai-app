@@ -5,11 +5,23 @@ import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
 
+function isSponsorConfig(value: unknown): value is SponsorConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const sponsor = value as Record<string, unknown>;
+  return (
+    typeof sponsor.id === 'string' &&
+    typeof sponsor.name === 'string' &&
+    typeof sponsor.description === 'string' &&
+    typeof sponsor.logoPath === 'string'
+  );
+}
+
 export const loadSponsorConfigs = async (envRoot: string, sponsorsPath: string): Promise<SponsorConfig[]> => {
   const sponsorConfigPath = joinPath(envRoot, sponsorsPath);
   const content = await readTextFile(sponsorConfigPath);
-  const parsed = yaml.parse(content) as SponsorConfig[];
-  return parsed || [];
+  const parsed: unknown = yaml.parse(content);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(isSponsorConfig);
 };
 
 export const seedSponsors = async (

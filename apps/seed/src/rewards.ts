@@ -7,21 +7,27 @@ import type { RewardConfig, AuthUserByEmail } from "./types";
 
 const db = createDb(env.databaseUrl);
 
+function isRewardConfig(value: unknown): value is RewardConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const reward = value as Record<string, unknown>;
+  return (
+    typeof reward.name === 'string' &&
+    typeof reward.description === 'string' &&
+    typeof reward.availableQuantity === 'number' &&
+    typeof reward.coinCost === 'number'
+  );
+}
+
 export const loadRewardConfigs = async (envRoot: string, rewardsPath: string): Promise<RewardConfig[]> => {
   const fullPath = joinPath(envRoot, rewardsPath);
   const content = await readTextFile(fullPath);
-  const parsed = yaml.parse(content) as RewardConfig[];
+  const parsed: unknown = yaml.parse(content);
   
   if (!Array.isArray(parsed)) {
     throw new Error(`Rewards config must be an array: ${fullPath}`);
   }
   
-  return parsed.filter(reward => 
-    reward?.name && 
-    reward?.description && 
-    typeof reward?.availableQuantity === 'number' && 
-    typeof reward?.coinCost === 'number'
-  );
+  return parsed.filter(isRewardConfig);
 };
 
 export const seedRewards = async (
