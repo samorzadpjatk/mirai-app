@@ -8,7 +8,7 @@ export default tseslint.config(
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.eslint.json",
+        project: "./tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -19,6 +19,14 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+    },
+  },
+  // Reanimated files use mutable shared values via .value assignments
+  // This is the intended Reanimated API and cannot be avoided
+  {
+    files: ["**/stores/map/mapOverlayStore.ts", "**/components/judgement/CardStack.tsx"],
+    rules: {
+      "react-hooks/immutability": "off",
     },
   },
   {
@@ -32,6 +40,18 @@ export default tseslint.config(
       "@typescript-eslint/no-floating-promises": "off",
       // Allow async functions without await (for test isolation patterns)
       "@typescript-eslint/require-await": "off",
+      // Allow empty functions in tests (for mocks/stubs)
+      "@typescript-eslint/no-empty-function": "off",
+      // Allow unsafe assignments in tests (mocking flexibility)
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      // Allow unsafe calls in tests
+      "@typescript-eslint/no-unsafe-call": "off",
+      // Allow unsafe member access in tests
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      // Allow unsafe returns in tests
+      "@typescript-eslint/no-unsafe-return": "off",
+      // Allow unsafe arguments in tests
+      "@typescript-eslint/no-unsafe-argument": "off",
     },
   },
   {

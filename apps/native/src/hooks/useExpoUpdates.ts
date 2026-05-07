@@ -21,7 +21,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(() => __DEV__ || !Updates.isEnabled);
   const hasAutoChecked = useRef(false);
 
   const checkForUpdates = useCallback(async (isAutoCheck = false) => {
@@ -80,8 +80,6 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
     if (!__DEV__ && Updates.isEnabled && !hasAutoChecked.current) {
       hasAutoChecked.current = true;
       void checkForUpdates(true);
-    } else if (__DEV__ || !Updates.isEnabled) {
-      setIsInitialized(true);
     }
   }, [checkForUpdates]);
 

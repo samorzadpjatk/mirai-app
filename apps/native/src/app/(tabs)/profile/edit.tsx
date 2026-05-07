@@ -1,3 +1,5 @@
+'use no memo';
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -228,7 +230,7 @@ export default function EditProfileScreen() {
         setIsPicking(false);
       }
     },
-    [currentUser?.id, uploadAvatarAsset],
+    [currentUser, uploadAvatarAsset],
   );
 
   const handleChangePhoto = useCallback(() => {

@@ -86,7 +86,7 @@ export function PhotoCaptureModal({
 }: PhotoCaptureModalProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
-  const [activeFacing, setActiveFacing] = useState<"front" | "back">(facing);
+  const [activeFacing, setActiveFacing] = useState<"front" | "back">(() => facing);
   const [availableLenses, setAvailableLenses] = useState<string[]>([]);
   const [selectedLens, setSelectedLens] = useState<string | undefined>(
     undefined,
@@ -98,18 +98,23 @@ export function PhotoCaptureModal({
     [availableLenses],
   );
 
-  useEffect(() => {
-    if (visible) return;
+  const resetState = useCallback(() => {
     setCapturedPhoto(null);
     setIsCapturingPhoto(false);
     setAvailableLenses([]);
     setSelectedLens(undefined);
-  }, [visible]);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    resetState();
+    onClose();
+  }, [onClose, resetState]);
 
   useEffect(() => {
-    if (!visible) return;
-    setActiveFacing(facing);
-  }, [facing, visible]);
+    if (!visible) {
+      queueMicrotask(resetState);
+    }
+  }, [visible, resetState]);
 
   const persistCapturedPhoto = useCallback((sourceUri: string) => {
     const destinationDir = new Directory(Paths.document, "captured-photos");

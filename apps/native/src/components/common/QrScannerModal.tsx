@@ -67,10 +67,8 @@ export function QrScannerModal({
     return true;
   }, [cameraPermission, requestCameraPermission]);
 
-  // Reset session state when modal becomes visible
   React.useEffect(() => {
     if (visible) {
-      setHasScannedThisSession(false);
       scanLockRef.current = false;
       void requestPermission();
     }

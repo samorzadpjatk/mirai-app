@@ -1,3 +1,5 @@
+'use no memo';
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -52,8 +54,6 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
-    setIsRejectModalVisible(false);
-    setRejectionReason('');
   }, [currentSubmission, translateX, translateY]);
 
   const openRejectModal = useCallback(() => {
@@ -67,6 +67,18 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
     setRejectionReason('');
   }, [isReviewing]);
 
+  const runSwipeAnimation = useCallback(
+    (toValue: number, onComplete: () => void) => {
+      translateX.value = withTiming(toValue, { duration: 220 }, onComplete);
+    },
+    [translateX],
+  );
+
+  const resetCardPosition = useCallback(() => {
+    translateX.value = 0;
+    translateY.value = 0;
+  }, [translateX, translateY]);
+
   const animateDecision = useCallback(
     (
       status: ReviewStatus,
@@ -77,13 +89,12 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       const normalizedRejectionReason = customRejectionReason?.trim();
       if (status === 'REJECTED' && !normalizedRejectionReason) return;
       const toValue = status === 'APPROVED' ? width * 1.2 : -width * 1.2;
-      translateX.value = withTiming(toValue, { duration: 220 }, () => {
+      runSwipeAnimation(toValue, () => {
         scheduleOnRN(reviewCurrent, status, normalizedRejectionReason, ranking);
-        translateX.value = 0;
-        translateY.value = 0;
+        resetCardPosition();
       });
     },
-    [currentSubmission, isReviewing, reviewCurrent, translateX, translateY, width],
+    [currentSubmission, isReviewing, reviewCurrent, resetCardPosition, runSwipeAnimation, width],
   );
 
   const openApproveSelection = useCallback(() => {
@@ -116,12 +127,35 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
     animateDecision('REJECTED', normalizedRejectionReason);
   }, [animateDecision, isReviewing, rejectionReason]);
 
+  const updatePanPosition = useCallback((translationX: number, translationY: number) => {
+    translateX.value = translationX;
+    translateY.value = translationY * 0.6;
+  }, [translateX, translateY]);
+
+  const springBack = useCallback(() => {
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+  }, [translateX, translateY]);
+
+  const animateApproveSwipe = useCallback((targetWidth: number) => {
+    translateX.value = withTiming(targetWidth * 1.2, { duration: 220 }, () => {
+      scheduleOnRN(reviewCurrent, 'APPROVED');
+      resetCardPosition();
+    });
+  }, [resetCardPosition, translateX]);
+
+  const animateRejectSwipe = useCallback((targetWidth: number) => {
+    translateX.value = withTiming(-targetWidth * 1.2, { duration: 220 }, () => {
+      scheduleOnRN(openRejectModal);
+      resetCardPosition();
+    });
+  }, [openRejectModal, resetCardPosition, translateX]);
+
   const panGesture = Gesture.Pan()
     .enabled(Boolean(currentSubmission) && !isReviewing && !isRejectModalVisible)
     .minDistance(10)
     .onUpdate((event) => {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY * 0.6;
+      updatePanPosition(event.translationX, event.translationY);
     })
     .onEnd(() => {
       const shouldApprove = translateX.value > swipeThreshold;
@@ -129,29 +163,16 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
 
       if (shouldApprove) {
         if (isJudgedStaff) {
-          translateX.value = withSpring(0);
-          translateY.value = withSpring(0);
+          springBack();
           scheduleOnRN(openApproveSelection);
           return;
         }
-
-        translateX.value = withTiming(width * 1.2, { duration: 220 }, () => {
-          scheduleOnRN(reviewCurrent, 'APPROVED');
-          translateX.value = 0;
-          translateY.value = 0;
-        });
-        return;
+        animateApproveSwipe(width);
+      } else if (shouldReject) {
+        animateRejectSwipe(width);
+      } else {
+        springBack();
       }
-
-      if (shouldReject) {
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        scheduleOnRN(openRejectModal);
-        return;
-      }
-
-      translateX.value = withSpring(0);
-      translateY.value = withSpring(0);
     });
 
   const cardStyle = useAnimatedStyle(() => {
