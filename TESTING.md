@@ -247,6 +247,54 @@ jest.mock("@supabase/supabase-js", () => ({
 }));
 ```
 
+### Manual Mocks with __mocks__ Directory
+
+For modules that are mocked consistently across many tests, use Jest's `__mocks__` directory pattern. Place mock implementations in `__mocks__/` at the package root (adjacent to `node_modules/`):
+
+```
+apps/native/
+├── __mocks__/
+│   ├── @tanstack/
+│   │   └── react-query.ts    # React Query hooks mock
+│   ├── expo-constants.js    # Expo Constants mock
+│   ├── expo-location.js     # Expo Location mock
+│   └── expo-notifications.js # Expo Notifications mock
+├── src/
+│   └── services/
+│       └── location/
+│           └── __mocks__/
+│               └── backgroundLocation.ts  # Service mock
+```
+
+Mock files should export mocked versions of the module's API:
+
+```typescript
+// apps/native/__mocks__/@tanstack/react-query.ts
+import { jest } from "@jest/globals";
+import React from "react";
+
+export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
+  return React.createElement(React.Fragment, null, children);
+};
+
+export class QueryClient {
+  defaultOptions: unknown;
+  constructor(options?: unknown) {
+    this.defaultOptions = options || {};
+  }
+}
+
+export const useQuery = jest.fn();
+export const useMutation = jest.fn();
+// ... other exports
+```
+
+Benefits of this pattern:
+- **Centralized mocks**: Single source of truth for module mocks
+- **Reduced duplication**: No need to repeat mock setup in each test
+- **Consistent behavior**: All tests use the same mock implementation
+- **Easier maintenance**: Update mocks in one place
+
 ### Testing Fastify Server (Backend)
 
 ```typescript
@@ -657,6 +705,16 @@ cd apps/native && bun run test --verbose
 5. **Use descriptive names** - tests should read like documentation
 6. **Isolate tests** - each test should be independent and not rely on others
 7. **Clean up resources** - use `afterEach` or `afterAll` to clean up
+8. **Avoid type casts in tests** - use `jest.Mock<>` types instead of `as unknown as`:
+
+```typescript
+// Avoid
+const mockFn = jest.fn() as unknown as MockedFunction<() => Promise<string>>;
+
+// Prefer
+const mockFn: jest.Mock<() => Promise<string>> = jest.fn();
+mockFn.mockResolvedValue("result");
+```
 
 ## Resources
 
