@@ -225,7 +225,7 @@ describe("mapHooks", () => {
       const { result, rerender } = renderHook(() => useMapActions());
 
       const firstRender = result.current;
-      rerender();
+      rerender(undefined);
       const secondRender = result.current;
 
       expect(firstRender.selectUser).toBe(secondRender.selectUser);

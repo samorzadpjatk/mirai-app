@@ -25,11 +25,11 @@ jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: () => mockTRPC,
 }));
 
-const mockUseQuery = jest.fn<ReturnType<typeof import("@tanstack/react-query").useQuery>, Parameters<typeof import("@tanstack/react-query").useQuery>>();
-const mockUseMutation = jest.fn<ReturnType<typeof import("@tanstack/react-query").useMutation>, Parameters<typeof import("@tanstack/react-query").useMutation>>();
-const mockInvalidateQueries = jest.fn<Promise<void>, [unknown]>();
+const mockUseQuery = jest.fn();
+const mockUseMutation = jest.fn();
+const mockInvalidateQueries = jest.fn();
 const mockQueryClient = {
-  invalidateQueries: (...args: [unknown]) => mockInvalidateQueries(...args),
+  invalidateQueries: mockInvalidateQueries,
 };
 
 jest.mock("@tanstack/react-query", () => ({
@@ -60,20 +60,38 @@ describe("LocationStoreProvider", () => {
       error: null,
     });
 
-    mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void>; onError?: (error: unknown) => void }) => ({
-      mutateAsync: jest.fn(async (input: unknown) => {
-        if (options?.onSuccess) {
-          await options.onSuccess(undefined, input, undefined);
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const typedOptions = options as { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void>; onError?: (error: unknown) => void };
+      const mutateAsync = jest.fn(async (input: unknown) => {
+        if (typedOptions?.onSuccess) {
+          await typedOptions.onSuccess(undefined, input, undefined);
         }
         return undefined;
-      }),
-      mutate: jest.fn((input: unknown) => {
-        if (options?.onSuccess) {
-          void options.onSuccess(undefined, input, undefined);
+      });
+      const mutate = jest.fn((input: unknown) => {
+        if (typedOptions?.onSuccess) {
+          void typedOptions.onSuccess(undefined, input, undefined);
         }
-      }),
-      isPending: false,
-    }));
+      });
+      return {
+        mutateAsync,
+        mutate,
+        isPending: false,
+        isIdle: true,
+        isSuccess: false,
+        isError: false,
+        status: 'idle',
+        data: undefined,
+        error: null,
+        reset: jest.fn(),
+        context: undefined,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        variables: undefined,
+        submittedAt: 0,
+      };
+    });
   });
 
   it("renders children", () => {
@@ -87,7 +105,7 @@ describe("LocationStoreProvider", () => {
   });
 
   it("renders without children", () => {
-    expect(() => render(<LocationStoreProvider />)).not.toThrow();
+    expect(() => render(<LocationStoreProvider>{null}</LocationStoreProvider>)).not.toThrow();
   });
 
   it("hydrates the store from server settings", async () => {

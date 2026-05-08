@@ -2,9 +2,9 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { PreviousUpload } from "tus-js-client";
 import type { Mock } from "jest-mock";
 
-// Extended interface to properly type the url property
 interface PreviousUploadWithUrl extends PreviousUpload {
   url: string;
+  offset?: number;
 }
 
 const mockGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
@@ -55,7 +55,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockGetItemAsync.mockResolvedValue("invalid-json");
 
       const result = await storage.findAllUploads();
@@ -77,7 +77,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage read errors", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockGetItemAsync.mockRejectedValue(new Error("Storage error"));
 
       const result = await storage.findAllUploads();
@@ -120,7 +120,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockGetItemAsync.mockResolvedValue("invalid-json");
 
       const result = await storage.findUploadsByFingerprint("fingerprint1");
@@ -143,7 +143,7 @@ describe("TUS URL Storage", () => {
       type StorageData = Record<string, Record<string, PreviousUpload>>;
       const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeDefined();
-      expect(Object.keys(storedData.fingerprint1)).toHaveLength(1);
+      expect(Object.keys(storedData.fingerprint1 ?? {})).toHaveLength(1);
     });
 
     it("should add upload to existing fingerprint", async () => {
@@ -160,7 +160,7 @@ describe("TUS URL Storage", () => {
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
       const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
-      expect(Object.keys(storedData.fingerprint1)).toHaveLength(2);
+      expect(Object.keys(storedData.fingerprint1 ?? {})).toHaveLength(2);
     });
 
     it("should add upload to new fingerprint when others exist", async () => {
@@ -203,7 +203,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage write errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockGetItemAsync.mockResolvedValue(null);
       mockSetItemAsync.mockRejectedValue(new Error("Write error"));
 
@@ -235,8 +235,8 @@ describe("TUS URL Storage", () => {
 
       type StorageData = Record<string, Record<string, PreviousUpload>>;
       const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
-      expect(storedData.fingerprint1.key1).toBeUndefined();
-      expect(storedData.fingerprint1.key2).toBeDefined();
+      expect(storedData.fingerprint1?.key1).toBeUndefined();
+      expect(storedData.fingerprint1?.key2).toBeDefined();
     });
 
     it("should remove fingerprint when last upload deleted", async () => {
@@ -277,7 +277,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage write errors", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const existingData = {
         fingerprint1: {
           key1: createMockUpload("key1", "url1"),
@@ -312,21 +312,20 @@ describe("TUS URL Storage", () => {
       type StorageData = Record<string, Record<string, PreviousUpload>>;
       const storedData = JSON.parse(mockSetItemAsync.mock.calls[0]![1]) as StorageData;
       expect(storedData.fingerprint1).toBeUndefined();
-      expect(storedData.fingerprint2.key1).toBeDefined();
+      expect(storedData.fingerprint2?.key1).toBeDefined();
     });
   });
 });
 
-function createMockUpload(
-  urlStorageKey: string,
-  url: string
-): PreviousUpload {
+function createMockUpload(urlStorageKey: string, url: string): PreviousUploadWithUrl {
   return {
     urlStorageKey,
     url,
+    uploadUrl: url,
     size: 1000,
     offset: 0,
     metadata: {},
-    creationTime: Date.now(),
+    creationTime: Date.now().toString(),
+    parallelUploadUrls: null,
   };
 }

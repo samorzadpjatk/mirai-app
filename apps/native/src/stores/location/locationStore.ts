@@ -13,7 +13,7 @@ import { LOCATION_SHARING_SETTINGS_KEY } from "~/services/location/constants";
 
 export type LocationPermissionStatus = "granted" | "denied" | "undetermined";
 
-type ServerSharingUpdater = (input: {
+export type ServerSharingUpdater = (input: {
   isSharingLocation: boolean;
   userIdsToShareWith: string[];
 }) => Promise<unknown>;

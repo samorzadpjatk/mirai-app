@@ -1,6 +1,5 @@
 import { useColorScheme } from "react-native";
-import { NativeTabs, Label, Icon, VectorIcon } from 'expo-router/unstable-native-tabs';
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useUser } from '@mirai-app/auth/client';
 import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 
@@ -37,25 +36,25 @@ export default function TabsLayout() {
         minimizeBehavior="onScrollDown"
       >
       <NativeTabs.Trigger name="community">
-        <Icon src={<VectorIcon family={Ionicons} name="people" />} />
-        <Label>Community</Label>
+        <NativeTabs.Trigger.Icon sf="person.2.fill" md="people" />
+        <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips">
-        <Icon src={<VectorIcon family={Ionicons} name="snow" />} />
-        <Label>Trips</Label>
+        <NativeTabs.Trigger.Icon sf="snowflake" md="ac_unit" />
+        <NativeTabs.Trigger.Label>Trips</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="notifications">
-        <Icon src={<VectorIcon family={Ionicons} name="notifications" />} />
-        <Label>Notifications</Label>
+        <NativeTabs.Trigger.Icon sf="bell.fill" md="notifications" />
+        <NativeTabs.Trigger.Label>Notifications</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
-        <Icon src={<VectorIcon family={Ionicons} name="person" />} />
-        <Label>Profile</Label>
+        <NativeTabs.Trigger.Icon sf="person.fill" md="person" />
+        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {hasAdminAccess && (
         <NativeTabs.Trigger name="admin">
-          <Icon src={<VectorIcon family={Ionicons} name="settings" />} />
-          <Label>Admin</Label>
+          <NativeTabs.Trigger.Icon sf="gearshape.fill" md="settings" />
+          <NativeTabs.Trigger.Label>Admin</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       )}
       </NativeTabs>

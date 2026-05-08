@@ -1,6 +1,4 @@
-module.exports = {
-  defineTask: jest.fn(),
-  isTaskDefined: jest.fn(() => true),
-  isTaskRegisteredAsync: jest.fn(() => Promise.resolve(false)),
-  unregisterTaskAsync: jest.fn(() => Promise.resolve(undefined)),
-};
+export const defineTask = jest.fn();
+export const isTaskDefined = jest.fn(() => true);
+export const isTaskRegisteredAsync = jest.fn(() => Promise.resolve(false));
+export const unregisterTaskAsync = jest.fn(() => Promise.resolve(undefined));

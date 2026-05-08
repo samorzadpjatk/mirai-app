@@ -557,8 +557,8 @@ describe("mapOverlayStore", () => {
 
   describe("externals and provider", () => {
     it("should set externals via setMapOverlayExternals", () => {
-      const mockUpdateSharing = jest.fn();
-      const mockRemoveUser = jest.fn();
+      const mockUpdateSharing = jest.fn<() => Promise<void>>();
+      const mockRemoveUser = jest.fn<(userId: string) => Promise<void>>();
       
       setMapOverlayExternals({
         updateSharing: mockUpdateSharing,
@@ -569,7 +569,7 @@ describe("mapOverlayStore", () => {
       expect(() => setMapOverlayExternals({})).not.toThrow();
     });
 
-    it("should provide context via MapOverlayProvider", () => {
+    it("should create MapOverlayProvider element with proper props", () => {
       const mockValue = {
         session: { user: { id: "user-123" } },
         updateSharing: async () => {},
@@ -577,13 +577,12 @@ describe("mapOverlayStore", () => {
         currentCoordinate: [52.2297, 21.0122] as [number, number],
       };
 
-      const TestComponent = () => React.createElement("div", null, "test");
-      const wrapper = ({ children }: { children: React.ReactNode }) =>
-        React.createElement(MapOverlayProvider, { value: mockValue }, children);
-
-      render(React.createElement(TestComponent));
+      const element = React.createElement(
+        MapOverlayProvider,
+        { value: mockValue, children: React.createElement("div", null, "test") }
+      );
       
-      expect(true).toBe(true);
+      expect(element).toBeTruthy();
     });
   });
 

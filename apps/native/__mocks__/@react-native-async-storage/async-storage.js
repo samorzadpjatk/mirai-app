@@ -1,3 +1,3 @@
-const asMock = require("@react-native-async-storage/async-storage/jest/async-storage-mock");
+import asMock from "@react-native-async-storage/async-storage/jest/async-storage-mock";
 
-module.exports = asMock;
+export default asMock;

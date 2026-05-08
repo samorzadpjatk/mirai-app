@@ -13,27 +13,27 @@ const mockAddNotificationReceivedListener = jest.fn(() => ({ remove: jest.fn() }
 const mockAddNotificationResponseReceivedListener = jest.fn(() => ({ remove: jest.fn() }));
 const mockRemoveNotificationSubscription = jest.fn();
 
-module.exports = {
+export const getExpoPushTokenAsync = mockGetExpoPushTokenAsync;
+export const getPermissionsAsync = mockGetPermissionsAsync;
+export const requestPermissionsAsync = mockRequestPermissionsAsync;
+export const setNotificationChannelAsync = mockSetNotificationChannelAsync;
+export const getNotificationChannelsAsync = mockGetNotificationChannelsAsync;
+export const scheduleNotificationAsync = mockScheduleNotificationAsync;
+export const cancelScheduledNotificationAsync = mockCancelScheduledNotificationAsync;
+export const getAllScheduledNotificationsAsync = mockGetAllScheduledNotificationsAsync;
+export const dismissNotificationAsync = mockDismissNotificationAsync;
+export const setBadgeCountAsync = mockSetBadgeCountAsync;
+export const getBadgeCountAsync = mockGetBadgeCountAsync;
+export const addNotificationReceivedListener = mockAddNotificationReceivedListener;
+export const addNotificationResponseReceivedListener = mockAddNotificationResponseReceivedListener;
+export const removeNotificationSubscription = mockRemoveNotificationSubscription;
+const defaultExport = {
   getExpoPushTokenAsync: mockGetExpoPushTokenAsync,
   getPermissionsAsync: mockGetPermissionsAsync,
   requestPermissionsAsync: mockRequestPermissionsAsync,
-  setNotificationChannelAsync: mockSetNotificationChannelAsync,
-  getNotificationChannelsAsync: mockGetNotificationChannelsAsync,
-  scheduleNotificationAsync: mockScheduleNotificationAsync,
-  cancelScheduledNotificationAsync: mockCancelScheduledNotificationAsync,
-  getAllScheduledNotificationsAsync: mockGetAllScheduledNotificationsAsync,
-  dismissNotificationAsync: mockDismissNotificationAsync,
-  setBadgeCountAsync: mockSetBadgeCountAsync,
-  getBadgeCountAsync: mockGetBadgeCountAsync,
   addNotificationReceivedListener: mockAddNotificationReceivedListener,
   addNotificationResponseReceivedListener: mockAddNotificationResponseReceivedListener,
   removeNotificationSubscription: mockRemoveNotificationSubscription,
-  default: {
-    getExpoPushTokenAsync: mockGetExpoPushTokenAsync,
-    getPermissionsAsync: mockGetPermissionsAsync,
-    requestPermissionsAsync: mockRequestPermissionsAsync,
-    addNotificationReceivedListener: mockAddNotificationReceivedListener,
-    addNotificationResponseReceivedListener: mockAddNotificationResponseReceivedListener,
-    removeNotificationSubscription: mockRemoveNotificationSubscription,
-  },
 };
+
+export default defaultExport;
