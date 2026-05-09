@@ -6,7 +6,7 @@ import { useAdminTrips } from "../../admin/useAdminTrips";
 const mockUseTrips = jest.fn();
 
 jest.mock("~/hooks/trips", () => ({
-  useTrips: () => mockUseTrips(),
+  useTrips: mockUseTrips,
 }));
 
 describe("useAdminTrips", () => {
@@ -65,8 +65,10 @@ describe("useAdminTrips", () => {
     });
 
     expect(result.current.trips).toHaveLength(2);
-    expect(result.current.trips[0].id).toBe("trip-1");
-    expect(result.current.trips[1].name).toBe("Summer Trip 2024");
+    expect(result.current.trips[0]!.id).toBe("trip-1");
+    expect(result.current.trips[1]!.name).toBe("Summer Trip 2024");
+    expect(result.current.trips[0]).toBeDefined();
+    expect(result.current.trips[1]).toBeDefined();
   });
 
   it("should select first trip by default", async () => {
@@ -278,7 +280,7 @@ describe("useAdminTrips", () => {
       refetch: jest.fn(),
     });
 
-    rerender();
+    rerender(() => useAdminTrips());
 
     await waitFor(() => {
       expect(result.current.selectedTripId).toBe("trip-2");

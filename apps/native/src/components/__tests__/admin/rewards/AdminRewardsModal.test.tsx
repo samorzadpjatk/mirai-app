@@ -542,7 +542,7 @@ describe("AdminRewardsModal", () => {
     it("should handle image picker cancellation", async () => {
       mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: true,
-        assets: [],
+        assets: null,
       });
 
       const { getByText } = renderWithProviders(
@@ -569,6 +569,9 @@ describe("AdminRewardsModal", () => {
           {
             uri: "file:///test/image.jpg",
             fileName: "test-image.jpg",
+            width: 100,
+            height: 100,
+            type: 'image' as const,
           },
         ],
       });
@@ -596,6 +599,9 @@ describe("AdminRewardsModal", () => {
           {
             uri: "file:///test/image.jpg",
             fileName: "test-image.jpg",
+            width: 100,
+            height: 100,
+            type: 'image' as const,
           },
         ],
       });
@@ -617,8 +623,20 @@ describe("AdminRewardsModal", () => {
       mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: false,
         assets: [
-          { uri: "file:///test/image1.jpg", fileName: "image1.jpg" },
-          { uri: "file:///test/image2.jpg", fileName: "image2.jpg" },
+          { 
+            uri: "file:///test/image1.jpg", 
+            fileName: "image1.jpg",
+            width: 100,
+            height: 100,
+            type: 'image' as const,
+          },
+          { 
+            uri: "file:///test/image2.jpg", 
+            fileName: "image2.jpg",
+            width: 100,
+            height: 100,
+            type: 'image' as const,
+          },
         ],
       });
 

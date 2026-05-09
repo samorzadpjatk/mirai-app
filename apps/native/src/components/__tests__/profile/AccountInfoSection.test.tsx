@@ -3,9 +3,10 @@ import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AccountInfoSection } from "../../profile/AccountInfoSection";
 
-const mockUseQuery = jest.fn(() => ({
-  data: null,
+const mockUseQuery = jest.fn((...args: unknown[]) => ({
+  data: null as { id: string; email?: string; firstName: string; lastName: string } | null,
   isLoading: false,
+  error: undefined as Error | undefined,
 }));
 
 jest.mock("@mirai-app/trpc/client", () => ({
@@ -21,7 +22,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: (...args: unknown[]) => mockUseQuery(args),
   QueryClient: jest.fn(),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -41,6 +42,7 @@ describe("AccountInfoSection", () => {
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: false,
+      error: undefined,
     });
   });
 
@@ -71,6 +73,7 @@ describe("AccountInfoSection", () => {
         lastName: "Doe",
       },
       isLoading: false,
+      error: undefined,
     });
 
     const { getByText } = renderWithProviders(<AccountInfoSection />);
@@ -87,6 +90,7 @@ describe("AccountInfoSection", () => {
         lastName: "Doe",
       },
       isLoading: false,
+      error: undefined,
     });
 
     const { getByText } = renderWithProviders(<AccountInfoSection />);
@@ -121,6 +125,7 @@ describe("AccountInfoSection", () => {
     mockUseQuery.mockReturnValue({
       data: null,
       isLoading: true,
+      error: undefined,
     });
 
     const { getByText } = renderWithProviders(<AccountInfoSection />);

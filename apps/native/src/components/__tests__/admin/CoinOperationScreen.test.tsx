@@ -137,7 +137,7 @@ describe("CoinOperationScreen", () => {
     const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "50");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Bonus");
-    fireEvent.press(getAllByText("Add Coins")[1]);
+    fireEvent.press(getAllByText("Add Coins")[1]!);
     await waitFor(() => expect(mockAddCoins).toHaveBeenCalledWith("group-1", 50, "Bonus"));
   });
 
@@ -146,7 +146,7 @@ describe("CoinOperationScreen", () => {
     const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="remove" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "25");
     fireEvent.changeText(getByPlaceholderText("Describe why you are removing coins"), "Penalty");
-    fireEvent.press(getAllByText("Remove Coins")[1]);
+    fireEvent.press(getAllByText("Remove Coins")[1]!);
     await waitFor(() => expect(mockRemoveCoins).toHaveBeenCalledWith("group-1", 25, "Penalty"));
   });
 
@@ -155,7 +155,7 @@ describe("CoinOperationScreen", () => {
     const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "10");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Reason");
-    fireEvent.press(getAllByText("Add Coins")[1]);
+    fireEvent.press(getAllByText("Add Coins")[1]!);
     expect(mockAlert).toHaveBeenCalledWith("Error", "Trip and group are required.");
   });
 });

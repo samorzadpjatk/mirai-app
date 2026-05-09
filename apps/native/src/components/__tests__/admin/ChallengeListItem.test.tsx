@@ -78,7 +78,7 @@ describe("ChallengeListItem", () => {
     );
 
     const deleteButtons = screen.getAllByText("trash");
-    fireEvent.press(deleteButtons[0]);
+    fireEvent.press(deleteButtons[0]!);
     expect(mockOnDeletePress).toHaveBeenCalledWith(mockChallenge.id);
   });
 

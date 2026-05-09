@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormFields } from "../../admin/challenges/ChallengeFormFields";
+import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 
 const mockUpdateForm = jest.fn();

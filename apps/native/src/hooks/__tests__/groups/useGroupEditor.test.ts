@@ -484,18 +484,18 @@ describe("useGroupEditor", () => {
       });
 
       let onSuccessCallback: (() => Promise<void>) | null = null;
-      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
+      mockUseMutation.mockImplementation(((options: { onSuccess?: () => Promise<void> }) => {
         onSuccessCallback = options?.onSuccess ?? null;
         return {
           mutateAsync: mockMutateAsync,
           isPending: false,
         };
-      });
+      }) as (...args: unknown[]) => unknown);
 
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback!();
+        await (onSuccessCallback as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -509,8 +509,9 @@ describe("useGroupEditor", () => {
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
-        onSuccessCallback = options?.onSuccess ?? null;
+      mockUseMutation.mockImplementation((options: unknown) => {
+        const opts = options as { onSuccess?: () => Promise<void> };
+        onSuccessCallback = opts?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
           isPending: false,
@@ -520,7 +521,7 @@ describe("useGroupEditor", () => {
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback!();
+        await (onSuccessCallback as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -534,8 +535,9 @@ describe("useGroupEditor", () => {
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
-        onSuccessCallback = options?.onSuccess ?? null;
+      mockUseMutation.mockImplementation((options: unknown) => {
+        const opts = options as { onSuccess?: () => Promise<void> };
+        onSuccessCallback = opts?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
           isPending: false,
@@ -545,7 +547,7 @@ describe("useGroupEditor", () => {
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback!();
+        await (onSuccessCallback as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);

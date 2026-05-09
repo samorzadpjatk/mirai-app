@@ -56,7 +56,9 @@ describe("GroupsList", () => {
       <GroupsList groups={mockGroups} onSelectGroup={mockOnSelectGroup} />
     );
     const groupCards = screen.getAllByText(/Group \d/);
-    fireEvent.press(groupCards[0]);
+    const firstGroupCard = groupCards[0];
+    expect(firstGroupCard).toBeDefined();
+    fireEvent.press(firstGroupCard!);
     expect(mockOnSelectGroup).toHaveBeenCalledTimes(1);
   });
 
@@ -93,7 +95,7 @@ describe("GroupsList", () => {
   });
 
   it("should handle single group", () => {
-    const singleGroup = [mockGroups[0]];
+    const singleGroup = [mockGroups[0]!];
     renderWithProviders(
       <GroupsList groups={singleGroup} onSelectGroup={mockOnSelectGroup} />
     );

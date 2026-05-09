@@ -12,7 +12,7 @@ jest.mock("~/stores/tripStore", () => ({
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name }: { name: string; size: number; color: string }) {
-    return <mockText testID={`icon-${name}`}>{name}</mockText>;
+    return <span data-testid={`icon-${name}`}>{name}</span>;
   },
 }));
 

@@ -390,7 +390,7 @@ describe("ShareLocationModal", () => {
     const user = userEvent.setup();
     renderWithProviders(<ShareLocationModal />);
 
-    const userItem = screen.getAllByTestId("user-item")[0];
+    const userItem = screen.getAllByTestId("user-item")[0]!;
     await user.press(userItem);
 
     expect(mockToggleSelectedUser).not.toHaveBeenCalled();

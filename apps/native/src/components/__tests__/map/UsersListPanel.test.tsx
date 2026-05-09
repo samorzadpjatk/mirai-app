@@ -80,7 +80,7 @@ interface MockIoniconsProps {
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name, size, color }: MockIoniconsProps) => (
-    <MockView testID={`icon-${name}`} style={{ width: size, height: size, color }} />
+    <MockView testID={`icon-${name}`} style={{ width: size, height: size }} />
   ),
 }));
 

@@ -14,15 +14,17 @@ jest.mock("@expo/vector-icons", () => {
 
 interface Challenge {
   id: string;
-  tripId: string;
+  tripId?: string;
   title: string;
   description: string;
   points: number;
   icon: string;
-  category: "standard" | "wintegral" | "photo";
-  status: "active" | "draft";
+  category: "standard" | "wintegral" | "special";
+  status: string;
   submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
+  targetLatitude?: number | null;
+  targetLongitude?: number | null;
 }
 
 describe("Admin ChallengeCard", () => {

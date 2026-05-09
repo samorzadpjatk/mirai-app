@@ -44,7 +44,7 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("~/hooks/files", () => ({
-  useFileDownload: (...args: unknown[]) => mockUseFileDownload(...args),
+  useFileDownload: () => mockUseFileDownload(),
 }));
 
 jest.mock("expo-image", () => ({

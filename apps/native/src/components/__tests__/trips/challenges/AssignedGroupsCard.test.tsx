@@ -2,9 +2,10 @@ import React from "react";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";
+import type { AssignedGroup } from "../../../trips/challenges/AssignedGroupsCard";
 
 describe("AssignedGroupsCard", () => {
-  const mockGroups = [
+  const mockGroups: AssignedGroup[] = [
     {
       id: "1",
       group: {
@@ -52,18 +53,18 @@ describe("AssignedGroupsCard", () => {
   });
 
   it("should render leader info when organizer exists with full name", () => {
-    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[0]]} />);
+    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[0]!]} />);
     expect(screen.getByText("Leader: John Doe")).toBeOnTheScreen();
   });
 
   it("should render leader info when organizer exists with partial name", () => {
-    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[2]]} />);
+    renderWithProviders(<AssignedGroupsCard groups={[mockGroups[2]!]} />);
     expect(screen.getByText("Leader: Jane")).toBeOnTheScreen();
   });
 
   it("should not render leader info when organizer is null", () => {
     const { queryByText } = renderWithProviders(
-      <AssignedGroupsCard groups={[mockGroups[1]]} />
+      <AssignedGroupsCard groups={[mockGroups[1]!]} />
     );
     expect(queryByText(/Leader:/)).toBeNull();
   });
@@ -74,7 +75,7 @@ describe("AssignedGroupsCard", () => {
   });
 
   it("should handle single group", () => {
-    const singleGroup = [mockGroups[0]];
+    const singleGroup = [mockGroups[0]!];
     renderWithProviders(<AssignedGroupsCard groups={singleGroup} />);
     expect(screen.getByText("Test Group 1")).toBeOnTheScreen();
     expect(screen.getByText("Assigned to Groups")).toBeOnTheScreen();

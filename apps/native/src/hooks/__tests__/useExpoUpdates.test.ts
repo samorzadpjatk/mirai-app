@@ -25,7 +25,7 @@ interface MockedExpoUpdates {
   isEnabled: boolean;
 }
 
-const mockedUpdates = jest.requireMock("expo-updates") as MockedExpoUpdates;
+const mockedUpdates = jest.requireMock("expo-updates");
 const mockCheckForUpdateAsync = mockedUpdates.checkForUpdateAsync;
 const mockFetchUpdateAsync = mockedUpdates.fetchUpdateAsync;
 const mockReloadAsync = mockedUpdates.reloadAsync;

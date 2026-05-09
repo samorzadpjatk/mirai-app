@@ -11,11 +11,11 @@ const mockGetAllQuery = jest.fn(() => ({
   queryKey: ["sponsor", "getAll"],
 }));
 
-const mockGetByIdQuery = jest.fn((params) => ({
+const mockGetByIdQuery = jest.fn((params: { id: string }) => ({
   queryKey: ["sponsor", "getById", params.id],
 }));
 
-const mockGetByTripIdQuery = jest.fn((params) => ({
+const mockGetByTripIdQuery = jest.fn((params: { tripId: string }) => ({
   queryKey: ["sponsor", "getByTripId", params.tripId],
 }));
 

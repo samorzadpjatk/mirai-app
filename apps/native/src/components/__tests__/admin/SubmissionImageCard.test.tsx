@@ -3,6 +3,7 @@ import { fireEvent, waitFor } from "@testing-library/react-native";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
+import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(),
@@ -18,13 +19,12 @@ jest.mock("@tanstack/react-query", () => {
 });
 
 describe("SubmissionImageCard", () => {
-  interface Submission {
-    imagePath: string;
-    groupName: string;
-  }
-  const mockSubmission: Submission = {
+  const mockSubmission: VotingSubmission = {
+    id: "submission-1",
+    groupId: "group-1",
     imagePath: "submission-images/group-a.jpg",
     groupName: "Group A",
+    createdAt: "2024-01-01T00:00:00Z",
   };
 
   beforeEach(() => {

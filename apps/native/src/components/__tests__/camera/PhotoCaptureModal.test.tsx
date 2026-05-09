@@ -43,10 +43,10 @@ jest.mock("expo-camera", () => {
   const React = require("react");
   const { View } = require("react-native");
 
-  const MockCameraView = React.forwardRef<CameraViewHandle, CameraViewProps>(function MockCameraView(
+  const MockCameraView = React.forwardRef(function MockCameraView(
     _props: CameraViewProps,
     ref: React.Ref<CameraViewHandle>,
-  ) {
+  ): React.ReactElement {
     React.useImperativeHandle(
       ref,
       () => ({

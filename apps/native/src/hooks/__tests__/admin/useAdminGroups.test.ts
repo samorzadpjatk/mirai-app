@@ -190,12 +190,12 @@ describe("useAdminGroups", () => {
     });
 
     expect(result.current.groups).toHaveLength(2);
-    expect(result.current.groups[0].id).toBe("group-1");
-    expect(result.current.groups[0].name).toBe("Group A");
-    expect(result.current.groups[0].organizer?.firstName).toBe("John");
-    expect(result.current.groups[0]._count.participants).toBe(2);
-    expect(result.current.groups[1].organizer).toBeNull();
-    expect(result.current.groups[1]._count.participants).toBe(0);
+    expect(result.current.groups[0]!.id).toBe("group-1");
+    expect(result.current.groups[0]!.name).toBe("Group A");
+    expect(result.current.groups[0]!.organizer?.firstName).toBe("John");
+    expect(result.current.groups[0]!._count.participants).toBe(2);
+    expect(result.current.groups[1]!.organizer).toBeNull();
+    expect(result.current.groups[1]!._count.participants).toBe(0);
   });
 
   it("should return users from API", async () => {
@@ -251,9 +251,9 @@ describe("useAdminGroups", () => {
     });
 
     expect(result.current.users).toHaveLength(2);
-    expect(result.current.users[0].id).toBe("user-1");
-    expect(result.current.users[0].role).toBe("USER");
-    expect(result.current.users[1].role).toBe("ADMIN");
+    expect(result.current.users[0]!.id).toBe("user-1");
+    expect(result.current.users[0]!.role).toBe("USER");
+    expect(result.current.users[1]!.role).toBe("ADMIN");
   });
 
   it("should create group", async () => {
@@ -672,8 +672,8 @@ describe("useAdminGroups", () => {
       expect(result.current.groups).toHaveLength(2);
     });
 
-    expect(result.current.groups[0].id).toBe("group-1");
-    expect(result.current.groups[1].id).toBe("group-2");
+    expect(result.current.groups[0]!.id).toBe("group-1");
+    expect(result.current.groups[1]!.id).toBe("group-2");
   });
 
   it("should return pagination info", async () => {
@@ -744,6 +744,6 @@ describe("useAdminGroups", () => {
     renderHook(() => useAdminGroups(""));
 
     const lastCall = mockUseInfiniteQuery.mock.calls[mockUseInfiniteQuery.mock.calls.length - 1];
-    expect(lastCall[0].enabled).toBe(false);
+    expect(lastCall![0].enabled).toBe(false);
   });
 });

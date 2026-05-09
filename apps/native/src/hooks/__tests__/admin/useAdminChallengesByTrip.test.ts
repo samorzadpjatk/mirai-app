@@ -140,10 +140,10 @@ describe("useAdminChallengesByTrip", () => {
     });
 
     expect(result.current.challenges).toHaveLength(2);
-    expect(result.current.challenges[0].id).toBe("challenge-1");
-    expect(result.current.challenges[0].title).toBe("Photo Challenge");
-    expect(result.current.challenges[1].basePoints).toBe(200);
-    expect(result.current.challenges[1].status).toBe("HIDDEN");
+    expect(result.current.challenges[0]!.id).toBe("challenge-1");
+    expect(result.current.challenges[0]!.title).toBe("Photo Challenge");
+    expect(result.current.challenges[1]!.basePoints).toBe(200);
+    expect(result.current.challenges[1]!.status).toBe("HIDDEN");
   });
 
   it("should handle challenges with null description", async () => {
@@ -186,7 +186,7 @@ describe("useAdminChallengesByTrip", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.challenges[0].description).toBeNull();
+    expect(result.current.challenges[0]!.description).toBeNull();
   });
 
   it("should use default status when not provided", async () => {
@@ -229,8 +229,8 @@ describe("useAdminChallengesByTrip", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.challenges[0].status).toBe("HIDDEN");
-    expect(result.current.challenges[0].basePoints).toBe(0);
+    expect(result.current.challenges[0]!.status).toBe("HIDDEN");
+    expect(result.current.challenges[0]!.basePoints).toBe(0);
   });
 
   it("should calculate stats correctly", async () => {
@@ -464,8 +464,8 @@ describe("useAdminChallengesByTrip", () => {
       expect(result.current.challenges).toHaveLength(2);
     });
 
-    expect(result.current.challenges[0].id).toBe("1");
-    expect(result.current.challenges[1].id).toBe("2");
+    expect(result.current.challenges[0]!.id).toBe("1");
+    expect(result.current.challenges[1]!.id).toBe("2");
   });
 
   it("should handle empty challenges", async () => {
@@ -523,6 +523,6 @@ describe("useAdminChallengesByTrip", () => {
     renderHook(() => useAdminChallengesByTrip(""));
 
     const lastCall = mockUseInfiniteQuery.mock.calls[mockUseInfiniteQuery.mock.calls.length - 1];
-    expect(lastCall[0].enabled).toBe(false);
+    expect(lastCall![0].enabled).toBe(false);
   });
 });

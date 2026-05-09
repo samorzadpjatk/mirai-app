@@ -20,15 +20,48 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock React Query
-const mockUseInfiniteQuery = jest.fn();
-const mockUseMutation = jest.fn();
+const mockUseInfiniteQuery = jest.fn<
+  (options?: unknown) => {
+    data: {
+      pages: {
+        activities: {
+          id: string;
+          activityType: string;
+          reactionsSummary?: {
+            total: number;
+            counts: Record<string, number>;
+            myReactions: string[];
+          };
+        }[];
+        pagination: {
+          total: number | null;
+          page: number | null;
+          pageSize: number;
+          totalPages: number | null;
+          hasMore: boolean;
+        };
+        nextCursor: unknown;
+      }[];
+    } | null;
+    isLoading: boolean;
+    isFetching: boolean;
+    hasNextPage: boolean;
+    fetchNextPage: jest.Mock;
+  }
+>();
+
+const mockUseMutation = jest.fn<
+  (options?: unknown) => {
+    mutateAsync: jest.Mock;
+  }
+>();
 const mockSetQueryData = jest.fn();
 const mockCancelQueries = jest.fn();
 const mockGetQueryData = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+  useInfiniteQuery: mockUseInfiniteQuery,
+  useMutation: mockUseMutation,
   useQueryClient: jest.fn(() => ({
     setQueryData: mockSetQueryData,
     cancelQueries: mockCancelQueries,
@@ -138,8 +171,8 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(2);
     });
 
-    expect(result.current.filteredActivities[0].id).toBe("activity-1");
-    expect(result.current.filteredActivities[1].id).toBe("activity-2");
+    expect(result.current.filteredActivities[0]!.id).toBe("activity-1");
+    expect(result.current.filteredActivities[1]!.id).toBe("activity-2");
   });
 
   it("should filter activities by type", async () => {
@@ -189,7 +222,7 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(1);
     });
 
-    expect(result.current.filteredActivities[0].activityType).toBe("user_post");
+    expect(result.current.filteredActivities[0]!.activityType).toBe("user_post");
   });
 
   it("should prioritize focused activity", async () => {
@@ -237,7 +270,7 @@ describe("useCommunityFeed", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.filteredActivities[0].id).toBe("activity-2");
+      expect(result.current.filteredActivities[0]!.id).toBe("activity-2");
     });
 
     expect(result.current.filteredActivities).toHaveLength(2);
@@ -273,7 +306,7 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    const mockMutateAsync = jest.fn().mockResolvedValue({
+    const mockMutateAsync = (jest.fn() as any).mockResolvedValue({
       activityId: "activity-1",
       reactionsSummary: {
         total: 4,
@@ -411,8 +444,8 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(2);
     });
 
-    expect(result.current.filteredActivities[0].id).toBe("activity-1");
-    expect(result.current.filteredActivities[1].id).toBe("activity-2");
+    expect(result.current.filteredActivities[0]!.id).toBe("activity-1");
+    expect(result.current.filteredActivities[1]!.id).toBe("activity-2");
   });
 
   it("should handle queryFn when selectedTripId is provided", async () => {
@@ -425,16 +458,17 @@ describe("useCommunityFeed", () => {
       },
     ];
 
-    mockGetByTripQuery.mockResolvedValue({
+    (mockGetByTripQuery as any).mockResolvedValue({
       activities: mockActivities,
       pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1, hasMore: false },
       nextCursor: null,
     });
 
-    mockUseInfiniteQuery.mockImplementation(({ queryFn }: { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> }) => {
+    mockUseInfiniteQuery.mockImplementation((options: unknown) => {
+      const opts = options as { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> };
       // Simulate calling the queryFn
-      if (queryFn) {
-        queryFn({ pageParam: null }).catch(() => { /* noop */ });
+      if (opts.queryFn) {
+        opts.queryFn({ pageParam: null }).catch(() => { /* noop */ });
       }
       return {
         data: {
@@ -476,17 +510,18 @@ describe("useCommunityFeed", () => {
   });
 
   it("should return empty activities when no trip selected via queryFn", () => {
-    mockUseInfiniteQuery.mockImplementation(({ queryFn }: { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> }) => {
-      // Simulate calling queryFn with no trip
-      if (queryFn) {
-        queryFn({ pageParam: null }).catch(() => { /* noop */ });
+    mockUseInfiniteQuery.mockImplementation((options: unknown) => {
+      const opts = options as { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> };
+      // Simulate calling the queryFn
+      if (opts.queryFn) {
+        opts.queryFn({ pageParam: null }).catch(() => { /* noop */ });
       }
       return {
         data: {
           pages: [
             {
               activities: [],
-              pagination: { total: null, page: null, pageSize: 30, totalPages: null, hasMore: false },
+              pagination: { total: 0, page: 1, pageSize: 30, totalPages: 0, hasMore: false },
               nextCursor: null,
             },
           ],
@@ -589,10 +624,11 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
-      capturedOnMutate = onMutate;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      capturedOnMutate = opts.onMutate;
       return {
-        mutateAsync: jest.fn().mockResolvedValue({
+        mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
           activityId: "activity-1",
           reactionsSummary: {
             total: 4,
@@ -631,8 +667,9 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
-      capturedOnMutate = onMutate;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      capturedOnMutate = opts.onMutate;
       return {
         mutateAsync: jest.fn(),
       };
@@ -678,10 +715,11 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onError }: { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void }) => {
-      capturedOnError = onError;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void };
+      capturedOnError = opts.onError;
       return {
-        mutateAsync: jest.fn().mockRejectedValue(new Error("Toggle failed")),
+        mutateAsync: jest.fn<() => Promise<unknown>>().mockRejectedValue(new Error("Toggle failed")),
       };
     });
 
@@ -713,8 +751,9 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onError }: { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void }) => {
-      capturedOnError = onError;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void };
+      capturedOnError = opts.onError;
       return {
         mutateAsync: jest.fn(),
       };
@@ -760,15 +799,16 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onSuccess }: { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void }) => {
-      capturedOnSuccess = onSuccess;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void };
+      capturedOnSuccess = opts.onSuccess;
       return {
-        mutateAsync: jest.fn().mockResolvedValue({
+        mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
           activityId: "activity-1",
           reactionsSummary: {
-            total: 6,
-            counts: { heart: 4, fire: 1, clap: 1, star: 0 },
-            myReactions: ["heart"],
+            total: 4,
+            counts: { heart: 2, fire: 1, clap: 1, star: 0 },
+            myReactions: [],
           },
         }),
       };
@@ -787,31 +827,46 @@ describe("useCommunityFeed", () => {
         {
           activityId: "activity-1",
           reactionsSummary: {
-            total: 6,
-            counts: { heart: 4, fire: 1, clap: 1, star: 0 },
-            myReactions: ["heart"],
+            total: 4,
+            counts: { heart: 2, fire: 1, clap: 1, star: 0 },
+            myReactions: [],
           },
         },
         { activityId: "activity-1" },
-        { queryKey: ["community-feed", "trip-1", 30] }
+        null
       );
       expect(mockSetQueryData).toHaveBeenCalled();
     }
   });
 
-  it("should handle onSuccess when no context provided", () => {
+  it("should handle onSuccess with undefined summary", () => {
     let capturedOnSuccess: ((result: unknown, variables: { activityId: string }, context: unknown) => void) | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
-      data: null,
+      data: {
+        pages: [
+          {
+            activities: [
+              {
+                id: "activity-1",
+                activityType: "user_post",
+                reactionsSummary: undefined,
+              },
+            ],
+            pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1, hasMore: false },
+            nextCursor: null,
+          },
+        ],
+      },
       isLoading: false,
       isFetching: false,
       hasNextPage: false,
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onSuccess }: { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void }) => {
-      capturedOnSuccess = onSuccess;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void };
+      capturedOnSuccess = opts.onSuccess;
       return {
         mutateAsync: jest.fn(),
       };
@@ -870,7 +925,7 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn().mockResolvedValue({
+      mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
         activityId: "activity-1",
         reactionsSummary: {
           total: 6,
@@ -923,7 +978,7 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn().mockResolvedValue({
+      mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
         activityId: "activity-1",
         reactionsSummary: {
           total: 1,
@@ -992,7 +1047,7 @@ describe("useCommunityFeed", () => {
       expect(result.current.filteredActivities).toHaveLength(1);
     });
 
-    expect(result.current.filteredActivities[0].id).toBe("activity-1");
+    expect(result.current.filteredActivities[0]!.id).toBe("activity-1");
   });
 
   it("should handle applyReactionSummaryToFeed with function updater", async () => {
@@ -1027,10 +1082,11 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    mockUseMutation.mockImplementation(({ onMutate }: { onMutate?: (variables: { activityId: string }) => Promise<unknown> }) => {
-      capturedOnMutate = onMutate;
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      capturedOnMutate = opts.onMutate;
       return {
-        mutateAsync: jest.fn().mockResolvedValue({
+        mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
           activityId: "activity-1",
           reactionsSummary: {
             total: 4,

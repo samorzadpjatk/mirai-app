@@ -147,11 +147,11 @@ describe("useAdminSchedules", () => {
     });
 
     expect(result.current.schedules).toHaveLength(2);
-    expect(result.current.schedules[0].id).toBe("schedule-1");
-    expect(result.current.schedules[0].triggerTime).toBe("09:00");
-    expect(result.current.schedules[0].isRecurring).toBe(true);
-    expect(result.current.schedules[1].triggerTime).toBe("20:30");
-    expect(result.current.schedules[1].isRecurring).toBe(false);
+    expect(result.current.schedules[0]!.id).toBe("schedule-1");
+    expect(result.current.schedules[0]!.triggerTime).toBe("09:00");
+    expect(result.current.schedules[0]!.isRecurring).toBe(true);
+    expect(result.current.schedules[1]!.triggerTime).toBe("20:30");
+    expect(result.current.schedules[1]!.isRecurring).toBe(false);
   });
 
   it("should create schedule", async () => {
@@ -459,8 +459,8 @@ describe("useAdminSchedules", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.schedules[0].message).toBe("Custom Body");
-    expect(result.current.schedules[1].message).toBe("Scheduled notification: SYSTEM");
+    expect(result.current.schedules[0]!.message).toBe("Custom Body");
+    expect(result.current.schedules[1]!.message).toBe("Scheduled notification: SYSTEM");
   });
 
   it("should work without tripId", () => {

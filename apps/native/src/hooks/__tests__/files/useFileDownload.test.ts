@@ -48,7 +48,7 @@ jest.mock("expo-crypto", () => {
     CryptoDigestAlgorithm: {
       SHA256: "SHA256",
     },
-    digestStringAsync: jest.fn<() => Promise<string>>().mockResolvedValue("abc123hash"),
+    digestStringAsync: jest.fn().mockResolvedValue("abc123hash"),
   };
 });
 
@@ -64,7 +64,7 @@ jest.mock("@mirai-app/trpc/client", () => {
     useTRPCClient: jest.fn(() => ({
       storage: {
         createDownloadUrl: {
-          query: (...args: unknown[]) => mockCreateDownloadUrl(...args),
+          query: () => mockCreateDownloadUrl(),
         },
       },
     })),

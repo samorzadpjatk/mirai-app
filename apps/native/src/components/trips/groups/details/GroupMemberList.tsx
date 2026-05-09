@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-interface GroupMember {
+export interface GroupMember {
   id: string;
   name: string;
   initials: string;

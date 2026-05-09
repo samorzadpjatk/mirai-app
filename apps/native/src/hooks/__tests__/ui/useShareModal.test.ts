@@ -199,7 +199,7 @@ describe("useShareModal", () => {
       await result.current.confirm();
     });
 
-    const calledWith = mockUpdateSharing.mock.calls[0][0];
+    const calledWith = mockUpdateSharing.mock.calls[0]![0];
     expect(calledWith).toHaveLength(3);
     expect(calledWith).toContain("user-1");
     expect(calledWith).toContain("user-2");

@@ -211,8 +211,8 @@ describe("runtimeEnv", () => {
 
   describe("getEnvString helper", () => {
     it("should throw error for non-string values", async () => {
-      // @ts-expect-error - Testing invalid type
-      process.env.EXPO_PUBLIC_SUPABASE_URL = 123;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (process.env as any).EXPO_PUBLIC_SUPABASE_URL = 123;
       process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
       process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";

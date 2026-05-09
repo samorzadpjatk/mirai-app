@@ -84,8 +84,8 @@ describe("usePanelAnimation", () => {
   it("should use default duration of 240ms", () => {
     renderHook(() => usePanelAnimation());
 
-    const { withTiming } = jest.requireMock("react-native-reanimated");
-    expect(withTiming).toBeDefined();
+    const reanimatedMock = jest.requireMock("react-native-reanimated");
+    expect(reanimatedMock.withTiming).toBeDefined();
   });
 
   it("should accept custom duration", () => {

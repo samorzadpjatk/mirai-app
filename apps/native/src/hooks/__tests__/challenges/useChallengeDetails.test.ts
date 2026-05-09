@@ -202,7 +202,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", "trip-123"));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0];
+    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
     expect(challengeQueryCall[0]).toMatchObject({
       queryKey: ["challenge", "getById", "challenge-123"],
       enabled: true,
@@ -222,7 +222,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails(null, "trip-123"));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0];
+    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
     expect(challengeQueryCall[0]).toMatchObject({
       enabled: false,
     });
@@ -241,7 +241,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", null));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0];
+    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
     expect(challengeQueryCall[0]).toMatchObject({
       enabled: false,
     });

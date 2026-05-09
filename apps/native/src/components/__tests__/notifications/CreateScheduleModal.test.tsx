@@ -308,9 +308,9 @@ describe("CreateScheduleModal", () => {
     await renderWithTimers(<CreateScheduleModal {...defaultProps} />);
 
     const inputs = screen.getAllByTestId("text-input");
-    fireEvent.changeText(inputs[0], "Daily Reminder");
+    fireEvent.changeText(inputs[0]!, "Daily Reminder");
 
-    expect(inputs[0].props.value).toBe("Daily Reminder");
+    expect(inputs[0]!.props.value).toBe("Daily Reminder");
   });
 
   it("should switch notification type", async () => {

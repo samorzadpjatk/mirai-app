@@ -5,12 +5,12 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
 jest.mock("~/components/common/ui", () => {
-   
+    
   const { createElement } = require("react");
   const { View, Text, Pressable } = require("react-native");
 
   return {
-    AppModalShell: (props) =>
+    AppModalShell: (props: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) =>
       !props.visible
         ? null
         : createElement(
@@ -25,7 +25,7 @@ jest.mock("~/components/common/ui", () => {
             props.children
           ),
   };
-   
+    
 });
 
 const noop = (): void => undefined;

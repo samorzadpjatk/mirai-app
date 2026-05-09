@@ -163,8 +163,8 @@ describe("useChallenges", () => {
     });
 
     expect(result.current.challenges).toHaveLength(2);
-    expect(result.current.challenges[0].id).toBe("challenge-1");
-    expect(result.current.challenges[1].title).toBe("Video Challenge");
+    expect(result.current.challenges[0]!.id).toBe("challenge-1");
+    expect(result.current.challenges[1]!.title).toBe("Video Challenge");
     expect(result.current.completedChallengesCount).toBe(1);
   });
 
@@ -513,7 +513,7 @@ describe("useChallenges", () => {
     const { result } = renderHook(() => useChallenges("trip-123"));
 
     await waitFor(() => {
-      expect(result.current.challenges[0].points).toBe(10);
+      expect(result.current.challenges[0]!.points).toBe(10);
     });
   });
 
@@ -557,7 +557,7 @@ describe("useChallenges", () => {
     const { result } = renderHook(() => useChallenges("trip-123"));
 
     await waitFor(() => {
-      expect(result.current.challenges[0].points).toBe(50);
+      expect(result.current.challenges[0]!.points).toBe(50);
     });
   });
 
@@ -600,8 +600,8 @@ describe("useChallenges", () => {
       expect(result.current.challenges).toHaveLength(2);
     });
 
-    expect(result.current.challenges[0].id).toBe("c1");
-    expect(result.current.challenges[1].id).toBe("c2");
+    expect(result.current.challenges[0]!.id).toBe("c1");
+    expect(result.current.challenges[1]!.id).toBe("c2");
   });
 
   it("should return null leaderboard info when no user group", async () => {

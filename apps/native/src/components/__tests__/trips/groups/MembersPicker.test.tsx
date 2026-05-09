@@ -3,8 +3,19 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersPicker } from "../../../trips/groups/create/MembersPicker";
 
+interface ParticipantUser {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+}
+
+interface Participant {
+  user: ParticipantUser;
+}
+
 describe("MembersPicker", () => {
-  const mockParticipants = [
+  const mockParticipants: Participant[] = [
     {
       user: {
         id: "1",
@@ -92,7 +103,7 @@ describe("MembersPicker", () => {
     expect(activityIndicator).toBeOnTheScreen();
   });
 
-  it("should call onToggleMember when a member is pressed", () => {
+it("should call onToggleMember when a member is pressed", () => {
     renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
@@ -101,8 +112,10 @@ describe("MembersPicker", () => {
         onToggleMember={mockOnToggleMember}
       />
     );
-    const memberItems = screen.getAllByText(/JD|JS|B/);
-    fireEvent.press(memberItems[0].parent?.parent?.parent ?? memberItems[0]);
+    const pressableElements = screen.getAllByTestId(/checkbox-/);
+    const firstPressableElement = pressableElements[0];
+    expect(firstPressableElement).toBeDefined();
+    fireEvent.press(firstPressableElement!);
     expect(mockOnToggleMember).toHaveBeenCalled();
   });
 
@@ -158,7 +171,7 @@ describe("MembersPicker", () => {
   });
 
   it("should handle single participant", () => {
-    const singleParticipant = [mockParticipants[0]];
+    const singleParticipant = [mockParticipants[0]!];
     renderWithProviders(
       <MembersPicker
         participants={singleParticipant}

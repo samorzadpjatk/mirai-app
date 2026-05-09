@@ -13,9 +13,17 @@ describe("JudgementHeader", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseJudgement.mockReturnValue({
+      tripId: "trip-1",
+      challengeId: "challenge-1",
       challengeName: "Test Challenge",
+      challengeScoringCategory: null,
+      isLoading: false,
+      isReviewing: false,
       pendingCount: 5,
       stats: { approved: 10, rejected: 2 },
+      currentSubmission: null,
+      nextSubmission: null,
+      reviewCurrent: jest.fn(),
     });
   });
 
@@ -52,14 +60,14 @@ describe("JudgementHeader", () => {
 
 describe("JudgementHeader - Different Stats", () => {
   it("should render with zero counts", () => {
-    mockUseJudgement.mockReturnValueOnce({ challengeName: "Empty Challenge", pendingCount: 0, stats: { approved: 0, rejected: 0 } });
+    mockUseJudgement.mockReturnValueOnce({ tripId: "trip-1", challengeId: "challenge-1", challengeName: "Empty Challenge", challengeScoringCategory: null, isLoading: false, isReviewing: false, pendingCount: 0, stats: { approved: 0, rejected: 0 }, currentSubmission: null, nextSubmission: null, reviewCurrent: jest.fn() });
     const { getByText } = renderWithProviders(<JudgementHeader tripId="trip-1" challengeId="challenge-1" />);
     expect(getByText("Empty Challenge")).toBeTruthy();
     expect(getByText("0 pending • 0 approved • 0 rejected")).toBeTruthy();
   });
 
   it("should render with large counts", () => {
-    mockUseJudgement.mockReturnValueOnce({ challengeName: "Popular Challenge", pendingCount: 999, stats: { approved: 5000, rejected: 100 } });
+    mockUseJudgement.mockReturnValueOnce({ tripId: "trip-1", challengeId: "challenge-1", challengeName: "Popular Challenge", challengeScoringCategory: null, isLoading: false, isReviewing: false, pendingCount: 999, stats: { approved: 5000, rejected: 100 }, currentSubmission: null, nextSubmission: null, reviewCurrent: jest.fn() });
     const { getByText } = renderWithProviders(<JudgementHeader tripId="trip-1" challengeId="challenge-1" />);
     expect(getByText("Popular Challenge")).toBeTruthy();
     expect(getByText("999 pending • 5000 approved • 100 rejected")).toBeTruthy();

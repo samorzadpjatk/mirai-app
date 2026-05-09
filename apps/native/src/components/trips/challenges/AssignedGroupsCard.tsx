@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-interface AssignedGroup {
+export interface AssignedGroup {
   id: string;
   group: {
     name: string;

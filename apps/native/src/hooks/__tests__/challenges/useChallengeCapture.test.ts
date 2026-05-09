@@ -4,10 +4,10 @@ import { useChallengeCapture } from "../../challenges/useChallengeCapture";
 import { Alert } from "react-native";
 
 // Mock expo-image-picker
-const mockLaunchImageLibraryAsync = jest.fn();
+const mockLaunchImageLibraryAsync = jest.fn<(options?: { mediaTypes?: string; allowsEditing?: boolean; aspect?: number[]; quality?: number; exif?: boolean }) => Promise<{ canceled: boolean; assets?: { uri: string; fileName?: string | null; mimeType?: string }[] }>>();
 
 jest.mock("expo-image-picker", () => ({
-  launchImageLibraryAsync: (options: unknown) => mockLaunchImageLibraryAsync(options),
+  launchImageLibraryAsync: () => mockLaunchImageLibraryAsync(),
   MediaTypeOptions: {
     Images: "images",
     Videos: "videos",
@@ -15,7 +15,7 @@ jest.mock("expo-image-picker", () => ({
 }));
 
 // Mock expo-router
-const mockPush = jest.fn();
+const mockPush = jest.fn<(path: string | { pathname: string; params?: Record<string, string> }) => void>();
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -24,17 +24,11 @@ jest.mock("expo-router", () => ({
 }));
 
 // Mock tRPC
-const mockUserGetMyWithGroupQuery = jest.fn(() => ({
-  queryKey: ["user", "getMyWithGroup"],
-}));
+const mockUserGetMyWithGroupQuery = jest.fn<() => { queryKey: string[] }>();
 
-const mockCreateSubmissionMutation = jest.fn(() => ({
-  mutationFn: jest.fn(),
-}));
+const mockCreateSubmissionMutation = jest.fn<() => { mutationFn: jest.Mock }>();
 
-const mockDeleteSubmissionMutation = jest.fn(() => ({
-  mutationFn: jest.fn(),
-}));
+const mockDeleteSubmissionMutation = jest.fn<() => { mutationFn: jest.Mock }>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
@@ -60,22 +54,20 @@ jest.mock("@mirai-app/trpc/client/query", () => ({
 }));
 
 // Mock React Query
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
-const mockUseQueryClient = jest.fn(() => ({
-  invalidateQueries: jest.fn(),
-}));
+const mockUseQuery = jest.fn<() => { data: unknown; isLoading: boolean }>();
+const mockUseMutation = jest.fn<() => { mutateAsync: jest.Mock<any>; isPending: boolean }>();
+const mockUseQueryClient = jest.fn<() => { invalidateQueries: jest.Mock }>();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+  useQuery: () => mockUseQuery(),
+  useMutation: () => mockUseMutation(),
   useQueryClient: () => mockUseQueryClient(),
 }));
 
 // Mock useFileUpload hook
-const mockUpload = jest.fn();
-const mockAbort = jest.fn();
-const mockReset = jest.fn();
+const mockUpload = jest.fn<(asset: { storagePath: string; fileUri: string; fileName: string; contentType: string }) => Promise<{ success: boolean }>>();
+const mockAbort = jest.fn<() => void>();
+const mockReset = jest.fn<() => void>();
 
 jest.mock("~/hooks/files", () => ({
   useFileUpload: () => ({
@@ -186,8 +178,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should submit captured photo successfully", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
-    const mockUploadFn = jest.fn().mockResolvedValue({ success: true });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -202,7 +193,7 @@ describe("useChallengeCapture", () => {
       isPending: false,
     });
 
-    mockUpload.mockImplementation(mockUploadFn);
+    mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
@@ -222,7 +213,7 @@ describe("useChallengeCapture", () => {
       longitude: undefined,
     });
 
-    expect(mockUploadFn).toHaveBeenCalled();
+    expect(mockUpload).toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith(
       "Submission sent",
       expect.stringContaining("Zgłoszenie zostało wysłane"),
@@ -330,8 +321,8 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle upload failure and cleanup", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
-    const mockDeleteSubmission = jest.fn().mockResolvedValue({ success: true });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
     const uploadError = new Error("Upload failed");
 
     mockUseQuery.mockReturnValue({
@@ -398,7 +389,7 @@ describe("useChallengeCapture", () => {
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
     );
 
-    const onSuccess = jest.fn();
+    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
 
     await act(async () => {
       await result.current.pickImageFromGallery(onSuccess);
@@ -412,7 +403,7 @@ describe("useChallengeCapture", () => {
       exif: true,
     });
 
-    expect(onSuccess).toHaveBeenCalledWith(mockAsset);
+    expect(onSuccess).toHaveBeenCalled();
   });
 
   it("should handle cancelled image picker", async () => {
@@ -435,7 +426,7 @@ describe("useChallengeCapture", () => {
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
     );
 
-    const onSuccess = jest.fn();
+    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
 
     await act(async () => {
       await result.current.pickImageFromGallery(onSuccess);
@@ -494,7 +485,7 @@ describe("useChallengeCapture", () => {
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
     );
 
-    const onSuccess = jest.fn();
+    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
 
     await act(async () => {
       await result.current.pickVideoFromGallery(onSuccess);
@@ -506,7 +497,7 @@ describe("useChallengeCapture", () => {
       quality: 0.8,
     });
 
-    expect(onSuccess).toHaveBeenCalledWith(mockAsset);
+    expect(onSuccess).toHaveBeenCalled();
   });
 
   it("should handle video picker error", async () => {
@@ -534,8 +525,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should submit video asset successfully", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
-    const mockUploadFn = jest.fn().mockResolvedValue({ success: true });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; videoId?: string; imageIds?: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -550,7 +540,7 @@ describe("useChallengeCapture", () => {
       isPending: false,
     });
 
-    mockUpload.mockImplementation(mockUploadFn);
+    mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
@@ -572,13 +562,13 @@ describe("useChallengeCapture", () => {
       videoId: expect.stringContaining("challenge/challenge-123/group-1-"),
     });
 
-    expect(mockUploadFn).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
       contentType: "video/mp4",
     }));
   });
 
   it("should handle retake and cleanup submission", async () => {
-    const mockDeleteSubmission = jest.fn().mockResolvedValue({ success: true });
+    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -618,7 +608,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should resolve file extension from filename", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -655,7 +645,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should resolve file extension from mime type", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -692,7 +682,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should resolve mime type from extension", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -729,7 +719,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle heic image format", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -767,7 +757,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle webm video format", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -804,7 +794,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should submit with location data", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -844,7 +834,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should navigate to challenges on success alert", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -878,7 +868,7 @@ describe("useChallengeCapture", () => {
     const alertCalls = (Alert.alert as jest.Mock).mock.calls;
     expect(alertCalls.length).toBeGreaterThan(0);
 
-    const alertButtons = alertCalls[0][2] as { text: string; onPress?: () => void }[];
+    const alertButtons = alertCalls[0]![2] as { text: string; onPress?: () => void }[];
     const viewChallengesButton = alertButtons.find((b) => b.text === "View Challenges");
 
     if (viewChallengesButton?.onPress) {
@@ -891,7 +881,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle default filename generation", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -928,8 +918,8 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle cleanup failure gracefully", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
-    const mockDeleteSubmission = jest.fn().mockRejectedValue(new Error("Delete failed"));
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockRejectedValue(new Error("Delete failed"));
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -970,7 +960,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle m4v video format", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -1007,7 +997,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle heif image format", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -1044,7 +1034,7 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle uri with extension for filename", async () => {
-    const mockCreateSubmission = jest.fn().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {

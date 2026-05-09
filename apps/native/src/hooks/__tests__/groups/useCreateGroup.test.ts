@@ -202,8 +202,9 @@ describe("useCreateGroup", () => {
     it("should invalidate group queries after successful creation", async () => {
       let onSuccessCallback: (() => Promise<void>) | null = null;
 
-      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
-        onSuccessCallback = options?.onSuccess ?? null;
+      mockUseMutation.mockImplementation((options: unknown) => {
+        const opts = options as { onSuccess?: () => Promise<void> };
+        onSuccessCallback = opts?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "new-group" }),
           isPending: false,
@@ -213,7 +214,7 @@ describe("useCreateGroup", () => {
       renderHook(() => useCreateGroup("trip-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback();
+        await (onSuccessCallback as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -222,8 +223,9 @@ describe("useCreateGroup", () => {
     it("should invalidate queries with correct queryClient", async () => {
       let onSuccessCallback: (() => Promise<void>) | null = null;
 
-      mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
-        onSuccessCallback = options?.onSuccess ?? null;
+      mockUseMutation.mockImplementation((options: unknown) => {
+        const opts = options as { onSuccess?: () => Promise<void> };
+        onSuccessCallback = opts?.onSuccess ?? null;
         return {
           mutateAsync: jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "new-group" }),
           isPending: false,
@@ -233,7 +235,7 @@ describe("useCreateGroup", () => {
       renderHook(() => useCreateGroup("trip-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback();
+        await (onSuccessCallback as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledTimes(1);
@@ -370,7 +372,7 @@ describe("useCreateGroup", () => {
     });
 
     it("should handle null image", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string | null }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
+      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
         id: "new-group",
         name: "Test Group",
       });
@@ -382,12 +384,12 @@ describe("useCreateGroup", () => {
 
       const { result } = renderHook(() => useCreateGroup("trip-123"));
 
-      await result.current.createGroup({ name: "Test Group", image: null });
+      await result.current.createGroup({ name: "Test Group", image: undefined });
 
       expect(mockMutateAsync).toHaveBeenCalledWith({
         tripId: "trip-123",
         name: "Test Group",
-        image: null,
+        image: undefined,
       });
     });
   });

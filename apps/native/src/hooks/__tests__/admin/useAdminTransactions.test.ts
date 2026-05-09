@@ -124,10 +124,10 @@ describe("useAdminTransactions", () => {
     });
 
     expect(result.current.transactions).toHaveLength(2);
-    expect(result.current.transactions[0].id).toBe("tx-1");
-    expect(result.current.transactions[0].amount).toBe(100);
-    expect(result.current.transactions[1].amount).toBe(-50);
-    expect(result.current.transactions[1].admin.firstName).toBe("Jane");
+    expect(result.current.transactions[0]!.id).toBe("tx-1");
+    expect(result.current.transactions[0]!.amount).toBe(100);
+    expect(result.current.transactions[1]!.amount).toBe(-50);
+    expect(result.current.transactions[1]!.admin.firstName).toBe("Jane");
   });
 
   it("should return groups from API", async () => {
@@ -159,7 +159,7 @@ describe("useAdminTransactions", () => {
     });
 
     expect(result.current.groups).toHaveLength(3);
-    expect(result.current.groups[0].name).toBe("Team Alpha");
+    expect(result.current.groups[0]!.name).toBe("Team Alpha");
   });
 
   it("should handle pagination", async () => {
@@ -315,8 +315,8 @@ describe("useAdminTransactions", () => {
     });
 
     expect(result.current.transactions).toHaveLength(2);
-    expect(result.current.transactions[0].reason).toBe("Page 1");
-    expect(result.current.transactions[1].reason).toBe("Page 2");
+    expect(result.current.transactions[0]!.reason).toBe("Page 1");
+    expect(result.current.transactions[1]!.reason).toBe("Page 2");
   });
 
   it("should disable query when tripId is empty", () => {
@@ -339,6 +339,6 @@ describe("useAdminTransactions", () => {
 
     // Verify that the query is disabled when tripId is empty
     const infiniteQueryCall = mockUseInfiniteQuery.mock.calls[0];
-    expect((infiniteQueryCall[0] as { enabled?: boolean }).enabled).toBe(false);
+    expect((infiniteQueryCall![0] as { enabled?: boolean }).enabled).toBe(false);
   });
 });

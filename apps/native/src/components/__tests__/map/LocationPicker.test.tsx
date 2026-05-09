@@ -53,7 +53,7 @@ interface LocationPosition {
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: "granted" })),
   getCurrentPositionAsync: jest.fn(() =>
-    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } } as LocationPosition)
+    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } })
   ),
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
   Accuracy: { Balanced: 2 },

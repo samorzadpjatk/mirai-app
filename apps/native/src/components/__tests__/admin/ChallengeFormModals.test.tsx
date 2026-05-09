@@ -3,6 +3,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeFormModals } from "../../admin/challenges/ChallengeFormModals";
+import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 
 interface DateTimePickerModalProps {
   visible: boolean;

@@ -1,9 +1,9 @@
-import { describe, it, expect, jest, beforeEach, type Mock } from "@jest/globals";
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
 // Mock expo-location
-const mockHasStartedLocationUpdatesAsync = jest.fn() as Mock<(taskName: string) => Promise<boolean>>;
-const mockStartLocationUpdatesAsync = jest.fn() as Mock<(taskName: string, options: Record<string, unknown>) => Promise<void>>;
-const mockStopLocationUpdatesAsync = jest.fn() as Mock<(taskName: string) => Promise<void>>;
+const mockHasStartedLocationUpdatesAsync = jest.fn<(taskName: string) => Promise<boolean>>();
+const mockStartLocationUpdatesAsync = jest.fn<(taskName: string, options: Record<string, unknown>) => Promise<void>>();
+const mockStopLocationUpdatesAsync = jest.fn<(taskName: string) => Promise<void>>();
 
 jest.mock("expo-location", () => ({
   Accuracy: {
@@ -21,8 +21,8 @@ jest.mock("expo-location", () => ({
 }));
 
 // Mock AsyncStorage
-const mockGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockSetItem = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
+const mockGetItem = jest.fn<(key: string) => Promise<string | null>>();
+const mockSetItem = jest.fn<(key: string, value: string) => Promise<void>>();
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: (...args: [string]) => mockGetItem(...args),
@@ -71,7 +71,7 @@ describe("Background Location Service", () => {
     });
 
     it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const error = new Error("Storage error");
       mockGetItem.mockRejectedValue(error);
 
@@ -127,7 +127,7 @@ describe("Background Location Service", () => {
     });
 
     it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       const error = new Error("Location error");
       mockHasStartedLocationUpdatesAsync.mockRejectedValue(error);
 

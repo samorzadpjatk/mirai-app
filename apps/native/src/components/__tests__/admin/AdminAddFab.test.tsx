@@ -16,7 +16,7 @@ jest.mock("~/components/common/FloatingActionButton", () => ({
     disabled?: boolean;
   }) => (
     <button
-      testID="fab-button"
+      data-testid="fab-button"
       onClick={onPress}
       disabled={disabled}
       aria-label={accessibilityLabel}

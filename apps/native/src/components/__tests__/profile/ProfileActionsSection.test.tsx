@@ -41,11 +41,11 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("~/hooks/notifications", () => ({
-  useNotifications: (...args: unknown[]) => mockUseNotifications(...args),
+  useNotifications: () => mockUseNotifications(),
 }));
 
 jest.mock("~/stores/location", () => ({
-  useLocationContext: (...args: unknown[]) => mockUseLocationContext(...args),
+  useLocationContext: () => mockUseLocationContext(),
 }));
 
 jest.mock("@expo/vector-icons", () => {

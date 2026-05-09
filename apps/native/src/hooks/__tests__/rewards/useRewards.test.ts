@@ -128,7 +128,7 @@ describe("useAdminRewards", () => {
     mockUseTRPCClient.mockReturnValue({
       reward: {
         getByTripAdmin: {
-          query: jest.fn() as jest.Mock<() => Promise<{ rewards: typeof mockRewards; pagination: { hasMore: boolean; offset: number; limit: number } }>>,
+          query: jest.fn(),
         },
       },
     });
@@ -157,8 +157,8 @@ describe("useAdminRewards", () => {
       expect(result.current.data).toHaveLength(2);
     });
 
-    expect(result.current.data[0].id).toBe("reward-1");
-    expect(result.current.data[1].id).toBe("reward-2");
+    expect(result.current.data[0]!.id).toBe("reward-1");
+    expect(result.current.data[1]!.id).toBe("reward-2");
   });
 
   it("should handle pagination", async () => {
@@ -464,7 +464,7 @@ describe("useRewardPurchaseHistory", () => {
     mockUseTRPCClient.mockReturnValue({
       reward: {
         getPurchaseHistory: {
-          query: jest.fn() as jest.Mock<() => Promise<{ purchases: typeof mockPurchases; pagination: { hasMore: boolean; offset: number; limit: number } }>>,
+          query: jest.fn(),
         },
       },
     });

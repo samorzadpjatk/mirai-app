@@ -5,7 +5,6 @@ import { CardStack } from "../../judgement/CardStack";
 
 // Mock variables for jest.mock factories (must be prefixed with "mock")
 const mockReact = React;
-const mockView = View;
 
 jest.mock("~/stores/judgement", () => ({
   useJudgement: jest.fn().mockReturnValue({
@@ -64,19 +63,19 @@ jest.mock("@expo/vector-icons", () => ({
 }));
 
 jest.mock("~/components/judgement/QueuedSubmissionCard", () => ({
-  QueuedSubmissionCard: () => <mockView testID="queued-card" />,
+  QueuedSubmissionCard: () => <View testID="queued-card" />,
 }));
 
 jest.mock("~/components/judgement/CurrentSubmissionCard", () => ({
-  CurrentSubmissionCard: () => <mockView testID="current-card" />,
+  CurrentSubmissionCard: () => <View testID="current-card" />,
 }));
 
 jest.mock("~/components/judgement/EmptyStateCard", () => ({
-  EmptyStateCard: () => <mockView testID="empty-card" />,
+  EmptyStateCard: () => <View testID="empty-card" />,
 }));
 
 jest.mock("~/components/judgement/ActionBar", () => ({
-  ActionBar: () => <mockView testID="action-bar" />,
+  ActionBar: () => <View testID="action-bar" />,
 }));
 
 describe("CardStack", () => {

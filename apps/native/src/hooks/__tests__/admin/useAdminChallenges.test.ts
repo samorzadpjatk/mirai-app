@@ -117,9 +117,9 @@ describe("useAdminChallenges", () => {
     });
 
     expect(result.current.challenges).toHaveLength(2);
-    expect(result.current.challenges[0].id).toBe("challenge-1");
-    expect(result.current.challenges[0].title).toBe("Photo Challenge");
-    expect(result.current.challenges[1].category).toBe("wintegral");
+    expect(result.current.challenges[0]!.id).toBe("challenge-1");
+    expect(result.current.challenges[0]!.title).toBe("Photo Challenge");
+    expect(result.current.challenges[1]!.category).toBe("wintegral");
   });
 
   it("should handle challenges with null values", async () => {
@@ -153,12 +153,12 @@ describe("useAdminChallenges", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.challenges[0].title).toBe("");
-    expect(result.current.challenges[0].description).toBe("");
-    expect(result.current.challenges[0].points).toBe(0);
-    expect(result.current.challenges[0].category).toBe("standard");
-    expect(result.current.challenges[0].icon).toBe("star");
-    expect(result.current.challenges[0].status).toBe("active");
+    expect(result.current.challenges[0]!.title).toBe("");
+    expect(result.current.challenges[0]!.description).toBe("");
+    expect(result.current.challenges[0]!.points).toBe(0);
+    expect(result.current.challenges[0]!.category).toBe("standard");
+    expect(result.current.challenges[0]!.icon).toBe("star");
+    expect(result.current.challenges[0]!.status).toBe("active");
   });
 
   it("should calculate stats correctly", async () => {

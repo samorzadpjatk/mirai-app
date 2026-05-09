@@ -105,11 +105,11 @@ describe("useAdminCoins", () => {
     });
 
     expect(result.current.groups).toHaveLength(2);
-    expect(result.current.groups[0].id).toBe("group-1");
-    expect(result.current.groups[0].name).toBe("Group A");
-    expect(result.current.groups[0].coins).toBe(1000);
-    expect(result.current.groups[0].organizer?.firstName).toBe("John");
-    expect(result.current.groups[0]._count.participants).toBe(10);
+    expect(result.current.groups[0]!.id).toBe("group-1");
+    expect(result.current.groups[0]!.name).toBe("Group A");
+    expect(result.current.groups[0]!.coins).toBe(1000);
+    expect(result.current.groups[0]!.organizer?.firstName).toBe("John");
+    expect(result.current.groups[0]!._count.participants).toBe(10);
   });
 
   it("should add coins to group", async () => {
@@ -308,7 +308,7 @@ describe("useAdminCoins", () => {
       expect(result.current.groupsLoading).toBe(false);
     });
 
-    expect(result.current.groups[0].organizer).toBeNull();
+    expect(result.current.groups[0]!.organizer).toBeNull();
   });
 
   it("should pass reason parameter (unused but in interface)", async () => {

@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupMemberList } from "../../../trips/groups/details/GroupMemberList";
+import type { GroupMember } from "../../../trips/groups/details/GroupMemberList";
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: () => ({
@@ -17,7 +18,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 describe("GroupMemberList", () => {
-  const mockMembers = [
+  const mockMembers: GroupMember[] = [
     {
       id: "1",
       name: "John Doe",
@@ -146,7 +147,7 @@ describe("GroupMemberList", () => {
   });
 
   it("should handle single member", () => {
-    const singleMember = [mockMembers[0]];
+    const singleMember = [mockMembers[0]!];
     renderWithProviders(
       <GroupMemberList members={singleMember} />
     );

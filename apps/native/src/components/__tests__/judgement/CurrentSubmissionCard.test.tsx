@@ -55,9 +55,11 @@ jest.mock("~/components/judgement/SubmissionAssetPreview", () => {
 
 const mockSubmission = {
   id: "sub-1",
+  status: "PENDING",
   group: {
     id: "group-1",
     name: "Test Group",
+    description: null,
     image: null,
   },
   createdAt: new Date("2024-01-15"),

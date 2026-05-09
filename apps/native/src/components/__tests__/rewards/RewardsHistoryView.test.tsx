@@ -9,9 +9,9 @@ const mockFetchNextPage = jest.fn();
 const mockRefetch = jest.fn(() => Promise.resolve());
 
 const mockUseRewardPurchaseHistory = jest.fn(() => ({
-  data: [],
+  data: [] as any,
   isLoading: false,
-  error: null,
+  error: null as any,
   hasNextPage: false,
   isFetchingNextPage: false,
   fetchNextPage: mockFetchNextPage,
@@ -60,7 +60,7 @@ const basePurchase = (overrides: Record<string, unknown> = {}) => ({
 });
 
 jest.mock("~/hooks/rewards", () => ({
-  useRewardPurchaseHistory: (tripId: string) => mockUseRewardPurchaseHistory(tripId),
+  useRewardPurchaseHistory: () => mockUseRewardPurchaseHistory(),
   useUpdateMyRewardPurchaseStatus: () => mockUseUpdateMyRewardPurchaseStatus(),
 }));
 

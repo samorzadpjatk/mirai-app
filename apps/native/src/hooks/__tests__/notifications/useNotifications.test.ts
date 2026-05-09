@@ -31,13 +31,13 @@ jest.mock("expo-constants", () => ({
 }));
 
 // Mock react-native Alert and Linking
-import type { AlertButton } from "react-native";
-const mockAlert = jest.fn<(title: string, message?: string, buttons?: AlertButton[], options?: any) => void>();
+import type { AlertButton, AlertOptions } from "react-native";
+const mockAlert = jest.fn<(title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) => void>();
 const mockLinkingOpenSettings = jest.fn<() => Promise<void>>();
 
 jest.mock("react-native", () => ({
   Alert: {
-    alert: (title: string, message?: string, buttons?: AlertButton[], options?: any) => {
+    alert: (title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) => {
       mockAlert(title, message, buttons);
     },
   },

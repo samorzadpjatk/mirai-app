@@ -215,8 +215,8 @@ describe("useAdminUsers", () => {
     });
 
     expect(result.current.users).toHaveLength(2);
-    expect(result.current.users[0].id).toBe("user-1");
-    expect(result.current.users[1].role).toBe("ADMIN");
+    expect(result.current.users[0]!.id).toBe("user-1");
+    expect(result.current.users[1]!.role).toBe("ADMIN");
   });
 
   it("should return groups from API", async () => {
@@ -259,7 +259,7 @@ describe("useAdminUsers", () => {
     });
 
     expect(result.current.groups).toHaveLength(2);
-    expect(result.current.groups[0].name).toBe("Group A");
+    expect(result.current.groups[0]!.name).toBe("Group A");
   });
 
   it("should assign user to group", async () => {

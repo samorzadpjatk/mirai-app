@@ -78,8 +78,8 @@ describe("LeaderboardRankingsSection", () => {
       <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
     );
     const groupElements = screen.getAllByText(/Group \d/);
-    fireEvent.press(groupElements[0]);
-    expect(mockOnPressGroup).toHaveBeenCalledWith(mockGroups[0]);
+    fireEvent.press(groupElements[0]!);
+    expect(mockOnPressGroup).toHaveBeenCalledWith(mockGroups[0]!);
   });
 
   it("should render empty state when no groups", () => {
@@ -94,7 +94,7 @@ describe("LeaderboardRankingsSection", () => {
   });
 
   it("should handle single group", () => {
-    const singleGroup = [mockGroups[0]];
+    const singleGroup = [mockGroups[0]!];
     renderWithProviders(
       <LeaderboardRankingsSection groups={singleGroup} onPressGroup={mockOnPressGroup} />
     );

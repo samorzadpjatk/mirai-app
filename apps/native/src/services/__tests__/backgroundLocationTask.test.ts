@@ -1,24 +1,17 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { LocationObject } from "expo-location";
-import type { Mock } from "jest-mock";
 
 // Require helper for the module under test (using require for Jest compatibility)
 function loadBackgroundLocationTask(): unknown {
   return require("~/services/background/backgroundLocationTask");
 }
 
-const mockDefineTask = jest.fn() as Mock<(taskName: string, handler: (props: {
-  data?: { locations?: LocationObject[] };
-  error?: Error | null;
-}) => Promise<void>) => void>;
-const mockGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockGetSession = jest.fn() as Mock<() => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>>;
-const mockMutate = jest.fn() as Mock<(data: Record<string, unknown>) => Promise<void>>;
-const mockCleanup = jest.fn() as Mock<() => Promise<void>>;
-const mockGetTRPCClient = jest.fn() as Mock<(httpUrl: string, wsUrl: string, token: string) => {
-  client: { location: { updateLocation: { mutate: typeof mockMutate } } };
-  cleanup: typeof mockCleanup;
-}>;
+const mockDefineTask = jest.fn();
+const mockGetItem = jest.fn();
+const mockGetSession = jest.fn();
+const mockMutate = jest.fn();
+const mockCleanup = jest.fn();
+const mockGetTRPCClient = jest.fn();
 
 jest.mock("expo-task-manager", () => ({
   defineTask: (...args: [string, (props: {
@@ -607,13 +600,13 @@ describe("Background Location Task", () => {
         createMockLocation(),
         createMockLocation(),
       ];
-      locations[1].coords.latitude = 53.0;
-      locations[2].coords.latitude = 54.0;
+      locations[1]!.coords.latitude = 53.0;
+      locations[2]!.coords.latitude = 54.0;
 
       await Promise.all([
-        taskHandler({ data: { locations: [locations[0]] }, error: null }),
-        taskHandler({ data: { locations: [locations[1]] }, error: null }),
-        taskHandler({ data: { locations: [locations[2]] }, error: null }),
+        taskHandler({ data: { locations: [locations[0]!] }, error: null }),
+        taskHandler({ data: { locations: [locations[1]!] }, error: null }),
+        taskHandler({ data: { locations: [locations[2]!] }, error: null }),
       ]);
 
       expect(mockMutate).toHaveBeenCalledTimes(1);

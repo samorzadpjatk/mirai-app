@@ -5,7 +5,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapScreenOverlay } from "../../map/overlays/MapScreenOverlay";
 
 const mockGetMapOverlayStore = jest.fn(() => ({
-  selectedUser: null,
+  selectedUser: null as { id: string; name: string } | null,
   showUsersList: false,
   panelStyle: {},
   panGesture: { active: false },
