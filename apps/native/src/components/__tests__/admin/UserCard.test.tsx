@@ -14,10 +14,11 @@ describe("UserCard", () => {
     lastName: "Doe",
     email: "john@example.com",
     role: "USER" as const,
-    wristNumber: 123,
-    houseNumber: 456,
+    wristNumber: "123",
+    houseNumber: "456",
     isBanned: false,
     bannedUntil: null,
+    tripId: "trip-1",
     group: {
       id: "group-1",
       name: "Test Group",
@@ -140,7 +141,7 @@ describe("UserCard", () => {
   });
 
   it("renders with different wrist and house numbers", () => {
-    const userWithDifferentNumbers = { ...mockUser, wristNumber: 999, houseNumber: 888 };
+    const userWithDifferentNumbers = { ...mockUser, wristNumber: "999", houseNumber: "888" };
     renderWithProviders(<UserCard user={userWithDifferentNumbers} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("999")).toBeTruthy();

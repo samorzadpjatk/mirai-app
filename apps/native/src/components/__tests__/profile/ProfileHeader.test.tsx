@@ -4,7 +4,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProfileHeader } from "../../profile/ProfileHeader";
 
 const mockUseQuery = jest.fn(() => ({
-  data: null,
+  data: null as any,
   isLoading: false,
 }));
 
@@ -16,7 +16,7 @@ const mockAbort = jest.fn();
 const mockUseFileDownload = jest.fn(() => ({
   download: mockDownload,
   status: "idle",
-  file: null,
+  file: null as any,
   reset: mockReset,
   abort: mockAbort,
 }));
@@ -34,7 +34,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: () => mockUseQuery(),
   QueryClient: jest.fn(),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

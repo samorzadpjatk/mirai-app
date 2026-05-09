@@ -1,14 +1,13 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { TripListItem } from "~/components/trips/list/types";
-import type { Mock } from "jest-mock";
 
-const mockSecureGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockSecureSetItemAsync = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
-const mockSecureDeleteItemAsync = jest.fn() as Mock<(key: string) => Promise<void>>;
+const mockSecureGetItemAsync = jest.fn<(key: string) => Promise<string | null>>();
+const mockSecureSetItemAsync = jest.fn<(key: string, value: string) => Promise<void>>();
+const mockSecureDeleteItemAsync = jest.fn<(key: string) => Promise<void>>();
 
-const mockAsyncGetItem = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockAsyncSetItem = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
-const mockAsyncRemoveItem = jest.fn() as Mock<(key: string) => Promise<void>>;
+const mockAsyncGetItem = jest.fn<(key: string) => Promise<string | null>>();
+const mockAsyncSetItem = jest.fn<(key: string, value: string) => Promise<void>>();
+const mockAsyncRemoveItem = jest.fn<(key: string) => Promise<void>>();
 
 jest.mock("expo-secure-store", () => ({
   getItemAsync: (...args: [string]) => mockSecureGetItemAsync(...args),
@@ -95,8 +94,8 @@ describe("Selected Trip Storage", () => {
       const result = await getCachedTrips();
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe("trip-1");
-      expect(result[1].id).toBe("trip-2");
+      expect(result[0]!.id).toBe("trip-1");
+      expect(result[1]!.id).toBe("trip-2");
     });
 
     it("should filter out invalid trip items", async () => {
@@ -112,7 +111,7 @@ describe("Selected Trip Storage", () => {
       const result = await getCachedTrips();
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe("trip-1");
+      expect(result[0]!.id).toBe("trip-1");
     });
 
     it("should return empty array when cache is not an array", async () => {
@@ -124,7 +123,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockAsyncGetItem.mockResolvedValue("invalid-json");
 
       const result = await getCachedTrips();
@@ -170,7 +169,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle storage errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockAsyncSetItem.mockRejectedValue(new Error("Storage error"));
 
       await setCachedTrips([createMockTrip("trip-1", "Trip 1")]);
@@ -288,7 +287,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockAsyncGetItem.mockResolvedValue("invalid-json");
 
       const result = await getCachedTripById("trip-1");
@@ -340,7 +339,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle storage errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
       mockAsyncGetItem.mockResolvedValue("{}");
       mockAsyncSetItem.mockRejectedValue(new Error("Storage error"));
 

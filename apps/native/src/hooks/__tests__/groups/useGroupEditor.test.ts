@@ -3,7 +3,7 @@ import { renderHook } from "@testing-library/react-native";
 import { useGroupEditor } from "../../groups/useGroupEditor";
 
 const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
+const mockUseMutation = jest.fn<(...args: unknown[]) => unknown>();
 const mockUseQueryClient = jest.fn();
 const mockUseTRPC = jest.fn();
 const mockInvalidateGroupQueries = jest.fn();
@@ -495,7 +495,7 @@ describe("useGroupEditor", () => {
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback();
+        await onSuccessCallback!();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -520,7 +520,7 @@ describe("useGroupEditor", () => {
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback();
+        await onSuccessCallback!();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -545,7 +545,7 @@ describe("useGroupEditor", () => {
       renderHook(() => useGroupEditor("group-123"));
 
       if (onSuccessCallback) {
-        await onSuccessCallback();
+        await onSuccessCallback!();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);

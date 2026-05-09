@@ -141,8 +141,8 @@ describe("useGroups", () => {
       const { result } = renderHook(() => useGroups("trip-123"));
 
       expect(result.current.groups).toHaveLength(2);
-      expect(result.current.groups[0].id).toBe("group-1");
-      expect(result.current.groups[1].id).toBe("group-2");
+      expect(result.current.groups[0]!.id).toBe("group-1");
+      expect(result.current.groups[1]!.id).toBe("group-2");
     });
 
     it("should handle multiple pages of groups", () => {
@@ -171,8 +171,8 @@ describe("useGroups", () => {
       const { result } = renderHook(() => useGroups("trip-123"));
 
       expect(result.current.groups).toHaveLength(2);
-      expect(result.current.groups[0].id).toBe("group-1");
-      expect(result.current.groups[1].id).toBe("group-2");
+      expect(result.current.groups[0]!.id).toBe("group-1");
+      expect(result.current.groups[1]!.id).toBe("group-2");
     });
 
     it("should handle empty groups data", () => {
@@ -263,9 +263,9 @@ describe("useGroups", () => {
     it("should calculate participant count correctly", () => {
       const { result } = renderHook(() => useGroups("trip-123"));
 
-      expect(result.current.filteredGroups[0].participantCount).toBe(1);
-      expect(result.current.filteredGroups[1].participantCount).toBe(2);
-      expect(result.current.filteredGroups[2].participantCount).toBe(0);
+      expect(result.current.filteredGroups[0]!.participantCount).toBe(1);
+      expect(result.current.filteredGroups[1]!.participantCount).toBe(2);
+      expect(result.current.filteredGroups[2]!.participantCount).toBe(0);
     });
   });
 

@@ -3,6 +3,7 @@ import { Text, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionAssetPreview } from "../../judgement/SubmissionAssetPreview";
 import { useFileDownload } from "~/hooks/files";
+import { type Submission } from "~/stores/judgement";
 
 interface IconProps {
   name: string;
@@ -39,6 +40,24 @@ const mockUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPlay
   loop: false,
 }));
 
+const createMockSubmission = (overrides: Partial<Submission> = {}): Submission => ({
+  id: "sub-1",
+  status: "PENDING",
+  imageIds: [],
+  videoId: null,
+  textContent: null,
+  latitude: null,
+  longitude: null,
+  createdAt: new Date("2024-01-15"),
+  group: {
+    id: "group-1",
+    name: "Test Group",
+    description: null,
+    image: null,
+  },
+  ...overrides,
+});
+
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name }: IconProps) => mockReact.createElement(mockText, null, name),
 }));
@@ -49,12 +68,12 @@ jest.mock("expo-image", () => ({
 
 jest.mock("expo-video", () => ({
   VideoView: () => mockReact.createElement(mockView, { testID: "video-view" }),
-  useVideoPlayer: (...args: unknown[]) => mockUseVideoPlayer(...args),
+  useVideoPlayer: (source: unknown, callback?: (player: VideoPlayerMock) => void) => mockUseVideoPlayer(source, callback ?? (() => {})),
 }));
 
 jest.mock("~/hooks/files", () => ({
   __esModule: true,
-  useFileDownload: (...args: unknown[]) => mockUseFileDownload(...args),
+  useFileDownload: (storagePath: string, skipCache?: boolean) => mockUseFileDownload(storagePath, skipCache),
 }));
 
 const createState = (status: string, file: { uri: string } | null): DownloadState => ({
@@ -65,10 +84,10 @@ const createState = (status: string, file: { uri: string } | null): DownloadStat
   abort: jest.fn<void, []>(),
 });
 
-const mockSubmissionNoAssets = { id: "sub-1", imageIds: [], videoId: null };
-const mockSubmissionWithImages = { id: "sub-2", imageIds: ["image-1.jpg"], videoId: null };
-const mockSubmissionWithMultipleImages = { id: "sub-3", imageIds: ["image-1.jpg", "image-2.jpg", "image-3.jpg"], videoId: null };
-const mockSubmissionWithVideo = { id: "sub-4", imageIds: [], videoId: "video-1.mp4" };
+const mockSubmissionNoAssets = createMockSubmission({ id: "sub-1", imageIds: [], videoId: null });
+const mockSubmissionWithImages = createMockSubmission({ id: "sub-2", imageIds: ["image-1.jpg"], videoId: null });
+const mockSubmissionWithMultipleImages = createMockSubmission({ id: "sub-3", imageIds: ["image-1.jpg", "image-2.jpg", "image-3.jpg"], videoId: null });
+const mockSubmissionWithVideo = createMockSubmission({ id: "sub-4", imageIds: [], videoId: "video-1.mp4" });
 
 describe("SubmissionAssetPreview", () => {
   beforeEach(() => {

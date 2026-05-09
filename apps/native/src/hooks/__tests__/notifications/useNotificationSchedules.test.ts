@@ -80,7 +80,7 @@ describe("useNotificationSchedules", () => {
     const mockSchedules = [
       {
         id: "schedule-1",
-        title: "Morning Reminder",
+        name: "Morning Reminder",
         body: "Don't forget to check in!",
         scheduledAt: "2024-01-01T08:00:00Z",
         isActive: true,
@@ -89,7 +89,7 @@ describe("useNotificationSchedules", () => {
       },
       {
         id: "schedule-2",
-        title: "Evening Summary",
+        name: "Evening Summary",
         body: "Check today's progress",
         scheduledAt: "2024-01-01T20:00:00Z",
         isActive: false,
@@ -119,8 +119,8 @@ describe("useNotificationSchedules", () => {
     });
 
     expect(result.current.schedules).toHaveLength(2);
-    expect(result.current.schedules[0].id).toBe("schedule-1");
-    expect(result.current.schedules[1].title).toBe("Evening Summary");
+    expect(result.current.schedules[0]!.id).toBe("schedule-1");
+    expect(result.current.schedules[1]!.name).toBe("Evening Summary");
   });
 
   it("should handle empty schedules", () => {

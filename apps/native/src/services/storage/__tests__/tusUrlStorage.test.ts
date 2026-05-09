@@ -1,14 +1,13 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { PreviousUpload } from "tus-js-client";
-import type { Mock } from "jest-mock";
 
 interface PreviousUploadWithUrl extends PreviousUpload {
   url: string;
   offset?: number;
 }
 
-const mockGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockSetItemAsync = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
+const mockGetItemAsync = jest.fn<(key: string) => Promise<string | null>>();
+const mockSetItemAsync = jest.fn<(key: string, value: string) => Promise<void>>();
 
 jest.mock("expo-secure-store", () => ({
   getItemAsync: (...args: [string]) => mockGetItemAsync(...args),

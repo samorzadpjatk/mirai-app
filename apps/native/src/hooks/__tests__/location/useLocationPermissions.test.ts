@@ -41,9 +41,9 @@ jest.mock("@mirai-app/trpc/client/query", () => ({
 
 
 describe("useLocationPermissions", () => {
-  const mockMutateAsync = jest.fn();
-  const mockGetForegroundPermissions = Location.getForegroundPermissionsAsync as jest.Mock;
-  const mockRequestForeground = Location.requestForegroundPermissionsAsync as jest.Mock;
+  const mockMutateAsync = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+  const mockGetForegroundPermissions = jest.mocked(Location.getForegroundPermissionsAsync);
+  const mockRequestForeground = jest.mocked(Location.requestForegroundPermissionsAsync);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -56,8 +56,18 @@ describe("useLocationPermissions", () => {
       mutateAsync: mockMutateAsync,
     });
 
-    mockGetForegroundPermissions.mockResolvedValue({ status: Location.PermissionStatus.GRANTED });
-    mockRequestForeground.mockResolvedValue({ status: Location.PermissionStatus.GRANTED });
+    mockGetForegroundPermissions.mockResolvedValue({ 
+      status: Location.PermissionStatus.GRANTED,
+      granted: true,
+      expires: "never",
+      canAskAgain: true
+    });
+    mockRequestForeground.mockResolvedValue({ 
+      status: Location.PermissionStatus.GRANTED,
+      granted: true,
+      expires: "never",
+      canAskAgain: true
+    });
   });
 
   it("should initialize with default state", () => {
@@ -71,7 +81,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should load location sharing state from AsyncStorage", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -84,7 +94,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should use server state when available", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
     mockUseQuery.mockReturnValue({
@@ -103,7 +113,7 @@ describe("useLocationPermissions", () => {
 
   it("should handle AsyncStorage errors gracefully", async () => {
     const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockRejectedValueOnce(new Error("Storage error"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -151,7 +161,12 @@ describe("useLocationPermissions", () => {
   });
 
   it("should show alert when permission is denied", async () => {
-    mockRequestForeground.mockResolvedValueOnce({ status: Location.PermissionStatus.DENIED });
+    mockRequestForeground.mockResolvedValueOnce({ 
+      status: Location.PermissionStatus.DENIED,
+      granted: false,
+      expires: "never",
+      canAskAgain: true
+    });
 
     const { result } = renderHook(() => useLocationPermissions());
 
@@ -184,7 +199,7 @@ describe("useLocationPermissions", () => {
 
   it("should toggle location sharing on", async () => {
     mockMutateAsync.mockResolvedValueOnce(undefined);
-    const mockSetItem = AsyncStorage.setItem as jest.Mock;
+    const mockSetItem = jest.mocked(AsyncStorage.setItem);
 
     const { result } = renderHook(() => useLocationPermissions());
 
@@ -206,7 +221,7 @@ describe("useLocationPermissions", () => {
 
   it("should toggle location sharing off", async () => {
     mockMutateAsync.mockResolvedValueOnce(undefined);
-    const mockSetItem = AsyncStorage.setItem as jest.Mock;
+    const mockSetItem = jest.mocked(AsyncStorage.setItem);
 
     mockUseQuery.mockReturnValue({
       data: { isSharingLocation: true },
@@ -233,7 +248,12 @@ describe("useLocationPermissions", () => {
   it("should request permissions when enabling sharing and permission is undetermined", async () => {
     mockMutateAsync.mockResolvedValueOnce(undefined);
 
-    mockGetForegroundPermissions.mockResolvedValue({ status: Location.PermissionStatus.UNDETERMINED });
+    mockGetForegroundPermissions.mockResolvedValue({ 
+      status: Location.PermissionStatus.UNDETERMINED,
+      granted: false,
+      expires: "never",
+      canAskAgain: true
+    });
 
     const { result } = renderHook(() => useLocationPermissions());
 
@@ -294,7 +314,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should compute canViewOthersLocations correctly", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -307,7 +327,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should compute canViewOthersLocations as false when sharing disabled", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("false");
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -320,10 +340,15 @@ describe("useLocationPermissions", () => {
   });
 
   it("should compute canViewOthersLocations as false when permission denied", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
-    mockGetForegroundPermissions.mockResolvedValueOnce({ status: Location.PermissionStatus.DENIED });
+    mockGetForegroundPermissions.mockResolvedValueOnce({ 
+      status: Location.PermissionStatus.DENIED,
+      granted: false,
+      expires: "never",
+      canAskAgain: true
+    });
 
     const { result } = renderHook(() => useLocationPermissions());
 
@@ -335,7 +360,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should compute canShareOwnLocation correctly", async () => {
-    const mockGetItem = AsyncStorage.getItem as jest.Mock;
+    const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -359,7 +384,7 @@ describe("useLocationPermissions", () => {
   });
 
   it("should not update local state before server confirmation when toggling", async () => {
-    mockMutateAsync.mockImplementation(() => new Promise(() => { /* never resolves */ }));
+    mockMutateAsync.mockImplementation(() => new Promise<unknown>(() => { /* never resolves */ }));
 
     const { result } = renderHook(() => useLocationPermissions());
 

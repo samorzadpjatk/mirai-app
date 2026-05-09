@@ -1,9 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import type { Mock } from "jest-mock";
 
-const mockGetItemAsync = jest.fn() as Mock<(key: string) => Promise<string | null>>;
-const mockSetItemAsync = jest.fn() as Mock<(key: string, value: string) => Promise<void>>;
-const mockDeleteItemAsync = jest.fn() as Mock<(key: string) => Promise<void>>;
+const mockGetItemAsync = jest.fn<(key: string) => Promise<string | null>>();
+const mockSetItemAsync = jest.fn<(key: string, value: string) => Promise<void>>();
+const mockDeleteItemAsync = jest.fn<(key: string) => Promise<void>>();
 
 jest.mock("expo-secure-store", () => ({
   getItemAsync: (...args: [string]) => mockGetItemAsync(...args),

@@ -3,8 +3,8 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useCommunityActivityData } from "../../community/useCommunityActivityData";
 
 // Mock tRPC client
-const mockRankingQuery = jest.fn();
-const mockCreateDownloadUrlQuery = jest.fn();
+const mockRankingQuery = jest.fn<() => Promise<unknown>>();
+const mockCreateDownloadUrlQuery = jest.fn<() => Promise<unknown>>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPCClient: jest.fn(() => ({
@@ -22,10 +22,16 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock React Query
-const mockUseQuery = jest.fn();
+interface QueryOptions {
+  queryKey: string[];
+  queryFn?: () => Promise<unknown>;
+  enabled?: boolean;
+}
+
+const mockUseQuery = jest.fn<(options: QueryOptions) => { data: unknown; isLoading: boolean }>();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: (...args: unknown[]) => mockUseQuery(...args as [QueryOptions]),
 }));
 
 describe("useCommunityActivityData", () => {

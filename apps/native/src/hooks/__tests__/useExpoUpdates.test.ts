@@ -19,13 +19,13 @@ jest.mock("expo-updates", () => {
 
 // Get typed references to mocked functions using requireMock
 interface MockedExpoUpdates {
-  checkForUpdateAsync: jest.Mock<Promise<{ isAvailable: boolean }>, []>;
-  fetchUpdateAsync: jest.Mock<Promise<void>, []>;
-  reloadAsync: jest.Mock<Promise<void>, []>;
+  checkForUpdateAsync: jest.Mock<() => Promise<{ isAvailable: boolean }>>;
+  fetchUpdateAsync: jest.Mock<() => Promise<void>>;
+  reloadAsync: jest.Mock<() => Promise<void>>;
   isEnabled: boolean;
 }
 
-const mockedUpdates = jest.requireMock("expo-updates");
+const mockedUpdates = jest.requireMock("expo-updates") as MockedExpoUpdates;
 const mockCheckForUpdateAsync = mockedUpdates.checkForUpdateAsync;
 const mockFetchUpdateAsync = mockedUpdates.fetchUpdateAsync;
 const mockReloadAsync = mockedUpdates.reloadAsync;
@@ -160,7 +160,7 @@ describe("useExpoUpdates", () => {
     const pendingPromise = new Promise((resolve) => {
       resolvePromise = resolve;
     });
-    mockFetchUpdateAsync.mockImplementation(() => pendingPromise);
+    mockFetchUpdateAsync.mockImplementation(() => pendingPromise as Promise<void>);
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -189,7 +189,7 @@ describe("useExpoUpdates", () => {
     const pendingPromise = new Promise((resolve) => {
       resolvePromise = resolve;
     });
-    mockCheckForUpdateAsync.mockImplementation(() => pendingPromise);
+    mockCheckForUpdateAsync.mockImplementation(() => pendingPromise as Promise<{ isAvailable: boolean }>);
 
     const { result } = renderHook(() => useExpoUpdates());
 

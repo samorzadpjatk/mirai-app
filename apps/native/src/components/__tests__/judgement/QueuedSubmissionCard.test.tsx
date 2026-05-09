@@ -1,6 +1,7 @@
 import React from "react";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { QueuedSubmissionCard } from "../../judgement/QueuedSubmissionCard";
+import { type Submission } from "~/stores/judgement";
 
 import { Text } from "react-native";
 
@@ -17,11 +18,14 @@ jest.mock("~/utils/validation", () => ({
   getInitials: jest.fn().mockReturnValue("TG"),
 }));
 
-const mockSubmission = {
+const createMockSubmission = (overrides: Partial<Submission> = {}): Submission => ({
   id: "sub-1",
+  status: "PENDING",
   group: {
     id: "group-1",
     name: "Test Group",
+    description: null,
+    image: null,
   },
   createdAt: new Date("2024-01-15"),
   textContent: "Test content",
@@ -29,7 +33,10 @@ const mockSubmission = {
   longitude: null,
   imageIds: [],
   videoId: null,
-};
+  ...overrides,
+});
+
+const mockSubmission = createMockSubmission();
 
 describe("QueuedSubmissionCard", () => {
   it("should render group name", () => {
@@ -82,13 +89,14 @@ describe("QueuedSubmissionCard", () => {
   });
 
   it("should render with different group names", () => {
-    const differentSubmission = {
-      ...mockSubmission,
+    const differentSubmission = createMockSubmission({
       group: {
-        ...mockSubmission.group,
+        id: "group-1",
         name: "Another Group Name",
+        description: null,
+        image: null,
       },
-    };
+    });
 
     const { getByText } = renderWithProviders(
       <QueuedSubmissionCard submission={differentSubmission} maxCardHeight={500} />

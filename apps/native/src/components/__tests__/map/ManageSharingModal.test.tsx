@@ -7,6 +7,13 @@ import { ManageSharingModal } from "../../map/modals/ManageSharingModal";
 const mockSetShowManageModal = jest.fn();
 const mockHandleRemoveUser = jest.fn();
 
+interface SharingUser {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  image?: string | null;
+}
+
 const mockGetMapOverlayStore = jest.fn(() => ({
   showManageModal: true,
   setShowManageModal: mockSetShowManageModal,
@@ -14,7 +21,7 @@ const mockGetMapOverlayStore = jest.fn(() => ({
     usersToShareWith: [
       { id: "user-1", firstName: "John", lastName: "Doe", image: "https://example.com/avatar1.jpg" },
       { id: "user-2", firstName: "Jane", lastName: "Smith", image: null },
-    ],
+    ] as SharingUser[],
   },
   isRemovingUser: false,
   handleRemoveUser: mockHandleRemoveUser,
@@ -24,13 +31,18 @@ jest.mock("~/stores/map", () => ({
   useMapOverlayStore: () => mockGetMapOverlayStore(),
 }));
 
+interface MapModalShellProps {
+  visible: boolean;
+  title: string;
+  children: React.ReactNode;
+}
+
 jest.mock("~/components/map/modals/MapModalShell", () => {
-   
   const { createElement } = require("react");
   const { View, Text } = require("react-native");
 
   return {
-    MapModalShell: function MockMapModalShell(props) {
+    MapModalShell: function MockMapModalShell(props: MapModalShellProps) {
       if (!props.visible) return null;
       return createElement(View, { testID: "modal-shell" },
         createElement(Text, { testID: "modal-title" }, props.title),
@@ -38,16 +50,20 @@ jest.mock("~/components/map/modals/MapModalShell", () => {
       );
     },
   };
-   
 });
 
+interface MapModalUserItemProps {
+  name: string;
+  subtitle?: string;
+  rightElement?: React.ReactNode;
+}
+
 jest.mock("~/components/map/modals/MapModalUserItem", () => {
-   
   const { createElement } = require("react");
   const { View, Text } = require("react-native");
 
   return {
-    MapModalUserItem: function MockMapModalUserItem(props) {
+    MapModalUserItem: function MockMapModalUserItem(props: MapModalUserItemProps) {
       return createElement(View, { testID: "user-item" },
         createElement(Text, { testID: "user-name" }, props.name),
         props.subtitle && createElement(Text, { testID: "user-subtitle" }, props.subtitle),
@@ -55,7 +71,6 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => {
       );
     },
   };
-   
 });
 
 describe("ManageSharingModal", () => {
@@ -68,7 +83,7 @@ describe("ManageSharingModal", () => {
         usersToShareWith: [
           { id: "user-1", firstName: "John", lastName: "Doe", image: "https://example.com/avatar1.jpg" },
           { id: "user-2", firstName: "Jane", lastName: "Smith", image: null },
-        ],
+        ] as SharingUser[],
       },
       isRemovingUser: false,
       handleRemoveUser: mockHandleRemoveUser,
@@ -78,7 +93,8 @@ describe("ManageSharingModal", () => {
   it("should render modal with title", () => {
     renderWithProviders(<ManageSharingModal />);
 
-    expect(screen.getByTestId("modal-title").children[0]).toBe("Manage Location Sharing");
+    const titleElement = screen.getByTestId("modal-title");
+    expect(titleElement.children[0]).toBe("Manage Location Sharing");
   });
 
   it("should render list of users", () => {
@@ -92,8 +108,10 @@ describe("ManageSharingModal", () => {
     renderWithProviders(<ManageSharingModal />);
 
     const userNames = screen.getAllByTestId("user-name");
-    expect(userNames[0].children[0]).toBe("John Doe");
-    expect(userNames[1].children[0]).toBe("Jane Smith");
+    const firstUserName = userNames[0]?.children[0];
+    const secondUserName = userNames[1]?.children[0];
+    expect(firstUserName).toBe("John Doe");
+    expect(secondUserName).toBe("Jane Smith");
   });
 
   it("should render remove buttons for each user", () => {
@@ -107,7 +125,11 @@ describe("ManageSharingModal", () => {
     renderWithProviders(<ManageSharingModal />);
 
     const user = userEvent.setup();
-    await user.press(screen.getAllByText("Remove")[0]);
+    const removeButton = screen.getAllByText("Remove")[0];
+    if (!removeButton) {
+      throw new Error("Remove button not found");
+    }
+    await user.press(removeButton);
 
     expect(mockHandleRemoveUser).toHaveBeenCalledWith("user-1");
   });
@@ -131,7 +153,7 @@ describe("ManageSharingModal", () => {
       showManageModal: true,
       setShowManageModal: mockSetShowManageModal,
       sharingSettings: {
-        usersToShareWith: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
+        usersToShareWith: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }] as SharingUser[],
       },
       isRemovingUser: true,
       handleRemoveUser: mockHandleRemoveUser,
@@ -148,9 +170,9 @@ describe("ManageSharingModal", () => {
       setShowManageModal: mockSetShowManageModal,
       sharingSettings: {
         usersToShareWith: [
-          { id: "user-1", firstName: "John", lastName: null, image: null },
-          { id: "user-2", firstName: null, lastName: "Doe", image: null },
-        ],
+          { id: "user-1", firstName: "John", lastName: undefined, image: null },
+          { id: "user-2", firstName: undefined, lastName: "Doe", image: null },
+        ] as SharingUser[],
       },
       isRemovingUser: false,
       handleRemoveUser: mockHandleRemoveUser,

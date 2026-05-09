@@ -3,33 +3,54 @@ import { Alert, View } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsView from "../../rewards/RewardsView";
+import type { RewardListItem } from "../../rewards/types";
 
 const mockPush = jest.fn();
 const mockInvalidateQueries = jest.fn(() => Promise.resolve());
 const mockRefetch = jest.fn(() => Promise.resolve());
 const mockMutateAsync = jest.fn(() => Promise.resolve());
 
-const mockUseRewards = jest.fn(() => ({
+interface RewardsResult {
+  data: RewardListItem[] | undefined;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: typeof mockRefetch;
+}
+
+interface MyGroupResult {
+  group: { id: string; name: string; coins: number } | null;
+}
+
+interface TripDetailsResult {
+  isTripPast: boolean;
+}
+
+interface PurchaseRewardResult {
+  mutateAsync: typeof mockMutateAsync;
+  isPending: boolean;
+}
+
+const mockUseRewards = jest.fn((): RewardsResult => ({
   data: [],
   isLoading: false,
   error: null,
   refetch: mockRefetch,
 }));
 
-const mockUseMyGroup = jest.fn(() => ({
+const mockUseMyGroup = jest.fn((): MyGroupResult => ({
   group: null,
 }));
 
-const mockUseTripDetails = jest.fn(() => ({
+const mockUseTripDetails = jest.fn((): TripDetailsResult => ({
   isTripPast: false,
 }));
 
-const mockUsePurchaseReward = jest.fn(() => ({
+const mockUsePurchaseReward = jest.fn((): PurchaseRewardResult => ({
   mutateAsync: mockMutateAsync,
   isPending: false,
 }));
 
-const baseReward = (overrides: Record<string, unknown> = {}) => ({
+const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
   id: "reward-1",
   name: "Test Reward",
   description: "A test reward",
@@ -91,12 +112,10 @@ jest.mock("@tanstack/react-query", () => {
       getQueryData = jest.fn();
       getQueriesData = jest.fn();
       setQueriesData = jest.fn();
-      setQueryDefaults = jest.fn();
       getQueryState = jest.fn();
       removeQueries = jest.fn();
       removeQueryCache = jest.fn();
       setMutationCache = jest.fn();
-      getMutationCache = jest.fn();
       executeMutation = jest.fn();
       getLogger = jest.fn(() => ({ log: jest.fn(), error: jest.fn() }));
       defaultOptions = {};
@@ -107,16 +126,16 @@ jest.mock("@tanstack/react-query", () => {
 });
 
 jest.mock("~/hooks/rewards", () => ({
-  useRewards: (tripId: string) => mockUseRewards(tripId),
+  useRewards: (_tripId: string) => mockUseRewards(),
   usePurchaseReward: () => mockUsePurchaseReward(),
 }));
 
 jest.mock("~/hooks/groups", () => ({
-  useMyGroup: (tripId: string) => mockUseMyGroup(tripId),
+  useMyGroup: (_tripId: string) => mockUseMyGroup(),
 }));
 
 jest.mock("~/hooks/trips", () => ({
-  useTripDetails: (tripId: string) => mockUseTripDetails(tripId),
+  useTripDetails: (_tripId: string) => mockUseTripDetails(),
 }));
 
 jest.mock("@expo/vector-icons", () => {
@@ -199,7 +218,9 @@ describe("RewardsView", () => {
 
     const { getAllByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
-    fireEvent.press(getAllByText("Claim reward")[0]);
+    const claimButton = getAllByText("Claim reward")[0];
+    expect(claimButton).toBeTruthy();
+    fireEvent.press(claimButton!);
 
     expect(getByTestId("purchase-modal")).toBeTruthy();
   });

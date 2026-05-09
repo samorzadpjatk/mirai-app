@@ -56,12 +56,9 @@ jest.mock("@tanstack/react-query", () => {
   };
 });
 
-interface AlertButton {
-  style?: string;
-  onPress?: () => void;
-}
+import type { AlertButton } from "react-native";
 
-const mockAlert = jest.fn((title: string, message: string, buttons: AlertButton[]) => {
+const mockAlert = jest.fn((title: string, message?: string, buttons?: AlertButton[]) => {
   const deleteButton = buttons?.find((b) => b.style === "destructive");
   if (deleteButton?.onPress) {
     deleteButton.onPress();

@@ -8,6 +8,7 @@ interface ChipStyle extends ViewStyle {
   borderColor?: string;
   backgroundColor?: string;
   opacity?: number;
+  color?: string;
 }
 
 describe("FilterChip", () => {
@@ -122,7 +123,7 @@ describe("FilterChip", () => {
   });
 
   it("should apply custom count text style", () => {
-    const customCountTextStyle = { fontWeight: "bold" };
+    const customCountTextStyle = { fontWeight: "bold" as const };
     renderWithProviders(<FilterChip label="Items" count={5} countTextStyle={customCountTextStyle} />);
 
     const countText = screen.getByText("5");

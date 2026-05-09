@@ -177,7 +177,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should auto-subscribe when permission is granted", async () => {
-    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest.fn<(args: { token: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -314,7 +314,7 @@ describe("useAutoPushSubscription", () => {
 
   it("should handle missing push token", async () => {
     const mockSubscribe = jest.fn();
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -348,7 +348,7 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should handle subscription errors gracefully", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -363,7 +363,7 @@ describe("useAutoPushSubscription", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn().mockRejectedValue(new Error("Subscription failed")),
+      mutateAsync: jest.fn<() => Promise<never>>().mockRejectedValue(new Error("Subscription failed")),
       isPending: false,
     });
 
@@ -501,7 +501,7 @@ describe("useAutoPushSubscription", () => {
 
   it("should handle invalid token data", async () => {
     const mockSubscribe = jest.fn();
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
     mockUseAuth.mockReturnValue({
       session: {

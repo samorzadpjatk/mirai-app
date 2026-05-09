@@ -6,19 +6,30 @@ import { LocationPicker } from "../../map/LocationPicker";
 const mockOnLocationSelected = jest.fn();
 const mockOnClose = jest.fn();
 
+interface MapViewProps {
+  children?: React.ReactNode;
+}
+
+interface MarkerViewProps {
+  children?: React.ReactNode;
+}
+
+interface RasterSourceProps {
+  children?: React.ReactNode;
+}
+
 jest.mock("@maplibre/maplibre-react-native", () => {
-   
   const { forwardRef, useImperativeHandle, createElement } = require("react");
   const { View } = require("react-native");
 
-  const Camera = forwardRef((_, ref) => {
+  const Camera = forwardRef((_props: unknown, ref: React.Ref<{ setCamera: jest.Mock }>) => {
     useImperativeHandle(ref, () => ({ setCamera: jest.fn() }));
     return createElement(View, { testID: "camera" });
   });
 
-  const MapView = (props) => createElement(View, { testID: "map-view" }, props.children);
-  const MarkerView = (props) => createElement(View, { testID: "marker-view" }, props.children);
-  const RasterSource = (props) => createElement(View, { testID: "raster-source" }, props.children);
+  const MapView = (props: MapViewProps) => createElement(View, { testID: "map-view" }, props.children);
+  const MarkerView = (props: MarkerViewProps) => createElement(View, { testID: "marker-view" }, props.children);
+  const RasterSource = (props: RasterSourceProps) => createElement(View, { testID: "raster-source" }, props.children);
   const RasterLayer = () => createElement(View, { testID: "raster-layer" });
 
   return {
@@ -28,45 +39,59 @@ jest.mock("@maplibre/maplibre-react-native", () => {
     RasterSource,
     RasterLayer,
   };
-   
 });
+
+interface LocationCoords {
+  latitude: number;
+  longitude: number;
+}
+
+interface LocationPosition {
+  coords: LocationCoords;
+}
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: "granted" })),
   getCurrentPositionAsync: jest.fn(() =>
-    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } })
+    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } } as LocationPosition)
   ),
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
   Accuracy: { Balanced: 2 },
 }));
 
+interface SafeAreaProviderProps {
+  children?: React.ReactNode;
+}
+
 jest.mock("react-native-safe-area-context", () => {
-   
   const { createElement } = require("react");
   const { View } = require("react-native");
 
-  const SafeAreaProvider = (props) => createElement(View, null, props.children);
+  const SafeAreaProvider = (props: SafeAreaProviderProps) => createElement(View, null, props.children);
 
   return {
     SafeAreaProvider,
     useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
   };
-   
 });
 
+interface IoniconsProps {
+  name: string;
+  size?: number;
+  color?: string;
+}
+
 jest.mock("@expo/vector-icons", () => {
-   
   const { createElement } = require("react");
   const { View } = require("react-native");
 
   return {
-    Ionicons: (props) =>
+    Ionicons: (props: IoniconsProps) =>
       createElement(View, {
         testID: `icon-${props.name}`,
         style: { width: props.size, height: props.size, color: props.color },
       }),
   };
-   
 });
 
 describe("LocationPicker", () => {

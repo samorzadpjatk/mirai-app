@@ -1,13 +1,9 @@
 import React from "react";
-import { Alert, type Modal, View } from "react-native";
+import { Alert, Modal, View } from "react-native";
 import { fireEvent, screen, userEvent, waitFor } from "@testing-library/react-native";
 import { useCameraPermissions } from "expo-camera";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { QrScannerModal } from "../../common/QrScannerModal";
-
-interface CameraPermission {
-  granted: boolean;
-}
 
 interface BarcodeScannedEvent {
   data: string;
@@ -15,7 +11,7 @@ interface BarcodeScannedEvent {
 
 interface CameraViewMockProps {
   facing: "back" | "front";
-  barcodeScannerSettings: { barcodeTypes: "qr"[] };
+  barcodeScannerSettings: { barcodeTypes: ["qr"] };
   onBarcodeScanned?: (event: BarcodeScannedEvent) => void | Promise<void>;
 }
 
@@ -34,15 +30,22 @@ jest.mock("expo-camera", () => ({
 const mockUseCameraPermissions = useCameraPermissions as jest.MockedFunction<typeof useCameraPermissions>;
 const mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
 
-const createPermissionRequest = () => jest.fn<Promise<CameraPermission>, []>(() => Promise.resolve({ granted: true }));
+type PermissionReturn = ReturnType<typeof useCameraPermissions>;
+
+const createMockPermissionReturn = (granted: boolean): PermissionReturn => {
+  const requestFn = jest.fn(() => Promise.resolve({ granted, canAskAgain: true }));
+  return [
+    { granted, canAskAgain: true } as unknown as PermissionReturn[0],
+    requestFn as unknown as PermissionReturn[1],
+    requestFn as unknown as PermissionReturn[2],
+  ] as PermissionReturn;
+};
 
 describe("QrScannerModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAlert.mockClear();
-    mockUseCameraPermissions.mockReturnValue([{ granted: true }, createPermissionRequest()] as ReturnType<
-      typeof useCameraPermissions
-    >);
+    mockUseCameraPermissions.mockReturnValue(createMockPermissionReturn(true));
   });
 
   it("should render when visible is true", () => {
@@ -99,9 +102,7 @@ describe("QrScannerModal", () => {
   });
 
   it("should render permission request UI when permission is not granted", () => {
-    mockUseCameraPermissions.mockReturnValue([{ granted: false }, createPermissionRequest()] as ReturnType<
-      typeof useCameraPermissions
-    >);
+    mockUseCameraPermissions.mockReturnValue(createMockPermissionReturn(false));
 
     renderWithProviders(<QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />);
 
@@ -111,10 +112,12 @@ describe("QrScannerModal", () => {
 
   it("should request permission when Grant Permission button is pressed", async () => {
     const user = userEvent.setup();
-    const requestPermission = createPermissionRequest();
-    mockUseCameraPermissions.mockReturnValue([{ granted: false }, requestPermission] as ReturnType<
-      typeof useCameraPermissions
-    >);
+    const requestPermission = jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true }));
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false, canAskAgain: true } as unknown as PermissionReturn[0],
+      requestPermission as unknown as PermissionReturn[1],
+      requestPermission as unknown as PermissionReturn[2],
+    ] as PermissionReturn);
 
     renderWithProviders(<QrScannerModal visible={true} onClose={() => { /* noop */ }} onScan={() => { /* noop */ }} />);
 
