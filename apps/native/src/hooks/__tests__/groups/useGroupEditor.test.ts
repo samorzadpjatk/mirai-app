@@ -223,7 +223,7 @@ describe("useGroupEditor", () => {
 
   describe("updateGroup", () => {
     it("should update group with provided data", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ id: "group-123", name: "Updated Name" });
+      const mockMutateAsync = jest.fn<(data: { id: string; name: string; image: string; tripId: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({ id: "group-123", name: "Updated Name" });
       const mockGroup = {
         id: "group-123",
         name: "Original Name",
@@ -256,7 +256,7 @@ describe("useGroupEditor", () => {
     });
 
     it("should use tripId from group data when not provided", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest.fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -284,7 +284,7 @@ describe("useGroupEditor", () => {
     });
 
     it("should use provided tripId over group data tripId", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest.fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -356,7 +356,7 @@ describe("useGroupEditor", () => {
 
   describe("assignUser", () => {
     it("should assign user to group", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string; groupId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
       mockUseQuery.mockReturnValue({
         data: { id: "group-123", name: "Test Group" },
@@ -379,7 +379,7 @@ describe("useGroupEditor", () => {
     });
 
     it("should use empty string for groupId when not provided", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string; groupId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
       mockUseQuery.mockReturnValue({
         data: null,
@@ -404,7 +404,7 @@ describe("useGroupEditor", () => {
 
   describe("removeUser", () => {
     it("should remove user from group", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
       const mockGroup = {
         id: "group-123",
         name: "Test Group",
@@ -471,7 +471,7 @@ describe("useGroupEditor", () => {
 
   describe("mutation success callbacks", () => {
     it("should invalidate group queries after update success", async () => {
-      const mockMutateAsync = jest.fn().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -512,7 +512,7 @@ describe("useGroupEditor", () => {
       mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
         onSuccessCallback = options?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn().mockResolvedValue({ success: true }),
+          mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
           isPending: false,
         };
       });
@@ -537,7 +537,7 @@ describe("useGroupEditor", () => {
       mockUseMutation.mockImplementation((options: { onSuccess?: () => Promise<void> }) => {
         onSuccessCallback = options?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn().mockResolvedValue({ success: true }),
+          mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
           isPending: false,
         };
       });

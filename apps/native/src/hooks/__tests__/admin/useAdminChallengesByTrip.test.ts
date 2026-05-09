@@ -57,7 +57,7 @@ const mockGetQueryClient = jest.fn(() => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
+  useInfiniteQuery: (...args: [InfiniteQueryOptions]) => mockUseInfiniteQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockGetQueryClient(),
 }));
@@ -272,7 +272,7 @@ describe("useAdminChallengesByTrip", () => {
   });
 
   it("should delete challenge", async () => {
-    const mockDelete = jest.fn().mockResolvedValue(undefined);
+    const mockDelete = jest.fn<(data: { id: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },

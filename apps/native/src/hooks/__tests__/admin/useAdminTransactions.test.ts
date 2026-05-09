@@ -339,6 +339,6 @@ describe("useAdminTransactions", () => {
 
     // Verify that the query is disabled when tripId is empty
     const infiniteQueryCall = mockUseInfiniteQuery.mock.calls[0];
-    expect(infiniteQueryCall[0].enabled).toBe(false);
+    expect((infiniteQueryCall[0] as { enabled?: boolean }).enabled).toBe(false);
   });
 });

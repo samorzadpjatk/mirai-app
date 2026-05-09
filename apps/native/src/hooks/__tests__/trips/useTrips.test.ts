@@ -3,12 +3,12 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useTrips } from "../../trips/useTrips";
 
 // Mock the storage functions
-const mockGetCachedTrips = jest.fn<Promise<unknown[]>, []>();
-const mockSetCachedTrips = jest.fn<Promise<void>, [unknown[]]>();
+const mockGetCachedTrips = jest.fn<() => Promise<unknown[]>>();
+const mockSetCachedTrips = jest.fn<(trips: unknown[]) => Promise<void>>();
 
 jest.mock("~/services/storage/selectedTripStorage", () => ({
-  getCachedTrips: () => mockGetCachedTrips(),
-  setCachedTrips: (trips: unknown[]) => mockSetCachedTrips(trips),
+  getCachedTrips: (...args: []) => mockGetCachedTrips(...args),
+  setCachedTrips: (...args: [unknown[]]) => mockSetCachedTrips(...args),
 }));
 
 // Mock tRPC
@@ -53,10 +53,10 @@ interface MockInfiniteQueryResult {
   refetch: jest.Mock;
 }
 
-const mockUseInfiniteQuery = jest.fn<MockInfiniteQueryResult, []>();
+const mockUseInfiniteQuery = jest.fn<() => MockInfiniteQueryResult>();
 
 jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
+  useInfiniteQuery: (...args: []) => mockUseInfiniteQuery(...args),
 }));
 
 describe("useTrips", () => {

@@ -2,15 +2,23 @@ import type { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { useTripStore, useTripSync } from "../tripStore";
 import { renderHook } from "@testing-library/react-native";
+import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
+import type { TRPCClientErrorLike } from "@trpc/client";
+import type { AppRouter } from "@mirai-app/trpc";
 
 // Mock the hooks that useTripSync depends on
-const mockUseSelectedTrip = jest.fn<ReturnType<typeof useSelectedTrip>, []>();
-const mockUseTripDetails = jest.fn<ReturnType<typeof useTripDetails>, [string | null]>();
+const mockUseSelectedTrip = jest.fn<() => ReturnType<typeof useSelectedTrip>>();
+const mockUseTripDetails = jest.fn<(tripId?: string | null) => ReturnType<typeof useTripDetails>>();
 
 jest.mock("~/hooks/trips", () => ({
   useSelectedTrip: () => mockUseSelectedTrip(),
-  useTripDetails: (tripId: string | null) => mockUseTripDetails(tripId),
+  useTripDetails: (tripId?: string | null) => mockUseTripDetails(tripId),
 }));
+
+// Helper to create properly typed refetch mock
+type TripDetailsReturn = ReturnType<typeof useTripDetails>;
+type RefetchTrip = TripDetailsReturn["refetchTrip"];
+const createMockRefetch = (): jest.MockedFunction<RefetchTrip> => jest.fn();
 
 describe("tripStore", () => {
   beforeEach(() => {
@@ -203,7 +211,7 @@ describe("tripStore", () => {
   describe("useTripSync hook", () => {
     it("should sync store with selected trip data", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-123", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: true, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: true, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       renderHook(() => useTripSync());
 
@@ -215,21 +223,21 @@ describe("tripStore", () => {
 
     it("should update store when trip data changes", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-123", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       const { rerender } = renderHook(() => useTripSync());
 
       expect(useTripStore.getState().isLoading).toBe(false);
 
-      mockUseTripDetails.mockReturnValue({ isTripPast: true, isLoadingTrip: false });
-      rerender();
+      mockUseTripDetails.mockReturnValue({ isTripPast: true, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
+      rerender(undefined);
 
       expect(useTripStore.getState().isTripPast).toBe(true);
     });
 
     it("should handle null selectedTripId", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: null, isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: undefined, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: undefined as unknown as boolean, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       renderHook(() => useTripSync());
 
@@ -240,7 +248,7 @@ describe("tripStore", () => {
 
     it("should handle undefined isTripPast from useTripDetails", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-456", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: undefined, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: undefined as unknown as boolean, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       renderHook(() => useTripSync());
 
@@ -249,7 +257,7 @@ describe("tripStore", () => {
 
     it("should pass selectedTripId to useTripDetails", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-789", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       renderHook(() => useTripSync());
 
@@ -258,7 +266,7 @@ describe("tripStore", () => {
 
     it("should handle loading state from useTripDetails", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-123", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: true, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: true, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       renderHook(() => useTripSync());
 
@@ -267,13 +275,13 @@ describe("tripStore", () => {
 
     it("should handle multiple rerenders with same data", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-123", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       const { rerender } = renderHook(() => useTripSync());
 
-      rerender();
-      rerender();
-      rerender();
+      rerender(undefined);
+      rerender(undefined);
+      rerender(undefined);
 
       const state = useTripStore.getState();
       expect(state.selectedTripId).toBe("trip-123");
@@ -283,15 +291,15 @@ describe("tripStore", () => {
 
     it("should handle tripId change", () => {
       mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-123", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
-      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: jest.fn(), isErrorTrip: false, tripError: null });
+      mockUseTripDetails.mockReturnValue({ isTripPast: false, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
 
       const { rerender } = renderHook(() => useTripSync());
 
       expect(useTripStore.getState().selectedTripId).toBe("trip-123");
 
-      mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-456" });
-      mockUseTripDetails.mockReturnValue({ isTripPast: true, isLoadingTrip: false });
-      rerender();
+      mockUseSelectedTrip.mockReturnValue({ selectedTripId: "trip-456", isLoadingSelectedTrip: false, setSelectedTripId: jest.fn() });
+      mockUseTripDetails.mockReturnValue({ isTripPast: true, isLoadingTrip: false, currentUser: null, isLoadingUser: false, trip: null, refetchTrip: createMockRefetch(), isErrorTrip: false, tripError: null });
+      rerender(undefined);
 
       const state = useTripStore.getState();
       expect(state.selectedTripId).toBe("trip-456");
@@ -352,17 +360,17 @@ describe("tripStore", () => {
       states.push(useTripStore.getState());
 
       // Verify each state captured the correct values
-      expect(states[0].selectedTripId).toBe("trip-1");
-      expect(states[0].isTripPast).toBeUndefined();
-      expect(states[0].isLoading).toBe(false);
+      expect(states[0]!.selectedTripId).toBe("trip-1");
+      expect(states[0]!.isTripPast).toBeUndefined();
+      expect(states[0]!.isLoading).toBe(false);
 
-      expect(states[1].selectedTripId).toBe("trip-1");
-      expect(states[1].isTripPast).toBe(true);
-      expect(states[1].isLoading).toBe(false);
+      expect(states[1]!.selectedTripId).toBe("trip-1");
+      expect(states[1]!.isTripPast).toBe(true);
+      expect(states[1]!.isLoading).toBe(false);
 
-      expect(states[2].selectedTripId).toBe("trip-1");
-      expect(states[2].isTripPast).toBe(true);
-      expect(states[2].isLoading).toBe(true);
+      expect(states[2]!.selectedTripId).toBe("trip-1");
+      expect(states[2]!.isTripPast).toBe(true);
+      expect(states[2]!.isLoading).toBe(true);
     });
   });
 });

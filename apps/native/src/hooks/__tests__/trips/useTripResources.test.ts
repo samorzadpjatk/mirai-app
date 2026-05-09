@@ -36,7 +36,7 @@ interface MockQueryResult {
   refetch: jest.Mock;
 }
 
-const mockUseQuery = jest.fn<MockQueryResult, [MockQueryOptions]>();
+const mockUseQuery = jest.fn<(options?: MockQueryOptions) => MockQueryResult>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
@@ -52,7 +52,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: (...args: [MockQueryOptions]) => mockUseQuery(...args),
 }));
 
 describe("useTripResources", () => {
@@ -289,8 +289,8 @@ describe("useTripResources", () => {
   it("should disable query when tripId is empty string", () => {
     let capturedOptions: MockQueryOptions = {};
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
-      capturedOptions = options;
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
+      capturedOptions = options ?? {};
       return {
         data: null,
         isLoading: false,
@@ -308,8 +308,8 @@ describe("useTripResources", () => {
   it("should enable query when tripId is provided", () => {
     let capturedOptions: MockQueryOptions = {};
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
-      capturedOptions = options;
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
+      capturedOptions = options ?? {};
       return {
         data: null,
         isLoading: false,

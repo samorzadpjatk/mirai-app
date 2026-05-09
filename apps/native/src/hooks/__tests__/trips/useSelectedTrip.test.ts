@@ -2,26 +2,49 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act, waitFor } from "@testing-library/react-native";
 import { useSelectedTrip } from "../../trips/useSelectedTrip";
 
-const mockGetSelectedTripIdFromStorage: jest.MockedFunction<() => Promise<string | null>> = jest.fn();
-const mockSetSelectedTripIdInStorage: jest.MockedFunction<(id: string | null) => Promise<void>> = jest.fn();
-const mockClearSelectedTripIdInStorage: jest.MockedFunction<() => Promise<void>> = jest.fn();
+const mockGetSelectedTripIdFromStorage = jest.fn<() => Promise<string | null>>();
+const mockSetSelectedTripIdInStorage = jest.fn<(id: string | null) => Promise<void>>();
+const mockClearSelectedTripIdInStorage = jest.fn<() => Promise<void>>();
 
 jest.mock("~/services/storage/selectedTripStorage", () => ({
-  getSelectedTripIdFromStorage: (): Promise<string | null> => mockGetSelectedTripIdFromStorage(),
-  setSelectedTripIdInStorage: (id: string | null): Promise<void> => mockSetSelectedTripIdInStorage(id),
-  clearSelectedTripIdInStorage: (): Promise<void> => mockClearSelectedTripIdInStorage(),
+  getSelectedTripIdFromStorage: (...args: []) => mockGetSelectedTripIdFromStorage(...args),
+  setSelectedTripIdInStorage: (...args: [string | null]) => mockSetSelectedTripIdInStorage(...args),
+  clearSelectedTripIdInStorage: (...args: []) => mockClearSelectedTripIdInStorage(...args),
 }));
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
+interface QueryConfig {
+  queryKey?: readonly string[];
+  staleTime?: number;
+  queryFn?: () => Promise<string | null>;
+}
+
+interface QueryResult {
+  data: string | null;
+  isLoading: boolean;
+}
+
+interface MutationConfig {
+  mutationFn?: (tripId: string | null) => Promise<string | null>;
+  onSuccess?: (data: string | null) => void;
+  onError?: (error: unknown) => void;
+}
+
+interface MutationResult {
+  mutate: (tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => void;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+const mockUseQuery = jest.fn<(config: QueryConfig) => QueryResult>();
+const mockUseMutation = jest.fn<(config?: MutationConfig) => MutationResult>();
 const mockSetQueryData = jest.fn();
 const mockQueryClient = {
   setQueryData: mockSetQueryData,
 };
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+  useQuery: (...args: [QueryConfig]) => mockUseQuery(...args),
+  useMutation: (...args: [MutationConfig]) => mockUseMutation(...args),
   useQueryClient: jest.fn(() => mockQueryClient),
 }));
 
@@ -177,7 +200,7 @@ describe("useSelectedTrip", () => {
   });
 
   it("should handle mutation error gracefully", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const error = new Error("Storage error");
 
     const mutateMock = jest.fn((tripId: string | null, options?: { onError?: (error: unknown) => void }) => {
@@ -321,8 +344,8 @@ describe("useSelectedTrip", () => {
 
     let capturedMutationFn: ((tripId: string | null) => Promise<string | null>) | undefined;
 
-    mockUseMutation.mockImplementation((config: { mutationFn?: (tripId: string | null) => Promise<string | null> }) => {
-      capturedMutationFn = config.mutationFn;
+    mockUseMutation.mockImplementation((config?: MutationConfig) => {
+      capturedMutationFn = config?.mutationFn;
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
           if (capturedMutationFn) {
@@ -354,8 +377,8 @@ describe("useSelectedTrip", () => {
 
     let capturedMutationFn: ((tripId: string | null) => Promise<string | null>) | undefined;
 
-    mockUseMutation.mockImplementation((config: { mutationFn?: (tripId: string | null) => Promise<string | null> }) => {
-      capturedMutationFn = config.mutationFn;
+    mockUseMutation.mockImplementation((config?: MutationConfig) => {
+      capturedMutationFn = config?.mutationFn;
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
           if (capturedMutationFn) {
@@ -387,8 +410,8 @@ describe("useSelectedTrip", () => {
 
     let capturedOnSuccess: ((data: string | null) => void) | undefined;
 
-    mockUseMutation.mockImplementation((config: { onSuccess?: (data: string | null) => void }) => {
-      capturedOnSuccess = config.onSuccess;
+    mockUseMutation.mockImplementation((config?: MutationConfig) => {
+      capturedOnSuccess = config?.onSuccess;
       return {
         mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
           void mockSetSelectedTripIdInStorage(tripId).then(() => {
@@ -414,7 +437,7 @@ describe("useSelectedTrip", () => {
   });
 
   it("should handle mutation error in setSelectedTripId", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const storageError = new Error("Storage write failed");
     mockSetSelectedTripIdInStorage.mockRejectedValue(storageError);
 

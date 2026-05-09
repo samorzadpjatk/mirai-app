@@ -1,5 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import type { Mock } from "jest-mock";
+import { describe, it, expect, jest, beforeEach, type Mock } from "@jest/globals";
 
 // Mock expo-location
 const mockHasStartedLocationUpdatesAsync = jest.fn() as Mock<(taskName: string) => Promise<boolean>>;

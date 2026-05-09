@@ -6,11 +6,15 @@ import * as Location from "expo-location";
 import * as backgroundLocation from "~/services/location/backgroundLocation";
 
 jest.mock("~/services/location/backgroundLocation");
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+}));
 
-const mockGetForegroundPermissionsAsync = jest.fn();
-const mockRequestForegroundPermissionsAsync = jest.fn();
-const mockGetBackgroundPermissionsAsync = jest.fn();
-const mockRequestBackgroundPermissionsAsync = jest.fn();
+const mockGetForegroundPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockRequestForegroundPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockGetBackgroundPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
+const mockRequestBackgroundPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
 
 jest.mock("expo-location", () => ({
   getForegroundPermissionsAsync: () => mockGetForegroundPermissionsAsync(),
@@ -25,13 +29,13 @@ jest.mock("expo-location", () => ({
 }));
 
 describe("locationStore", () => {
-  let mockAlert: jest.Mock;
-  let mockOpenSettings: jest.Mock;
-  let mockGetBackgroundLocationPreference: jest.Mock;
-  let mockSetBackgroundLocationPreference: jest.Mock;
-  let mockHasBackgroundLocationTaskStarted: jest.Mock;
-  let mockStartBackgroundLocationTask: jest.Mock;
-  let mockStopBackgroundLocationTask: jest.Mock;
+  let mockAlert: ReturnType<typeof jest.spyOn>;
+  let mockOpenSettings: ReturnType<typeof jest.spyOn>;
+  let mockGetBackgroundLocationPreference: jest.Mock<() => Promise<boolean>>;
+  let mockSetBackgroundLocationPreference: jest.Mock<(enabled: boolean) => Promise<void>>;
+  let mockHasBackgroundLocationTaskStarted: jest.Mock<() => Promise<boolean>>;
+  let mockStartBackgroundLocationTask: jest.Mock<() => Promise<void>>;
+  let mockStopBackgroundLocationTask: jest.Mock<() => Promise<void>>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,11 +55,11 @@ describe("locationStore", () => {
     mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockOpenSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue(undefined);
 
-    mockGetBackgroundLocationPreference = backgroundLocation.getBackgroundLocationPreference;
-    mockSetBackgroundLocationPreference = backgroundLocation.setBackgroundLocationPreference;
-    mockHasBackgroundLocationTaskStarted = backgroundLocation.hasBackgroundLocationTaskStarted;
-    mockStartBackgroundLocationTask = backgroundLocation.startBackgroundLocationTask;
-    mockStopBackgroundLocationTask = backgroundLocation.stopBackgroundLocationTask;
+    mockGetBackgroundLocationPreference = backgroundLocation.getBackgroundLocationPreference as jest.Mock<() => Promise<boolean>>;
+    mockSetBackgroundLocationPreference = backgroundLocation.setBackgroundLocationPreference as jest.Mock<(enabled: boolean) => Promise<void>>;
+    mockHasBackgroundLocationTaskStarted = backgroundLocation.hasBackgroundLocationTaskStarted as jest.Mock<() => Promise<boolean>>;
+    mockStartBackgroundLocationTask = backgroundLocation.startBackgroundLocationTask as jest.Mock<() => Promise<void>>;
+    mockStopBackgroundLocationTask = backgroundLocation.stopBackgroundLocationTask as jest.Mock<() => Promise<void>>;
 
     mockGetBackgroundLocationPreference.mockResolvedValue(false);
     mockSetBackgroundLocationPreference.mockResolvedValue(undefined);
@@ -113,7 +117,7 @@ describe("locationStore", () => {
 
   describe("hydrate", () => {
     it("should hydrate from local storage", async () => {
-      const mockGetItem = AsyncStorage.getItem;
+      const mockGetItem = AsyncStorage.getItem as jest.Mock<() => Promise<string | null>>;
       mockGetItem.mockResolvedValueOnce("true");
       mockGetBackgroundLocationPreference.mockResolvedValueOnce(true);
       mockHasBackgroundLocationTaskStarted.mockResolvedValueOnce(true);
@@ -208,7 +212,7 @@ describe("locationStore", () => {
     });
 
     it("should call server updater when available", async () => {
-      const mockUpdater = jest.fn();
+      const mockUpdater = jest.fn<ServerSharingUpdater>();
       mockUpdater.mockResolvedValue(undefined);
       setLocationServerUpdater(mockUpdater);
 
@@ -427,7 +431,7 @@ describe("locationStore", () => {
 
   describe("setLocationServerUpdater", () => {
     it("should set the server updater function", async () => {
-      const mockUpdater = jest.fn();
+      const mockUpdater = jest.fn<ServerSharingUpdater>();
       mockUpdater.mockResolvedValue(undefined);
       setLocationServerUpdater(mockUpdater);
 

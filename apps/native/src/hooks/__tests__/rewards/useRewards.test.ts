@@ -128,10 +128,7 @@ describe("useAdminRewards", () => {
     mockUseTRPCClient.mockReturnValue({
       reward: {
         getByTripAdmin: {
-          query: jest.fn().mockResolvedValue({
-            rewards: mockRewards,
-            pagination: { hasMore: false, offset: 0, limit: 30 },
-          }),
+          query: jest.fn() as jest.Mock<() => Promise<{ rewards: typeof mockRewards; pagination: { hasMore: boolean; offset: number; limit: number } }>>,
         },
       },
     });
@@ -273,7 +270,7 @@ describe("useCreateReward", () => {
   });
 
   it("should create reward and invalidate queries", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({ id: "new-reward" });
+    const mockMutate = jest.fn<(data: { name: string; cost: number; tripId: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "new-reward" });
 
     mockUseTRPC.mockReturnValue({
       reward: {
@@ -292,7 +289,7 @@ describe("useCreateReward", () => {
     const { result } = renderHook(() => useCreateReward());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { name: string; cost: number; tripId: string }) => Promise<void>)({
         name: "New Reward",
         cost: 100,
         tripId: "trip-1",
@@ -309,7 +306,7 @@ describe("useUpdateReward", () => {
   });
 
   it("should update reward and invalidate queries", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({ id: "reward-1" });
+    const mockMutate = jest.fn<(data: { id: string; name: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "reward-1" });
 
     mockUseTRPC.mockReturnValue({
       reward: {
@@ -328,7 +325,7 @@ describe("useUpdateReward", () => {
     const { result } = renderHook(() => useUpdateReward());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { id: string; name: string }) => Promise<void>)({
         id: "reward-1",
         name: "Updated Reward",
       });
@@ -344,7 +341,7 @@ describe("useSetRewardHidden", () => {
   });
 
   it("should set reward hidden status", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({ id: "reward-1", hidden: true });
+    const mockMutate = jest.fn<(data: { id: string; hidden: boolean }) => Promise<{ id: string; hidden: boolean }>>().mockResolvedValue({ id: "reward-1", hidden: true });
 
     mockUseTRPC.mockReturnValue({
       reward: {
@@ -363,7 +360,7 @@ describe("useSetRewardHidden", () => {
     const { result } = renderHook(() => useSetRewardHidden());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { id: string; hidden: boolean }) => Promise<void>)({
         id: "reward-1",
         hidden: true,
       });
@@ -379,7 +376,7 @@ describe("useDeleteReward", () => {
   });
 
   it("should delete reward and invalidate queries", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({ success: true });
+    const mockMutate = jest.fn<(data: { id: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
 
     mockUseTRPC.mockReturnValue({
       reward: {
@@ -398,7 +395,7 @@ describe("useDeleteReward", () => {
     const { result } = renderHook(() => useDeleteReward());
 
     await act(async () => {
-      await result.current.mutateAsync({ id: "reward-1" });
+      await (result.current.mutateAsync as unknown as (data: { id: string }) => Promise<void>)({ id: "reward-1" });
     });
 
     expect(mockMutate).toHaveBeenCalled();
@@ -411,7 +408,7 @@ describe("usePurchaseReward", () => {
   });
 
   it("should purchase reward and invalidate queries", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({
+    const mockMutate = jest.fn<(data: { rewardId: string; tripId: string }) => Promise<{ purchaseId: string; rewardId: string }>>().mockResolvedValue({
       purchaseId: "purchase-1",
       rewardId: "reward-1",
     });
@@ -433,7 +430,7 @@ describe("usePurchaseReward", () => {
     const { result } = renderHook(() => usePurchaseReward());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { rewardId: string; tripId: string }) => Promise<void>)({
         rewardId: "reward-1",
         tripId: "trip-1",
       });
@@ -467,10 +464,7 @@ describe("useRewardPurchaseHistory", () => {
     mockUseTRPCClient.mockReturnValue({
       reward: {
         getPurchaseHistory: {
-          query: jest.fn().mockResolvedValue({
-            purchases: mockPurchases,
-            pagination: { hasMore: false, offset: 0, limit: 30 },
-          }),
+          query: jest.fn() as jest.Mock<() => Promise<{ purchases: typeof mockPurchases; pagination: { hasMore: boolean; offset: number; limit: number } }>>,
         },
       },
     });
@@ -507,7 +501,7 @@ describe("useUpdateRewardPurchaseStatus", () => {
   });
 
   it("should update purchase status", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({
+    const mockMutate = jest.fn<(data: { purchaseId: string; status: string }) => Promise<{ purchaseId: string; rewardId: string; status: string }>>().mockResolvedValue({
       purchaseId: "purchase-1",
       rewardId: "reward-1",
       status: "completed",
@@ -530,7 +524,7 @@ describe("useUpdateRewardPurchaseStatus", () => {
     const { result } = renderHook(() => useUpdateRewardPurchaseStatus());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { purchaseId: string; status: string }) => Promise<void>)({
         purchaseId: "purchase-1",
         status: "completed",
       });
@@ -546,7 +540,7 @@ describe("useUpdateMyRewardPurchaseStatus", () => {
   });
 
   it("should update my purchase status", async () => {
-    const mockMutate = jest.fn().mockResolvedValue({
+    const mockMutate = jest.fn<(data: { purchaseId: string; status: string }) => Promise<{ purchaseId: string; status: string }>>().mockResolvedValue({
       purchaseId: "purchase-1",
       status: "redeemed",
     });
@@ -568,7 +562,7 @@ describe("useUpdateMyRewardPurchaseStatus", () => {
     const { result } = renderHook(() => useUpdateMyRewardPurchaseStatus());
 
     await act(async () => {
-      await result.current.mutateAsync({
+      await (result.current.mutateAsync as unknown as (data: { purchaseId: string; status: string }) => Promise<void>)({
         purchaseId: "purchase-1",
         status: "redeemed",
       });

@@ -85,7 +85,7 @@ const mockGetQueryClient = jest.fn(() => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
+  useInfiniteQuery: (...args: [InfiniteQueryOptions]) => mockUseInfiniteQuery(...args),
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: (...args: unknown[]) => mockUseMutation(...args),
   useQueryClient: () => mockGetQueryClient(),
@@ -257,7 +257,7 @@ describe("useAdminGroups", () => {
   });
 
   it("should create group", async () => {
-    const mockCreate = jest.fn().mockResolvedValue({
+    const mockCreate = jest.fn<(data: { name: string; tripId: string }) => Promise<{ id: string; name: string; tripId: string }>>().mockResolvedValue({
       id: "group-new",
       name: "New Group",
       tripId: "trip-123",
@@ -296,7 +296,7 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with name only", async () => {
-    const mockUpdate = jest.fn().mockResolvedValue({
+    const mockUpdate = jest.fn<(data: { id: string; tripId: string; name: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
       id: "group-1",
       name: "Updated Group",
     });
@@ -335,7 +335,7 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with organizer only", async () => {
-    const mockUpdate = jest.fn().mockResolvedValue({
+    const mockUpdate = jest.fn<(data: { id: string; tripId: string; organizerId: string }) => Promise<{ id: string; organizerId: string }>>().mockResolvedValue({
       id: "group-1",
       organizerId: "user-2",
     });
@@ -374,7 +374,7 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with both name and organizer", async () => {
-    const mockUpdate = jest.fn().mockResolvedValue({
+    const mockUpdate = jest.fn<(data: { id: string; tripId: string; name: string; organizerId: string }) => Promise<{ id: string; name: string; organizerId: string }>>().mockResolvedValue({
       id: "group-1",
       name: "Updated Group",
       organizerId: "user-2",
@@ -415,7 +415,7 @@ describe("useAdminGroups", () => {
   });
 
   it("should delete group", async () => {
-    const mockDelete = jest.fn().mockResolvedValue(undefined);
+    const mockDelete = jest.fn<(data: { id: string }) => Promise<undefined>>().mockResolvedValue(undefined);
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },

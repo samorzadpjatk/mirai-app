@@ -2,7 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
 import { useMapActions } from "../../map/useMapActions";
 
-const mockMutateAsync = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockMutateAsync = jest.fn() as any;
 
 const mockUseMutation = jest.fn(() => ({
   mutateAsync: mockMutateAsync,
@@ -20,7 +21,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useMutation: (...args: unknown[]) => mockUseMutation(...args),
+  useMutation: (..._args: unknown[]) => mockUseMutation(),
 }));
 
 describe("useMapActions", () => {

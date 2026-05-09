@@ -57,7 +57,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].name).toBe("user@example.com");
+    expect(result.current[0]!.name).toBe("user@example.com");
   });
 
   it("should use 'You' as fallback when no name or email", () => {
@@ -69,7 +69,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].name).toBe("You");
+    expect(result.current[0]!.name).toBe("You");
   });
 
   it("should use 'me' as id when session user id is not available", () => {
@@ -81,7 +81,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].id).toBe("me");
+    expect(result.current[0]!.id).toBe("me");
   });
 
   it("should include avatarUrl when provided", () => {
@@ -94,7 +94,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].avatarUrl).toBe("https://example.com/avatar.jpg");
+    expect(result.current[0]!.avatarUrl).toBe("https://example.com/avatar.jpg");
   });
 
   it("should include other users from locationsByUserId", () => {
@@ -132,7 +132,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].name).toBe("Unknown");
+    expect(result.current[0]!.name).toBe("Unknown");
   });
 
   it("should not include address when houseNumber is not provided", () => {
@@ -148,7 +148,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].address).toBeUndefined();
+    expect(result.current[0]!.address).toBeUndefined();
   });
 
   it("should exclude current user from other users list", () => {
@@ -169,8 +169,8 @@ describe("useMapUsers", () => {
     const { result } = renderHook(() => useMapUsers(args));
 
     expect(result.current).toHaveLength(2);
-    expect(result.current[0].id).toBe("user-1");
-    expect(result.current[1].id).toBe("user-2");
+    expect(result.current[0]!.id).toBe("user-1");
+    expect(result.current[1]!.id).toBe("user-2");
   });
 
   it("should combine current user and other users", () => {
@@ -192,9 +192,9 @@ describe("useMapUsers", () => {
     const { result } = renderHook(() => useMapUsers(args));
 
     expect(result.current).toHaveLength(3);
-    expect(result.current[0].id).toBe("user-1");
-    expect(result.current[1].id).toBe("user-2");
-    expect(result.current[2].id).toBe("user-3");
+    expect(result.current[0]!.id).toBe("user-1");
+    expect(result.current[1]!.id).toBe("user-2");
+    expect(result.current[2]!.id).toBe("user-3");
   });
 
   it("should update lastActiveAt every second", async () => {
@@ -205,14 +205,14 @@ describe("useMapUsers", () => {
     };
 
     const { result } = renderHook(() => useMapUsers(args));
-    const initialTimestamp = result.current[0].lastActiveAt;
+    const initialTimestamp = result.current[0]!.lastActiveAt;
 
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
     await waitFor(() => {
-      expect(result.current[0].lastActiveAt).toBeGreaterThan(initialTimestamp);
+      expect(result.current[0]!.lastActiveAt as number).toBeGreaterThan(initialTimestamp as number);
     });
   });
 
@@ -230,7 +230,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].lastActiveAt).toBe(now.getTime());
+    expect(result.current[0]!.lastActiveAt).toBe(now.getTime());
   });
 
   it("should handle string timestamp in updatedAt", () => {
@@ -247,7 +247,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].lastActiveAt).toBe(timestamp);
+    expect(result.current[0]!.lastActiveAt).toBe(timestamp);
   });
 
   it("should handle number timestamp in updatedAt", () => {
@@ -264,7 +264,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].lastActiveAt).toBe(timestamp);
+    expect(result.current[0]!.lastActiveAt).toBe(timestamp);
   });
 
   it("should trim whitespace from currentUserName", () => {
@@ -277,7 +277,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].name).toBe("John Doe");
+    expect(result.current[0]!.name).toBe("John Doe");
   });
 
   it("should use email fallback when currentUserName is only whitespace", () => {
@@ -290,7 +290,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].name).toBe("user@example.com");
+    expect(result.current[0]!.name).toBe("user@example.com");
   });
 
   it("should handle null avatarUrl in usersData", () => {
@@ -304,9 +304,9 @@ describe("useMapUsers", () => {
       },
     };
 
-    const { result } = renderHook(() => useMapUsers(args));
+    const { result } = renderHook(() => useMapUsers(args as unknown as Parameters<typeof useMapUsers>[0]));
 
-    expect(result.current[0].avatarUrl).toBeNull();
+    expect(result.current[0]!.avatarUrl).toBeNull();
   });
 
   it("should handle undefined avatarUrl in usersData", () => {
@@ -322,7 +322,7 @@ describe("useMapUsers", () => {
 
     const { result } = renderHook(() => useMapUsers(args));
 
-    expect(result.current[0].avatarUrl).toBeNull();
+    expect(result.current[0]!.avatarUrl).toBeNull();
   });
 
   it("should memoize results and not recalculate unnecessarily", () => {
@@ -339,7 +339,7 @@ describe("useMapUsers", () => {
     const { result, rerender } = renderHook(() => useMapUsers(args));
     const firstResult = result.current;
 
-    rerender();
+    rerender(() => useMapUsers(args));
 
     expect(result.current).toBe(firstResult);
   });

@@ -2,8 +2,21 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import { useTripBackgroundImageDownload } from "../../trips/useTripBackgroundImageDownload";
 
-const mockDownload = jest.fn();
-const mockUseFileDownload = jest.fn();
+interface DownloadResult {
+  uri: string;
+  contentType: string;
+  fileName: string;
+  totalBytes: number;
+}
+
+interface FileDownloadState {
+  download: jest.Mock<(opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>>;
+  status: "idle" | "loading" | "success" | "error";
+  error: Error | null;
+}
+
+const mockDownload = jest.fn<(opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>>();
+const mockUseFileDownload = jest.fn<() => FileDownloadState>();
 
 jest.mock("~/hooks/files/useFileDownload", () => ({
   useFileDownload: () => mockUseFileDownload(),
@@ -102,7 +115,7 @@ describe("useTripBackgroundImageDownload", () => {
       error,
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const { result } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
@@ -194,7 +207,7 @@ describe("useTripBackgroundImageDownload", () => {
       error: null,
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const { unmount } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
@@ -230,8 +243,8 @@ describe("useTripBackgroundImageDownload", () => {
       error: new Error("All downloads failed"),
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation();
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
     const { result } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")

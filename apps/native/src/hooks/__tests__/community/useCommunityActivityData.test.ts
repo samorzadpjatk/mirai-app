@@ -22,17 +22,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 // Mock React Query
-interface QueryOptions {
-  queryKey: string[];
-  queryFn?: () => Promise<unknown>;
-}
-
-interface QueryResult {
-  data: unknown;
-  isLoading: boolean;
-}
-
-const mockUseQuery = jest.fn<(options: QueryOptions) => QueryResult>();
+const mockUseQuery = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),

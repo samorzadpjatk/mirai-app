@@ -2,7 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
 import { useMapLocationStream } from "../../map/useMapLocationStream";
 
-const mockUseSubscription = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockUseSubscription = jest.fn() as any;
 const mockRandomUUID = jest.fn();
 
 // Type for subscription options
@@ -25,7 +26,8 @@ interface LocationContextValue {
   canViewOthersLocations: boolean;
 }
 
-const mockUseLocationContext = jest.fn<LocationContextValue, []>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockUseLocationContext = jest.fn() as any;
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
@@ -357,7 +359,7 @@ describe("useMapLocationStream", () => {
       onDataCallback?.(initialEvent);
     });
 
-    expect(result.current.locationsByUserId["user-1"].latitude).toBe(52.23);
+    expect(result.current.locationsByUserId["user-1"]!.latitude).toBe(52.23);
 
     const updateEvent = {
       data: {
@@ -374,9 +376,9 @@ describe("useMapLocationStream", () => {
       onDataCallback?.(updateEvent);
     });
 
-    expect(result.current.locationsByUserId["user-1"].latitude).toBe(52.25);
-    expect(result.current.locationsByUserId["user-1"].longitude).toBe(21.05);
-    expect(result.current.usersData["user-1"].name).toBe("John Updated");
+    expect(result.current.locationsByUserId["user-1"]!.latitude).toBe(52.25);
+    expect(result.current.locationsByUserId["user-1"]!.longitude).toBe(21.05);
+    expect(result.current.usersData["user-1"]!.name).toBe("John Updated");
   });
 
   it("should handle subscription errors", () => {
@@ -487,6 +489,6 @@ describe("useMapLocationStream", () => {
       onDataCallback?.(upsertEvent);
     });
 
-    expect(result.current.usersData["user-1"].name).toBe("");
+    expect(result.current.usersData["user-1"]!.name).toBe("");
   });
 });

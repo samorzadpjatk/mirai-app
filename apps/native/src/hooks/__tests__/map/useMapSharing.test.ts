@@ -3,8 +3,10 @@ import { renderHook, act } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { useMapSharing } from "../../map/useMapSharing";
 
-const mockUseQuery = jest.fn();
-const mockUseMutation = jest.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockUseQuery = jest.fn() as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockUseMutation = jest.fn() as any;
 const mockAlertAlert = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
@@ -39,8 +41,10 @@ jest.mock("@mirai-app/trpc/client", () => ({
 
 describe("useMapSharing", () => {
   const mockRefetchSharing = jest.fn();
-  const mockMutateAsync = jest.fn();
-  const mockRemoveUserMutateAsync = jest.fn();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockMutateAsync = jest.fn() as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockRemoveUserMutateAsync = jest.fn() as any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -371,7 +375,7 @@ describe("useMapSharing", () => {
     const { result, rerender } = renderHook(() => useMapSharing(false, null));
     const firstSharingUserIds = result.current.sharingUserIds;
 
-    rerender();
+    rerender(() => useMapSharing(false, null));
 
     expect(result.current.sharingUserIds).toBe(firstSharingUserIds);
   });

@@ -4,7 +4,8 @@ import { useMapSelectedUser } from "../../map/useMapSelectedUser";
 import type { UserLocation } from "~/components/map/UserMap";
 
 describe("useMapSelectedUser", () => {
-  const mockUpdateSharing = jest.fn();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockUpdateSharing = jest.fn() as any;
 
   const mockUsers: UserLocation[] = [
     {
@@ -52,7 +53,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.selectedUserId).toBe("user-2");
@@ -63,7 +64,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.selectedUserId).toBe("user-2");
@@ -80,7 +81,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[2]);
+      result.current.selectUser(mockUsers[2]!);
     });
 
     expect(result.current.selectedUser?.id).toBe("user-3");
@@ -102,7 +103,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.canStopSharing).toBe(true);
@@ -112,7 +113,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[0]);
+      result.current.selectUser(mockUsers[0]!);
     });
 
     expect(result.current.canStopSharing).toBe(false);
@@ -126,7 +127,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(args));
 
     act(() => {
-      result.current.selectUser(mockUsers[2]);
+      result.current.selectUser(mockUsers[2]!);
     });
 
     expect(result.current.canStopSharing).toBe(false);
@@ -143,7 +144,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     await act(async () => {
@@ -169,7 +170,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     await act(async () => {
@@ -186,7 +187,7 @@ describe("useMapSelectedUser", () => {
 
     let returnedUser: UserLocation | null = null;
     act(() => {
-      returnedUser = result.current.mapUserPress(mockUsers[1]);
+      returnedUser = result.current.mapUserPress(mockUsers[1]!);
     });
 
     expect(result.current.selectedUserId).toBe("user-2");
@@ -200,13 +201,13 @@ describe("useMapSelectedUser", () => {
     );
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.selectedUser?.name).toBe("Jane Smith");
 
     const updatedUsers = [...mockUsers];
-    updatedUsers[1] = { ...mockUsers[1], name: "Jane Updated" };
+    updatedUsers[1] = { ...mockUsers[1]!, name: "Jane Updated" };
 
     rerender({ users: updatedUsers });
 
@@ -221,7 +222,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(args));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.canStopSharing).toBe(true);
@@ -235,7 +236,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(args));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.canStopSharing).toBe(true);
@@ -249,7 +250,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(args));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     expect(result.current.canStopSharing).toBe(false);
@@ -262,7 +263,7 @@ describe("useMapSelectedUser", () => {
     );
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     const firstSelectedUser: UserLocation | null = result.current.selectedUser;
@@ -281,7 +282,7 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(args));
 
     act(() => {
-      result.current.selectUser(mockUsers[1]);
+      result.current.selectUser(mockUsers[1]!);
     });
 
     await act(async () => {

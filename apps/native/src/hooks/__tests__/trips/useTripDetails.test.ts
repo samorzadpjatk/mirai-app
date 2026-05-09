@@ -4,14 +4,14 @@ import { useTripDetails } from "../../trips/useTripDetails";
 import type { UseQueryResult } from "@tanstack/react-query";
 
 // Mock the storage functions
-const mockGetCachedTripById = jest.fn<Promise<unknown>, [string]>();
-const mockSetCachedTripById = jest.fn<Promise<void>, [string, unknown]>();
-const mockUpsertCachedTripListItem = jest.fn<Promise<void>, [unknown]>();
+const mockGetCachedTripById = jest.fn<(id: string) => Promise<unknown>>();
+const mockSetCachedTripById = jest.fn<(id: string, trip: unknown) => Promise<void>>();
+const mockUpsertCachedTripListItem = jest.fn<(trip: unknown) => Promise<void>>();
 
 jest.mock("~/services/storage/selectedTripStorage", () => ({
-  getCachedTripById: (id: string) => mockGetCachedTripById(id),
-  setCachedTripById: (id: string, trip: unknown) => mockSetCachedTripById(id, trip),
-  upsertCachedTripListItem: (trip: unknown) => mockUpsertCachedTripListItem(trip),
+  getCachedTripById: (...args: [string]) => mockGetCachedTripById(...args),
+  setCachedTripById: (...args: [string, unknown]) => mockSetCachedTripById(...args),
+  upsertCachedTripListItem: (...args: [unknown]) => mockUpsertCachedTripListItem(...args),
 }));
 
 // Mock the trip utility
@@ -36,7 +36,7 @@ interface MockQueryResult {
   refetch: jest.Mock;
 }
 
-const mockUseQuery = jest.fn<MockQueryResult, [MockQueryOptions]>();
+const mockUseQuery = jest.fn<(options?: MockQueryOptions) => MockQueryResult>();
 
 jest.mock("@mirai-app/trpc/client", () => ({
   useTRPC: jest.fn(() => ({
@@ -59,7 +59,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useQuery: (...args: [MockQueryOptions]) => mockUseQuery(...args),
 }));
 
 describe("useTripDetails", () => {
@@ -69,7 +69,7 @@ describe("useTripDetails", () => {
   });
 
   it("should return initial state when no tripId provided", () => {
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -94,7 +94,7 @@ describe("useTripDetails", () => {
     };
     mockGetCachedTripById.mockResolvedValue(cachedTrip);
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -130,7 +130,7 @@ describe("useTripDetails", () => {
       groups: [{ id: "group-1", name: "Group 1" }],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -157,7 +157,7 @@ describe("useTripDetails", () => {
     mockGetCachedTripById.mockResolvedValue(null);
     const error = new Error("Failed to fetch trip");
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -188,7 +188,7 @@ describe("useTripDetails", () => {
       name: "Test User",
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: currentUser, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -213,7 +213,7 @@ describe("useTripDetails", () => {
   it("should indicate loading while fetching user", () => {
     mockGetCachedTripById.mockResolvedValue(null);
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: true, isError: false, error: null, refetch: jest.fn() };
       }
@@ -244,7 +244,7 @@ describe("useTripDetails", () => {
       groups: [],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -279,7 +279,7 @@ describe("useTripDetails", () => {
       groups: [],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -305,7 +305,7 @@ describe("useTripDetails", () => {
     mockGetCachedTripById.mockResolvedValue(null);
     const refetch = jest.fn();
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -338,7 +338,7 @@ describe("useTripDetails", () => {
       groups: [{ id: "group-1", name: "Group 1" }],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -371,7 +371,7 @@ describe("useTripDetails", () => {
       groups: [{ id: "group-1", name: "Group 1" }],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -400,7 +400,7 @@ describe("useTripDetails", () => {
   });
 
   it("should not load trip when tripId is empty string", () => {
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -432,7 +432,7 @@ describe("useTripDetails", () => {
       groups: [],
     };
 
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
@@ -469,7 +469,7 @@ describe("useTripDetails", () => {
     };
 
     mockGetCachedTripById.mockResolvedValue(trip2);
-    mockUseQuery.mockImplementation((options: MockQueryOptions): MockQueryResult => {
+    mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
         return { data: null, isLoading: false, isError: false, error: null, refetch: jest.fn() };
       }
