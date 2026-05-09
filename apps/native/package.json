@@ -6,7 +6,6 @@
   "license": "AGPL-3.0",
   "private": true,
   "scripts": {
-    "predev": "bun ./scripts/patch-node-modules.js",
     "dev": "bunx expo start",
     "env:dev": "EXPO_ENVIRONMENT=development",
     "start": "bunx expo start",
@@ -24,7 +23,6 @@
     "release:ios:build": "bundle exec fastlane ios ios_build",
     "release:ios:submit": "bundle exec fastlane ios ios_submit",
     "release:ios:release": "bundle exec fastlane ios ios_release",
-    "postinstall": "bun ./scripts/patch-node-modules.js",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
