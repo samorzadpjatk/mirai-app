@@ -91,7 +91,7 @@ export async function sendRankingUpdate({
     orderBy: { coins: "desc" },
   });
 
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     groups.map(async (group, index) => {
       const participants = await db.tripParticipant.findMany({
         where: { tripId, groupId: group.id },
@@ -118,8 +118,12 @@ export async function sendRankingUpdate({
     }),
   );
 
+  const successfulResults = results
+    .filter((r): r is PromiseFulfilledResult<SendNotificationResult> => r.status === "fulfilled")
+    .map((r) => r.value);
+
   return {
-    success: results.every((r) => r.success),
-    notificationIds: results.map((r) => r.notificationId),
+    success: successfulResults.length === groups.length,
+    notificationIds: successfulResults.map((r) => r.notificationId),
   };
 }

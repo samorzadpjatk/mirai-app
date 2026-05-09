@@ -9,10 +9,11 @@ interface GroupDetailsHeroProps {
 
 export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
   return (
-    <View style={[styles.heroCard, shadows.primaryGlow]}>
+    <View testID="group-details-hero" style={[styles.heroCard, shadows.primaryGlow]}>
       {imageUrl ? (
         <>
           <Image
+            testID="group-hero-image"
             source={{ uri: imageUrl }}
             style={styles.heroImage}
             resizeMode="cover"

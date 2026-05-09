@@ -14,7 +14,10 @@
     "db:migrate": "bunx --bun prisma migrate deploy",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@mirai-app/supabase": "workspace:*",
@@ -22,7 +25,9 @@
     "@prisma/adapter-pg": "^7.3.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^3.0.0",
     "prisma": "^7.3.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
   }
 }

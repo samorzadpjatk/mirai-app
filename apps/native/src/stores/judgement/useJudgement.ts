@@ -59,7 +59,7 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
       .filter((submission) => submission.status === "PENDING")
       .filter(
         (submission) => !activeDismissedIds.includes(submission.id),
-      ) as Submission[];
+      );
   }, [submissions, activeDismissedIds]);
 
   const stats = useMemo(() => {

@@ -1,4 +1,4 @@
-// Imagine your lint finds a bug in expo-file-system lib (https://github.com/expo/expo/issues/41737)
+
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
@@ -7,11 +7,12 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    }
+    },
+    "types": ["jest", "@testing-library/jest-native"],
+    "allowJs": true
   },
   "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
-  "exclude": ["**/node_modules/**"]
+  "exclude": ["**/node_modules/**", "dist/**", ".expo/**", "coverage/**"]
 }

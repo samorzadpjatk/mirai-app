@@ -12,7 +12,7 @@ type ExifRecord = Record<string, unknown>;
 
 const asExifRecord = (exif: ImagePickerAsset["exif"]): ExifRecord | null => {
   if (!exif || typeof exif !== "object") return null;
-  return exif as ExifRecord;
+  return exif;
 };
 
 const readOrientation = (

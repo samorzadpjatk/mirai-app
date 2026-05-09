@@ -80,8 +80,8 @@ export function useAdminChallenges() {
       category: (c.category ?? "standard") as AdminChallengeUI["category"],
       icon: c.icon ?? "star",
       status: c.status ?? "active",
-      submissionType: "IMAGE" as AdminChallengeUI["submissionType"],
-      scoringCategory: "JUDGED_STAFF" as AdminChallengeUI["scoringCategory"],
+      submissionType: "IMAGE",
+      scoringCategory: "JUDGED_STAFF",
       tripId: c.tripId,
     }));
   }, [challengesData]);

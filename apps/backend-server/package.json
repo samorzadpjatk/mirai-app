@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.build.json",
     "check": "eslint . && tsc --noEmit",
     "clean": "rm -rf node_modules",
     "dev": "bun --watch src/index.ts",

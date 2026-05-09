@@ -1,3 +1,5 @@
+'use no memo';
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -36,8 +38,12 @@ export default function EditProfileScreen() {
   const userMyQueryOptions = trpc.user.getMy.queryOptions();
   const { data: currentUser } = useQuery(userMyQueryOptions);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  // Initialize form state from user data - only on initial load
+  const initialFirstName = useMemo(() => currentUser?.firstName ?? "", [currentUser?.firstName]);
+  const initialLastName = useMemo(() => currentUser?.lastName ?? "", [currentUser?.lastName]);
+
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
   const [isPicking, setIsPicking] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<
@@ -63,12 +69,6 @@ export default function EditProfileScreen() {
     if (!currentUser?.id) return null;
     return `avatar/${currentUser.id}.jpg`;
   }, [currentUser?.id]);
-
-  useEffect(() => {
-    if (!currentUser) return;
-    setFirstName(currentUser.firstName ?? "");
-    setLastName(currentUser.lastName ?? "");
-  }, [currentUser]);
 
   const refreshAvatar = useCallback(
     async (skipCache = false) => {
@@ -137,7 +137,7 @@ export default function EditProfileScreen() {
       await upload({
         storagePath: avatarStoragePath,
         fileUri: asset.uri,
-        fileName: asset.fileName ?? `avatar-${currentUser.id}.jpg`,
+        fileName: asset.fileName ?? `avatar-${currentUser?.id}.jpg`,
         contentType: asset.mimeType ?? "image/jpeg",
         upsert: true,
       });
@@ -230,7 +230,7 @@ export default function EditProfileScreen() {
         setIsPicking(false);
       }
     },
-    [currentUser?.id, uploadAvatarAsset],
+    [currentUser, uploadAvatarAsset],
   );
 
   const handleChangePhoto = useCallback(() => {

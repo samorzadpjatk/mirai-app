@@ -34,8 +34,8 @@ export function MembersPicker({
 }: MembersPickerProps) {
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.loadingContainer} testID="members-picker-loading">
+        <ActivityIndicator size="large" color={colors.primary} testID="activity-indicator" />
       </View>
     );
   }
@@ -79,8 +79,10 @@ export function MembersPicker({
                     styles.checkbox,
                     isSelected && styles.checkboxSelected,
                   ]}
+                  testID={`checkbox-${participant.user.id}`}
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  {isSelected && <View style={styles.checkboxInner} />}
+                  {isSelected && <View style={styles.checkboxInner} testID={`checkbox-inner-${participant.user.id}`} />}
                 </View>
               </TouchableOpacity>
             );

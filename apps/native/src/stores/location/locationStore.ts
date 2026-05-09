@@ -13,7 +13,7 @@ import { LOCATION_SHARING_SETTINGS_KEY } from "~/services/location/constants";
 
 export type LocationPermissionStatus = "granted" | "denied" | "undetermined";
 
-type ServerSharingUpdater = (input: {
+export type ServerSharingUpdater = (input: {
   isSharingLocation: boolean;
   userIdsToShareWith: string[];
 }) => Promise<unknown>;
@@ -146,7 +146,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         );
       }
 
-      return status as LocationPermissionStatus;
+      return status;
     } catch (error) {
       console.error("Failed to request location permissions:", error);
       set({ permissionStatus: "denied" });

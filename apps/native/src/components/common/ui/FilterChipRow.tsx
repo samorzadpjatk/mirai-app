@@ -19,6 +19,7 @@ export const FilterChipRow: React.FC<FilterChipRowProps> = ({
 }) => {
   return (
     <ScrollView
+      testID="filter-chip-row"
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={[

@@ -75,6 +75,7 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
 
     return (
       <DateTimePicker
+        testID="datetime-picker"
         value={value}
         mode={mode === "datetime" ? "date" : mode}
         display="default"
@@ -90,12 +91,14 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable style={styles.overlay} onPress={onCancel}>
+      <Pressable style={styles.overlay} onPress={onCancel} testID="datetime-picker-overlay">
         <Pressable
           style={styles.card}
           onPress={(event) => event.stopPropagation()}
+          testID="datetime-picker-card"
         >
           <DateTimePicker
+            testID="datetime-picker"
             value={draft}
             mode={mode}
             display="spinner"

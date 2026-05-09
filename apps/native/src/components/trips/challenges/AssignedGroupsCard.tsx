@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-interface AssignedGroup {
+export interface AssignedGroup {
   id: string;
   group: {
     name: string;
@@ -20,7 +20,7 @@ export function AssignedGroupsCard({ groups }: AssignedGroupsCardProps) {
   if (groups.length === 0) return null;
 
   return (
-    <View style={styles.container}>
+    <View testID="assigned-groups-card" style={styles.container}>
       <Text style={styles.title}>Assigned to Groups</Text>
       {groups.map((group) => (
         <View key={group.id} style={styles.groupRow}>

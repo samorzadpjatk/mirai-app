@@ -127,7 +127,7 @@ export function ProfileHeader() {
   );
 
   return (
-    <View style={styles.profileHeader}>
+    <View testID="profile-header" style={styles.profileHeader}>
       <View style={styles.avatarLarge}>
         {avatarUri ? (
           <Image

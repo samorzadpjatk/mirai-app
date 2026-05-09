@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
 
 interface LeaderboardListItemProps {
@@ -10,6 +11,7 @@ interface LeaderboardListItemProps {
 export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps) {
   return (
     <TouchableOpacity
+      testID="leaderboard-item"
       style={[styles.row, group.isCurrentUserGroup && styles.rowActive]}
       activeOpacity={0.85}
       onPress={() => onPress?.(group)}
@@ -29,7 +31,7 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
         style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}
       >
         {group.image ? (
-          <Image source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
+          <Image testID="group-image" source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
         ) : (
           <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>
         )}
@@ -56,7 +58,7 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
             group.isCurrentUserGroup && styles.scoreTextActive,
           ]}
         >
-          {group.coins.toLocaleString()} pts
+          {formatNumber(group.coins)} pts
         </Text>
       </View>
     </TouchableOpacity>

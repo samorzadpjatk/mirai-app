@@ -10,7 +10,11 @@
 export function isTripPast(endDate: Date | string): boolean {
   const now = new Date();
   const end = new Date(endDate);
-  return now > end;
+
+  const today = now.toISOString().split("T")[0] ?? "";
+  const endDay = end.toISOString().split("T")[0] ?? "";
+
+  return today > endDay;
 }
 
 /**

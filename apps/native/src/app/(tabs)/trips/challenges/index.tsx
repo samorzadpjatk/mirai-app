@@ -259,14 +259,14 @@ export default function ChallengesScreen() {
               >
                 <View style={styles.typeChipIcons}>
                   <Ionicons
-                    name={filter.icon as keyof typeof Ionicons.glyphMap}
+                    name={filter.icon}
                     size={14}
                     color={selected ? colors.primary : colors.textMuted}
                   />
                   {"secondaryIcon" in filter && filter.secondaryIcon ? (
                     <Ionicons
                       name={
-                        filter.secondaryIcon as keyof typeof Ionicons.glyphMap
+                        filter.secondaryIcon
                       }
                       size={14}
                       color={selected ? colors.primary : colors.textMuted}

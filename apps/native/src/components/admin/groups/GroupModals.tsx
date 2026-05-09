@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
@@ -67,15 +67,8 @@ interface EditGroupModalProps {
 }
 
 export function EditGroupModal({ visible, onClose, group, onUpdateGroup, isUpdating }: EditGroupModalProps) {
-  const [groupName, setGroupName] = useState('');
-
-  React.useEffect(() => {
-    if (group) {
-      setGroupName(group.name);
-    } else {
-      setGroupName('');
-    }
-  }, [group]);
+  // Initialize state from group prop directly - component re-mounts when key changes
+  const [groupName, setGroupName] = useState(group?.name ?? '');
 
   const handleUpdate = () => {
     if (!group || !groupName.trim()) return;
@@ -184,11 +177,10 @@ export function AssignOrganizerModal({
 }: AssignOrganizerModalProps) {
   const [selectedOrganizer, setSelectedOrganizer] = useState<User | null>(null);
 
-  React.useEffect(() => {
-    if (!visible) {
-      setSelectedOrganizer(null);
-    }
-  }, [visible]);
+  const handleClose = useCallback(() => {
+    setSelectedOrganizer(null);
+    onClose();
+  }, [onClose]);
 
   const handleAssign = () => {
     if (!group || !selectedOrganizer) return;
@@ -198,12 +190,12 @@ export function AssignOrganizerModal({
   return (
     <AdminModal
       visible={visible}
-      onClose={onClose}
+      onClose={handleClose}
       title="Assign Organizer"
       maxHeight={500}
       actions={
         <>
-          <AdminModalButton title="Cancel" onPress={onClose} variant="cancel" />
+          <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
           <AdminModalButton 
             title="Assign" 
             onPress={handleAssign} 

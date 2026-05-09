@@ -12,7 +12,7 @@ export function MembersSearchBar({
   onChangeText,
 }: MembersSearchBarProps) {
   return (
-    <View style={styles.searchContainer}>
+    <View testID="members-search-bar-container" style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>
         <Ionicons name="search" size={20} color={colors.textMuted} />
       </View>

@@ -6,7 +6,7 @@ import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
-import { normalizePath, relativePath } from "./utils/path";
+import type { Role } from "@mirai-app/db";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -22,30 +22,32 @@ export const seedTrip = async (
   if (tripConfig.background) {
     const backgroundAbsPath = joinPath(envRoot, tripConfig.background);
     try {
-      const backgroundFile = readFile(backgroundAbsPath);
-      const { size } = await backgroundFile.stat();
+      const backgroundFile: BunFile = readFile(backgroundAbsPath);
+      const fileStat = await backgroundFile.stat();
+      const size: number = fileStat.size;
       
       if (size > 0) {
         // Generate storage path: trips/{trip-key}/background.{ext}
-        const ext = tripConfig.background.split('.').pop()?.toLowerCase() || 'jpg';
+        const ext = tripConfig.background.split('.').pop()?.toLowerCase() ?? 'jpg';
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
         
-        const { error } = await supabase.storage
+        const uploadResult = await supabase.storage
           .from(env.imageBucket)
           .upload(storagePath, backgroundFile, {
             upsert: true,
             contentType: `image/${ext}`,
           });
           
-        if (error) {
-          console.warn(`✗ Background upload failed for ${tripConfig.name}: ${error.message}`);
+        if (uploadResult.error) {
+          console.warn(`✗ Background upload failed for ${tripConfig.name}: ${uploadResult.error.message}`);
         } else {
           backgroundImagePath = storagePath;
           console.log(`✓ Uploaded background for ${tripConfig.name}: ${storagePath}`);
         }
       }
-    } catch (err) {
-      console.warn(`✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`, err);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      console.warn(`✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`, error);
     }
   }
 
@@ -97,14 +99,14 @@ export const seedTrip = async (
     if (!dbUser) {
       console.warn(`✗ DB user not yet created for ${email} (auth id ${authUser.id}). Creating manually...`);
       
-      const roleMapping: Record<string, any> = {
+      const roleMapping: Record<string, string> = {
         'admin': 'ADMIN',
         'moderator': 'MODERATOR', 
         'service': 'SERVICE',
         'user': 'USER'
       };
       
-      const dbRole = roleMapping[row.role?.toLowerCase() || 'user'] || 'USER';
+      const dbRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       try {
         dbUser = await prisma.user.create({
@@ -122,14 +124,14 @@ export const seedTrip = async (
       }
     } else {
       // Update the role if it doesn't match what we expect from CSV
-      const roleMapping: Record<string, any> = {
+      const roleMapping: Record<string, string> = {
         'admin': 'ADMIN',
         'moderator': 'MODERATOR', 
         'service': 'SERVICE',
         'user': 'USER'
       };
       
-      const expectedRole = roleMapping[row.role?.toLowerCase() || 'user'] || 'USER';
+      const expectedRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       if (dbUser.role !== expectedRole) {
         dbUser = await prisma.user.update({

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatNumber } from "~/utils/format";
 
 interface GroupStatsGridProps {
   membersCount: number;
@@ -22,7 +23,7 @@ export function GroupStatsGrid({
       <View style={styles.statCard}>
         <Text style={styles.statLabel}>Coins</Text>
         <Text style={[styles.statValue, { color: colors.primary }]}>
-          {coins.toLocaleString()}
+          {formatNumber(coins)}
         </Text>
       </View>
 

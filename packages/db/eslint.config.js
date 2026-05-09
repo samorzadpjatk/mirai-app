@@ -1,6 +1,7 @@
 import baseConfig from "../../eslint.config.base.js";
+import tseslint from "typescript-eslint";
 
-export default [
+export default tseslint.config(
   ...baseConfig,
   {
     ignores: [
@@ -15,6 +16,15 @@ export default [
     ],
   },
   {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
     files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-unsafe-assignment": "off",
@@ -27,4 +37,4 @@ export default [
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-];
+);

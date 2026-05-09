@@ -128,7 +128,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
         <View style={viewStyles.mediaWrapper}>
           {imageStatus === "loading" ? (
             <View style={viewStyles.mediaLoading}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator testID="image-loading" size="small" color={colors.primary} />
             </View>
           ) : imageFile?.uri ? (
             <Pressable onPress={openFullscreenImage}>
@@ -195,7 +195,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
         {videoFile?.uri ? (
           <VideoView player={videoPlayer} style={viewStyles.mediaImage} />
         ) : videoStatus === "loading" ? (
-          <ActivityIndicator size="small" color={colors.white} />
+          <ActivityIndicator testID="video-loading" size="small" color={colors.white} />
         ) : (
           <Ionicons name="play-circle" size={48} color={colors.white} />
         )}

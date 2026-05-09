@@ -195,6 +195,27 @@ vi.mock('./api', () => ({
 }));
 ```
 
+### Manual Mocks with __mocks__ Directory
+
+For modules mocked consistently across many tests, use the `__mocks__` directory pattern:
+
+```
+├── __mocks__/
+│   ├── @tanstack/
+│   │   └── react-query.ts
+│   ├── expo-constants.js
+│   └── expo-location.js
+└── src/
+    └── services/
+        └── __mocks__/
+            └── myService.ts
+```
+
+Benefits:
+- Centralized mock implementations
+- Consistent behavior across tests
+- Reduced setup boilerplate
+
 ## Coverage
 
 ### Configuration

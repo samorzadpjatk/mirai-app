@@ -33,6 +33,7 @@ export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress
               <Image
                 source={{ uri: user.image }}
                 className="w-8 h-8 rounded-full"
+                accessibilityLabel="User avatar"
               />
             ) : (
               <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center">

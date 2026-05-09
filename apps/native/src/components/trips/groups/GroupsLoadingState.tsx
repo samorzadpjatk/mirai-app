@@ -3,8 +3,8 @@ import { colors, spacing } from "~/styles";
 
 export function GroupsLoadingState() {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
+    <View testID="groups-loading-container" style={styles.container}>
+      <ActivityIndicator testID="groups-loading-indicator" size="large" color={colors.primary} />
     </View>
   );
 }

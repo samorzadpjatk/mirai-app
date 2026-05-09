@@ -1,15 +1,18 @@
 import baseConfig from "../../eslint.config.base.js";
+import tseslint from "typescript-eslint";
 
-export default [
+export default tseslint.config(
   ...baseConfig,
   {
-    ignores: ["dist/**", "node_modules/**"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**"],
   },
   {
-    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
-    rules: {
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
-];
+);

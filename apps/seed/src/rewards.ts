@@ -7,21 +7,27 @@ import type { RewardConfig, AuthUserByEmail } from "./types";
 
 const db = createDb(env.databaseUrl);
 
+function isRewardConfig(value: unknown): value is RewardConfig {
+  if (typeof value !== 'object' || value === null) return false;
+  const reward = value as Record<string, unknown>;
+  return (
+    typeof reward.name === 'string' &&
+    typeof reward.description === 'string' &&
+    typeof reward.availableQuantity === 'number' &&
+    typeof reward.coinCost === 'number'
+  );
+}
+
 export const loadRewardConfigs = async (envRoot: string, rewardsPath: string): Promise<RewardConfig[]> => {
   const fullPath = joinPath(envRoot, rewardsPath);
   const content = await readTextFile(fullPath);
-  const parsed = yaml.parse(content) as RewardConfig[];
+  const parsed: unknown = yaml.parse(content);
   
   if (!Array.isArray(parsed)) {
     throw new Error(`Rewards config must be an array: ${fullPath}`);
   }
   
-  return parsed.filter(reward => 
-    reward?.name && 
-    reward?.description && 
-    typeof reward?.availableQuantity === 'number' && 
-    typeof reward?.coinCost === 'number'
-  );
+  return parsed.filter(isRewardConfig);
 };
 
 export const seedRewards = async (
@@ -33,7 +39,7 @@ export const seedRewards = async (
   // First try to find an admin user, then any user
   let dbUser = null;
   
-  for (const [email, authUser] of authUsers.entries()) {
+  for (const [, authUser] of authUsers.entries()) {
     try {
       const user = await db.user.findFirst({ 
         where: { authUserId: authUser.id },
@@ -47,11 +53,9 @@ export const seedRewards = async (
           break;
         }
         // Use first available user if no admin found
-        if (!dbUser) {
-          dbUser = user;
-        }
+        dbUser ??= user;
       }
-    } catch (error) {
+    } catch {
       // Continue trying other users
       continue;
     }
@@ -78,7 +82,7 @@ export const seedRewards = async (
           description: rewardConfig.description,
           availableQuantity: rewardConfig.availableQuantity,
           coinCost: rewardConfig.coinCost,
-          image: imagePath || null,
+          image: imagePath ?? null,
           tripId,
           createdById: dbUser.id,
         },

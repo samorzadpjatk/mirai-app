@@ -169,7 +169,7 @@ export function useChallenges(tripId?: string | null) {
         description: dbChallenge.description ?? undefined,
         image: dbChallenge.image ?? undefined,
         participantGroupsCount: dbChallenge.participantGroupsCount ?? 0,
-      } as ChallengeListItem;
+      };
     });
   }, [challengesData]);
 

@@ -344,7 +344,7 @@ export default function AdminChallengesScreen() {
         continue;
       }
       if (challenge.submissionType in counts) {
-        counts[challenge.submissionType as ChallengeTypeFilter] += 1;
+        counts[challenge.submissionType] += 1;
       }
     }
 

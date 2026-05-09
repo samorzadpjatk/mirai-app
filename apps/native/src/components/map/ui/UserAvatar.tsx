@@ -75,6 +75,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   if (hasImage && !hasImageError) {
     return (
       <Image
+        testID="user-avatar-image"
         source={{ uri: imageUrl }}
         style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
         contentFit="cover"
@@ -90,6 +91,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
   return (
     <View
+      testID="user-avatar-initials-container"
       style={[
         styles.initialsContainer,
         {
@@ -100,7 +102,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         },
       ]}
     >
-      <Text style={[styles.initialsText, { fontSize }]}>{initials}</Text>
+      <Text testID="user-avatar-initials-text" style={[styles.initialsText, { fontSize }]}>{initials}</Text>
     </View>
   );
 };

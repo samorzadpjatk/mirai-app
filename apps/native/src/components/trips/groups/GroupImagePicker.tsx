@@ -16,16 +16,22 @@ export function GroupImagePicker({
   uploadPercent = null,
 }: GroupImagePickerProps) {
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="group-image-picker-container">
       <Text style={styles.label}>Group Image</Text>
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.85}
         onPress={onPickImage}
         disabled={isUploading}
+        testID="group-image-picker-touchable"
       >
         {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.image}
+            resizeMode="cover"
+            testID="group-image-picker-image"
+          />
         ) : (
           <View style={styles.placeholder}>
             <Ionicons name="images-outline" size={28} color={colors.primary} />
@@ -36,7 +42,11 @@ export function GroupImagePicker({
         <View style={styles.badge}>
           {isUploading ? (
             <>
-              <ActivityIndicator size="small" color={colors.white} />
+              <ActivityIndicator
+                size="small"
+                color={colors.white}
+                testID="group-image-picker-activity-indicator"
+              />
               <Text style={styles.badgeText}>
                 {uploadPercent != null ? `Uploading ${uploadPercent}%` : "Uploading..."}
               </Text>

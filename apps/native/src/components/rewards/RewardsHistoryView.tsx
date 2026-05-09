@@ -59,7 +59,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
   if (isLoading) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size="large" color="#00ced1" />
+        <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
         <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading claim history...</Text>
       </View>
     );
@@ -79,6 +79,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
   return (
     <View style={commonStyles.container}>
       <ScrollView
+        testID="rewards-scroll-view"
         style={{ flex: 1, padding: 16 }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -102,7 +103,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
         ) : (
           <View style={{ gap: 12 }}>
             {purchases.map((purchase) => {
-              const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
+              const status = (purchase.status ?? "BOUGHT");
               const statusInfo = statusMeta[status] ?? statusMeta.BOUGHT;
               const purchaserName = `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
               const isUpdating = updateMyPurchaseStatus.isPending;
@@ -287,7 +288,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
             {isFetchingNextPage ? (
               <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
-                <ActivityIndicator size="small" color="#00ced1" />
+                <ActivityIndicator testID="loading-more-indicator" size="small" color="#00ced1" />
                 <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more claim history...</Text>
               </View>
             ) : null}

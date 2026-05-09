@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-interface GroupMember {
+export interface GroupMember {
   id: string;
   name: string;
   initials: string;
@@ -72,6 +72,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
           <View key={member.id} style={styles.memberCard}>
             <View style={styles.memberInfo}>
               <View
+                testID={member.isLeader ? "leader-avatar" : "member-avatar"}
                 style={[styles.avatar, member.isLeader && styles.avatarLeader]}
               >
                 <MemberAvatar member={member} />

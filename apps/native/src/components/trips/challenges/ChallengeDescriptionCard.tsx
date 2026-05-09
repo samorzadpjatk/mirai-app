@@ -21,6 +21,8 @@ export function ChallengeDescriptionCard({
           source={{ uri: imageUrl }}
           style={styles.image}
           resizeMode="cover"
+          testID="challenge-image"
+          accessibilityLabel="Challenge image"
         />
       ) : null}
     </View>

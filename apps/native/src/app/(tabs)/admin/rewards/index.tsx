@@ -115,9 +115,9 @@ export default function AdminRewardsPage() {
     refetch: refetchPurchases,
   } = useRewardPurchaseHistory(tripIdParam ?? "");
 
-  const safePurchases = useMemo(() => {
-    if (!Array.isArray(purchasesData)) return [] as AdminPurchaseListItem[];
-    return purchasesData as AdminPurchaseListItem[];
+  const safePurchases = useMemo<AdminPurchaseListItem[]>(() => {
+    if (!Array.isArray(purchasesData)) return [];
+    return purchasesData;
   }, [purchasesData]);
 
   const filteredPurchases = useMemo(() => {

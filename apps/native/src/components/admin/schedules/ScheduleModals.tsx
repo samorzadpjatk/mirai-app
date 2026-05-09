@@ -107,23 +107,13 @@ export function EditScheduleModal({
 }: EditScheduleModalProps) {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
-  const [triggerTime, setTriggerTime] = useState('');
+  const [triggerTime, setTriggerTime] = useState(schedule?.triggerTime ?? '');
 
   const resetForm = () => {
     setName('');
     setMessage('');
     setTriggerTime('');
   };
-
-  React.useEffect(() => {
-    if (schedule) {
-      setName(schedule.name);
-      setMessage(schedule.message);
-      setTriggerTime(schedule.triggerTime);
-    } else {
-      resetForm();
-    }
-  }, [schedule]);
 
   const handleUpdate = () => {
     if (!schedule || !name.trim() || !message.trim() || !triggerTime.trim()) {

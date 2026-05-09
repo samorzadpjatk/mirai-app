@@ -131,12 +131,14 @@ export function ExistingSubmissionCard({
               source={{ uri: file.uri }}
               style={styles.image}
               resizeMode="contain"
+              accessibilityLabel="Submission preview"
             />
           ) : localPreviewUri ? (
             <Image
               source={{ uri: localPreviewUri }}
               style={styles.image}
               resizeMode="contain"
+              accessibilityLabel="Submission preview"
             />
           ) : (
             <View style={styles.imageLoading}>

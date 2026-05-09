@@ -18,14 +18,15 @@ export function ChallengeUploadProgressCard({
       : `${Math.round(resolvedProgress * 100)}%`;
 
   return (
-    <View style={styles.container}>
+    <View testID="upload-progress-card" style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Uploading submission</Text>
-        <ActivityIndicator size="small" color={colors.primary} />
+        <ActivityIndicator testID="upload-progress-indicator" size="small" color={colors.primary} />
       </View>
       <Text style={styles.progressText}>{percentLabel}</Text>
-      <View style={styles.progressTrack}>
+      <View testID="progress-track" style={styles.progressTrack}>
         <View
+          testID="progress-fill"
           style={[
             styles.progressFill,
             { flex: resolvedProgress ?? 0, minWidth: 0 },

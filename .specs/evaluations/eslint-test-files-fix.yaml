@@ -1,0 +1,228 @@
+# ESLint Test Files Fix - Evaluation Specification
+# Reusable spec for evaluating TypeScript ESLint fixes in test files
+# Applicable to: any package with Jest or Vitest tests
+
+metadata:
+  name: eslint-test-files-fix
+  version: 1.0.0
+  scope: test-files-only
+  applicable_to:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+  test_frameworks:
+    - jest
+    - vitest
+
+target_rules:
+  - "@typescript-eslint/no-explicit-any"
+  - "@typescript-eslint/no-unsafe-member-access"
+  - "@typescript-eslint/no-unsafe-call"
+  - "@typescript-eslint/no-unsafe-return"
+  - "@typescript-eslint/no-unsafe-assignment"
+  - "@typescript-eslint/no-unsafe-argument"
+  - "@typescript-eslint/unbound-method"
+  - "@typescript-eslint/require-await"
+  - "@typescript-eslint/no-empty-function"
+  - "@typescript-eslint/no-unsafe-function-type"
+
+evaluation_criteria:
+  # Rule: no-empty-function
+  no_empty_function:
+    description: "All empty arrow functions must be replaced with proper no-op patterns"
+    severity: error
+    patterns_to_fix:
+      - pattern: "() => {}"
+        replacement: "() => undefined"  # or vi.fn() / jest.fn() for mocks
+      - pattern: "function() {}"
+        replacement: "function() { return undefined; }"
+      - pattern: "async () => {}"
+        replacement: "async () => undefined"
+    exceptions:
+      - "mock functions using jest.fn() or vi.fn()"
+      - "explicit no-op utilities with proper return types"
+    verification: |
+      No instances of "() => {}" or equivalent empty function bodies remain.
+      All replacements maintain the original function signature.
+
+  # Rule: require-await
+  require_await:
+    description: "Async functions must contain at least one await expression or be properly typed"
+    severity: error
+    patterns_to_fix:
+      - pattern: "async function without await"
+        fix_options:
+          - "Add await to async operations"
+          - "Remove async keyword if no async operations"
+          - "Add explicit Promise<ReturnType> return type annotation"
+      - pattern: "async () => without await"
+        fix_options:
+          - "Add await to async operations"
+          - "Remove async keyword if no async operations"
+          - "Add explicit return type annotation"
+    exceptions:
+      - "Functions with explicit Promise<T> return type"
+      - "Test hooks (beforeEach, afterEach) with explicit typing"
+    verification: |
+      No async functions lack await unless explicitly typed with Promise<ReturnType>.
+
+  # Rule: unbound-method
+  unbound_method:
+    description: "Class methods used as callbacks must be properly bound or wrapped"
+    severity: error
+    patterns_to_fix:
+      - pattern: "expect(mock.method).toHaveBeenCalled()"
+        replacement: "expect(mock.method.bind(mock)).toHaveBeenCalled()"
+      - pattern: "const handler = obj.method"
+        replacement: "const handler = obj.method.bind(obj)"
+      - pattern: "array.map(obj.method)"
+        replacement: "array.map((item) => obj.method(item))"
+    exceptions:
+      - "Static methods"
+      - "Methods explicitly bound in constructor"
+    verification: |
+      No method references are passed as callbacks without proper binding or wrapping.
+
+  # Rule: no-explicit-any
+  no_explicit_any:
+    description: "No explicit 'any' types allowed - use proper types or unknown with guards"
+    severity: error
+    patterns_to_fix:
+      - pattern: ": any"
+        replacement: ": SpecificType"  # use actual type
+      - pattern: "as any"
+        replacement: "as SpecificType"  # or remove if unnecessary
+      - pattern: "<any>"
+        replacement: "<SpecificType>"
+      - pattern: "Array<any>"
+        replacement: "Array<SpecificType>"
+      - pattern: "Record<string, any>"
+        replacement: "Record<string, SpecificType>"  # or use unknown
+    safe_alternatives:
+      - "unknown with type guards"
+      - "generics with constraints"
+      - "proper interface definitions"
+    verification: |
+      No instances of "any" type remain in test files.
+      All replacements use specific types or "unknown" with proper guards.
+
+  # Rule: no-unsafe-member-access
+  no_unsafe_member_access:
+    description: "Member access on typed values must be type-safe"
+    severity: error
+    patterns_to_fix:
+      - pattern: "obj['dynamicKey']"
+        replacement: "(obj as Record<string, Type>).dynamicKey"
+      - pattern: "obj.property on unknown/any typed obj"
+        fix: "Add proper type annotation or use type guard"
+    verification: |
+      All member access operations are on properly typed objects.
+      No unsafe property access on "unknown" or loosely typed values.
+
+  # Rule: no-unsafe-call
+  no_unsafe_call:
+    description: "Function calls must be on properly typed functions"
+    severity: error
+    patterns_to_fix:
+      - pattern: "fn() where fn is typed as any"
+        replacement: "Add proper function type signature"
+      - pattern: "(obj as any).method()"
+        replacement: "Properly type obj and its methods"
+    verification: |
+      All function calls are on values with explicit function types.
+
+  # Rule: no-unsafe-return
+  no_unsafe_return:
+    description: "Return values must match declared return types"
+    severity: error
+    patterns_to_fix:
+      - pattern: "return value of type any from typed function"
+        replacement: "Add proper return type or cast to expected type"
+    verification: |
+      All return statements match the function's declared return type.
+
+  # Rule: no-unsafe-assignment
+  no_unsafe_assignment:
+    description: "Assignments must be type-compatible"
+    severity: error
+    patterns_to_fix:
+      - pattern: "const x: Type = anyValue"
+        replacement: "Add type guard or proper typing"
+      - pattern: "let x = anyValue as any"
+        replacement: "Remove 'as any' and add proper type"
+    verification: |
+      All assignments are between compatible types.
+
+  # Rule: no-unsafe-argument
+  no_unsafe_argument:
+    description: "Function arguments must match parameter types"
+    severity: error
+    patterns_to_fix:
+      - pattern: "fn(anyValue) where fn expects specific type"
+        replacement: "Add type assertion or guard before call"
+    verification: |
+      All function arguments match the expected parameter types.
+
+  # Rule: no-unsafe-function-type
+  no_unsafe_function_type:
+    description: "Function types must be explicit and safe"
+    severity: error
+    patterns_to_fix:
+      - pattern: "Function"  # generic Function type
+        replacement: "(arg: Type) => ReturnType"  # explicit signature
+      - pattern: "{ (...args: any[]): any }"
+        replacement: "{ (...args: SpecificType[]): ReturnType }"
+    verification: |
+      No generic "Function" types remain. All function types have explicit signatures.
+
+mock_patterns:
+  jest:
+    spy_pattern: "jest.fn()"
+    mock_module: "jest.mock"
+    spy_type: "jest.Mock"
+  vitest:
+    spy_pattern: "vi.fn()"
+    mock_module: "vi.mock"
+    spy_type: "vi.Mock"
+  common_fixes:
+    - "Use properly typed mock functions instead of empty functions"
+    - "Add return type annotations to mock implementations"
+    - "Use MockedFunction<typeof fn> for spied functions"
+
+verification_steps:
+  1_lint_check:
+    command: "eslint . --ext .ts,.tsx"
+    expected_result: "Zero errors for target rules in test files"
+  2_type_check:
+    command: "tsc --noEmit"
+    expected_result: "No type errors introduced"
+  3_test_run:
+    command: "test command for package (jest/vitest)"
+    expected_result: "All tests pass"
+
+scoring:
+  pass_threshold: 100
+  weights:
+    no_empty_function: 10
+    require_await: 10
+    unbound_method: 10
+    no_explicit_any: 15
+    no_unsafe_member_access: 10
+    no_unsafe_call: 10
+    no_unsafe_return: 10
+    no_unsafe_assignment: 10
+    no_unsafe_argument: 10
+    no_unsafe_function_type: 5
+
+failure_conditions:
+  - "Any target ESLint rule still has violations in test files"
+  - "Type errors introduced by fixes"
+  - "Tests fail after fixes"
+  - "Functionality changed (not just types)"
+
+success_criteria:
+  - "All 10 target ESLint rules have zero violations in test files"
+  - "No new type errors introduced"
+  - "All tests continue to pass"
+  - "Changes are limited to type safety improvements only"

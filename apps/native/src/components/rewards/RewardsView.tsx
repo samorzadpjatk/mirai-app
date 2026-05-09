@@ -154,7 +154,7 @@ export default function RewardsView({ tripId }: Props) {
   if (isLoading) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size="large" color="#00ced1" />
+        <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
                 <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading rewards...</Text>
       </View>
     );
@@ -238,7 +238,8 @@ export default function RewardsView({ tripId }: Props) {
         )}
       </View>
 
-      <ScrollView 
+      <ScrollView
+        testID="rewards-scroll-view"
         style={{ flex: 1, padding: 16 }}
         refreshControl={
           <RefreshControl
@@ -373,6 +374,7 @@ export default function RewardsView({ tripId }: Props) {
 
       {/* Purchase Modal */}
       <Modal
+        testID="purchase-modal"
         visible={showPurchaseModal}
         animationType="slide"
         presentationStyle="pageSheet"
@@ -477,6 +479,7 @@ export default function RewardsView({ tripId }: Props) {
 
       {/* Reward Details Modal */}
       <Modal
+        testID="reward-details-modal"
         visible={showRewardDetailsModal}
         animationType="slide"
         presentationStyle="pageSheet"

@@ -11,19 +11,14 @@
         "root": "./src/app"
       }
     },
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "owner": "samorzadpjatk",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "scheme": "native",
-    "notification": {
-      "icon": "./assets/mirai_notification_logo.png",
-      "color": "#000000",
-      "androidMode": "default",
-      "androidCollapsedTitle": "MIRAI",
-      "iosDisplayInForeground": true
-    },
     "ios": {
       "icon": "./assets/ios_logo.icon",
       "supportsTablet": false,
@@ -44,7 +39,6 @@
         "monochromeImage": "./assets/mirai_adaptive_logo_monochrome.png",
         "backgroundImage": "./assets/mirai_adaptive_logo_background.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "edu.samorzadpjatk.mirai",
       "googleServicesFile": "credentials/android/google-services.json",
@@ -67,7 +61,9 @@
       [
         "expo-asset",
         {
-          "assets": ["./assets/mirai_logo.png"]
+          "assets": [
+            "./assets/mirai_logo.png"
+          ]
         }
       ],
       [
@@ -92,7 +88,18 @@
       "expo-font",
       "expo-secure-store",
       "@react-native-community/datetimepicker",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": true
+          },
+          "android": {
+            "newArchEnabled": true
+          }
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"

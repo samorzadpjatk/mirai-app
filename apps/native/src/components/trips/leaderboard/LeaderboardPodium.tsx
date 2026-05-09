@@ -1,6 +1,7 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
 
 const MEDAL_COLORS = {
@@ -113,7 +114,7 @@ function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
             position === 1 ? styles.podiumScoreLarge : styles.podiumScoreSmall,
           ]}
         >
-          {group.coins.toLocaleString()} pts
+          {formatNumber(group.coins)} pts
         </Text>
       </View>
     </TouchableOpacity>

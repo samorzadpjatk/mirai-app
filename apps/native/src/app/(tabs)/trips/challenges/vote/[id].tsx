@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -236,6 +236,7 @@ export default function ChallengePeerVotingScreen() {
   const [previousTop3Key, setPreviousTop3Key] = useState<string | null>(null);
   const [finalTopThreeIds, setFinalTopThreeIds] = useState<string[]>([]);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const bootstrapRef = useRef({ pending: false, completed: false });
 
   const ownGroupId = meWithGroup?.trips?.[0]?.group?.id ?? null;
 
@@ -327,7 +328,8 @@ export default function ChallengePeerVotingScreen() {
     navigateBackToChallenge();
   }, [navigateBackToChallenge, shouldRedirectToChallengeDetails]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
+  // Handle bootstrap logic in a microtask to avoid synchronous setState in effect
   useEffect(() => {
     if (!challengeId || !tripId) return;
     if (
@@ -348,27 +350,39 @@ export default function ChallengePeerVotingScreen() {
       return;
     }
 
-    if ((myVotes?.length ?? 0) > 0) {
-      navigateBackToChallenge();
-      setBootstrapped(true);
-      return;
-    }
+    if (bootstrapRef.current.completed || bootstrapRef.current.pending) return;
 
-    if (votingSubmissions.length < MIN_SUBMISSIONS_TO_VOTE) {
-      if (phase !== "blocked") {
-        setPhase("blocked");
+    bootstrapRef.current.pending = true;
+
+    queueMicrotask(() => {
+      if ((myVotes?.length ?? 0) > 0) {
+        navigateBackToChallenge();
+        setBootstrapped(true);
+        bootstrapRef.current.completed = true;
+        bootstrapRef.current.pending = false;
+        return;
       }
-      setBlockedReason(
-        `At least ${MIN_SUBMISSIONS_TO_VOTE} approved submissions are required. Voting starts automatically after moderation and after submissions end. Eligible now: ${votingSubmissions.length}.`,
-      );
-      setBootstrapped(true);
-      return;
-    }
 
-    if (!bootstrapped || phase === "blocked") {
-      startComparing();
-      setBootstrapped(true);
-    }
+      if (votingSubmissions.length < MIN_SUBMISSIONS_TO_VOTE) {
+        if (phase !== "blocked") {
+          setPhase("blocked");
+        }
+        setBlockedReason(
+          `At least ${MIN_SUBMISSIONS_TO_VOTE} approved submissions are required. Voting starts automatically after moderation and after submissions end. Eligible now: ${votingSubmissions.length}.`,
+        );
+        setBootstrapped(true);
+        bootstrapRef.current.completed = true;
+        bootstrapRef.current.pending = false;
+        return;
+      }
+
+      if (!bootstrapped || phase === "blocked") {
+        startComparing();
+        setBootstrapped(true);
+      }
+      bootstrapRef.current.completed = true;
+      bootstrapRef.current.pending = false;
+    });
   }, [
     bootstrapped,
     challenge,
@@ -385,7 +399,7 @@ export default function ChallengePeerVotingScreen() {
     tripId,
     votingSubmissions.length,
   ]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const handlePickWinner = (winnerId: string) => {
     if (phase !== "comparing") return;

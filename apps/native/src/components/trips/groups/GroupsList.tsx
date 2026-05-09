@@ -19,7 +19,7 @@ export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps
   }
 
   return (
-    <View style={styles.groupsList}>
+    <View style={styles.groupsList} testID="groups-list">
       {groups.map((group) => (
         <GroupCard
           key={group.id}

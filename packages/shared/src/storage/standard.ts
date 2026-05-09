@@ -52,7 +52,7 @@ export const normalizeBucketName = (bucket: string | null | undefined): Standard
     'file-public': STANDARD_BUCKETS.PUBLIC
   };
   
-  return aliases[normalized] || null;
+  return aliases[normalized] ?? null;
 };
 
 /**

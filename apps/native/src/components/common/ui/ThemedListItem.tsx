@@ -40,6 +40,7 @@ export function ThemedListItem({
 
   return (
     <Pressable
+      testID="themed-list-item-pressable"
       style={({ pressed }) => [
         styles.item,
         bordered && styles.itemBordered,

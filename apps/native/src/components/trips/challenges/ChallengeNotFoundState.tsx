@@ -9,7 +9,7 @@ export function ChallengeNotFoundState({
   onGoBack,
 }: ChallengeNotFoundStateProps) {
   return (
-    <View style={styles.container}>
+    <View testID="challenge-not-found-container" style={styles.container}>
       <Text style={styles.title}>Challenge not found</Text>
       <TouchableOpacity onPress={onGoBack} style={styles.button}>
         <Text style={styles.buttonText}>Go Back</Text>

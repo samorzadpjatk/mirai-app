@@ -14,6 +14,7 @@ export function SaveGroupButton({
       label="Save Changes"
       isLoading={isSubmitting}
       onPress={onPress}
+      testID="save-group-button"
     />
   );
 }

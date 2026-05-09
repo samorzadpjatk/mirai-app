@@ -13,7 +13,7 @@ const QueuedSubmissionCard = ({
   maxCardHeight: number;
 }) => {
   return (
-    <View style={[viewStyles.card, viewStyles.cardBack, { maxHeight: maxCardHeight }]}>
+    <View testID="queued-submission-card" style={[viewStyles.card, viewStyles.cardBack, { maxHeight: maxCardHeight }]}>
       <View style={viewStyles.cardHeader}>
         <View style={viewStyles.groupAvatar}>
           <Text style={textStyles.groupAvatarText}>{getInitials(submission.group.name)}</Text>

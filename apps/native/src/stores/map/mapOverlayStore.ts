@@ -1,3 +1,5 @@
+'use no memo';
+
 import { createStore } from "zustand/vanilla";
 import { useStore } from "zustand";
 import React, { createContext, useContext } from "react";
@@ -352,23 +354,23 @@ export function useMapOverlayStore() {
     expandAnim.setOpen(store.isListExpanded);
   }, [expandAnim, store.isListExpanded]);
   
-  // Pan gesture
   const listDragStart = useSharedValue(0);
+  const expandValue = expandAnim.value;
   const panGesture = Gesture.Pan()
     .onBegin(() => {
-      listDragStart.value = expandAnim.value.value;
+      listDragStart.value = expandValue.value;
     })
     .onUpdate((event) => {
       if (selectedUser || !store.showUsersList) return;
       const dragProgress =
         listDragStart.value + -event.translationY / listMaxHeight;
-      expandAnim.value.value = Math.max(0, Math.min(1, dragProgress));
+      expandValue.value = Math.max(0, Math.min(1, dragProgress));
     })
     .onEnd((event) => {
       if (selectedUser || !store.showUsersList) return;
       const shouldExpand =
-        expandAnim.value.value > 0.5 || event.velocityY < -500;
-      expandAnim.value.value = withSpring(shouldExpand ? 1 : 0);
+        expandValue.value > 0.5 || event.velocityY < -500;
+      expandValue.value = withSpring(shouldExpand ? 1 : 0);
       if (shouldExpand !== store.isListExpanded) {
         scheduleOnRN(() => {
           store.toggleListExpansion();

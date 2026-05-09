@@ -11,7 +11,7 @@ interface LocationPermissionDeniedProps {
 export function LocationPermissionDenied({ compact = false }: LocationPermissionDeniedProps) {
   if (compact) {
     return (
-      <View style={compactStyles.container}>
+      <View testID="location-permission-denied-compact" style={compactStyles.container}>
         <Ionicons name="locate" size={16} color={colors.white} />
         <Text style={compactStyles.text}>Location sharing disabled</Text>
       </View>
@@ -19,7 +19,7 @@ export function LocationPermissionDenied({ compact = false }: LocationPermission
   }
 
   return (
-    <View style={styles.container}>
+    <View testID="location-permission-denied" style={styles.container}>
       <View style={styles.iconContainer}>
         <Ionicons name="locate" size={48} color={colors.textMuted} />
       </View>

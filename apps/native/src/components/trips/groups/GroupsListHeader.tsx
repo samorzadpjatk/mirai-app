@@ -8,7 +8,7 @@ interface GroupsListHeaderProps {
 
 export function GroupsListHeader({ title, count }: GroupsListHeaderProps) {
   return (
-    <View style={styles.listHeader}>
+    <View testID="groups-list-header" style={styles.listHeader}>
       <Text style={styles.listHeaderTitle}>{title}</Text>
       <Text style={styles.listHeaderCount}>{count} Results</Text>
     </View>

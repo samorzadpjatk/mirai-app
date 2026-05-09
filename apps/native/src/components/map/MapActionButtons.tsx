@@ -33,6 +33,7 @@ export function MapActionButtons() {
     <>
       <View style={styles.leftButtonsGroup}>
         <TouchableOpacity
+          testID="background-toggle-button"
           style={[
             styles.backgroundToggle,
             isBackgroundDisplayedOn && styles.backgroundToggleActive,
@@ -44,7 +45,7 @@ export function MapActionButtons() {
           disabled={isBackgroundControlDisabled}
         >
           {isUpdatingBackgroundLocation ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator testID="background-loading-indicator" size="small" color={colors.primary} />
           ) : (
             <>
               <Text
@@ -81,6 +82,7 @@ export function MapActionButtons() {
 
       <View style={styles.rightButtonsGroup}>
         <TouchableOpacity
+          testID="location-toggle-button"
           style={[
             styles.locationToggle,
             isLocationSharingEnabled && styles.locationToggleActive,
@@ -91,7 +93,7 @@ export function MapActionButtons() {
           disabled={isLoading || isUpdatingSharing}
         >
           {isUpdatingSharing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator testID="location-loading-indicator" size="small" color={colors.primary} />
           ) : (
             <>
               <Text style={styles.locationToggleText}>
@@ -105,7 +107,11 @@ export function MapActionButtons() {
             </>
           )}
         </TouchableOpacity>
-        <Pressable style={styles.themeToggleButton} onPress={toggleTheme}>
+        <Pressable
+          testID="theme-toggle-button"
+          style={styles.themeToggleButton}
+          onPress={toggleTheme}
+        >
           <Ionicons
             name={mapTheme === "dark" ? "sunny" : "moon"}
             size={22}
@@ -113,7 +119,11 @@ export function MapActionButtons() {
           />
         </Pressable>
         {isLocationSharingEnabled && (
-          <Pressable style={styles.recenterButton} onPress={onRecenter}>
+          <Pressable
+            testID="recenter-button"
+            style={styles.recenterButton}
+            onPress={onRecenter}
+          >
             <Ionicons name="locate" size={20} color="#00ced1" />
           </Pressable>
         )}

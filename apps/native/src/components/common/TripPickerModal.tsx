@@ -53,12 +53,13 @@ export function TripPickerModal({
       animationType="fade"
       transparent
       onRequestClose={onClose}
+      testID="trip-picker-modal"
     >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select trip</Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={onClose} testID="close-button">
               <Ionicons name="close" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -67,12 +68,14 @@ export function TripPickerModal({
             contentContainerStyle={styles.modalList}
             onScroll={onLoadMore}
             scrollEventThrottle={16}
+            testID="trip-list-scrollview"
           >
             {trips.map((trip) => (
               <TouchableOpacity
                 key={trip.id}
                 style={styles.modalItem}
                 onPress={() => handleSelectTrip(trip.id)}
+                testID={`trip-item-${trip.id}`}
               >
                 <Text style={styles.modalItemText}>{trip.name}</Text>
                 {selectedTripId === trip.id ? (
@@ -80,6 +83,7 @@ export function TripPickerModal({
                     name="checkmark"
                     size={18}
                     color={colors.primary}
+                    testID="checkmark-icon"
                   />
                 ) : null}
               </TouchableOpacity>

@@ -89,6 +89,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
 
   return (
     <TouchableOpacity
+      testID="challenge-card"
       style={getCardStyle()}
       onPress={() => !isLocked && onPress?.(challenge)}
       disabled={isLocked}
