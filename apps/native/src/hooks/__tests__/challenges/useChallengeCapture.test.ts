@@ -7,7 +7,7 @@ import { Alert } from "react-native";
 const mockLaunchImageLibraryAsync = jest.fn<(options?: { mediaTypes?: string; allowsEditing?: boolean; aspect?: number[]; quality?: number; exif?: boolean }) => Promise<{ canceled: boolean; assets?: { uri: string; fileName?: string | null; mimeType?: string }[] }>>();
 
 jest.mock("expo-image-picker", () => ({
-  launchImageLibraryAsync: () => mockLaunchImageLibraryAsync(),
+  launchImageLibraryAsync: (...args: unknown[]) => mockLaunchImageLibraryAsync(...args as [object]),
   MediaTypeOptions: {
     Images: "images",
     Videos: "videos",
@@ -55,6 +55,7 @@ jest.mock("@mirai-app/trpc/client/query", () => ({
 
 // Mock React Query
 const mockUseQuery = jest.fn<() => { data: unknown; isLoading: boolean }>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockUseMutation = jest.fn<() => { mutateAsync: jest.Mock<any>; isPending: boolean }>();
 const mockUseQueryClient = jest.fn<() => { invalidateQueries: jest.Mock }>();
 

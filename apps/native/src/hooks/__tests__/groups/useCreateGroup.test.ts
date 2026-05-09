@@ -214,7 +214,7 @@ describe("useCreateGroup", () => {
       renderHook(() => useCreateGroup("trip-123"));
 
       if (onSuccessCallback) {
-        await (onSuccessCallback as () => Promise<void>)();
+        await (onSuccessCallback as unknown as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledWith(mockQueryClient);
@@ -235,7 +235,7 @@ describe("useCreateGroup", () => {
       renderHook(() => useCreateGroup("trip-123"));
 
       if (onSuccessCallback) {
-        await (onSuccessCallback as () => Promise<void>)();
+        await (onSuccessCallback as unknown as () => Promise<void>)();
       }
 
       expect(mockInvalidateGroupQueries).toHaveBeenCalledTimes(1);

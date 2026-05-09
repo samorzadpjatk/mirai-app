@@ -14,16 +14,19 @@ jest.mock("~/components/common/FloatingActionButton", () => ({
     iconName: string;
     accessibilityLabel: string;
     disabled?: boolean;
-  }) => (
-    <button
-      data-testid="fab-button"
-      onClick={onPress}
-      disabled={disabled}
-      aria-label={accessibilityLabel}
-    >
-      {iconName}
-    </button>
-  ),
+  }) => {
+    const { TouchableOpacity, Text } = jest.requireActual("react-native");
+    return (
+      <TouchableOpacity
+        testID="fab-button"
+        onPress={onPress}
+        disabled={disabled}
+        accessibilityLabel={accessibilityLabel}
+      >
+        <Text>{iconName}</Text>
+      </TouchableOpacity>
+    );
+  },
 }));
 
 describe("AdminAddFab", () => {
@@ -63,7 +66,7 @@ describe("AdminAddFab", () => {
     );
 
     const button = getByTestId("fab-button");
-    expect(button.props.disabled).toBe(true);
+    expect(button.props.accessibilityState?.disabled ?? button.props.disabled).toBe(true);
   });
 
   it("renders with custom position props", () => {

@@ -24,33 +24,39 @@ jest.mock("~/stores/judgement/judgementStores", () => ({
   },
 }));
 
-jest.mock("react-native-reanimated", () => ({
-  useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
-  useAnimatedStyle: jest.fn().mockReturnValue({}),
-  withSpring: jest.fn().mockReturnValue({ value: 0 }),
-  withTiming: jest.fn().mockReturnValue({ value: 0 }),
-  interpolate: jest.fn().mockReturnValue(0),
-  Extrapolation: { CLAMP: "clamp" },
-  default: {
-    View: ({ children }: { children: React.ReactNode }) => {
+jest.mock("react-native-reanimated", () => {
+  const React = require("react");
+  return {
+    useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
+    useAnimatedStyle: jest.fn().mockReturnValue({}),
+    withSpring: jest.fn().mockReturnValue({ value: 0 }),
+    withTiming: jest.fn().mockReturnValue({ value: 0 }),
+    interpolate: jest.fn().mockReturnValue(0),
+    Extrapolation: { CLAMP: "clamp" },
+    default: {
+      View: ({ children }: { children: React.ReactNode }) => {
+        return children;
+      },
+    },
+  };
+});
+
+jest.mock("react-native-gesture-handler", () => {
+  const React = require("react");
+  return {
+    Gesture: {
+      Pan: jest.fn().mockReturnValue({
+        enabled: jest.fn().mockReturnThis(),
+        minDistance: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+      }),
+    },
+    GestureDetector: ({ children }: { children: React.ReactNode }) => {
       return children;
     },
-  },
-}));
-
-jest.mock("react-native-gesture-handler", () => ({
-  Gesture: {
-    Pan: jest.fn().mockReturnValue({
-      enabled: jest.fn().mockReturnThis(),
-      minDistance: jest.fn().mockReturnThis(),
-      onUpdate: jest.fn().mockReturnThis(),
-      onEnd: jest.fn().mockReturnThis(),
-    }),
-  },
-  GestureDetector: ({ children }: { children: React.ReactNode }) => {
-    return children;
-  },
-}));
+  };
+});
 
 jest.mock("react-native-worklets", () => ({
   scheduleOnRN: jest.fn(),
@@ -62,21 +68,33 @@ jest.mock("@expo/vector-icons", () => ({
   },
 }));
 
-jest.mock("~/components/judgement/QueuedSubmissionCard", () => ({
-  QueuedSubmissionCard: () => <View testID="queued-card" />,
-}));
+jest.mock("~/components/judgement/QueuedSubmissionCard", () => {
+  const { View } = require("react-native");
+  return {
+    QueuedSubmissionCard: () => <View testID="queued-card" />,
+  };
+});
 
-jest.mock("~/components/judgement/CurrentSubmissionCard", () => ({
-  CurrentSubmissionCard: () => <View testID="current-card" />,
-}));
+jest.mock("~/components/judgement/CurrentSubmissionCard", () => {
+  const { View } = require("react-native");
+  return {
+    CurrentSubmissionCard: () => <View testID="current-card" />,
+  };
+});
 
-jest.mock("~/components/judgement/EmptyStateCard", () => ({
-  EmptyStateCard: () => <View testID="empty-card" />,
-}));
+jest.mock("~/components/judgement/EmptyStateCard", () => {
+  const { View } = require("react-native");
+  return {
+    EmptyStateCard: () => <View testID="empty-card" />,
+  };
+});
 
-jest.mock("~/components/judgement/ActionBar", () => ({
-  ActionBar: () => <View testID="action-bar" />,
-}));
+jest.mock("~/components/judgement/ActionBar", () => {
+  const { View } = require("react-native");
+  return {
+    ActionBar: () => <View testID="action-bar" />,
+  };
+});
 
 describe("CardStack", () => {
   const defaultProps = {

@@ -22,7 +22,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
 }));
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(args),
+  useQuery: (...args: unknown[]) => mockUseQuery(...args),
   QueryClient: jest.fn(),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

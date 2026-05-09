@@ -2,12 +2,11 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminTrips } from "../../admin/useAdminTrips";
 
-// Mock useTrips hook
-const mockUseTrips = jest.fn();
-
 jest.mock("~/hooks/trips", () => ({
-  useTrips: mockUseTrips,
+  useTrips: jest.fn(),
 }));
+
+const mockUseTrips = (jest.requireMock("~/hooks/trips") as { useTrips: jest.Mock }).useTrips;
 
 describe("useAdminTrips", () => {
   beforeEach(() => {

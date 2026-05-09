@@ -12,7 +12,12 @@ jest.mock("~/stores/tripStore", () => ({
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: function MockIonicons({ name }: { name: string; size: number; color: string }) {
-    return <span data-testid={`icon-${name}`}>{name}</span>;
+    const { View, Text } = jest.requireActual("react-native");
+    return (
+      <View testID={`icon-${name}`}>
+        <Text>{name}</Text>
+      </View>
+    );
   },
 }));
 

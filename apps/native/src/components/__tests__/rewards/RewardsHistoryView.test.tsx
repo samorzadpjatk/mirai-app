@@ -9,9 +9,9 @@ const mockFetchNextPage = jest.fn();
 const mockRefetch = jest.fn(() => Promise.resolve());
 
 const mockUseRewardPurchaseHistory = jest.fn(() => ({
-  data: [] as any,
+  data: [] as Record<string, unknown>[],
   isLoading: false,
-  error: null as any,
+  error: null as Error | null,
   hasNextPage: false,
   isFetchingNextPage: false,
   fetchNextPage: mockFetchNextPage,

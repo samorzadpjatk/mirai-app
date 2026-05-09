@@ -4,7 +4,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ProfileHeader } from "../../profile/ProfileHeader";
 
 const mockUseQuery = jest.fn(() => ({
-  data: null as any,
+  data: null as Record<string, unknown> | null,
   isLoading: false,
 }));
 
@@ -16,7 +16,7 @@ const mockAbort = jest.fn();
 const mockUseFileDownload = jest.fn(() => ({
   download: mockDownload,
   status: "idle",
-  file: null as any,
+  file: null as { uri: string } | null,
   reset: mockReset,
   abort: mockAbort,
 }));
