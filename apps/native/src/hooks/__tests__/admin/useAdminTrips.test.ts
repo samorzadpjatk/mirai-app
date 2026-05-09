@@ -6,6 +6,7 @@ jest.mock("~/hooks/trips", () => ({
   useTrips: jest.fn(),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 const mockUseTrips = (jest.requireMock("~/hooks/trips") as { useTrips: jest.Mock }).useTrips;
 
 describe("useAdminTrips", () => {

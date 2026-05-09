@@ -25,6 +25,7 @@ interface MockedExpoUpdates {
   isEnabled: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 const mockedUpdates = jest.requireMock("expo-updates") as MockedExpoUpdates;
 const mockCheckForUpdateAsync = mockedUpdates.checkForUpdateAsync;
 const mockFetchUpdateAsync = mockedUpdates.fetchUpdateAsync;

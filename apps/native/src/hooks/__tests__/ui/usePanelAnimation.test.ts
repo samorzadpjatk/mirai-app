@@ -84,6 +84,7 @@ describe("usePanelAnimation", () => {
   it("should use default duration of 240ms", () => {
     renderHook(() => usePanelAnimation());
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const reanimatedMock = jest.requireMock("react-native-reanimated") as { withTiming: jest.Mock };
     expect(reanimatedMock.withTiming).toBeDefined();
   });
