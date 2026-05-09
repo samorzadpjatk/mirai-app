@@ -25,13 +25,13 @@ jest.mock("expo-location", () => ({
 }));
 
 describe("locationStore", () => {
-  let mockAlert: any;
-  let mockOpenSettings: any;
-  let mockGetBackgroundLocationPreference: any;
-  let mockSetBackgroundLocationPreference: any;
-  let mockHasBackgroundLocationTaskStarted: any;
-  let mockStartBackgroundLocationTask: any;
-  let mockStopBackgroundLocationTask: any;
+  let mockAlert: jest.Mock;
+  let mockOpenSettings: jest.Mock;
+  let mockGetBackgroundLocationPreference: jest.Mock;
+  let mockSetBackgroundLocationPreference: jest.Mock;
+  let mockHasBackgroundLocationTaskStarted: jest.Mock;
+  let mockStartBackgroundLocationTask: jest.Mock;
+  let mockStopBackgroundLocationTask: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();

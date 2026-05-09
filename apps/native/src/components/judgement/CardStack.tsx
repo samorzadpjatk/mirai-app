@@ -142,7 +142,7 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       scheduleOnRN(reviewCurrent, 'APPROVED');
       resetCardPosition();
     });
-  }, [resetCardPosition, translateX]);
+  }, [resetCardPosition, reviewCurrent, translateX]);
 
   const animateRejectSwipe = useCallback((targetWidth: number) => {
     translateX.value = withTiming(-targetWidth * 1.2, { duration: 220 }, () => {

@@ -1,3 +1,5 @@
+import type React from "react";
+import type { Text } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeCard } from "../../challenges/ChallengeCard";
@@ -8,10 +10,8 @@ interface IoniconsProps {
 }
 
 jest.mock("@expo/vector-icons", () => {
-   
-  const React = jest.requireActual<typeof import("react")>("react");
-   
-  const { Text } = jest.requireActual<typeof import("react-native")>("react-native");
+  const React = jest.requireActual("react");
+  const { Text } = jest.requireActual("react-native");
 
   return {
     Ionicons: ({ name }: IoniconsProps) => <Text testID={`icon-${name}`}>{name}</Text>,

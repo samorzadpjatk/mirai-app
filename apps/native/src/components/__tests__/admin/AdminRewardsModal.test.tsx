@@ -1,4 +1,5 @@
 import type React from "react";
+import type { Text, TouchableOpacity, View, TextInput } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import AdminRewardsModal from "../../admin/rewards/AdminRewardsModal";
@@ -44,10 +45,8 @@ interface ThemedTextInputProps {
 }
 
 jest.mock("~/components/common/ui", () => {
-   
-  const React = jest.requireActual<typeof import("react")>("react");
-   
-  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual<typeof import("react-native")>("react-native");
+  const React = jest.requireActual("react");
+  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
 
   return {
     AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (

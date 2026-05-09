@@ -1,10 +1,11 @@
+import type { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { useTripStore, useTripSync } from "../tripStore";
 import { renderHook } from "@testing-library/react-native";
 
 // Mock the hooks that useTripSync depends on
-const mockUseSelectedTrip = jest.fn<ReturnType<typeof import("~/hooks/trips").useSelectedTrip>, []>();
-const mockUseTripDetails = jest.fn<ReturnType<typeof import("~/hooks/trips").useTripDetails>, [string | null]>();
+const mockUseSelectedTrip = jest.fn<ReturnType<typeof useSelectedTrip>, []>();
+const mockUseTripDetails = jest.fn<ReturnType<typeof useTripDetails>, [string | null]>();
 
 jest.mock("~/hooks/trips", () => ({
   useSelectedTrip: () => mockUseSelectedTrip(),

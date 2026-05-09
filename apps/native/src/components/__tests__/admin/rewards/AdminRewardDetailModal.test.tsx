@@ -1,9 +1,11 @@
+import type ReactType from "react";
+import type { View, Text, TouchableOpacity, TextInput } from "react-native";
 import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import AdminRewardDetailModal from "../../../admin/rewards/AdminRewardDetailModal";
 import * as ImagePicker from "expo-image-picker";
-import { View, Text, TouchableOpacity, TextInput, Alert } from "react-native";
+import { Alert } from "react-native";
 
 const mockMutateAsync = jest.fn();
 const mockDeleteMutateAsync = jest.fn();
@@ -219,10 +221,8 @@ interface ThemedTextInputProps {
 }
 
 jest.mock("~/components/common/ui", () => {
-   
-  const mockReact = jest.requireActual<typeof import("react")>("react");
-   
-  const mockRN = jest.requireActual<typeof import("react-native")>("react-native");
+  const mockReact = jest.requireActual("react");
+  const mockRN = jest.requireActual("react-native");
   return {
     AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
       if (!props.visible) return null;

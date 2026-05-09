@@ -188,7 +188,7 @@ export function PhotoCaptureModal({
     <AppModalShell
       visible={visible}
       title={title}
-      onClose={onClose}
+      onClose={handleClose}
       variant="pageSheet"
     >
       <View style={{ flex: 1 }}>

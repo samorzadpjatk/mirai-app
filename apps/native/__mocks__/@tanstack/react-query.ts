@@ -9,7 +9,7 @@ export class QueryClient {
   defaultOptions: unknown;
 
   constructor(options?: unknown) {
-    this.defaultOptions = options || {};
+    this.defaultOptions = options ?? {};
   }
 }
 

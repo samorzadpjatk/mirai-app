@@ -9,7 +9,6 @@ import {
   statusOptions,
   newChallengeStatusOptions,
   type ChallengeFormState,
-  type VotingDurationUnit,
   toVotingDurationHours,
   toVotingDurationDraft,
   formatTime,
