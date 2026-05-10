@@ -116,6 +116,7 @@ export interface TRPCContext {
   supabase: SupabaseClient;
   headers: Headers;
   accessToken: string | null;
+  [key: string]: unknown;
 }
 
 // On the backend we use a single SERVICE_ROLE Supabase client (singleton).

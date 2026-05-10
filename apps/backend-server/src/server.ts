@@ -1,12 +1,8 @@
-import ws from "@fastify/websocket";
-import cors from "@fastify/cors";
-import {
-  fastifyTRPCPlugin,
-  type FastifyTRPCPluginOptions,
-} from "@trpc/server/adapters/fastify";
-import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter, createTRPCContext } from "@mirai-app/trpc";
-import { fastifyHeadersToFetchHeaders } from "./utils/headers";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { trpcServer } from "@hono/trpc-server";
+import { appRouter, createTRPCContext } from "@mirai-app/trpc";
+import { createBunHonoWSHandler } from "./ws-adapter";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -20,30 +16,19 @@ export function createServer(opts: ServerOptions) {
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";
   const host = opts.host ?? "127.0.0.1";
-  const server = fastify({ logger: dev });
+
+  const app = new Hono();
 
   if (dev) {
-    void server.register(cors, {
-      origin: true,
-      credentials: true,
-    });
+    app.use("*", cors({ origin: (origin) => origin, credentials: true }));
   }
 
-  void server.register(ws);
-  void server.register(fastifyTRPCPlugin, {
-    prefix,
-    useWSS: true,
-    trpcOptions: {
+  app.use(
+    prefix + "/*",
+    trpcServer({
       router: appRouter,
-      // For HTTP requests Fastify passes only { req }.
-      // For WebSocket connections tRPC additionally forwards `connectionParams`
-      // coming from the client-side `createWSClient`.
-      createContext: (opts: {
-        req: FastifyRequest;
-        connectionParams?: Record<string, string>;
-      }) => {
-        const { req, connectionParams } = opts;
-
+      endpoint: prefix,
+      createContext: (_opts, c) => {
         const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const databaseUrl = process.env.DATABASE_URL;
@@ -60,13 +45,9 @@ export function createServer(opts: ServerOptions) {
           );
         }
 
-        // Extract headers and add the original URL for auth token parsing
-        const headers = fastifyHeadersToFetchHeaders(req.headers);
-
-        // Add URL to headers for WebSocket auth token extraction from query params
-        // This is a workaround for WebSocket connections that can't send custom headers
-        if (req.url) {
-          headers.set("x-original-url", req.url);
+        const headers = new Headers(c.req.raw.headers);
+        if (c.req.url) {
+          headers.set("x-original-url", c.req.url);
         }
 
         return createTRPCContext({
@@ -74,33 +55,91 @@ export function createServer(opts: ServerOptions) {
           databaseUrl,
           supabaseUrl,
           supabaseKey,
-          connectionParams,
         });
       },
       onError({ path, error }) {
-        // report to error monitoring
         console.error(`Error in tRPC handler on path '${path}':`, error);
       },
-    } satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
-  });
+    }),
+  );
 
-  server.get("/health", () => {
-    return "OK";
-  });
+  app.get("/health", (c) => c.text("OK"));
 
-  const stop = async () => {
-    await server.close();
-  };
-  const start = async () => {
+  let bunServer: ReturnType<typeof Bun.serve> | null = null;
+
+  const start = () => {
     try {
-      await server.listen({ port, host });
+      const wsResult = createBunHonoWSHandler({
+        router: appRouter,
+        createContext: (opts) => {
+          const supabaseUrl = process.env.SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const databaseUrl = process.env.DATABASE_URL;
+
+          if (!supabaseUrl || !supabaseKey) {
+            throw new Error(
+              "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+            );
+          }
+
+          if (!databaseUrl) {
+            throw new Error(
+              "Missing database credentials. Set DATABASE_URL.",
+            );
+          }
+
+          const headers = new Headers();
+          const url = opts.info.url;
+          if (url) {
+            headers.set("x-original-url", url.toString());
+          }
+
+          const connectionParams = opts.info.connectionParams as
+            | Record<string, string>
+            | null;
+
+          if (connectionParams) {
+            for (const [key, value] of Object.entries(connectionParams)) {
+              headers.set(key, value);
+            }
+          }
+
+          return createTRPCContext({
+            headers,
+            databaseUrl,
+            supabaseUrl,
+            supabaseKey,
+            connectionParams: connectionParams ?? undefined,
+          });
+        },
+        onError({ path, error }) {
+          console.error(`Error in tRPC WS handler on path '${path}':`, error);
+        },
+      });
+
+      app.route(prefix, wsResult.wsRouter);
+
+      bunServer = Bun.serve({
+        port,
+        hostname: host,
+        fetch: app.fetch,
+        websocket: wsResult.websocket,
+      });
+
       console.log("listening on port", port);
       console.log(`tRPC endpoint ready at http://${host}:${port}${prefix}`);
     } catch (err) {
-      server.log.error(err);
+      console.error(err);
       process.exit(1);
     }
   };
 
-  return { server, start, stop };
+  const stop = async () => {
+    if (bunServer) {
+      await bunServer.stop(true);
+      bunServer = null;
+    }
+  };
+
+  return { app, start, stop };
 }
