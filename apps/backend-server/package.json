@@ -21,16 +21,15 @@
   "private": true,
   "license": "AGPL-3.0",
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@fastify/websocket": "^11.2.0",
+    "@hono/trpc-server": "^0.4.2",
     "@mirai-app/trpc": "workspace:*",
     "@trpc/server": "^11.8.1",
-    "fastify": "^5.6.2",
-    "ws": "^8.18.3"
+    "@valkyrie-resistance/trpc-ws-hono-bun-adapter": "^0.2.1",
+    "hono": "^4.12.18"
   },
   "devDependencies": {
+    "@types/bun": "^1.3.13",
     "@types/node": "^24.7.2",
-    "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
