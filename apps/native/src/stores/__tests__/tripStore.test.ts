@@ -3,8 +3,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { useTripStore, useTripSync } from "../tripStore";
 import { renderHook } from "@testing-library/react-native";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
-import type { TRPCClientErrorLike } from "@trpc/client";
-import type { AppRouter } from "@mirai-app/orpc";
+
 
 // Mock the hooks that useTripSync depends on
 const mockUseSelectedTrip = jest.fn<() => ReturnType<typeof useSelectedTrip>>();

@@ -2,7 +2,7 @@
  
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   ensureTripNotEnded,
   ensureTripNotEndedByGroupId,
@@ -57,7 +57,7 @@ describe("tripGuards", () => {
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue(null);
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
-        TRPCError
+        ORPCError
       );
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
         "Trip not found"
@@ -66,7 +66,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as TRPCError).code).toBe("NOT_FOUND");
+        expect((error as ORPCError).code).toBe("NOT_FOUND");
       }
     });
 
@@ -79,7 +79,7 @@ describe("tripGuards", () => {
       } as never);
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
-        TRPCError
+        ORPCError
       );
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
         "Trip has ended"
@@ -88,7 +88,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as TRPCError).code).toBe("FORBIDDEN");
+        expect((error as ORPCError).code).toBe("FORBIDDEN");
       }
     });
 
@@ -103,13 +103,13 @@ describe("tripGuards", () => {
       } as never);
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
-        TRPCError
+        ORPCError
       );
 
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as TRPCError).code).toBe("FORBIDDEN");
+        expect((error as ORPCError).code).toBe("FORBIDDEN");
       }
     });
 
@@ -157,7 +157,7 @@ describe("tripGuards", () => {
 
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
       ).rejects.toThrow("Group not found");
@@ -165,7 +165,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEndedByGroupId(mockDb, "group-1");
       } catch (error) {
-        expect((error as TRPCError).code).toBe("NOT_FOUND");
+        expect((error as ORPCError).code).toBe("NOT_FOUND");
       }
     });
 
@@ -179,7 +179,7 @@ describe("tripGuards", () => {
 
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
       ).rejects.toThrow("Group not found");
@@ -187,7 +187,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEndedByGroupId(mockDb, "group-1");
       } catch (error) {
-        expect((error as TRPCError).code).toBe("NOT_FOUND");
+        expect((error as ORPCError).code).toBe("NOT_FOUND");
       }
     });
 
@@ -207,7 +207,7 @@ describe("tripGuards", () => {
 
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
       ).rejects.toThrow("Trip has ended");

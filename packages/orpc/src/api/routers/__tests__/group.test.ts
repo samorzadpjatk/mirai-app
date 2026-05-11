@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { groupRouter } from "../../routers/group";
 import { createRouterClient } from "@orpc/server";
@@ -456,7 +456,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -465,7 +465,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -793,7 +793,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           name: "Updated Group",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when organizer tries to change organizer", async () => {
@@ -814,7 +814,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           organizerId: "new-organizer-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for deleted group", async () => {
@@ -835,7 +835,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           name: "Updated Group",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for group in different trip", async () => {
@@ -855,7 +855,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           name: "Updated Group",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -892,7 +892,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.delete({ id: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.delete({ id: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -901,7 +901,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.delete({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.delete({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -947,7 +947,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.deleteMyGroup({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.deleteMyGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for deleted group", async () => {
@@ -961,7 +961,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.deleteMyGroup({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.deleteMyGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -997,7 +997,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.join({ id: "non-existent", tripId: "trip-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.join({ id: "non-existent", tripId: "trip-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for group in different trip", async () => {
@@ -1011,7 +1011,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.join({ id: "group-123", tripId: "trip-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.join({ id: "group-123", tripId: "trip-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when already in group", async () => {
@@ -1035,7 +1035,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.join({ id: "group-123", tripId: "trip-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.join({ id: "group-123", tripId: "trip-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1094,7 +1094,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when not a trip participant", async () => {
@@ -1109,7 +1109,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when already in a group", async () => {
@@ -1124,7 +1124,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when request already exists for same group", async () => {
@@ -1140,7 +1140,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when request exists for different group", async () => {
@@ -1156,7 +1156,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.requestToJoin({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1194,7 +1194,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getMyJoinRequestForGroup({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.getMyJoinRequestForGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1239,7 +1239,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.cancelMyJoinRequest({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.cancelMyJoinRequest({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1297,7 +1297,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getPendingJoinRequests({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.getPendingJoinRequests({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1413,7 +1413,7 @@ describe("groupRouter", () => {
           requestId: "non-existent",
           decision: "ACCEPT",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when not organizer", async () => {
@@ -1440,7 +1440,7 @@ describe("groupRouter", () => {
           requestId: "request-123",
           decision: "ACCEPT",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when user already in another group", async () => {
@@ -1468,7 +1468,7 @@ describe("groupRouter", () => {
           requestId: "request-123",
           decision: "ACCEPT",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1514,7 +1514,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for group in different trip", async () => {
@@ -1534,7 +1534,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when user already in group", async () => {
@@ -1564,7 +1564,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1689,7 +1689,7 @@ describe("groupRouter", () => {
           groupId: "group-123",
           userIds: ["user-456"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when not organizer", async () => {
@@ -1710,7 +1710,7 @@ describe("groupRouter", () => {
           groupId: "group-123",
           userIds: ["user-456"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1879,7 +1879,7 @@ describe("groupRouter", () => {
           userId: "user-456",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when non-organizer tries to remove member", async () => {
@@ -1902,7 +1902,7 @@ describe("groupRouter", () => {
           userId: "user-456",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when organizer tries to remove themselves", async () => {
@@ -1925,7 +1925,7 @@ describe("groupRouter", () => {
           userId: "user-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -2035,7 +2035,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.leaveMyGroup({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.leaveMyGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when not a member", async () => {
@@ -2050,7 +2050,7 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.leaveMyGroup({ groupId: "group-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.leaveMyGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -2137,7 +2137,7 @@ describe("groupRouter", () => {
           amount: 100,
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

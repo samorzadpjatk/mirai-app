@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { notificationScheduleRouter } from "../../routers/notificationSchedule";
 import { createRouterClient } from "@orpc/server";
@@ -435,7 +435,7 @@ describe("notificationScheduleRouter", () => {
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -582,7 +582,7 @@ describe("notificationScheduleRouter", () => {
           tripId: "non-existent",
           templateKey: "daily_morning",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -621,7 +621,7 @@ describe("notificationScheduleRouter", () => {
           id: "non-existent",
           name: "Updated Name",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -654,7 +654,7 @@ describe("notificationScheduleRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.delete({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.delete({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -718,7 +718,7 @@ describe("notificationScheduleRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.duplicate({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.duplicate({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -805,7 +805,7 @@ describe("notificationScheduleRouter", () => {
           id: "non-existent",
           lastRun: new Date(),
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 });

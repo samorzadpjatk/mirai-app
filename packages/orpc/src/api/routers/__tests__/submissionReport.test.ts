@@ -7,7 +7,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
 import * as tripGuards from "../../../utils/tripGuards";
@@ -285,7 +285,7 @@ describe("submissionReportRouter", () => {
           submissionId: "submission-1",
           reason: "Inappropriate content",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when submission does not exist", async () => {
@@ -307,12 +307,12 @@ describe("submissionReportRouter", () => {
           submissionId: "nonexistent-submission",
           reason: "Inappropriate content",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw error when trip has ended", async () => {
       mockEnsureTripNotEnded.mockImplementation(() => {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Trip has ended" });
+        throw new ORPCError("FORBIDDEN", { message: "Trip has ended" });
       });
 
       const ctx: TRPCContext = {
@@ -330,7 +330,7 @@ describe("submissionReportRouter", () => {
           submissionId: "submission-1",
           reason: "Inappropriate content",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate reason is non-empty", async () => {

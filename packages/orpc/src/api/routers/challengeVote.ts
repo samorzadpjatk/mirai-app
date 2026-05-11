@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   adminProcedure,
   createORPCRouter,
@@ -50,7 +50,7 @@ const ensureTripParticipant = async (
     where: { userId_tripId: { userId: context.dbUser.id, tripId } },
   });
   if (!participant) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Brak dostepu do wyjazdu" });
+    throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
   }
   return participant;
 };
@@ -66,7 +66,7 @@ const getChallengeInTrip = async (
   });
 
   if (!challenge) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Challenge not found" });
+    throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
   }
 
   return challenge;
@@ -80,54 +80,33 @@ const ensureChallengeVoting = (params: {
 
   if (challenge.scoringCategory === "PEER_VOTING") {
     if (challenge.status !== "VOTING_PHASE") {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Glosowanie nie jest aktywne",
-      });
+      throw new ORPCError("BAD_REQUEST", { message: "Glosowanie nie jest aktywne" });
     }
     return;
   }
 
   if (challenge.scoringCategory !== "JUDGED_STAFF") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Voting is available only for peer voting and judged staff challenges",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Voting is available only for peer voting and judged staff challenges" });
   }
 
   if (actorRole !== "ADMIN") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Only admins can vote in judged staff challenges",
-    });
+    throw new ORPCError("FORBIDDEN", { message: "Only admins can vote in judged staff challenges" });
   }
 
   if (challenge.status === "CANCELLED" || challenge.status === "COMPLETED") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Glosowanie zostalo zakonczone",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Glosowanie zostalo zakonczone" });
   }
 
   if (challenge.status !== "ACTIVE" && challenge.status !== "VOTING_PHASE") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Challenge nie jest gotowy do glosowania",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Challenge nie jest gotowy do glosowania" });
   }
 
   if (!challenge.endTime) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Staff voting requires submission end time",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Staff voting requires submission end time" });
   }
 
   if (challenge.endTime.getTime() > Date.now()) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Staff voting starts after submission phase ends",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Staff voting starts after submission phase ends" });
   }
 };
 
@@ -344,24 +323,15 @@ const validateJudgedStaffVotePayload = async (
   );
 
   if (requiredPositions <= 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "At least 2 eligible submissions are required for staff voting",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "At least 2 eligible submissions are required for staff voting" });
   }
 
   if (params.votePositions.some((position) => position > requiredPositions)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Staff voting accepts only positions 1-${requiredPositions}`,
-    });
+    throw new ORPCError("BAD_REQUEST", { message: `Staff voting accepts only positions 1-${requiredPositions}` });
   }
 
   if (params.requireExactCount && params.votePositions.length !== requiredPositions) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Staff voting requires exactly ${requiredPositions} votes`,
-    });
+    throw new ORPCError("BAD_REQUEST", { message: `Staff voting requires exactly ${requiredPositions} votes` });
   }
 
   return { requiredPositions };
@@ -396,10 +366,7 @@ export const challengeVoteRouter = createORPCRouter({
       const challenge = await getChallengeInTrip(context, input.challengeId, input.tripId);
 
       if (challenge.scoringCategory !== "JUDGED_STAFF") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Progress is available only for judged staff challenges",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Progress is available only for judged staff challenges" });
       }
 
       const progress = await getJudgedStaffVotingProgress(context, {
@@ -419,31 +386,19 @@ export const challengeVoteRouter = createORPCRouter({
       const challenge = await getChallengeInTrip(context, input.challengeId, input.tripId);
 
       if (challenge.scoringCategory !== "JUDGED_STAFF") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Force end is available only for judged staff challenges",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Force end is available only for judged staff challenges" });
       }
 
       if (challenge.status === "CANCELLED") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cancelled challenge cannot be finalized",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Cancelled challenge cannot be finalized" });
       }
 
       if (!challenge.endTime) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Staff voting requires submission end time",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Staff voting requires submission end time" });
       }
 
       if (challenge.endTime.getTime() > Date.now()) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You can force end staff voting only after submission phase ends",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "You can force end staff voting only after submission phase ends" });
       }
 
       const result = await context.db.$transaction(async (tx) => {
@@ -510,18 +465,12 @@ export const challengeVoteRouter = createORPCRouter({
 
       const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
       if (uniqueSubmissionIds.size !== input.votes.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie" });
       }
 
       const uniquePositions = new Set(input.votes.map((vote) => vote.votePosition));
       if (uniquePositions.size !== input.votes.length) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Pozycje glosow musza byc unikalne",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Pozycje glosow musza byc unikalne" });
       }
 
       const submissions = await context.db.challengeSubmission.findMany({
@@ -530,10 +479,7 @@ export const challengeVoteRouter = createORPCRouter({
       });
 
       if (submissions.length !== uniqueSubmissionIds.size) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Nieprawidlowe zgloszenia",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Nieprawidlowe zgloszenia" });
       }
 
       if (participant.groupId) {
@@ -541,10 +487,7 @@ export const challengeVoteRouter = createORPCRouter({
           (submission) => submission.groupId === participant.groupId,
         );
         if (ownSubmission) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Nie mozna glosowac na wlasna grupe",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Nie mozna glosowac na wlasna grupe" });
         }
       }
 
@@ -558,10 +501,7 @@ export const challengeVoteRouter = createORPCRouter({
       });
 
       if (existingVotes.length > 0) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
-        });
+        throw new ORPCError("CONFLICT", { message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu." });
       }
 
       // Create new votes (no deletion allowed for any voting type)
@@ -629,17 +569,11 @@ export const challengeVoteRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Nieprawidlowe zgloszenie",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Nieprawidlowe zgloszenie" });
       }
 
       if (participant.groupId && submission.groupId === participant.groupId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Nie mozna glosowac na wlasna grupe",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Nie mozna glosowac na wlasna grupe" });
       }
 
       // Check for any existing votes to prevent updates (for all voting types)
@@ -654,10 +588,7 @@ export const challengeVoteRouter = createORPCRouter({
       if (existingVotes.length > 0) {
         // For peer voting, any existing vote should prevent new votes
         if (challenge.scoringCategory === "PEER_VOTING") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
-          });
+          throw new ORPCError("CONFLICT", { message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu." });
         }
         
         // For judged staff voting, check if position is already taken
@@ -667,15 +598,9 @@ export const challengeVoteRouter = createORPCRouter({
         
         if (existingByPosition) {
           if (existingByPosition.submissionId === input.submissionId) {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: "Glos juz istnieje",
-            });
+            throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
           }
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Pozycja glosu jest juz zajeta",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Pozycja glosu jest juz zajeta" });
         }
       }
 
@@ -714,10 +639,7 @@ export const challengeVoteRouter = createORPCRouter({
         const prismaCodeValue =
           typeof prismaCode === "string" ? prismaCode : "";
         if (prismaCodeValue === "P2002") {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Glos juz istnieje",
-          });
+          throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
         }
         throw error;
       }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   adminProcedure,
@@ -22,7 +22,7 @@ export const sponsorRouter = createORPCRouter({
       });
 
       if (!sponsor) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Sponsor not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
 
       return sponsor;
@@ -80,7 +80,7 @@ export const sponsorRouter = createORPCRouter({
       const { id, ...data } = input;
       const sponsor = await context.db.sponsor.findUnique({ where: { id } });
       if (!sponsor) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Sponsor not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
       return context.db.sponsor.update({
         where: { id },
@@ -107,7 +107,7 @@ export const sponsorRouter = createORPCRouter({
         where: { id: input.tripId },
       });
       if (!trip) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
       // Check if sponsor exists
@@ -115,7 +115,7 @@ export const sponsorRouter = createORPCRouter({
         where: { id: input.sponsorId },
       });
       if (!sponsor) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Sponsor not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
 
       // Check if already associated
@@ -129,10 +129,7 @@ export const sponsorRouter = createORPCRouter({
       });
 
       if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Sponsor is already associated with this trip",
-        });
+        throw new ORPCError("CONFLICT", { message: "Sponsor is already associated with this trip" });
       }
 
       return context.db.tripSponsor.create({

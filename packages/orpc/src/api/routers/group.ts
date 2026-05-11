@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import type { SupabaseClient } from "@mirai-app/supabase";
 
 import {
@@ -358,7 +358,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
@@ -460,10 +460,7 @@ export const groupRouter = createORPCRouter({
           }
         }
 
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate a unique group code",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to generate a unique group code" });
       })();
 
       // Add creator as a member of the group and clean up join requests atomically
@@ -522,17 +519,14 @@ export const groupRouter = createORPCRouter({
       const { id, tripId, ...updateData } = input;
       const group = await context.db.group.findUnique({ where: { id } });
       if (group?.tripId !== tripId || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       const isAdmin = context.dbUser.role === "ADMIN";
       const isOrganizer = group.organizerId === context.dbUser.id;
 
       if (!isAdmin && !isOrganizer) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only group organizer or admin can update this group",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only group organizer or admin can update this group" });
       }
 
       if (
@@ -540,10 +534,7 @@ export const groupRouter = createORPCRouter({
         updateData.organizerId &&
         updateData.organizerId !== group.organizerId
       ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only admin can change group organizer",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only admin can change group organizer" });
       }
 
       const updatedGroup = await context.db.group.update({
@@ -588,7 +579,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       await context.db.$transaction(async (tx) => {
@@ -618,14 +609,11 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       if (group.organizerId !== context.dbUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only group organizer can delete this group",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only group organizer can delete this group" });
       }
 
       await context.db.$transaction(async (tx) => {
@@ -656,13 +644,10 @@ export const groupRouter = createORPCRouter({
         },
       });
       if (!group)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
 
       if (group.tripId !== input.tripId || group.isDeleted) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Group not in trip",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
       }
 
       // Check if user is already in the group
@@ -671,10 +656,7 @@ export const groupRouter = createORPCRouter({
       );
 
       if (existingMembership) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Użytkownik już należy do tej grupy",
-        });
+        throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
       }
 
       const [participant] = await context.db.$transaction([
@@ -709,7 +691,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       const participant = await context.db.tripParticipant.findUnique({
@@ -723,17 +705,11 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!participant) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only trip participants can request joining a group",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only trip participants can request joining a group" });
       }
 
       if (participant.groupId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You are already in a group",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "You are already in a group" });
       }
 
       const existingRequest = await context.db.groupJoinRequest.findUnique({
@@ -747,16 +723,10 @@ export const groupRouter = createORPCRouter({
 
       if (existingRequest) {
         if (existingRequest.groupId === group.id) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Join request for this group is already pending",
-          });
+          throw new ORPCError("CONFLICT", { message: "Join request for this group is already pending" });
         }
 
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "You already have a pending request for another group",
-        });
+        throw new ORPCError("CONFLICT", { message: "You already have a pending request for another group" });
       }
 
       return await context.db.groupJoinRequest.create({
@@ -776,7 +746,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       return await context.db.groupJoinRequest.findFirst({
@@ -799,7 +769,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       const existingRequest = await context.db.groupJoinRequest.findFirst({
@@ -812,10 +782,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!existingRequest) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Join request not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
       }
 
       await context.db.groupJoinRequest.delete({ where: { id: existingRequest.id } });
@@ -831,14 +798,11 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       if (group.organizerId !== context.dbUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only group organizer can view join requests",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only group organizer can view join requests" });
       }
 
       const requests = await context.db.groupJoinRequest.findMany({
@@ -890,26 +854,17 @@ export const groupRouter = createORPCRouter({
         });
 
         if (!request) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Join request not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
         }
 
         await ensureTripNotEnded(context.db, request.tripId);
 
         if (request.group.organizerId !== context.dbUser.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only group organizer can respond to join requests",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only group organizer can respond to join requests" });
         }
 
         if (request.group.isDeleted) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         if (input.decision === "REJECT") {
@@ -928,17 +883,11 @@ export const groupRouter = createORPCRouter({
         });
 
         if (!participant) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "User is not a participant of this trip",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "User is not a participant of this trip" });
         }
 
         if (participant.groupId && participant.groupId !== request.groupId) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "User is already in another group",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "User is already in another group" });
         }
 
         await tx.tripParticipant.update({
@@ -971,13 +920,10 @@ export const groupRouter = createORPCRouter({
         include: { participants: true },
       });
       if (!group)
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
 
       if (group.tripId !== input.tripId || group.isDeleted) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Group not in trip",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
       }
 
       // Check if user is already in the group
@@ -986,10 +932,7 @@ export const groupRouter = createORPCRouter({
       );
 
       if (existingMembership) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Użytkownik już należy do tej grupy",
-        });
+        throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
       }
 
       const [participant] = await context.db.$transaction([
@@ -1030,14 +973,11 @@ export const groupRouter = createORPCRouter({
       });
 
       if (group?.tripId !== input.tripId || group?.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       if (group?.organizerId !== context.dbUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only the organizer can assign users to this group",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Only the organizer can assign users to this group" });
       }
 
       const uniqueUserIds = Array.from(new Set(input.userIds));
@@ -1116,10 +1056,7 @@ export const groupRouter = createORPCRouter({
         });
 
         if (!participant) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Participant not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Participant not found" });
         }
 
         const group = participant.groupId
@@ -1138,10 +1075,7 @@ export const groupRouter = createORPCRouter({
           participant.groupId &&
           (!group?.tripId || group.tripId !== input.tripId || group.isDeleted)
         ) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         const isAdmin = context.dbUser.role === "ADMIN";
@@ -1150,17 +1084,11 @@ export const groupRouter = createORPCRouter({
         );
 
         if (!isAdmin && !isOrganizer) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only group organizer or admin can remove members",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only group organizer or admin can remove members" });
         }
 
         if (!isAdmin && participant.userId === group?.organizerId) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Group leader cannot be removed by organizer",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Group leader cannot be removed by organizer" });
         }
 
         const updated = await tx.tripParticipant.update({
@@ -1216,7 +1144,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (!group || group.isDeleted) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
       const membership = await context.db.tripParticipant.findUnique({
@@ -1230,10 +1158,7 @@ export const groupRouter = createORPCRouter({
       });
 
       if (membership?.groupId !== group.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not a member of this group",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You are not a member of this group" });
       }
 
       const isOrganizer = group.organizerId === context.dbUser.id;
@@ -1337,10 +1262,7 @@ export const groupRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId || group?.isDeleted) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
         // Update group coins
         await tx.group.update({

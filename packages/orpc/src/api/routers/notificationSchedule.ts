@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   adminProcedure,
@@ -284,10 +284,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!schedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${input.id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
@@ -407,10 +404,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!trip) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Trip with ID ${input.tripId} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Trip with ID ${input.tripId} not found` });
       }
 
       const template = getDailyRankingScheduleTemplate(input.templateKey);
@@ -529,10 +523,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!existingSchedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${id} not found` });
       }
 
       const shouldNormalize =
@@ -644,10 +635,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!schedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${input.id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
       await context.db.notificationSchedule.delete({
@@ -698,10 +686,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!originalSchedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${input.id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
       const newStartDate = input.startDate ?? new Date();
@@ -772,10 +757,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!schedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${input.id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
       const updatedSchedule = await context.db.notificationSchedule.update({
@@ -827,10 +809,7 @@ export const notificationScheduleRouter = createORPCRouter({
       });
 
       if (!schedule) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Notification schedule with ID ${input.id} not found`,
-        });
+        throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
       return await context.db.notificationSchedule.update({

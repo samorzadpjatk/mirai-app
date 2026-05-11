@@ -1,4 +1,4 @@
-import { TRPCError } from "../api/trpc";
+import { ORPCError } from "@orpc/server";
 import type { PrismaClient } from "@mirai-app/db";
 
 /**
@@ -7,7 +7,7 @@ import type { PrismaClient } from "@mirai-app/db";
  * 
  * @param db - Prisma client instance
  * @param tripId - The ID of the trip to check
- * @throws {TRPCError} - If trip has ended
+ * @throws {ORPCError} - If trip has ended
  */
 export async function ensureTripNotEnded(
   db: PrismaClient,
@@ -19,10 +19,7 @@ export async function ensureTripNotEnded(
   });
 
   if (!trip) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Trip not found",
-    });
+    throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
   }
 
   // Check if trip has ended (beyond 24-hour grace period)
@@ -31,10 +28,7 @@ export async function ensureTripNotEnded(
   const now = new Date();
 
   if (now.getTime() > gracePeriodEnd.getTime()) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Trip has ended",
-    });
+    throw new ORPCError("FORBIDDEN", { message: "Trip has ended" });
   }
 }
 
@@ -45,7 +39,7 @@ export async function ensureTripNotEnded(
  * @param db - Prisma client instance
  * @param groupId - The ID of the group to look up the trip for
  * @returns {Promise<string>} - The tripId
- * @throws {TRPCError} - If group not found or trip has ended
+ * @throws {ORPCError} - If group not found or trip has ended
  */
 export async function ensureTripNotEndedByGroupId(
   db: PrismaClient,
@@ -57,10 +51,7 @@ export async function ensureTripNotEndedByGroupId(
   });
 
   if (!group || group.isDeleted) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Group not found",
-    });
+    throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
   // Ensure the trip hasn't ended

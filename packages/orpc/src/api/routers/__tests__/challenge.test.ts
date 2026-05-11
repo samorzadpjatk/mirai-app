@@ -7,7 +7,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User, Challenge } from "@mirai-app/db";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 
 // Mock utility modules
@@ -435,7 +435,7 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(
-        TRPCError
+        ORPCError
       );
     });
 
@@ -1328,7 +1328,7 @@ describe("challengeRouter", () => {
 
       await expect(
         caller.delete({ id: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1380,7 +1380,7 @@ describe("challengeRouter", () => {
 
       await expect(
         caller.forceCloseVoting({ id: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for non-peer voting challenge", async () => {
@@ -1401,7 +1401,7 @@ describe("challengeRouter", () => {
 
       await expect(
         caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when challenge is not in voting phase", async () => {
@@ -1424,7 +1424,7 @@ describe("challengeRouter", () => {
 
       await expect(
         caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should create activity on force close", async () => {

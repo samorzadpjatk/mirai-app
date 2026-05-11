@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import { type PrismaClient, type Prisma } from "@mirai-app/db";
@@ -382,12 +382,12 @@ export const rewardRouter = createORPCRouter({
       });
 
       if (!reward) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
       }
 
       const isStaff = context.dbUser.role === "ADMIN" || context.dbUser.role === "MODERATOR";
       if (reward.isHidden && !isStaff) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
       }
 
       const imageData = await resolveRewardImageData(context.supabase, reward.image);
@@ -553,10 +553,7 @@ export const rewardRouter = createORPCRouter({
       });
 
       if (purchaseCount > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Cannot delete reward with existing purchases",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Cannot delete reward with existing purchases" });
       }
 
       await context.db.reward.delete({
@@ -582,23 +579,17 @@ export const rewardRouter = createORPCRouter({
         });
 
         if (!reward) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
+          throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
         }
 
         await ensureTripNotEnded(context.db, reward.tripId);
 
         if (reward.isHidden) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Reward is hidden",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Reward is hidden" });
         }
 
         if (reward.availableQuantity < input.quantity) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Not enough rewards available",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Not enough rewards available" });
         }
 
         // Get user's group and verify they are the organizer
@@ -621,17 +612,11 @@ export const rewardRouter = createORPCRouter({
         });
 
         if (!userParticipant?.group || userParticipant.group?.tripId !== reward.tripId) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only group organizers can purchase rewards",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only group organizers can purchase rewards" });
         }
 
         if (userParticipant.group.organizerId !== context.dbUser.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only group organizers can purchase rewards",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only group organizers can purchase rewards" });
         }
 
         // Calculate dynamic coin cost at time of purchase
@@ -650,10 +635,7 @@ export const rewardRouter = createORPCRouter({
         const totalCost = dynamicCoinCost * input.quantity;
 
         if (userParticipant.group.coins < totalCost) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Not enough coins",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Not enough coins" });
         }
 
         // Update reward quantity
@@ -750,24 +732,18 @@ export const rewardRouter = createORPCRouter({
         });
 
         if (!purchase) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Purchase not found" });
+          throw new ORPCError("NOT_FOUND", { message: "Purchase not found" });
         }
 
         if (purchase.group.organizerId !== context.dbUser.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only group organizer can update purchase status",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only group organizer can update purchase status" });
         }
 
         const currentStatus = purchase.status;
 
         if (input.status === "IN_DELIVERY") {
           if (currentStatus !== "ACCEPTED") {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Purchase can be moved to in delivery only after acceptance",
-            });
+            throw new ORPCError("BAD_REQUEST", { message: "Purchase can be moved to in delivery only after acceptance" });
           }
 
           return await tx.rewardPurchase.update({
@@ -804,10 +780,7 @@ export const rewardRouter = createORPCRouter({
         }
 
         if (currentStatus !== "BOUGHT") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Only pending purchases can be cancelled by user",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Only pending purchases can be cancelled by user" });
         }
 
         await tx.group.update({
@@ -893,24 +866,18 @@ export const rewardRouter = createORPCRouter({
         });
 
         if (!purchase) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Purchase not found" });
+          throw new ORPCError("NOT_FOUND", { message: "Purchase not found" });
         }
 
         const currentStatus = purchase.status;
         const nextStatus = input.status;
 
         if (!canTransitionPurchaseStatus(currentStatus, nextStatus)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Cannot change status from ${currentStatus} to ${nextStatus}`,
-          });
+          throw new ORPCError("BAD_REQUEST", { message: `Cannot change status from ${currentStatus} to ${nextStatus}` });
         }
 
         if (nextStatus === "ACCEPTED" && !input.collectionMethod?.trim()) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Collection method is required when accepting a purchase",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Collection method is required when accepting a purchase" });
         }
 
         if (
@@ -918,10 +885,7 @@ export const rewardRouter = createORPCRouter({
           !input.collectionMethod?.trim() &&
           !purchase.collectionMethod?.trim()
         ) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Collection method must be provided before moving to in delivery",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Collection method must be provided before moving to in delivery" });
         }
 
         if (nextStatus === "CANCELLED" && currentStatus !== "CANCELLED") {
@@ -1013,10 +977,7 @@ export const rewardRouter = createORPCRouter({
         });
 
         if (!participant?.groupId) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Only trip participants with a group can view reward history",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Only trip participants with a group can view reward history" });
         }
 
         groupIdFilter = participant.groupId;

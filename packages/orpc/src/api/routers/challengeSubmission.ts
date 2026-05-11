@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   protectedProcedure,
@@ -105,10 +105,7 @@ const ensureTripParticipant = async (
     where: { userId_tripId: { userId: context.dbUser.id, tripId } },
   });
   if (!participant) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Brak dostepu do wyjazdu",
-    });
+    throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
   }
   return participant;
 };
@@ -181,7 +178,7 @@ const ensureChallengeInTrip = async (
     },
   });
   if (!challenge) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Challenge not found" });
+    throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
   }
   return challenge;
 };
@@ -202,10 +199,7 @@ const assertSubmissionWithinTargetLocation = (params: {
     typeof params.challenge.targetLatitude !== "number" ||
     typeof params.challenge.targetLongitude !== "number"
   ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Location challenge is missing required coordinates",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Location challenge is missing required coordinates" });
   }
 
   const distanceKm = calculateDistance(
@@ -216,10 +210,7 @@ const assertSubmissionWithinTargetLocation = (params: {
   );
 
   if (distanceKm * 1000 > LOCATION_SUBMISSION_RADIUS_METERS) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "You are too far from target location",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "You are too far from target location" });
   }
 };
 
@@ -239,16 +230,10 @@ const shouldAutoApproveSubmission = (params: {
     const expected = params.challenge.expectedValue?.trim();
     const submitted = params.textContent?.trim();
     if (!expected) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "QR challenge is not configured with expected code",
-      });
+      throw new ORPCError("BAD_REQUEST", { message: "QR challenge is not configured with expected code" });
     }
     if (!submitted || submitted !== expected) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Invalid QR code",
-      });
+      throw new ORPCError("BAD_REQUEST", { message: "Invalid QR code" });
     }
     return true;
   }
@@ -268,10 +253,7 @@ const shouldAutoApproveSubmission = (params: {
     if (expected) {
       const submitted = params.textContent?.trim();
       if (!submitted || submitted !== expected) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Incorrect phrase",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Incorrect phrase" });
       }
       return true;
     }
@@ -304,58 +286,37 @@ const validateSubmissionPayload = (input: {
   switch (input.submissionType) {
     case "IMAGE":
       if (imageCount < 1) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagany jest co najmniej 1 obraz",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest co najmniej 1 obraz" });
       }
       break;
     case "MULTI_IMAGE":
       if (imageCount < 2) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagane sa co najmniej 2 obrazy",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagane sa co najmniej 2 obrazy" });
       }
       break;
     case "VIDEO":
       if (!hasVideo) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagany jest film",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest film" });
       }
       break;
     case "TEXT":
       if (!hasText) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagana jest tresc tekstowa",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagana jest tresc tekstowa" });
       }
       break;
     case "IMAGE_LOCATION":
       if (imageCount < 1 || !hasLocation) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagany jest obraz oraz lokalizacja",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest obraz oraz lokalizacja" });
       }
       break;
     case "LOCATION":
       if (!hasLocation) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagana jest lokalizacja",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagana jest lokalizacja" });
       }
       break;
     case "QR_CODE":
       if (!hasText && imageCount < 1) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagany jest kod QR (tekst lub obraz)",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest kod QR (tekst lub obraz)" });
       }
       break;
     default:
@@ -552,10 +513,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Submission not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
@@ -626,10 +584,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       const participant = await ensureTripParticipant(context, input.tripId);
       if (!participant.groupId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Użytkownik nie jest przypisany do grupy",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Użytkownik nie jest przypisany do grupy" });
       }
       const participantGroupId = participant.groupId;
       const resolvedChallengeId =
@@ -646,17 +601,11 @@ export const challengeSubmissionRouter = createORPCRouter({
       );
 
       if (challenge.status !== "ACTIVE") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Submission is allowed only for active challenges",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Submission is allowed only for active challenges" });
       }
 
       if (challenge.endTime && challenge.endTime <= new Date()) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Submission window has ended",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
       }
 
       const existing = await context.db.challengeSubmission.findUnique({
@@ -670,10 +619,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Zgłoszenie dla tej grupy już istnieje",
-        });
+        throw new ORPCError("CONFLICT", { message: "Zgłoszenie dla tej grupy już istnieje" });
       }
 
       validateSubmissionPayload({
@@ -751,10 +697,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Submission not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
@@ -786,10 +729,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       const participant = await ensureTripParticipant(context, input.tripId);
       if (!participant.groupId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Uzytkownik nie jest przypisany do grupy",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Uzytkownik nie jest przypisany do grupy" });
       }
 
       const submission = await context.db.challengeSubmission.findFirst({
@@ -826,17 +766,11 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Submission not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
       if (submission.status === "APPROVED") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Nie można edytować zatwierdzonego zgłoszenia",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Nie można edytować zatwierdzonego zgłoszenia" });
       }
 
       const currentTime = new Date();
@@ -907,20 +841,14 @@ export const challengeSubmissionRouter = createORPCRouter({
         }
 
         if (submission.challenge.status !== "ACTIVE") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Submission is allowed only for active challenges",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Submission is allowed only for active challenges" });
         }
 
         if (
           submission.challenge.endTime &&
           submission.challenge.endTime <= currentTime
         ) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Submission window has ended",
-          });
+          throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
         }
 
         const nextImageIds = input.imageIds ?? submission.imageIds;
@@ -984,10 +912,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       const participant = await ensureTripParticipant(context, input.tripId);
       if (!participant.groupId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Użytkownik nie jest przypisany do grupy",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Użytkownik nie jest przypisany do grupy" });
       }
 
       const submission = await context.db.challengeSubmission.findFirst({
@@ -1000,17 +925,11 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Zgłoszenie nie zostało znalezione",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
       }
 
       if (submission.status === "APPROVED") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Nie można usunąć zatwierdzonego zgłoszenia",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Nie można usunąć zatwierdzonego zgłoszenia" });
       }
 
       await context.db.challengeSubmission.delete({ where: { id: input.id } });
@@ -1030,10 +949,7 @@ export const challengeSubmissionRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       if (input.status === "REJECTED" && !input.rejectionReason) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Wymagany jest powód odrzucenia",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest powód odrzucenia" });
       }
 
       const submission = await context.db.challengeSubmission.findUnique({
@@ -1062,18 +978,11 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Zgłoszenie nie zostało znalezione",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
       }
 
       if (submission.challenge.scoringCategory === "JUDGED_STAFF") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "For judged staff challenges use staff voting flow instead of manual approve/reject",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "For judged staff challenges use staff voting flow instead of manual approve/reject" });
       }
 
       const isSpeed = submission.challenge.scoringCategory === "SPEED";
@@ -1147,10 +1056,7 @@ export const challengeSubmissionRouter = createORPCRouter({
         });
 
         if (!refreshedForResponse) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Zgłoszenie nie zostało znalezione",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
         }
 
         if (shouldCreateApprovalActivity) {
@@ -1168,10 +1074,7 @@ export const challengeSubmissionRouter = createORPCRouter({
               });
 
             if (!refreshedForActivity) {
-              throw new TRPCError({
-                code: "NOT_FOUND",
-                message: "Zgłoszenie nie zostało znalezione",
-              });
+              throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
             }
 
             const totalPoints =

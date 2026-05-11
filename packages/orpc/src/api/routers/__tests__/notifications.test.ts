@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { notificationRouter } from "../../routers/notifications";
 import { createRouterClient } from "@orpc/server";
@@ -342,7 +342,7 @@ describe("notificationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.unsubscribe({ token: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.unsubscribe({ token: "non-existent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -426,7 +426,7 @@ describe("notificationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getAllMy({ page: 10, pageSize: 10 })).rejects.toThrow(TRPCError);
+      await expect(caller.getAllMy({ page: 10, pageSize: 10 })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -519,7 +519,7 @@ describe("notificationRouter", () => {
           body: "Test",
           url: "/test",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group is deleted", async () => {
@@ -538,7 +538,7 @@ describe("notificationRouter", () => {
           body: "Test",
           url: "/test",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -640,7 +640,7 @@ describe("notificationRouter", () => {
           groupId: "group-123",
           coins: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -713,7 +713,7 @@ describe("notificationRouter", () => {
           groupId: "group-123",
           userId: "non-existent",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -790,7 +790,7 @@ describe("notificationRouter", () => {
         caller.retryNotification({
           notificationId: "non-existent",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when no failed pushes to retry", async () => {
@@ -806,7 +806,7 @@ describe("notificationRouter", () => {
         caller.retryNotification({
           notificationId: "notification-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

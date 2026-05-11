@@ -334,11 +334,5 @@ export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
 
 export const createORPCRouter = <T extends Record<string, unknown>>(routes: T): T => routes;
 
-export class TRPCError extends ORPCError<string, unknown> {
-  constructor(opts: { code: string; message: string; cause?: unknown }) {
-    super(opts.code, { message: opts.message, cause: opts.cause });
-  }
-}
-
 // Shim for tRPC's tracked() subscription helper (oRPC subscriptions yield directly)
 export const tracked = <T>(_connectionId: string, data: T): T => data;

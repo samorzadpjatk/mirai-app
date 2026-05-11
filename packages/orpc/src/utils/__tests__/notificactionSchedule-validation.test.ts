@@ -2,7 +2,7 @@
  
  
 import { describe, it, expect } from "vitest";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   validateDateRange,
   validateFutureDates,
@@ -26,7 +26,7 @@ describe("notificactionSchedule-validation", () => {
 
     it("should throw when end date equals start date", () => {
       const date = new Date("2024-01-01");
-      expect(() => validateDateRange(date, date)).toThrow(TRPCError);
+      expect(() => validateDateRange(date, date)).toThrow(ORPCError);
       expect(() => validateDateRange(date, date)).toThrow(
         "End date (2024-01-01T00:00:00.000Z) must be after start date (2024-01-01T00:00:00.000Z)"
       );
@@ -35,7 +35,7 @@ describe("notificactionSchedule-validation", () => {
     it("should throw when end date is before start date", () => {
       const startDate = new Date("2024-01-02");
       const endDate = new Date("2024-01-01");
-      expect(() => validateDateRange(startDate, endDate)).toThrow(TRPCError);
+      expect(() => validateDateRange(startDate, endDate)).toThrow(ORPCError);
       expect(() => validateDateRange(startDate, endDate)).toThrow(
         "End date (2024-01-01T00:00:00.000Z) must be after start date (2024-01-02T00:00:00.000Z)"
       );
@@ -54,7 +54,7 @@ describe("notificactionSchedule-validation", () => {
       const now = new Date();
       const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      expect(() => validateFutureDates(pastDate, futureDate)).toThrow(TRPCError);
+      expect(() => validateFutureDates(pastDate, futureDate)).toThrow(ORPCError);
       expect(() => validateFutureDates(pastDate, futureDate)).toThrow(
         "cannot be in the past"
       );
@@ -72,7 +72,7 @@ describe("notificactionSchedule-validation", () => {
     it("should throw when end date is in the past", () => {
       const now = new Date();
       const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      expect(() => validateFutureDates(pastDate, pastDate)).toThrow(TRPCError);
+      expect(() => validateFutureDates(pastDate, pastDate)).toThrow(ORPCError);
       expect(() => validateFutureDates(pastDate, pastDate)).toThrow(
         "cannot be in the past"
       );
@@ -82,7 +82,7 @@ describe("notificactionSchedule-validation", () => {
       const now = new Date();
       const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       expect(() => validateFutureDates(pastDate, pastDate, true)).toThrow(
-        TRPCError
+        ORPCError
       );
     });
   });
@@ -101,7 +101,7 @@ describe("notificactionSchedule-validation", () => {
       const nearFuture = new Date(now.getTime() + 2 * 60 * 1000);
       expect(() =>
         validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes())
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
       expect(() =>
         validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes())
       ).toThrow("at least 5 minutes in the future");
@@ -112,7 +112,7 @@ describe("notificactionSchedule-validation", () => {
       const pastDate = new Date(now.getTime() - 10 * 60 * 1000);
       expect(() =>
         validateScheduleTime(pastDate, pastDate.getUTCHours(), pastDate.getUTCMinutes())
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
     });
   });
 
@@ -132,7 +132,7 @@ describe("notificactionSchedule-validation", () => {
     it("should throw for duration less than 1 minute", () => {
       const startDate = new Date("2024-01-01T00:00:00");
       const endDate = new Date("2024-01-01T00:00:30");
-      expect(() => validateMinimumDuration(startDate, endDate)).toThrow(TRPCError);
+      expect(() => validateMinimumDuration(startDate, endDate)).toThrow(ORPCError);
       expect(() => validateMinimumDuration(startDate, endDate)).toThrow(
         "at least 1 minute"
       );
@@ -140,7 +140,7 @@ describe("notificactionSchedule-validation", () => {
 
     it("should throw for zero duration", () => {
       const date = new Date("2024-01-01T00:00:00");
-      expect(() => validateMinimumDuration(date, date)).toThrow(TRPCError);
+      expect(() => validateMinimumDuration(date, date)).toThrow(ORPCError);
     });
   });
 
@@ -160,7 +160,7 @@ describe("notificactionSchedule-validation", () => {
     it("should throw when custom notification has no title", () => {
       expect(() =>
         validateNotificationContent("custom", "", "Body", undefined)
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
       expect(() =>
         validateNotificationContent("custom", "", "Body", undefined)
       ).toThrow("Notification title is required");
@@ -169,13 +169,13 @@ describe("notificactionSchedule-validation", () => {
     it("should throw when custom notification has whitespace-only title", () => {
       expect(() =>
         validateNotificationContent("custom", "   ", "Body", undefined)
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
     });
 
     it("should throw when custom notification has no body", () => {
       expect(() =>
         validateNotificationContent("custom", "Title", "", undefined)
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
       expect(() =>
         validateNotificationContent("custom", "Title", "", undefined)
       ).toThrow("Notification body is required");
@@ -184,7 +184,7 @@ describe("notificactionSchedule-validation", () => {
     it("should throw when custom notification has whitespace-only body", () => {
       expect(() =>
         validateNotificationContent("custom", "Title", "   ", undefined)
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
     });
 
     it("should not throw when URL is undefined", () => {
@@ -236,7 +236,7 @@ describe("notificactionSchedule-validation", () => {
           "Body",
           "not-a-valid-url"
         )
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
       expect(() =>
         validateNotificationContent(
           "custom",
@@ -255,7 +255,7 @@ describe("notificactionSchedule-validation", () => {
           "Body",
           "ftp://example.com"
         )
-      ).toThrow(TRPCError);
+      ).toThrow(ORPCError);
     });
   });
 
@@ -274,7 +274,7 @@ describe("notificactionSchedule-validation", () => {
       const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(
-        TRPCError
+        ORPCError
       );
       expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(
         "Start date cannot be in the past"
@@ -295,7 +295,7 @@ describe("notificactionSchedule-validation", () => {
       const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       const endDate = new Date(now.getTime() + 366 * 24 * 60 * 60 * 1000);
       expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(
-        TRPCError
+        ORPCError
       );
       expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(
         "cannot be more than 1 year"

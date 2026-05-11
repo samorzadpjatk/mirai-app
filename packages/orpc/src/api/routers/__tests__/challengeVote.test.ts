@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { challengeVoteRouter } from "../../routers/challengeVote";
 import { createRouterClient } from "@orpc/server";
@@ -285,7 +285,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should return empty array when user has no votes", async () => {
@@ -398,7 +398,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -449,7 +449,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when submission phase hasn't ended", async () => {
@@ -469,7 +469,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -541,7 +541,7 @@ describe("challengeVoteRouter", () => {
             { submissionId: "submission-1", votePosition: 2, votePoints: 2 }, // Duplicate submission
           ],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for duplicate vote positions", async () => {
@@ -565,7 +565,7 @@ describe("challengeVoteRouter", () => {
             { submissionId: "submission-2", votePosition: 1, votePoints: 2 }, // Duplicate position
           ],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when voting on own group submission", async () => {
@@ -592,7 +592,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           votes: [{ submissionId: "submission-1", votePosition: 1, votePoints: 3 }],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when user already voted", async () => {
@@ -619,7 +619,7 @@ describe("challengeVoteRouter", () => {
           challengeId: "challenge-123",
           votes: [{ submissionId: "submission-1", votePosition: 1, votePoints: 3 }],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -728,7 +728,7 @@ describe("challengeVoteRouter", () => {
           votePosition: 1,
           votePoints: 3,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when voting outside allowed positions", async () => {
@@ -757,7 +757,7 @@ describe("challengeVoteRouter", () => {
           votePosition: 3, // Position 3 not allowed with only 2 submissions
           votePoints: 3,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when vote already exists for position", async () => {
@@ -788,7 +788,7 @@ describe("challengeVoteRouter", () => {
           votePosition: 1, // Position already voted
           votePoints: 3,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 });

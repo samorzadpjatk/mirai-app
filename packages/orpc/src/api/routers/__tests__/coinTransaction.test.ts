@@ -2,7 +2,7 @@
  
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { coinTransactionRouter } from "../../routers/coinTransaction";
 import { createRouterClient } from "@orpc/server";
@@ -516,7 +516,7 @@ describe("coinTransactionRouter", () => {
 
       await expect(
         caller.getCoinTransactions({ tripId: "trip-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group not found", async () => {
@@ -533,7 +533,7 @@ describe("coinTransactionRouter", () => {
 
       await expect(
         caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
@@ -552,7 +552,7 @@ describe("coinTransactionRouter", () => {
 
       await expect(
         caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group is deleted", async () => {
@@ -571,7 +571,7 @@ describe("coinTransactionRouter", () => {
 
       await expect(
         caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should use default limit of 50", async () => {

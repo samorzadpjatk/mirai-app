@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { adminProcedure, createORPCRouter } from "../trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 
@@ -83,11 +83,7 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching notification deliveries:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch notification deliveries: ${err.message}`,
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch notification deliveries: ${err.message}`, cause: err });
       }
     }),
 
@@ -127,10 +123,7 @@ export const notificationDeliveryRouter = createORPCRouter({
         });
 
         if (delivery?.tripId !== input.tripId) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Notification delivery not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Notification delivery not found" });
         }
 
         if (!delivery?.notification?.createdBy) {
@@ -154,16 +147,12 @@ export const notificationDeliveryRouter = createORPCRouter({
           },
         };
       } catch (error) {
-        if (error instanceof TRPCError) {
+        if (error instanceof ORPCError) {
           throw error;
         }
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching notification delivery:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch notification delivery: ${err.message}`,
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch notification delivery: ${err.message}`, cause: err });
       }
     }),
 
@@ -253,11 +242,7 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching delivery stats:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch delivery stats: ${err.message}`,
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch delivery stats: ${err.message}`, cause: err });
       }
     }),
 
@@ -319,11 +304,7 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching failed deliveries:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to fetch failed deliveries: ${err.message}`,
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch failed deliveries: ${err.message}`, cause: err });
       }
     }),
 });

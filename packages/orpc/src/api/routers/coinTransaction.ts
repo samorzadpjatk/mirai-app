@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   moderatorProcedure,
@@ -236,10 +236,7 @@ export const coinTransactionRouter = createORPCRouter({
       });
 
       if (!participant) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not a participant of this trip",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
       if (input.groupId) {
@@ -249,10 +246,7 @@ export const coinTransactionRouter = createORPCRouter({
         });
 
         if (!group?.tripId || group.tripId !== input.tripId || group.isDeleted) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
       }
 

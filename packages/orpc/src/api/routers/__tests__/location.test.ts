@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { locationRouter } from "../../routers/location";
 import { createRouterClient } from "@orpc/server";
@@ -422,7 +422,7 @@ describe("locationRouter", () => {
         caller.updateSharingSettings({
           isSharingLocation: true,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate shareable targets when userIds provided", async () => {
@@ -538,7 +538,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.addUserToSharing({ userId: "user-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when user is outside sharing scope", async () => {
@@ -549,7 +549,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.addUserToSharing({ userId: "user-456" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -632,7 +632,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.requestLocationSharing({ receiverId: "user-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when request already pending", async () => {
@@ -659,7 +659,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.requestLocationSharing({ receiverId: "user-456" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when already sharing", async () => {
@@ -686,7 +686,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.requestLocationSharing({ receiverId: "user-456" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should update rejected request to pending", async () => {
@@ -767,7 +767,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.acceptLocationSharingRequest({ requestId: "non-existent" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when user is not the receiver", async () => {
@@ -783,7 +783,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.acceptLocationSharingRequest({ requestId: "request-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when request is not pending", async () => {
@@ -799,7 +799,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.acceptLocationSharingRequest({ requestId: "request-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -840,7 +840,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.rejectLocationSharingRequest({ requestId: "non-existent" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when user is not the receiver", async () => {
@@ -856,7 +856,7 @@ describe("locationRouter", () => {
 
       await expect(
         caller.rejectLocationSharingRequest({ requestId: "request-123" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

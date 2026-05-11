@@ -7,7 +7,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, Sponsor, TripSponsor, Trip, User } from "@mirai-app/db";
-import { TRPCError } from "../../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as auth from "@mirai-app/auth";
 
@@ -143,7 +143,7 @@ describe("sponsorRouter", () => {
       };
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "nonexistent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "nonexistent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -268,7 +268,7 @@ describe("sponsorRouter", () => {
 
       await expect(
         caller.update({ id: "nonexistent", name: "New Name" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -361,7 +361,7 @@ describe("sponsorRouter", () => {
 
       await expect(
         caller.addToTrip({ tripId: "trip-1", sponsorId: "sponsor-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

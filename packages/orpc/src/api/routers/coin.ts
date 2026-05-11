@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { createORPCRouter, moderatorProcedure } from "../../api/trpc";
 import {
   captureTripRankingSnapshot,
@@ -30,7 +30,7 @@ export const coinRouter = createORPCRouter({
         });
         
         if (group?.tripId !== input.tripId || group.isDeleted) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         // Update group coins within the transaction
@@ -104,10 +104,7 @@ export const coinRouter = createORPCRouter({
           group.isDeleted ||
           (group?.coins ?? 0) < input.amount
         ) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Group does not have enough coins",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Group does not have enough coins" });
         }
 
         // Update group coins within the transaction

@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { tripRouter } from "../trip";
 import { createRouterClient } from "@orpc/server";
@@ -404,7 +404,7 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "trip-1" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "trip-1" })).rejects.toThrow(ORPCError);
       await expect(caller.getById({ id: "trip-1" })).rejects.toThrow("You are not a participant of this trip");
     });
 
@@ -425,7 +425,7 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(ORPCError);
       await expect(caller.getById({ id: "non-existent" })).rejects.toThrow("Trip not found");
     });
 
@@ -665,7 +665,7 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.getByIdAdmin({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getByIdAdmin({ id: "non-existent" })).rejects.toThrow(ORPCError);
       await expect(caller.getByIdAdmin({ id: "non-existent" })).rejects.toThrow("Trip not found");
     });
 
@@ -926,7 +926,7 @@ describe("tripRouter", () => {
       await expect(caller.update({
         id: "non-existent",
         name: "Updated Name",
-      })).rejects.toThrow(TRPCError);
+      })).rejects.toThrow(ORPCError);
       await expect(caller.update({
         id: "non-existent",
         name: "Updated Name",
@@ -1073,7 +1073,7 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow(TRPCError);
+      await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow(ORPCError);
       await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow("You are not a participant of this trip");
     });
 

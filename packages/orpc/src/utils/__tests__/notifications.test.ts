@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { Prisma } from "@mirai-app/db";
 
@@ -210,7 +210,7 @@ describe("notifications", () => {
       });
     });
 
-    it("should throw TRPCError when notification creation fails", async () => {
+    it("should throw ORPCError when notification creation fails", async () => {
       mockDb.notification.create.mockRejectedValue(
         new Error("Database error")
       );
@@ -227,7 +227,7 @@ describe("notifications", () => {
             tripId: "trip-1",
           },
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
 
       await expect(
         sendNotification({

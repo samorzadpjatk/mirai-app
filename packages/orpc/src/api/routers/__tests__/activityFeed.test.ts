@@ -2,7 +2,7 @@
  
  
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { appRouter } from "../../root";
 import { createRouterClient } from "@orpc/server";
@@ -255,7 +255,7 @@ describe("activityFeed router", () => {
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.getByTrip({ tripId: "trip-1" }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -304,7 +304,7 @@ describe("activityFeed router", () => {
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.getById({ id: "nonexistent" }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -394,7 +394,7 @@ describe("activityFeed router", () => {
           groupId: "group-1",
           title: "Submission",
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -438,7 +438,7 @@ describe("activityFeed router", () => {
           eventType: "challenge_started",
           title: "Challenge Event",
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -482,7 +482,7 @@ describe("activityFeed router", () => {
           coinsGained: 100,
           title: "Rank Change",
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -509,7 +509,7 @@ describe("activityFeed router", () => {
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.update({ activityId: "activity-1" }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -634,7 +634,7 @@ describe("activityFeed router", () => {
           activityId: "nonexistent",
           reactionType: "heart",
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     test("throws FORBIDDEN when activity is hidden", async () => {
@@ -650,7 +650,7 @@ describe("activityFeed router", () => {
           activityId: "activity-1",
           reactionType: "heart",
         }),
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

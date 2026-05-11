@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { coinRouter } from "../../routers/coin";
 import { createRouterClient } from "@orpc/server";
@@ -214,7 +214,7 @@ describe("coinRouter", () => {
           groupId: "non-existent",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
@@ -230,7 +230,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group is deleted", async () => {
@@ -246,7 +246,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should create rank change activities after adding coins", async () => {
@@ -356,7 +356,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when group has zero coins", async () => {
@@ -372,7 +372,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 10,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group does not exist", async () => {
@@ -387,7 +387,7 @@ describe("coinRouter", () => {
           groupId: "non-existent",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when group belongs to different trip", async () => {
@@ -403,7 +403,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when group is deleted", async () => {
@@ -419,7 +419,7 @@ describe("coinRouter", () => {
           groupId: "group-123",
           amount: 50,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should create rank change activities after removing coins", async () => {

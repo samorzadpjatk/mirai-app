@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { rewardRouter } from "../../routers/reward";
 import { createRouterClient } from "@orpc/server";
@@ -469,7 +469,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "non-existent" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND for hidden reward when not staff", async () => {
@@ -478,7 +478,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getById({ id: "reward-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "reward-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should return hidden reward for staff", async () => {
@@ -702,7 +702,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.delete({ id: "reward-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.delete({ id: "reward-123" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -754,7 +754,7 @@ describe("rewardRouter", () => {
           rewardId: "non-existent",
           quantity: 1,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when reward is hidden", async () => {
@@ -768,7 +768,7 @@ describe("rewardRouter", () => {
           rewardId: "reward-123",
           quantity: 1,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when not enough quantity", async () => {
@@ -782,7 +782,7 @@ describe("rewardRouter", () => {
           rewardId: "reward-123",
           quantity: 1,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when not group leader", async () => {
@@ -802,7 +802,7 @@ describe("rewardRouter", () => {
           rewardId: "reward-123",
           quantity: 1,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when not enough coins", async () => {
@@ -823,7 +823,7 @@ describe("rewardRouter", () => {
           rewardId: "reward-123",
           quantity: 1,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -873,7 +873,7 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getPurchaseHistory({ tripId: "trip-123" })).rejects.toThrow(TRPCError);
+      await expect(caller.getPurchaseHistory({ tripId: "trip-123" })).rejects.toThrow(ORPCError);
     });
   });
 

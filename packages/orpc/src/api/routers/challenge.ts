@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   adminProcedure,
@@ -117,19 +117,13 @@ const validatePeerVotingTimeline = (input: {
     input.submissionType !== "IMAGE" &&
     input.submissionType !== "VIDEO"
   ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Peer voting is supported only for IMAGE or VIDEO challenges",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Peer voting is supported only for IMAGE or VIDEO challenges" });
   }
 
   if (input.scoringCategory !== "PEER_VOTING") return;
 
   if (!input.endTime) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Peer voting challenge requires submission end time",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Peer voting challenge requires submission end time" });
   }
 
   const hasDuration =
@@ -139,10 +133,7 @@ const validatePeerVotingTimeline = (input: {
   const hasWindow = Boolean(input.votingStartTime) && Boolean(input.votingEndTime);
 
   if (!hasDuration && !hasWindow) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Peer voting challenge requires voting duration in hours or days",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Peer voting challenge requires voting duration in hours or days" });
   }
 
   if (
@@ -151,10 +142,7 @@ const validatePeerVotingTimeline = (input: {
       input.votingDurationHours < 1 ||
       input.votingDurationHours > MAX_PEER_VOTING_DURATION_HOURS)
   ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
-    });
+    throw new ORPCError("BAD_REQUEST", { message: `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours` });
   }
 
   if (
@@ -162,10 +150,7 @@ const validatePeerVotingTimeline = (input: {
     input.votingEndTime &&
     input.votingStartTime >= input.votingEndTime
   ) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Voting start time must be before voting end time",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Voting start time must be before voting end time" });
   }
 };
 
@@ -220,24 +205,15 @@ const validateRecurringTimeline = (input: {
   if (!input.isRecurring) return;
 
   if (!input.dailyStartTime || !input.dailyEndTime) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Recurring challenge requires daily start and end time",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Recurring challenge requires daily start and end time" });
   }
 
   if (!input.recurringDays || input.recurringDays < 1) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Recurring challenge requires number of days",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Recurring challenge requires number of days" });
   }
 
   if (input.scoringCategory === "PEER_VOTING") {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Recurring peer voting challenges are not supported",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Recurring peer voting challenges are not supported" });
   }
 };
 
@@ -278,16 +254,10 @@ const resolveRecurringDays = (params: {
   if (!params.isRecurring) return null;
   const value = params.recurringDays ?? params.fallbackDays;
   if (!value || value < 1) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Recurring challenge requires number of days",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Recurring challenge requires number of days" });
   }
   if (!Number.isInteger(value) || value > MAX_RECURRING_DAYS) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Recurring days must be an integer between 1 and ${MAX_RECURRING_DAYS}`,
-    });
+    throw new ORPCError("BAD_REQUEST", { message: `Recurring days must be an integer between 1 and ${MAX_RECURRING_DAYS}` });
   }
   return value;
 };
@@ -590,10 +560,7 @@ export const challengeRouter = createORPCRouter({
       });
 
       if (!challenge) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Challenge not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
       }
 
       return {
@@ -699,10 +666,7 @@ export const challengeRouter = createORPCRouter({
         input.submissionType === "IMAGE_LOCATION" &&
         input.autoApprove
       ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Image + Location challenges cannot use auto-approve",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Image + Location challenges cannot use auto-approve" });
       }
 
       if (
@@ -710,11 +674,7 @@ export const challengeRouter = createORPCRouter({
         input.autoApprove &&
         !input.textExpectedPhrase?.trim()
       ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Text auto-approve requires an expected phrase, or disable auto-approve",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Text auto-approve requires an expected phrase, or disable auto-approve" });
       }
 
       const requestedStatus = input.status ?? "HIDDEN";
@@ -877,10 +837,7 @@ export const challengeRouter = createORPCRouter({
       });
 
       if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Challenge not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
       }
 
       const peerVotingDurationHours = inferPeerVotingDurationHours({
@@ -959,11 +916,7 @@ export const challengeRouter = createORPCRouter({
         ]);
 
         if (totalSubmissions === 0 || pendingSubmissions > 0) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message:
-              "Peer voting can start only after staff reviews all submitted photos",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Peer voting can start only after staff reviews all submitted photos" });
         }
       }
 
@@ -984,10 +937,7 @@ export const challengeRouter = createORPCRouter({
           : input.autoApprove ?? existing.autoApprove;
 
       if (effectiveSubmissionType === "IMAGE_LOCATION" && input.autoApprove) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Image + Location challenges cannot use auto-approve",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Image + Location challenges cannot use auto-approve" });
       }
 
       if (
@@ -995,11 +945,7 @@ export const challengeRouter = createORPCRouter({
         effectiveAutoApprove &&
         !effectiveExpectedValue?.trim()
       ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Text auto-approve requires an expected phrase, or disable auto-approve",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Text auto-approve requires an expected phrase, or disable auto-approve" });
       }
 
       const challenge = await context.db.$transaction(async (tx) => {
@@ -1083,10 +1029,7 @@ export const challengeRouter = createORPCRouter({
       });
 
       if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Challenge not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
       }
 
       await context.db.challenge.delete({ where: { id: input.id } });
@@ -1107,24 +1050,15 @@ export const challengeRouter = createORPCRouter({
       });
 
       if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Challenge not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
       }
 
       if (existing.scoringCategory !== "PEER_VOTING") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Force close voting is only available for peer voting challenges",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Force close voting is only available for peer voting challenges" });
       }
 
       if (existing.status !== "VOTING_PHASE") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Challenge is not in voting phase",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Challenge is not in voting phase" });
       }
 
       const challenge = await context.db.$transaction(async (tx) => {

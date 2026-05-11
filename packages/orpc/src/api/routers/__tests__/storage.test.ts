@@ -2,7 +2,7 @@
  
  
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { storageRouter } from "../../routers/storage";
 import { createRouterClient } from "@orpc/server";
@@ -175,7 +175,7 @@ describe("storageRouter", () => {
         caller.createUploadUrl({
           storagePath: "invalid-path",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw INTERNAL_SERVER_ERROR when upload URL creation fails", async () => {
@@ -199,7 +199,7 @@ describe("storageRouter", () => {
         caller.createUploadUrl({
           storagePath: "images/test-image.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw INTERNAL_SERVER_ERROR when SUPABASE_URL is missing", async () => {
@@ -212,7 +212,7 @@ describe("storageRouter", () => {
         caller.createUploadUrl({
           storagePath: "images/test-image.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -263,7 +263,7 @@ describe("storageRouter", () => {
         caller.createDownloadUrl({
           storagePath: "images/non-existent.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw INTERNAL_SERVER_ERROR for other storage errors", async () => {
@@ -287,7 +287,7 @@ describe("storageRouter", () => {
         caller.createDownloadUrl({
           storagePath: "images/test-image.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
@@ -301,7 +301,7 @@ describe("storageRouter", () => {
         caller.createDownloadUrl({
           storagePath: "invalid-path",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -328,7 +328,7 @@ describe("storageRouter", () => {
         caller.createPublicUrl({
           storagePath: "images/private-image.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
@@ -342,7 +342,7 @@ describe("storageRouter", () => {
         caller.createPublicUrl({
           storagePath: "invalid-path",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw INTERNAL_SERVER_ERROR when SUPABASE_URL is missing", async () => {
@@ -356,7 +356,7 @@ describe("storageRouter", () => {
         caller.createPublicUrl({
           storagePath: "files-public/document.pdf",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should use SUPABASE_PUBLIC_URL when available", async () => {
@@ -478,7 +478,7 @@ describe("storageRouter", () => {
         caller.createUploadUrl({
           storagePath: "https://example.com/image.jpg",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 });

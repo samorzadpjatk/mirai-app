@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   adminProcedure,
   createORPCRouter,
@@ -39,11 +39,7 @@ export const notificationRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error saving push subscription:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to save push subscription: ${err.message}`,
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to save push subscription: ${err.message}`, cause: err });
       }
     }),
 
@@ -63,22 +59,16 @@ export const notificationRouter = createORPCRouter({
         });
 
         if (result.count === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No subscription found with that token",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "No subscription found with that token" });
         }
 
         return { success: true, deletedCount: result.count };
       } catch (error) {
-        if (error instanceof TRPCError) {
+        if (error instanceof ORPCError) {
           throw error;
         }
         console.error("Error removing push subscription:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to remove push subscription",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove push subscription" });
       }
     }),
 
@@ -92,10 +82,7 @@ export const notificationRouter = createORPCRouter({
       return { success: true, deletedCount: result.count };
     } catch (error) {
       console.error("Error removing all push subscriptions:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to remove all push subscriptions",
-      });
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove all push subscriptions" });
     }
   }),
 
@@ -129,10 +116,7 @@ export const notificationRouter = createORPCRouter({
       });
       const totalPages = Math.ceil(count / input.pageSize);
       if (input.page > totalPages && totalPages > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Page ${input.page} exceeds total pages ${totalPages}`,
-        });
+        throw new ORPCError("BAD_REQUEST", { message: `Page ${input.page} exceeds total pages ${totalPages}` });
       }
       const notifications = await context.db.notification.findMany({
         where: { pushes: { some: { targetUserId: context.dbUser.id } } },
@@ -225,10 +209,7 @@ export const notificationRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId || group.isDeleted) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
         const participants = await context.db.tripParticipant.findMany({
           where: { tripId: input.tripId, groupId: input.groupId },
@@ -250,10 +231,7 @@ export const notificationRouter = createORPCRouter({
         return result;
       } catch (error) {
         console.error("Error sending notification to group:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send notification to group",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send notification to group" });
       }
     }),
 
@@ -288,10 +266,7 @@ export const notificationRouter = createORPCRouter({
         return result;
       } catch (error) {
         console.error("Error sending notification to all:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send notification to all users",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send notification to all users" });
       }
     }),
 
@@ -306,10 +281,7 @@ export const notificationRouter = createORPCRouter({
         });
       } catch (error) {
         console.error("Error sending ranking update notifications:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send ranking update notifications",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send ranking update notifications" });
       }
     }),
 
@@ -328,10 +300,7 @@ export const notificationRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         const participants = await context.db.tripParticipant.findMany({
@@ -361,10 +330,7 @@ export const notificationRouter = createORPCRouter({
           "Error sending coins added notification to group:",
           error,
         );
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send coins added notification to group",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send coins added notification to group" });
       }
     }),
 
@@ -383,10 +349,7 @@ export const notificationRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         const participants = await context.db.tripParticipant.findMany({
@@ -416,10 +379,7 @@ export const notificationRouter = createORPCRouter({
           "Error sending coins removed notification to group:",
           error,
         );
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send coins removed notification to group",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send coins removed notification to group" });
       }
     }),
 
@@ -437,20 +397,14 @@ export const notificationRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
         const user = await context.db.user.findFirst({
           where: { id: input.userId },
           select: { id: true, firstName: true, lastName: true },
         });
         if (!user) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "User not found" });
         }
         const firstName =
           typeof user.firstName === "string" ? user.firstName : null;
@@ -493,11 +447,8 @@ export const notificationRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error("Unknown error");
         console.error("Error sending new member notification to group:", err);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send new member notification to group",
-          cause: err,
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send new member notification to group", cause: err,
+         });
       }
     }),
 
@@ -517,10 +468,7 @@ export const notificationRouter = createORPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId || group.isDeleted) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Group not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
         const participants = await context.db.tripParticipant.findMany({
           where: { tripId: input.tripId, groupId: input.groupId },
@@ -540,10 +488,7 @@ export const notificationRouter = createORPCRouter({
         });
       } catch (error) {
         console.error("Error sending custom notification to group:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send custom notification to group",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send custom notification to group" });
       }
     }),
 
@@ -562,16 +507,10 @@ export const notificationRouter = createORPCRouter({
           where: { notificationId: input.notificationId, status: "failed" },
         });
         if (!notification) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Notification not found",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Notification not found" });
         }
         if (pushes.length === 0) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No failed pushes to retry",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "No failed pushes to retry" });
         }
 
         await context.db.notificationPush.updateMany({
@@ -597,10 +536,7 @@ export const notificationRouter = createORPCRouter({
         };
       } catch (error) {
         console.error("Error retrying notification:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to retry notification",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retry notification" });
       }
     }),
 
@@ -618,10 +554,7 @@ export const notificationRouter = createORPCRouter({
         return { success: true };
       } catch (error) {
         console.error("Error deleting notification:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete notification",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to delete notification" });
       }
     }),
 });

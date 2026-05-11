@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { challengeSubmissionRouter } from "../challengeSubmission";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import type { PrismaClient, User, Prisma } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
@@ -350,7 +350,7 @@ describe("challengeSubmissionRouter", () => {
       const caller = createCaller({ ...ctx, dbUser: createMockModeratorUser() });
       await expect(
         caller.getByChallengeForAdmin({ challengeId: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -438,7 +438,7 @@ describe("challengeSubmissionRouter", () => {
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
         caller.getByChallenge({ challengeId: "challenge-1", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -478,7 +478,7 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(TRPCError);
+      await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -633,7 +633,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           textContent: "WRONGCODE",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should auto-approve location challenge within radius", async () => {
@@ -700,7 +700,7 @@ describe("challengeSubmissionRouter", () => {
           latitude: 52.25,
           longitude: 21.05,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw CONFLICT when submission already exists", async () => {
@@ -725,7 +725,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when challenge is not active", async () => {
@@ -749,7 +749,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw FORBIDDEN when submission window has ended", async () => {
@@ -773,7 +773,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when user has no group", async () => {
@@ -794,7 +794,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate IMAGE submission type", async () => {
@@ -818,7 +818,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: [], // Empty array should fail
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate MULTI_IMAGE submission type", async () => {
@@ -842,7 +842,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"], // Only 1 image should fail
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate VIDEO submission type", async () => {
@@ -866,7 +866,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           // No videoId provided
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate TEXT submission type", async () => {
@@ -890,7 +890,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           // No textContent provided
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate IMAGE_LOCATION submission type", async () => {
@@ -915,7 +915,7 @@ describe("challengeSubmissionRouter", () => {
           imageIds: ["image-1"],
           // No location provided
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate LOCATION submission type", async () => {
@@ -939,7 +939,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           // No location provided
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should validate QR_CODE submission type with text", async () => {
@@ -963,7 +963,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           // No text or image provided
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should auto-approve TEXT challenge with expected value", async () => {
@@ -1026,7 +1026,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           textContent: "WRONGANSWER",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should auto-approve when autoApprove flag is true", async () => {
@@ -1164,7 +1164,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           imageIds: ["new-image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when submission not found", async () => {
@@ -1186,7 +1186,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           imageIds: ["new-image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should auto-approve on update if conditions met", async () => {
@@ -1328,7 +1328,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1371,7 +1371,7 @@ describe("challengeSubmissionRouter", () => {
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
         caller.deleteMine({ id: "submission-1", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when submission not found", async () => {
@@ -1389,7 +1389,7 @@ describe("challengeSubmissionRouter", () => {
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
         caller.deleteMine({ id: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when user has no group", async () => {
@@ -1406,7 +1406,7 @@ describe("challengeSubmissionRouter", () => {
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
         caller.deleteMine({ id: "submission-1", tripId: "trip-1" })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -1514,7 +1514,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           status: "REJECTED",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when submission not found", async () => {
@@ -1533,7 +1533,7 @@ describe("challengeSubmissionRouter", () => {
           id: "nonexistent",
           status: "APPROVED",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for JUDGED_STAFF challenges", async () => {
@@ -1555,7 +1555,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           status: "APPROVED",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should award coins when approving", async () => {
@@ -1927,7 +1927,7 @@ describe("challengeSubmissionRouter", () => {
           latitude: 52.23,
           longitude: 21.01,
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should handle QR code challenge without expected value configured", async () => {
@@ -1951,7 +1951,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           textContent: "SOMECODE",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should handle missing submission after creation", async () => {
@@ -1978,7 +1978,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should handle missing submission after review", async () => {
@@ -2003,7 +2003,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           status: "APPROVED",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should handle missing submission for activity creation", async () => {
@@ -2038,7 +2038,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           status: "APPROVED",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 

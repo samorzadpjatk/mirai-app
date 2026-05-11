@@ -7,7 +7,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User, TripParticipant, Group } from "@mirai-app/db";
-import { TRPCError } from "../../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
 
@@ -467,7 +467,7 @@ describe("userRouter", () => {
 
         const caller = createCaller(ctx);
 
-        await expect(caller.getBanStatusByEmail({ email: "test@example.com" })).rejects.toThrow(TRPCError);
+        await expect(caller.getBanStatusByEmail({ email: "test@example.com" })).rejects.toThrow(ORPCError);
       });
 
       it("should handle getUserById error after finding user", async () => {
@@ -490,7 +490,7 @@ describe("userRouter", () => {
 
         const caller = createCaller(ctx);
 
-        await expect(caller.getBanStatusByEmail({ email: "user@example.com" })).rejects.toThrow(TRPCError);
+        await expect(caller.getBanStatusByEmail({ email: "user@example.com" })).rejects.toThrow(ORPCError);
       });
 
       it("should paginate through users to find email", async () => {
@@ -1268,7 +1268,7 @@ describe("userRouter", () => {
 
         await expect(
           caller.updateUserAdminStatus({ userId: mockDbUser.id, role: "USER" })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
 
       it("should allow admin to change their role to another admin", async () => {
@@ -1401,7 +1401,7 @@ describe("userRouter", () => {
             lastName: "User",
             email: "test@example.com",
           })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
 
       it("should validate required fields", async () => {
@@ -1715,7 +1715,7 @@ describe("userRouter", () => {
             userId: "nonexistent",
             tripId: "trip-1",
           })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
 
       it("should throw when user not in trip", async () => {
@@ -1738,7 +1738,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
           })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
 
       it("should throw when auth delete fails", async () => {
@@ -1763,7 +1763,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
           })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
     });
 
@@ -1825,7 +1825,7 @@ describe("userRouter", () => {
             tripId: "trip-1",
             wristNumber: "W123",
           })
-        ).rejects.toThrow(TRPCError);
+        ).rejects.toThrow(ORPCError);
       });
 
       it("should validate wrist number length", async () => {

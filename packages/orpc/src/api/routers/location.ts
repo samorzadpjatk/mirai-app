@@ -16,7 +16,8 @@ import type {
   Location as DbLocation,
   PrismaClient,
 } from "@mirai-app/db";
-import { TRPCError, tracked } from "../../api/trpc";
+import { tracked } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 /**
@@ -36,10 +37,7 @@ async function ensureUserInActiveTrip(
   });
 
   if (memberships.length === 0) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Location sharing requires trip participation",
-    });
+    throw new ORPCError("FORBIDDEN", { message: "Location sharing requires trip participation" });
   }
 
   // Check if all user's trips have ended
@@ -55,10 +53,7 @@ async function ensureUserInActiveTrip(
   }
 
   // All trips have ended
-  throw new TRPCError({
-    code: "FORBIDDEN",
-    message: "Location sharing is not available for past trips",
-  });
+  throw new ORPCError("FORBIDDEN", { message: "Location sharing is not available for past trips" });
 }
 
 /**
@@ -260,10 +255,7 @@ async function assertShareableTargets({
   if (uniqueTargetUserIds.length === 0) return;
 
   if (uniqueTargetUserIds.some((targetId) => targetId === currentUserId)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "You cannot share location settings with yourself",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "You cannot share location settings with yourself" });
   }
 
   const allowedIds = await getShareableUserIdsForCurrentUser({
@@ -292,11 +284,7 @@ async function assertShareableTargets({
   );
 
   if (invalidTargetIds.length > 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message:
-        "One or more selected users are outside your allowed sharing scope",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "One or more selected users are outside your allowed sharing scope" });
   }
 }
 
@@ -429,11 +417,7 @@ export const locationRouter = createORPCRouter({
         radiusKm !== undefined &&
         (latitude === undefined || longitude === undefined)
       ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "When providing radiusKm, both latitude and longitude are required",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "When providing radiusKm, both latitude and longitude are required" });
       }
 
       // Emituj początkowe lokalizacje znajomych (filtrowane jeśli radius podany)
@@ -957,10 +941,7 @@ export const locationRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       await ensureUserInActiveTrip(context.db, context.dbUser.id);
       if (input.receiverId === context.dbUser.id) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You cannot send a request to yourself",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "You cannot send a request to yourself" });
       }
 
       await assertShareableTargets({
@@ -979,16 +960,10 @@ export const locationRouter = createORPCRouter({
 
       if (existingRequest) {
         if (existingRequest.status === "PENDING") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Request already sent",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Request already sent" });
         }
         if (existingRequest.status === "ACCEPTED") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Location sharing already enabled",
-          });
+          throw new ORPCError("BAD_REQUEST", { message: "Location sharing already enabled" });
         }
 
         const updated = await context.db.locationSharingRequest.update({
@@ -1021,24 +996,15 @@ export const locationRouter = createORPCRouter({
       });
 
       if (!request) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Request not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Request not found" });
       }
 
       if (request.receiverId !== context.dbUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only accept requests sent to you",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You can only accept requests sent to you" });
       }
 
       if (request.status !== "PENDING") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Request is not pending",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Request is not pending" });
       }
 
       // Wrap all operations in a transaction for atomicity
@@ -1104,17 +1070,11 @@ export const locationRouter = createORPCRouter({
       });
 
       if (!request) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Request not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Request not found" });
       }
 
       if (request.receiverId !== context.dbUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only reject requests sent to you",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You can only reject requests sent to you" });
       }
 
       const updatedRequest = await context.db.locationSharingRequest.update({

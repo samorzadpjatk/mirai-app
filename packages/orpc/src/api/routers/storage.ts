@@ -1,15 +1,12 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { createORPCRouter, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
 const resolveStoragePath = (value: string) => {
   const info = normalizeSupabaseStoragePath(value);
   if (!info) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Unsupported storage reference",
-    });
+    throw new ORPCError("BAD_REQUEST", { message: "Unsupported storage reference" });
   }
   return info;
 };
@@ -18,10 +15,7 @@ const getResumableEndpoint = () => {
   const baseUrl =
     process.env.SUPABASE_URL;
   if (!baseUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Missing SUPABASE_URL",
-    });
+    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Missing SUPABASE_URL" });
   }
 
   try {
@@ -42,10 +36,7 @@ const getResumableEndpoint = () => {
 const getPublicUrl = () => {
   const baseUrl = process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
   if (!baseUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL",
-    });
+    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL" });
   }
 
   try {
@@ -79,10 +70,7 @@ export const storageRouter = createORPCRouter({
         .createSignedUploadUrl(objectInfo.path, { upsert: Boolean(input.upsert) });
 
       if (error || !data?.token) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Unable to create signed upload URL",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Unable to create signed upload URL" });
       }
 
       return {
@@ -118,12 +106,9 @@ export const storageRouter = createORPCRouter({
           message.toLowerCase().includes("not found") ||
           message.toLowerCase().includes("does not exist");
 
-        throw new TRPCError({
-          code: looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR",
-          message: looksLikeNotFound
-            ? "Storage object not found"
-            : "Unable to create signed URL",
-        });
+        throw new ORPCError(looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR", { message: looksLikeNotFound
+          ? "Storage object not found"
+          : "Unable to create signed URL" });
       }
 
       return {
@@ -142,10 +127,7 @@ export const storageRouter = createORPCRouter({
       const objectInfo = resolveStoragePath(input.storagePath);
       
       if (objectInfo.bucket !== "files-public") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets.",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets." });
       }
       
       const publicUrlBase = getPublicUrl();

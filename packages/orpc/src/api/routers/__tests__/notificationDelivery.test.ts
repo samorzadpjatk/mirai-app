@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TRPCError } from "../../trpc";
+import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { notificationDeliveryRouter } from "../../routers/notificationDelivery";
 import { createRouterClient } from "@orpc/server";
@@ -259,7 +259,7 @@ describe("notificationDeliveryRouter", () => {
         caller.getDeliveries({
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 
@@ -318,7 +318,7 @@ describe("notificationDeliveryRouter", () => {
           notificationId: "notification-123",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when delivery does not exist", async () => {
@@ -332,7 +332,7 @@ describe("notificationDeliveryRouter", () => {
           notificationId: "non-existent",
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
 
     it("should return delivery without email when creator has no authUserId", async () => {
@@ -584,7 +584,7 @@ describe("notificationDeliveryRouter", () => {
         caller.getFailedDeliveries({
           tripId: "trip-123",
         })
-      ).rejects.toThrow(TRPCError);
+      ).rejects.toThrow(ORPCError);
     });
   });
 });

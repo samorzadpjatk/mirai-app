@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   moderatorProcedure,
@@ -168,10 +168,7 @@ export const userRouter = createORPCRouter({
         });
 
         if (error) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: error.message,
-          });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: error.message });
         }
 
         const found = data?.users?.find(
@@ -196,10 +193,7 @@ export const userRouter = createORPCRouter({
 
       const lookup = await context.supabase.auth.admin.getUserById(authUserId);
       if (lookup.error || !lookup.data.user) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: lookup.error?.message ?? "Failed to fetch auth user",
-        });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: lookup.error?.message ?? "Failed to fetch auth user" });
       }
 
       const adminUser = lookup.data.user as SupabaseAdminUser | null;
@@ -400,10 +394,7 @@ export const userRouter = createORPCRouter({
         input.userId === context.dbUser.id &&
         input.role !== roleSchema.enum.ADMIN
       ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Nie możesz usunąć swoich uprawnień administratora",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "Nie możesz usunąć swoich uprawnień administratora" });
       }
 
       const updatedUser = await context.db.user.update({
@@ -440,10 +431,7 @@ export const userRouter = createORPCRouter({
       });
 
       if (error || !data?.user) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: error?.message ?? "Failed to create auth user",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: error?.message ?? "Failed to create auth user" });
       }
 
       const authUserId = data.user.id;
@@ -540,27 +528,18 @@ export const userRouter = createORPCRouter({
       });
 
       if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "User not found" });
       }
 
       const bannedUntil = new Date(input.bannedUntilMs);
 
       if (Number.isNaN(bannedUntil.getTime())) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Invalid ban date",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Invalid ban date" });
       }
 
       const diffMs = bannedUntil.getTime() - Date.now();
       if (diffMs <= 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Ban date must be in the future",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "Ban date must be in the future" });
       }
 
       const diffMinutes = Math.ceil(diffMs / 60000);
@@ -571,10 +550,7 @@ export const userRouter = createORPCRouter({
       );
 
       if (adminUser.error || !adminUser.data.user) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: adminUser.error?.message ?? "Failed to fetch auth user",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: adminUser.error?.message ?? "Failed to fetch auth user" });
       }
 
       const existingMetadata =
@@ -591,10 +567,7 @@ export const userRouter = createORPCRouter({
       );
 
       if (error) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: error.message,
-        });
+        throw new ORPCError("BAD_REQUEST", { message: error.message });
       }
 
       return { bannedUntil: bannedUntil.toISOString() };
@@ -613,10 +586,7 @@ export const userRouter = createORPCRouter({
       });
 
       if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "User not found" });
       }
 
       const result = await context.db.$transaction(async (tx) => {
@@ -628,10 +598,7 @@ export const userRouter = createORPCRouter({
         });
 
         if (!participant) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User is not assigned to this trip",
-          });
+          throw new ORPCError("NOT_FOUND", { message: "User is not assigned to this trip" });
         }
 
         await tx.tripParticipant.delete({
@@ -656,10 +623,7 @@ export const userRouter = createORPCRouter({
           user.authUserId,
         );
         if (error) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: error.message,
-          });
+          throw new ORPCError("BAD_REQUEST", { message: error.message });
         }
       }
 
@@ -693,12 +657,9 @@ export const userRouter = createORPCRouter({
         const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
           existingParticipant.user.authUserId,
         ]);
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(
-            toPublicUser(existingParticipant.user, emailByAuthUserId),
-          )}`,
-        });
+        throw new ORPCError("CONFLICT", { message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(
+          toPublicUser(existingParticipant.user, emailByAuthUserId),
+        )}` });
       }
 
       const participant = await context.db.tripParticipant.upsert({

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   protectedProcedure,
@@ -73,10 +73,7 @@ const ensureTripParticipant = async (
   });
 
   if (!participant) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "You are not a participant of this trip",
-    });
+    throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
   }
 
   return participant;
@@ -92,10 +89,7 @@ const ensureTripExists = async (
   });
 
   if (!trip) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Trip not found",
-    });
+    throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
   }
 
   return trip;
@@ -504,10 +498,7 @@ const getActivitiesPage = async (params: {
   const totalPages = Math.ceil(count / params.pageSize);
 
   if (params.page > totalPages && totalPages > 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Page ${params.page} exceeds total pages ${totalPages}`,
-    });
+    throw new ORPCError("BAD_REQUEST", { message: `Page ${params.page} exceeds total pages ${totalPages}` });
   }
 
   const activities = await params.context.db.activityFeed.findMany({
@@ -743,10 +734,7 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!activity) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Activity not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
       const [enriched] = await enrichActivities(context, [activity]);
@@ -854,10 +842,7 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Submission not found in selected trip",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found in selected trip" });
       }
 
       const activity = await context.db.activityFeed.create({
@@ -931,10 +916,7 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!challenge) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Challenge not found in selected trip",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Challenge not found in selected trip" });
       }
 
       const activity = await context.db.activityFeed.create({
@@ -991,10 +973,7 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!group) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Group not found in selected trip",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Group not found in selected trip" });
       }
 
       const activity = await context.db.activityFeed.create({
@@ -1046,10 +1025,7 @@ export const activityFeedRouter = createORPCRouter({
       }
 
       if (Object.keys(updateData).length === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No fields provided to update",
-        });
+        throw new ORPCError("BAD_REQUEST", { message: "No fields provided to update" });
       }
 
       const activity = await context.db.activityFeed.update({
@@ -1139,19 +1115,13 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!activity) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Activity not found",
-        });
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
       await ensureTripParticipant(context, activity.tripId);
 
       if (activity.isHidden) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "This activity is hidden",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "This activity is hidden" });
       }
 
       const existing = await context.db.activityReaction.findUnique({

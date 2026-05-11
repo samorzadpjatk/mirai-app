@@ -1,5 +1,5 @@
 import type { Prisma } from "@mirai-app/db";
-import { TRPCError } from "../api/trpc";
+import { ORPCError } from "@orpc/server";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
 
@@ -67,10 +67,7 @@ export async function sendNotification({
     );
   } catch (error) {
     console.error("Error creating notification after retries:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to create notification",
-    });
+    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create notification" });
   }
 }
 

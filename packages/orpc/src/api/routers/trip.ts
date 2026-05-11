@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   adminProcedure,
@@ -112,10 +112,7 @@ export const tripRouter = createORPCRouter({
       });
 
       if (!isParticipant) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not a participant of this trip",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
       const trip = await context.db.trip.findUnique({
@@ -170,7 +167,7 @@ export const tripRouter = createORPCRouter({
         },
       });
       if (!trip) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(
@@ -262,7 +259,7 @@ export const tripRouter = createORPCRouter({
         },
       });
       if (!trip) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(
@@ -334,7 +331,7 @@ export const tripRouter = createORPCRouter({
       const { id, ...data } = input;
       const trip = await context.db.trip.findUnique({ where: { id } });
       if (!trip) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
       return context.db.trip.update({
         where: { id },
@@ -356,10 +353,7 @@ export const tripRouter = createORPCRouter({
       });
 
       if (!isParticipant) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not a participant of this trip",
-        });
+        throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
       const resources = await context.db.tripResource.findMany({

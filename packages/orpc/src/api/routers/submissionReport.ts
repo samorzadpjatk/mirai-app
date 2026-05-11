@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TRPCError } from "../../api/trpc";
+import { ORPCError } from "@orpc/server";
 import {
   createORPCRouter,
   protectedProcedure,
@@ -39,7 +39,7 @@ const ensureTripParticipant = async (
     where: { userId_tripId: { userId: context.dbUser.id, tripId } },
   });
   if (!participant) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Brak dostepu do wyjazdu" });
+    throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
   }
   return participant;
 };
@@ -64,7 +64,7 @@ export const submissionReportRouter = createORPCRouter({
       });
 
       if (!submission) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
       const report = await context.db.submissionReport.create({
