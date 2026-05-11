@@ -37,6 +37,7 @@ on:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  TURBO_SCM_BASE: origin/${{ github.base_ref }}
 
 jobs:
   build_test:
@@ -49,6 +50,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Fetch base branch for turbo --affected
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }} --depth=1
 
       - name: Use Node.js 24
         uses: actions/setup-node@v6
@@ -86,42 +91,38 @@ jobs:
         with:
           reviewdog_version: latest
 
-      - name: Run ESLint (affected)
-        if: github.event_name == 'pull_request'
-        run: npx turbo run lint --affected
+      - name: Run ESLint
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx turbo run lint --affected
+          else
+            bun run lint
+          fi
 
-      - name: Run ESLint (full)
-        if: github.event_name != 'pull_request'
-        run: bun run lint
-
-      - name: Run TypeScript type checking (affected)
-        if: github.event_name == 'pull_request'
-        id: typecheck-affected
+      - name: Run TypeScript type checking
+        id: typecheck
         run: |
           set -o pipefail
-          npx turbo run typecheck --affected 2>&1 | tee typecheck.log
-
-      - name: Run TypeScript type checking (full)
-        if: github.event_name != 'pull_request'
-        id: typecheck-full
-        run: |
-          set -o pipefail
-          bun run typecheck 2>&1 | tee typecheck.log
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx turbo run typecheck --affected 2>&1 | tee typecheck.log
+          else
+            bun run typecheck 2>&1 | tee typecheck.log
+          fi
 
       - name: Report TypeScript errors to PR
-        if: failure() && (steps.typecheck-affected.outcome == 'failure' || steps.typecheck-full.outcome == 'failure')
+        if: failure() && steps.typecheck.outcome == 'failure'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat typecheck.log | reviewdog -f=tsc -name="TypeScript" -reporter=github-pr-review -filter-mode=nofilter -fail-on-error=false
 
-      - name: Run tests (affected)
-        if: github.event_name == 'pull_request'
-        run: npx turbo run test --affected
-
-      - name: Run tests (full)
-        if: github.event_name != 'pull_request'
-        run: bun run test
+      - name: Run tests
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx turbo run test --affected
+          else
+            bun run test
+          fi
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
