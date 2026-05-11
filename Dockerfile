@@ -22,6 +22,9 @@ ARG PACKAGE
 WORKDIR /app
 # copy pruned package json (for accurate deps) and package sources
 COPY --from=pruner /repo/out/full ./
+# turbo prune strips root-level files; tsconfig.base.json is required
+# by every workspace package ("extends": "../../tsconfig.base.json")
+COPY --from=pruner /repo/tsconfig.base.json ./tsconfig.base.json
 # install dependencies inside bundler (use bun cache)
 RUN --mount=type=cache,id=bun-cache,target=/root/.bun \
     bun install --frozen-lockfile
