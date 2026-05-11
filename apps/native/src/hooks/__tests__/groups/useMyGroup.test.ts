@@ -3,32 +3,27 @@ import { renderHook } from "@testing-library/react-native";
 import { useMyGroup } from "../../groups/useMyGroup";
 
 const mockUseQuery = jest.fn();
-const mockUseTRPC = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockUseTRPC(),
+const mockGroupGetMyQueryOptions = jest.fn((params: { input: { tripId: string }; enabled?: boolean }) => ({
+  queryKey: ["group", "getMy", params.input.tripId],
+  enabled: params.enabled,
+}));
+
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    group: {
+      getMy: {
+        queryOptions: (params: { input: { tripId: string }; enabled?: boolean }) => mockGroupGetMyQueryOptions(params),
+      },
+    },
+  },
 }));
 
 describe("useMyGroup", () => {
-  const mockTrpc = {
-    group: {
-      getMy: {
-        queryOptions: jest.fn((params: { tripId: string } | undefined, options: Record<string, unknown> | undefined) => ({
-          queryKey: ["group", "getMy", params?.tripId],
-          ...options,
-        })),
-      },
-    },
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseTRPC.mockReturnValue(mockTrpc);
-  });
 
   describe("query initialization", () => {
     it("should fetch my group when tripId is provided", () => {
@@ -40,10 +35,7 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup("trip-123"));
 
-      expect(mockTrpc.group.getMy.queryOptions).toHaveBeenCalledWith(
-        { tripId: "trip-123" },
-        { enabled: true }
-      );
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "trip-123" }, enabled: true });
     });
 
     it("should disable query when tripId is null", () => {
@@ -55,10 +47,7 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup(null));
 
-      expect(mockTrpc.group.getMy.queryOptions).toHaveBeenCalledWith(
-        { tripId: "" },
-        { enabled: false }
-      );
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "" }, enabled: false });
     });
 
     it("should disable query when tripId is undefined", () => {
@@ -70,10 +59,7 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup(undefined));
 
-      expect(mockTrpc.group.getMy.queryOptions).toHaveBeenCalledWith(
-        { tripId: "" },
-        { enabled: false }
-      );
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "" }, enabled: false });
     });
   });
 

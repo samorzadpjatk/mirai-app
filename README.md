@@ -39,12 +39,13 @@ Check their configuration details inside [`turbo.json`](turbo.json) and [`bun.lo
 It contains:
 
 - **Native application** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
-- **Backend server** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
+- **Backend server** (Hono + oRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
 - **Notification sender** (Expo Push Notifications) → [`@mirai-app/notification-sender`](apps/notification-sender/)
 - **Seed CLI** (Database & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Shared packages** → [`packages`](packages/)
   - [`@mirai-app/auth`](packages/auth/) - Authentication logic
   - [`@mirai-app/db`](packages/db/) - Prisma database client
+  - [`@mirai-app/orpc`](packages/orpc/) - oRPC routers and client
   - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
 
@@ -124,7 +125,7 @@ Runs all applications in development mode simultaneously:
 
 #### `bun run dev:backend`
 
-Runs only the backend server (Fastify + tRPC) in development mode (default port 2022).
+Runs only the backend server (Hono + oRPC) in development mode (default port 2022).
 
 #### `bun run dev:native`
 

@@ -1,15 +1,23 @@
 import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { useTRPC } from "@mirai-app/trpc/client";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(),
+const mockUseQuery = jest.fn();
+const mockCreateDownloadUrlQueryOptions = jest.fn((options: { input: { storagePath: string }; enabled?: boolean }) => ({
+  queryKey: ["storage", "createDownloadUrl", options.input.storagePath],
+  enabled: options.enabled,
 }));
 
-const mockUseQuery = jest.fn();
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    storage: {
+      createDownloadUrl: { queryOptions: (options: { input: { storagePath: string }; enabled?: boolean }) => mockCreateDownloadUrlQueryOptions(options) },
+    },
+  },
+}));
+
 jest.mock("@tanstack/react-query", () => {
   const actual = jest.requireActual("@tanstack/react-query");
   return {
@@ -29,15 +37,6 @@ describe("SubmissionImageCard", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useTRPC as jest.Mock).mockReturnValue({
-      storage: {
-        createDownloadUrl: {
-          queryOptions: ({ storagePath }: { storagePath: string }) => ({
-            queryKey: [storagePath],
-          }),
-        },
-      },
-    });
   });
 
   it("renders the title and group name", () => {

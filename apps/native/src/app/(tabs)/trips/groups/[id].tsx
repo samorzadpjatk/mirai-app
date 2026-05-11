@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
@@ -27,13 +27,12 @@ export default function GroupDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { data: group, isLoading: groupLoading } = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
+    ...orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } }),
     enabled: !!groupId,
   });
   const { isTripPast } = useTripDetails(group?.trip?.id);
@@ -48,8 +47,8 @@ export default function GroupDetailsScreen() {
 
   const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
     useQuery({
-      ...trpc.user.getMyWithGroup.queryOptions({
-        tripId: group?.trip?.id ?? "",
+      ...orpc.user.getMyWithGroup.queryOptions({
+        input: { tripId: group?.trip?.id ?? "" },
       }),
       enabled: !!group?.trip?.id,
     });
@@ -58,109 +57,111 @@ export default function GroupDetailsScreen() {
   const hasGroupInCurrentTrip = Boolean(currentUserGroupId);
 
   const { data: myJoinRequest } = useQuery({
-    ...trpc.group.getMyJoinRequestForGroup.queryOptions({
-      groupId: groupId ?? "",
+    ...orpc.group.getMyJoinRequestForGroup.queryOptions({
+      input: { groupId: groupId ?? "" },
     }),
     enabled:
       !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
   });
 
   const { data: pendingJoinRequests } = useQuery({
-    ...trpc.group.getPendingJoinRequests.queryOptions({
-      groupId: groupId ?? "",
+    ...orpc.group.getPendingJoinRequests.queryOptions({
+      input: { groupId: groupId ?? "" },
     }),
     enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup,
   });
 
   const { data: transactions } = useQuery({
-    ...trpc.coinTransaction.getCoinTransactions.queryOptions({
-      tripId: group?.trip?.id ?? "",
-      groupId: groupId ?? "",
-      limit: 20,
+    ...orpc.coinTransaction.getCoinTransactions.queryOptions({
+      input: {
+        tripId: group?.trip?.id ?? "",
+        groupId: groupId ?? "",
+        limit: 20,
+      },
     }),
     enabled: !!groupId && !!group?.trip?.id,
   });
   const { data: rankingData } = useQuery({
-    ...trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }),
+    ...orpc.group.ranking.queryOptions({ input: { tripId: group?.trip?.id ?? "" } }),
     enabled: !!group?.trip?.id,
   });
   const leaveGroupMutation = useMutation(
-    trpc.group.leaveMyGroup.mutationOptions({
+    orpc.group.leaveMyGroup.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
+          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } })
             .queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({
-            tripId: group?.trip?.id ?? "",
+          queryKey: orpc.group.getAll.queryOptions({
+            input: { tripId: group?.trip?.id ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({
-            tripId: group?.trip?.id ?? "",
+          queryKey: orpc.group.ranking.queryOptions({
+            input: { tripId: group?.trip?.id ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.user.getMyWithGroup.queryOptions({
-            tripId: group?.trip?.id ?? "",
+          queryKey: orpc.user.getMyWithGroup.queryOptions({
+            input: { tripId: group?.trip?.id ?? "" },
           }).queryKey,
         });
       },
     }),
   );
   const requestToJoinMutation = useMutation(
-    trpc.group.requestToJoin.mutationOptions({
+    orpc.group.requestToJoin.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
-            groupId: groupId ?? "",
+          queryKey: orpc.group.getMyJoinRequestForGroup.queryOptions({
+            input: { groupId: groupId ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
+          queryKey: orpc.group.getPendingJoinRequests.queryOptions({
+            input: { groupId: groupId ?? "" },
           }).queryKey,
         });
       },
     }),
   );
   const cancelJoinRequestMutation = useMutation(
-    trpc.group.cancelMyJoinRequest.mutationOptions({
+    orpc.group.cancelMyJoinRequest.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
-            groupId: groupId ?? "",
+          queryKey: orpc.group.getMyJoinRequestForGroup.queryOptions({
+            input: { groupId: groupId ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
+          queryKey: orpc.group.getPendingJoinRequests.queryOptions({
+            input: { groupId: groupId ?? "" },
           }).queryKey,
         });
       },
     }),
   );
   const respondToJoinRequestMutation = useMutation(
-    trpc.group.respondToJoinRequest.mutationOptions({
+    orpc.group.respondToJoinRequest.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
+          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } })
             .queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
+          queryKey: orpc.group.getPendingJoinRequests.queryOptions({
+            input: { groupId: groupId ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({
-            tripId: group?.trip?.id ?? "",
+          queryKey: orpc.group.getAll.queryOptions({
+            input: { tripId: group?.trip?.id ?? "" },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({
-            tripId: group?.trip?.id ?? "",
+          queryKey: orpc.group.ranking.queryOptions({
+            input: { tripId: group?.trip?.id ?? "" },
           }).queryKey,
         });
       },

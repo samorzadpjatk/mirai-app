@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 
 export interface ChallengeItem {
   id: string;
@@ -14,11 +14,9 @@ export interface ChallengeItem {
 const PAGE_SIZE = 30;
 
 export function useAdminChallengesByTrip(tripId: string) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const challengeQueryKey = trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey;
+  const challengeQueryKey = orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } }).queryKey;
   const {
     data,
     isLoading,
@@ -27,20 +25,18 @@ export function useAdminChallengesByTrip(tripId: string) {
     isFetchingNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [...challengeQueryKey, 'infinite', PAGE_SIZE],
-    enabled: !!tripId,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.challenge.getAllByTrip.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.challenge.getAllByTrip.query({
+      return {
         tripId,
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -48,7 +44,8 @@ export function useAdminChallengesByTrip(tripId: string) {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: !!tripId,
+  }));
 
   const challengesData = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.challenges ?? []),
@@ -69,7 +66,7 @@ export function useAdminChallengesByTrip(tripId: string) {
   }, [challengesData]);
 
   const deleteChallengeMutation = useMutation(
-    trpc.challenge.delete.mutationOptions({
+    orpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: challengeQueryKey });
       },

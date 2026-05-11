@@ -2,8 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminChallenges } from "../../admin/useAdminChallenges";
 
-// Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
+// Mock oRPC
+const mockGetAllQuery = jest.fn((options: { input: Record<string, never> }) => ({
   queryKey: ["challenge", "getAll"],
 }));
 
@@ -19,23 +19,23 @@ const mockDeleteMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     challenge: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        queryOptions: (options: { input: Record<string, never> }) => mockGetAllQuery(options),
       },
       create: {
-        mutationOptions: mockCreateMutation,
+        mutationOptions: () => mockCreateMutation(),
       },
       update: {
-        mutationOptions: mockUpdateMutation,
+        mutationOptions: () => mockUpdateMutation(),
       },
       delete: {
-        mutationOptions: mockDeleteMutation,
+        mutationOptions: () => mockDeleteMutation(),
       },
     },
-  })),
+  },
 }));
 
 // Mock React Query

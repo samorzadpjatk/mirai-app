@@ -10,7 +10,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { QrScannerModal } from "~/components/common";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";
@@ -71,7 +71,6 @@ const isOnOrBeforeNow = (value?: string | Date | null) => {
 
 export default function ChallengeDetailScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const challengeId =
@@ -115,14 +114,18 @@ export default function ChallengeDetailScreen() {
     : undefined;
 
   const submissionQuery =
-    trpc.challengeSubmission.getMyForChallenge.queryOptions({
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+    orpc.challengeSubmission.getMyForChallenge.queryOptions({
+      input: {
+        challengeId: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
     });
   const challengeSubmissionsQuery =
-    trpc.challengeSubmission.getByChallenge.queryOptions({
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+    orpc.challengeSubmission.getByChallenge.queryOptions({
+      input: {
+        challengeId: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
     });
 
   const { data: mySubmission } = useQuery({
@@ -134,7 +137,7 @@ export default function ChallengeDetailScreen() {
     enabled: !!challengeId && !!tripId,
   });
   const { data: trip } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
+    ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
     enabled: !!tripId,
   });
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -152,7 +155,7 @@ export default function ChallengeDetailScreen() {
   >(null);
 
   const withdrawMutation = useMutation(
-    trpc.challengeSubmission.deleteMine.mutationOptions({
+    orpc.challengeSubmission.deleteMine.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: submissionQuery.queryKey,
@@ -164,7 +167,7 @@ export default function ChallengeDetailScreen() {
     }),
   );
   const qrSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
+    orpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: submissionQuery.queryKey,
@@ -176,7 +179,7 @@ export default function ChallengeDetailScreen() {
     }),
   );
   const locationSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
+    orpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: submissionQuery.queryKey,
@@ -188,7 +191,7 @@ export default function ChallengeDetailScreen() {
     }),
   );
   const textSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
+    orpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: submissionQuery.queryKey,

@@ -121,7 +121,7 @@ turbo run lint:fix
 turbo run format:write
 
 # Check specific package
-turbo run lint --filter=@mirai-app/trpc
+turbo run lint --filter=@mirai-app/orpc
 ```
 
 ## Testing
@@ -131,7 +131,7 @@ turbo run lint --filter=@mirai-app/trpc
 turbo run test
 
 # Run tests for specific package
-turbo run test --filter=@mirai-app/trpc
+turbo run test --filter=@mirai-app/orpc
 
 # Watch mode
 cd packages/trpc && bun run test:watch
@@ -144,7 +144,7 @@ cd packages/trpc && bun run test:watch
 turbo run build
 
 # Build specific package with dependencies
-turbo run build --filter=@mirai-app/trpc...
+turbo run build --filter=@mirai-app/orpc...
 
 # Build packages only
 turbo run build --filter='./packages/*'
@@ -182,7 +182,7 @@ turbo run dev --filter=@mirai-app/native
 turbo run build --filter=@mirai-app/native...
 
 # Run script in package and its dependents
-turbo run build --filter=@mirai-app/trpc^
+turbo run build --filter=@mirai-app/orpc^
 
 # Run script in packages only
 turbo run lint --filter='./packages/*'

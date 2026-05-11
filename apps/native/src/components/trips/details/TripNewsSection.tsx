@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripNewsSectionProps {
@@ -48,14 +48,15 @@ const formatAdminName = (item: AdminNewsItem) => {
 };
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
-  const trpc = useTRPC();
   const router = useRouter();
 
   const newsQuery = useQuery({
-    ...trpc.activityFeed.getByTrip.queryOptions({
-      tripId,
-      page: 1,
-      pageSize: 30,
+    ...orpc.activityFeed.getByTrip.queryOptions({
+      input: {
+        tripId,
+        page: 1,
+        pageSize: 30,
+      },
     }),
     enabled: Boolean(tripId),
   });

@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -13,7 +13,6 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 export default function AdminEditActivityScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ activityId: string; tripId?: string }>();
@@ -23,14 +22,16 @@ export default function AdminEditActivityScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
+  const feedQueryOptions = orpc.activityFeed.getByTripModeration.queryOptions({
+    input: {
+      tripId,
+      page: 1,
+      pageSize: 100,
+    },
   });
 
   const { data: activity, isLoading } = useQuery(
-    trpc.activityFeed.getById.queryOptions({ id: activityId }, { enabled: !!activityId })
+    orpc.activityFeed.getById.queryOptions({ input: { id: activityId }, enabled: !!activityId })
   );
 
   // Initialize form with activity data when it loads
@@ -51,7 +52,7 @@ export default function AdminEditActivityScreen() {
   }, [activity, title, description]);
 
   const updateMutation = useMutation(
-    trpc.activityFeed.update.mutationOptions({
+    orpc.activityFeed.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
         Alert.alert("Success", "Activity updated successfully.", [

@@ -21,7 +21,7 @@ export type ServerSharingUpdater = (input: {
 let _updateSharingOnServer: ServerSharingUpdater | null = null;
 
 /**
- * Inject the tRPC mutation function so the store can call the server
+ * Inject the oRPC mutation function so the store can call the server
  * without depending on React hooks.
  */
 export function setLocationServerUpdater(fn: ServerSharingUpdater | null) {

@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 
 export interface TransactionItem {
   id: string;
@@ -20,9 +20,6 @@ export interface TransactionItem {
 const PAGE_SIZE = 50;
 
 export function useAdminTransactions(tripId: string) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
   const {
     data,
     isLoading,
@@ -31,24 +28,18 @@ export function useAdminTransactions(tripId: string) {
     isFetchingNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.coinTransaction.getAll.queryOptions({ tripId }).queryKey,
-      'infinite',
-      PAGE_SIZE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.coinTransaction.getAll.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.coinTransaction.getAll.query({
+      return {
         tripId,
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -56,10 +47,11 @@ export function useAdminTransactions(tripId: string) {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const groupsQuery = useQuery(
-    trpc.group.getAllNames.queryOptions({ tripId }, { enabled: Boolean(tripId) })
+    orpc.group.getAllNames.queryOptions({ input: { tripId }, enabled: Boolean(tripId) })
   );
 
   // Transform the data to match our interface

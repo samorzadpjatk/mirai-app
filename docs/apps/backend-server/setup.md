@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers setting up the Fastify + tRPC backend server.
+This guide covers setting up the Fastify + oRPC backend server.
 
 ## Prerequisites
 
@@ -69,8 +69,8 @@ bun run start
 src/
 ├── index.ts           # Entry point
 ├── server.ts          # Fastify instance
-├── context.ts         # tRPC context
-├── routers/           # tRPC routers
+├── context.ts         # oRPC context
+├── routers/           # oRPC routers
 │   ├── index.ts       # Root router
 │   └── ...
 └── plugins/           # Fastify plugins
@@ -99,7 +99,7 @@ import healthRoute from './routes/health';
 await fastify.register(healthRoute);
 ```
 
-### tRPC Procedure
+### oRPC Procedure
 
 ```typescript
 // Add to packages/trpc/src/routers/my-router.ts
@@ -221,4 +221,4 @@ DATABASE_URL=postgresql://...
 ## Further Reading
 
 - [Fastify Documentation](https://fastify.dev/)
-- [tRPC Server](https://trpc.io/docs/server/introduction)
+- [oRPC Server](https://trpc.io/docs/server/introduction)

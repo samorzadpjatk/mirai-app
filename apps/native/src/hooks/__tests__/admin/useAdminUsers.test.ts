@@ -2,15 +2,14 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminUsers } from "../../admin/useAdminUsers";
 
-// Mock tRPC
-const mockSearchWithPaginationQuery = jest.fn(() => ({
-  queryKey: ["user", "searchWithPagination"],
+// Mock oRPC
+const mockSearchWithPaginationQuery = jest.fn((options: { input: { tripId: string } }) => ({
+  ...options,
+  queryKey: ["user", "searchWithPagination", options.input.tripId],
 }));
 
-const mockSearchWithPaginationQueryClient = jest.fn();
-
-const mockGroupGetAllQuery = jest.fn(() => ({
-  queryKey: ["group", "getAll"],
+const mockGroupGetAllQuery = jest.fn((options: { input: { tripId: string } }) => ({
+  queryKey: ["group", "getAll", options.input.tripId],
 }));
 
 const mockAssignUserToGroupMutation = jest.fn(() => ({
@@ -53,60 +52,53 @@ const mockRemoveHouseNumberMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     user: {
       searchWithPagination: {
-        queryOptions: mockSearchWithPaginationQuery,
+        infiniteOptions: (options: { input: { tripId: string } }) => mockSearchWithPaginationQuery(options),
       },
       createUser: {
-        mutationOptions: mockCreateUserMutation,
+        mutationOptions: () => mockCreateUserMutation(),
       },
       banUserUntil: {
-        mutationOptions: mockBanUserMutation,
+        mutationOptions: () => mockBanUserMutation(),
       },
       deleteUser: {
-        mutationOptions: mockDeleteUserMutation,
+        mutationOptions: () => mockDeleteUserMutation(),
       },
       updateName: {
-        mutationOptions: mockUpdateNameMutation,
+        mutationOptions: () => mockUpdateNameMutation(),
       },
       updateWristNumber: {
-        mutationOptions: mockUpdateWristNumberMutation,
+        mutationOptions: () => mockUpdateWristNumberMutation(),
       },
       removeWristNumber: {
-        mutationOptions: mockRemoveWristNumberMutation,
+        mutationOptions: () => mockRemoveWristNumberMutation(),
       },
       updateHouseNumber: {
-        mutationOptions: mockUpdateHouseNumberMutation,
+        mutationOptions: () => mockUpdateHouseNumberMutation(),
       },
       removeHouseNumber: {
-        mutationOptions: mockRemoveHouseNumberMutation,
+        mutationOptions: () => mockRemoveHouseNumberMutation(),
       },
     },
     group: {
       getAll: {
-        queryOptions: mockGroupGetAllQuery,
+        queryOptions: (options: { input: { tripId: string } }) => mockGroupGetAllQuery(options),
       },
       assignUserToGroup: {
-        mutationOptions: mockAssignUserToGroupMutation,
+        mutationOptions: () => mockAssignUserToGroupMutation(),
       },
       removeUserFromGroup: {
-        mutationOptions: mockRemoveUserFromGroupMutation,
+        mutationOptions: () => mockRemoveUserFromGroupMutation(),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    user: {
-      searchWithPagination: {
-        query: mockSearchWithPaginationQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateUserQueries: jest.fn(),
 }));
 

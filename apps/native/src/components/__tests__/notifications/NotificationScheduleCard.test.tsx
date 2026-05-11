@@ -7,7 +7,7 @@ import { NotificationScheduleCard } from "../../notifications/NotificationSchedu
 const mockMutateDelete = jest.fn();
 const mockMutateToggle = jest.fn();
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: () => ({
     notificationSchedule: {
       delete: {
@@ -27,6 +27,25 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   }),
+  orpc: {
+    notificationSchedule: {
+      delete: {
+        mutationOptions: () => ({
+          mutationFn: mockMutateDelete,
+        }),
+      },
+      toggleActive: {
+        mutationOptions: () => ({
+          mutationFn: mockMutateToggle,
+        }),
+      },
+      getAll: {
+        queryOptions: () => ({
+          queryKey: ["notificationSchedule", "getAll"],
+        }),
+      },
+    },
+  },
 }));
 
 interface MutationOptions {

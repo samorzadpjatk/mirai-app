@@ -3,20 +3,20 @@
 > **Inherited Conventions**: See [root AGENTS.md](../../AGENTS.md) for monorepo conventions, build system, and development workflow.
 
 > **Backend-Specific Overrides**:
-> - Uses Fastify 5.6.2 instead of Express
-> - WebSocket support via @fastify/websocket
-> - tRPC integration for type-safe APIs
+> - Uses Hono 4.x instead of Fastify
+> - WebSocket support via Bun-native adapter
+> - oRPC integration for type-safe APIs
 
 ## Purpose
 
-Fastify HTTP server providing the REST and tRPC API for the MIRAI platform. Handles authentication, data persistence, and WebSocket connections for real-time features.
+Hono HTTP server providing the REST and oRPC API for the MIRAI platform. Handles authentication, data persistence, and WebSocket connections for real-time features.
 
 ## Tech Stack
 
-- **Framework**: Fastify 5.6.2
-- **API**: tRPC 11.8.1
-- **WebSocket**: @fastify/websocket
-- **CORS**: @fastify/cors
+- **Framework**: Hono 4.12.18
+- **API**: oRPC 1.14.2
+- **WebSocket**: Bun native WebSocket via `@orpc/server/bun-ws`
+- **CORS**: `hono/cors` (built-in)
 - **Testing**: Vitest
 
 ## Key Files
@@ -25,10 +25,10 @@ Fastify HTTP server providing the REST and tRPC API for the MIRAI platform. Hand
 apps/backend-server/
 ├── src/
 │   ├── index.ts          # Server entry point
-│   ├── server.ts         # Fastify server setup
-│   ├── routes/           # HTTP routes
-│   ├── trpc/             # tRPC router setup
-│   └── websocket/        # WebSocket handlers
+│   ├── server.ts         # Hono server setup
+│   ├── ws-adapter.ts     # oRPC WebSocket adapter wrapper
+│   ├── config.ts         # Server configuration
+│   └── routes/           # HTTP routes
 ├── package.json
 └── AGENTS.md             # This file
 ```
@@ -58,15 +58,14 @@ bun run test:ui
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `/trpc/*` | tRPC procedures |
-| `/ws` | WebSocket endpoint |
+| `/api/trpc/*` | oRPC procedures (HTTP + WebSocket) |
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PORT` | Server port | 3000 |
-| `HOST` | Server host | 0.0.0.0 |
+| `TRPC_SERVER_PORT` | Server port | - |
+| `TRPC_SERVER_HOST` | Server host | - |
 | `DATABASE_URL` | PostgreSQL URL | - |
 | `SUPABASE_URL` | Supabase URL | - |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key | - |
@@ -75,26 +74,25 @@ bun run test:ui
 
 ### Internal
 
-- `@mirai-app/trpc` - tRPC router
+- `@mirai-app/orpc` - oRPC router
 
 ### External
 
-- `fastify` - Web framework
-- `@fastify/cors` - CORS handling
-- `@fastify/websocket` - WebSocket support
-- `@trpc/server` - tRPC server
-- `ws` - WebSocket library
+- `hono` - Web framework
+- `@orpc/server` - oRPC server
+- `@orpc/server/fetch` - oRPC fetch handler
+- `@orpc/server/bun-ws` - Bun WebSocket oRPC handler
 
 ## Overrides to Root Conventions
 
-1. **Uses Fastify** instead of typical Node.js frameworks
-2. **WebSocket support** for real-time features
+1. **Uses Hono** instead of Fastify or Express
+2. **Bun-native WebSocket** for real-time features
 3. **Hot reload** via `bun --watch`
 4. **Vitest** for testing instead of Jest
 
 ## Links
 
 - [Setup guide](../../docs/apps/backend-server/setup.md)
-- [tRPC Integration](../../docs/apps/backend-server/trpc.md)
+- [oRPC Integration](../../docs/apps/backend-server/orpc.md)
 - [API Structure](../../docs/apps/backend-server/api-structure.md)
 - [Root AGENTS.md](../../AGENTS.md)

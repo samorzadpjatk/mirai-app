@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 
@@ -9,7 +9,7 @@ interface UseCommunityActivityDataProps {
 }
 
 export const useCommunityActivityData = ({ activities }: UseCommunityActivityDataProps) => {
-  const trpcClient = useTRPCClient();
+  const trpcClient = orpc;
 
   // Get unique trip IDs for rank change activities
   const rankingTripIds = useMemo(() => {
@@ -43,7 +43,7 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
       if (rankingTripIds.length === 0) return {};
       
       const queries = rankingTripIds.map(tripId =>
-        trpcClient.group.ranking.query({ tripId })
+        trpcClient.group.ranking.call({ tripId })
           .then(data => ({ tripId, data: data.data }))
           .catch(() => ({ tripId, data: [] }))
       );
@@ -73,7 +73,7 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
       if (avatarUserIds.length === 0) return {};
       
       const queries = avatarUserIds.map(userId =>
-        trpcClient.storage.createDownloadUrl.query({
+        trpcClient.storage.createDownloadUrl.call({
           storagePath: `avatar/${userId}.jpg`,
           expiresInSeconds: 60 * 60,
         })

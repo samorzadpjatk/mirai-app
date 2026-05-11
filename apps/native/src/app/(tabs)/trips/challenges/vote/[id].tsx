@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import {
   borderRadius,
   colors,
@@ -116,10 +116,9 @@ function SubmissionImageCard({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const trpc = useTRPC();
   const { data, isLoading } = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: submission.imagePath,
+    ...orpc.storage.createDownloadUrl.queryOptions({
+      input: { storagePath: submission.imagePath },
     }),
     enabled: !!submission.imagePath,
   });
@@ -168,7 +167,6 @@ export default function ChallengePeerVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
   const challengeId =
@@ -176,19 +174,23 @@ export default function ChallengePeerVotingScreen() {
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
-  const challengeQuery = trpc.challenge.getById.queryOptions({
-    id: challengeId ?? "",
-    tripId: tripId ?? "",
+  const challengeQuery = orpc.challenge.getById.queryOptions({
+    input: {
+      id: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
   });
-  const submissionsQuery = trpc.challengeSubmission.getByChallenge.queryOptions(
-    {
+  const submissionsQuery = orpc.challengeSubmission.getByChallenge.queryOptions({
+    input: {
       challengeId: challengeId ?? "",
       tripId: tripId ?? "",
     },
-  );
-  const myVotesQuery = trpc.challengeVote.getMyByChallenge.queryOptions({
-    challengeId: challengeId ?? "",
-    tripId: tripId ?? "",
+  });
+  const myVotesQuery = orpc.challengeVote.getMyByChallenge.queryOptions({
+    input: {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
   });
 
   const { data: challenge, isLoading: isLoadingChallenge } = useQuery({
@@ -204,7 +206,7 @@ export default function ChallengePeerVotingScreen() {
     enabled: !!challengeId && !!tripId,
   });
   const { data: meWithGroup, isLoading: isLoadingMeWithGroup } = useQuery({
-    ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
+    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
     enabled: !!tripId,
   });
 
@@ -223,7 +225,7 @@ export default function ChallengePeerVotingScreen() {
   }, [isTripPast, challengeId, tripId, router]);
 
   const submitVoteMutation = useMutation(
-    trpc.challengeVote.submitVote.mutationOptions(),
+    orpc.challengeVote.submitVote.mutationOptions(),
   );
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");

@@ -2,30 +2,30 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminCoins } from "../../admin/useAdminCoins";
 
-// Mock tRPC
-const mockGetGroupListQuery = jest.fn(() => ({
-  queryKey: ["group", "getGroupList"],
+// Mock oRPC
+const mockGetGroupListQuery = jest.fn((options: { input: { tripId: string } }) => ({
+  queryKey: ["group", "getGroupList", options.input.tripId],
 }));
 
 const mockAddCoinsMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     group: {
       getGroupList: {
-        queryOptions: mockGetGroupListQuery,
+        queryOptions: (options: { input: { tripId: string } }) => mockGetGroupListQuery(options),
       },
       addCoins: {
-        mutationOptions: mockAddCoinsMutation,
+        mutationOptions: () => mockAddCoinsMutation(),
       },
     },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateGroupQueries: jest.fn(),
 }));
 

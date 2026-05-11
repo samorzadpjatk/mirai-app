@@ -1,19 +1,15 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
-import { invalidateRewardQueries, invalidateTransactionQueries } from '@mirai-app/trpc/client/query';
+import { orpc } from '@mirai-app/orpc/client';
+import { invalidateRewardQueries, invalidateTransactionQueries } from '@mirai-app/orpc/client/query';
 
 const PAGE_SIZE = 30;
 
 export const useRewards = (tripId: string) => {
-  const trpc = useTRPC();
-  return useQuery(trpc.reward.getByTrip.queryOptions({ tripId }, { enabled: Boolean(tripId) }));
+  return useQuery(orpc.reward.getByTrip.queryOptions({ input: { tripId }, enabled: Boolean(tripId) }));
 };
 
 export const useAdminRewards = (tripId?: string | null) => {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
   const {
     data,
     isLoading,
@@ -23,24 +19,18 @@ export const useAdminRewards = (tripId?: string | null) => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.reward.getByTripAdmin.queryOptions({ tripId: tripId ?? '' }).queryKey,
-      'infinite',
-      PAGE_SIZE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.reward.getByTripAdmin.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.reward.getByTripAdmin.query({
+      return {
         tripId: tripId ?? '',
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -48,7 +38,8 @@ export const useAdminRewards = (tripId?: string | null) => {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const rewards = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.rewards ?? []),
@@ -68,30 +59,26 @@ export const useAdminRewards = (tripId?: string | null) => {
 };
 
 export const useReward = (id: string | null) => {
-  const trpc = useTRPC();
-  return useQuery(trpc.reward.getById.queryOptions({ id: id ?? "" }, { enabled: Boolean(id) }));
+  return useQuery(orpc.reward.getById.queryOptions({ input: { id: id ?? "" }, enabled: Boolean(id) }));
 };
 
 export const useCreateReward = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.create.mutationOptions({
+  return useMutation(orpc.reward.create.mutationOptions({
     onSuccess: async () => { await invalidateRewardQueries(queryClient, true); },
   }));
 };
 
 export const useUpdateReward = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.update.mutationOptions({
+  return useMutation(orpc.reward.update.mutationOptions({
     onSuccess: async () => { await invalidateRewardQueries(queryClient, true); },
   }));
 };
 
 export const useSetRewardHidden = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.setHidden.mutationOptions({
+  return useMutation(orpc.reward.setHidden.mutationOptions({
     onSuccess: async (responseData) => {
       await queryClient.invalidateQueries({ queryKey: ['reward', 'getById', responseData.id] });
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getByTrip']] });
@@ -101,9 +88,8 @@ export const useSetRewardHidden = () => {
 };
 
 export const useDeleteReward = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.delete.mutationOptions({
+  return useMutation(orpc.reward.delete.mutationOptions({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getByTrip']] });
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getByTripAdmin']] });
@@ -112,9 +98,8 @@ export const useDeleteReward = () => {
 };
 
 export const usePurchaseReward = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.purchase.mutationOptions({
+  return useMutation(orpc.reward.purchase.mutationOptions({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getByTrip']] });
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getPurchaseHistory']] });
@@ -124,9 +109,6 @@ export const usePurchaseReward = () => {
 };
 
 export const useRewardPurchaseHistory = (tripId: string) => {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
   const {
     data,
     isLoading,
@@ -136,24 +118,18 @@ export const useRewardPurchaseHistory = (tripId: string) => {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.reward.getPurchaseHistory.queryOptions({ tripId }).queryKey,
-      'infinite',
-      PAGE_SIZE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.reward.getPurchaseHistory.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.reward.getPurchaseHistory.query({
+      return {
         tripId,
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -161,7 +137,8 @@ export const useRewardPurchaseHistory = (tripId: string) => {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const purchases = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.purchases ?? []),
@@ -181,9 +158,8 @@ export const useRewardPurchaseHistory = (tripId: string) => {
 };
 
 export const useUpdateRewardPurchaseStatus = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.updatePurchaseStatus.mutationOptions({
+  return useMutation(orpc.reward.updatePurchaseStatus.mutationOptions({
     onSuccess: async (responseData) => {
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getPurchaseHistory']] });
       await queryClient.invalidateQueries({ queryKey: ['reward', 'getById', responseData.rewardId] });
@@ -195,9 +171,8 @@ export const useUpdateRewardPurchaseStatus = () => {
 };
 
 export const useUpdateMyRewardPurchaseStatus = () => {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  return useMutation(trpc.reward.updateMyPurchaseStatus.mutationOptions({
+  return useMutation(orpc.reward.updateMyPurchaseStatus.mutationOptions({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getPurchaseHistory']] });
       await queryClient.invalidateQueries({ queryKey: [['reward', 'getByTrip']] });

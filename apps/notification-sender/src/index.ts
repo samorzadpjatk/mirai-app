@@ -1,6 +1,6 @@
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
-import { getTRPCClient } from "@mirai-app/trpc/client";
+import { getORPCClient } from "@mirai-app/orpc/client";
 
 interface NotificationRow {
   id: string;
@@ -23,7 +23,7 @@ export function main() {
     { realtime: { params: { eventsPerSecond: 2 } } },
   );
 
-  const { client, cleanup } = getTRPCClient(
+  const { client, cleanup } = getORPCClient(
     `http://${TRPC_HOST}/api/trpc`,
     `ws://${TRPC_HOST}/api/trpc`,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -34,17 +34,17 @@ export function main() {
   ): Promise<void> => {
     const id = payload.new.id;
     try {
-      await client.notificationSender.trackDeliveryStart.mutate({
+      await client.notificationSender.trackDeliveryStart({
         notificationId: id,
       });
 
       const mobile =
-        await client.notificationSender.sendMobileNotifications.mutate({
+        await client.notificationSender.sendMobileNotifications({
           notificationId: id,
         });
       console.log("Delivery summary:", { mobile });
 
-      await client.notificationSender.trackDeliveryComplete.mutate({
+      await client.notificationSender.trackDeliveryComplete({
         notificationId: id,
         totalRecipients: mobile.total,
         successCount: mobile.sent,
@@ -55,7 +55,7 @@ export function main() {
       console.error("Failed handling Notification INSERT:", err);
 
       try {
-        await client.notificationSender.trackDeliveryFailure.mutate({
+        await client.notificationSender.trackDeliveryFailure({
           notificationId: id,
           error: err instanceof Error ? err : String(err),
         });

@@ -2,7 +2,7 @@ import React from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
@@ -14,7 +14,6 @@ import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/ad
 export default function EditChallengeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const tripId =
@@ -24,9 +23,11 @@ export default function EditChallengeScreen() {
   const challengeId =
     typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
-  const challengeQueryOptions = trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
+  const challengeQueryOptions = orpc.challenge.getById.queryOptions({
+    input: {
+      id: challengeId,
+      tripId,
+    },
   });
 
   const { data: challenge, isLoading: isChallengeLoading } = useQuery({
@@ -48,7 +49,7 @@ export default function EditChallengeScreen() {
   }
 
   const updateChallengeMutation = useMutation(
-    trpc.challenge.update.mutationOptions({
+    orpc.challenge.update.mutationOptions({
       onSuccess: () => {
         Alert.alert("Saved", "Challenge updated successfully.", [
           {

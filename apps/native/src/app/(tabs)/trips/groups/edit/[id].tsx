@@ -10,7 +10,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import {
@@ -41,10 +41,9 @@ export default function EditGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { group, isLoading: groupLoading } = useGroupEditor(groupId);
   const { isTripPast } = useTripDetails(group?.trip?.id);
@@ -81,7 +80,7 @@ export default function EditGroupScreen() {
 
   const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
   const deleteGroupMutation = useMutation(
-    trpc.group.deleteMyGroup.mutationOptions(),
+    orpc.group.deleteMyGroup.mutationOptions(),
   );
 
   const handleSave = async () => {

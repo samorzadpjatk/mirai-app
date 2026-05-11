@@ -4,7 +4,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import type {
   CommunityFeedActivity,
   ActivityFilter,
@@ -75,7 +75,7 @@ export const useCommunityFeed = ({
   focusActivityId,
 }: UseCommunityFeedProps) => {
   const queryClient = useQueryClient();
-  const trpcClient = useTRPCClient();
+  const trpcClient = orpc;
 
   const feedQueryKey = useMemo(
     () =>
@@ -102,7 +102,7 @@ export const useCommunityFeed = ({
         } satisfies FeedPageData;
       }
 
-      return (await trpcClient.activityFeed.getByTrip.query({
+      return (await trpcClient.activityFeed.getByTrip.call({
         tripId: selectedTripId,
         page: 1,
         pageSize: 30,
@@ -151,7 +151,7 @@ export const useCommunityFeed = ({
 
   const { mutateAsync: toggleHeart } = useMutation({
     mutationFn: async ({ activityId }: { activityId: string }) => {
-      return await trpcClient.activityFeed.toggleReaction.mutate({
+      return await trpcClient.activityFeed.toggleReaction.call({
         activityId,
         reactionType: "heart",
       });

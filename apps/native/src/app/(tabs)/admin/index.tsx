@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
 import { TripPickerModal } from '~/components/common/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -99,8 +99,6 @@ const tiles: TileType[] = [
 
 export default function AdminPanelScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
@@ -111,22 +109,17 @@ export default function AdminPanelScreen() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.trip.getAll.queryOptions().queryKey,
-      'infinite',
-      PAGE_SIZE,
-    ],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.trip.getAll.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.trip.getAll.query({
+      return {
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       const pagination =
         lastPage && typeof lastPage === 'object' && 'pagination' in lastPage
@@ -139,7 +132,7 @@ export default function AdminPanelScreen() {
 
       return pagination.offset + pagination.limit;
     },
-  });
+  }));
 
   const trips = useMemo(
     () =>

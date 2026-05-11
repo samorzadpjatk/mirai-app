@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -24,7 +24,6 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 export default function AdminCreateActivityScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
@@ -39,14 +38,16 @@ export default function AdminCreateActivityScreen() {
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
+  const feedQueryOptions = orpc.activityFeed.getByTripModeration.queryOptions({
+    input: {
+      tripId,
+      page: 1,
+      pageSize: 100,
+    },
   });
 
   const createCustomMutation = useMutation(
-    trpc.activityFeed.createCustom.mutationOptions({
+    orpc.activityFeed.createCustom.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
         setTitle("");

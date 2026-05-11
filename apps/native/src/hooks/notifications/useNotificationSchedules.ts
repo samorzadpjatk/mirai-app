@@ -1,16 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 
 export function useNotificationSchedules() {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const query = useQuery(trpc.notificationSchedule.getAll.queryOptions());
-  const deleteMutation = useMutation(trpc.notificationSchedule.delete.mutationOptions({
+  const query = useQuery(orpc.notificationSchedule.getAll.queryOptions({ input: {} }));
+  const deleteMutation = useMutation(orpc.notificationSchedule.delete.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
     onError: (err) => { console.error("Error deleting schedule:", err); },
   }));
-  const toggleMutation = useMutation(trpc.notificationSchedule.toggleActive.mutationOptions({
+  const toggleMutation = useMutation(orpc.notificationSchedule.toggleActive.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
     onError: (err) => { console.error("Error toggling schedule:", err); },
   }));

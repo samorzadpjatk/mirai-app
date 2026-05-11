@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -24,7 +24,6 @@ import { useFileUpload } from "~/hooks/files";
 
 export default function AdminEditRewardScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ rewardId: string; tripId?: string }>();
@@ -34,11 +33,11 @@ export default function AdminEditRewardScreen() {
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { data: reward, isLoading } = useQuery(
-    trpc.reward.getById.queryOptions({ id: rewardId }, { enabled: !!rewardId })
+    orpc.reward.getById.queryOptions({ input: { id: rewardId }, enabled: !!rewardId })
   );
 
   const { data: totalPointsData } = useQuery(
-    trpc.reward.getTotalAvailablePoints.queryOptions({ tripId }, { enabled: !!tripId })
+    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId })
   );
 
   const [name, setName] = useState(reward?.name ?? "");
@@ -55,7 +54,7 @@ export default function AdminEditRewardScreen() {
     : 0;
 
   const updateRewardMutation = useMutation(
-    trpc.reward.update.mutationOptions({
+    orpc.reward.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["reward", "getAll"], { input: { tripId } }],
@@ -75,7 +74,7 @@ export default function AdminEditRewardScreen() {
   );
 
   const setHiddenMutation = useMutation(
-    trpc.reward.setHidden.mutationOptions({
+    orpc.reward.setHidden.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["reward", "getAll"], { input: { tripId } }],
@@ -89,7 +88,7 @@ export default function AdminEditRewardScreen() {
   );
 
   const deleteRewardMutation = useMutation(
-    trpc.reward.delete.mutationOptions({
+    orpc.reward.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["reward", "getAll"], { input: { tripId } }],

@@ -3,23 +3,23 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useCommunityActivityData } from "../../community/useCommunityActivityData";
 import type { CommunityFeedActivity } from "../../../components/community/CommunityActivityCard";
 
-// Mock tRPC client
-const mockRankingQuery = jest.fn<() => Promise<unknown>>();
-const mockCreateDownloadUrlQuery = jest.fn<() => Promise<unknown>>();
+// Mock oRPC client
+const mockRankingQuery = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const mockCreateDownloadUrlQuery = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPCClient: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     group: {
       ranking: {
-        query: mockRankingQuery,
+        call: (...args: unknown[]) => mockRankingQuery(...args),
       },
     },
     storage: {
       createDownloadUrl: {
-        query: mockCreateDownloadUrlQuery,
+        call: (...args: unknown[]) => mockCreateDownloadUrlQuery(...args),
       },
     },
-  })),
+  },
 }));
 
 // Mock React Query

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
-import { invalidateGroupQueries } from '@mirai-app/trpc/client/query';
+import { orpc } from '@mirai-app/orpc/client';
+import { invalidateGroupQueries } from '@mirai-app/orpc/client/query';
 
 const GROUPS_PER_PAGE = 30;
 
@@ -33,9 +33,6 @@ export interface User {
 }
 
 export function useAdminGroups(tripId: string) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
   const {
     data,
     isLoading: groupsLoading,
@@ -44,31 +41,18 @@ export function useAdminGroups(tripId: string) {
     isFetchingNextPage: groupsFetchingNextPage,
     fetchNextPage: fetchMoreGroups,
     refetch: refetchGroups,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.group.getAll.queryOptions({
-        tripId,
-        pagination: {
-          limit: GROUPS_PER_PAGE,
-          offset: 0,
-        },
-      }).queryKey,
-      'infinite',
-      GROUPS_PER_PAGE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.group.getAll.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-
-      return trpcClient.group.getAll.query({
+      return {
         tripId,
         pagination: {
           limit: GROUPS_PER_PAGE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -76,7 +60,8 @@ export function useAdminGroups(tripId: string) {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const groups = useMemo(
     () =>
@@ -103,21 +88,21 @@ export function useAdminGroups(tripId: string) {
     [data],
   );
 
-  // Use direct tRPC + React Query for queries
+  // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
-  const { data: usersData, isLoading: usersLoading } = useQuery(trpc.user.getAll.queryOptions({ tripId }));
+  const { data: usersData, isLoading: usersLoading } = useQuery(orpc.user.getAll.queryOptions({ input: { tripId } }));
   const users = (usersData ?? []) as User[];
 
-  // Use direct tRPC + React Query for mutations
-  const createGroupMutation = useMutation(trpc.group.create.mutationOptions({
+  // Use direct oRPC + React Query for mutations
+  const createGroupMutation = useMutation(orpc.group.create.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
   }));
 
-  const updateGroupMutation = useMutation(trpc.group.update.mutationOptions({
+  const updateGroupMutation = useMutation(orpc.group.update.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
   }));
 
-  const deleteGroupMutation = useMutation(trpc.group.delete.mutationOptions({
+  const deleteGroupMutation = useMutation(orpc.group.delete.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
   }));
 

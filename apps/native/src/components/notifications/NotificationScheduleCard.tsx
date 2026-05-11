@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface NotificationScheduleCardProps {
@@ -12,14 +12,13 @@ interface NotificationScheduleCardProps {
 export function NotificationScheduleCard({
   schedule,
 }: NotificationScheduleCardProps) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation(
-    trpc.notificationSchedule.delete.mutationOptions({
+    orpc.notificationSchedule.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.notificationSchedule.getAll.queryOptions().queryKey,
+          queryKey: orpc.notificationSchedule.getAll.queryOptions({ input: {} }).queryKey,
         });
       },
       onError: (err) => {
@@ -29,10 +28,10 @@ export function NotificationScheduleCard({
   );
 
   const toggleMutation = useMutation(
-    trpc.notificationSchedule.toggleActive.mutationOptions({
+    orpc.notificationSchedule.toggleActive.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.notificationSchedule.getAll.queryOptions().queryKey,
+          queryKey: orpc.notificationSchedule.getAll.queryOptions({ input: {} }).queryKey,
         });
       },
       onError: (err) => {

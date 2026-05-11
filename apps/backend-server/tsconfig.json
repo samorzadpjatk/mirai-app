@@ -6,7 +6,7 @@
     "outDir": "./dist",
     "rootDir": ".",
     "composite": true,
-    "types": ["node", "vitest", "ws"]
+    "types": ["node", "vitest", "bun"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]

@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
@@ -25,7 +25,6 @@ export default function GroupsListScreen() {
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const trpc = useTRPC();
 
   const { isTripPast } = useTripDetails(tripId);
   const {
@@ -41,7 +40,7 @@ export default function GroupsListScreen() {
   } = useGroups(tripId);
   const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
     useQuery({
-      ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
+      ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
       enabled: !!tripId,
     });
   const groupsLoading = isLoading;

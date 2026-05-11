@@ -17,7 +17,7 @@ import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
@@ -33,9 +33,8 @@ interface UploadAsset {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
 
   // Initialize form state from user data - only on initial load
@@ -101,7 +100,7 @@ export default function EditProfileScreen() {
   ]);
 
   const updateAvatarMutation = useMutation(
-    trpc.user.updateAvatar.mutationOptions({
+    orpc.user.updateAvatar.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: userMyQueryOptions.queryKey,
@@ -111,7 +110,7 @@ export default function EditProfileScreen() {
   );
 
   const updateProfileMutation = useMutation(
-    trpc.user.updateMyProfile.mutationOptions({
+    orpc.user.updateMyProfile.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: userMyQueryOptions.queryKey,

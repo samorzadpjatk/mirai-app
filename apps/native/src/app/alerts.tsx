@@ -7,7 +7,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
@@ -17,15 +17,16 @@ import { colors, spacing, typography } from "../styles";
 import type { NotificationItem } from "~/types/notifications";
 
 export default function AlertsScreen() {
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    ...trpc.notifications.getAllMy.queryOptions({
-      page,
-      pageSize,
+    ...orpc.notifications.getAllMy.queryOptions({
+      input: {
+        page,
+        pageSize,
+      },
     }),
   });
 

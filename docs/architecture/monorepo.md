@@ -29,7 +29,7 @@ MIRAI uses a monorepo architecture managed by **Turborepo** and **Bun workspaces
 Applications are deployable units:
 
 - **native**: Expo React Native app for iOS/Android
-- **backend-server**: Fastify + tRPC API server
+- **backend-server**: Fastify + oRPC API server
 - **notification-sender**: Background worker for push notifications
 - **seed**: CLI tool for database seeding
 
@@ -41,7 +41,7 @@ Packages are shared libraries:
 - **db**: Prisma schema and database client
 - **shared**: Shared utilities and design tokens
 - **supabase**: Supabase client configuration
-- **trpc**: tRPC routers and client utilities
+- **trpc**: oRPC routers and client utilities
 
 ## Dependency Flow
 

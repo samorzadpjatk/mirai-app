@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
 import {
@@ -29,7 +29,6 @@ export function CreateScheduleModal({
   onClose,
   onCreated,
 }: CreateScheduleModalProps) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
@@ -63,11 +62,11 @@ export function CreateScheduleModal({
   }, [createTripId, createType, trips]);
 
   const createScheduleMutation = useMutation(
-    trpc.notificationSchedule.create.mutationOptions({
+    orpc.notificationSchedule.create.mutationOptions({
       onSuccess: async () => {
         // Invalidate schedules so list refreshes without parent needing to refetch
         await queryClient.invalidateQueries({
-          queryKey: trpc.notificationSchedule.getAll.queryOptions().queryKey,
+          queryKey: orpc.notificationSchedule.getAll.queryOptions({ input: {} }).queryKey,
         });
         onCreated?.();
         onClose();

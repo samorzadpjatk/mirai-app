@@ -1,0 +1,338 @@
+/**
+ * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
+ * 1. You want to modify request context (see Part 1).
+ * 2. You want to create a new middleware or type of procedure (see Part 3).
+ *
+ * TL;DR - This is where all the oRPC server stuff is created and plugged in. The pieces you will
+ * need to use are documented accordingly near the end.
+ */
+
+import { os, ORPCError } from "@orpc/server";
+
+import {
+  requireAdmin,
+  requireAuth,
+  requireModerator,
+  AuthenticationError,
+  AuthorizationError,
+} from "@mirai-app/auth";
+import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
+import { createDb, type PrismaClient } from "@mirai-app/db";
+
+const getAccessTokenFromHeaders = (headers: Headers): string | null => {
+  const authorization =
+    headers.get("authorization") ?? headers.get("Authorization");
+  if (!authorization) {
+    return null;
+  }
+
+  const [scheme, token] = authorization.split(" ");
+  if (scheme?.toLowerCase() !== "bearer" || !token) {
+    return null;
+  }
+
+  return token.trim();
+};
+
+const getAccessToken = (
+  headers: Headers,
+  connectionParams?: Record<string, string>,
+): string | null => {
+  // First try to get token from Authorization header
+  const headerToken = getAccessTokenFromHeaders(headers);
+  if (headerToken) {
+    console.log("[Auth] Token found in headers");
+    return headerToken;
+  }
+
+  console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
+
+  // Try connectionParams (sent as first WebSocket message)
+  if (
+   connectionParams &&    
+    "authorization" in connectionParams
+  ) {
+    const token = connectionParams.authorization;
+    console.log("[Auth] authorization in connectionParams:", token ? "EXISTS" : "MISSING");
+
+    if (token && token.trim().length > 0) {
+      console.log("[Auth] Token found in connectionParams");
+      return token.trim();
+    }
+  }
+
+  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
+  // This is used because WebSocket connections via browser/React Native don't support custom headers
+  const urlString = headers.get("x-original-url");
+  if (urlString) {
+    try {
+      // Handle both absolute URLs and relative URLs (WebSocket connections)
+      let url: URL;
+      if (urlString.startsWith('http://') || urlString.startsWith('https://') || urlString.startsWith('ws://') || urlString.startsWith('wss://')) {
+        // Absolute URL
+        url = new URL(urlString);
+      } else {
+        // Relative URL - construct absolute URL for parsing
+        // Use a dummy base URL since we only care about parsing query params
+        url = new URL(urlString, 'http://localhost');
+      }
+      
+      const authParam = url.searchParams.get("authorization");
+      if (authParam) {
+        const [scheme, token] = authParam.split(" ");
+        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
+          console.log("[Auth] Token found in URL query params");
+          return token.trim();
+        }
+      }
+    } catch (err) {
+      console.error("[Auth] Failed to parse URL:", err);
+    }
+  }
+
+  console.log("[Auth] No token found");
+  return null;
+};
+
+const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
+  if (!userAgent) return null;
+  
+  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
+  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
+  
+  // Android User Agent pattern: okhttp/4.12.0
+  const androidPattern = /^okhttp\/[\d.]+$/;
+  
+  if (iosPattern.test(userAgent)) return "ios";
+  if (androidPattern.test(userAgent)) return "android";
+  return null;
+};
+
+export interface ORPCContext {
+  db: PrismaClient;
+  supabase: SupabaseClient;
+  headers: Headers;
+  accessToken: string | null;
+}
+
+export interface TRPCContext extends ORPCContext, Record<string, unknown> {}
+
+// On the backend we use a single SERVICE_ROLE Supabase client (singleton).
+// Follow the Prisma pattern: a module-level lazy-initialized singleton so we avoid adding globals.
+let supabase: SupabaseClient | undefined;
+
+/**
+ * 1. CONTEXT
+ *
+ * This section defines the "contexts" that are available in the backend API.
+ *
+ * These allow you to access things when processing a request, like the database, the session, etc.
+ *
+ * This helper generates the "internals" for an oRPC context. The API handler and RSC clients each
+ * wrap this and provides the required context.
+ */
+export const createORPCContext = (opts: {
+  headers: Headers;
+  databaseUrl: string;
+  supabaseUrl: string;
+  supabaseKey: string;
+  connectionParams?: Record<string, string>;
+}): TRPCContext => {
+  if (!supabase) {
+    supabase = createSupabaseClient(
+      opts.supabaseUrl,
+      opts.supabaseKey,
+      undefined,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    console.log("[Supabase] Created server singleton client using SERVICE_ROLE key");
+  } else {
+    console.log("[Supabase] Reusing server singleton Supabase client");
+  }
+
+  // Extract User-Agent from connection params for WebSocket connections
+  const headers = new Headers(opts.headers);
+  for (const [key, value] of Object.entries(opts.connectionParams ?? {})) {
+    headers.set(key, value);
+  }
+
+  const accessToken = getAccessToken(headers, opts.connectionParams);
+  console.log(
+    "Creating oRPC context with access token:",
+    accessToken ? "YES" : "NO",
+  );
+
+  const db = createDb(opts.databaseUrl);
+
+  return {
+    db,
+    supabase,
+    headers,
+    accessToken,
+  };
+};
+
+/**
+ * 2. INITIALIZATION
+ *
+ * This is where the oRPC API is initialized. We use the `os` builder with typed context.
+ */
+const base = os.$context<ORPCContext>();
+
+// Global middleware for request telemetry
+const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
+  const userAgent = context.headers.get("user-agent") ?? context.headers.get("User-Agent");
+
+  const platform = getPlatformFromUserAgent(userAgent);
+  console.log("[Telemetry] User-Agent:", userAgent, "Platform:", platform);
+
+  // Log user agent for update rollout analysis
+  try {
+    // Try to extract user ID from auth token for better tracking
+    let userId = null;
+    if (context.accessToken) {
+      try {
+        // This is a lightweight way to get user ID without full validation
+        // since we're just logging, not authenticating here
+        const { data } = await context.supabase.auth.getUser(context.accessToken);
+        userId = data.user?.id ?? null;
+      } catch (error) {
+        // Ignore auth errors for logging purposes
+        console.log("[UserAgent Logging] Could not extract user ID:", error);
+      }
+    }
+
+    if (userAgent && platform) {
+      // Log to database asynchronously (fire and forget)
+      void context.db.userAgent.create({
+        data: {
+          userAgent,
+          platform,
+          userId,
+          endpoint: path.join("/"),
+        },
+      }).catch((error: unknown) => {
+        // Log errors but don't block the request
+        console.error("[UserAgent Logging] Failed to log user agent:", error);
+      });
+    }
+  } catch (error) {
+    console.error("[UserAgent Logging] Unexpected error:", error);
+  }
+
+  return next();
+});
+
+/**
+ * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
+ *
+ * These are the pieces you use to build your oRPC API. You should import these a lot in the
+ * "/src/server/api/routers" directory.
+ */
+
+/**
+ * Base procedure
+ * All procedures pass through shared telemetry middleware.
+ */
+const baseProcedure = base.use(mobileAppMiddleware);
+
+/**
+ * Public (unauthenticated) procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your oRPC API. It does not
+ * guarantee that a user querying is authorized, but you can still access user session data if they
+ * are logged in.
+ */
+export const publicProcedure = baseProcedure;
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
+ * the session is valid and guarantees `context.user` and `context.dbUser` are available.
+ */
+export const protectedProcedure = baseProcedure.use(async ({ context, next }) => {
+  try {
+    console.log("[Auth] Protected procedure called, checking auth...");
+    console.log("[Auth] Access token present:", context.accessToken ? "YES" : "NO");
+    
+    const { user, dbUser } = await requireAuth(
+      context.db,
+      context.supabase,
+      context.accessToken ?? undefined,
+    );
+    
+    console.log("[Auth] Auth successful for user:", user?.id || "unknown");
+    return next({
+      context: {
+        user,
+        dbUser,
+      },
+    });
+  } catch (err) {
+    console.error("[Auth] Auth failed:", err);
+    if (err instanceof AuthenticationError) {
+      console.log("[Auth] Throwing UNAUTHORIZED error");
+      throw new ORPCError("UNAUTHORIZED", { message: err.message });
+    }
+    throw err;
+  }
+});
+
+/**
+ * Moderator (authenticated) procedure
+ *
+ * If you want a query or mutation to ONLY be accessible to moderators or admins, use this.
+ */
+export const moderatorProcedure = baseProcedure.use(async ({ context, next }) => {
+  try {
+    const dbUser = await requireModerator(
+      context.db,
+      context.supabase,
+      context.accessToken ?? undefined,
+    );
+    return next({
+      context: {
+        dbUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new ORPCError("UNAUTHORIZED", { message: err.message });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new ORPCError("FORBIDDEN", { message: err.message });
+    }
+    throw err;
+  }
+});
+
+export const mobileAppProcedure = base.use(mobileAppMiddleware);
+
+export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
+  try {
+    const dbUser = await requireAdmin(
+      context.db,
+      context.supabase,
+      context.accessToken ?? undefined,
+    );
+    return next({
+      context: {
+        dbUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new ORPCError("UNAUTHORIZED", { message: err.message });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new ORPCError("FORBIDDEN", { message: err.message });
+    }
+    throw err;
+  }
+});
+
+export const createORPCRouter = <T extends Record<string, unknown>>(routes: T): T => routes;
+
+// Shim for tRPC's tracked() subscription helper (oRPC subscriptions yield directly)
+export const tracked = <T>(_connectionId: string, data: T): T => data;

@@ -1,38 +1,29 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 30;
 
 export function useChallenges(tripId?: string | null) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
   const tripQuery = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
+    ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
     enabled: Boolean(tripId),
   });
 
-  const challengesQuery = useInfiniteQuery({
-    queryKey: [
-      ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" }).queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.challenge.getAllByTrip.query({
+  const challengesQuery = useInfiniteQuery(orpc.challenge.getAllByTrip.infiniteOptions({
+    input: (pageParam: number) => {
+      const offset = pageParam || 0;
+      return {
         tripId: tripId ?? "",
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -40,9 +31,10 @@ export function useChallenges(tripId?: string | null) {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
-  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
+  const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { data: trip, isLoading: tripLoading } = tripQuery;
   const challengesData = useMemo(

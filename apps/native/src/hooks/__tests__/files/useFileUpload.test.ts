@@ -26,7 +26,7 @@ jest.mock("expo-file-system", () => ({
   })),
 }));
 
-// Mock tRPC client - using interface for complex return type
+// Mock oRPC client - using interface for complex return type
 interface UploadTicket {
   resumableUrl: string;
   bucket: string;
@@ -35,16 +35,16 @@ interface UploadTicket {
   storagePath: string;
 }
 
-const mockCreateUploadUrl = jest.fn<(args: { storagePath: string; upsert?: boolean }) => Promise<UploadTicket>>();
+const mockCreateUploadUrl = jest.fn<(...args: unknown[]) => Promise<UploadTicket>>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPCClient: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     storage: {
       createUploadUrl: {
-        mutate: mockCreateUploadUrl,
+        call: (...args: unknown[]) => mockCreateUploadUrl(...args),
       },
     },
-  })),
+  },
 }));
 
 // Mock Supabase

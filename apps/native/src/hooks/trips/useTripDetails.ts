@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import {
   getCachedTripById,
   setCachedTripById,
@@ -10,9 +10,8 @@ import type { TripListItem } from "~/components/trips/list/types";
 import { isTripPast } from "~/utils/trip";
 
 export function useTripDetails(tripId?: string | null) {
-  const trpc = useTRPC();
-  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
-  const tripQuery = useQuery(trpc.trip.getById.queryOptions({ id: tripId ?? "" }, { enabled: !!tripId }));
+  const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
+  const tripQuery = useQuery(orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" }, enabled: !!tripId }));
 
   const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
 

@@ -41,7 +41,7 @@
     "@mirai-app/auth": "workspace:*",
     "@mirai-app/shared": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
-    "@mirai-app/trpc": "workspace:*",
+    "@mirai-app/orpc": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.6.0",
     "@react-native-picker/picker": "2.11.4",

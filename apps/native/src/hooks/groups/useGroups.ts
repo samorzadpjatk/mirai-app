@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import type { GroupListItem } from "~/components/trips/groups/types";
 
 const PAGE_SIZE = 30;
 
 export function useGroups(tripId?: string | null) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
@@ -18,24 +16,18 @@ export function useGroups(tripId?: string | null) {
     isFetchingNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.group.getAll.queryOptions({ tripId: tripId ?? "" }).queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.group.getAll.query({
+  } = useInfiniteQuery(orpc.group.getAll.infiniteOptions({
+    input: (pageParam: number) => {
+      const offset = pageParam || 0;
+      return {
         tripId: tripId ?? "",
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -43,7 +35,8 @@ export function useGroups(tripId?: string | null) {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const groups = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.groups ?? []),

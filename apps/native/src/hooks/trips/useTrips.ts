@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import type { TripListItem } from "~/components/trips/list/types";
 import { getCachedTrips, setCachedTrips } from "~/services/storage/selectedTripStorage";
 
 const PAGE_SIZE = 20;
 
 export function useTrips() {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const [cachedTrips, setCachedTripsState] = useState<TripListItem[] | null>(null);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
 
@@ -22,22 +20,17 @@ export function useTrips() {
     isError,
     error,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.trip.getAll.queryOptions().queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.trip.getAll.query({
+  } = useInfiniteQuery(orpc.trip.getAll.infiniteOptions({
+    input: (pageParam: number) => {
+      const offset = pageParam || 0;
+      return {
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -45,7 +38,7 @@ export function useTrips() {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+  }));
 
   const tripsData = useMemo(
     () => (data ? data.pages.flatMap((page) => page.trips ?? []) : null),

@@ -1,0 +1,367 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { noop } from "@mirai-app/shared/test-utils";
+
+// Set up console spy BEFORE importing the module under test
+const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
+
+// Mock the @orpc/client module
+vi.mock("@orpc/client", () => ({
+  createORPCClient: vi.fn(() => ({})),
+  ORPCError: class ORPCError extends Error {
+    status: number;
+    code: string;
+    constructor(code: string, opts?: { message?: string; status?: number; cause?: unknown }) {
+      super(opts?.message ?? code);
+      this.code = code;
+      this.status = opts?.status ?? 500;
+    }
+  },
+}));
+
+// Mock the @orpc/client/fetch module
+vi.mock("@orpc/client/fetch", () => ({
+  RPCLink: vi.fn(),
+}));
+
+// Mock the @orpc/client/websocket module
+vi.mock("@orpc/client/websocket", () => ({
+  RPCLink: vi.fn(),
+}));
+
+// Mock global WebSocket
+const mockWebSocketInstances: { close: ReturnType<typeof vi.fn> }[] = [];
+vi.stubGlobal(
+  "WebSocket",
+  vi.fn(() => {
+    const instance = { close: vi.fn().mockResolvedValue(undefined) };
+    mockWebSocketInstances.push(instance);
+    return instance;
+  })
+);
+
+// Import mocked modules for assertions
+import { RPCLink as RPCLinkFetch } from "@orpc/client/fetch";
+import { RPCLink as WSLink } from "@orpc/client/websocket";
+
+// Now import the module under test
+import { getORPCClient } from "../vanilia";
+
+describe("getORPCClient", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    consoleSpy.mockClear();
+    mockWebSocketInstances.length = 0;
+    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
+    vi.mocked(WSLink).mockReturnValue({} as never);
+  });
+
+  afterEach(() => {
+    consoleSpy.mockClear();
+  });
+
+  it("should create a client with HTTP URL and WS URL", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    const result = getORPCClient(httpUrl, wsUrl);
+
+    expect(result).toHaveProperty("client");
+    expect(result).toHaveProperty("cleanup");
+    expect(typeof result.cleanup).toBe("function");
+  });
+
+  it("should create a client without authorization token", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    const result = getORPCClient(httpUrl, wsUrl);
+
+    expect(result.client).toBeDefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Creating WebSocket client with token:",
+      "NO"
+    );
+  });
+
+  it("should create a client with authorization token", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const token = "test-auth-token-12345";
+
+    const result = getORPCClient(httpUrl, wsUrl, token);
+
+    expect(result.client).toBeDefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Creating WebSocket client with token:",
+      "YES"
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Token preview:",
+      expect.stringContaining("...")
+    );
+  });
+
+  it("should include token preview in logs", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const token = "test-auth-token-12345";
+
+    getORPCClient(httpUrl, wsUrl, token);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Token preview:",
+      "test-auth-token-1234..."
+    );
+  });
+
+  it("should provide a cleanup function that closes WebSocket", async () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    const { cleanup } = getORPCClient(httpUrl, wsUrl);
+
+    expect(typeof cleanup).toBe("function");
+
+    await cleanup();
+    expect(mockWebSocketInstances[0]?.close).toHaveBeenCalled();
+  });
+
+  it("should handle different URL formats", () => {
+    const testCases = [
+      { http: "http://api.example.com", ws: "ws://api.example.com" },
+      { http: "https://api.example.com/v1", ws: "wss://api.example.com/v1" },
+      { http: "http://localhost:2022", ws: "ws://localhost:2022" },
+    ];
+
+    testCases.forEach(({ http, ws }) => {
+      const result = getORPCClient(http, ws);
+      expect(result.client).toBeDefined();
+      expect(result.cleanup).toBeDefined();
+    });
+  });
+
+  it("should handle long authorization tokens", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const longToken = "a".repeat(1000);
+
+    const result = getORPCClient(httpUrl, wsUrl, longToken);
+
+    expect(result.client).toBeDefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Token preview:",
+      "a".repeat(20) + "..."
+    );
+  });
+
+  it("should handle empty authorization token", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const emptyToken = "";
+
+    const result = getORPCClient(httpUrl, wsUrl, emptyToken);
+
+    expect(result.client).toBeDefined();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "[WS Client] Creating WebSocket client with token:",
+      "NO"
+    );
+  });
+
+  it("should handle special characters in URLs", () => {
+    const httpUrl = "http://localhost:3000/path?query=value";
+    const wsUrl = "ws://localhost:3000/path";
+
+    const result = getORPCClient(httpUrl, wsUrl);
+
+    expect(result.client).toBeDefined();
+    expect(result.cleanup).toBeDefined();
+  });
+});
+
+describe("WebSocket Client Creation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    consoleSpy.mockClear();
+    mockWebSocketInstances.length = 0;
+  });
+
+  afterEach(() => {
+    consoleSpy.mockClear();
+  });
+
+  it("should encode authorization token in WebSocket URL", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const token = "Bearer token123";
+
+    getORPCClient(httpUrl, wsUrl, token);
+
+    expect(WebSocket).toHaveBeenCalled();
+    const wsUrlArg = (WebSocket as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
+    expect(wsUrlArg).toContain("authorization=");
+    expect(wsUrlArg).toContain(encodeURIComponent("Bearer token123"));
+  });
+
+  it("should create WebSocket without auth when no token", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
+  });
+});
+
+describe("HTTP Link Configuration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
+    vi.mocked(WSLink).mockReturnValue({} as never);
+  });
+
+  it("should configure HTTP link with correct URL", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    expect(RPCLinkFetch).toHaveBeenCalled();
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    expect(callArgs?.url).toBe(httpUrl);
+  });
+
+  it("should include authorization header when token provided", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+    const token = "test-token";
+
+    getORPCClient(httpUrl, wsUrl, token);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const headersFn = callArgs?.headers as (() => Record<string, string>) | undefined;
+
+    expect(typeof headersFn).toBe("function");
+    expect(headersFn?.()).toEqual({ Authorization: "Bearer test-token" });
+  });
+
+  it("should not include authorization header when no token", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const headersFn = callArgs?.headers as (() => Record<string, string>) | undefined;
+
+    expect(typeof headersFn).toBe("function");
+    expect(headersFn?.()).toEqual({});
+  });
+
+  it("should configure retry interceptor", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    expect(callArgs).toHaveProperty("interceptors");
+    expect(Array.isArray(callArgs.interceptors)).toBe(true);
+    expect(callArgs.interceptors).toHaveLength(1);
+  });
+});
+
+describe("Retry Interceptor", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
+    vi.mocked(WSLink).mockReturnValue({} as never);
+  });
+
+  it("should retry on ORPCError with status >= 500", async () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+
+    const { ORPCError } = await import("@orpc/client");
+    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
+
+    let attempts = 0;
+    const nextFn = vi.fn().mockImplementation(() => {
+      attempts++;
+      if (attempts < 3) {
+        return Promise.reject(serverError);
+      }
+      return Promise.resolve("success");
+    });
+
+    const result = await interceptor({ next: nextFn, path: "test" });
+    expect(result).toBe("success");
+    expect(nextFn).toHaveBeenCalledTimes(3);
+  }, 60_000);
+
+  it("should retry on FetchError", async () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+
+    const fetchError = new Error("Fetch error");
+    fetchError.name = "FetchError";
+
+    let attempts = 0;
+    const nextFn = vi.fn().mockImplementation(() => {
+      attempts++;
+      if (attempts < 2) {
+        return Promise.reject(fetchError);
+      }
+      return Promise.resolve("success");
+    });
+
+    const result = await interceptor({ next: nextFn, path: "test" });
+    expect(result).toBe("success");
+    expect(nextFn).toHaveBeenCalledTimes(2);
+  }, 60_000);
+
+  it("should not retry after max attempts", async () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+
+    const { ORPCError } = await import("@orpc/client");
+    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
+
+    const nextFn = vi.fn().mockRejectedValue(serverError);
+
+    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow();
+    expect(nextFn).toHaveBeenCalledTimes(5);
+  }, 60_000);
+
+  it("should not retry non-retryable errors", async () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+
+    const clientError = new Error("Client error");
+
+    const nextFn = vi.fn().mockRejectedValue(clientError);
+
+    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow("Client error");
+    expect(nextFn).toHaveBeenCalledTimes(1);
+  });
+});

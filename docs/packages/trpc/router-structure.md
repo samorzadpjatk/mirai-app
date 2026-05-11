@@ -1,8 +1,8 @@
-# tRPC Router Structure
+# oRPC Router Structure
 
 ## Overview
 
-This document explains how tRPC routers are organized and composed in the MIRAI project.
+This document explains how oRPC routers are organized and composed in the MIRAI project.
 
 ## Router Hierarchy
 

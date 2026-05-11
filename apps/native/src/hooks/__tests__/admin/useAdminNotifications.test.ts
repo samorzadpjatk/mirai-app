@@ -2,42 +2,44 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminNotifications } from "../../admin/useAdminNotifications";
 
-// Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
+// Mock oRPC
+const mockGetAllInfiniteOptions = jest.fn((options: {
+  input: (pageParam: number) => unknown;
+  initialPageParam: number;
+  getNextPageParam: (lastPage: { pagination?: { hasMore?: boolean; offset: number; limit: number } }) => unknown;
+}) => ({
   queryKey: ["notifications", "getAll"],
+  ...options,
 }));
 
-const mockRetryNotificationMutation = jest.fn(() => ({
+const mockRetryNotificationMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockDeleteNotificationMutation = jest.fn(() => ({
+const mockDeleteNotificationMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockGetAllQueryClient = jest.fn();
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     notifications: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        infiniteOptions: (options: { input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } }; initialPageParam: number; getNextPageParam: (lastPage: { pagination?: { hasMore?: boolean | undefined; offset: number; limit: number; } | undefined; }) => unknown; }) => mockGetAllInfiniteOptions(options),
       },
       retryNotification: {
-        mutationOptions: mockRetryNotificationMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockRetryNotificationMutation(options),
       },
       delete: {
-        mutationOptions: mockDeleteNotificationMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockDeleteNotificationMutation(options),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    notifications: {
-      getAll: {
-        query: mockGetAllQueryClient,
-      },
-    },
-  })),
+  },
+}));
+
+jest.mock("@mirai-app/orpc/client/query", () => ({
+  invalidateNotificationQueries: jest.fn(),
 }));
 
 // Mock React Query

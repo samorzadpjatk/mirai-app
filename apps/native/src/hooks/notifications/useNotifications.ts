@@ -3,8 +3,8 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -19,19 +19,17 @@ export interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
-  const trpc = useTRPC();
-
   const subscriptionQueryOptions =
-    trpc.notifications.getSubscriptionStatus.queryOptions();
+    orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} });
   const { data: subscriptionStatus, isLoading: isStatusLoading } = useQuery(
     subscriptionQueryOptions,
   );
 
   const queryClient = useQueryClient();
-  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
+  const subscribeMutation = useMutation(orpc.notifications.subscribe.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
   }));
-  const unsubscribeMutation = useMutation(trpc.notifications.unsubscribe.mutationOptions({
+  const unsubscribeMutation = useMutation(orpc.notifications.unsubscribe.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
   }));
 

@@ -2,37 +2,30 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminTransactions } from "../../admin/useAdminTransactions";
 
-// Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
+// Mock oRPC
+const mockGetAllInfiniteOptions = jest.fn((options: { input: unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => ({
   queryKey: ["coinTransaction", "getAll"],
+  ...options,
 }));
 
-const mockGetAllNamesQuery = jest.fn(() => ({
+const mockGetAllNamesQuery = jest.fn((options: { input: unknown; enabled: boolean }) => ({
   queryKey: ["group", "getAllNames"],
+  ...options,
 }));
 
-const mockGetAllQueryClient = jest.fn();
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     coinTransaction: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        infiniteOptions: (options: { input: unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => mockGetAllInfiniteOptions(options),
       },
     },
     group: {
       getAllNames: {
-        queryOptions: mockGetAllNamesQuery,
+        queryOptions: (options: { input: unknown; enabled: boolean }) => mockGetAllNamesQuery(options),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    coinTransaction: {
-      getAll: {
-        query: mockGetAllQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock React Query
@@ -337,7 +330,6 @@ describe("useAdminTransactions", () => {
 
     renderHook(() => useAdminTransactions(""));
 
-    // Verify that the query is disabled when tripId is empty
     const infiniteQueryCall = mockUseInfiniteQuery.mock.calls[0];
     expect((infiniteQueryCall![0] as { enabled?: boolean }).enabled).toBe(false);
   });

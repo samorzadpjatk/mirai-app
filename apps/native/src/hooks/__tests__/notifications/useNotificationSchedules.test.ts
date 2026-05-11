@@ -2,37 +2,33 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useNotificationSchedules } from "../../notifications/useNotificationSchedules";
 
-// Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
-  queryKey: ["notificationSchedule", "getAll"],
-}));
-
-const mockDeleteMutation = jest.fn(() => ({
-  mutationFn: jest.fn(),
-}));
-
-const mockToggleMutation = jest.fn(() => ({
-  mutationFn: jest.fn(),
-}));
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+// Mock oRPC
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     notificationSchedule: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        queryOptions: ({ input }: { input: Record<string, never> }) => ({
+          queryKey: ["notificationSchedule", "getAll", input],
+        }),
       },
       delete: {
-        mutationOptions: mockDeleteMutation,
+        mutationOptions: ({ onSuccess }: { onSuccess?: () => void | Promise<void> }) => ({
+          mutationFn: jest.fn(),
+          onSuccess,
+        }),
       },
       toggleActive: {
-        mutationOptions: mockToggleMutation,
+        mutationOptions: ({ onSuccess }: { onSuccess?: () => void | Promise<void> }) => ({
+          mutationFn: jest.fn(),
+          onSuccess,
+        }),
       },
     },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateNotificationQueries: jest.fn(),
 }));
 

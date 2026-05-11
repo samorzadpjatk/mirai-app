@@ -25,6 +25,9 @@ jest.mock("@mirai-app/shared", () => ({
 }));
 
 interface MockQueryOptions {
+  input: {
+    tripId: string;
+  };
   enabled?: boolean;
 }
 
@@ -38,17 +41,17 @@ interface MockQueryResult {
 
 const mockUseQuery = jest.fn<(options?: MockQueryOptions) => MockQueryResult>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     trip: {
       getResources: {
-        queryOptions: jest.fn((params: { tripId: string }, options?: { enabled?: boolean }) => ({
-          queryKey: ["trip", "getResources", params.tripId],
-          enabled: options?.enabled ?? true,
+        queryOptions: jest.fn(({ input, enabled }: MockQueryOptions) => ({
+          queryKey: ["trip", "getResources", input.tripId],
+          enabled: enabled ?? true,
         })),
       },
     },
-  })),
+  },
 }));
 
 jest.mock("@tanstack/react-query", () => ({
@@ -287,10 +290,10 @@ describe("useTripResources", () => {
   });
 
   it("should disable query when tripId is empty string", () => {
-    let capturedOptions: MockQueryOptions = {};
+    let capturedOptions: MockQueryOptions = { input: { tripId: "" } };
 
     mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
-      capturedOptions = options ?? {};
+      capturedOptions = options ?? { input: { tripId: "" } };
       return {
         data: null,
         isLoading: false,
@@ -306,10 +309,10 @@ describe("useTripResources", () => {
   });
 
   it("should enable query when tripId is provided", () => {
-    let capturedOptions: MockQueryOptions = {};
+    let capturedOptions: MockQueryOptions = { input: { tripId: "" } };
 
     mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
-      capturedOptions = options ?? {};
+      capturedOptions = options ?? { input: { tripId: "" } };
       return {
         data: null,
         isLoading: false,

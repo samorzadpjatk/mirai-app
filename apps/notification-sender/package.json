@@ -19,8 +19,8 @@
   "dependencies": {
     "@mirai-app/db": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
-    "@mirai-app/trpc": "workspace:*",
-    "@trpc/client": "^11.8.1"
+    "@mirai-app/orpc": "workspace:*",
+    "@orpc/client": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",

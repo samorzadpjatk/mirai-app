@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
-import { invalidateUserQueries } from '@mirai-app/trpc/client/query';
+import { orpc } from '@mirai-app/orpc/client';
+import { invalidateUserQueries } from '@mirai-app/orpc/client/query';
 
 const USERS_PER_PAGE = 30;
 
@@ -45,12 +45,9 @@ export type UserSearchField =
   | 'groupName';
 
 export function useAdminUsers(tripId: string, searchTerm: string, field: UserSearchField) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
-
-  // Use direct tRPC + React Query for queries
+  // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
-  const { data: groupsData, isLoading: groupsLoading } = useQuery(trpc.group.getAll.queryOptions({ tripId }));
+  const { data: groupsData, isLoading: groupsLoading } = useQuery(orpc.group.getAll.queryOptions({ input: { tripId } }));
   const groups = (groupsData ?? []) as Group[];
 
   const normalizedSearchTerm = searchTerm.trim();
@@ -63,26 +60,10 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
     isFetchingNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.user.searchWithPagination.queryOptions({
-        tripId,
-        field,
-        searchTerm: normalizedSearchTerm || undefined,
-        pagination: {
-          limit: USERS_PER_PAGE,
-          offset: 0,
-        },
-      }).queryKey,
-      'infinite',
-      USERS_PER_PAGE,
-    ],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
+  } = useInfiniteQuery(orpc.user.searchWithPagination.infiniteOptions({
+    input: (pageParam: number) => {
       const offset = typeof pageParam === 'number' ? pageParam : 0;
-
-      return trpcClient.user.searchWithPagination.query({
+      return {
         tripId,
         field,
         searchTerm: normalizedSearchTerm || undefined,
@@ -90,8 +71,9 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
           limit: USERS_PER_PAGE,
           offset,
         },
-      });
+      };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -99,7 +81,8 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+    enabled: Boolean(tripId),
+  }));
 
   const users = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.users ?? []),
@@ -111,35 +94,35 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
     [data],
   );
 
-  // Use direct tRPC + React Query for mutations
-  const assignToGroupMutation = useMutation(trpc.group.assignUserToGroup.mutationOptions({
+  // Use direct oRPC + React Query for mutations
+  const assignToGroupMutation = useMutation(orpc.group.assignUserToGroup.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const removeFromGroupMutation = useMutation(trpc.group.removeUserFromGroup.mutationOptions({
+  const removeFromGroupMutation = useMutation(orpc.group.removeUserFromGroup.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const createUserMutation = useMutation(trpc.user.createUser.mutationOptions({
+  const createUserMutation = useMutation(orpc.user.createUser.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const banUserMutation = useMutation(trpc.user.banUserUntil.mutationOptions({
+  const banUserMutation = useMutation(orpc.user.banUserUntil.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const deleteUserMutation = useMutation(trpc.user.deleteUser.mutationOptions({
+  const deleteUserMutation = useMutation(orpc.user.deleteUser.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const updateNameMutation = useMutation(trpc.user.updateName.mutationOptions({
+  const updateNameMutation = useMutation(orpc.user.updateName.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const updateWristNumberMutation = useMutation(trpc.user.updateWristNumber.mutationOptions({
+  const updateWristNumberMutation = useMutation(orpc.user.updateWristNumber.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const removeWristNumberMutation = useMutation(trpc.user.removeWristNumber.mutationOptions({
+  const removeWristNumberMutation = useMutation(orpc.user.removeWristNumber.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const updateHouseNumberMutation = useMutation(trpc.user.updateHouseNumber.mutationOptions({
+  const updateHouseNumberMutation = useMutation(orpc.user.updateHouseNumber.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-  const removeHouseNumberMutation = useMutation(trpc.user.removeHouseNumber.mutationOptions({
+  const removeHouseNumberMutation = useMutation(orpc.user.removeHouseNumber.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
 

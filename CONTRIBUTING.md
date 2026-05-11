@@ -41,7 +41,7 @@ bun run test:watch
 **When to run the full test suite:**
 - Changes to `packages/shared` (shared utilities affect all packages)
 - Changes to `packages/auth` (authentication affects multiple apps)
-- Changes to `packages/trpc` (tRPC routers affect backend and native)
+- Changes to `packages/orpc` (oRPC routers affect backend and native)
 - Any refactoring that could have cross-package impact
 
 ### CI/CD Testing

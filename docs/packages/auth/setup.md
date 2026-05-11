@@ -76,7 +76,7 @@ function ProtectedScreen() {
 }
 ```
 
-### Server-Side Auth (tRPC)
+### Server-Side Auth (oRPC)
 
 ```typescript
 import { requireAuth } from '@mirai-app/auth/server';

@@ -1026,7 +1026,7 @@ apps/native/src/
 The `jest.setup.js` (645 lines) already provides comprehensive mocks:
 - Expo modules (secure-store, image, camera, location)
 - React Native (reanimated, gesture-handler, navigation)
-- Internal packages (@mirai-app/auth, @mirai-app/trpc)
+- Internal packages (@mirai-app/auth, @mirai-app/orpc)
 
 **Verify and extend as needed during testing.**
 

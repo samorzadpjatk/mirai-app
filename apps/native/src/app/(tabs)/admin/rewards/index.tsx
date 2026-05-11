@@ -13,7 +13,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commonStyles } from "~/styles/commonStyles";
 import { spacing } from "~/styles";
@@ -72,7 +72,6 @@ const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: k
 };
 
 export default function AdminRewardsPage() {
-  const trpc = useTRPC();
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripIdParam =
@@ -84,7 +83,7 @@ export default function AdminRewardsPage() {
   const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
   const insets = useSafeAreaInsets();
   const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
-  const tripQueryOptions = trpc.trip.getByIdAdmin.queryOptions({ id: tripIdParam ?? "" });
+  const tripQueryOptions = orpc.trip.getByIdAdmin.queryOptions({ input: { id: tripIdParam ?? "" } });
 
   const { data: trip, error: tripError } = useQuery({
     ...tripQueryOptions,

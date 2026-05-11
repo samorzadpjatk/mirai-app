@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 
 export function AccountInfoSection() {
-  const trpc = useTRPC();
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
 
   const email = currentUser?.email;

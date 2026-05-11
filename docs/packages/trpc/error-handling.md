@@ -1,12 +1,12 @@
-# tRPC Error Handling
+# oRPC Error Handling
 
 ## Overview
 
-This document covers error handling patterns in tRPC.
+This document covers error handling patterns in oRPC.
 
 ## TRPCError Types
 
-tRPC provides standard error codes:
+oRPC provides standard error codes:
 
 | Code | HTTP Status | Usage |
 |------|-------------|-------|
@@ -148,7 +148,7 @@ create: protectedProcedure
 ### React Query Integration
 
 ```typescript
-import { trpc } from '@mirai-app/trpc/client';
+import { trpc } from '@mirai-app/orpc/client';
 
 function UserProfile({ userId }: { userId: string }) {
   const { data, error, isError } = trpc.user.getById.useQuery(
@@ -230,7 +230,7 @@ const t = initTRPC.create({
 const t = initTRPC.create({
   onError: ({ error, path, type }) => {
     // Log error
-    console.error(`tRPC Error in ${type} ${path}:`, error);
+    console.error(`oRPC Error in ${type} ${path}:`, error);
     
     // Send to error tracking service
     if (error.code === 'INTERNAL_SERVER_ERROR') {
@@ -242,6 +242,6 @@ const t = initTRPC.create({
 
 ## Further Reading
 
-- [tRPC Error Handling Docs](https://trpc.io/docs/error-handling)
+- [oRPC Error Handling Docs](https://trpc.io/docs/error-handling)
 - [Procedures](./procedures.md)
 - [Middleware](./middleware.md)

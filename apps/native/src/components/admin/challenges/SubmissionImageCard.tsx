@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import {
   borderRadius,
   colors,
@@ -32,10 +32,11 @@ export function SubmissionImageCard({
   onPress,
   disabled = false,
 }: SubmissionImageCardProps) {
-  const trpc = useTRPC();
   const { data, isLoading } = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: submission.imagePath,
+    ...orpc.storage.createDownloadUrl.queryOptions({
+      input: {
+        storagePath: submission.imagePath,
+      },
     }),
     enabled: !!submission.imagePath,
   });

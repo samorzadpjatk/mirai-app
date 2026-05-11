@@ -5,7 +5,6 @@ import { useGroupEditor } from "../../groups/useGroupEditor";
 const mockUseQuery = jest.fn();
 const mockUseMutation = jest.fn<(...args: unknown[]) => unknown>();
 const mockUseQueryClient = jest.fn();
-const mockUseTRPC = jest.fn();
 const mockInvalidateGroupQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
@@ -14,11 +13,35 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockUseTRPC(),
+const mockGroupGetByIdQueryOptions = jest.fn((params: { input: { id: string }; enabled?: boolean }) => ({
+  queryKey: ["group", "getById", params.input.id],
+  enabled: params.enabled,
+}));
+const mockGroupMutationOptions = jest.fn((options: Record<string, unknown>) => ({
+  mutationKey: ["group", "mutation"],
+  ...options,
 }));
 
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    group: {
+      getById: {
+        queryOptions: (params: { input: { id: string }; enabled?: boolean }) => mockGroupGetByIdQueryOptions(params),
+      },
+      update: {
+        mutationOptions: (options: Record<string, unknown>) => mockGroupMutationOptions(options),
+      },
+      assignUserToGroup: {
+        mutationOptions: (options: Record<string, unknown>) => mockGroupMutationOptions(options),
+      },
+      removeUserFromGroup: {
+        mutationOptions: (options: Record<string, unknown>) => mockGroupMutationOptions(options),
+      },
+    },
+  },
+}));
+
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateGroupQueries: (...args: unknown[]) => mockInvalidateGroupQueries(...args),
 }));
 
@@ -27,39 +50,9 @@ describe("useGroupEditor", () => {
     invalidateQueries: jest.fn(),
   };
 
-  const mockTrpc = {
-    group: {
-      getById: {
-        queryOptions: jest.fn((params: { id: string } | undefined, options: Record<string, unknown> | undefined) => ({
-          queryKey: ["group", "getById", params?.id],
-          ...options,
-        })),
-      },
-      update: {
-        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
-          mutationKey: ["group", "update"],
-          ...options,
-        })),
-      },
-      assignUserToGroup: {
-        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
-          mutationKey: ["group", "assignUserToGroup"],
-          ...options,
-        })),
-      },
-      removeUserFromGroup: {
-        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
-          mutationKey: ["group", "removeUserFromGroup"],
-          ...options,
-        })),
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseQueryClient.mockReturnValue(mockQueryClient);
-    mockUseTRPC.mockReturnValue(mockTrpc);
   });
 
   describe("query initialization", () => {
@@ -75,10 +68,7 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor("group-123"));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "group-123" },
-        { enabled: true }
-      );
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "group-123" }, enabled: true });
     });
 
     it("should disable query when groupId is null", () => {
@@ -93,10 +83,7 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor(null));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "" },
-        { enabled: false }
-      );
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
     });
 
     it("should disable query when groupId is undefined", () => {
@@ -111,10 +98,7 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor(undefined));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "" },
-        { enabled: false }
-      );
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
     });
   });
 

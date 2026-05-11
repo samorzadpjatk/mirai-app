@@ -19,7 +19,7 @@ Expo React Native application for iOS and Android. The primary mobile interface 
 - **Router**: Expo Router ~6.0.23
 - **Styling**: Tailwind CSS 3.4 + NativeWind 4.2.1
 - **State**: Zustand 5.0.11
-- **API**: tRPC + React Query
+- **API**: oRPC + React Query
 
 ## Key Files
 
@@ -90,7 +90,7 @@ bun run release:ios:submit
 - `@mirai-app/auth` - Authentication
 - `@mirai-app/shared` - Shared utilities
 - `@mirai-app/supabase` - Supabase client
-- `@mirai-app/trpc` - tRPC client
+- `@mirai-app/orpc` - oRPC client
 
 ### Key External
 

@@ -15,7 +15,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { FilterChip, FilterChipRow, EmptyState, ThemedTextInput } from "~/components/common/ui";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 
@@ -68,7 +68,6 @@ const getActivityGroupName = (activity: AdminActivity) =>
 
 
 export default function AdminActivityScreen() {
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -79,13 +78,15 @@ export default function AdminActivityScreen() {
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
+  const feedQueryOptions = orpc.activityFeed.getByTripModeration.queryOptions({
+    input: {
+      tripId,
+      page: 1,
+      pageSize: 100,
+    },
   });
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
   const { data, isLoading, isRefetching, refetch } = useQuery({
     ...feedQueryOptions,
     enabled: Boolean(tripId),
@@ -96,28 +97,28 @@ export default function AdminActivityScreen() {
   };
 
   const pinMutation = useMutation(
-    trpc.activityFeed.setPinned.mutationOptions({
+    orpc.activityFeed.setPinned.mutationOptions({
       onSuccess: invalidateFeed,
       onError: (error) => Alert.alert("Error", error.message),
     }),
   );
 
   const hideMutation = useMutation(
-    trpc.activityFeed.hide.mutationOptions({
+    orpc.activityFeed.hide.mutationOptions({
       onSuccess: invalidateFeed,
       onError: (error) => Alert.alert("Error", error.message),
     }),
   );
 
   const unhideMutation = useMutation(
-    trpc.activityFeed.unhide.mutationOptions({
+    orpc.activityFeed.unhide.mutationOptions({
       onSuccess: invalidateFeed,
       onError: (error) => Alert.alert("Error", error.message),
     }),
   );
 
   const deleteMutation = useMutation(
-    trpc.activityFeed.delete.mutationOptions({
+    orpc.activityFeed.delete.mutationOptions({
       onSuccess: invalidateFeed,
       onError: (error) => Alert.alert("Error", error.message),
     }),

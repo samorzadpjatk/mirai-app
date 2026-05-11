@@ -6,7 +6,7 @@ import {
   useTripSponsors,
 } from "../../sponsors/useSponsors";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllQuery = jest.fn(() => ({
   queryKey: ["sponsor", "getAll"],
 }));
@@ -21,8 +21,20 @@ const mockGetByTripIdQuery = jest.fn((params: { tripId: string }) => ({
 
 const mockUseQuery = jest.fn();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => {
+  const mockGetAllQuery = jest.fn(() => ({
+    queryKey: ["sponsor", "getAll"],
+  }));
+
+  const mockGetByIdQuery = jest.fn((params: { id: string }) => ({
+    queryKey: ["sponsor", "getById", params.id],
+  }));
+
+  const mockGetByTripIdQuery = jest.fn((params: { tripId: string }) => ({
+    queryKey: ["sponsor", "getByTripId", params.tripId],
+  }));
+
+  const trpc = {
     sponsor: {
       getAll: {
         queryOptions: mockGetAllQuery,
@@ -34,8 +46,13 @@ jest.mock("@mirai-app/trpc/client", () => ({
         queryOptions: mockGetByTripIdQuery,
       },
     },
-  })),
-}));
+  };
+
+  return {
+    useTRPC: jest.fn(() => trpc),
+    orpc: trpc,
+  };
+});
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),

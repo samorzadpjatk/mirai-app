@@ -164,7 +164,7 @@ Returns: User object with id, email, name, role, createdAt, updatedAt
 <!-- Good - concise -->
 ## API
 
-See [tRPC documentation](../../docs/packages/trpc/procedures.md)
+See [oRPC documentation](../../docs/packages/trpc/procedures.md)
 ```
 
 ### Missing Links

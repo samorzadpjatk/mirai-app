@@ -10,7 +10,7 @@ Background worker service for sending push notifications to mobile devices. Proc
 
 - **Runtime**: Bun
 - **Notifications**: Expo Server SDK
-- **API**: tRPC Client
+- **API**: oRPC Client
 - **Testing**: Vitest
 
 ## Key Files
@@ -50,14 +50,14 @@ bun run test:watch
 
 ### Internal
 
-- `@mirai-app/trpc` - tRPC client for API calls
+- `@mirai-app/orpc` - oRPC client for API calls
 - `@mirai-app/db` - Database access
 - `@mirai-app/supabase` - Supabase realtime
 
 ### External
 
 - `expo-server-sdk` - Expo push notifications
-- `@trpc/client` - tRPC client
+- `@orpc/client` - oRPC client
 
 ## How It Works
 

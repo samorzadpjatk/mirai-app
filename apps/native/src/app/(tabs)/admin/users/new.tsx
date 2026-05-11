@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -12,7 +12,6 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 export default function AdminCreateUserScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
@@ -23,7 +22,7 @@ export default function AdminCreateUserScreen() {
   const [email, setEmail] = useState("");
 
   const createUserMutation = useMutation(
-    trpc.user.createUser.mutationOptions({
+    orpc.user.createUser.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],

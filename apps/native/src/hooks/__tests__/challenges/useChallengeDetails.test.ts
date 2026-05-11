@@ -2,27 +2,30 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import { useChallengeDetails } from "../../challenges/useChallengeDetails";
 
-// Mock tRPC
-const mockUserGetMyQuery = jest.fn(() => ({
-  queryKey: ["user", "getMy"],
+// Mock oRPC
+const mockChallengeGetByIdQueryOptions = jest.fn((params: { input: { id: string; tripId: string }; enabled?: boolean }) => ({
+  queryKey: ["challenge", "getById", params.input.id],
+  enabled: params.enabled,
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+const mockUserGetMyQueryOptions = jest.fn((params: { input: Record<string, never> }) => ({
+  queryKey: ["user", "getMy"],
+  input: params.input,
+}));
+
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     challenge: {
       getById: {
-        queryOptions: (params: { id: string; tripId: string }, options?: { enabled?: boolean }) => ({
-          queryKey: ["challenge", "getById", params.id],
-          enabled: options?.enabled ?? true,
-        }),
+        queryOptions: (params: { input: { id: string; tripId: string }; enabled?: boolean }) => mockChallengeGetByIdQueryOptions(params),
       },
     },
     user: {
       getMy: {
-        queryOptions: mockUserGetMyQuery,
+        queryOptions: (params: { input: Record<string, never> }) => mockUserGetMyQueryOptions(params),
       },
     },
-  })),
+  },
 }));
 
 // Mock React Query
@@ -202,11 +205,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", "trip-123"));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
-    expect(challengeQueryCall[0]).toMatchObject({
-      queryKey: ["challenge", "getById", "challenge-123"],
-      enabled: true,
-    });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "challenge-123", tripId: "trip-123" }, enabled: true });
   });
 
   it("should disable query when challengeId is missing", () => {
@@ -222,10 +221,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails(null, "trip-123"));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
-    expect(challengeQueryCall[0]).toMatchObject({
-      enabled: false,
-    });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "", tripId: "trip-123" }, enabled: false });
   });
 
   it("should disable query when tripId is missing", () => {
@@ -241,10 +237,7 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", null));
 
-    const challengeQueryCall = mockUseQuery.mock.calls[0]!;
-    expect(challengeQueryCall[0]).toMatchObject({
-      enabled: false,
-    });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "challenge-123", tripId: "" }, enabled: false });
   });
 
   it("should handle challenge with all properties", async () => {

@@ -1,12 +1,9 @@
-import ws from "@fastify/websocket";
-import cors from "@fastify/cors";
-import {
-  fastifyTRPCPlugin,
-  type FastifyTRPCPluginOptions,
-} from "@trpc/server/adapters/fastify";
-import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter, createTRPCContext } from "@mirai-app/trpc";
-import { fastifyHeadersToFetchHeaders } from "./utils/headers";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { RPCHandler } from "@orpc/server/fetch";
+import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+import { onError } from "@orpc/server";
+import { appRouter, createORPCContext } from "@mirai-app/orpc";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -20,87 +17,183 @@ export function createServer(opts: ServerOptions) {
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";
   const host = opts.host ?? "127.0.0.1";
-  const server = fastify({ logger: dev });
+
+  const app = new Hono();
 
   if (dev) {
-    void server.register(cors, {
-      origin: true,
-      credentials: true,
-    });
+    app.use("*", cors({ origin: (origin) => origin, credentials: true }));
   }
 
-  void server.register(ws);
-  void server.register(fastifyTRPCPlugin, {
-    prefix,
-    useWSS: true,
-    trpcOptions: {
-      router: appRouter,
-      // For HTTP requests Fastify passes only { req }.
-      // For WebSocket connections tRPC additionally forwards `connectionParams`
-      // coming from the client-side `createWSClient`.
-      createContext: (opts: {
-        req: FastifyRequest;
-        connectionParams?: Record<string, string>;
-      }) => {
-        const { req, connectionParams } = opts;
-
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const databaseUrl = process.env.DATABASE_URL;
-
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error(
-            "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-          );
-        }
-
-        if (!databaseUrl) {
-          throw new Error(
-            "Missing database credentials. Set DATABASE_URL.",
-          );
-        }
-
-        // Extract headers and add the original URL for auth token parsing
-        const headers = fastifyHeadersToFetchHeaders(req.headers);
-
-        // Add URL to headers for WebSocket auth token extraction from query params
-        // This is a workaround for WebSocket connections that can't send custom headers
-        if (req.url) {
-          headers.set("x-original-url", req.url);
-        }
-
-        return createTRPCContext({
-          headers,
-          databaseUrl,
-          supabaseUrl,
-          supabaseKey,
-          connectionParams,
-        });
-      },
-      onError({ path, error }) {
-        // report to error monitoring
-        console.error(`Error in tRPC handler on path '${path}':`, error);
-      },
-    } satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
+  const rpcHandler = new RPCHandler(appRouter, {
+    interceptors: [
+      onError((error) => {
+        console.error(error);
+      }),
+    ],
   });
 
-  server.get("/health", () => {
-    return "OK";
+  app.use(
+    prefix + "/*",
+    async (c, next) => {
+      const request =
+        c.req.method === "GET" || c.req.method === "HEAD"
+          ? c.req.raw
+          : new Proxy(c.req.raw, {
+              get(target, prop) {
+                switch (prop) {
+                  case "arrayBuffer":
+                    return () => c.req.arrayBuffer();
+                  case "blob":
+                    return () => c.req.blob();
+                  case "formData":
+                    return () => c.req.formData();
+                  case "json":
+                    return () => c.req.json();
+                  case "text":
+                    return () => c.req.text();
+                  default:
+                    return Reflect.get(target, prop, target) as unknown;
+                }
+              },
+            });
+
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const databaseUrl = process.env.DATABASE_URL;
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error(
+          "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+        );
+      }
+
+      if (!databaseUrl) {
+        throw new Error(
+          "Missing database credentials. Set DATABASE_URL.",
+        );
+      }
+
+      const headers = new Headers(c.req.raw.headers);
+      if (c.req.url) {
+        headers.set("x-original-url", c.req.url);
+      }
+
+      const context = createORPCContext({
+        headers,
+        databaseUrl,
+        supabaseUrl,
+        supabaseKey,
+      });
+
+      const { matched, response } = await rpcHandler.handle(request, {
+        prefix: prefix as `/${string}`,
+        context,
+      });
+
+      if (matched) {
+        return response;
+      }
+
+      await next();
+    },
+  );
+
+  app.get("/health", (c) => c.text("OK"));
+
+  let bunServer: ReturnType<typeof Bun.serve> | null = null;
+
+  const wsRpcHandler = new BunWsRPCHandler(appRouter, {
+    interceptors: [
+      onError((error) => {
+        console.error(error);
+      }),
+    ],
   });
 
-  const stop = async () => {
-    await server.close();
-  };
-  const start = async () => {
+  const start = () => {
     try {
-      await server.listen({ port, host });
+      bunServer = Bun.serve({
+        port,
+        hostname: host,
+        fetch(req, server) {
+          const url = new URL(req.url, "http://localhost");
+          const connectionParams: Record<string, string> = {};
+          for (const [key, value] of url.searchParams.entries()) {
+            connectionParams[key] = value;
+          }
+
+          if (
+            url.pathname.startsWith(prefix) &&
+            server.upgrade(req, { data: { connectionParams, url: req.url } })
+          ) {
+            return;
+          }
+
+          return app.fetch(req);
+        },
+        websocket: {
+          async message(ws, message) {
+            const data = ws.data as {
+              connectionParams?: Record<string, string>;
+              url?: string;
+            };
+
+            const headers = new Headers();
+            if (data.url) {
+              headers.set("x-original-url", data.url);
+            }
+            if (data.connectionParams) {
+              for (const [key, value] of Object.entries(data.connectionParams)) {
+                headers.set(key, value);
+              }
+            }
+
+            const supabaseUrl = process.env.SUPABASE_URL;
+            const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+            const databaseUrl = process.env.DATABASE_URL;
+
+            if (!supabaseUrl || !supabaseKey) {
+              throw new Error(
+                "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+              );
+            }
+
+            if (!databaseUrl) {
+              throw new Error(
+                "Missing database credentials. Set DATABASE_URL.",
+              );
+            }
+
+            const context = createORPCContext({
+              headers,
+              databaseUrl,
+              supabaseUrl,
+              supabaseKey,
+              connectionParams: data.connectionParams,
+            });
+
+            await wsRpcHandler.message(ws, message, { context });
+          },
+          close(ws) {
+            wsRpcHandler.close(ws);
+          },
+        },
+      });
+
       console.log("listening on port", port);
-      console.log(`tRPC endpoint ready at http://${host}:${port}${prefix}`);
+      console.log(`oRPC endpoint ready at http://${host}:${port}${prefix}`);
     } catch (err) {
-      server.log.error(err);
+      console.error(err);
       process.exit(1);
     }
   };
 
-  return { server, start, stop };
+  const stop = async () => {
+    if (bunServer) {
+      await bunServer.stop(true);
+      bunServer = null;
+    }
+  };
+
+  return { app, start, stop };
 }

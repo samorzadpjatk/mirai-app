@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useRouter } from "expo-router";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
@@ -17,12 +17,11 @@ import { NotificationsHeader } from "~/components/notifications/NotificationsHea
 import type { NotificationScheduleItem } from "~/types/notifications";
 
 export default function NotificationsScreen() {
-  const trpc = useTRPC();
   const router = useRouter();
 
   // Check user permissions
   const { data: currentUser, isLoading: isLoadingUser } = useQuery(
-    trpc.user.getMy.queryOptions(),
+    orpc.user.getMy.queryOptions({ input: {} }),
   );
 
   // Redirect if user doesn't have access
@@ -42,7 +41,7 @@ export default function NotificationsScreen() {
     error,
     refetch,
     isRefetching,
-  } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
+  } = useQuery(orpc.notificationSchedule.getAll.queryOptions({ input: {} }));
 
   const schedules = (schedulesData?.schedules ??
     []) as NotificationScheduleItem[];
