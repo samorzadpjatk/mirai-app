@@ -18,7 +18,9 @@
     "test:watch": "turbo run test:watch",
     "test:coverage": "turbo run test:coverage",
     "clean": "turbo run clean && rm -rf node_modules",
-    "prepare": "husky"
+    "postinstall": "cd packages/db && bun run db:generate",
+    "prepare": "husky",
+    "setup:dev": "bun run scripts/setup-dev.ts"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.28.6",
@@ -36,6 +38,7 @@
     "jsdom": "^29.1.1",
     "prettier": "^3.8.1",
     "react-test-renderer": "19.1.0",
+    "picocolors": "^1.1.1",
     "turbo": "^2.8.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
