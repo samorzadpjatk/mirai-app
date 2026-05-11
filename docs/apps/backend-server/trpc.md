@@ -1,8 +1,8 @@
-# tRPC Integration
+# oRPC Integration
 
 ## Overview
 
-The backend server integrates tRPC with Fastify for type-safe APIs.
+The backend server integrates oRPC with Fastify for type-safe APIs.
 
 ## Setup
 
@@ -11,7 +11,7 @@ The backend server integrates tRPC with Fastify for type-safe APIs.
 ```typescript
 // src/trpc.ts
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
-import { appRouter } from '@mirai-app/trpc';
+import { appRouter } from '@mirai-app/orpc';
 import { createContext } from './context';
 
 export default async function (fastify: FastifyInstance) {
@@ -53,7 +53,7 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 ```typescript
 // src/trpc.ts
-import { appRouter } from '@mirai-app/trpc';
+import { appRouter } from '@mirai-app/orpc';
 
 // The appRouter is already defined in packages/trpc
 // No need to redefine here
@@ -65,13 +65,13 @@ If needed, you can extend the base router:
 
 ```typescript
 // src/trpc.ts
-import { router as baseRouter } from '@mirai-app/trpc';
+import { router as baseRouter } from '@mirai-app/orpc';
 import { serverRouter } from './routers/server';
 
 const appRouter = baseRouter.merge('server', serverRouter);
 ```
 
-## WebSocket with tRPC
+## WebSocket with oRPC
 
 ### Setup
 
@@ -79,7 +79,7 @@ const appRouter = baseRouter.merge('server', serverRouter);
 // src/websocket.ts
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
-import { appRouter } from '@mirai-app/trpc';
+import { appRouter } from '@mirai-app/orpc';
 
 const wss = new WebSocketServer({ port: 3001 });
 
@@ -159,13 +159,13 @@ Procedure Handler
 Prisma/Database
 ```
 
-## Testing tRPC
+## Testing oRPC
 
 ### Integration Test
 
 ```typescript
 import { test, expect } from 'vitest';
-import { appRouter } from '@mirai-app/trpc';
+import { appRouter } from '@mirai-app/orpc';
 import { createContext } from './test-context';
 
 const caller = appRouter.createCaller(await createContext());
@@ -189,5 +189,5 @@ test('create user', async () => {
 
 ## Further Reading
 
-- [tRPC Fastify Adapter](https://trpc.io/docs/server/adapters/fastify)
-- [tRPC WebSocket](https://trpc.io/docs/subscriptions)
+- [oRPC Fastify Adapter](https://trpc.io/docs/server/adapters/fastify)
+- [oRPC WebSocket](https://trpc.io/docs/subscriptions)

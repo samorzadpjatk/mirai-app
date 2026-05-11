@@ -7,7 +7,7 @@
 MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 
 - **Frontend**: Expo React Native (iOS/Android)
-- **Backend**: Fastify + tRPC server with WebSocket support
+- **Backend**: Fastify + oRPC server with WebSocket support
 - **Database**: PostgreSQL via Prisma ORM + Supabase
 - **Tooling**: Turborepo + Bun workspaces
 
@@ -17,7 +17,7 @@ MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 MIRAI/
 ├── apps/
 │   ├── native/              # Expo React Native app (iOS/Android)
-│   ├── backend-server/      # Fastify + tRPC API server
+│   ├── backend-server/      # Fastify + oRPC API server
 │   ├── notification-sender/ # Notification service worker
 │   └── seed/                # Database seeding CLI
 ├── packages/
@@ -25,7 +25,7 @@ MIRAI/
 │   ├── db/                  # Prisma schema and client
 │   ├── shared/              # Shared utilities, design tokens
 │   ├── supabase/            # Supabase client configuration
-│   └── trpc/                # tRPC routers and utilities
+│   └── trpc/                # oRPC routers and utilities
 ├── docs/                    # Detailed documentation
 ├── turbo.json               # Turborepo configuration
 ├── package.json             # Bun workspaces configuration
@@ -150,7 +150,7 @@ To stay within OpenAI's default 32 KiB combined instruction limit:
 ## App & Package AGENTS.md Files
 
 - [apps/native/AGENTS.md](./apps/native/AGENTS.md) - Expo React Native app
-- [apps/backend-server/AGENTS.md](./apps/backend-server/AGENTS.md) - Fastify + tRPC server
+- [apps/backend-server/AGENTS.md](./apps/backend-server/AGENTS.md) - Fastify + oRPC server
 - [apps/notification-sender/AGENTS.md](./apps/notification-sender/AGENTS.md) - Notification service
 - [apps/seed/AGENTS.md](./apps/seed/AGENTS.md) - Database seeding CLI
 - [packages/auth/AGENTS.md](./packages/auth/AGENTS.md) - Authentication utilities

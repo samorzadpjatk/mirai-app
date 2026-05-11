@@ -157,7 +157,7 @@ bun install
 turbo run typecheck
 
 # Check specific package
-turbo run typecheck --filter=@mirai-app/trpc
+turbo run typecheck --filter=@mirai-app/orpc
 ```
 
 ## Next Steps

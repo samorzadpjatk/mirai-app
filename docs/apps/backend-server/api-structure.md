@@ -12,11 +12,11 @@ Client (Native/Web)
      ▼
 Fastify Server
      ├── /health         # Health check
-     ├── /trpc/*         # tRPC procedures
+     ├── /trpc/*         # oRPC procedures
      └── /ws             # WebSocket
 ```
 
-## tRPC Router Structure
+## oRPC Router Structure
 
 ```
 appRouter (packages/trpc)
@@ -116,7 +116,7 @@ export const appRouter = router({
 ### 3. Client Access
 
 ```typescript
-import { trpc } from '@mirai-app/trpc/client';
+import { trpc } from '@mirai-app/orpc/client';
 
 // Available immediately
 const { data } = trpc.myResource.list.useQuery();
@@ -220,5 +220,5 @@ fastify.get('/metrics', async () => {
 
 ## Further Reading
 
-- [tRPC HTTP Specification](https://trpc.io/docs/http-rpc-spec)
+- [oRPC HTTP Specification](https://trpc.io/docs/http-rpc-spec)
 - [Fastify Routing](https://fastify.dev/docs/latest/Reference/Routes/)

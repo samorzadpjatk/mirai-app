@@ -1,8 +1,8 @@
-# tRPC Middleware
+# oRPC Middleware
 
 ## Overview
 
-Middleware in tRPC allows you to run code before/after procedures, handle authentication, logging, and more.
+Middleware in oRPC allows you to run code before/after procedures, handle authentication, logging, and more.
 
 ## Built-in Middleware
 
@@ -168,7 +168,7 @@ export const errorHandler = middleware(async ({ next }) => {
     // Log error
     console.error('Procedure failed:', error);
     
-    // Re-throw to let tRPC handle it
+    // Re-throw to let oRPC handle it
     throw error;
   }
 });
@@ -178,7 +178,7 @@ export const errorHandler = middleware(async ({ next }) => {
 
 1. **Order matters** - Middleware runs in the order they're chained
 2. **Keep middleware focused** - One concern per middleware
-3. **Don't swallow errors** - Let tRPC handle errors appropriately
+3. **Don't swallow errors** - Let oRPC handle errors appropriately
 4. **Use type-safe context** - Extend context types properly
 5. **Document middleware** - Explain what each one does
 

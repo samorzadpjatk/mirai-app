@@ -11,7 +11,7 @@ Testing patterns and conventions for the MIRAI monorepo.
 | Unit/Integration | Vitest | Business logic, utilities |
 | E2E | Playwright | Full user flows |
 | Component | React Testing Library | React components |
-| API | tRPC test client | tRPC procedures |
+| API | oRPC test client | oRPC procedures |
 
 ## File Organization
 
@@ -59,7 +59,7 @@ describe('calculateTotal', () => {
 });
 ```
 
-## tRPC Testing
+## oRPC Testing
 
 ### Creating Test Caller
 

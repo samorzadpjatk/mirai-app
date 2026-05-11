@@ -97,7 +97,7 @@ export default function RootLayout() {
 ### Using Queries
 
 ```typescript
-import { trpc } from '@mirai-app/trpc/client';
+import { trpc } from '@mirai-app/orpc/client';
 
 function EventList() {
   const { data, isLoading, error } = trpc.event.list.useQuery();

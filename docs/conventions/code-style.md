@@ -164,7 +164,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 
 // 2. Internal packages
-import { trpc } from '@mirai-app/trpc/client';
+import { trpc } from '@mirai-app/orpc/client';
 import { colors } from '@mirai-app/shared/design-tokens';
 
 // 3. Relative imports

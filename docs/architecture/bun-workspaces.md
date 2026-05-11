@@ -28,7 +28,7 @@ Use `workspace:*` to reference local packages:
 ```json
 {
   "dependencies": {
-    "@mirai-app/trpc": "workspace:*",
+    "@mirai-app/orpc": "workspace:*",
     "@mirai-app/db": "workspace:*"
   }
 }
@@ -53,7 +53,7 @@ All packages use the `@mirai-app/` scope:
 
 - `@mirai-app/native` - Expo app
 - `@mirai-app/backend-server` - API server
-- `@mirai-app/trpc` - tRPC package
+- `@mirai-app/orpc` - oRPC package
 - `@mirai-app/db` - Database package
 - etc.
 
@@ -91,7 +91,7 @@ When you change a package, dependent packages need to be rebuilt:
 ```bash
 # Change in packages/trpc
 # Automatically rebuilds apps that depend on it
-turbo run build --filter=@mirai-app/trpc...
+turbo run build --filter=@mirai-app/orpc...
 ```
 
 ### Local Linking
@@ -100,7 +100,7 @@ Bun automatically links workspace packages:
 
 ```typescript
 // In apps/native/some-file.ts
-import { trpc } from '@mirai-app/trpc';
+import { trpc } from '@mirai-app/orpc';
 // Resolves to packages/trpc/src/index.ts
 ```
 

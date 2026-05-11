@@ -640,9 +640,9 @@ shared ────┘
 **Packages that need external mocks:**
 - `packages/auth` - Mock `@mirai-app/supabase`, `@mirai-app/db`
 - `packages/trpc` - Mock `@mirai-app/auth`, `@mirai-app/db`, `@mirai-app/supabase`
-- `apps/backend-server` - Mock `@mirai-app/trpc`
-- `apps/notification-sender` - Mock `@mirai-app/trpc`, `@mirai-app/db`, `@mirai-app/supabase`
-- `apps/native` - Mock `expo-*` modules, `@mirai-app/trpc`, `@mirai-app/supabase`
+- `apps/backend-server` - Mock `@mirai-app/orpc`
+- `apps/notification-sender` - Mock `@mirai-app/orpc`, `@mirai-app/db`, `@mirai-app/supabase`
+- `apps/native` - Mock `expo-*` modules, `@mirai-app/orpc`, `@mirai-app/supabase`
 
 ---
 

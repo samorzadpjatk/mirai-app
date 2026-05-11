@@ -47,8 +47,5 @@
     "packages/*"
   ],
   "license": "AGPL-3.0",
-  "dependencies": {
-    "@trpc/client": "^11.10.0",
-    "@valkyrie-resistance/trpc-ws-hono-bun-adapter": "^0.2.1"
-  }
+  "dependencies": {}
 }

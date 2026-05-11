@@ -1,8 +1,8 @@
-# tRPC Procedures
+# oRPC Procedures
 
 ## Overview
 
-This document covers tRPC procedure patterns for queries and mutations.
+This document covers oRPC procedure patterns for queries and mutations.
 
 ## Procedure Types
 
