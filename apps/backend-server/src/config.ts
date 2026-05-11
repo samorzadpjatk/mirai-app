@@ -12,7 +12,7 @@ if (!serverPort || !serverHost) {
 export const serverConfig: ServerOptions = {
   dev: true,
   port: Number(serverPort),
-  // Serve both HTTP and WebSocket tRPC under the same path
+  // Serve both HTTP and WebSocket oRPC under the same path
   // so that clients can use one base URL.
   prefix: "/api/trpc",
   host: serverHost,

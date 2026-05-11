@@ -42,12 +42,13 @@ Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.jso
 Znajduje się w nim:
 
 - **Aplikacja natywna** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
-- **Backend serwerowy** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
+- **Backend serwerowy** (Hono + oRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
 - **Nadawca powiadomień** (Expo Push Notifications) → [`@mirai-app/notification-sender`](apps/notification-sender/)
 - **Seed CLI** (Baza danych & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Współdzielone biblioteki** → [`packages`](packages/)
   - [`@mirai-app/auth`](packages/auth/) - Logika autoryzacji
   - [`@mirai-app/db`](packages/db/) - Klient Prisma bazy danych
+  - [`@mirai-app/orpc`](packages/orpc/) - Routery oRPC i klient
   - [`@mirai-app/shared`](packages/shared/) - Współdzielone utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Konfiguracja klienta Supabase
 
@@ -115,7 +116,7 @@ Uruchamia wszystkie aplikacje w trybie developerskim jednocześnie:
 
 #### `bun run dev:backend`
 
-Uruchamia tylko serwer backendowy (Fastify + tRPC) w trybie deweloperskim (domyślnie port 2022).
+Uruchamia tylko serwer backendowy (Hono + oRPC) w trybie deweloperskim (domyślnie port 2022).
 
 #### `bun run dev:native`
 
