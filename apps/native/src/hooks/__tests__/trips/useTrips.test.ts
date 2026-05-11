@@ -11,7 +11,7 @@ jest.mock("~/services/storage/selectedTripStorage", () => ({
   setCachedTrips: (...args: [unknown[]]) => mockSetCachedTrips(...args),
 }));
 
-// Mock tRPC
+// Mock oRPC
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     trip: {

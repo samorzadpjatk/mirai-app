@@ -15,9 +15,9 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import type { PrismaClient, User } from "@mirai-app/db";
 
 /**
- * Example tRPC Router Tests
+ * Example oRPC Router Tests
  *
- * This file demonstrates how to test tRPC routers with Vitest.
+ * This file demonstrates how to test oRPC routers with Vitest.
  * It shows patterns for testing public, protected, and admin procedures.
  */
 
@@ -70,7 +70,7 @@ const testRouter = createORPCRouter({
 // Create caller for testing
 const createCaller = (ctx: TRPCContext) => createRouterClient(testRouter, { context: ctx });
 
-describe("tRPC Router Testing Patterns", () => {
+describe("oRPC Router Testing Patterns", () => {
   let mockDb: PrismaClient;
   let mockSupabase: SupabaseClient;
 

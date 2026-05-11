@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminTransactions } from "../../admin/useAdminTransactions";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllInfiniteOptions = jest.fn((options: { input: unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => ({
   queryKey: ["coinTransaction", "getAll"],
   ...options,

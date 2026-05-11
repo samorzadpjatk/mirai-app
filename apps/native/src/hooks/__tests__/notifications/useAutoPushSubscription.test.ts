@@ -39,7 +39,7 @@ jest.mock("@mirai-app/auth/client", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock tRPC
+// Mock oRPC
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     notifications: {

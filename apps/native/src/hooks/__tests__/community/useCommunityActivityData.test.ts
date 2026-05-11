@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useCommunityActivityData } from "../../community/useCommunityActivityData";
 import type { CommunityFeedActivity } from "../../../components/community/CommunityActivityCard";
 
-// Mock tRPC client
+// Mock oRPC client
 const mockRankingQuery = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockCreateDownloadUrlQuery = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 

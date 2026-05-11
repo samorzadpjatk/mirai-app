@@ -157,7 +157,7 @@ To stay within OpenAI's default 32 KiB combined instruction limit:
 - [packages/db/AGENTS.md](./packages/db/AGENTS.md) - Prisma database client
 - [packages/shared/AGENTS.md](./packages/shared/AGENTS.md) - Shared utilities
 - [packages/supabase/AGENTS.md](./packages/supabase/AGENTS.md) - Supabase client
-- [packages/trpc/AGENTS.md](./packages/trpc/AGENTS.md) - tRPC routers
+- [packages/orpc/AGENTS.md](./packages/orpc/AGENTS.md) - oRPC routers
 
 ## Documentation Structure
 

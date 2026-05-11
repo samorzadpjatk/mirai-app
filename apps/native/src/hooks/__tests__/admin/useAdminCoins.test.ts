@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminCoins } from "../../admin/useAdminCoins";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetGroupListQuery = jest.fn((options: { input: { tripId: string } }) => ({
   queryKey: ["group", "getGroupList", options.input.tripId],
 }));

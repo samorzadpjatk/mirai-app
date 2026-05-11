@@ -22,7 +22,7 @@ jest.mock("~/utils/trip", () => ({
   },
 }));
 
-// Mock tRPC
+// Mock oRPC
 interface MockQueryOptions {
   queryKey?: string[];
   enabled?: boolean;

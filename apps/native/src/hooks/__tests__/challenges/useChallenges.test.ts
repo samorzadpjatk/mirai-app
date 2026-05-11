@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import { useChallenges } from "../../challenges/useChallenges";
 
-// Mock tRPC
+// Mock oRPC
 const mockTripGetByIdQueryOptions = jest.fn((params: { input: { id: string } }) => ({
   queryKey: ["trip", "getById", params.input.id],
 }));

@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminChallenges } from "../../admin/useAdminChallenges";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllQuery = jest.fn((options: { input: Record<string, never> }) => ({
   queryKey: ["challenge", "getAll"],
 }));

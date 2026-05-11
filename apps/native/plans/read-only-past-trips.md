@@ -4,7 +4,7 @@ Enforce that trip participants cannot perform any mutations after a trip's `endD
 
 ---
 
-## Layer 1: Backend — tRPC guard
+## Layer 1: Backend — oRPC guard
 
 ### 1a. Shared helper `ensureTripNotEnded`
 

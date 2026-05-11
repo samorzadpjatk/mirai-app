@@ -1,6 +1,6 @@
 # Migrate Trip Info from Hardcoded to Dynamic DB Data
 
-Move all hardcoded trip-specific values from `apps/native/src/app/(tabs)/trips/info.tsx` into new fully-relational DB tables (`TripResource`, `TripInsurance`, `TripInsuranceStep`), expose them via a dedicated tRPC query, seed them from YAML, define shared types in `packages/shared`, and consume them dynamically in the native app.
+Move all hardcoded trip-specific values from `apps/native/src/app/(tabs)/trips/info.tsx` into new fully-relational DB tables (`TripResource`, `TripInsurance`, `TripInsuranceStep`), expose them via a dedicated oRPC query, seed them from YAML, define shared types in `packages/shared`, and consume them dynamically in the native app.
 
 ## Hardcoded values to migrate
 
@@ -317,7 +317,7 @@ resources: []
 | **DB** | `packages/db/src/prisma/schema.prisma` — add `TripResource`, `TripInsurance`, `TripInsuranceStep` + Trip relations (with `storagePath` field) |
 | **Migration** | new auto-generated migration |
 | **Shared** | new `packages/shared/src/tripInfo/types.ts` + re-export from index |
-| **tRPC** | `packages/trpc/src/api/routers/trip.ts` — add `getResources` procedure |
+| **oRPC** | `packages/trpc/src/api/routers/trip.ts` — add `getResources` procedure |
 | **Seed types** | `apps/seed/src/types.ts` — add `info?`, `TripResourceConfig` (with `storagePath`), `TripInsuranceConfig`, `TripInfoConfig` |
 | **Seed logic** | new `apps/seed/src/tripInfo.ts` (uploads files to Supabase Storage for `storagePath` resources) |
 | **Seed wiring** | `apps/seed/src/seed.ts` — call `seedTripInfo` |

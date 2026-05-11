@@ -88,12 +88,12 @@ export function useAdminGroups(tripId: string) {
     [data],
   );
 
-  // Use direct tRPC + React Query for queries
+  // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
   const { data: usersData, isLoading: usersLoading } = useQuery(orpc.user.getAll.queryOptions({ input: { tripId } }));
   const users = (usersData ?? []) as User[];
 
-  // Use direct tRPC + React Query for mutations
+  // Use direct oRPC + React Query for mutations
   const createGroupMutation = useMutation(orpc.group.create.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
   }));

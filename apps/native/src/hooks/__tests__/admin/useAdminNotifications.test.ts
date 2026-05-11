@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminNotifications } from "../../admin/useAdminNotifications";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllInfiniteOptions = jest.fn((options: {
   input: (pageParam: number) => unknown;
   initialPageParam: number;

@@ -6,7 +6,7 @@ import {
   useTripSponsors,
 } from "../../sponsors/useSponsors";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllQuery = jest.fn(() => ({
   queryKey: ["sponsor", "getAll"],
 }));

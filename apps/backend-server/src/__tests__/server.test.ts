@@ -404,7 +404,7 @@ describe("Backend Server (Hono)", () => {
       expect(app).toBeDefined();
     });
 
-    it("should trigger context creation with valid env vars on tRPC request", async () => {
+    it("should trigger context creation with valid env vars on oRPC request", async () => {
       process.env.SUPABASE_URL = "http://localhost:8000";
       process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
       process.env.DATABASE_URL = "postgresql://localhost:5432/test";
@@ -423,7 +423,7 @@ describe("Backend Server (Hono)", () => {
       expect([200, 404, 405, 500]).toContain(res.status);
     });
 
-    it("should handle missing SUPABASE_URL on tRPC request", async () => {
+    it("should handle missing SUPABASE_URL on oRPC request", async () => {
       delete process.env.SUPABASE_URL;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
       delete process.env.DATABASE_URL;

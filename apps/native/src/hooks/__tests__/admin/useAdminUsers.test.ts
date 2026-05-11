@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminUsers } from "../../admin/useAdminUsers";
 
-// Mock tRPC
+// Mock oRPC
 const mockSearchWithPaginationQuery = jest.fn((options: { input: { tripId: string } }) => ({
   ...options,
   queryKey: ["user", "searchWithPagination", options.input.tripId],

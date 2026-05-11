@@ -1,6 +1,6 @@
 # Wrap Multi-Op Mutations in DB Transactions
 
-Wrap all tRPC mutations in `packages/trpc/src/api/routers/` that perform multiple DB writes without an existing `$transaction`, ensuring atomicity.
+Wrap all oRPC mutations in `packages/trpc/src/api/routers/` that perform multiple DB writes without an existing `$transaction`, ensuring atomicity.
 
 ---
 

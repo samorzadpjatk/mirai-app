@@ -47,7 +47,7 @@ export function useAutoPushSubscription() {
   const { session } = useAuth();
   const attemptedForUserRef = useRef<string | null>(null);
 
-  // Use tRPC + React Query directly for server-state
+  // Use oRPC + React Query directly for server-state
   const queryClient = useQueryClient();
   const subscriptionQuery = useQuery(orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} }));
   const subscribeMutation = useMutation(orpc.notifications.subscribe.mutationOptions({

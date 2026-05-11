@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminSchedules } from "../../admin/useAdminSchedules";
 
-// Mock tRPC
+// Mock oRPC
 const mockGetAllQuery = jest.fn((options: { input: unknown }) => ({
   queryKey: ["notificationSchedule", "getAll"],
   ...options,

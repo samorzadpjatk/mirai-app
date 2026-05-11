@@ -45,7 +45,7 @@ export type UserSearchField =
   | 'groupName';
 
 export function useAdminUsers(tripId: string, searchTerm: string, field: UserSearchField) {
-  // Use direct tRPC + React Query for queries
+  // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
   const { data: groupsData, isLoading: groupsLoading } = useQuery(orpc.group.getAll.queryOptions({ input: { tripId } }));
   const groups = (groupsData ?? []) as Group[];
@@ -94,7 +94,7 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
     [data],
   );
 
-  // Use direct tRPC + React Query for mutations
+  // Use direct oRPC + React Query for mutations
   const assignToGroupMutation = useMutation(orpc.group.assignUserToGroup.mutationOptions({
     onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));

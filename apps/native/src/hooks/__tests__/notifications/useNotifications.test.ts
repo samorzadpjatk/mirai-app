@@ -46,7 +46,7 @@ jest.mock("react-native", () => ({
   },
 }));
 
-// Mock tRPC
+// Mock oRPC
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     notifications: {

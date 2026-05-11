@@ -9,7 +9,7 @@ interface LocationStoreProviderProps {
 }
 
 /**
- * Bridges the Zustand location store with tRPC server data.
+ * Bridges the Zustand location store with oRPC server data.
  * Hydrates the store with server sharing settings and synchronizes background tasks.
  */
 export function LocationStoreProvider({ children }: LocationStoreProviderProps) {

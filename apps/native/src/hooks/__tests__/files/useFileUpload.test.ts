@@ -26,7 +26,7 @@ jest.mock("expo-file-system", () => ({
   })),
 }));
 
-// Mock tRPC client - using interface for complex return type
+// Mock oRPC client - using interface for complex return type
 interface UploadTicket {
   resumableUrl: string;
   bucket: string;

@@ -44,7 +44,7 @@ export function useAdminSchedules(tripId?: string) {
 
   const { data: result, isLoading } = useQuery(queryOptions);
 
-  // Use direct tRPC + React Query for mutations
+  // Use direct oRPC + React Query for mutations
   const queryClient = useQueryClient();
   const createScheduleMutation = useMutation(orpc.notificationSchedule.create.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },

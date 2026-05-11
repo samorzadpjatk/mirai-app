@@ -23,7 +23,7 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
-// Mock tRPC
+// Mock oRPC
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     user: {

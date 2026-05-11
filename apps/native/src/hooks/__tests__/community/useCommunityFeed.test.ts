@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useCommunityFeed } from "../../community/useCommunityFeed";
 
-// Mock tRPC client
+// Mock oRPC client
 const mockToggleReaction = jest.fn();
 const mockGetByTripQuery = jest.fn<(input: unknown) => Promise<{
   activities: {

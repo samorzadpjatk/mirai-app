@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useNotificationSchedules } from "../../notifications/useNotificationSchedules";
 
-// Mock tRPC
+// Mock oRPC
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     notificationSchedule: {
