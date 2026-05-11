@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router';
-import { useTRPC } from '@mirai-app/trpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 import { useQuery } from '@tanstack/react-query';
 import { colors } from '~/styles';
 
 const backgroundColor = "#17181c";
 
 export default function AdminLayout() {
-  const trpc = useTRPC();
-
-  const { data: user } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: user } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   // Check if user has admin role based on the user object
   const hasAdminAccess = user?.role === 'ADMIN' || user?.role === 'MODERATOR';

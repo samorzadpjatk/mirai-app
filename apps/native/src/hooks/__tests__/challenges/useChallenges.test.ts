@@ -3,45 +3,50 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useChallenges } from "../../challenges/useChallenges";
 
 // Mock tRPC
-const mockTripGetByIdQuery = jest.fn(() => ({
-  queryKey: ["trip", "getById"],
+const mockTripGetByIdQueryOptions = jest.fn((params: { input: { id: string } }) => ({
+  queryKey: ["trip", "getById", params.input.id],
 }));
 
-const mockChallengeGetAllByTripQuery = jest.fn(() => ({
+const mockChallengeGetAllByTripInfiniteOptions = jest.fn((params: {
+  input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } };
+  initialPageParam: number;
+  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
+  enabled?: boolean;
+}) => ({
   queryKey: ["challenge", "getAllByTrip"],
+  initialPageParam: params.initialPageParam,
+  getNextPageParam: params.getNextPageParam,
+  enabled: params.enabled,
 }));
 
-const mockUserGetMyQuery = jest.fn(() => ({
+const mockUserGetMyQueryOptions = jest.fn((params: { input: Record<string, never> }) => ({
   queryKey: ["user", "getMy"],
+  input: params.input,
 }));
 
-const mockChallengeGetAllByTripQueryClient = jest.fn();
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     trip: {
       getById: {
-        queryOptions: mockTripGetByIdQuery,
+        queryOptions: (params: { input: { id: string } }) => mockTripGetByIdQueryOptions(params),
       },
     },
     challenge: {
       getAllByTrip: {
-        queryOptions: mockChallengeGetAllByTripQuery,
+        infiniteOptions: (params: {
+          input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } };
+          initialPageParam: number;
+          getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
+          enabled?: boolean;
+        }) => mockChallengeGetAllByTripInfiniteOptions(params),
       },
     },
     user: {
       getMy: {
-        queryOptions: mockUserGetMyQuery,
+        queryOptions: (params: { input: Record<string, never> }) => mockUserGetMyQueryOptions(params),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    challenge: {
-      getAllByTrip: {
-        query: mockChallengeGetAllByTripQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock React Query

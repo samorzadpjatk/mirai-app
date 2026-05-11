@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateGroupQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 
 export function useCreateGroup(tripId?: string | null) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const createGroupMutation = useMutation(trpc.group.create.mutationOptions({
+  const createGroupMutation = useMutation(orpc.group.create.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient); },
   }));
 

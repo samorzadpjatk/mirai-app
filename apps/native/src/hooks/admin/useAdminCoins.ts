@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@mirai-app/trpc/client';
-import { invalidateGroupQueries } from '@mirai-app/trpc/client/query';
+import { orpc } from '@mirai-app/orpc/client';
+import { invalidateGroupQueries } from '@mirai-app/orpc/client/query';
 
 export interface Group {
   id: string;
@@ -18,13 +18,12 @@ export interface CoinOperation {
 }
 
 export function useAdminCoins(tripId: string) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const groupsQuery = trpc.group.getGroupList.queryOptions({ tripId });
+  const groupsQuery = orpc.group.getGroupList.queryOptions({ input: { tripId } });
   const { data: groups, isLoading: groupsLoading } = useQuery(groupsQuery);
 
-  const coinsMutation = useMutation(trpc.group.addCoins.mutationOptions({
+  const coinsMutation = useMutation(orpc.group.addCoins.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
   }));
 

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
@@ -25,7 +25,6 @@ export default function AdminChallengeStaffVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
   const challengeId =
@@ -35,23 +34,31 @@ export default function AdminChallengeStaffVotingScreen() {
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
-  const challengeQuery = trpc.challenge.getById.queryOptions({
-    id: challengeId ?? "",
-    tripId: tripId ?? "",
+  const challengeQuery = orpc.challenge.getById.queryOptions({
+    input: {
+      id: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
   });
   const submissionsQuery =
-    trpc.challengeSubmission.getByChallengeForAdmin.queryOptions({
+    orpc.challengeSubmission.getByChallengeForAdmin.queryOptions({
+      input: {
+        challengeId: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
+    });
+  const myVotesQuery = orpc.challengeVote.getMyByChallenge.queryOptions({
+    input: {
       challengeId: challengeId ?? "",
       tripId: tripId ?? "",
-    });
-  const myVotesQuery = trpc.challengeVote.getMyByChallenge.queryOptions({
-    challengeId: challengeId ?? "",
-    tripId: tripId ?? "",
+    },
   });
   const judgedStaffProgressQuery =
-    trpc.challengeVote.getJudgedStaffProgress.queryOptions({
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+    orpc.challengeVote.getJudgedStaffProgress.queryOptions({
+      input: {
+        challengeId: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
     });
 
   const { data: challenge, isLoading: isLoadingChallenge } = useQuery({
@@ -84,10 +91,10 @@ export default function AdminChallengeStaffVotingScreen() {
   });
 
   const submitVoteMutation = useMutation(
-    trpc.challengeVote.submitVotes.mutationOptions(),
+    orpc.challengeVote.submitVotes.mutationOptions(),
   );
   const forceEndMutation = useMutation(
-    trpc.challengeVote.forceEndJudgedStaffVoting.mutationOptions(),
+    orpc.challengeVote.forceEndJudgedStaffVoting.mutationOptions(),
   );
 
   const navigateBackToChallenges = () => {

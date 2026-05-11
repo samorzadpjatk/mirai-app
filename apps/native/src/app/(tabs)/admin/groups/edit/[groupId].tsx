@@ -3,7 +3,7 @@ import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
@@ -20,7 +20,6 @@ interface OrganizerOption {
 
 export default function AdminEditGroupScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ groupId: string; tripId?: string }>();
@@ -29,12 +28,12 @@ export default function AdminEditGroupScreen() {
 
 
   const { data: group, isLoading: groupLoading } = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId }),
+    ...orpc.group.getById.queryOptions({ input: { id: groupId } }),
     enabled: !!groupId,
   });
 
   const { data: users, isLoading: usersLoading } = useQuery({
-    ...trpc.user.getAll.queryOptions({ tripId }),
+    ...orpc.user.getAll.queryOptions({ input: { tripId } }),
     enabled: !!tripId,
   });
 
@@ -45,7 +44,7 @@ export default function AdminEditGroupScreen() {
   const [userSearch, setUserSearch] = useState("");
 
   const updateGroupMutation = useMutation(
-    trpc.group.update.mutationOptions({
+    orpc.group.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["group", "getAll"], { input: { tripId } }],
@@ -62,7 +61,7 @@ export default function AdminEditGroupScreen() {
   );
 
   const deleteGroupMutation = useMutation(
-    trpc.group.delete.mutationOptions({
+    orpc.group.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["group", "getAll"], { input: { tripId } }],

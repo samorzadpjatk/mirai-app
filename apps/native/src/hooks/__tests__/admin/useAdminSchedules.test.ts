@@ -3,59 +3,65 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminSchedules } from "../../admin/useAdminSchedules";
 
 // Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
+const mockGetAllQuery = jest.fn((options: { input: unknown }) => ({
   queryKey: ["notificationSchedule", "getAll"],
+  ...options,
 }));
 
-const mockCreateMutation = jest.fn(() => ({
+const mockCreateMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockUpdateMutation = jest.fn(() => ({
+const mockUpdateMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockDeleteMutation = jest.fn(() => ({
+const mockDeleteMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockToggleMutation = jest.fn(() => ({
+const mockToggleMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-const mockUpsertTemplateMutation = jest.fn(() => ({
+const mockUpsertTemplateMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
+  ...options,
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     notificationSchedule: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        queryOptions: (options: { input: unknown }) => mockGetAllQuery(options),
       },
       create: {
-        mutationOptions: mockCreateMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockCreateMutation(options),
       },
       update: {
-        mutationOptions: mockUpdateMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockUpdateMutation(options),
       },
       delete: {
-        mutationOptions: mockDeleteMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockDeleteMutation(options),
       },
       toggleActive: {
-        mutationOptions: mockToggleMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockToggleMutation(options),
       },
       upsertTemplate: {
-        mutationOptions: mockUpsertTemplateMutation,
+        mutationOptions: (options: { onSuccess: () => void }) => mockUpsertTemplateMutation(options),
       },
     },
-  })),
+  },
 }));
 
-// Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateNotificationQueries: jest.fn(),
 }));
+
 
 // Mock React Query
 const mockUseQuery = jest.fn();

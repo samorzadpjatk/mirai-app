@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 export function useMyGroup(tripId?: string | null) {
-  const trpc = useTRPC();
-  const query = useQuery(trpc.group.getMy.queryOptions({ tripId: tripId ?? "" }, { enabled: !!tripId }));
+  const query = useQuery(orpc.group.getMy.queryOptions({ input: { tripId: tripId ?? "" }, enabled: !!tripId }));
 
   return {
     group: query.data ?? null,

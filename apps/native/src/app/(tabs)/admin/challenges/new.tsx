@@ -2,7 +2,7 @@ import React from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
@@ -14,7 +14,6 @@ import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/ad
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const trpc = useTRPC();
 
   const tripId =
     typeof params.tripId === "string"
@@ -29,7 +28,7 @@ export default function NewChallengeScreen() {
   const { form, validateForm, isUploadingImage } = formState;
 
   const createChallengeMutation = useMutation(
-    trpc.challenge.create.mutationOptions({
+    orpc.challenge.create.mutationOptions({
       onSuccess: () => {
         Alert.alert("Saved", "Challenge created successfully.", [
           {

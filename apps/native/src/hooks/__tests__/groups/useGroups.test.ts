@@ -3,39 +3,28 @@ import { renderHook } from "@testing-library/react-native";
 import { useGroups } from "../../groups/useGroups";
 
 const mockUseInfiniteQuery = jest.fn();
-const mockUseTRPC = jest.fn();
-const mockUseTRPCClient = jest.fn();
+const mockGetAllInfiniteOptions = jest.fn((options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => ({
+  queryKey: ["groups", "getAll"],
+  ...options,
+}));
 
 jest.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockUseTRPC(),
-  useTRPCClient: () => mockUseTRPCClient(),
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    group: {
+      getAll: {
+        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => mockGetAllInfiniteOptions(options),
+      },
+    },
+  },
 }));
 
 describe("useGroups", () => {
-  const mockTrpc = {
-    group: {
-      getAll: {
-        queryOptions: jest.fn(() => ({ queryKey: ["groups", "getAll"] })),
-      },
-    },
-  };
-
-  const mockTrpcClient = {
-    group: {
-      getAll: {
-        query: jest.fn(),
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseTRPC.mockReturnValue(mockTrpc);
-    mockUseTRPCClient.mockReturnValue(mockTrpcClient);
   });
 
   describe("query initialization", () => {
@@ -69,10 +58,8 @@ describe("useGroups", () => {
 
       renderHook(() => useGroups("trip-123"));
 
-      expect(mockUseInfiniteQuery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          enabled: true,
-        })
+      expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: true })
       );
     });
 
@@ -89,10 +76,8 @@ describe("useGroups", () => {
 
       renderHook(() => useGroups(null));
 
-      expect(mockUseInfiniteQuery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          enabled: false,
-        })
+      expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false })
       );
     });
 
@@ -109,10 +94,8 @@ describe("useGroups", () => {
 
       renderHook(() => useGroups(undefined));
 
-      expect(mockUseInfiniteQuery).toHaveBeenCalledWith(
-        expect.objectContaining({
-          enabled: false,
-        })
+      expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false })
       );
     });
   });

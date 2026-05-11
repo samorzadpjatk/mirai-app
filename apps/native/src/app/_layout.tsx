@@ -39,7 +39,7 @@ import {
 } from "@mirai-app/auth/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
-import { APIProvider, useTRPCClient } from "@mirai-app/trpc/client";
+import { QueryProvider, orpc } from "@mirai-app/orpc/client";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
@@ -160,11 +160,9 @@ function App() {
 }
 
 function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
-  const trpcClient = useTRPCClient();
-  
   const onUserFetch = async () => {
     try {
-      const user = await trpcClient.user.getMy.query();
+      const user = await orpc.user.getMy.call({});
       if (!user) return null;
       
       // Transform database user to AuthUser format
@@ -215,13 +213,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SupabaseProvider client={supabaseClient}>
-          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+          <QueryProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
             <AuthStoreProviderWrapper>
               <LocationStoreProvider>
                 <App />
               </LocationStoreProvider>
             </AuthStoreProviderWrapper>
-          </APIProvider>
+          </QueryProvider>
         </SupabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

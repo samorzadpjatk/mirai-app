@@ -1,16 +1,14 @@
 import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared";
 
 export function useTripResources(tripId?: string | null) {
-  const trpc = useTRPC();
-  
   const resourcesQuery = useQuery(
-    trpc.trip.getResources.queryOptions(
-      { tripId: tripId ?? "" },
-      { enabled: !!tripId }
-    )
+    orpc.trip.getResources.queryOptions({
+      input: { tripId: tripId ?? "" },
+      enabled: !!tripId,
+    })
   );
 
   const { data: resourcesData, isLoading, isError, error, refetch } = resourcesQuery;

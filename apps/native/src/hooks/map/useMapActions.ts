@@ -1,9 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 export function useMapActions() {
-  const trpc = useTRPC();
-  const updateLocationMutation = useMutation(trpc.location.updateLocation.mutationOptions());
+  const updateLocationMutation = useMutation(orpc.location.updateLocation.mutationOptions());
 
   const sendLocation = async (input: {
     latitude: number;

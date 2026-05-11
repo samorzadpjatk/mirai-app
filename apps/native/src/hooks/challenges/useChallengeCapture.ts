@@ -3,8 +3,8 @@ import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateChallengeQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
 import { useFileUpload } from "~/hooks/files";
 
 interface ChallengeCaptureOptions {
@@ -28,13 +28,12 @@ export function useChallengeCapture({
 }: ChallengeCaptureOptions) {
   const router = useRouter();
   
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userQuery = useQuery(trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }, { enabled: !!tripId }));
-  const createSubmissionMutation = useMutation(trpc.challengeSubmission.create.mutationOptions({
+  const userQuery = useQuery(orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" }, enabled: !!tripId }));
+  const createSubmissionMutation = useMutation(orpc.challengeSubmission.create.mutationOptions({
     onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
   }));
-  const deleteSubmissionMutation = useMutation(trpc.challengeSubmission.deleteMine.mutationOptions({
+  const deleteSubmissionMutation = useMutation(orpc.challengeSubmission.deleteMine.mutationOptions({
     onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
   }));
 

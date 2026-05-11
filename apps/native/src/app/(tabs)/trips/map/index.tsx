@@ -5,7 +5,7 @@ import { useMapUsers } from "~/hooks/map";
 import { useMapOverlayStore, mapOverlayStore, setMapOverlayExternals } from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@mirai-app/auth/client";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
@@ -55,10 +55,9 @@ function MapScreenContent({
 
 export default function MapScreen() {
   const { session } = useAuth();
-  const trpc = useTRPC();
   const { selectedTripId } = useSelectedTrip();
   const { isTripPast } = useTripDetails(selectedTripId);
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
   const mapTheme = "dark";
   const [currentCoordinate, setCurrentCoordinate] = useState<

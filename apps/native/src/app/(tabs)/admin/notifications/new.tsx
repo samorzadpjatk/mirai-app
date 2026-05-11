@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";
@@ -101,7 +101,6 @@ const placeholderLegend = [
 
 export default function AdminCreateNotificationScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
@@ -119,29 +118,31 @@ export default function AdminCreateNotificationScreen() {
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
 
   const groupsQuery = useQuery({
-    ...trpc.group.getAllNames.queryOptions({ tripId }),
+    ...orpc.group.getAllNames.queryOptions({ input: { tripId } }),
     enabled: !!tripId,
   });
 
   const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
 
-  const schedulesQueryOptions = trpc.notificationSchedule.getAll.queryOptions({
-    ...(tripId ? { filter: { tripId } } : {}),
-    pagination: {
-      limit: 100,
-      offset: 0,
+  const schedulesQueryOptions = orpc.notificationSchedule.getAll.queryOptions({
+    input: {
+      ...(tripId ? { filter: { tripId } } : {}),
+      pagination: {
+        limit: 100,
+        offset: 0,
+      },
     },
   });
 
-  const sentNotificationsQueryOptions = trpc.notifications.getAll.queryOptions(
-    tripId ? { tripId } : undefined,
-  );
+  const sentNotificationsQueryOptions = orpc.notifications.getAll.queryOptions({
+    input: tripId ? { tripId } : {},
+  });
 
   const createScheduleMutation = useMutation(
-    trpc.notificationSchedule.create.mutationOptions(),
+    orpc.notificationSchedule.create.mutationOptions(),
   );
-  const sendToAllMutation = useMutation(trpc.notifications.sendToAll.mutationOptions());
-  const sendToGroupMutation = useMutation(trpc.notifications.sendToGroup.mutationOptions());
+  const sendToAllMutation = useMutation(orpc.notifications.sendToAll.mutationOptions());
+  const sendToGroupMutation = useMutation(orpc.notifications.sendToGroup.mutationOptions());
 
   const isSubmitting =
     createScheduleMutation.isPending ||

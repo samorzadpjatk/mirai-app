@@ -3,8 +3,8 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateLocationQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateLocationQueries } from "@mirai-app/orpc/client/query";
 
 const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
 
@@ -28,14 +28,13 @@ export interface UseLocationPermissionsReturn {
 }
 
 export function useLocationPermissions(): UseLocationPermissionsReturn {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const updateSharingMutation = useMutation(trpc.location.updateSharingSettings.mutationOptions({
+  const updateSharingMutation = useMutation(orpc.location.updateSharingSettings.mutationOptions({
     onSuccess: async () => { await invalidateLocationQueries(queryClient); },
     onError: (error) => { console.error("Failed to update location sharing settings:", error); },
   }));
-  
-  const sharingSettingsQuery = useQuery(trpc.location.getMySharingSettings.queryOptions());
+
+  const sharingSettingsQuery = useQuery(orpc.location.getMySharingSettings.queryOptions({ input: {} }));
   const sharingSettings = sharingSettingsQuery.data;
   const isSettingsLoading = sharingSettingsQuery.isLoading;
 

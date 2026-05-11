@@ -21,7 +21,7 @@ const mockUseFileDownload = jest.fn(() => ({
   abort: mockAbort,
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: () => ({
     user: {
       getMy: {
@@ -31,6 +31,15 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   }),
+  orpc: {
+    user: {
+      getMy: {
+        queryOptions: () => ({
+          queryKey: ["user", "getMy"],
+        }),
+      },
+    },
+  },
 }));
 
 jest.mock("@tanstack/react-query", () => ({

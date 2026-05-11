@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
@@ -15,15 +15,14 @@ export default function LeaderboardScreen() {
   const router = useRouter();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
+    ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
     enabled: !!tripId,
   });
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   // Calculate rankings
   const rankedGroups: RankedGroup[] = useMemo(() => {

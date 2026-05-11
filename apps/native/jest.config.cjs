@@ -14,16 +14,20 @@ module.exports = {
   // The jest-expo preset has: /node_modules/(?!(.pnpm|react-native|...))
   // We add .bun alongside .pnpm
   transformIgnorePatterns: [
-    "node_modules/(?!.*(?:.bun|.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|react-native-svg|superjson|copy-anything|is-what))",
+    "node_modules/(?!.*(?:.bun|.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|react-native-svg|superjson|copy-anything|is-what|@orpc))",
   ],
+  // Handle ESM .mjs files from @orpc packages
+  transform: {
+    "\\.mjs$": "babel-jest",
+  },
   moduleNameMapper: {
     "^~/(.*)$": "<rootDir>/src/$1",
     "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
     "^@mirai-app/supabase$": "<rootDir>/../../packages/supabase/src/index.ts",
     "^@mirai-app/auth$": "<rootDir>/../../packages/auth/src/index.ts",
     "^@mirai-app/db$": "<rootDir>/../../packages/db/src/index.ts",
-    "^@mirai-app/trpc/client/query$": "<rootDir>/../../packages/trpc/src/client/query/index.ts",
-    "^@mirai-app/trpc/client$": "<rootDir>/../../packages/trpc/src/client/index.ts",
+    "^@mirai-app/orpc/client/query$": "<rootDir>/../../packages/orpc/src/client/query/index.ts",
+    "^@mirai-app/orpc/client$": "<rootDir>/../../packages/orpc/src/client/index.ts",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   // Exclude helper files from test discovery

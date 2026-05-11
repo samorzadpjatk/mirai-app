@@ -4,7 +4,7 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupMemberList } from "../../../trips/groups/details/GroupMemberList";
 import type { GroupMember } from "../../../trips/groups/details/GroupMemberList";
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: () => ({
     storage: {
       createDownloadUrl: {
@@ -15,6 +15,16 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   }),
+  orpc: {
+    storage: {
+      createDownloadUrl: {
+        queryOptions: () => ({
+          queryKey: ["test"],
+          queryFn: () => Promise.resolve({ signedUrl: null }),
+        }),
+      },
+    },
+  },
 }));
 
 describe("GroupMemberList", () => {

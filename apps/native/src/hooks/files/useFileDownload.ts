@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
@@ -71,7 +71,7 @@ export const deleteCachedDownload = async (storagePath: string): Promise<void> =
 };
 
 export const useFileDownload = () => {
-  const trpcClient = useTRPCClient();
+  const trpcClient = orpc;
   const [status, setStatus] = useState<DownloadStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
   const [file, setFile] = useState<DownloadResult | null>(null);
@@ -156,7 +156,7 @@ export const useFileDownload = () => {
         if (input.publicUrl) {
           signedUrl = input.publicUrl;
         } else {
-          const response = await trpcClient.storage.createDownloadUrl.query({
+          const response = await trpcClient.storage.createDownloadUrl.call({
             storagePath: input.storagePath,
             expiresInSeconds: input.expiresInSeconds,
           });

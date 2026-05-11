@@ -18,7 +18,7 @@ jest.mock("@tanstack/react-query", () => ({
   },
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: jest.fn(() => ({
     location: {
       getMySharingSettings: {
@@ -35,6 +35,22 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   })),
+  orpc: {
+    location: {
+      getMySharingSettings: {
+        queryOptions: jest.fn(() => ({ queryKey: ["sharing-settings"] })),
+      },
+      getAllUsersForSharing: {
+        queryOptions: jest.fn((input: unknown) => ({ queryKey: ["users-for-sharing", input] })),
+      },
+      updateSharingSettings: {
+        mutationOptions: jest.fn((options: unknown) => ({ options })),
+      },
+      removeUserFromSharing: {
+        mutationOptions: jest.fn((options: unknown) => ({ options })),
+      },
+    },
+  },
 }));
 
 

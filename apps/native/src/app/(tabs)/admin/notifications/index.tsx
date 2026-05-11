@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { NotificationCard } from "~/components/admin/notifications/NotificationCard";
@@ -83,7 +83,6 @@ function parseNotificationAudience(url: string): {
 
 export default function AdminNotificationsScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
@@ -126,7 +125,7 @@ export default function AdminNotificationsScreen() {
   } = useAdminSchedules(tripId || undefined);
 
   const groupsQuery = useQuery({
-    ...trpc.group.getAllNames.queryOptions({ tripId }),
+    ...orpc.group.getAllNames.queryOptions({ input: { tripId } }),
     enabled: !!tripId,
   });
   const groups = groupsQuery.data ?? [];

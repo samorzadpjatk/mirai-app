@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JudgementContent } from '~/components/judgement/JudgementContent';
@@ -17,16 +17,17 @@ import { viewStyles, textStyles } from '~/styles/judgement';
 export default function ChallengeJudgementScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const trpc = useTRPC();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
   const challengeId =
     typeof params.challengeId === 'string' ? params.challengeId : params.challengeId?.[0] ?? '';
 
   const challengeQuery = useQuery({
-    ...trpc.challenge.getById.queryOptions({
-      id: challengeId,
-      tripId,
+    ...orpc.challenge.getById.queryOptions({
+      input: {
+        id: challengeId,
+        tripId,
+      },
     }),
     enabled: Boolean(tripId) && Boolean(challengeId),
   });

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useStore } from "zustand";
 import {
   judgementStore,
@@ -14,7 +14,6 @@ import type { ReviewStatus, Submission } from "./judgementStores";
  * Can be called with explicit params or without args (reads from store).
  */
 export function useJudgement(explicitTripId?: string, explicitChallengeId?: string) {
-  const trpc = useTRPC();
   const storeTripId = useStore(judgementStore, (s) => s.tripId);
   const storeChallengeId = useStore(judgementStore, (s) => s.challengeId);
   const dismissedIds = useStore(judgementStore, (s) => s.dismissedIds);
@@ -23,17 +22,17 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
   const tripId = explicitTripId ?? storeTripId;
   const challengeId = explicitChallengeId ?? storeChallengeId;
 
-  const submissionsQuery = useQuery(trpc.challengeSubmission.getByChallenge.queryOptions({
-    tripId,
-    challengeId,
-  }, { enabled: !!tripId && !!challengeId }));
+  const submissionsQuery = useQuery(orpc.challengeSubmission.getByChallenge.queryOptions({
+    input: { tripId, challengeId },
+    enabled: !!tripId && !!challengeId,
+  }));
 
-  const challengeQuery = useQuery(trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
-  }, { enabled: !!tripId && !!challengeId }));
+  const challengeQuery = useQuery(orpc.challenge.getById.queryOptions({
+    input: { id: challengeId, tripId },
+    enabled: !!tripId && !!challengeId,
+  }));
 
-  const reviewMutation = useMutation(trpc.challengeSubmission.review.mutationOptions({
+  const reviewMutation = useMutation(orpc.challengeSubmission.review.mutationOptions({
     onError: (error) => {
       console.error(error);
     },

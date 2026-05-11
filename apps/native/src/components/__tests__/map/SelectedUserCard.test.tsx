@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SelectedUserCard } from "../../map/ui/SelectedUserCard";
 
-jest.mock("@mirai-app/trpc", () => ({
+jest.mock("@mirai-app/orpc", () => ({
   api: {},
   createTRPCClient: jest.fn(),
   createQueryClient: jest.fn(),

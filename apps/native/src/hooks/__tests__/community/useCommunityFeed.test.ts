@@ -4,7 +4,7 @@ import { useCommunityFeed } from "../../community/useCommunityFeed";
 
 // Mock tRPC client
 const mockToggleReaction = jest.fn();
-const mockGetByTripQuery = jest.fn<() => Promise<{
+const mockGetByTripQuery = jest.fn<(input: unknown) => Promise<{
   activities: {
     id: string;
     activityType: string;
@@ -24,17 +24,17 @@ const mockGetByTripQuery = jest.fn<() => Promise<{
   nextCursor: unknown;
 }>>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPCClient: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     activityFeed: {
       getByTrip: {
-        query: mockGetByTripQuery,
+        call: (input: unknown) => mockGetByTripQuery(input),
       },
       toggleReaction: {
-        mutate: mockToggleReaction,
+        call: (input: unknown) => mockToggleReaction(input),
       },
     },
-  })),
+  },
 }));
 
 // Mock React Query

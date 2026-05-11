@@ -1,14 +1,13 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 export function useChallengeDetails(
   challengeId?: string | null,
   tripId?: string | null,
 ) {
-  const trpc = useTRPC();
-  const challengeQuery = useQuery(trpc.challenge.getById.queryOptions({ id: challengeId ?? "", tripId: tripId ?? "" }, { enabled: !!challengeId && !!tripId }));
-  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
+  const challengeQuery = useQuery(orpc.challenge.getById.queryOptions({ input: { id: challengeId ?? "", tripId: tripId ?? "" }, enabled: !!challengeId && !!tripId }));
+  const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { data: challenge, isLoading: challengeLoading } = challengeQuery;
   const { data: currentUser } = currentUserQuery;

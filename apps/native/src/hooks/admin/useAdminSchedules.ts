@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@mirai-app/trpc/client';
-import { invalidateNotificationQueries } from '@mirai-app/trpc/client/query';
+import { orpc } from '@mirai-app/orpc/client';
+import { invalidateNotificationQueries } from '@mirai-app/orpc/client/query';
 
 export interface NotificationSchedule {
   id: string;
@@ -29,8 +29,6 @@ function toTriggerTime(hour: number, minute: number): string {
 }
 
 export function useAdminSchedules(tripId?: string) {
-  const trpc = useTRPC();
-
   const queryInput = useMemo(
     () => ({
       ...(tripId ? { filter: { tripId } } : {}),
@@ -42,25 +40,25 @@ export function useAdminSchedules(tripId?: string) {
     [tripId],
   );
 
-  const queryOptions = trpc.notificationSchedule.getAll.queryOptions(queryInput);
+  const queryOptions = orpc.notificationSchedule.getAll.queryOptions({ input: queryInput });
 
   const { data: result, isLoading } = useQuery(queryOptions);
 
   // Use direct tRPC + React Query for mutations
   const queryClient = useQueryClient();
-  const createScheduleMutation = useMutation(trpc.notificationSchedule.create.mutationOptions({
+  const createScheduleMutation = useMutation(orpc.notificationSchedule.create.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
   }));
-  const updateScheduleMutation = useMutation(trpc.notificationSchedule.update.mutationOptions({
+  const updateScheduleMutation = useMutation(orpc.notificationSchedule.update.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
   }));
-  const deleteScheduleMutation = useMutation(trpc.notificationSchedule.delete.mutationOptions({
+  const deleteScheduleMutation = useMutation(orpc.notificationSchedule.delete.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
   }));
-  const toggleScheduleMutation = useMutation(trpc.notificationSchedule.toggleActive.mutationOptions({
+  const toggleScheduleMutation = useMutation(orpc.notificationSchedule.toggleActive.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
   }));
-  const upsertTemplateMutation = useMutation(trpc.notificationSchedule.upsertTemplate.mutationOptions({
+  const upsertTemplateMutation = useMutation(orpc.notificationSchedule.upsertTemplate.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
   }));
 

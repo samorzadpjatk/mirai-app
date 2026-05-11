@@ -3,34 +3,36 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminChallengesByTrip } from "../../admin/useAdminChallengesByTrip";
 
 // Mock tRPC
-const mockGetAllByTripQuery = jest.fn(() => ({
-  queryKey: ["challenge", "getAllByTrip"],
+const mockGetAllByTripQuery = jest.fn((options: { input: { tripId: string } }) => ({
+  queryKey: ["challenge", "getAllByTrip", options.input.tripId],
 }));
 
-const mockGetAllByTripQueryClient = jest.fn();
+const mockGetAllByTripInfiniteOptions = jest.fn((options: {
+  input: (pageParam: number) => unknown;
+  initialPageParam: number;
+  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
+  enabled?: boolean;
+}) => ({
+  ...options,
+  queryKey: ["challenge", "getAllByTrip"],
+}));
 
 const mockDeleteMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     challenge: {
       getAllByTrip: {
-        queryOptions: mockGetAllByTripQuery,
+        queryOptions: (options: { input: { tripId: string } }) => mockGetAllByTripQuery(options),
+        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined; enabled?: boolean }) => mockGetAllByTripInfiniteOptions(options),
       },
       delete: {
-        mutationOptions: mockDeleteMutation,
+        mutationOptions: () => mockDeleteMutation(),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    challenge: {
-      getAllByTrip: {
-        query: mockGetAllByTripQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock React Query

@@ -38,12 +38,12 @@ interface MockQueryResult {
 
 const mockUseQuery = jest.fn<(options?: MockQueryOptions) => MockQueryResult>();
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     trip: {
       getById: {
-        queryOptions: jest.fn((params: { id: string }, options?: { enabled?: boolean }) => ({
-          queryKey: ["trip", "getById", params.id],
+        queryOptions: jest.fn((options?: { input?: { id?: string }; enabled?: boolean }) => ({
+          queryKey: ["trip", "getById", options?.input?.id],
           enabled: options?.enabled ?? true,
         })),
       },
@@ -55,7 +55,7 @@ jest.mock("@mirai-app/trpc/client", () => ({
         })),
       },
     },
-  })),
+  },
 }));
 
 jest.mock("@tanstack/react-query", () => ({

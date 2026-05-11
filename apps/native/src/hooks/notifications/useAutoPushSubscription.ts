@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 import { useAuth } from "@mirai-app/auth/client";
 
 function resolveProjectId(): string | undefined {
@@ -48,10 +48,9 @@ export function useAutoPushSubscription() {
   const attemptedForUserRef = useRef<string | null>(null);
 
   // Use tRPC + React Query directly for server-state
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const subscriptionQuery = useQuery(trpc.notifications.getSubscriptionStatus.queryOptions());
-  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
+  const subscriptionQuery = useQuery(orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} }));
+  const subscribeMutation = useMutation(orpc.notifications.subscribe.mutationOptions({
     onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
   }));
 

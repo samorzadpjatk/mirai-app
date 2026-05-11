@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/supabase/react";
 
@@ -36,7 +36,7 @@ interface UploadTicket {
 }
 
 export const useFileUpload = () => {
-  const trpcClient = useTRPCClient();
+  const trpcClient = orpc;
   const supabase = useSupabaseClient();
   
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -99,7 +99,7 @@ export const useFileUpload = () => {
 
         const contentType = input.contentType;
     
-        const uploadTicket = await trpcClient.storage.createUploadUrl.mutate({
+        const uploadTicket = await trpcClient.storage.createUploadUrl.call({
           storagePath: input.storagePath,
           upsert: input.upsert,
         });
@@ -159,7 +159,7 @@ export const useFileUpload = () => {
                   attempt += 1;
                   void tusUpload.abort().then(async () => {
                     try {
-                      const refreshedTicket = await trpcClient.storage.createUploadUrl.mutate({
+                      const refreshedTicket = await trpcClient.storage.createUploadUrl.call({
                         storagePath: input.storagePath,
                       });
                       console.warn("[Upload] Retrying with fresh signed URL", {

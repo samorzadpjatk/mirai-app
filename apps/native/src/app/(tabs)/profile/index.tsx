@@ -6,16 +6,15 @@ import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
 
   useFocusEffect(
     useCallback(() => {

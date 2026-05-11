@@ -3,14 +3,18 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminGroups } from "../../admin/useAdminGroups";
 
 // Mock tRPC
-const mockGetAllQuery = jest.fn(() => ({
+const mockGetAllInfiniteOptions = jest.fn((options: {
+  input: (pageParam: number) => unknown;
+  initialPageParam: number;
+  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
+  enabled?: boolean;
+}) => ({
+  ...options,
   queryKey: ["group", "getAll"],
 }));
 
-const mockGetAllQueryClient = jest.fn();
-
-const mockGetAllUsersQuery = jest.fn(() => ({
-  queryKey: ["user", "getAll"],
+const mockGetAllUsersQuery = jest.fn((options: { input: { tripId: string } }) => ({
+  queryKey: ["user", "getAll", options.input.tripId],
 }));
 
 const mockCreateMutation = jest.fn(() => ({
@@ -25,39 +29,32 @@ const mockDeleteMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     group: {
       getAll: {
-        queryOptions: mockGetAllQuery,
+        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined; enabled?: boolean }) => mockGetAllInfiniteOptions(options),
       },
       create: {
-        mutationOptions: mockCreateMutation,
+        mutationOptions: () => mockCreateMutation(),
       },
       update: {
-        mutationOptions: mockUpdateMutation,
+        mutationOptions: () => mockUpdateMutation(),
       },
       delete: {
-        mutationOptions: mockDeleteMutation,
+        mutationOptions: () => mockDeleteMutation(),
       },
     },
     user: {
       getAll: {
-        queryOptions: mockGetAllUsersQuery,
+        queryOptions: (options: { input: { tripId: string } }) => mockGetAllUsersQuery(options),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    group: {
-      getAll: {
-        query: mockGetAllQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateGroupQueries: jest.fn(),
 }));
 

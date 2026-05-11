@@ -4,7 +4,6 @@ import { useCreateGroup } from "../../groups/useCreateGroup";
 
 const mockUseMutation = jest.fn();
 const mockUseQueryClient = jest.fn();
-const mockUseTRPC = jest.fn();
 const mockInvalidateGroupQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
@@ -12,11 +11,22 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockUseTRPC(),
+const mockCreateGroupMutationOptions = jest.fn((options: Record<string, unknown>) => ({
+  mutationKey: ["group", "create"],
+  ...options,
 }));
 
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    group: {
+      create: {
+        mutationOptions: (options: Record<string, unknown>) => mockCreateGroupMutationOptions(options),
+      },
+    },
+  },
+}));
+
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateGroupQueries: (...args: unknown[]) => mockInvalidateGroupQueries(...args),
 }));
 
@@ -25,21 +35,9 @@ describe("useCreateGroup", () => {
     invalidateQueries: jest.fn(),
   };
 
-  const mockTrpc = {
-    group: {
-      create: {
-        mutationOptions: jest.fn((options: Record<string, unknown>) => ({
-          mutationKey: ["group", "create"],
-          ...options,
-        })),
-      },
-    },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseQueryClient.mockReturnValue(mockQueryClient);
-    mockUseTRPC.mockReturnValue(mockTrpc);
   });
 
   describe("mutation initialization", () => {
@@ -51,7 +49,7 @@ describe("useCreateGroup", () => {
 
       renderHook(() => useCreateGroup("trip-123"));
 
-      expect(mockTrpc.group.create.mutationOptions).toHaveBeenCalled();
+      expect(mockCreateGroupMutationOptions).toHaveBeenCalled();
       expect(mockUseMutation).toHaveBeenCalled();
     });
 

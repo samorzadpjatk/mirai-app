@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
 
@@ -13,18 +13,17 @@ interface LocationStoreProviderProps {
  * Hydrates the store with server sharing settings and synchronizes background tasks.
  */
 export function LocationStoreProvider({ children }: LocationStoreProviderProps) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasHydrated = useRef(false);
 
   // Get current sharing settings from server
   const { data: sharingSettings } = useQuery(
-    trpc.location.getMySharingSettings.queryOptions(),
+    orpc.location.getMySharingSettings.queryOptions({ input: {} }),
   );
 
   // Mutation to update sharing settings on the server
   const updateSharingMutation = useMutation(
-    trpc.location.updateSharingSettings.mutationOptions({
+    orpc.location.updateSharingSettings.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: ["location", "getMySharingSettings"],
@@ -32,9 +31,10 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
       },
       onError: (error) => {
         console.error("Failed to update location sharing settings:", error);
-        if (error?.data?.code === "UNAUTHORIZED") {
+        const code = (error as { code?: string })?.code;
+        if (code === "UNAUTHORIZED") {
           Alert.alert("Authentication Required", "Please sign in again to update location settings.");
-        } else if (error?.data?.code === "FORBIDDEN") {
+        } else if (code === "FORBIDDEN") {
           Alert.alert("Access Denied", "You don't have permission to update location settings.");
         } else {
           Alert.alert("Connection Error", "Failed to update location sharing settings. Please check your internet connection and try again.");

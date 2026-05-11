@@ -1,26 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 export function useSponsors() {
-  const trpc = useTRPC();
-  
-  return useQuery(trpc.sponsor.getAll.queryOptions());
+  return useQuery(orpc.sponsor.getAll.queryOptions({ input: {} }));
 }
 
 export function useSponsorById(id: string) {
-  const trpc = useTRPC();
-  
   return useQuery({
-    ...trpc.sponsor.getById.queryOptions({ id }),
+    ...orpc.sponsor.getById.queryOptions({ input: { id } }),
     enabled: !!id,
   });
 }
 
 export function useTripSponsors(tripId: string) {
-  const trpc = useTRPC();
-  
   return useQuery({
-    ...trpc.sponsor.getByTripId.queryOptions({ tripId }),
+    ...orpc.sponsor.getByTripId.queryOptions({ input: { tripId } }),
     enabled: !!tripId,
   });
 }

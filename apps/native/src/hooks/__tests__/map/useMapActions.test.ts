@@ -10,7 +10,7 @@ const mockUseMutation = jest.fn(() => ({
   isPending: false,
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: jest.fn(() => ({
     location: {
       updateLocation: {
@@ -18,6 +18,13 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   })),
+  orpc: {
+    location: {
+      updateLocation: {
+        mutationOptions: jest.fn(() => ({})),
+      },
+    },
+  },
 }));
 
 jest.mock("@tanstack/react-query", () => ({

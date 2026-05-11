@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FilterChip, FilterChipRow, EmptyState, AppModalShell, AppModalFooter, ThemedTextInput } from "~/components/common/ui";
 import { SubmissionReviewCard, type SubmissionItem } from "~/components/admin/challenges/SubmissionReviewCard";
@@ -35,7 +35,6 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
 
 
 export default function ChallengeSubmissionsScreen() {
-  const trpc = useTRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -56,21 +55,23 @@ export default function ChallengeSubmissionsScreen() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<SubmissionItem | null>(null);
 
-  const challengeQueryOptions = trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
+  const challengeQueryOptions = orpc.challenge.getById.queryOptions({
+    input: {
+      id: challengeId,
+      tripId,
+    },
   });
   const challengeQuery = useQuery({
     ...challengeQueryOptions,
     enabled: Boolean(tripId) && Boolean(challengeId),
   });
 
-  const submissionsQueryOptions = trpc.challengeSubmission.getByChallenge.queryOptions(
-    {
+  const submissionsQueryOptions = orpc.challengeSubmission.getByChallenge.queryOptions({
+    input: {
       tripId,
       challengeId,
     },
-  );
+  });
   const submissionsQuery = useQuery({
     ...submissionsQueryOptions,
     enabled: Boolean(tripId) && Boolean(challengeId),
@@ -82,14 +83,14 @@ export default function ChallengeSubmissionsScreen() {
   );
 
   const reviewMutation = useMutation(
-    trpc.challengeSubmission.review.mutationOptions({
+    orpc.challengeSubmission.review.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: submissionsQueryOptions.queryKey,
         });
         if (tripId) {
           await queryClient.invalidateQueries({
-            queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
+            queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } }).queryKey,
           });
         }
       },

@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -12,7 +12,6 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 export default function AdminCreateGroupScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
@@ -21,7 +20,7 @@ export default function AdminCreateGroupScreen() {
   const [groupName, setGroupName] = useState("");
 
   const createGroupMutation = useMutation(
-    trpc.group.create.mutationOptions({
+    orpc.group.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["group", "getAll"], { input: { tripId } }],

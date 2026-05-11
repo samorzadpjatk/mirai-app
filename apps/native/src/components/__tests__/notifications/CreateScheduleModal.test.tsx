@@ -32,7 +32,7 @@ jest.mock("~/hooks/trips", () => ({
   useTrips: () => mockUseTrips(),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: () => ({
     notificationSchedule: {
       create: {
@@ -47,6 +47,20 @@ jest.mock("@mirai-app/trpc/client", () => ({
       },
     },
   }),
+  orpc: {
+    notificationSchedule: {
+      create: {
+        mutationOptions: () => ({
+          mutationFn: mockMutate,
+        }),
+      },
+      getAll: {
+        queryOptions: () => ({
+          queryKey: ["notificationSchedule", "getAll"],
+        }),
+      },
+    },
+  },
 }));
 
 const mockUseQueryClient = jest.fn(() => ({

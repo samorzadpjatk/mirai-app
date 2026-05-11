@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -24,14 +24,13 @@ import { useFileUpload } from "~/hooks/files";
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
 
   const { data: totalPointsData } = useQuery(
-    trpc.reward.getTotalAvailablePoints.queryOptions({ tripId }, { enabled: !!tripId })
+    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId })
   );
 
   const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
@@ -52,7 +51,7 @@ export default function AdminCreateRewardScreen() {
     : 0;
 
   const createRewardMutation = useMutation(
-    trpc.reward.create.mutationOptions({
+    orpc.reward.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["reward", "getAll"], { input: { tripId } }],

@@ -12,27 +12,16 @@ jest.mock("~/services/storage/selectedTripStorage", () => ({
 }));
 
 // Mock tRPC
-const mockTripGetAllQuery = jest.fn(() => ({
-  queryKey: ["trip", "getAll"],
-}));
-
-const mockTripGetAllQueryClient = jest.fn();
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     trip: {
       getAll: {
-        queryOptions: mockTripGetAllQuery,
+        infiniteOptions: jest.fn(() => ({
+          queryKey: ["trip", "getAll"],
+        })),
       },
     },
-  })),
-  useTRPCClient: jest.fn(() => ({
-    trip: {
-      getAll: {
-        query: mockTripGetAllQueryClient,
-      },
-    },
-  })),
+  },
 }));
 
 // Mock React Query

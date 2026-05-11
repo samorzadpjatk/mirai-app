@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 
 export interface AdminChallengeUI {
   id: string;
@@ -18,41 +18,40 @@ export interface AdminChallengeUI {
 }
 
 export function useAdminChallenges() {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const { data: challengesData, isLoading } = useQuery(
-    trpc.challenge.getAll.queryOptions(),
+    orpc.challenge.getAll.queryOptions({ input: {} }),
   );
 
   const createMutation = useMutation(
-    trpc.challenge.create?.mutationOptions?.({
+    orpc.challenge.create.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["challenge", "getAll"]],
         });
       },
-    }) ?? {},
+    }),
   );
 
   const updateMutation = useMutation(
-    trpc.challenge.update?.mutationOptions?.({
+    orpc.challenge.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["challenge", "getAll"]],
         });
       },
-    }) ?? {},
+    }),
   );
 
   const deleteMutation = useMutation(
-    trpc.challenge.delete?.mutationOptions?.({
+    orpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["challenge", "getAll"]],
         });
       },
-    }) ?? {},
+    }),
   );
 
   interface DBChallenge {

@@ -5,24 +5,23 @@ import { render, waitFor } from "@testing-library/react-native";
 import { LocationStoreProvider } from "../LocationStoreProvider";
 import { locationStore, setLocationServerUpdater } from "../locationStore";
 
-const mockTRPC = {
-  location: {
-    getMySharingSettings: {
-      queryOptions: jest.fn(() => ({
-        queryKey: ["location", "getMySharingSettings"],
-      })),
-    },
-    updateSharingSettings: {
-      mutationOptions: jest.fn((options: { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void }) => ({
-        mutationKey: ["location", "updateSharingSettings"],
-        ...options,
-      })),
+const mockGetMySharingSettingsQueryOptions = jest.fn((options: { input: {}; enabled?: boolean }) => ({
+  queryKey: ["location", "getMySharingSettings"],
+  enabled: options.enabled,
+}));
+const mockUpdateSharingSettingsMutationOptions = jest.fn((options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => ({
+  mutationKey: ["location", "updateSharingSettings"],
+  onSuccess: options.onSuccess,
+  onError: options.onError,
+}));
+
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    location: {
+      getMySharingSettings: { queryOptions: (options: { input: {}; enabled?: boolean }) => mockGetMySharingSettingsQueryOptions(options) },
+      updateSharingSettings: { mutationOptions: (options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => mockUpdateSharingSettingsMutationOptions(options) },
     },
   },
-};
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockTRPC,
 }));
 
 const mockUseQuery = jest.fn();

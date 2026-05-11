@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from "@mirai-app/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@mirai-app/supabase/react";
-import { getTRPCClient } from "@mirai-app/trpc/client";
+import { getORPCClient } from "@mirai-app/orpc/client";
 import { PRIVACY_POLICY_PUBLIC_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
@@ -53,18 +53,18 @@ export default function LoginScreen() {
     if (!token) {
       return { banned: false, bannedUntil: null as string | null, reason: null as string | null };
     }
-    const { client, cleanup } = getTRPCClient(TRPC_HTTP_URL, TRPC_WS_URL, token);
+    const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL, token);
     try {
-      return await client.user.getBanStatus.query();
+      return await client.user.getBanStatus({});
     } finally {
       await cleanup();
     }
   };
 
   const checkBanStatusByEmail = async () => {
-    const { client, cleanup } = getTRPCClient(TRPC_HTTP_URL, TRPC_WS_URL);
+    const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL);
     try {
-      return await client.user.getBanStatusByEmail.query({ email });
+      return await client.user.getBanStatusByEmail({ email });
     } finally {
       await cleanup();
     }

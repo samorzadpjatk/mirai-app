@@ -38,8 +38,15 @@ jest.mock("@mirai-app/supabase", () => ({
   })),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
+jest.mock("@mirai-app/orpc/client", () => ({
   getTRPCClient: (...args: [string, string, string]) => mockGetTRPCClient(...args),
+  orpc: {
+    location: {
+      updateLocation: {
+        mutate: mockMutate,
+      },
+    },
+  },
 }));
 
 jest.mock("~/services/storage/storage", () => ({

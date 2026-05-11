@@ -1,10 +1,9 @@
-import { useState, useMemo } from "react";
-import { useTRPC, useSubscription } from "@mirai-app/trpc/client";
+import { useState, useMemo, useEffect } from "react";
+import { orpc } from "@mirai-app/orpc/client";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
 
 export function useMapLocationStream(enabled: boolean) {
-  const trpc = useTRPC();
   const { canViewOthersLocations } = useLocationContext();
 
   const [locationsByUserId, setLocationsByUserId] = useState<
@@ -22,18 +21,23 @@ export function useMapLocationStream(enabled: boolean) {
 
   const connectionId = useMemo(() => Crypto.randomUUID(), []);
 
-  useSubscription(
-    trpc.location.getFriendsLocationsStream.subscriptionOptions(
-      {
-        connectionId,
-        radiusKm: undefined,
-        latitude: undefined,
-        longitude: undefined,
-      },
-      {
-        enabled: enabled && canViewOthersLocations,
-        onData: (data) => {
-          const { data: event } = data;
+  useEffect(() => {
+    if (!enabled || !canViewOthersLocations) return;
+
+    const controller = new AbortController();
+
+    const run = async () => {
+      try {
+        const stream = await orpc.location.getFriendsLocationsStream.call({
+          connectionId,
+          radiusKm: undefined,
+          latitude: undefined,
+          longitude: undefined,
+        });
+
+        for await (const data of stream) {
+          if (controller.signal.aborted) break;
+          const event = data;
           if (event.type === "upsert" && event.location) {
             const { location } = event;
             const userId = location?.user?.id ?? "";
@@ -69,18 +73,22 @@ export function useMapLocationStream(enabled: boolean) {
               return next;
             });
           }
-        },
-        onError: (error: unknown) => {
-          // Only log UNAUTHORIZED errors as warnings, others as errors
-          if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
-            console.warn("Location subscription unauthorized - user may not be logged in");
-          } else {
-            console.error("Location subscription error:", error);
-          }
-        },
-      },
-    ),
-  );
+        }
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes("UNAUTHORIZED")) {
+          console.warn("Location subscription unauthorized - user may not be logged in");
+        } else {
+          console.error("Location subscription error:", error);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      controller.abort();
+    };
+  }, [enabled, canViewOthersLocations, connectionId]);
 
   return {
     locationsByUserId,

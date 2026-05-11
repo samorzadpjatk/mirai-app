@@ -3,36 +3,37 @@ import { renderHook } from "@testing-library/react-native";
 import { useGroupDetails } from "../../groups/useGroupDetails";
 
 const mockUseQuery = jest.fn();
-const mockUseTRPC = jest.fn();
+const mockGetMyQueryOptions = jest.fn((options: { input: Record<string, never> }) => ({
+  queryKey: ["user", "getMy"],
+  ...options,
+}));
+const mockGetByIdQueryOptions = jest.fn((options: { input: { id: string }; enabled: boolean }) => ({
+  queryKey: ["group", "getById", options.input.id],
+  ...options,
+}));
 
 jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: () => mockUseTRPC(),
-}));
-
-describe("useGroupDetails", () => {
-  const mockTrpc = {
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     user: {
       getMy: {
-        queryOptions: jest.fn(() => ({ queryKey: ["user", "getMy"] })),
+        queryOptions: (options: { input: Record<string, never> }) => mockGetMyQueryOptions(options),
       },
     },
     group: {
       getById: {
-        queryOptions: jest.fn((params: { id: string } | undefined, options: Record<string, unknown> | undefined) => ({ 
-          queryKey: ["group", "getById", params?.id],
-          ...options 
-        })),
+        queryOptions: (options: { input: { id: string }; enabled: boolean }) => mockGetByIdQueryOptions(options),
       },
     },
-  };
+  },
+}));
 
+describe("useGroupDetails", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseTRPC.mockReturnValue(mockTrpc);
   });
 
   describe("query initialization", () => {
@@ -43,7 +44,7 @@ describe("useGroupDetails", () => {
 
       renderHook(() => useGroupDetails("group-123"));
 
-      expect(mockTrpc.user.getMy.queryOptions).toHaveBeenCalled();
+      expect(mockGetMyQueryOptions).toHaveBeenCalledWith({ input: {} });
     });
 
     it("should fetch group data when groupId is provided", () => {
@@ -53,10 +54,7 @@ describe("useGroupDetails", () => {
 
       renderHook(() => useGroupDetails("group-123"));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "group-123" },
-        { enabled: true }
-      );
+      expect(mockGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "group-123" }, enabled: true });
     });
 
     it("should disable group query when groupId is null", () => {
@@ -66,10 +64,7 @@ describe("useGroupDetails", () => {
 
       renderHook(() => useGroupDetails(null));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "" },
-        { enabled: false }
-      );
+      expect(mockGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
     });
 
     it("should disable group query when groupId is undefined", () => {
@@ -79,10 +74,7 @@ describe("useGroupDetails", () => {
 
       renderHook(() => useGroupDetails(undefined));
 
-      expect(mockTrpc.group.getById.queryOptions).toHaveBeenCalledWith(
-        { id: "" },
-        { enabled: false }
-      );
+      expect(mockGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
     });
   });
 

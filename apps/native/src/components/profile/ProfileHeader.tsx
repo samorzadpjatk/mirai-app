@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo } from "react";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useFileDownload } from "~/hooks/files";
@@ -62,8 +62,7 @@ const getRoleBadgeStyle = (role: string) => {
 };
 
 export function ProfileHeader() {
-  const trpc = useTRPC();
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
   const {
     download: downloadAvatar,
     status: avatarStatus,

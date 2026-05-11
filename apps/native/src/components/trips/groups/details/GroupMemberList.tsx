@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export interface GroupMember {
@@ -19,11 +19,12 @@ interface GroupMemberListProps {
 }
 
 function MemberAvatar({ member }: { member: GroupMember }) {
-  const trpc = useTRPC();
   const avatarQuery = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: member.avatarStoragePath ?? "",
-      expiresInSeconds: 60 * 60,
+    ...orpc.storage.createDownloadUrl.queryOptions({
+      input: {
+        storagePath: member.avatarStoragePath ?? "",
+        expiresInSeconds: 60 * 60,
+      },
     }),
     enabled: Boolean(member.avatarStoragePath),
     staleTime: 15 * 60 * 1000,

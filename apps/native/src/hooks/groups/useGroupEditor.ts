@@ -1,19 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateGroupQueries } from "@mirai-app/trpc/client/query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 
 export function useGroupEditor(groupId?: string | null) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const groupQuery = useQuery(trpc.group.getById.queryOptions({ id: groupId ?? "" }, { enabled: !!groupId }));
-  const updateMutation = useMutation(trpc.group.update.mutationOptions({
+  const groupQuery = useQuery(orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }));
+  const updateMutation = useMutation(orpc.group.update.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient); },
   }));
-  const assignMutation = useMutation(trpc.group.assignUserToGroup.mutationOptions({
+  const assignMutation = useMutation(orpc.group.assignUserToGroup.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient); },
   }));
-  const removeMutation = useMutation(trpc.group.removeUserFromGroup.mutationOptions({
+  const removeMutation = useMutation(orpc.group.removeUserFromGroup.mutationOptions({
     onSuccess: async () => { await invalidateGroupQueries(queryClient); },
   }));
 

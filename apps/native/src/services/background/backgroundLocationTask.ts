@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/supabase";
-import { getTRPCClient } from "@mirai-app/trpc/client";
+import { getORPCClient } from "@mirai-app/orpc/client";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,
@@ -93,14 +93,14 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
     return;
   }
 
-  const { client, cleanup } = getTRPCClient(
+  const { client, cleanup } = getORPCClient(
     TRPC_HTTP_URL,
     TRPC_WS_URL,
     accessToken,
   );
 
   try {
-    await client.location.updateLocation.mutate({
+    await client.location.updateLocation({
       latitude,
       longitude,
       accuracy: toNonNegativeOrNull(location.coords.accuracy),

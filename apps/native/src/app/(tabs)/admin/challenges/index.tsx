@@ -18,7 +18,7 @@ import {
   useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
@@ -185,8 +185,6 @@ const styles = StyleSheet.create({
 
 export default function AdminChallengesScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const tripId =
@@ -208,24 +206,19 @@ export default function AdminChallengesScreen() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
-    enabled: !!tripId,
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.challenge.getAllByTrip.query({
+  } = useInfiniteQuery(orpc.challenge.getAllByTrip.infiniteOptions({
+    input: (pageParam: number) => {
+      const offset = pageParam || 0;
+      return {
         tripId,
         pagination: {
           limit: PAGE_SIZE,
           offset,
         },
-      });
+      };
     },
+    enabled: !!tripId,
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
@@ -233,7 +226,7 @@ export default function AdminChallengesScreen() {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
-  });
+  }));
 
   const challengesData = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.challenges ?? []),
@@ -268,10 +261,10 @@ export default function AdminChallengesScreen() {
   );
 
   const deleteChallengeMutation = useMutation(
-    trpc.challenge.delete.mutationOptions({
+    orpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId })
+          queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } })
             .queryKey,
         });
       },
@@ -440,9 +433,11 @@ export default function AdminChallengesScreen() {
 
   const judgedStaffProgressQueries = useQueries({
     queries: judgedStaffChallengesForProgress.map((challenge) => ({
-      ...trpc.challengeVote.getJudgedStaffProgress.queryOptions({
-        challengeId: challenge.id,
-        tripId,
+      ...orpc.challengeVote.getJudgedStaffProgress.queryOptions({
+        input: {
+          challengeId: challenge.id,
+          tripId,
+        },
       }),
       enabled: Boolean(tripId),
       refetchInterval: 15_000,

@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -12,7 +12,6 @@ import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/co
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
@@ -20,22 +19,19 @@ export default function AdminEditUserScreen() {
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
 
   const { data: user, isLoading } = useQuery(
-    trpc.user.getById.queryOptions({ id: userId }, {
-      enabled: !!userId,
-    })
+    orpc.user.getById.queryOptions({ input: { id: userId }, enabled: !!userId })
   );
 
   const { data: participant } = useQuery(
-    trpc.user.getByIdWithGroup.queryOptions(
-      { id: userId, tripId },
-      {
-        enabled: Boolean(userId && tripId),
-      }
-    )
+    orpc.user.getByIdWithGroup.queryOptions({
+      input: { id: userId, tripId },
+      enabled: Boolean(userId && tripId),
+    })
   );
 
   const { data: groupsResponse, error: groupsError } = useQuery(
-    trpc.group.getAll.queryOptions({ tripId, pagination: { limit: 100, offset: 0 } }, {
+    orpc.group.getAll.queryOptions({
+      input: { tripId, pagination: { limit: 100, offset: 0 } },
       enabled: Boolean(tripId),
     })
   );
@@ -56,7 +52,7 @@ export default function AdminEditUserScreen() {
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
 
   const updateNameMutation = useMutation(
-    trpc.user.updateName.mutationOptions({
+    orpc.user.updateName.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],
@@ -72,7 +68,7 @@ export default function AdminEditUserScreen() {
   );
 
   const updateWristNumberMutation = useMutation(
-    trpc.user.updateWristNumber.mutationOptions({
+    orpc.user.updateWristNumber.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],
@@ -88,7 +84,7 @@ export default function AdminEditUserScreen() {
   );
 
   const updateHouseNumberMutation = useMutation(
-    trpc.user.updateHouseNumber.mutationOptions({
+    orpc.user.updateHouseNumber.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],
@@ -104,7 +100,7 @@ export default function AdminEditUserScreen() {
   );
 
   const banUserMutation = useMutation(
-    trpc.user.banUserUntil.mutationOptions({
+    orpc.user.banUserUntil.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],
@@ -123,7 +119,7 @@ export default function AdminEditUserScreen() {
   );
 
   const deleteUserMutation = useMutation(
-    trpc.user.deleteUser.mutationOptions({
+    orpc.user.deleteUser.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],
@@ -142,7 +138,7 @@ export default function AdminEditUserScreen() {
   );
 
   const assignToGroupMutation = useMutation(
-    trpc.group.assignUserToGroup.mutationOptions({
+    orpc.group.assignUserToGroup.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: [["user", "getAll"], { input: { tripId } }],

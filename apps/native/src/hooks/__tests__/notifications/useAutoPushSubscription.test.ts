@@ -40,29 +40,26 @@ jest.mock("@mirai-app/auth/client", () => ({
 }));
 
 // Mock tRPC
-const mockGetSubscriptionStatusQuery = jest.fn(() => ({
-  queryKey: ["notifications", "getSubscriptionStatus"],
-}));
-
-const mockSubscribeMutation = jest.fn(() => ({
-  mutationFn: jest.fn(),
-}));
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     notifications: {
       getSubscriptionStatus: {
-        queryOptions: mockGetSubscriptionStatusQuery,
+        queryOptions: ({ input }: { input: Record<string, never> }) => ({
+          queryKey: ["notifications", "getSubscriptionStatus", input],
+        }),
       },
       subscribe: {
-        mutationOptions: mockSubscribeMutation,
+        mutationOptions: ({ onSuccess }: { onSuccess?: () => void | Promise<void> }) => ({
+          mutationFn: jest.fn(),
+          onSuccess,
+        }),
       },
     },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateNotificationQueries: jest.fn(),
 }));
 

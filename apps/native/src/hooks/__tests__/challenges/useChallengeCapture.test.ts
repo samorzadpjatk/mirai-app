@@ -24,32 +24,34 @@ jest.mock("expo-router", () => ({
 }));
 
 // Mock tRPC
-const mockUserGetMyWithGroupQuery = jest.fn<() => { queryKey: string[] }>();
-
-const mockCreateSubmissionMutation = jest.fn<() => { mutationFn: jest.Mock }>();
-
-const mockDeleteSubmissionMutation = jest.fn<() => { mutationFn: jest.Mock }>();
-
-jest.mock("@mirai-app/trpc/client", () => ({
-  useTRPC: jest.fn(() => ({
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
     user: {
       getMyWithGroup: {
-        queryOptions: mockUserGetMyWithGroupQuery,
+        queryOptions: ({ input, enabled }: { input: { tripId: string }; enabled?: boolean }) => ({
+          queryKey: ["user", "getMyWithGroup", input, enabled],
+        }),
       },
     },
     challengeSubmission: {
       create: {
-        mutationOptions: mockCreateSubmissionMutation,
+        mutationOptions: ({ onSuccess }: { onSuccess?: () => void | Promise<void> }) => ({
+          mutationFn: jest.fn(),
+          onSuccess,
+        }),
       },
       deleteMine: {
-        mutationOptions: mockDeleteSubmissionMutation,
+        mutationOptions: ({ onSuccess }: { onSuccess?: () => void | Promise<void> }) => ({
+          mutationFn: jest.fn(),
+          onSuccess,
+        }),
       },
     },
-  })),
+  },
 }));
 
 // Mock query invalidation
-jest.mock("@mirai-app/trpc/client/query", () => ({
+jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateChallengeQueries: jest.fn(),
 }));
 

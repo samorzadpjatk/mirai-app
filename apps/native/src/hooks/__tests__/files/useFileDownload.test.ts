@@ -56,20 +56,17 @@ interface DownloadUrlResult {
   signedUrl: string;
 }
 
-const mockCreateDownloadUrl = jest.fn<() => Promise<DownloadUrlResult>>();
+const mockCreateDownloadUrl = jest.fn<(...args: unknown[]) => Promise<DownloadUrlResult>>();
 
-jest.mock("@mirai-app/trpc/client", () => {
-  const { jest } = require("@jest/globals");
-  return {
-    useTRPCClient: jest.fn(() => ({
-      storage: {
-        createDownloadUrl: {
-          query: () => mockCreateDownloadUrl(),
-        },
+jest.mock("@mirai-app/orpc/client", () => ({
+  orpc: {
+    storage: {
+      createDownloadUrl: {
+        call: (...args: unknown[]) => mockCreateDownloadUrl(...args),
       },
-    })),
-  };
-});
+    },
+  },
+}));
 
 describe("useFileDownload", () => {
   beforeEach(() => {
