@@ -1,0 +1,516 @@
+ 
+ 
+ 
+import { describe, it, expect } from "vitest";
+import { TRPCError } from "../../api/trpc";
+import {
+  validateDateRange,
+  validateFutureDates,
+  validateScheduleTime,
+  validateMinimumDuration,
+  validateNotificationContent,
+  validateReasonableDateRange,
+  notificationScheduleCreateSchema,
+  notificationScheduleUpdateSchema,
+  paginationSchema,
+  filterSchema,
+} from "../notificactionSchedule-validation";
+
+describe("notificactionSchedule-validation", () => {
+  describe("validateDateRange", () => {
+    it("should not throw when end date is after start date", () => {
+      const startDate = new Date("2024-01-01");
+      const endDate = new Date("2024-01-02");
+      expect(() => validateDateRange(startDate, endDate)).not.toThrow();
+    });
+
+    it("should throw when end date equals start date", () => {
+      const date = new Date("2024-01-01");
+      expect(() => validateDateRange(date, date)).toThrow(TRPCError);
+      expect(() => validateDateRange(date, date)).toThrow(
+        "End date (2024-01-01T00:00:00.000Z) must be after start date (2024-01-01T00:00:00.000Z)"
+      );
+    });
+
+    it("should throw when end date is before start date", () => {
+      const startDate = new Date("2024-01-02");
+      const endDate = new Date("2024-01-01");
+      expect(() => validateDateRange(startDate, endDate)).toThrow(TRPCError);
+      expect(() => validateDateRange(startDate, endDate)).toThrow(
+        "End date (2024-01-01T00:00:00.000Z) must be after start date (2024-01-02T00:00:00.000Z)"
+      );
+    });
+  });
+
+  describe("validateFutureDates", () => {
+    it("should not throw for future dates", () => {
+      const now = new Date();
+      const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const endDate = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      expect(() => validateFutureDates(startDate, endDate)).not.toThrow();
+    });
+
+    it("should throw when start date is in the past", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      expect(() => validateFutureDates(pastDate, futureDate)).toThrow(TRPCError);
+      expect(() => validateFutureDates(pastDate, futureDate)).toThrow(
+        "cannot be in the past"
+      );
+    });
+
+    it("should not throw for past start date when allowPastStart is true", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      expect(() =>
+        validateFutureDates(pastDate, futureDate, true)
+      ).not.toThrow();
+    });
+
+    it("should throw when end date is in the past", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      expect(() => validateFutureDates(pastDate, pastDate)).toThrow(TRPCError);
+      expect(() => validateFutureDates(pastDate, pastDate)).toThrow(
+        "cannot be in the past"
+      );
+    });
+
+    it("should throw when end date is in the past even with allowPastStart", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      expect(() => validateFutureDates(pastDate, pastDate, true)).toThrow(
+        TRPCError
+      );
+    });
+  });
+
+  describe("validateScheduleTime", () => {
+    it("should not throw for time at least 5 minutes in the future", () => {
+      const now = new Date();
+      const futureDate = new Date(now.getTime() + 10 * 60 * 1000);
+      expect(() =>
+        validateScheduleTime(futureDate, futureDate.getUTCHours(), futureDate.getUTCMinutes())
+      ).not.toThrow();
+    });
+
+    it("should throw for time less than 5 minutes in the future", () => {
+      const now = new Date();
+      const nearFuture = new Date(now.getTime() + 2 * 60 * 1000);
+      expect(() =>
+        validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes())
+      ).toThrow(TRPCError);
+      expect(() =>
+        validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes())
+      ).toThrow("at least 5 minutes in the future");
+    });
+
+    it("should throw for past time", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 10 * 60 * 1000);
+      expect(() =>
+        validateScheduleTime(pastDate, pastDate.getUTCHours(), pastDate.getUTCMinutes())
+      ).toThrow(TRPCError);
+    });
+  });
+
+  describe("validateMinimumDuration", () => {
+    it("should not throw for duration of at least 1 minute", () => {
+      const startDate = new Date("2024-01-01T00:00:00");
+      const endDate = new Date("2024-01-01T00:01:00");
+      expect(() => validateMinimumDuration(startDate, endDate)).not.toThrow();
+    });
+
+    it("should not throw for duration longer than 1 minute", () => {
+      const startDate = new Date("2024-01-01T00:00:00");
+      const endDate = new Date("2024-01-01T00:05:00");
+      expect(() => validateMinimumDuration(startDate, endDate)).not.toThrow();
+    });
+
+    it("should throw for duration less than 1 minute", () => {
+      const startDate = new Date("2024-01-01T00:00:00");
+      const endDate = new Date("2024-01-01T00:00:30");
+      expect(() => validateMinimumDuration(startDate, endDate)).toThrow(TRPCError);
+      expect(() => validateMinimumDuration(startDate, endDate)).toThrow(
+        "at least 1 minute"
+      );
+    });
+
+    it("should throw for zero duration", () => {
+      const date = new Date("2024-01-01T00:00:00");
+      expect(() => validateMinimumDuration(date, date)).toThrow(TRPCError);
+    });
+  });
+
+  describe("validateNotificationContent", () => {
+    it("should not throw for non-custom notification type", () => {
+      expect(() =>
+        validateNotificationContent("ranking", "", "", "")
+      ).not.toThrow();
+    });
+
+    it("should not throw for custom notification with title and body", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", undefined)
+      ).not.toThrow();
+    });
+
+    it("should throw when custom notification has no title", () => {
+      expect(() =>
+        validateNotificationContent("custom", "", "Body", undefined)
+      ).toThrow(TRPCError);
+      expect(() =>
+        validateNotificationContent("custom", "", "Body", undefined)
+      ).toThrow("Notification title is required");
+    });
+
+    it("should throw when custom notification has whitespace-only title", () => {
+      expect(() =>
+        validateNotificationContent("custom", "   ", "Body", undefined)
+      ).toThrow(TRPCError);
+    });
+
+    it("should throw when custom notification has no body", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "", undefined)
+      ).toThrow(TRPCError);
+      expect(() =>
+        validateNotificationContent("custom", "Title", "", undefined)
+      ).toThrow("Notification body is required");
+    });
+
+    it("should throw when custom notification has whitespace-only body", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "   ", undefined)
+      ).toThrow(TRPCError);
+    });
+
+    it("should not throw when URL is undefined", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", undefined)
+      ).not.toThrow();
+    });
+
+    it("should not throw when URL is null", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", null as unknown as undefined)
+      ).not.toThrow();
+    });
+
+    it("should not throw for valid absolute URL", () => {
+      expect(() =>
+        validateNotificationContent(
+          "custom",
+          "Title",
+          "Body",
+          "https://example.com"
+        )
+      ).not.toThrow();
+    });
+
+    it("should not throw for valid path URL", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", "/ranking")
+      ).not.toThrow();
+    });
+
+    it("should not throw for empty URL string", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", "")
+      ).not.toThrow();
+    });
+
+    it("should not throw for whitespace-only URL", () => {
+      expect(() =>
+        validateNotificationContent("custom", "Title", "Body", "   ")
+      ).not.toThrow();
+    });
+
+    it("should throw for invalid URL", () => {
+      expect(() =>
+        validateNotificationContent(
+          "custom",
+          "Title",
+          "Body",
+          "not-a-valid-url"
+        )
+      ).toThrow(TRPCError);
+      expect(() =>
+        validateNotificationContent(
+          "custom",
+          "Title",
+          "Body",
+          "not-a-valid-url"
+        )
+      ).toThrow("valid URL or path");
+    });
+
+    it("should throw for URL with invalid protocol", () => {
+      expect(() =>
+        validateNotificationContent(
+          "custom",
+          "Title",
+          "Body",
+          "ftp://example.com"
+        )
+      ).toThrow(TRPCError);
+    });
+  });
+
+  describe("validateReasonableDateRange", () => {
+    it("should not throw for reasonable future dates", () => {
+      const now = new Date();
+      const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      expect(() =>
+        validateReasonableDateRange(startDate, endDate)
+      ).not.toThrow();
+    });
+
+    it("should throw when start date is in the past", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(
+        TRPCError
+      );
+      expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(
+        "Start date cannot be in the past"
+      );
+    });
+
+    it("should not throw for past start date when allowPastStart is true", () => {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      expect(() =>
+        validateReasonableDateRange(pastDate, futureDate, true)
+      ).not.toThrow();
+    });
+
+    it("should throw when end date is more than 1 year in the future", () => {
+      const now = new Date();
+      const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const endDate = new Date(now.getTime() + 366 * 24 * 60 * 60 * 1000);
+      expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(
+        TRPCError
+      );
+      expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(
+        "cannot be more than 1 year"
+      );
+    });
+
+    it("should not throw for end date exactly 1 year in the future", () => {
+      const now = new Date();
+      const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const oneYearFromNow = new Date(now);
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      expect(() =>
+        validateReasonableDateRange(startDate, oneYearFromNow)
+      ).not.toThrow();
+    });
+  });
+
+  describe("notificationScheduleCreateSchema", () => {
+    it("should validate valid create input", () => {
+      const input = {
+        name: "Test Schedule",
+        tripId: "trip-123",
+        notificationType: "custom" as const,
+        notificationTitle: "Title",
+        notificationBody: "Body",
+        notificationUrl: "/path",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        hour: 12,
+        minute: 30,
+        isActive: true,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).not.toThrow();
+    });
+
+    it("should validate with minimal required fields", () => {
+      const input = {
+        name: "Test",
+        notificationType: "ranking" as const,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        hour: 0,
+      };
+      const result = notificationScheduleCreateSchema.parse(input);
+      expect(result.minute).toBe(0);
+      expect(result.isActive).toBe(true);
+    });
+
+    it("should reject name shorter than 3 characters", () => {
+      const input = {
+        name: "Te",
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 12,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject name longer than 100 characters", () => {
+      const input = {
+        name: "a".repeat(101),
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 12,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject invalid notification type", () => {
+      const input = {
+        name: "Test",
+        notificationType: "invalid",
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 12,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject hour less than 0", () => {
+      const input = {
+        name: "Test",
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: -1,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject hour greater than 23", () => {
+      const input = {
+        name: "Test",
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 24,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject minute less than 0", () => {
+      const input = {
+        name: "Test",
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 12,
+        minute: -1,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+
+    it("should reject minute greater than 59", () => {
+      const input = {
+        name: "Test",
+        notificationType: "custom" as const,
+        startDate: new Date(),
+        endDate: new Date(),
+        hour: 12,
+        minute: 60,
+      };
+      expect(() => notificationScheduleCreateSchema.parse(input)).toThrow();
+    });
+  });
+
+  describe("notificationScheduleUpdateSchema", () => {
+    it("should validate valid update input", () => {
+      const input = {
+        id: "schedule-123",
+        name: "Updated Schedule",
+        isActive: false,
+      };
+      expect(() => notificationScheduleUpdateSchema.parse(input)).not.toThrow();
+    });
+
+    it("should validate partial update", () => {
+      const input = {
+        id: "schedule-123",
+        notificationTitle: "New Title",
+      };
+      expect(() => notificationScheduleUpdateSchema.parse(input)).not.toThrow();
+    });
+
+    it("should require id field", () => {
+      const input = {
+        name: "Updated Schedule",
+      };
+      expect(() => notificationScheduleUpdateSchema.parse(input)).toThrow();
+    });
+  });
+
+  describe("paginationSchema", () => {
+    it("should use default values", () => {
+      const input = {};
+      const result = paginationSchema.parse(input);
+      expect(result.limit).toBe(50);
+      expect(result.offset).toBe(0);
+    });
+
+    it("should accept custom values", () => {
+      const input = { limit: 25, offset: 10 };
+      const result = paginationSchema.parse(input);
+      expect(result.limit).toBe(25);
+      expect(result.offset).toBe(10);
+    });
+
+    it("should reject limit less than 1", () => {
+      const input = { limit: 0 };
+      expect(() => paginationSchema.parse(input)).toThrow();
+    });
+
+    it("should reject limit greater than 100", () => {
+      const input = { limit: 101 };
+      expect(() => paginationSchema.parse(input)).toThrow();
+    });
+
+    it("should reject negative offset", () => {
+      const input = { offset: -1 };
+      expect(() => paginationSchema.parse(input)).toThrow();
+    });
+  });
+
+  describe("filterSchema", () => {
+    it("should validate empty filter", () => {
+      const input = {};
+      expect(() => filterSchema.parse(input)).not.toThrow();
+    });
+
+    it("should validate complete filter", () => {
+      const input = {
+        tripId: "trip-123",
+        notificationType: "custom" as const,
+        isActive: true,
+        startDateFrom: new Date(),
+        startDateTo: new Date(),
+        search: "test query",
+      };
+      expect(() => filterSchema.parse(input)).not.toThrow();
+    });
+
+    it("should validate partial filter", () => {
+      const input = {
+        tripId: "trip-123",
+      };
+      expect(() => filterSchema.parse(input)).not.toThrow();
+    });
+
+    it("should reject invalid notification type", () => {
+      const input = {
+        notificationType: "invalid",
+      };
+      expect(() => filterSchema.parse(input)).toThrow();
+    });
+  });
+});
