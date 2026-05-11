@@ -21,10 +21,8 @@
   "private": true,
   "license": "AGPL-3.0",
   "dependencies": {
-    "@hono/trpc-server": "^0.4.2",
-    "@mirai-app/trpc": "workspace:*",
-    "@trpc/server": "^11.8.1",
-    "@valkyrie-resistance/trpc-ws-hono-bun-adapter": "^0.2.1",
+    "@mirai-app/orpc": "workspace:*",
+    "@orpc/server": "^1.14.2",
     "hono": "^4.12.18"
   },
   "devDependencies": {

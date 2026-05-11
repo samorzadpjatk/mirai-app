@@ -5,17 +5,17 @@
 > **Backend-Specific Overrides**:
 > - Uses Hono 4.x instead of Fastify
 > - WebSocket support via Bun-native adapter
-> - tRPC integration for type-safe APIs
+> - oRPC integration for type-safe APIs
 
 ## Purpose
 
-Hono HTTP server providing the REST and tRPC API for the MIRAI platform. Handles authentication, data persistence, and WebSocket connections for real-time features.
+Hono HTTP server providing the REST and oRPC API for the MIRAI platform. Handles authentication, data persistence, and WebSocket connections for real-time features.
 
 ## Tech Stack
 
 - **Framework**: Hono 4.12.18
-- **API**: tRPC 11.8.1
-- **WebSocket**: Bun native WebSocket via `@valkyrie-resistance/trpc-ws-hono-bun-adapter`
+- **API**: oRPC 1.14.2
+- **WebSocket**: Bun native WebSocket via `@orpc/server/bun-ws`
 - **CORS**: `hono/cors` (built-in)
 - **Testing**: Vitest
 
@@ -26,7 +26,7 @@ apps/backend-server/
 ├── src/
 │   ├── index.ts          # Server entry point
 │   ├── server.ts         # Hono server setup
-│   ├── ws-adapter.ts     # tRPC WebSocket adapter wrapper
+│   ├── ws-adapter.ts     # oRPC WebSocket adapter wrapper
 │   ├── config.ts         # Server configuration
 │   └── routes/           # HTTP routes
 ├── package.json
@@ -58,7 +58,7 @@ bun run test:ui
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `/api/trpc/*` | tRPC procedures (HTTP + WebSocket) |
+| `/api/trpc/*` | oRPC procedures (HTTP + WebSocket) |
 
 ## Environment Variables
 
@@ -74,14 +74,14 @@ bun run test:ui
 
 ### Internal
 
-- `@mirai-app/trpc` - tRPC router
+- `@mirai-app/orpc` - oRPC router
 
 ### External
 
 - `hono` - Web framework
-- `@hono/trpc-server` - Official Hono tRPC HTTP adapter
-- `@valkyrie-resistance/trpc-ws-hono-bun-adapter` - Bun WebSocket tRPC adapter
-- `@trpc/server` - tRPC server (peer dependency)
+- `@orpc/server` - oRPC server
+- `@orpc/server/fetch` - oRPC fetch handler
+- `@orpc/server/bun-ws` - Bun WebSocket oRPC handler
 
 ## Overrides to Root Conventions
 
@@ -93,6 +93,6 @@ bun run test:ui
 ## Links
 
 - [Setup guide](../../docs/apps/backend-server/setup.md)
-- [tRPC Integration](../../docs/apps/backend-server/trpc.md)
+- [oRPC Integration](../../docs/apps/backend-server/orpc.md)
 - [API Structure](../../docs/apps/backend-server/api-structure.md)
 - [Root AGENTS.md](../../AGENTS.md)

@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { ServerOptions } from "../server";
+import type * as ServerModule from "../server";
 
-vi.mock("@mirai-app/trpc", () => ({
+vi.mock("@mirai-app/orpc", () => ({
   appRouter: {},
-  createTRPCContext: vi.fn((opts) => ({
+  createORPCContext: vi.fn((opts) => ({
     headers: opts.headers,
     databaseUrl: opts.databaseUrl,
     supabaseUrl: opts.supabaseUrl,
@@ -12,17 +13,7 @@ vi.mock("@mirai-app/trpc", () => ({
   })),
 }));
 
-vi.mock("../ws-adapter", async () => {
-  const { Hono } = await import("hono");
-  return {
-    createBunHonoWSHandler: vi.fn(() => ({
-      wsRouter: new Hono(),
-      websocket: {},
-    })),
-  };
-});
-
-let createServer: typeof import("../server").createServer;
+let createServer: typeof ServerModule.createServer;
 
 beforeEach(async () => {
   vi.resetModules();
@@ -166,8 +157,8 @@ describe("Backend Server (Hono)", () => {
     });
   });
 
-  describe("tRPC Endpoint", () => {
-    it("should respond to tRPC GET requests", async () => {
+  describe("oRPC Endpoint", () => {
+    it("should respond to oRPC GET requests", async () => {
       const { app } = createServer({
         dev: true,
         port: 3003,
@@ -179,7 +170,7 @@ describe("Backend Server (Hono)", () => {
       expect([200, 404, 405, 500]).toContain(res.status);
     });
 
-    it("should respond to tRPC POST requests", async () => {
+    it("should respond to oRPC POST requests", async () => {
       const { app } = createServer({
         dev: true,
         port: 3003,
@@ -221,7 +212,7 @@ describe("Backend Server (Hono)", () => {
         host: "127.0.0.1",
       });
 
-      await start();
+      start();
       expect(serveSpy).toHaveBeenCalledTimes(1);
 
       await stop();
@@ -254,10 +245,71 @@ describe("Backend Server (Hono)", () => {
         host: "127.0.0.1",
       });
 
-      await start();
+      start();
 
       expect(exitSpy).toHaveBeenCalledWith(1);
       exitSpy.mockRestore();
+      await stop();
+    });
+
+    it("should configure WebSocket handlers on start", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3007,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+      expect(serveSpy).toHaveBeenCalledTimes(1);
+      expect(serveOptions.fetch).toBeDefined();
+      expect(serveOptions.websocket).toBeDefined();
+      expect(serveOptions.websocket.message).toBeDefined();
+      expect(serveOptions.websocket.close).toBeDefined();
+
+      // Test fetch with WebSocket upgrade request at prefix
+      const mockServer = { upgrade: vi.fn(() => true) };
+      const upgradeReq = new Request(
+        "ws://localhost:3007/trpc?authorization=Bearer%20token",
+      );
+      const result = await serveOptions.fetch(upgradeReq, mockServer);
+      expect(mockServer.upgrade).toHaveBeenCalled();
+      expect(result).toBeUndefined();
+
+      // Test fetch with regular HTTP request (not at prefix)
+      const httpReq = new Request("http://localhost:3007/health");
+      const mockServer2 = { upgrade: vi.fn(() => false) };
+      const httpResult = await serveOptions.fetch(httpReq, mockServer2);
+      expect(mockServer2.upgrade).not.toHaveBeenCalled();
+      expect(httpResult).toBeInstanceOf(Response);
+
+      // Test websocket.message and websocket.close
+      const mockWs = {
+        data: {
+          connectionParams: { authorization: "Bearer test" },
+          url: "/trpc",
+        },
+        send: vi.fn(),
+      };
+
+      await serveOptions.websocket.message(
+        mockWs,
+        JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+      );
+
+      serveOptions.websocket.close(mockWs);
+
       await stop();
     });
   });

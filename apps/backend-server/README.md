@@ -1,6 +1,6 @@
 # @mirai-app/backend-server
 
-Dedicated backend server for the MIRAI application, based on Fastify and tRPC.
+Dedicated backend server for the MIRAI application, based on Hono and oRPC.
 
 ## Running
 
@@ -61,7 +61,7 @@ createWSClient({
    - Gets `access_token` from Supabase session
    - Passes token in `connectionParams` (WebSocket) or `Authorization` header (HTTP)
 
-2. **tRPC Context** (`packages/trpc/src/api/trpc.ts`):
+2. **oRPC Context** (`packages/trpc/src/api/trpc.ts`):
    - Extracts token from headers or `connectionParams`
    - Creates Supabase client
    - Passes token to context
@@ -91,7 +91,7 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
 });
 ```
 
-Token changes cause tRPC client reconstruction with the new token in `connectionParams`.
+Token changes cause oRPC client reconstruction with the new token in `connectionParams`.
 
 ## Architecture
 
@@ -103,20 +103,20 @@ Token changes cause tRPC client reconstruction with the new token in `connection
          │ authToken
          ↓
 ┌─────────────────┐     ┌──────────────┐
-│   APIProvider   │────→│  WS Client   │
-│  (tRPC Client)  │     │connectionParams
+│  QueryProvider  │────→│  WS Client   │
+│  (oRPC Client)  │     │connectionParams
 └────────┬────────┘     └──────┬───────┘
          │                     │
          │ HTTP: Bearer token  │ WS: authToken
          ↓                     ↓
 ┌─────────────────────────────────────┐
-│      WebSocket Server (Fastify)     │
-│         + tRPC + WebSocket          │
+│      WebSocket Server (Hono)       │
+│         + oRPC + WebSocket          │
 └──────────────┬──────────────────────┘
                │
                ↓
 ┌──────────────────────────────────────┐
-│    tRPC Context (createTRPCContext)  │
+│    oRPC Context (createTRPCContext)  │
 │  - extracts token from headers/params│
 │  - creates Supabase client           │
 └──────────────┬───────────────────────┘
@@ -132,7 +132,7 @@ Token changes cause tRPC client reconstruction with the new token in `connection
 ## Endpoints
 
 - `/health` - Health check endpoint
-- `/trpc` - tRPC endpoint (HTTP + WebSocket)
+- `/api/trpc` - oRPC endpoint (HTTP + WebSocket)
 
 ## Testing
 
@@ -156,7 +156,7 @@ await server.stop();
 
 The server uses shared packages:
 
-- `@mirai-app/trpc` - tRPC Router and procedures
+- `@mirai-app/orpc` - oRPC Router and procedures
 - `@mirai-app/auth` - Authorization logic
 - `@mirai-app/supabase` - Supabase client
 - `@mirai-app/db` - Prisma client
@@ -179,5 +179,5 @@ If you see `AuthSessionMissingError: Auth session missing!` in logs:
 ### Token Not Being Passed
 
 1. Check if Supabase session is active: `supabase.auth.getSession()`
-2. Check if `authToken` is being passed to `APIProvider`
+2. Check if `authToken` is being passed to `QueryProvider`
 3. Check server logs - is token visible in context?
