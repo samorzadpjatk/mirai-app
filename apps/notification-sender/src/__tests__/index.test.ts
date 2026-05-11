@@ -8,7 +8,7 @@ const mockTrackDeliveryFailure = vi.fn();
 const mockRemoveChannel = vi.fn();
 const mockCleanup = vi.fn();
 const mockCreateSupabaseClient = vi.fn();
-const mockGetTRPCClient = vi.fn();
+const mockGetORPCClient = vi.fn();
 const mockChannelOn = vi.fn();
 const mockChannelSubscribe = vi.fn();
 
@@ -31,17 +31,17 @@ vi.mock("@mirai-app/supabase", async () => {
   };
 });
 
-vi.mock("@mirai-app/trpc/client", () => {
+vi.mock("@mirai-app/orpc/client", () => {
   return {
-    getTRPCClient: (...args: unknown[]) => {
-      mockGetTRPCClient(...args);
+    getORPCClient: (...args: unknown[]) => {
+      mockGetORPCClient(...args);
       return {
         client: {
           notificationSender: {
-            trackDeliveryStart: { mutate: mockTrackDeliveryStart },
-            sendMobileNotifications: { mutate: mockSendMobileNotifications },
-            trackDeliveryComplete: { mutate: mockTrackDeliveryComplete },
-            trackDeliveryFailure: { mutate: mockTrackDeliveryFailure },
+            trackDeliveryStart: mockTrackDeliveryStart,
+            sendMobileNotifications: mockSendMobileNotifications,
+            trackDeliveryComplete: mockTrackDeliveryComplete,
+            trackDeliveryFailure: mockTrackDeliveryFailure,
           },
         },
         cleanup: mockCleanup.mockResolvedValue(undefined),
@@ -164,7 +164,7 @@ describe("Notification Sender - Client Initialization", () => {
     );
   });
 
-  it("should create tRPC client with correct parameters", async () => {
+  it("should create oRPC client with correct parameters", async () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
@@ -173,7 +173,7 @@ describe("Notification Sender - Client Initialization", () => {
     // eslint-disable-next-line @typescript-eslint/await-thenable
     await main();
 
-    expect(mockGetTRPCClient).toHaveBeenCalledWith(
+    expect(mockGetORPCClient).toHaveBeenCalledWith(
       "http://localhost:2022/api/trpc",
       "ws://localhost:2022/api/trpc",
       "test-key"
@@ -301,13 +301,13 @@ describe("Notification Sender - SIGINT Handling", () => {
       removeChannel: mockRemoveChannel.mockResolvedValue(undefined),
     }));
 
-    mockGetTRPCClient.mockImplementationOnce(() => ({
+    mockGetORPCClient.mockImplementationOnce(() => ({
       client: {
         notificationSender: {
-          trackDeliveryStart: { mutate: mockTrackDeliveryStart },
-          sendMobileNotifications: { mutate: mockSendMobileNotifications },
-          trackDeliveryComplete: { mutate: mockTrackDeliveryComplete },
-          trackDeliveryFailure: { mutate: mockTrackDeliveryFailure },
+          trackDeliveryStart: mockTrackDeliveryStart,
+          sendMobileNotifications: mockSendMobileNotifications,
+          trackDeliveryComplete: mockTrackDeliveryComplete,
+          trackDeliveryFailure: mockTrackDeliveryFailure,
         },
       },
       cleanup: mockCleanup.mockResolvedValue(undefined),
