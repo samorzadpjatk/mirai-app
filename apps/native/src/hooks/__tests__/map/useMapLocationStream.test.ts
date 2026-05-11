@@ -13,7 +13,8 @@ interface LocationContextValue {
 const createStream = (events: unknown[] = [], error?: unknown) => ({
   async *[Symbol.asyncIterator]() {
     if (error) {
-      throw error instanceof Error ? error : new Error(typeof error === "string" ? error : JSON.stringify(error));
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw error;
     }
     for (const event of events) yield event;
   },
