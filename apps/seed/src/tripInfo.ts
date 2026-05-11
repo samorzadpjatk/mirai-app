@@ -135,6 +135,7 @@ export const seedTripInfo = async (
         label: resourceConfig.label,
         description: resourceConfig.description ?? null,
         url: resourceConfig.url ?? publicUrl ?? null,
+        publicUrl: publicUrl ?? null,
         storagePath: resourceConfig.storagePath ?? null,
         fileName: resourceConfig.fileName ?? null,
         iconName: resourceConfig.iconName ?? null,
