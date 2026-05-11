@@ -66,7 +66,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as ORPCError).code).toBe("NOT_FOUND");
+        expect((error as Error & { code: string }).code).toBe("NOT_FOUND");
       }
     });
 
@@ -88,7 +88,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as ORPCError).code).toBe("FORBIDDEN");
+        expect((error as Error & { code: string }).code).toBe("FORBIDDEN");
       }
     });
 
@@ -109,7 +109,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEnded(mockDb, "trip-1");
       } catch (error) {
-        expect((error as ORPCError).code).toBe("FORBIDDEN");
+        expect((error as Error & { code: string }).code).toBe("FORBIDDEN");
       }
     });
 
@@ -165,7 +165,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEndedByGroupId(mockDb, "group-1");
       } catch (error) {
-        expect((error as ORPCError).code).toBe("NOT_FOUND");
+        expect((error as Error & { code: string }).code).toBe("NOT_FOUND");
       }
     });
 
@@ -187,7 +187,7 @@ describe("tripGuards", () => {
       try {
         await ensureTripNotEndedByGroupId(mockDb, "group-1");
       } catch (error) {
-        expect((error as ORPCError).code).toBe("NOT_FOUND");
+        expect((error as Error & { code: string }).code).toBe("NOT_FOUND");
       }
     });
 

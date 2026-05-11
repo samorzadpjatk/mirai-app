@@ -39,7 +39,6 @@ function getQueryClient() {
 
 export const queryClient = getQueryClient();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export let orpc: RouterUtils<RouterClient<AppRouter>>;
 
 const isUnauthorizedError = (error: unknown) => {
