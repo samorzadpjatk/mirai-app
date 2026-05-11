@@ -5,7 +5,7 @@ import { render, waitFor } from "@testing-library/react-native";
 import { LocationStoreProvider } from "../LocationStoreProvider";
 import { locationStore, setLocationServerUpdater } from "../locationStore";
 
-const mockGetMySharingSettingsQueryOptions = jest.fn((options: { input: {}; enabled?: boolean }) => ({
+const mockGetMySharingSettingsQueryOptions = jest.fn((options: { input: Record<string, unknown>; enabled?: boolean }) => ({
   queryKey: ["location", "getMySharingSettings"],
   enabled: options.enabled,
 }));
@@ -18,7 +18,7 @@ const mockUpdateSharingSettingsMutationOptions = jest.fn((options: { onSuccess?:
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     location: {
-      getMySharingSettings: { queryOptions: (options: { input: {}; enabled?: boolean }) => mockGetMySharingSettingsQueryOptions(options) },
+      getMySharingSettings: { queryOptions: (options: { input: Record<string, unknown>; enabled?: boolean }) => mockGetMySharingSettingsQueryOptions(options) },
       updateSharingSettings: { mutationOptions: (options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => mockUpdateSharingSettingsMutationOptions(options) },
     },
   },

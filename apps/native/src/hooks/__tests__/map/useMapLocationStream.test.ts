@@ -12,7 +12,9 @@ interface LocationContextValue {
 
 const createStream = (events: unknown[] = [], error?: unknown) => ({
   async *[Symbol.asyncIterator]() {
-    if (error) throw error;
+    if (error) {
+      throw error instanceof Error ? error : new Error(typeof error === "string" ? error : JSON.stringify(error));
+    }
     for (const event of events) yield event;
   },
 });
