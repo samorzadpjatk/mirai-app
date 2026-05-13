@@ -214,22 +214,22 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     }
   );
 
-  db.insert = () => ({
-    values: () => ({
+  db.insert = (_table: unknown) => ({
+    values: (_data: unknown) => ({
       returning: () => Promise.resolve([{}]),
     }),
   });
 
-  db.update = () => ({
-    set: () => ({
-      where: () => ({
+  db.update = (_table: unknown) => ({
+    set: (_data: unknown) => ({
+      where: (_condition: unknown) => ({
         returning: () => Promise.resolve([{}]),
       }),
     }),
   });
 
-  db.delete = () => ({
-    where: () => ({
+  db.delete = (_table: unknown) => ({
+    where: (_condition: unknown) => ({
       returning: () => Promise.resolve([{}]),
     }),
   });

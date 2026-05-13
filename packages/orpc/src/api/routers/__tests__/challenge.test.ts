@@ -243,6 +243,47 @@ describe("challengeRouter", () => {
         create: vi.fn().mockResolvedValue({}),
       },
       $transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
+      // Drizzle API methods
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([mockChallenge])),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(() => Promise.resolve([mockChallenge])),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([mockChallenge])),
+        })),
+      })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            groupBy: vi.fn(() => Promise.resolve([])),
+            limit: vi.fn(() => Promise.resolve([])),
+          })),
+        })),
+      })),
+      transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
+    };
+
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      challenges: mockDb.challenge,
+      challengeSubmissions: mockDb.challengeSubmission,
+      tripParticipants: mockDb.tripParticipant,
+      users: mockDb.user,
+      groups: mockDb.group,
+      coinTransactions: mockDb.coinTransaction,
+      userAgents: mockDb.userAgent,
+      activityFeeds: mockDb.activityFeed,
+      challengeActivities: mockDb.challengeActivity,
+      submissionActivities: mockDb.submissionActivity,
     };
   });
 
