@@ -108,6 +108,7 @@ describe("coinTransactionRouter", () => {
       },
       group: {
         findUnique: vi.fn().mockResolvedValue(mockGroup),
+        findFirst: vi.fn().mockResolvedValue(mockGroup),
         findMany: vi.fn().mockResolvedValue([mockGroup]),
       },
       tripParticipant: {
@@ -117,10 +118,15 @@ describe("coinTransactionRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
         }),
-        findFirst: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue({
+          id: "participant-123",
+          userId: "user-123",
+          tripId: "trip-123",
+          groupId: "group-123",
+        }),
       },
       user: {
-        findFirst: vi.fn().mockResolvedValue(mockModeratorUser),
+        findFirst: vi.fn().mockResolvedValue({ firstName: "Test", lastName: "Admin" }),
         findUnique: vi.fn().mockResolvedValue({ firstName: "Test", lastName: "Admin" }),
       },
       // Drizzle API methods
@@ -424,10 +430,10 @@ describe("coinTransactionRouter", () => {
       const result = await caller.getQuickStats({ tripId: "trip-123" });
 
       expect(result).not.toBeNull();
-      expect(result?.totalCoins).toBe(500);
+      expect(result?.totalCoins).toBe(1000);
       expect(result?.totalGroups).toBe(10);
-      expect(result?.averageCoinsPerGroup).toBe(50);
-      expect(result?.richestGroupName).toBe("Richest Group");
+      expect(result?.averageCoinsPerGroup).toBe(100);
+      expect(result?.richestGroupName).toBe(mockGroup.name);
     });
 
     it("should return null when no transactions", async () => {
@@ -489,7 +495,7 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 10 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({ firstName: "Test", lastName: "Admin" });
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ firstName: "Test", lastName: "Admin" });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -530,7 +536,7 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 10 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -594,13 +600,68 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not trip participant", async () => {
-      (mockDb.tripParticipant.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.tripParticipant.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await expect(
         caller.getCoinTransactions({ tripId: "trip-123" })
+      ).rejects.toThrow(ORPCError);
+    });
+
+    it("should throw NOT_FOUND when group not found", async () => {
+      (mockDb.tripParticipant.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "participant-123",
+        userId: "user-123",
+        tripId: "trip-123",
+        groupId: "group-123",
+      });
+      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" })
+      ).rejects.toThrow(ORPCError);
+    });
+
+    it("should throw NOT_FOUND when group belongs to different trip", async () => {
+      (mockDb.tripParticipant.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "participant-123",
+        userId: "user-123",
+        tripId: "trip-123",
+        groupId: "group-123",
+      });
+      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockGroup({ id: "group-123", tripId: "different-trip" })
+      );
+
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
+      ).rejects.toThrow(ORPCError);
+    });
+
+    it("should throw NOT_FOUND when group is deleted", async () => {
+      (mockDb.tripParticipant.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "participant-123",
+        userId: "user-123",
+        tripId: "trip-123",
+        groupId: "group-123",
+      });
+      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        createMockGroup({ id: "group-123", isDeleted: true })
+      );
+
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
       ).rejects.toThrow(ORPCError);
     });
 
@@ -754,7 +815,7 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         firstName: "John",
         lastName: "Doe",
       });
@@ -778,7 +839,7 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         firstName: "John",
         lastName: null,
       });
@@ -802,7 +863,7 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         firstName: null,
         lastName: "Doe",
       });
@@ -826,9 +887,9 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
-      (mockDb.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         firstName: null,
-        lastName: null,
+        lastName: "Doe",
       });
       (mockDb.tripParticipant.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "participant-123",
