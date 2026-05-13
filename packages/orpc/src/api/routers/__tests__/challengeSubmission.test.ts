@@ -342,19 +342,47 @@ describe("challengeSubmissionRouter", () => {
     // Ensure transactions pass mockTx, not mockDb, so per-test tx mocks are honored
     (mockDb as any).transaction = (callback: (tx: typeof mockTx) => unknown) => callback(mockTx);
 
-    // Make Drizzle insert/update/delete returning passthrough so tests see actual data
+    // Make Drizzle insert/update/delete bridge to Prisma model mocks
+    const getTableName = (table: unknown): string | undefined => {
+      if (typeof table === "string") return table;
+      if (table && typeof table === "object") {
+        const obj = table as Record<string | symbol, unknown>;
+        if (obj.name && typeof obj.name === "string") return obj.name;
+        const sym = Object.getOwnPropertySymbols(obj).find((s) => s.description === "drizzle:Name");
+        if (sym && typeof obj[sym] === "string") return obj[sym] as string;
+      }
+      return undefined;
+    };
+    const getModelName = (table: unknown): string => {
+      const name = getTableName(table);
+      return name ? name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()).replace(/s$/, "") : "unknown";
+    };
     const passthroughReturning = (data: unknown) => ({
       returning: () => Promise.resolve([data]),
       onConflictDoNothing: () => Promise.resolve([data]),
       onConflictDoUpdate: () => Promise.resolve([data]),
     });
     [mockDb, mockTx].forEach((db) => {
-      (db as any).insert = () => ({
-        values: (data: unknown) => passthroughReturning(data),
+      (db as any).insert = (table: unknown) => ({
+        values: (data: unknown) => {
+          const modelName = getModelName(table);
+          const model = (db as Record<string, unknown>)[modelName];
+          if (model && typeof model === "object" && "create" in model && typeof (model as Record<string, unknown>).create === "function") {
+            return passthroughReturning((model as Record<string, (...args: unknown[]) => Promise<unknown>).create({ data }));
+          }
+          return passthroughReturning(data);
+        },
       });
-      (db as any).update = () => ({
+      (db as any).update = (table: unknown) => ({
         set: (data: unknown) => ({
-          where: () => passthroughReturning(data),
+          where: () => {
+            const modelName = getModelName(table);
+            const model = (db as Record<string, unknown>)[modelName];
+            if (model && typeof model === "object" && "update" in model && typeof (model as Record<string, unknown>).update === "function") {
+              return (model as Record<string, (...args: unknown[]) => Promise<unknown>).update({ data, where: {} }).then((result: unknown) => passthroughReturning(result));
+            }
+            return passthroughReturning(data);
+          },
         }),
       });
       (db as any).delete = () => ({
