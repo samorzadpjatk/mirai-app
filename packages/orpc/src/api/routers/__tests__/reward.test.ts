@@ -269,30 +269,65 @@ describe("rewardRouter", () => {
           return Promise.all(callback);
         }
       ),
-      // Drizzle API methods
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([mockReward])),
-        })),
-      })),
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn(() => Promise.resolve([mockReward])),
-          })),
-        })),
-      })),
-      delete: vi.fn(() => ({
-        where: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([mockReward])),
-        })),
-      })),
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve([mockReward])),
-        })),
-      })),
+      // Drizzle API methods with Prisma model bridge
+      query: {
+        rewards: { ...mockDb.reward, findFirst: mockDb.reward.findUnique || vi.fn() },
+        rewardPurchases: { ...mockDb.rewardPurchase, findFirst: mockDb.rewardPurchase.findUnique || vi.fn() },
+        groups: { ...mockDb.group, findFirst: mockDb.group.findUnique || vi.fn() },
+        tripParticipants: { ...mockDb.tripParticipant, findFirst: mockDb.tripParticipant.findFirst || vi.fn() },
+        challenges: { ...mockDb.challenge, findFirst: mockDb.challenge.findUnique || vi.fn() },
+        coinTransactions: { ...mockDb.coinTransaction, findFirst: mockDb.coinTransaction.findUnique || vi.fn() },
+      },
     };
+
+    // Bridge Drizzle insert/update/delete to Prisma model methods
+    const getModelName = (table: unknown): string => {
+      const getName = (t: unknown): string | undefined => {
+        if (typeof t === "string") return t;
+        if (t && typeof t === "object") {
+          const obj = t as Record<string | symbol, unknown>;
+          if (obj.name && typeof obj.name === "string") return obj.name;
+          const sym = Object.getOwnPropertySymbols(obj).find((s) => s.description === "drizzle:Name");
+          if (sym && typeof obj[sym] === "string") return obj[sym] as string;
+        }
+        return undefined;
+      };
+      const name = getName(table);
+      return name ? name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()).replace(/s$/, "") : "unknown";
+    };
+
+    [mockDb, ...([] as typeof mockDb[])].forEach((db) => {
+      const passthroughReturning = (data: unknown) => ({
+        returning: () => Promise.resolve([data]),
+        onConflictDoNothing: () => Promise.resolve([data]),
+        onConflictDoUpdate: () => Promise.resolve([data]),
+      });
+      (db as any).insert = (table: unknown) => ({
+        values: (data: unknown) => {
+          const modelName = getModelName(table);
+          const model = (db as Record<string, unknown>)[modelName];
+          if (model && typeof model === "object" && "create" in model && typeof (model as Record<string, unknown>).create === "function") {
+            return passthroughReturning((model as Record<string, (...args: unknown[]) => Promise<unknown>).create({ data }));
+          }
+          return passthroughReturning(data);
+        },
+      });
+      (db as any).update = (table: unknown) => ({
+        set: (data: unknown) => ({
+          where: () => {
+            const modelName = getModelName(table);
+            const model = (db as Record<string, unknown>)[modelName];
+            if (model && typeof model === "object" && "update" in model && typeof (model as Record<string, unknown>).update === "function") {
+              return (model as Record<string, (...args: unknown[]) => Promise<unknown>).update({ data, where: {} }).then((result: unknown) => passthroughReturning(result));
+            }
+            return passthroughReturning(data);
+          },
+        }),
+      });
+      (db as any).delete = () => ({
+        where: () => Promise.resolve({ count: 1 }),
+      });
+    });
 
     mockDb = createDrizzleProxy(mockDb as any);
   });
