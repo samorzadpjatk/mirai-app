@@ -175,11 +175,11 @@ describe("coinRouter", () => {
       });
 
        
-      vi.mocked(mockDb.group.findUnique).mockResolvedValue(mockGroup);
+      mockDb.group.findUnique.mockResolvedValue(mockGroup);
        
-      vi.mocked(mockDb.group.update).mockResolvedValue(updatedGroup);
+      mockDb.group.update.mockResolvedValue(updatedGroup);
        
-      vi.mocked(mockDb.coinTransaction.create).mockResolvedValue(transaction);
+      mockDb.coinTransaction.create.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);

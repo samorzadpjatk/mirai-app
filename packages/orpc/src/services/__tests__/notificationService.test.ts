@@ -229,7 +229,7 @@ describe("sendMobileNotifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(executeWithRetry).mockImplementation(async (fn) => fn());
+    executeWithRetry.mockImplementation(async (fn) => fn());
 
     mockNotification = {
       id: "notification-1",
@@ -300,7 +300,7 @@ describe("sendMobileNotifications", () => {
 
   it("should return failure when notification not found", async () => {
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(null);
+    mockDb.notification.findUnique.mockResolvedValue(null);
 
     const result = await sendMobileNotifications(mockDb, "nonexistent-notification");
 
@@ -312,7 +312,7 @@ describe("sendMobileNotifications", () => {
 
   it("should send notifications to all subscriptions when no explicit audience", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -326,7 +326,7 @@ describe("sendMobileNotifications", () => {
   it("should send notifications to pending explicit audience", async () => {
     const pendingPush = { ...mockNotificationPush, status: "pending" };
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush]);
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -338,7 +338,7 @@ describe("sendMobileNotifications", () => {
   it("should skip when all explicit audience already processed", async () => {
     const sentPush = { ...mockNotificationPush, status: "sent" };
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([sentPush]);
+    mockDb.notificationPush.findMany.mockResolvedValue([sentPush]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -349,7 +349,7 @@ describe("sendMobileNotifications", () => {
 
   it("should return early when no push subscriptions exist", async () => {
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -360,14 +360,14 @@ describe("sendMobileNotifications", () => {
 
   it("should filter subscriptions by trip participants when tripId exists", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
       { ...mockPushSubscription, id: "sub-3", userId: "user-3", token: "ExponentPushToken[test-token-3]" },
@@ -380,9 +380,9 @@ describe("sendMobileNotifications", () => {
 
   it("should filter by group when audienceMode is group", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany)
+    mockDb.tripParticipant.findMany
       .mockResolvedValueOnce([
         { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
         { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
@@ -391,7 +391,7 @@ describe("sendMobileNotifications", () => {
         { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
@@ -401,7 +401,7 @@ describe("sendMobileNotifications", () => {
       url: "/test?__audience=group&__groupId=group-1",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithGroupAudience);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithGroupAudience);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -412,9 +412,9 @@ describe("sendMobileNotifications", () => {
     const { applyRankingTemplate } = await import("../../utils/notificationTemplates");
 
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithTemplate = {
       ...mockNotification,
@@ -422,7 +422,7 @@ describe("sendMobileNotifications", () => {
       body: "Position: <miejsce-w-rankingu>",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithTemplate);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithTemplate);
 
     await sendMobileNotifications(mockDb, "notification-1");
 
@@ -431,9 +431,9 @@ describe("sendMobileNotifications", () => {
 
   it("should handle invalid push tokens gracefully", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, token: "invalid-token" },
     ]);
 
@@ -445,8 +445,8 @@ describe("sendMobileNotifications", () => {
 
   it("should handle Expo API errors gracefully", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-    vi.mocked(executeWithRetry).mockRejectedValue(new Error("Expo API error"));
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+    executeWithRetry.mockRejectedValue(new Error("Expo API error"));
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -457,7 +457,7 @@ describe("sendMobileNotifications", () => {
   it("should use EXPO_ACCESS_TOKEN when available", async () => {
     process.env.EXPO_ACCESS_TOKEN = "test-access-token";
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     await sendMobileNotifications(mockDb, "notification-1");
 
@@ -469,14 +469,14 @@ describe("sendMobileNotifications", () => {
 
   it("should handle audience mode 'all'", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: null, role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
@@ -486,7 +486,7 @@ describe("sendMobileNotifications", () => {
       url: "/test?__audience=all",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithAllAudience);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithAllAudience);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -496,9 +496,9 @@ describe("sendMobileNotifications", () => {
   it("should return early when no push subscriptions exist", async () => {
     const pendingPush = { ...mockNotificationPush, status: "pending" };
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush]);
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -513,11 +513,11 @@ describe("sendMobileNotifications", () => {
       tripId: null,
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithoutTrip);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithoutTrip);
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -526,7 +526,7 @@ describe("sendMobileNotifications", () => {
 
   it("should handle chunking large numbers of notifications", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     const manySubscriptions = Array.from({ length: 250 }, (_, i) => ({
       ...mockPushSubscription,
@@ -535,9 +535,9 @@ describe("sendMobileNotifications", () => {
       token: `ExponentPushToken[test-token-${i}]`,
     }));
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue(manySubscriptions);
+    mockDb.pushSubscription.findMany.mockResolvedValue(manySubscriptions);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue(
+    mockDb.tripParticipant.findMany.mockResolvedValue(
       Array.from({ length: 250 }, (_, i) => ({ id: `tp-${i}`, userId: `user-${i}`, tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null }))
     );
 
@@ -548,19 +548,19 @@ describe("sendMobileNotifications", () => {
 
   it("should handle mixed success and failure from Expo", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
 
-    vi.mocked(executeWithRetry).mockResolvedValue([
+    executeWithRetry.mockResolvedValue([
       { status: "ok", id: "ticket-1" },
       { status: "error", message: "Invalid token", details: { error: "InvalidToken" } },
     ]);
@@ -574,8 +574,8 @@ describe("sendMobileNotifications", () => {
 
   it("should handle retry logic for Expo failures", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-    vi.mocked(executeWithRetry).mockImplementation(async (fn) => {
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+    executeWithRetry.mockImplementation(async (fn) => {
       // First call fails, second succeeds
       try {
         return await fn();
@@ -595,11 +595,11 @@ describe("sendMobileNotifications", () => {
       url: "not-a-valid-url",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithBadUrl);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithBadUrl);
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -608,20 +608,20 @@ describe("sendMobileNotifications", () => {
 
   it("should handle empty audience groupId parameter", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithEmptyGroup = {
       ...mockNotification,
       url: "/test?__audience=group&__groupId=",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithEmptyGroup);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithEmptyGroup);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -630,13 +630,13 @@ describe("sendMobileNotifications", () => {
 
   it("should handle participants without groupId", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: null, role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -645,18 +645,18 @@ describe("sendMobileNotifications", () => {
 
   it("should handle missing trip data gracefully", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.trip.findUnique).mockResolvedValue(null);
+    mockDb.trip.findUnique.mockResolvedValue(null);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithTemplate = {
       ...mockNotification,
       title: "Ranking: <nazwa-wycieczki>",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithTemplate);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithTemplate);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -665,9 +665,9 @@ describe("sendMobileNotifications", () => {
 
   it("should handle database errors during status updates", async () => {
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.notificationPush.createMany).mockRejectedValue(new Error("Database error"));
+    mockDb.notificationPush.createMany.mockRejectedValue(new Error("Database error"));
 
     await expect(sendMobileNotifications(mockDb, "notification-1")).rejects.toThrow();
   });
@@ -676,9 +676,9 @@ describe("sendMobileNotifications", () => {
     const pendingPush1 = { ...mockNotificationPush, status: "pending", targetUserId: "user-1" };
     const pendingPush2 = { ...mockNotificationPush, status: "pending", targetUserId: "user-2", id: "push-2" };
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush1, pendingPush2]);
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush1, pendingPush2]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
     ]);
 
@@ -695,11 +695,11 @@ describe("sendMobileNotifications", () => {
       url: "https://example.com/test?__audience=all",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithAbsoluteUrl);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithAbsoluteUrl);
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -712,11 +712,11 @@ describe("sendMobileNotifications", () => {
       url: "/test?__audience=all#section",
     };
  
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithHash);
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithHash);
  
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
  
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 

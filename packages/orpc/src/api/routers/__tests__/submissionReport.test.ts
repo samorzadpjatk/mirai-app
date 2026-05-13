@@ -41,8 +41,8 @@ describe("submissionReportRouter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockBuildAuthEmailLookup = vi.mocked(authEmails.buildAuthEmailLookup);
-    mockEnsureTripNotEnded = vi.mocked(tripGuards.ensureTripNotEnded);
+    mockBuildAuthEmailLookup = authEmails.buildAuthEmailLookup;
+    mockEnsureTripNotEnded = tripGuards.ensureTripNotEnded;
     mockEnsureTripNotEnded.mockResolvedValue(undefined);
 
     mockUser = {

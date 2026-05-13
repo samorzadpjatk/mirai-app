@@ -91,7 +91,7 @@ describe("sponsorRouter", () => {
         createMockSponsor({ id: "sponsor-2", name: "Sponsor Two" }),
       ];
        
-      vi.mocked(mockDb.sponsor.findMany).mockResolvedValue(mockSponsors);
+      mockDb.sponsor.findMany.mockResolvedValue(mockSponsors);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -116,7 +116,7 @@ describe("sponsorRouter", () => {
     it("should return sponsor by id", async () => {
       const mockSponsor = createMockSponsor({ id: "sponsor-123" });
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
+      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -133,7 +133,7 @@ describe("sponsorRouter", () => {
 
     it("should throw NOT_FOUND when sponsor doesn't exist", async () => {
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(null);
+      mockDb.sponsor.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -158,7 +158,7 @@ describe("sponsorRouter", () => {
         }),
       ];
        
-      vi.mocked(mockDb.tripSponsor.findMany).mockResolvedValue(mockTripSponsors);
+      mockDb.tripSponsor.findMany.mockResolvedValue(mockTripSponsors);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -185,8 +185,8 @@ describe("sponsorRouter", () => {
         logoPath: "https://example.com/new-logo.png",
       });
        
-      vi.mocked(mockDb.sponsor.create).mockResolvedValue(newSponsor);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.sponsor.create.mockResolvedValue(newSponsor);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -226,10 +226,10 @@ describe("sponsorRouter", () => {
         name: "Updated Name",
       });
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(existingSponsor);
+      mockDb.sponsor.findUnique.mockResolvedValue(existingSponsor);
        
-      vi.mocked(mockDb.sponsor.update).mockResolvedValue(updatedSponsor);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.sponsor.update.mockResolvedValue(updatedSponsor);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -252,8 +252,8 @@ describe("sponsorRouter", () => {
 
     it("should throw NOT_FOUND when updating non-existent sponsor", async () => {
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(null);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.sponsor.findUnique.mockResolvedValue(null);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -276,8 +276,8 @@ describe("sponsorRouter", () => {
     it("should delete a sponsor as admin", async () => {
       const sponsorToDelete = createMockSponsor({ id: "sponsor-123" });
        
-      vi.mocked(mockDb.sponsor.delete).mockResolvedValue(sponsorToDelete);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.sponsor.delete.mockResolvedValue(sponsorToDelete);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -307,14 +307,14 @@ describe("sponsorRouter", () => {
       const mockTripSponsor = createMockTripSponsor();
       
        
-      vi.mocked(mockDb.trip.findUnique).mockResolvedValue(mockTrip);
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
+      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
        
-      vi.mocked(mockDb.tripSponsor.findUnique).mockResolvedValue(null);
+      mockDb.tripSponsor.findUnique.mockResolvedValue(null);
        
-      vi.mocked(mockDb.tripSponsor.create).mockResolvedValue(mockTripSponsor);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.tripSponsor.create.mockResolvedValue(mockTripSponsor);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -341,12 +341,12 @@ describe("sponsorRouter", () => {
       const existingTripSponsor = createMockTripSponsor();
       
        
-      vi.mocked(mockDb.trip.findUnique).mockResolvedValue(mockTrip);
+      mockDb.trip.findUnique.mockResolvedValue(mockTrip);
        
-      vi.mocked(mockDb.sponsor.findUnique).mockResolvedValue(mockSponsor);
+      mockDb.sponsor.findUnique.mockResolvedValue(mockSponsor);
        
-      vi.mocked(mockDb.tripSponsor.findUnique).mockResolvedValue(existingTripSponsor);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.tripSponsor.findUnique.mockResolvedValue(existingTripSponsor);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });
@@ -369,8 +369,8 @@ describe("sponsorRouter", () => {
     it("should remove sponsor from trip as admin", async () => {
       const mockTripSponsor = createMockTripSponsor();
        
-      vi.mocked(mockDb.tripSponsor.delete).mockResolvedValue(mockTripSponsor);
-      vi.mocked(auth.requireAdmin).mockResolvedValue({
+      mockDb.tripSponsor.delete.mockResolvedValue(mockTripSponsor);
+      auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
       });

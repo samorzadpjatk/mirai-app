@@ -148,11 +148,11 @@ describe("rewardRouter", () => {
 
     const { requireAuth, requireModerator, requireAdmin } = await import("@mirai-app/auth");
      
-    vi.mocked(requireAuth).mockResolvedValue({ user: { id: mockUser.authUserId, email: mockUser.email }, dbUser: mockUser });
+    requireAuth.mockResolvedValue({ user: { id: mockUser.authUserId, email: mockUser.email }, dbUser: mockUser });
      
-    vi.mocked(requireModerator).mockResolvedValue(mockModeratorUser);
+    requireModerator.mockResolvedValue(mockModeratorUser);
      
-    vi.mocked(requireAdmin).mockResolvedValue(mockAdminUser);
+    requireAdmin.mockResolvedValue(mockAdminUser);
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -489,7 +489,7 @@ describe("rewardRouter", () => {
       // Override requireAuth to return moderator user for this test
       const { requireAuth } = await import("@mirai-app/auth");
        
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: mockModeratorUser.authUserId, email: mockModeratorUser.email },
         dbUser: mockModeratorUser,
       });
@@ -710,7 +710,7 @@ describe("rewardRouter", () => {
     it("should purchase reward as group leader", async () => {
       const { ensureTripNotEnded } = await import("../../../utils/tripGuards");
        
-      vi.mocked(ensureTripNotEnded).mockResolvedValue(undefined);
+      ensureTripNotEnded.mockResolvedValue(undefined);
 
       mockDb.reward.findUnique.mockResolvedValue(mockReward);
       mockDb.tripParticipant.findFirst.mockResolvedValue({

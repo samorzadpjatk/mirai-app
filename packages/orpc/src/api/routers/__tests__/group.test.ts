@@ -664,7 +664,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -711,7 +711,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -757,7 +757,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -922,7 +922,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1067,7 +1067,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1271,7 +1271,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1343,7 +1343,7 @@ describe("groupRouter", () => {
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValue({
+      requireAuth.mockResolvedValue({
         user: { id: "auth-123", email: "test@example.com" },
         dbUser: mockUser,
       });
@@ -1761,7 +1761,7 @@ describe("groupRouter", () => {
 
       // Mock requireAuth to return admin user
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValueOnce({
+      requireAuth.mockResolvedValueOnce({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -1840,7 +1840,7 @@ describe("groupRouter", () => {
 
       // Mock requireAuth to return admin user - middleware overwrites ctx.dbUser
       const { requireAuth } = await import("@mirai-app/auth");
-      vi.mocked(requireAuth).mockResolvedValueOnce({
+      requireAuth.mockResolvedValueOnce({
         user: { id: "auth-admin-123", email: "admin@example.com" },
         dbUser: mockAdminUser,
       });
@@ -2515,7 +2515,7 @@ describe("groupRouter", () => {
     it("should handle missing user in context", async () => {
       const { requireAuth } = await import("@mirai-app/auth");
       // Use mockRejectedValueOnce so it only affects this test
-      vi.mocked(requireAuth).mockRejectedValueOnce(new Error("Unauthorized"));
+      requireAuth.mockRejectedValueOnce(new Error("Unauthorized"));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

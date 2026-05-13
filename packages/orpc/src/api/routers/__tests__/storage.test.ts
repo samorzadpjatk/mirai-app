@@ -166,7 +166,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -292,7 +292,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -333,7 +333,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -469,7 +469,7 @@ describe("storageRouter", () => {
 
     it("should handle URL-based storage paths gracefully", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

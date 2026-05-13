@@ -331,7 +331,7 @@ describe("challengeRouter", () => {
     it("should include participant submission counts", async () => {
        
        
-      vi.mocked(mockDb.challengeSubmission.groupBy).mockResolvedValue([
+      mockDb.challengeSubmission.groupBy.mockResolvedValue([
         { challengeId: "challenge-1", _count: { _all: 5 } }
       ]);
 
@@ -351,7 +351,7 @@ describe("challengeRouter", () => {
     it("should include my group submission status", async () => {
        
        
-      vi.mocked(mockDb.challengeSubmission.findMany).mockResolvedValue([
+      mockDb.challengeSubmission.findMany.mockResolvedValue([
         { challengeId: "challenge-1", status: "PENDING" }
       ]);
 
@@ -371,7 +371,7 @@ describe("challengeRouter", () => {
     it("should handle empty challenges list", async () => {
        
        
-      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([]);
+      mockDb.challenge.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -423,7 +423,7 @@ describe("challengeRouter", () => {
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
+      mockDb.challenge.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -442,11 +442,11 @@ describe("challengeRouter", () => {
     it("should resolve recurring challenge id for non-admin users", async () => {
       const { resolveRecurringChallengeIdForTrip } = await import("../../../utils/recurringChallenges");
        
-      vi.mocked(resolveRecurringChallengeIdForTrip).mockResolvedValue(null);
+      resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
 
        
        
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(null);
+      mockDb.user.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -467,9 +467,9 @@ describe("challengeRouter", () => {
 
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(mockChallenge);
+      mockDb.challenge.findFirst.mockResolvedValue(mockChallenge);
        
-      vi.mocked(resolveRecurringChallengeIdForTrip).mockResolvedValue("recurring-challenge-id");
+      resolveRecurringChallengeIdForTrip.mockResolvedValue("recurring-challenge-id");
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -889,7 +889,7 @@ describe("challengeRouter", () => {
 
        
        
-      vi.mocked(mockDb.challenge.create).mockResolvedValue({
+      mockDb.challenge.create.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
       });
@@ -941,7 +941,7 @@ describe("challengeRouter", () => {
     it("should reject invalid image URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
        
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValue(null);
+      normalizeSupabaseStoragePath.mockReturnValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -988,7 +988,7 @@ describe("challengeRouter", () => {
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
+      mockDb.challenge.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1032,7 +1032,7 @@ describe("challengeRouter", () => {
     it("should validate peer voting transition to voting phase", async () => {
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1045,7 +1045,7 @@ describe("challengeRouter", () => {
 
        
        
-      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValueOnce(1)
+      mockDb.challengeSubmission.count.mockResolvedValueOnce(1)
         .mockResolvedValueOnce(0);
 
       const ctx: TRPCContext = {
@@ -1068,7 +1068,7 @@ describe("challengeRouter", () => {
     it("should throw error when transitioning to voting phase with no submissions", async () => {
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1077,7 +1077,7 @@ describe("challengeRouter", () => {
 
        
        
-      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValue(0);
+      mockDb.challengeSubmission.count.mockResolvedValue(0);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1100,7 +1100,7 @@ describe("challengeRouter", () => {
     it("should throw error when transitioning to voting phase with pending submissions", async () => {
        
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1109,7 +1109,7 @@ describe("challengeRouter", () => {
 
        
        
-      vi.mocked(mockDb.challengeSubmission.count).mockResolvedValueOnce(5) // total submissions
+      mockDb.challengeSubmission.count.mockResolvedValueOnce(5) // total submissions
         .mockResolvedValueOnce(2); // pending submissions
 
       const ctx: TRPCContext = {
@@ -1132,7 +1132,7 @@ describe("challengeRouter", () => {
 
     it("should update recurring challenge with inferred days", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
@@ -1196,7 +1196,7 @@ describe("challengeRouter", () => {
 
     it("should validate peer voting timeline on update", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1264,7 +1264,7 @@ describe("challengeRouter", () => {
       const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
 
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
@@ -1272,7 +1272,7 @@ describe("challengeRouter", () => {
         startTime: new Date("2025-01-01"),
       });
        
-      vi.mocked(mockDb.challenge.update).mockResolvedValue(createMockChallenge({ isRecurring: true }));
+      mockDb.challenge.update.mockResolvedValue(createMockChallenge({ isRecurring: true }));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1315,7 +1315,7 @@ describe("challengeRouter", () => {
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
+      mockDb.challenge.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1335,7 +1335,7 @@ describe("challengeRouter", () => {
   describe("forceCloseVoting (adminProcedure)", () => {
     it("should force close voting for peer voting challenge", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1367,7 +1367,7 @@ describe("challengeRouter", () => {
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue(null);
+      mockDb.challenge.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1385,7 +1385,7 @@ describe("challengeRouter", () => {
 
     it("should throw BAD_REQUEST for non-peer voting challenge", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "SPEED",
       });
@@ -1406,7 +1406,7 @@ describe("challengeRouter", () => {
 
     it("should throw BAD_REQUEST when challenge is not in voting phase", async () => {
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1431,7 +1431,7 @@ describe("challengeRouter", () => {
       const { createChallengeStatusActivityFromTransition } = await import("../../../utils/activityFeed");
 
        
-      vi.mocked(mockDb.challenge.findFirst).mockResolvedValue({
+      mockDb.challenge.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1576,7 +1576,7 @@ describe("challengeRouter", () => {
   describe("Edge cases and error handling", () => {
     it("should handle database errors gracefully", async () => {
        
-      vi.mocked(mockDb.challenge.findMany).mockRejectedValue(new Error("Test error"));
+      mockDb.challenge.findMany.mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1593,7 +1593,7 @@ describe("challengeRouter", () => {
     it("should handle missing supabase storage signed URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
        
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValue(null);
+      normalizeSupabaseStoragePath.mockReturnValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1611,7 +1611,7 @@ describe("challengeRouter", () => {
 
     it("should handle participant without group", async () => {
        
-      vi.mocked(mockDb.tripParticipant.findUnique).mockResolvedValue(null);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1628,7 +1628,7 @@ describe("challengeRouter", () => {
 
     it("should handle challenge with external URL image", async () => {
        
-      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([
+      mockDb.challenge.findMany.mockResolvedValue([
         { ...mockChallenge, id: "challenge-external", image: "https://external.com/image.jpg" }
       ]);
 
@@ -1647,7 +1647,7 @@ describe("challengeRouter", () => {
 
     it("should handle challenge without image", async () => {
        
-      vi.mocked(mockDb.challenge.findMany).mockResolvedValue([
+      mockDb.challenge.findMany.mockResolvedValue([
         { ...mockChallenge, id: "challenge-no-image", image: null }
       ]);
 
@@ -1666,7 +1666,7 @@ describe("challengeRouter", () => {
 
     it("should handle transaction errors", async () => {
        
-      vi.mocked(mockDb.$transaction).mockRejectedValue(new Error("Test error"));
+      mockDb.$transaction.mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,

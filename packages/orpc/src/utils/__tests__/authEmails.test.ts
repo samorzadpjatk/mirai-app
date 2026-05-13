@@ -44,7 +44,7 @@ describe("authEmails", () => {
 
     it("should fetch email for single user ID", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -65,7 +65,7 @@ describe("authEmails", () => {
 
     it("should fetch emails for multiple user IDs", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById)
+      mockSupabase.auth.admin.getUserById
         .mockResolvedValueOnce({
           data: { user: { id: "user-1", email: "user1@example.com" } },
           error: null,
@@ -86,7 +86,7 @@ describe("authEmails", () => {
 
     it("should deduplicate user IDs", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
       } as never);
@@ -103,7 +103,7 @@ describe("authEmails", () => {
 
     it("should handle null email in response", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: null } },
         error: null,
       } as never);
@@ -115,7 +115,7 @@ describe("authEmails", () => {
 
     it("should handle user not found", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
@@ -127,7 +127,7 @@ describe("authEmails", () => {
 
     it("should handle API error and log warning", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "User not found" },
       } as never);
@@ -142,7 +142,7 @@ describe("authEmails", () => {
 
     it("should filter out null/undefined IDs and process valid ones", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
       } as never);
@@ -178,7 +178,7 @@ describe("authEmails", () => {
         .split("T")[0];
 
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -203,7 +203,7 @@ describe("authEmails", () => {
 
     it("should build summary for non-banned user", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -232,7 +232,7 @@ describe("authEmails", () => {
         .split("T")[0];
 
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -253,7 +253,7 @@ describe("authEmails", () => {
 
     it("should handle user with empty banned_until string", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -274,7 +274,7 @@ describe("authEmails", () => {
 
     it("should handle user with invalid ban date", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -294,7 +294,7 @@ describe("authEmails", () => {
 
     it("should handle API error with default summary", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "API Error" },
       } as never);
@@ -315,7 +315,7 @@ describe("authEmails", () => {
 
     it("should deduplicate user IDs", async () => {
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
             id: "user-1",
@@ -339,7 +339,7 @@ describe("authEmails", () => {
         .split("T")[0];
 
        
-      vi.mocked(mockSupabase.auth.admin.getUserById)
+      mockSupabase.auth.admin.getUserById
         .mockResolvedValueOnce({
           data: {
             user: {

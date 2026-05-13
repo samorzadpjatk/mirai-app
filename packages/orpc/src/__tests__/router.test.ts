@@ -205,15 +205,15 @@ describe("oRPC Router Testing Patterns", () => {
 
       // Mock successful auth
        
-      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+      mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
       } as never);
 
        
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser);
+      mockDb.user.findFirst.mockResolvedValue(mockDbUser);
        
-      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
@@ -243,7 +243,7 @@ describe("oRPC Router Testing Patterns", () => {
       };
 
        
-      vi.mocked(mockDb.user.update).mockResolvedValue(mockUpdatedUser);
+      mockDb.user.update.mockResolvedValue(mockUpdatedUser);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -277,7 +277,7 @@ describe("oRPC Router Testing Patterns", () => {
 
       // Mock non-admin user
        
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue({
+      mockDb.user.findFirst.mockResolvedValue({
         id: "db-123",
         authUserId: "auth-123",
         role: "USER",
@@ -323,7 +323,7 @@ describe("oRPC Router Testing Patterns", () => {
       ];
 
        
-      vi.mocked(mockDb.user.findMany).mockResolvedValue(mockUsers);
+      mockDb.user.findMany.mockResolvedValue(mockUsers);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -381,7 +381,7 @@ describe("oRPC Router Testing Patterns", () => {
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
        
-      vi.mocked(mockDb.user.findMany).mockRejectedValue(
+      mockDb.user.findMany.mockRejectedValue(
         new Error("Database connection failed")
       );
 

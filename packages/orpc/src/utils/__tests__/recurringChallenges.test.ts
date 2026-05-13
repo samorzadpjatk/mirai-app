@@ -139,7 +139,7 @@ describe("recurringChallenges", () => {
 
     it("should return existing instance if found", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue({
+      mockTx.challenge.findFirst.mockResolvedValue({
         id: "existing-1",
         status: "ACTIVE",
       });
@@ -159,9 +159,9 @@ describe("recurringChallenges", () => {
 
     it("should create new instance if not found", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -181,7 +181,7 @@ describe("recurringChallenges", () => {
 
     it("should use createdAt as fallback when startTime is null", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue({
+      mockTx.challenge.findFirst.mockResolvedValue({
         id: "existing-1",
         status: "ACTIVE",
       });
@@ -203,9 +203,9 @@ describe("recurringChallenges", () => {
 
     it("should create instance with correct day index", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -233,9 +233,9 @@ describe("recurringChallenges", () => {
 
     it("should set VISIBLE status when now is before daily start", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "VISIBLE",
       });
@@ -261,9 +261,9 @@ describe("recurringChallenges", () => {
 
     it("should set ACTIVE status when now is within daily bounds", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -289,9 +289,9 @@ describe("recurringChallenges", () => {
 
     it("should set COMPLETED status when now is after daily end", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "COMPLETED",
       });
@@ -317,9 +317,9 @@ describe("recurringChallenges", () => {
 
     it("should handle daily end time on next day", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -379,9 +379,9 @@ describe("recurringChallenges", () => {
 
     it("should create instances for all days in range", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -404,13 +404,13 @@ describe("recurringChallenges", () => {
 
     it("should skip existing instances", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst)
+      mockTx.challenge.findFirst
         .mockResolvedValueOnce({ id: "existing-1", status: "ACTIVE" })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: "existing-2", status: "ACTIVE" });
 
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -436,7 +436,7 @@ describe("recurringChallenges", () => {
 
     it("should skip days with invalid daily bounds", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
 
       const template = createMockTemplate({
         startTime: new Date("2024-01-01"),
@@ -455,9 +455,9 @@ describe("recurringChallenges", () => {
 
     it("should use startTime as fallback for endTime", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -485,13 +485,13 @@ describe("recurringChallenges", () => {
       ];
 
        
-      vi.mocked(mockTx.challenge.findMany).mockResolvedValue(
+      mockTx.challenge.findMany.mockResolvedValue(
         mockTemplates
       );
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue({
+      mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
       });
@@ -516,7 +516,7 @@ describe("recurringChallenges", () => {
 
     it("should return empty array when no recurring templates exist", async () => {
        
-      vi.mocked(mockTx.challenge.findMany).mockResolvedValue([]);
+      mockTx.challenge.findMany.mockResolvedValue([]);
 
       const result = await ensureRecurringInstancesForTrip({
         tx: mockTx,
@@ -530,7 +530,7 @@ describe("recurringChallenges", () => {
   describe("resolveRecurringChallengeIdForTrip", () => {
     it("should return null when challenge not found", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue(null);
+      mockTx.challenge.findFirst.mockResolvedValue(null);
 
       const result = await resolveRecurringChallengeIdForTrip({
         tx: mockTx,
@@ -543,7 +543,7 @@ describe("recurringChallenges", () => {
 
     it("should return challenge ID when not recurring", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue({
+      mockTx.challenge.findFirst.mockResolvedValue({
         id: "challenge-1",
         isRecurring: false,
       });
@@ -559,7 +559,7 @@ describe("recurringChallenges", () => {
 
     it("should return instance ID when challenge is recurring", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst).mockResolvedValue({
+      mockTx.challenge.findFirst.mockResolvedValue({
         id: "template-1",
         tripId: "trip-1",
         name: "Daily Challenge",
@@ -585,7 +585,7 @@ describe("recurringChallenges", () => {
       });
 
        
-      vi.mocked(mockTx.challenge.findFirst)
+      mockTx.challenge.findFirst
         .mockResolvedValueOnce({
           id: "template-1",
           tripId: "trip-1",
@@ -627,7 +627,7 @@ describe("recurringChallenges", () => {
 
     it("should return template ID when instance creation fails", async () => {
        
-      vi.mocked(mockTx.challenge.findFirst)
+      mockTx.challenge.findFirst
         .mockResolvedValueOnce({
           id: "template-1",
           tripId: "trip-1",
@@ -656,7 +656,7 @@ describe("recurringChallenges", () => {
 
       // Mock create to return null to simulate instance creation failure
        
-      vi.mocked(mockTx.challenge.create).mockResolvedValue(null);
+      mockTx.challenge.create.mockResolvedValue(null);
 
       const result = await resolveRecurringChallengeIdForTrip({
         tx: mockTx,

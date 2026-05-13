@@ -800,7 +800,7 @@ describe("tripRouter", () => {
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Mock requireAdmin to throw AuthorizationError for non-admin users
        
-      vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
+      requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -1180,7 +1180,7 @@ describe("tripRouter", () => {
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Simulate non-admin user by making requireAdmin throw AuthorizationError
        
-      vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
+      requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -1491,7 +1491,7 @@ describe("tripRouter", () => {
     it("should throw UNAUTHORIZED when no token provided for protected procedure", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
        
-      vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
+      requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -1509,7 +1509,7 @@ describe("tripRouter", () => {
     it("should throw UNAUTHORIZED when token is invalid", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
        
-      vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
+      requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,

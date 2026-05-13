@@ -163,11 +163,11 @@ describe("userRouter", () => {
     };
 
     // Get mocked functions
-    mockBuildAuthEmailLookup = vi.mocked(authEmails.buildAuthEmailLookup);
-    mockBuildAuthUserSummaryLookup = vi.mocked(authEmails.buildAuthUserSummaryLookup);
-    mockRequireAuth = vi.mocked(requireAuth);
-    mockRequireAdmin = vi.mocked(requireAdmin);
-    mockRequireModerator = vi.mocked(requireModerator);
+    mockBuildAuthEmailLookup = authEmails.buildAuthEmailLookup;
+    mockBuildAuthUserSummaryLookup = authEmails.buildAuthUserSummaryLookup;
+    mockRequireAuth = requireAuth;
+    mockRequireAdmin = requireAdmin;
+    mockRequireModerator = requireModerator;
   });
 
   describe("Public Procedures", () => {
