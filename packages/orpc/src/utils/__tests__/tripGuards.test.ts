@@ -255,7 +255,6 @@ describe("tripGuards", () => {
         where: expect.any(Function),
       });
     });
-    });
 
     it("should work with group in grace period trip", async () => {
       const recentEndDate = new Date(Date.now() - 12 * 60 * 60 * 1000);
