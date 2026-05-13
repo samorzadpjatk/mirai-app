@@ -177,7 +177,7 @@ export function createMockSupabase(): MockSupabaseClient {
 
 function singularize(name: string): string {
   if (name.endsWith("ies")) return name.slice(0, -3) + "y";
-  if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("ses") || name.endsWith("zes")) return name.slice(0, -2);
+  if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("zes")) return name.slice(0, -2);
   if (name.endsWith("s")) return name.slice(0, -1);
   return name;
 }
@@ -431,15 +431,17 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                 return async (...args: unknown[]) => {
                   if (modelObj[method]) {
                     const result = await modelObj[method](...args);
-                    // If method exists and returns explicit null/undefined, respect it.
-                    // Don't fall back to lastResults (which may have stale update values)
-                    // or other methods (which may have unrelated default mocks).
-                    return result ?? null;
+                    if (result !== null && result !== undefined) {
+                      return result;
+                    }
+                    return lastResults[modelName] ?? null;
                   }
-                  // Method doesn't exist on model - fall back to the other method
                   const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                   if (modelObj[otherMethod]) {
-                    return modelObj[otherMethod](...args);
+                    const fb = await modelObj[otherMethod](...args);
+                    if (fb !== null && fb !== undefined) {
+                      return fb;
+                    }
                   }
                   return lastResults[modelName] ?? null;
                 };
