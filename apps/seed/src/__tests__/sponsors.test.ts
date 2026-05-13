@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { SponsorConfig } from "../types";
 
-vi.mock("../utils/fs");
-vi.mock("../utils/path");
+const mockBunFileText = vi.fn();
 
 vi.mock("yaml", () => ({
   default: {
@@ -36,17 +35,18 @@ const mockDbInsert = vi.fn((table: unknown) => {
 });
 
 describe("sponsors", () => {
-  let readTextFileMock: ReturnType<typeof vi.fn>;
-  let joinPathMock: ReturnType<typeof vi.fn>;
+  let bunFileSpy: ReturnType<typeof vi.spyOn>;
 
-  beforeEach(async () => {
-    const fsModule = await import("../utils/fs");
-    readTextFileMock = fsModule.readTextFile;
-
-    const pathModule = await import("../utils/path");
-    joinPathMock = pathModule.joinPath;
+  beforeEach(() => {
+    bunFileSpy = vi.spyOn(Bun, "file").mockImplementation(
+      () =>
+        ({
+          text: () => mockBunFileText(),
+        }) as unknown as BunFile
+    );
 
     vi.clearAllMocks();
+    mockBunFileText.mockReset();
 
     mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
     mockTripSponsorOnConflict.mockReset().mockResolvedValue(undefined);
@@ -66,9 +66,13 @@ describe("sponsors", () => {
     }));
   });
 
+  afterEach(() => {
+    bunFileSpy.mockRestore();
+  });
+
   describe("loadSponsorConfigs", () => {
     it("should load sponsor configs from YAML file", async () => {
-      readTextFileMock.mockResolvedValue(JSON.stringify([
+      mockBunFileText.mockResolvedValue(JSON.stringify([
         {
           id: "sponsor-1",
           name: "Acme Corp",
@@ -108,7 +112,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for null parsed content", async () => {
-      readTextFileMock.mockResolvedValue("");
+      mockBunFileText.mockResolvedValue("");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -117,7 +121,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for empty YAML", async () => {
-      readTextFileMock.mockResolvedValue("[]");
+      mockBunFileText.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -126,12 +130,12 @@ describe("sponsors", () => {
     });
 
     it("should construct correct file path", async () => {
-      readTextFileMock.mockResolvedValue("[]");
+      mockBunFileText.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       await loadSponsorConfigs("/test/assets/dev", "sponsors/test.yaml");
 
-      expect(joinPathMock).toHaveBeenCalledWith("/test/assets/dev", "sponsors/test.yaml");
+      expect(bunFileSpy).toHaveBeenCalledWith("/test/assets/dev/sponsors/test.yaml");
     });
   });
 

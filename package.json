@@ -53,5 +53,9 @@
   "dependencies": {
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
+  },
+  "overrides": {
+    "@prisma/client": false,
+    "prisma": false
   }
 }

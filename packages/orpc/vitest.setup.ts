@@ -170,6 +170,86 @@ export function createMockSupabase(): MockSupabaseClient {
   };
 }
 
+function singularize(name: string): string {
+  if (name.endsWith("s")) return name.slice(0, -1);
+  return name;
+}
+
+function createDrizzleProxy(mockDb: MockDbClient): DB {
+  const chainable = {
+    where: () => chainable,
+    innerJoin: () => chainable,
+    leftJoin: () => chainable,
+    orderBy: () => chainable,
+    limit: () => chainable,
+    offset: () => chainable,
+    groupBy: () => chainable,
+    having: () => chainable,
+    then: (resolve: (value: unknown) => unknown) => resolve([]),
+  };
+
+  return new Proxy(mockDb as unknown as DB, {
+    get(target, prop) {
+      if (prop === "query") {
+        return new Proxy(
+          {},
+          {
+            get(_, tableName) {
+              const modelName = singularize(String(tableName));
+              const model = (target as Record<string, unknown>)[modelName];
+              if (model && typeof model === "object") {
+                return model;
+              }
+              return {
+                findFirst: vi.fn(() => Promise.resolve(null)),
+                findUnique: vi.fn(() => Promise.resolve(null)),
+                findMany: vi.fn(() => Promise.resolve([])),
+                count: vi.fn(() => Promise.resolve(0)),
+              };
+            },
+          }
+        );
+      }
+
+      if (prop === "insert") {
+        return () => ({
+          values: () => ({
+            returning: () => Promise.resolve([{}]),
+          }),
+        });
+      }
+
+      if (prop === "update") {
+        return (table: unknown) => ({
+          set: () => ({
+            where: () => ({
+              returning: () => Promise.resolve([{}]),
+            }),
+          }),
+        });
+      }
+
+      if (prop === "delete") {
+        return () => ({
+          where: () => ({
+            returning: () => Promise.resolve([{}]),
+          }),
+        });
+      }
+
+      if (prop === "select") {
+        return () => chainable;
+      }
+
+      if (prop === "transaction") {
+        return (callback: (tx: DB) => Promise<unknown>) => callback(target as DB);
+      }
+
+      return (target as Record<string, unknown>)[String(prop)];
+    },
+  });
+}
+
 export function createMockDb(): MockDbClient {
   const mockUser = createMockDbUser();
 
@@ -226,9 +306,10 @@ export function createMockDb(): MockDbClient {
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
   const mockSupabase = createMockSupabase();
   const mockDb = createMockDb();
+  const drizzleDb = createDrizzleProxy(mockDb);
 
   return {
-    db: mockDb as unknown as DB,
+    db: drizzleDb,
     supabase: mockSupabase as unknown as SupabaseClient,
     headers: new Headers(),
     accessToken: null,
@@ -251,12 +332,14 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-vi.mock("@mirai-app/db", () => {
+vi.mock("@mirai-app/db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@mirai-app/db")>();
   const mockDbClient = createMockDb();
+  const drizzleDb = createDrizzleProxy(mockDbClient);
 
   return {
-    createDb: vi.fn(() => mockDbClient),
-    db: mockDbClient,
+    ...actual,
+    createDb: vi.fn(() => drizzleDb),
   };
 });
 
