@@ -4,27 +4,6 @@ import type { SponsorConfig } from "../types";
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 
-vi.mock("../utils/fs", () => ({
-  readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
-}));
-
-vi.mock("../utils/path", () => ({
-  joinPath: (...args: string[]) => mockJoinPath(...args),
-}));
-
-vi.mock("yaml", () => ({
-  default: {
-    parse: (content: string): unknown[] | null => {
-      if (!content.trim()) return null;
-      try {
-        return JSON.parse(content) as unknown[];
-      } catch {
-        return [];
-      }
-    },
-  },
-}));
-
 const sponsorsTable = { id: { name: "id" } };
 const tripSponsorsTable = {
   tripId: { name: "tripId" },
@@ -45,6 +24,7 @@ const mockDbInsert = vi.fn((table: unknown) => {
 
 describe("sponsors", () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
 
     mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
@@ -58,14 +38,31 @@ describe("sponsors", () => {
       throw new Error("Unknown table");
     });
 
-    vi.doMock("../config/db", () => ({
-      db: { insert: (table: unknown) => mockDbInsert(table) },
+    vi.doMock("../utils/fs", () => ({
+      readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
+    }));
+
+    vi.doMock("../utils/path", () => ({
+      joinPath: (...args: string[]) => mockJoinPath(...args),
+    }));
+
+    vi.doMock("yaml", () => ({
+      default: {
+        parse: (content: string): unknown[] | null => {
+          if (!content.trim()) return null;
+          try {
+            return JSON.parse(content) as unknown[];
+          } catch {
+            return [];
+          }
+        },
+      },
     }));
 
     vi.doMock("@mirai-app/db", () => ({
       sponsors: sponsorsTable,
       tripSponsors: tripSponsorsTable,
-      createDb: vi.fn(),
+      createDb: () => ({ insert: (table: unknown) => mockDbInsert(table) }),
     }));
   });
 

@@ -8,7 +8,7 @@ MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 
 - **Frontend**: Expo React Native (iOS/Android)
 - **Backend**: Fastify + oRPC server with WebSocket support
-- **Database**: PostgreSQL via Prisma ORM + Supabase
+- **Database**: PostgreSQL via Drizzle ORM + Supabase
 - **Tooling**: Turborepo + Bun workspaces
 
 ## Monorepo Structure
@@ -22,7 +22,7 @@ MIRAI/
 │   └── seed/                # Database seeding CLI
 ├── packages/
 │   ├── auth/                # Authentication utilities
-│   ├── db/                  # Prisma schema and client
+│   ├── db/                  # Drizzle schema and client
 │   ├── shared/              # Shared utilities, design tokens
 │   ├── supabase/            # Supabase client configuration
 │   └── trpc/                # oRPC routers and utilities
@@ -154,7 +154,7 @@ To stay within OpenAI's default 32 KiB combined instruction limit:
 - [apps/notification-sender/AGENTS.md](./apps/notification-sender/AGENTS.md) - Notification service
 - [apps/seed/AGENTS.md](./apps/seed/AGENTS.md) - Database seeding CLI
 - [packages/auth/AGENTS.md](./packages/auth/AGENTS.md) - Authentication utilities
-- [packages/db/AGENTS.md](./packages/db/AGENTS.md) - Prisma database client
+- [packages/db/AGENTS.md](./packages/db/AGENTS.md) - Drizzle database client
 - [packages/shared/AGENTS.md](./packages/shared/AGENTS.md) - Shared utilities
 - [packages/supabase/AGENTS.md](./packages/supabase/AGENTS.md) - Supabase client
 - [packages/orpc/AGENTS.md](./packages/orpc/AGENTS.md) - oRPC routers

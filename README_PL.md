@@ -47,7 +47,7 @@ Znajduje się w nim:
 - **Seed CLI** (Baza danych & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Współdzielone biblioteki** → [`packages`](packages/)
   - [`@mirai-app/auth`](packages/auth/) - Logika autoryzacji
-  - [`@mirai-app/db`](packages/db/) - Klient Prisma bazy danych
+  - [`@mirai-app/db`](packages/db/) - Klient Drizzle bazy danych
   - [`@mirai-app/orpc`](packages/orpc/) - Routery oRPC i klient
   - [`@mirai-app/shared`](packages/shared/) - Współdzielone utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Konfiguracja klienta Supabase
@@ -89,14 +89,14 @@ Spójrz na jego [dokumentację](environment/dev/README.md)
 ### 4. Przygotowuj schemat bazy danych
 
 ```bash
-# Generate Prisma client
-cd packages/seed && bun run db:generate
+# Generate Drizzle migrations
+cd packages/db && bun run db:generate
 
 # Push the schema to the database
-cd packages/seed && bun run db:push
+cd packages/db && bun run db:push
 
-# Optional: Open Prisma Studio to view the database
-cd packages/seed && bun run db:studio
+# Optional: Open Drizzle Studio to view the database
+cd packages/db && bun run db:studio
 ```
 
 > 📖 **Więcej informacji o komendach bazodanowych**: Zobacz [packages/seed/README.md](packages/seed/README.md)

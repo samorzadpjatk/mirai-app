@@ -14,8 +14,8 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/prisma/lib",
-    "**/prisma/lib/**",
+    "**/drizzle/**",
+    "drizzle/**",
     "**/__tests__/**",
     "**/*.test.*"
   ]

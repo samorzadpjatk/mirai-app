@@ -1,6 +1,6 @@
 # @mirai-app/seed
 
-Application-level seeding for Supabase Storage + Prisma data.
+Application-level seeding for Supabase Storage + Drizzle data.
 
 ## What it does
 - Creates required Supabase Storage buckets (files-public/image/video)
@@ -196,9 +196,9 @@ in `apps/native/.env` so the app exposes the password login for the reviewer acc
 - `bun run db:seed:dev` - Run seed with development environment (alias)
 - `bun run db:seed:prod` - Run seed with production environment (alias)
 
-### Prisma Operations
-- `bun run db:generate` - Generate Prisma client
-- `bun run db:migrate` - Run Prisma migrations (no environment)
+### Drizzle Operations
+- `bun run db:generate` - Generate Drizzle migrations
+- `bun run db:migrate` - Run Drizzle migrations (no environment)
 - `bun run db:migrate:deploy` - Deploy migrations to production
 - `bun run db:migrate:dev` - Run migrations in development environment
 - `bun run db:migrate:prod` - Run migrations in production environment
@@ -207,9 +207,9 @@ in `apps/native/.env` so the app exposes the password login for the reviewer acc
 - `bun run db:reset:prod` - Reset database in production environment
 - `bun run db:push:dev` - Push schema to development database
 - `bun run db:push:prod` - Push schema to production database
-- `bun run db:studio:dev` - Open Prisma Studio with development database
-- `bun run db:studio:prod` - Open Prisma Studio with production database
-- `bun run db:format` - Format Prisma schema
+- `bun run db:studio:dev` - Open Drizzle Studio with development database
+- `bun run db:studio:prod` - Open Drizzle Studio with production database
+- `bun run db:format` - Format Drizzle schema
 
 ## Run
 ```bash
@@ -251,6 +251,6 @@ Tests cover the following areas:
 - **Configuration parsing** - YAML and CSV file parsing and validation
 - **File upload handling** - Supabase Storage bucket operations and file uploads
 - **User/trip creation logic** - Database operations for creating trips, users, and participant relationships
-- **Integration tests** - End-to-end workflows with Supabase Storage and Prisma
+- **Integration tests** - End-to-end workflows with Supabase Storage and Drizzle
 
-Tests use mocked external dependencies (Supabase, Prisma) to run without requiring live services.
+Tests use mocked external dependencies (Supabase, Drizzle) to run without requiring live services.

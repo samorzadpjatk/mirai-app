@@ -118,7 +118,7 @@ export interface ORPCContext {
 export interface TRPCContext extends ORPCContext, Record<string, unknown> {}
 
 // On the backend we use a single SERVICE_ROLE Supabase client (singleton).
-// Follow the Prisma pattern: a module-level lazy-initialized singleton so we avoid adding globals.
+// Follow the Drizzle pattern: a module-level lazy-initialized singleton so we avoid adding globals.
 let supabase: SupabaseClient | undefined;
 
 /**

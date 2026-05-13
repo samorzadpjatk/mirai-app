@@ -79,24 +79,22 @@ vi.mock("@mirai-app/db", () => {
     updatedAt: new Date(),
   };
 
-  const mockPrismaClient = {
-    user: {
-      findFirst: vi.fn().mockResolvedValue(mockUser),
-      findUnique: vi.fn().mockResolvedValue(mockUser),
-      findMany: vi.fn().mockResolvedValue([mockUser]),
-      create: vi.fn().mockResolvedValue(mockUser),
-      update: vi.fn().mockResolvedValue(mockUser),
-      upsert: vi.fn().mockResolvedValue(mockUser),
-      delete: vi.fn().mockResolvedValue(mockUser),
+  const mockDbClient = {
+    query: {
+      users: {
+        findFirst: vi.fn().mockResolvedValue(mockUser),
+        findMany: vi.fn().mockResolvedValue([mockUser]),
+      },
     },
-    $connect: vi.fn().mockResolvedValue(undefined),
-    $disconnect: vi.fn().mockResolvedValue(undefined),
+    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue([mockUser]) })),
+    update: vi.fn(() => ({ set: vi.fn().mockResolvedValue([mockUser]), where: vi.fn().mockResolvedValue([mockUser]) })),
+    delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([mockUser]) })),
   };
 
   return {
-    createDb: vi.fn(() => mockPrismaClient),
-    prisma: mockPrismaClient,
-    PrismaClient: vi.fn(() => mockPrismaClient),
+    createDb: vi.fn(() => mockDbClient),
+    db: mockDbClient,
+    users: { __table: "users" },
     User: mockUser,
     Role: ["USER", "ADMIN", "MODERATOR", "SERVICE"],
   };
