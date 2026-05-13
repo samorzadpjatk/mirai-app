@@ -1,5 +1,7 @@
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User, Role, PrismaClient } from "@mirai-app/db";
+import type { User, Role, DB } from "@mirai-app/db";
+import { users } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
 import type { AuthUser } from "@mirai-app/shared";
 
 interface MinimalBuffer {
@@ -220,7 +222,7 @@ export function hasRequiredRole(
  * @returns Session object with user and authUserId, or null if not authenticated
  */
 export async function getSession(
-  db: PrismaClient,
+  db: DB,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
@@ -233,8 +235,8 @@ export async function getSession(
     return null;
   }
 
-  const dbUser = await db.user.findFirst({
-    where: { authUserId: supabaseUser.id },
+  const dbUser = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.authUserId, supabaseUser.id),
   });
 
   if (!dbUser) {
@@ -253,7 +255,7 @@ export async function getSession(
 }
 
 export async function requireAuth(
-  db: PrismaClient,
+  db: DB,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
@@ -285,8 +287,8 @@ export async function requireAuth(
     }
   }
 
-  const dbUser = await db.user.findFirst({
-    where: { authUserId: session.authUserId! },
+  const dbUser = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.authUserId, session.authUserId!),
   });
 
   if (!dbUser) {
@@ -302,7 +304,7 @@ export async function requireAuth(
 }
 
 export async function requireAdmin(
-  db: PrismaClient,
+  db: DB,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
@@ -316,7 +318,7 @@ export async function requireAdmin(
 }
 
 export async function requireModerator(
-  db: PrismaClient,
+  db: DB,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
