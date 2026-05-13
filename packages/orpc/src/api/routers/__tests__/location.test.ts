@@ -141,6 +141,14 @@ describe("locationRouter", () => {
       }),
     };
 
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      locations: mockDb.location,
+      tripParticipants: mockDb.tripParticipant,
+      users: mockDb.user,
+      locationSharingRequests: mockDb.locationSharingRequest,
+    };
+
     // Setup mock Supabase client
     mockSupabase = {
       auth: {

@@ -74,6 +74,13 @@ describe("sponsorRouter", () => {
       },
     };
 
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      sponsors: mockDb.sponsor,
+      tripSponsors: mockDb.tripSponsor,
+      trips: mockDb.trip,
+    };
+
     mockSupabase = {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123" } }, error: null }),
