@@ -182,6 +182,7 @@ function singularize(name: string): string {
 
 export function createDrizzleProxy(mockDb: MockDbClient): DB {
   const chainable = {
+    from: () => chainable,
     where: () => chainable,
     innerJoin: () => chainable,
     leftJoin: () => chainable,
@@ -214,24 +215,24 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     }
   );
 
+  const returningChainable = {
+    returning: () => Promise.resolve([{}]),
+  };
+
   db.insert = (_table: unknown) => ({
-    values: (_data: unknown) => ({
-      returning: () => Promise.resolve([{}]),
-    }),
+    values: (_data: unknown) => returningChainable,
+    onConflictDoNothing: () => returningChainable,
+    onConflictDoUpdate: () => returningChainable,
   });
 
   db.update = (_table: unknown) => ({
     set: (_data: unknown) => ({
-      where: (_condition: unknown) => ({
-        returning: () => Promise.resolve([{}]),
-      }),
+      where: (_condition: unknown) => returningChainable,
     }),
   });
 
   db.delete = (_table: unknown) => ({
-    where: (_condition: unknown) => ({
-      returning: () => Promise.resolve([{}]),
-    }),
+    where: (_condition: unknown) => returningChainable,
   });
 
   db.select = () => chainable;
