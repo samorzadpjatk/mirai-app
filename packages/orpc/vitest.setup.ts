@@ -210,13 +210,13 @@ function getModelName(table: unknown): string {
 export function createDrizzleProxy(mockDb: MockDbClient): DB {
   const lastResults: Record<string, unknown> = {};
 
-  function createReturningChainable(modelName: string, method: string) {
+  function createReturningChainable(modelName: string, method: string, args?: unknown) {
     const execute = () => {
       const model = (mockDb as Record<string, unknown>)[modelName];
       if (model && typeof model === "object" && method in model) {
         const fn = (model as Record<string, unknown>)[method];
         if (typeof fn === "function") {
-          const result = (fn as () => unknown)();
+          const result = args !== undefined ? (fn as (...args: unknown[]) => unknown)(args) : (fn as () => unknown)();
           const promise = result instanceof Promise ? result : Promise.resolve(result);
           return promise.then((result: unknown) => {
             if (result !== null && result !== undefined) {
@@ -238,18 +238,18 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
 
   function createInsertChainable(modelName: string) {
     return {
-      values: (_data: unknown) => ({
-        ...createReturningChainable(modelName, "create"),
-        onConflictDoNothing: () => createReturningChainable(modelName, "upsert"),
-        onConflictDoUpdate: (_opts: unknown) => createReturningChainable(modelName, "upsert"),
+      values: (data: unknown) => ({
+        ...createReturningChainable(modelName, "create", { data }),
+        onConflictDoNothing: () => createReturningChainable(modelName, "upsert", { data }),
+        onConflictDoUpdate: (_opts: unknown) => createReturningChainable(modelName, "upsert", { data }),
       }),
     };
   }
 
   function createUpdateChainable(modelName: string) {
     return {
-      set: (_data: unknown) => ({
-        where: (_condition: unknown) => createReturningChainable(modelName, "update"),
+      set: (data: unknown) => ({
+        where: (_condition: unknown) => createReturningChainable(modelName, "update", { data }),
       }),
     };
   }
@@ -372,6 +372,34 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                 return resolve([mapped]);
               });
             }
+            if ("findFirst" in model) {
+              const findFirstFn = (model as { findFirst: () => Promise<unknown> }).findFirst;
+              return findFirstFn().then((result) => {
+                if (result === null || result === undefined) {
+                  return resolve([]);
+                }
+                if ("findMany" in model) {
+                  return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
+                    const transformed = (results as Record<string, unknown>[]).map((record) => {
+                      const item = { ...record };
+                      if (joins.length === 0) return item;
+                      const row: Record<string, unknown> = {};
+                      for (const joinTable of joins) {
+                        const joinModelName = toCamelCase(singularize(joinTable));
+                        if (joinModelName in item) {
+                          row[joinTable] = item[joinModelName];
+                          delete item[joinModelName];
+                        }
+                      }
+                      row[primaryTableRaw ?? primaryTable] = item;
+                      return row;
+                    });
+                    return resolve(transformed);
+                  });
+                }
+                return resolve([result]);
+              });
+            }
             if ("findMany" in model) {
                 return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
                   const transformed = (results as Record<string, unknown>[]).map((record) => {
@@ -414,6 +442,9 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
               const method = String(methodName);
               if (method === "findFirst" || method === "findUnique") {
                 return async (...args: unknown[]) => {
+                  if (method === "findFirst" && lastResults[modelName] !== undefined) {
+                    return lastResults[modelName];
+                  }
                   if (modelObj[method]) {
                     const result = await modelObj[method](...args);
                     if (result !== null && result !== undefined) {
