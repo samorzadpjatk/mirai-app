@@ -269,6 +269,39 @@ describe("rewardRouter", () => {
           return Promise.all(callback);
         }
       ),
+      // Drizzle API methods
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([mockReward])),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(() => Promise.resolve([mockReward])),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([mockReward])),
+        })),
+      })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve([mockReward])),
+        })),
+      })),
+    };
+
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      rewards: mockDb.reward,
+      rewardPurchases: mockDb.rewardPurchase,
+      groups: mockDb.group,
+      tripParticipants: mockDb.tripParticipant,
+      challenges: mockDb.challenge,
+      coinTransactions: mockDb.coinTransaction,
     };
   });
 
