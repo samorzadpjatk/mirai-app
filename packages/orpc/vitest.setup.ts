@@ -210,8 +210,20 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
       then: (resolve: (value: unknown) => unknown) => {
         if (tableName) {
           const model = (mockDb as Record<string, unknown>)[tableName];
-          if (model && typeof model === "object" && "findMany" in model) {
-            return (model as { findMany: () => Promise<unknown[]> }).findMany().then(resolve);
+          if (model && typeof model === "object") {
+            const hasCount = selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>);
+            if (hasCount) {
+              if ("count" in model) {
+                const countFn = (model as { count: () => Promise<number> }).count;
+                return countFn().then((result) => {
+                  console.log("[DEBUG] select count for", tableName, "result:", result);
+                  return resolve([{ count: result }]);
+                });
+              }
+            }
+            if ("findMany" in model) {
+              return (model as { findMany: () => Promise<unknown[]> }).findMany().then(resolve);
+            }
           }
         }
         return resolve([]);

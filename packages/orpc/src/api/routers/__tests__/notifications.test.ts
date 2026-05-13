@@ -1,14 +1,11 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { notificationRouter } from "../../routers/notifications";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, PushSubscription, Notification, NotificationPush, Group, TripParticipant } from "@mirai-app/db";
+import { notifications, notificationPushes, pushSubscriptions, tripParticipants } from "@mirai-app/db";
 
 // Mock the notification utilities
 vi.mock("../../../utils/notifications", () => ({
@@ -182,6 +179,36 @@ const createMockTripParticipant = (overrides: Partial<TripParticipant> = {}): Tr
   ...overrides,
 });
 
+// Drizzle chain helpers
+const createInsertChain = (returnValue: any[] = []) => ({
+  values: vi.fn().mockReturnThis(),
+  onConflictDoUpdate: vi.fn().mockReturnThis(),
+  onConflictDoNothing: vi.fn().mockReturnThis(),
+  returning: vi.fn().mockResolvedValue(returnValue),
+});
+
+const createDeleteChain = (returnValue: any[] = []) => ({
+  where: vi.fn().mockReturnThis(),
+  returning: vi.fn().mockResolvedValue(returnValue),
+});
+
+const createUpdateChain = (returnValue: any = { count: 0 }) => ({
+  set: vi.fn().mockReturnThis(),
+  where: vi.fn().mockResolvedValue(returnValue),
+});
+
+const createSelectChain = (returnValue: any[] = []) => {
+  const chain: any = {
+    from: vi.fn(() => chain),
+    where: vi.fn(() => chain),
+    orderBy: vi.fn(() => chain),
+    limit: vi.fn(() => chain),
+    offset: vi.fn(() => chain),
+    then: vi.fn((resolve: any) => Promise.resolve(returnValue).then(resolve)),
+  };
+  return chain;
+};
+
 describe("notificationRouter", () => {
   let mockDb: DB;
   let mockSupabase: SupabaseClient;
@@ -212,34 +239,29 @@ describe("notificationRouter", () => {
     } satisfies SupabaseClient;
 
     mockDb = {
-      user: {
-        findFirst: vi.fn().mockResolvedValue(mockUser),
-        findUnique: vi.fn().mockResolvedValue(mockUser),
+      insert: vi.fn(() => createInsertChain()),
+      delete: vi.fn(() => createDeleteChain()),
+      update: vi.fn(() => createUpdateChain()),
+      select: vi.fn(() => createSelectChain()),
+      query: {
+        pushSubscriptions: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        notifications: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        groups: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        users: {
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+        notificationPushes: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
       },
-      pushSubscription: {
-        upsert: vi.fn().mockResolvedValue(createMockPushSubscription()),
-        findMany: vi.fn().mockResolvedValue([createMockPushSubscription()]),
-        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-      notification: {
-        findMany: vi.fn().mockResolvedValue([createMockNotification()]),
-        findFirst: vi.fn().mockResolvedValue(createMockNotification()),
-        count: vi.fn().mockResolvedValue(1),
-        create: vi.fn().mockResolvedValue(createMockNotification()),
-        delete: vi.fn().mockResolvedValue(createMockNotification()),
-      },
-      notificationPush: {
-        findMany: vi.fn().mockResolvedValue([createMockNotificationPush()]),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-      },
-      group: {
-        findUnique: vi.fn().mockResolvedValue(createMockGroup()),
-        findFirst: vi.fn().mockResolvedValue(createMockGroup()),
-      },
-      tripParticipant: {
-        findMany: vi.fn().mockResolvedValue([createMockTripParticipant()]),
-      },
-    };
+    } as unknown as DB;
   });
 
   const createAuthContext = (user: User, token = "test-token"): TRPCContext => ({
@@ -259,7 +281,8 @@ describe("notificationRouter", () => {
         token: "new-token",
       });
 
-      (mockDb.pushSubscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue(subscription);
+      const chain = createInsertChain([subscription]);
+      (mockDb.insert as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -268,23 +291,10 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.id).toBe("new-sub-123");
-       
-      expect(mockDb.pushSubscription.upsert).toHaveBeenCalledWith({
-        where: {
-          userId_token: {
-            userId: "user-123",
-            token: "new-token",
-          },
-        },
-        update: {
-           
-          updatedAt: expect.any(Date),
-        },
-        create: {
-          userId: "user-123",
-          token: "new-token",
-        },
-      });
+      expect(mockDb.insert).toHaveBeenCalledWith(pushSubscriptions);
+      expect(chain.values).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-123", token: "new-token" }));
+      expect(chain.onConflictDoUpdate).toHaveBeenCalled();
+      expect(chain.returning).toHaveBeenCalled();
     });
 
     it("should update existing subscription timestamp", async () => {
@@ -294,7 +304,8 @@ describe("notificationRouter", () => {
         token: "existing-token",
       });
 
-      (mockDb.pushSubscription.upsert as ReturnType<typeof vi.fn>).mockResolvedValue(existingSubscription);
+      const chain = createInsertChain([existingSubscription]);
+      (mockDb.insert as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -302,12 +313,14 @@ describe("notificationRouter", () => {
       const result = await caller.subscribe({ token: "existing-token" });
 
       expect(result.success).toBe(true);
-       
-      expect(mockDb.pushSubscription.upsert).toHaveBeenCalled();
+      expect(mockDb.insert).toHaveBeenCalledWith(pushSubscriptions);
+      expect(chain.values).toHaveBeenCalled();
     });
 
     it("should handle database errors", async () => {
-      (mockDb.pushSubscription.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("DB error"));
+      const chain = createInsertChain();
+      chain.returning.mockRejectedValue(new Error("DB error"));
+      (mockDb.insert as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -318,7 +331,8 @@ describe("notificationRouter", () => {
 
   describe("unsubscribe", () => {
     it("should delete push subscription by token", async () => {
-      (mockDb.pushSubscription.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 1 });
+      const chain = createDeleteChain([createMockPushSubscription()]);
+      (mockDb.delete as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -327,17 +341,14 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.deletedCount).toBe(1);
-       
-      expect(mockDb.pushSubscription.deleteMany).toHaveBeenCalledWith({
-        where: {
-          userId: "user-123",
-          token: "test-token",
-        },
-      });
+      expect(mockDb.delete).toHaveBeenCalledWith(pushSubscriptions);
+      expect(chain.where).toHaveBeenCalled();
+      expect(chain.returning).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when subscription does not exist", async () => {
-      (mockDb.pushSubscription.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+      const chain = createDeleteChain([]);
+      (mockDb.delete as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -348,7 +359,12 @@ describe("notificationRouter", () => {
 
   describe("unsubscribeAll", () => {
     it("should delete all user push subscriptions", async () => {
-      (mockDb.pushSubscription.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 3 });
+      const chain = createDeleteChain([
+        createMockPushSubscription(),
+        createMockPushSubscription(),
+        createMockPushSubscription(),
+      ]);
+      (mockDb.delete as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -357,12 +373,9 @@ describe("notificationRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.deletedCount).toBe(3);
-       
-      expect(mockDb.pushSubscription.deleteMany).toHaveBeenCalledWith({
-        where: {
-          userId: "user-123",
-        },
-      });
+      expect(mockDb.delete).toHaveBeenCalledWith(pushSubscriptions);
+      expect(chain.where).toHaveBeenCalled();
+      expect(chain.returning).toHaveBeenCalled();
     });
   });
 
@@ -373,7 +386,7 @@ describe("notificationRouter", () => {
         createMockPushSubscription({ id: "sub-2", token: "token-2" }),
       ];
 
-      (mockDb.pushSubscription.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(subscriptions);
+      (mockDb.query.pushSubscriptions.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(subscriptions);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -386,7 +399,7 @@ describe("notificationRouter", () => {
     });
 
     it("should return not subscribed when no subscriptions", async () => {
-      (mockDb.pushSubscription.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.query.pushSubscriptions.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -400,13 +413,15 @@ describe("notificationRouter", () => {
 
   describe("getAllMy", () => {
     it("should get user notifications with pagination", async () => {
-      const notifications = [
+      const notificationsList = [
         createMockNotification({ id: "notif-1" }),
         createMockNotification({ id: "notif-2" }),
       ];
 
-      (mockDb.notification.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
-      (mockDb.notification.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notifications);
+      const pushRows = notificationsList.map((n) => ({ notificationId: n.id }));
+      const selectChain = createSelectChain(pushRows);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -418,10 +433,14 @@ describe("notificationRouter", () => {
       expect(result.pagination.page).toBe(1);
       expect(result.pagination.pageSize).toBe(10);
       expect(result.pagination.totalPages).toBe(1);
+      expect(mockDb.select).toHaveBeenCalledWith({ notificationId: notificationPushes.notificationId });
+      expect(selectChain.from).toHaveBeenCalledWith(notificationPushes);
+      expect(mockDb.query.notifications.findMany).toHaveBeenCalled();
     });
 
     it("should throw BAD_REQUEST when page exceeds total pages", async () => {
-      (mockDb.notification.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
+      const selectChain = createSelectChain([]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -432,13 +451,14 @@ describe("notificationRouter", () => {
 
   describe("getAll", () => {
     it("should get all notifications with pagination for admin", async () => {
-      const notifications = [
+      const notificationsList = [
         createMockNotification({ id: "notif-1", pushes: [{ targetUserId: "user-1", sentAt: new Date(), status: "sent", failureReason: null }] }),
         createMockNotification({ id: "notif-2", pushes: [{ targetUserId: "user-2", sentAt: new Date(), status: "sent", failureReason: null }] }),
       ];
 
-      (mockDb.notification.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notifications);
-      (mockDb.notification.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
+      const countChain = createSelectChain([{ count: 2 }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(countChain);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -451,13 +471,17 @@ describe("notificationRouter", () => {
       expect(result.notifications).toHaveLength(2);
       expect(result.pagination.total).toBe(2);
       expect(result.pagination.hasMore).toBe(false);
+      expect(mockDb.query.notifications.findMany).toHaveBeenCalled();
+      expect(mockDb.select).toHaveBeenCalledWith(expect.objectContaining({ count: expect.anything() }));
+      expect(countChain.from).toHaveBeenCalledWith(notifications);
     });
 
     it("should filter notifications by tripId", async () => {
-      const notifications = [createMockNotification({ id: "notif-1", tripId: "trip-123" })];
+      const notificationsList = [createMockNotification({ id: "notif-1", tripId: "trip-123" })];
 
-      (mockDb.notification.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notifications);
-      (mockDb.notification.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
+      const countChain = createSelectChain([{ count: 1 }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(countChain);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -465,10 +489,9 @@ describe("notificationRouter", () => {
       const result = await caller.getAll({ tripId: "trip-123" });
 
       expect(result.notifications).toHaveLength(1);
-       
-      expect(mockDb.notification.findMany).toHaveBeenCalledWith(
+      expect(mockDb.query.notifications.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { tripId: "trip-123" },
+          where: expect.anything(),
         })
       );
     });
@@ -485,8 +508,9 @@ describe("notificationRouter", () => {
         createMockTripParticipant({ userId: "user-2" }),
       ];
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      const selectChain = createSelectChain(participants.map((p) => ({ userId: p.userId })));
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -506,7 +530,7 @@ describe("notificationRouter", () => {
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
       const group = createMockGroup({ id: "group-123", tripId: "different-trip" });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -525,7 +549,7 @@ describe("notificationRouter", () => {
     it("should throw NOT_FOUND when group is deleted", async () => {
       const group = createMockGroup({ id: "group-123", tripId: "trip-123", isDeleted: true });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -553,7 +577,8 @@ describe("notificationRouter", () => {
         createMockTripParticipant({ userId: "user-3" }),
       ];
 
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      const selectChain = createSelectChain(participants.map((p) => ({ userId: p.userId })));
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -567,7 +592,6 @@ describe("notificationRouter", () => {
 
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           input: expect.objectContaining({
             userIds: ["user-1", "user-2", "user-3"],
             title: "All Users",
@@ -608,8 +632,9 @@ describe("notificationRouter", () => {
       const group = createMockGroup({ id: "group-123", tripId: "trip-123", name: "Test Group" });
       const participants = [createMockTripParticipant({ userId: "user-1" })];
 
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      const selectChain = createSelectChain([{ userId: "user-1" }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -621,7 +646,6 @@ describe("notificationRouter", () => {
         reason: "Bonus",
       });
 
-       
       expect(NotificationService.createCoinsAddedNotification).toHaveBeenCalledWith("Test Group", 50, "Bonus");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -629,7 +653,7 @@ describe("notificationRouter", () => {
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
       const group = createMockGroup({ id: "group-123", tripId: "different-trip" });
 
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -652,8 +676,9 @@ describe("notificationRouter", () => {
       const group = createMockGroup({ id: "group-123", tripId: "trip-123", name: "Test Group" });
       const participants = [createMockTripParticipant({ userId: "user-1" })];
 
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      const selectChain = createSelectChain([{ userId: "user-1" }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -665,7 +690,6 @@ describe("notificationRouter", () => {
         reason: "Penalty",
       });
 
-       
       expect(NotificationService.createCoinsRemovedNotification).toHaveBeenCalledWith("Test Group", 20, "Penalty");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -680,9 +704,10 @@ describe("notificationRouter", () => {
       const user = createMockUser({ id: "new-user-123", firstName: "John", lastName: "Doe" });
       const participants = [createMockTripParticipant({ userId: "user-1" })];
 
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(user);
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      (mockDb.query.users.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(user);
+      const selectChain = createSelectChain([{ userId: "user-1" }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -693,7 +718,6 @@ describe("notificationRouter", () => {
         userId: "new-user-123",
       });
 
-       
       expect(NotificationService.createNewMemberNotification).toHaveBeenCalledWith("Test Group", "John Doe");
       expect(sendNotification).toHaveBeenCalled();
     });
@@ -701,8 +725,8 @@ describe("notificationRouter", () => {
     it("should throw NOT_FOUND when user does not exist", async () => {
       const group = createMockGroup({ id: "group-123", tripId: "trip-123" });
 
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      (mockDb.query.users.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -724,8 +748,9 @@ describe("notificationRouter", () => {
       const group = createMockGroup({ id: "group-123", tripId: "trip-123" });
       const participants = [createMockTripParticipant({ userId: "user-1" })];
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(group);
-      (mockDb.tripParticipant.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(participants);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(group);
+      const selectChain = createSelectChain([{ userId: "user-1" }]);
+      (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -740,7 +765,6 @@ describe("notificationRouter", () => {
 
       expect(sendNotification).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           input: expect.objectContaining({
             title: "Custom Title",
             body: "Custom Body",
@@ -761,9 +785,11 @@ describe("notificationRouter", () => {
         createMockNotificationPush({ status: "failed", targetUserId: "user-2" }),
       ];
 
-      (mockDb.notification.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
-      (mockDb.notificationPush.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(failedPushes);
-      (mockDb.notificationPush.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
+      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
+      (mockDb.query.notificationPushes.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(failedPushes);
+
+      const updateChain = createUpdateChain({ count: 2 });
+      (mockDb.update as ReturnType<typeof vi.fn>).mockReturnValue(updateChain);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -775,13 +801,14 @@ describe("notificationRouter", () => {
       expect(result.success).toBe(true);
       expect(result.notificationId).toBe("notification-123");
       expect(result.retriedCount).toBe(2);
-       
-      expect(mockDb.notificationPush.updateMany).toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalledWith(notificationPushes);
+      expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", sentAt: null, failureReason: null }));
+      expect(updateChain.where).toHaveBeenCalled();
       expect(sendMobileNotifications).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when notification does not exist", async () => {
-      (mockDb.notification.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -796,8 +823,8 @@ describe("notificationRouter", () => {
     it("should throw BAD_REQUEST when no failed pushes to retry", async () => {
       const notification = createMockNotification({ id: "notification-123" });
 
-      (mockDb.notification.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
-      (mockDb.notificationPush.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
+      (mockDb.query.notificationPushes.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -812,7 +839,8 @@ describe("notificationRouter", () => {
 
   describe("delete", () => {
     it("should delete notification", async () => {
-      (mockDb.notification.delete as ReturnType<typeof vi.fn>).mockResolvedValue(createMockNotification());
+      const chain = createDeleteChain([]);
+      (mockDb.delete as ReturnType<typeof vi.fn>).mockReturnValue(chain);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -822,10 +850,8 @@ describe("notificationRouter", () => {
       });
 
       expect(result.success).toBe(true);
-       
-      expect(mockDb.notification.delete).toHaveBeenCalledWith({
-        where: { id: "notification-123" },
-      });
+      expect(mockDb.delete).toHaveBeenCalledWith(notifications);
+      expect(chain.where).toHaveBeenCalled();
     });
   });
 });
