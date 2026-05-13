@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "vitest.explorer",
+    "usernamehw.errorlens",
+    "yoavbls.pretty-ts-errors",
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens",
+    "oven.bun-vscode"
+  ]
+}
