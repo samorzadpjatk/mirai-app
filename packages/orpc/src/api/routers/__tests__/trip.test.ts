@@ -22,7 +22,7 @@ import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } fr
  * - Edge cases (pagination, image resolution, email lookup)
  */
 
-// Type for mock PrismaClient - uses vi.MockedFn for all methods
+// Type for mock DB client - uses vi.MockedFn for all methods
  
 type MockFn = ReturnType<typeof vi.fn> & ((...args: unknown[]) => unknown);
 
@@ -208,7 +208,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -244,7 +244,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -266,7 +266,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -318,7 +318,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -375,7 +375,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -396,7 +396,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -417,7 +417,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -486,7 +486,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -548,7 +548,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -601,7 +601,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "resolved@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -636,7 +636,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -657,7 +657,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -674,7 +674,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -705,7 +705,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -754,7 +754,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -776,7 +776,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -797,7 +797,7 @@ describe("tripRouter", () => {
       vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -840,7 +840,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -891,7 +891,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -915,7 +915,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -938,7 +938,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -1017,7 +1017,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1045,7 +1045,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1065,7 +1065,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1118,7 +1118,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1155,7 +1155,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -1177,7 +1177,7 @@ describe("tripRouter", () => {
       vi.mocked(requireAdmin).mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -1240,7 +1240,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1302,7 +1302,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1374,7 +1374,7 @@ describe("tripRouter", () => {
       });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1429,7 +1429,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1468,7 +1468,7 @@ describe("tripRouter", () => {
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1488,7 +1488,7 @@ describe("tripRouter", () => {
       vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers(),
         accessToken: null,
@@ -1506,7 +1506,7 @@ describe("tripRouter", () => {
       vi.mocked(requireAuth).mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer invalid-token" }),
         accessToken: "invalid-token",
@@ -1525,7 +1525,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1542,7 +1542,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1562,7 +1562,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: mockDb as unknown as PrismaClient,
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",

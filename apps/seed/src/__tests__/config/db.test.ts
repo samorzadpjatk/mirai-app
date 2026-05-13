@@ -18,7 +18,7 @@ describe("config/db", () => {
     }));
   });
 
-  it("should create prisma client with database URL from env", async () => {
+  it("should create drizzle client with database URL from env", async () => {
     const mockDbUrl = "postgresql://localhost:5432/testdb";
     
     vi.doMock("../../config/env", () => ({

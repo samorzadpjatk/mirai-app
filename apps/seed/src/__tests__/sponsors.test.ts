@@ -17,9 +17,6 @@ vi.mock("yaml", () => ({
   },
 }));
 
-import { readTextFile } from "../utils/fs";
-import { joinPath } from "../utils/path";
-
 const sponsorsTable = { id: { name: "id" } };
 const tripSponsorsTable = {
   tripId: { name: "tripId" },
@@ -39,7 +36,16 @@ const mockDbInsert = vi.fn((table: unknown) => {
 });
 
 describe("sponsors", () => {
-  beforeEach(() => {
+  let readTextFileMock: ReturnType<typeof vi.fn>;
+  let joinPathMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const fsModule = await import("../utils/fs");
+    readTextFileMock = fsModule.readTextFile;
+
+    const pathModule = await import("../utils/path");
+    joinPathMock = pathModule.joinPath;
+
     vi.clearAllMocks();
 
     mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
@@ -62,7 +68,7 @@ describe("sponsors", () => {
 
   describe("loadSponsorConfigs", () => {
     it("should load sponsor configs from YAML file", async () => {
-      readTextFile.mockResolvedValue(JSON.stringify([
+      readTextFileMock.mockResolvedValue(JSON.stringify([
         {
           id: "sponsor-1",
           name: "Acme Corp",
@@ -102,7 +108,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for null parsed content", async () => {
-      readTextFile.mockResolvedValue("");
+      readTextFileMock.mockResolvedValue("");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -111,7 +117,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for empty YAML", async () => {
-      readTextFile.mockResolvedValue("[]");
+      readTextFileMock.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -120,12 +126,12 @@ describe("sponsors", () => {
     });
 
     it("should construct correct file path", async () => {
-      readTextFile.mockResolvedValue("[]");
+      readTextFileMock.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       await loadSponsorConfigs("/test/assets/dev", "sponsors/test.yaml");
 
-      expect(joinPath).toHaveBeenCalledWith("/test/assets/dev", "sponsors/test.yaml");
+      expect(joinPathMock).toHaveBeenCalledWith("/test/assets/dev", "sponsors/test.yaml");
     });
   });
 

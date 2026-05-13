@@ -235,7 +235,7 @@ describe("challengeVoteRouter", () => {
       },
       $transaction: vi.fn(async (callback: unknown) => {
         if (typeof callback === "function") {
-          return await (callback as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (callback as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(callback as unknown[]);
       }),
@@ -413,7 +413,7 @@ describe("challengeVoteRouter", () => {
       mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
       mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (fn as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(fn as unknown[]);
       });
@@ -498,7 +498,7 @@ describe("challengeVoteRouter", () => {
       mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          await (fn as (db: DB) => Promise<unknown>)(mockDb);
           return createdVotes;
         }
         return Promise.all(fn as unknown[]);
@@ -641,7 +641,7 @@ describe("challengeVoteRouter", () => {
       mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (fn as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(fn as unknown[]);
       });
@@ -681,7 +681,7 @@ describe("challengeVoteRouter", () => {
       mockDb.challengeSubmission.count.mockResolvedValue(5);
       mockDb.$transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (fn as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(fn as unknown[]);
       });

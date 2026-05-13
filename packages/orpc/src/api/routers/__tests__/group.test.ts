@@ -202,14 +202,14 @@ describe("groupRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn(async (callback: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
+      $transaction: vi.fn(async (callback: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
         if (typeof callback === "function") {
           return await callback(mockDb);
         }
         // Handle array of promises
         return Promise.all(callback);
       }),
-    } as PrismaClient;
+    } as DB;
   });
 
   // Helper to create authenticated context
@@ -603,10 +603,9 @@ describe("groupRouter", () => {
     it("should retry on duplicate code error", async () => {
       const newGroup = createMockGroup({ id: "new-group-123", name: "New Group" });
 
-      // Prisma throws errors with code P2002 for unique constraint violations
-      const prismaError = new Error("Unique constraint failed on the fields: (`code`)");
-      (prismaError as { code?: string }).code = "P2002";
-      mockDb.group.create.mockRejectedValueOnce(prismaError)
+      const dbError = new Error("Unique constraint failed on the fields: (`code`)");
+      (dbError as { code?: string }).code = "P2002";
+      mockDb.group.create.mockRejectedValueOnce(dbError)
         .mockResolvedValueOnce(newGroup);
 
       const ctx = createAuthContext(mockUser);
@@ -864,7 +863,7 @@ describe("groupRouter", () => {
       const existingGroup = createMockGroup({ id: "group-123" });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -914,7 +913,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -974,7 +973,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1335,7 +1334,7 @@ describe("groupRouter", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1384,7 +1383,7 @@ describe("groupRouter", () => {
       };
 
       mockDb.groupJoinRequest.findUnique.mockResolvedValue(mockRequest);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1481,7 +1480,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1577,7 +1576,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1648,7 +1647,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1720,7 +1719,7 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-123" });
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1748,7 +1747,7 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-456" });
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1783,7 +1782,7 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ userId: "user-456" });
       const mockGroup = createMockGroup({ organizerId: "user-123" });
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1825,7 +1824,7 @@ describe("groupRouter", () => {
         updatedAt: new Date(),
       };
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1862,7 +1861,7 @@ describe("groupRouter", () => {
     });
 
     it("should throw NOT_FOUND when participant not found", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1883,7 +1882,7 @@ describe("groupRouter", () => {
     });
 
     it("should throw FORBIDDEN when non-organizer tries to remove member", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1906,7 +1905,7 @@ describe("groupRouter", () => {
     });
 
     it("should throw FORBIDDEN when organizer tries to remove themselves", async () => {
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1940,7 +1939,7 @@ describe("groupRouter", () => {
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
       mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1973,7 +1972,7 @@ describe("groupRouter", () => {
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
       mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.tripParticipant.findMany.mockResolvedValue(otherParticipants);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -2004,7 +2003,7 @@ describe("groupRouter", () => {
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
       mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.tripParticipant.findMany.mockResolvedValue([]);
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -2089,7 +2088,7 @@ describe("groupRouter", () => {
 
       mockDb.coinTransaction.create.mockResolvedValue(mockTransaction);
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -2121,7 +2120,7 @@ describe("groupRouter", () => {
 
       mockDb.group.findUnique.mockResolvedValue(existingGroup);
 
-      mockDb.$transaction.mockImplementation(async (fn: ((prisma: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }

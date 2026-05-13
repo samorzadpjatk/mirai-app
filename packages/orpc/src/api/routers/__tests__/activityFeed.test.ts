@@ -83,7 +83,7 @@ const createMockDb = () =>
       findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
-  }) as unknown as PrismaClient;
+  }) as unknown as DB;
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>

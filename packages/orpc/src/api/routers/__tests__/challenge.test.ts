@@ -242,7 +242,7 @@ describe("challengeRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn((cb: (prisma: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
+      $transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
   });
 
