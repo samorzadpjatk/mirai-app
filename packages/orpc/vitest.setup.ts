@@ -372,34 +372,6 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                 return resolve([mapped]);
               });
             }
-            if ("findFirst" in model) {
-              const findFirstFn = (model as { findFirst: () => Promise<unknown> }).findFirst;
-              return findFirstFn().then((result) => {
-                if (result === null || result === undefined) {
-                  return resolve([]);
-                }
-                if ("findMany" in model) {
-                  return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
-                    const transformed = (results as Record<string, unknown>[]).map((record) => {
-                      const item = { ...record };
-                      if (joins.length === 0) return item;
-                      const row: Record<string, unknown> = {};
-                      for (const joinTable of joins) {
-                        const joinModelName = toCamelCase(singularize(joinTable));
-                        if (joinModelName in item) {
-                          row[joinTable] = item[joinModelName];
-                          delete item[joinModelName];
-                        }
-                      }
-                      row[primaryTableRaw ?? primaryTable] = item;
-                      return row;
-                    });
-                    return resolve(transformed);
-                  });
-                }
-                return resolve([result]);
-              });
-            }
             if ("findMany" in model) {
                 return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
                   const transformed = (results as Record<string, unknown>[]).map((record) => {
@@ -411,6 +383,11 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                       if (joinModelName in item) {
                         row[joinTable] = item[joinModelName];
                         delete item[joinModelName];
+                      }
+                      const singularJoinModel = singularize(joinTable);
+                      if (singularJoinModel in item) {
+                        row[joinTable] = item[singularJoinModel];
+                        delete item[singularJoinModel];
                       }
                     }
                     row[primaryTableRaw ?? primaryTable] = item;
