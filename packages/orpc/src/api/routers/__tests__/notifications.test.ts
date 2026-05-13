@@ -439,7 +439,8 @@ describe("notificationRouter", () => {
     });
 
     it("should throw BAD_REQUEST when page exceeds total pages", async () => {
-      const selectChain = createSelectChain([]);
+      const pushRows = Array.from({ length: 5 }, (_, i) => ({ notificationId: `notif-${i + 1}` }));
+      const selectChain = createSelectChain(pushRows);
       (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
 
       const ctx = createAuthContext(mockUser);
