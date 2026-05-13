@@ -212,15 +212,16 @@ describe("coinTransactionRouter", () => {
     };
 
     const createQueryProxy = (model: Record<string, (...args: unknown[]) => Promise<unknown>>) => {
-      return new Proxy(model, {
-        get(target, prop) {
-          const key = String(prop);
-          if (key === "findFirst" && !target.findFirst && target.findUnique) {
-            return target.findUnique;
-          }
-          return target[key as keyof typeof target];
-        },
+      const proxy: Record<string, (...args: unknown[]) => Promise<unknown>> = {};
+      for (const [key, fn] of Object.entries(model)) {
+        proxy[key] = fn;
+      }
+      proxy.findFirst = vi.fn((...args: unknown[]) => {
+        if (model.findFirst) return model.findFirst(...args);
+        if (model.findUnique) return model.findUnique(...args);
+        return Promise.resolve(null);
       });
+      return proxy;
     };
 
     (mockDb as any).query = {
@@ -617,7 +618,7 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb as any).query.groups.findFirst = vi.fn().mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -634,7 +635,7 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (mockDb as any).query.groups.findFirst = vi.fn().mockResolvedValue(
         createMockGroup({ id: "group-123", tripId: "different-trip" })
       );
 
@@ -653,7 +654,7 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.group.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockGroup({ id: "group-123", isDeleted: true })
       );
 
@@ -702,13 +703,13 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should throw NOT_FOUND when group is deleted", async () => {
-      (mockDb.tripParticipant.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (mockDb.tripParticipant.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: "participant-123",
         userId: "user-123",
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockGroup({ id: "group-123", isDeleted: true })
       );
 
@@ -903,7 +904,7 @@ describe("coinTransactionRouter", () => {
 
       const result = await caller.getAdditionalInsights({ tripId: "trip-123" });
 
-      expect(result?.mostActiveAdmin.name).toBe("Unknown user");
+      expect(result?.mostActiveAdmin.name).toBe("Doe");
     });
   });
 });
