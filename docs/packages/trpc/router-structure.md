@@ -49,17 +49,17 @@ export const userRouter = router({
   // Queries
   list: publicProcedure
     .query(async ({ ctx }) => {
-      return ctx.prisma.user.findMany();
+      return ctx.db.query.users.findMany();
     }),
-    
+
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
-      return ctx.prisma.user.findUnique({
-        where: { id: input.id }
+      return ctx.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, input.id),
       });
     }),
-    
+
   // Mutations
   create: protectedProcedure
     .input(z.object({
@@ -67,9 +67,10 @@ export const userRouter = router({
       name: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
-      return ctx.prisma.user.create({ data: input });
+      const [created] = await ctx.db.insert(users).values(input).returning();
+      return created;
     }),
-    
+
   update: protectedProcedure
     .input(z.object({
       id: z.string(),
@@ -77,10 +78,11 @@ export const userRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
-      return ctx.prisma.user.update({
-        where: { id },
-        data,
-      });
+      const [updated] = await ctx.db.update(users)
+        .set(data)
+        .where(eq(users.id, id))
+        .returning();
+      return updated;
     }),
 });
 ```
@@ -94,11 +96,11 @@ export const userRouter = router({
    // packages/trpc/src/routers/product.ts
    import { router, publicProcedure } from '../trpc';
    
-   export const productRouter = router({
-     list: publicProcedure.query(async ({ ctx }) => {
-       return ctx.prisma.product.findMany();
-     }),
-   });
+    export const productRouter = router({
+      list: publicProcedure.query(async ({ ctx }) => {
+        return ctx.db.query.products.findMany();
+      }),
+    });
    ```
 
 2. **Add to root router**:

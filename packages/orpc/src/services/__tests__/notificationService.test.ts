@@ -221,7 +221,7 @@ describe("NotificationService", () => {
 });
 
 describe("sendMobileNotifications", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockNotification: Notification;
   let mockPushSubscription: PushSubscription;
   let mockNotificationPush: NotificationPush;

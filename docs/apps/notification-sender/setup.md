@@ -65,14 +65,12 @@ bun run start
 
 ```typescript
 // In backend server
-await prisma.notification.create({
-  data: {
-    userId: 'user-123',
-    title: 'New Event',
-    body: 'You have a new event invitation',
-    data: { eventId: 'event-456' },
-    status: 'pending',
-  }
+await db.insert(notifications).values({
+  userId: 'user-123',
+  title: 'New Event',
+  body: 'You have a new event invitation',
+  data: { eventId: 'event-456' },
+  status: 'pending',
 });
 ```
 

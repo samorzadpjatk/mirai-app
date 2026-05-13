@@ -9,10 +9,10 @@ import {
   resolveRecurringChallengeIdForTrip,
   type RecurringTemplate,
 } from "../recurringChallenges";
-import type { Prisma } from "@mirai-app/db";
+import type { TransactionDB } from "@mirai-app/db";
 
 describe("recurringChallenges", () => {
-  let mockTx: Prisma.TransactionClient;
+  let mockTx: TransactionDB;
 
   beforeEach(() => {
     vi.clearAllMocks();

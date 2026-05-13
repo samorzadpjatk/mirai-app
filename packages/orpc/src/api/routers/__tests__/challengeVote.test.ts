@@ -141,7 +141,7 @@ const createMockParticipant = (overrides: Partial<TripParticipant> = {}): TripPa
 });
 
 describe("challengeVoteRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModeratorUser: User;

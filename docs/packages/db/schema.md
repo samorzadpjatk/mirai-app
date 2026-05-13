@@ -2,57 +2,59 @@
 
 ## Overview
 
-Conventions and best practices for designing the Prisma schema.
+Conventions and best practices for designing the Drizzle schema.
 
 ## Naming Conventions
 
-### Models
+### Tables
 
-- **PascalCase, singular**: `User`, `Post`, `Event`
-- **Avoid abbreviations**: `User` not `Usr`
+- **camelCase, plural in code; snake_case in DB**: `users`, `events`, `tripParticipants`
+- **Avoid abbreviations**: `users` not `usrs`
 
-### Fields
+### Columns
 
-- **camelCase**: `firstName`, `createdAt`
-- **Boolean**: prefix with verb `is`, `has`, `can`: `isActive`, `hasProfile`
+- **camelCase in code; snake_case in DB**: `firstName` → `first_name`, `createdAt` → `created_at`
+- **Boolean**: prefix with verb `is`, `has`, `can`: `isActive`, `hasAvatar`
 - **Timestamps**: `createdAt`, `updatedAt`
 
 ### Relations
 
-- **Model name in field**: `author` (User), `posts` (Post[])
-- **Explicit relation names** when ambiguous:
-  ```prisma
-  writtenPosts Post[] @relation("WrittenPosts")
-  favoritedPosts Post[] @relation("FavoritedPosts")
+- **Descriptive relation names** when ambiguous, using `relationName`:
+  ```typescript
+  coinTransactionsAdmin: many(coinTransactions, {
+    relationName: "UserCoinTransactionsAdmin",
+  }),
   ```
 
 ## Schema Structure
 
-### Model Template
+### Table Template
 
-```prisma
-model User {
+```typescript
+import { pgTable, varchar, timestamp, text } from "drizzle-orm/pg-core";
+import { randomUUID } from "../utils/uuid";
+
+export const users = pgTable("users", {
   // Primary key
-  id        String   @id @default(uuid())
-  
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+
   // Required fields
-  email     String   @unique
-  
+  authUserId: text("auth_user_id").notNull().unique(),
+  firstName: text("first_name").notNull(),
+
   // Optional fields
-  name      String?
-  
-  // Relations
-  profile   Profile?
-  posts     Post[]
-  
+  lastSeenOn: timestamp("last_seen_on", { withTimezone: true }),
+
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Indexes
-  @@index([email])
-  @@index([createdAt])
-}
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 ```
 
 ### Field Ordering
@@ -60,99 +62,118 @@ model User {
 1. Primary key (`id`)
 2. Required fields
 3. Optional fields
-4. Relations
-5. Timestamps (`createdAt`, `updatedAt`)
-6. Indexes
+4. Timestamps (`createdAt`, `updatedAt`)
 
 ## Data Types
 
 ### IDs
 
-```prisma
+```typescript
 // UUID (recommended for most cases)
-id String @id @default(uuid())
+id: varchar("id", { length: 36 })
+  .primaryKey()
+  .$defaultFn(() => randomUUID()),
 
 // Auto-increment (for internal/sequential data)
-id Int @id @default(autoincrement())
-
-// CUID (alternative to UUID)
-id String @id @default(cuid())
+id: serial("id").primaryKey(),
 ```
 
 ### Strings
 
-```prisma
+```typescript
 // Short text
-name String
+title: text("title").notNull(),
 
 // Long text
-description String? // or @db.Text for very long
+description: text("description"),
 
 // Enforced limits
-slug String @db.VarChar(100)
+slug: varchar("slug", { length: 100 }),
 ```
 
 ### Dates
 
-```prisma
-// Always use DateTime
-createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt
-expiresAt DateTime?
+```typescript
+// Always use timestamp with timezone
+createdAt: timestamp("created_at", { withTimezone: true })
+  .defaultNow()
+  .notNull(),
+updatedAt: timestamp("updated_at", { withTimezone: true })
+  .$onUpdate(() => new Date())
+  .notNull(),
+expiresAt: timestamp("expires_at", { withTimezone: true }),
 ```
 
 ### Booleans
 
-```prisma
+```typescript
 // Always default boolean values
-isActive Boolean @default(true)
-isAdmin  Boolean @default(false)
+isActive: boolean("is_active").default(true).notNull(),
+isAdmin: boolean("is_admin").default(false).notNull(),
 ```
 
 ## Relations
 
 ### One-to-One
 
-```prisma
-model User {
-  id      String  @id @default(uuid())
-  profile Profile?
-}
+```typescript
+// In schema file
+export const profiles = pgTable("profiles", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .references(() => users.id)
+    .unique(),
+});
 
-model Profile {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
-  userId String @unique
-}
+// In relations file
+export const usersRelations = relations(users, ({ one }) => ({
+  profile: one(profiles),
+}));
 ```
 
 ### One-to-Many
 
-```prisma
-model User {
-  id    String @id @default(uuid())
-  posts Post[]
-}
+```typescript
+// In schema file
+export const posts = pgTable("posts", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  authorId: varchar("author_id", { length: 36 })
+    .notNull()
+    .references(() => users.id),
+});
 
-model Post {
-  id       String @id @default(uuid())
-  author   User   @relation(fields: [authorId], references: [id])
-  authorId String
-}
+// In relations file
+export const usersRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+}));
 ```
 
 ### Many-to-Many
 
-```prisma
-model Post {
-  id    String @id @default(uuid())
-  tags  Tag[]
-}
+```typescript
+// Junction table
+export const postTags = pgTable(
+  "post_tags",
+  {
+    postId: varchar("post_id", { length: 36 })
+      .notNull()
+      .references(() => posts.id),
+    tagId: varchar("tag_id", { length: 36 })
+      .notNull()
+      .references(() => tags.id),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.tagId] })],
+);
 
-model Tag {
-  id    String @id @default(uuid())
-  posts Post[]
-}
+// In relations file
+export const postsRelations = relations(posts, ({ many }) => ({
+  tags: many(tags),
+}));
 ```
 
 ## Indexes
@@ -161,81 +182,85 @@ model Tag {
 
 - **Foreign keys**: Always index relation fields
 - **Search fields**: Index fields used in WHERE clauses
-- **Unique constraints**: Use @unique
+- **Unique constraints**: Use `.unique()` on columns
 
-```prisma
-model Post {
-  id        String   @id @default(uuid())
-  authorId  String
-  slug      String   @unique
-  status    String
-  createdAt DateTime @default(now())
-  
-  // Foreign key index (auto-created by Prisma)
-  
+```typescript
+export const posts = pgTable("posts", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  authorId: varchar("author_id", { length: 36 }).notNull(),
+  slug: varchar("slug", { length: 100 }).unique(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+}, (table) => [
   // Custom indexes
-  @@index([status, createdAt])  // For filtered lists
-  @@index([authorId, status])   // For user's posts
-}
+  index("posts_status_created_at_idx").on(table.status, table.createdAt),
+  index("posts_author_id_status_idx").on(table.authorId, table.status),
+]);
 ```
 
 ## Constraints
 
 ### Unique Constraints
 
-```prisma
+```typescript
 // Single field
-email String @unique
+email: text("email").unique(),
 
-// Multiple fields (composite)
-@@unique([organizationId, email])
-```
-
-### Check Constraints (PostgreSQL)
-
-```prisma
-// Using @db extension
-db Score {
-  value Int @db.SmallInt
-  
-  @@ignore // Custom check in migration
-}
+// Multiple fields (composite) - via table constraint
+export const memberships = pgTable(
+  "memberships",
+  {
+    organizationId: varchar("organization_id", { length: 36 }).notNull(),
+    email: text("email").notNull(),
+  },
+  (table) => [unique().on(table.organizationId, table.email)],
+);
 ```
 
 ## Soft Deletes
 
 Pattern for soft deletion:
 
-```prisma
-model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  deletedAt DateTime?
-  
-  @@index([deletedAt])
-}
+```typescript
+export const users = pgTable("users", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  email: text("email").unique(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
 ```
 
 Query with filter:
 ```typescript
-const activeUsers = await prisma.user.findMany({
-  where: { deletedAt: null }
+import { isNull } from "drizzle-orm";
+
+const activeUsers = await db.query.users.findMany({
+  where: (u, { isNull }) => isNull(u.deletedAt),
 });
 ```
 
 ## Schema Documentation
 
-Add comments for clarity:
+Add comments for clarity using JSDoc:
 
-```prisma
-/// User account in the system
-model User {
-  /// Unique identifier (UUID)
-  id String @id @default(uuid())
-  
-  /// Email address used for login
-  email String @unique
-}
+```typescript
+/**
+ * User account in the system
+ */
+export const users = pgTable("users", {
+  /** Unique identifier (UUID) */
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+
+  /** Email address used for login */
+  email: text("email").unique(),
+});
 ```
 
 ## Best Practices
@@ -243,9 +268,6 @@ model User {
 1. **Use UUIDs** for external-facing IDs
 2. **Always include timestamps** (createdAt, updatedAt)
 3. **Index foreign keys** and frequently queried fields
-4. **Use @map** for database naming conventions:
-   ```prisma
-   createdAt DateTime @default(now()) @map("created_at")
-   ```
-5. **Keep relations explicit** with @relation attributes
+4. **Use snake_case for database column names** via the first argument to column helpers
+5. **Keep relations explicit** in a separate `relations.ts` file
 6. **Validate at application layer** even with schema constraints

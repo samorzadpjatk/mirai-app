@@ -28,7 +28,7 @@ vi.mock("../../../utils/tripGuards", () => ({
 const createCaller = (ctx: TRPCContext) => createRouterClient(submissionReportRouter, { context: ctx });
 
 describe("submissionReportRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModerator: User;

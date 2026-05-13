@@ -1,6 +1,6 @@
 import { vi, mocked as vitestMocked, type Mocked } from "vitest";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { PrismaClient, User } from "@mirai-app/db";
+import type { DB, User } from "@mirai-app/db";
 import type { TRPCContext } from "./src/api/trpc";
 
 declare global {
@@ -78,7 +78,7 @@ export interface MockSupabaseClient {
   from: MockedFunction<(table: string) => MockSupabaseQueryBuilder>;
 }
 
-interface MockPrismaModelMethods<T = unknown> {
+interface MockDbModelMethods<T = unknown> {
   findFirst: MockedFunction<() => Promise<T | null>>;
   findUnique: MockedFunction<() => Promise<T | null>>;
   findMany: MockedFunction<() => Promise<T[]>>;
@@ -89,15 +89,15 @@ interface MockPrismaModelMethods<T = unknown> {
   count: MockedFunction<() => Promise<number>>;
 }
 
-export interface MockPrismaClient {
-  user: MockPrismaModelMethods<User>;
-  tripParticipant: MockPrismaModelMethods<unknown>;
-  trip: MockPrismaModelMethods<unknown>;
-  group: MockPrismaModelMethods<unknown>;
+export interface MockDbClient {
+  user: MockDbModelMethods<User>;
+  tripParticipant: MockDbModelMethods<unknown>;
+  trip: MockDbModelMethods<unknown>;
+  group: MockDbModelMethods<unknown>;
   userAgent: { create: MockedFunction<() => Promise<unknown>> };
   $connect: MockedFunction<() => Promise<void>>;
   $disconnect: MockedFunction<() => Promise<void>>;
-  $transaction: MockedFunction<<T>(callback: (prisma: MockPrismaClient) => Promise<T>) => Promise<T>>;
+  $transaction: MockedFunction<<T>(callback: (db: MockDbClient) => Promise<T>) => Promise<T>>;
 }
 
 function createMockQueryBuilder(): MockSupabaseQueryBuilder {
@@ -170,10 +170,10 @@ export function createMockSupabase(): MockSupabaseClient {
   };
 }
 
-export function createMockPrisma(): MockPrismaClient {
+export function createMockDb(): MockDbClient {
   const mockUser = createMockDbUser();
 
-  const mockDb: MockPrismaClient = {
+  const mockDb: MockDbClient = {
     user: {
       findFirst: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
       findUnique: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
@@ -215,7 +215,7 @@ export function createMockPrisma(): MockPrismaClient {
     },
     $connect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
     $disconnect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
-    $transaction: vi.fn<<T>(callback: (prisma: MockPrismaClient) => Promise<T>) => Promise<T>>((callback) =>
+    $transaction: vi.fn<<T>(callback: (db: MockDbClient) => Promise<T>) => Promise<T>>((callback) =>
       callback(mockDb)
     ),
   };
@@ -225,10 +225,10 @@ export function createMockPrisma(): MockPrismaClient {
 
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
   const mockSupabase = createMockSupabase();
-  const mockDb = createMockPrisma();
+  const mockDb = createMockDb();
 
   return {
-    db: mockDb as unknown as PrismaClient,
+    db: mockDb as unknown as DB,
     supabase: mockSupabase as unknown as SupabaseClient,
     headers: new Headers(),
     accessToken: null,
@@ -252,12 +252,11 @@ vi.mock("@mirai-app/supabase", () => {
 });
 
 vi.mock("@mirai-app/db", () => {
-  const mockPrismaClient = createMockPrisma();
+  const mockDbClient = createMockDb();
 
   return {
-    createDb: vi.fn(() => mockPrismaClient),
-    prisma: mockPrismaClient,
-    PrismaClient: vi.fn(() => mockPrismaClient),
+    createDb: vi.fn(() => mockDbClient),
+    db: mockDbClient,
   };
 });
 

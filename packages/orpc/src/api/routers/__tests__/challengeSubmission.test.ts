@@ -7,7 +7,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
-import type { DB, User, Prisma } from "@mirai-app/db";
+import type { DB, User, TransactionDB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 
 // Mock the utility modules
@@ -52,9 +52,9 @@ import { ensureTripNotEnded } from "~/utils/tripGuards";
 const createCaller = (ctx: TRPCContext) => createRouterClient(challengeSubmissionRouter, { context: ctx });
 
 describe("challengeSubmissionRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
-  let mockTx: Prisma.TransactionClient;
+  let mockTx: TransactionDB;
 
   // Test data factories
   const createMockUser = (overrides?: Partial<User>): User => ({

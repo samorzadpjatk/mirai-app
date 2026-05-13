@@ -10,7 +10,7 @@ import {
 import type { DB } from "@mirai-app/db";
 
 describe("tripGuards", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
 
   beforeEach(() => {
     vi.clearAllMocks();

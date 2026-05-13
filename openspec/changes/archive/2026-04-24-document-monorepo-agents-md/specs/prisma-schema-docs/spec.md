@@ -1,15 +1,15 @@
 ## ADDED Requirements
 
-### Requirement: Prisma schema location documentation
-The packages/db AGENTS.md and docs/packages/db/ files SHALL document where the Prisma schema is located and how it's organized.
+### Requirement: Drizzle schema location documentation
+The packages/db AGENTS.md and docs/packages/db/ files SHALL document where the Drizzle schema is located and how it's organized.
 
-#### Scenario: Finding Prisma schema
-- **WHEN** an AI assistant needs to find or modify the Prisma schema
-- **THEN** they SHALL find documentation on schema.prisma location
+#### Scenario: Finding Drizzle schema
+- **WHEN** an AI assistant needs to find or modify the Drizzle schema
+- **THEN** they SHALL find documentation on schema.ts location
 - **AND** they SHALL understand the schema organization
-- **AND** they SHALL understand naming conventions for models
+- **AND** they SHALL understand naming conventions for tables
 
-### Requirement: Prisma migration documentation
+### Requirement: Drizzle migration documentation
 The packages/db AGENTS.md and docs/packages/db/ files SHALL document migration commands and best practices for creating and applying migrations.
 
 #### Scenario: Working with migrations
@@ -18,16 +18,16 @@ The packages/db AGENTS.md and docs/packages/db/ files SHALL document migration c
 - **AND** they SHALL understand the migration workflow
 - **AND** they SHALL find best practices for migration creation
 
-### Requirement: Prisma client usage documentation
-The packages/db AGENTS.md and docs/packages/db/ files SHALL document how to use the Prisma client for database queries, including patterns for common operations.
+### Requirement: Drizzle client usage documentation
+The packages/db AGENTS.md and docs/packages/db/ files SHALL document how to use the Drizzle client for database queries, including patterns for common operations.
 
-#### Scenario: Using Prisma client
-- **WHEN** an AI assistant needs to use the Prisma client
+#### Scenario: Using Drizzle client
+- **WHEN** an AI assistant needs to use the Drizzle client
 - **THEN** they SHALL find documentation on client initialization
 - **AND** they SHALL find examples of common query patterns
 - **AND** they SHALL understand transaction handling
 
-### Requirement: Prisma seeding documentation
+### Requirement: Drizzle seeding documentation
 The docs/packages/db/ files SHALL document how database seeding works, including the seed script location and how to run seeds.
 
 #### Scenario: Seeding database
@@ -40,7 +40,7 @@ The docs/packages/db/ files SHALL document how database seeding works, including
 The docs/packages/db/ files SHALL document schema design conventions, including naming standards, relationship patterns, and indexing strategies.
 
 #### Scenario: Following schema conventions
-- **WHEN** an AI assistant needs to add new models to the schema
+- **WHEN** an AI assistant needs to add new tables to the schema
 - **THEN** they SHALL find documentation on naming conventions
 - **AND** they SHALL find documentation on relationship patterns
 - **AND** they SHALL find documentation on indexing strategies

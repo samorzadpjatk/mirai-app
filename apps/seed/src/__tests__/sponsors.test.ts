@@ -1,8 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { SponsorConfig } from "../types";
 
-const mockReadTextFile = vi.fn();
-const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
+vi.mock("../utils/fs");
+vi.mock("../utils/path");
+
+vi.mock("yaml", () => ({
+  default: {
+    parse: (content: string): unknown[] | null => {
+      if (!content.trim()) return null;
+      try {
+        return JSON.parse(content) as unknown[];
+      } catch {
+        return [];
+      }
+    },
+  },
+}));
+
+import { readTextFile } from "../utils/fs";
+import { joinPath } from "../utils/path";
 
 const sponsorsTable = { id: { name: "id" } };
 const tripSponsorsTable = {
@@ -24,7 +40,6 @@ const mockDbInsert = vi.fn((table: unknown) => {
 
 describe("sponsors", () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
 
     mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
@@ -38,27 +53,6 @@ describe("sponsors", () => {
       throw new Error("Unknown table");
     });
 
-    vi.doMock("../utils/fs", () => ({
-      readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
-    }));
-
-    vi.doMock("../utils/path", () => ({
-      joinPath: (...args: string[]) => mockJoinPath(...args),
-    }));
-
-    vi.doMock("yaml", () => ({
-      default: {
-        parse: (content: string): unknown[] | null => {
-          if (!content.trim()) return null;
-          try {
-            return JSON.parse(content) as unknown[];
-          } catch {
-            return [];
-          }
-        },
-      },
-    }));
-
     vi.doMock("@mirai-app/db", () => ({
       sponsors: sponsorsTable,
       tripSponsors: tripSponsorsTable,
@@ -68,7 +62,7 @@ describe("sponsors", () => {
 
   describe("loadSponsorConfigs", () => {
     it("should load sponsor configs from YAML file", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify([
+      readTextFile.mockResolvedValue(JSON.stringify([
         {
           id: "sponsor-1",
           name: "Acme Corp",
@@ -108,7 +102,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for null parsed content", async () => {
-      mockReadTextFile.mockResolvedValue("");
+      readTextFile.mockResolvedValue("");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -117,7 +111,7 @@ describe("sponsors", () => {
     });
 
     it("should return empty array for empty YAML", async () => {
-      mockReadTextFile.mockResolvedValue("[]");
+      readTextFile.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -126,12 +120,12 @@ describe("sponsors", () => {
     });
 
     it("should construct correct file path", async () => {
-      mockReadTextFile.mockResolvedValue("[]");
+      readTextFile.mockResolvedValue("[]");
 
       const { loadSponsorConfigs } = await import("../sponsors");
       await loadSponsorConfigs("/test/assets/dev", "sponsors/test.yaml");
 
-      expect(mockJoinPath).toHaveBeenCalledWith("/test/assets/dev", "sponsors/test.yaml");
+      expect(joinPath).toHaveBeenCalledWith("/test/assets/dev", "sponsors/test.yaml");
     });
   });
 

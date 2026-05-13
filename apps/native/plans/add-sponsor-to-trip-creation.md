@@ -7,7 +7,7 @@ Build a full admin trip creation screen with an integrated sponsor picker, so ad
 - **Backend**: `trip.create` procedure exists (`packages/trpc/src/api/routers/trip.ts:301-321`) but accepts only `name`, `description`, `startDate`, `endDate`, `backgroundImagePath` — no `sponsorIds`.
 - **Backend**: `sponsor.addToTrip` / `removeFromTrip` already exist (`packages/trpc/src/api/routers/sponsor.ts:97-162`), but aren't called from any UI.
 - **Backend**: `sponsor.getAll` returns all active sponsors.
-- **DB schema**: `Sponsor` ↔ `TripSponsor` ↔ `Trip` many-to-many is fully modeled (`packages/db/src/prisma/schema.prisma:653-683`).
+- **DB schema**: `Sponsor` ↔ `TripSponsor` ↔ `Trip` many-to-many is fully modeled (`packages/db/src/schema.ts`).
 - **Native app**: No trip creation screen exists. Trips are selected via `TripPickerModal` on the admin index, but there's no way to create one.
 - **Native app**: Existing admin `new.tsx` screens (rewards, groups, challenges) follow a consistent pattern: `AdminHeader` + `ScrollView` with `FormField`/`ThemedTextInput` + `PrimaryLoadingButton`.
 
@@ -18,7 +18,7 @@ Build a full admin trip creation screen with an integrated sponsor picker, so ad
 **File**: `packages/trpc/src/api/routers/trip.ts`
 
 - Add `sponsorIds: z.array(z.string()).optional()` to the `create` input schema.
-- Wrap the trip creation + `TripSponsor` inserts in a Prisma `$transaction` so it's atomic.
+- Wrap the trip creation + `TripSponsor` inserts in a Drizzle `db.transaction()` so it's atomic.
 - If `sponsorIds` is provided, create one `TripSponsor` row per sponsor ID in the same transaction.
 
 ### 2. Create the admin trip creation screen

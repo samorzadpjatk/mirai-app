@@ -124,7 +124,7 @@ Recommended extensions:
 - ESLint
 - Prettier
 - Tailwind CSS IntelliSense
-- Prisma
+- Drizzle ORM (optional, for schema editing)
 
 ## Troubleshooting
 

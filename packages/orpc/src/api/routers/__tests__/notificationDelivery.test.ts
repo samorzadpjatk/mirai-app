@@ -81,7 +81,7 @@ const createMockNotification = (overrides: Partial<Notification> = {}): Notifica
 });
 
 describe("notificationDeliveryRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockAdminUser: User;
 

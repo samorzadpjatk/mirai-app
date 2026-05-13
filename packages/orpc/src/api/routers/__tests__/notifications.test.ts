@@ -183,7 +183,7 @@ const createMockTripParticipant = (overrides: Partial<TripParticipant> = {}): Tr
 });
 
 describe("notificationRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModeratorUser: User;

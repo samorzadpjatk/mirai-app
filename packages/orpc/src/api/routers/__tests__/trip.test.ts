@@ -26,7 +26,7 @@ import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } fr
  
 type MockFn = ReturnType<typeof vi.fn> & ((...args: unknown[]) => unknown);
 
-interface MockPrismaClient {
+interface MockDbClient {
   trip: {
     findMany: MockFn;
     findUnique: MockFn;
@@ -64,7 +64,7 @@ interface MockPrismaClient {
 const createCaller = (ctx: TRPCContext) => createRouterClient(tripRouter, { context: ctx });
 
 describe("tripRouter", () => {
-  let mockDb: MockPrismaClient;
+  let mockDb: MockDbClient;
   let mockSupabase: SupabaseClient;
   let mockUser: { id: string; email: string };
   let mockDbUser: User;
@@ -130,7 +130,7 @@ describe("tripRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn((cb: (arg: PrismaClient) => unknown) => cb(mockDb as unknown as PrismaClient)),
+      $transaction: vi.fn((cb: (arg: DB) => unknown) => cb(mockDb as unknown as DB)),
     };
 
     // Setup mock Supabase client - need to return user that matches mockDbUser

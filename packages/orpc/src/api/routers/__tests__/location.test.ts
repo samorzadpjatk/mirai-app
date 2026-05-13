@@ -95,7 +95,7 @@ const createMockSharingRequest = (overrides: Partial<LocationSharingRequest> = {
 });
 
 describe("locationRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockLocation: Location;

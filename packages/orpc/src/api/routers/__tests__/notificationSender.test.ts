@@ -60,7 +60,7 @@ const createMockScheduleExecution = (overrides: Partial<NotificationScheduleExec
 });
 
 describe("notificationSenderRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
 

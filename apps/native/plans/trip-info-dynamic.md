@@ -24,80 +24,77 @@ In `apps/native/src/app/(tabs)/trips/info.tsx`:
 
 ## Plan
 
-### 1. DB schema — three new models (`packages/db`)
+### 1. DB schema — three new tables (`packages/db`)
 
 No JSON fields — everything is fully relational.
 
 **`TripResource`** — generic resources (links, PDFs, images, SOS):
 
-```prisma
-model TripResource {
-  id          String   @id @default(cuid())
-  tripId      String
-  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  type        String   // "interactive_map", "pdf_map", "infopack", "whatsapp", "sos", "hero_image", "map_bg_image"
-  label       String   // Display name
-  description String?  // Subtitle or message text (e.g. SOS alert message)
-  url         String?  // External URL (only for interactive_map, whatsapp)
-  storagePath String?  // Supabase Storage path (for PDFs, images)
-  fileName    String?  // For downloadable PDF files (display name)
-  iconName    String?  // Ionicons icon name
-  value       String?  // Simple text value (e.g. emergency number "112")
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+```ts
+export const tripResource = pgTable("trip_resource", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  tripId: text("trip_id").notNull().references(() => trip.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // "interactive_map", "pdf_map", "infopack", "whatsapp", "sos", "hero_image", "map_bg_image"
+  label: text("label").notNull(),
+  description: text("description"),
+  url: text("url"),
+  storagePath: text("storage_path"),
+  fileName: text("file_name"),
+  iconName: text("icon_name"),
+  value: text("value"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
-  @@index([tripId, type])
-}
+export const tripResourceTripIdTypeIdx = index("trip_resource_trip_id_type_idx").on(tripResource.tripId, tripResource.type);
 ```
 
 **`TripInsurance`** — insurance config per trip (one-to-one):
 
-```prisma
-model TripInsurance {
-  id               String   @id @default(cuid())
-  tripId           String   @unique
-  trip             Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  label            String   // e.g. "Ubezpieczenie / Kontakt"
-  phoneNumber      String   // e.g. "+48225640625"
-  phoneDisplay     String   // e.g. "+48 22 564 06 25"
-  policyNumber     String
-  contractNumber   String
-  providerName     String   // e.g. "WIENER"
-  hospitalName     String?
-  hospitalAddress  String?
-  hospitalDistance String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  steps TripInsuranceStep[]
-}
+```ts
+export const tripInsurance = pgTable("trip_insurance", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  tripId: text("trip_id").notNull().unique().references(() => trip.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  phoneDisplay: text("phone_display").notNull(),
+  policyNumber: text("policy_number").notNull(),
+  contractNumber: text("contract_number").notNull(),
+  providerName: text("provider_name").notNull(),
+  hospitalName: text("hospital_name"),
+  hospitalAddress: text("hospital_address"),
+  hospitalDistance: text("hospital_distance"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 ```
 
 **`TripInsuranceStep`** — ordered steps with optional list items:
 
-```prisma
-model TripInsuranceStep {
-  id             String        @id @default(cuid())
-  insuranceId    String
-  insurance      TripInsurance @relation(fields: [insuranceId], references: [id], onDelete: Cascade)
-  stepNumber     Int
-  title          String        // "Krok 1"
-  text           String        // Main instruction text
-  requiredInfo   String[]      @default([])  // e.g. ["imienia i nazwiska", ...]
-  exampleCall    String?       // Quote text
-  additionalText String?       // Extra paragraph (e.g. hospital directions)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+```ts
+export const tripInsuranceStep = pgTable("trip_insurance_step", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  insuranceId: text("insurance_id").notNull().references(() => tripInsurance.id, { onDelete: "cascade" }),
+  stepNumber: integer("step_number").notNull(),
+  title: text("title").notNull(),
+  text: text("text").notNull(),
+  requiredInfo: text("required_info").array().default([]),
+  exampleCall: text("example_call"),
+  additionalText: text("additional_text"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
-  @@index([insuranceId, stepNumber])
-}
+export const tripInsuranceStepInsuranceIdStepNumberIdx = index("trip_insurance_step_insurance_id_step_number_idx").on(tripInsuranceStep.insuranceId, tripInsuranceStep.stepNumber);
 ```
 
-Add relations to `Trip`:
-```prisma
-tripResources TripResource[]
-tripInsurance TripInsurance?
+Add relations to `Trip` schema in Drizzle (update the table definition with relations):
+```ts
+export const tripRelations = relations(trip, ({ many, one }) => ({
+  tripResources: many(tripResource),
+  tripInsurance: one(tripInsurance),
+}));
 ```
 
 ### 2. Shared types (`packages/shared`)
@@ -130,13 +127,13 @@ getResources: protectedProcedure
   .input(z.object({ tripId: z.string() }))
   .query(async ({ ctx, input }) => {
     // verify participant access
-    const resources = await ctx.db.tripResource.findMany({
-      where: { tripId: input.tripId },
-      orderBy: { sortOrder: "asc" },
+    const resources = await ctx.db.query.tripResource.findMany({
+      where: (fields, { eq }) => eq(fields.tripId, input.tripId),
+      orderBy: (fields, { asc }) => [asc(fields.sortOrder)],
     });
-    const insurance = await ctx.db.tripInsurance.findUnique({
-      where: { tripId: input.tripId },
-      include: { steps: { orderBy: { stepNumber: "asc" } } },
+    const insurance = await ctx.db.query.tripInsurance.findFirst({
+      where: (fields, { eq }) => eq(fields.tripId, input.tripId),
+      with: { steps: { orderBy: (fields, { asc }) => [asc(fields.stepNumber)] } },
     });
     return { resources, insurance };
   });
@@ -304,7 +301,7 @@ resources: []
 
 ### 6. Migration & testing
 
-- Generate and apply the Prisma migration
+- Generate and apply the Drizzle migration (`bun run db:generate` then `bun run db:migrate`)
 - Run seed to verify
 - Test info screen on emulator
 
@@ -314,8 +311,8 @@ resources: []
 
 | Layer | Files |
 |---|---|
-| **DB** | `packages/db/src/prisma/schema.prisma` — add `TripResource`, `TripInsurance`, `TripInsuranceStep` + Trip relations (with `storagePath` field) |
-| **Migration** | new auto-generated migration |
+| **DB** | `packages/db/src/schema.ts` — add `tripResource`, `tripInsurance`, `tripInsuranceStep` tables + trip relations (with `storagePath` field) |
+| **Migration** | `packages/db/drizzle/` — generate and apply Drizzle migration |
 | **Shared** | new `packages/shared/src/tripInfo/types.ts` + re-export from index |
 | **oRPC** | `packages/trpc/src/api/routers/trip.ts` — add `getResources` procedure |
 | **Seed types** | `apps/seed/src/types.ts` — add `info?`, `TripResourceConfig` (with `storagePath`), `TripInsuranceConfig`, `TripInfoConfig` |

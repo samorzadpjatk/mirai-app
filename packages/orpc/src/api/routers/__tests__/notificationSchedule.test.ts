@@ -129,7 +129,7 @@ const createMockTrip = (overrides: Partial<Trip> = {}): Trip => ({
 });
 
 describe("notificationScheduleRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockModeratorUser: User;
   let mockAdminUser: User;

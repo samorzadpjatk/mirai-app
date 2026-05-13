@@ -72,7 +72,7 @@ turbo run clean            # Clean build artifacts and node_modules
 |--------|---------|
 | `db:seed:dev` | Seed dev database |
 | `db:seed:prod` | Seed prod database |
-| `db:generate` | Generate Prisma client |
+| `db:generate` | Generate Drizzle migrations |
 | `db:migrate` | Run migrations |
 | `db:migrate:dev` | Run dev migrations |
 | `db:migrate:prod` | Run prod migrations |
@@ -80,9 +80,9 @@ turbo run clean            # Clean build artifacts and node_modules
 | `db:push:prod` | Push schema to prod database |
 | `db:reset:dev` | Reset dev database |
 | `db:reset:prod` | Reset prod database |
-| `db:studio:dev` | Open Prisma Studio (dev) |
-| `db:studio:prod` | Open Prisma Studio (prod) |
-| `db:format` | Format Prisma schema |
+| `db:studio:dev` | Open Drizzle Studio (dev) |
+| `db:studio:prod` | Open Drizzle Studio (prod) |
+| `db:format` | Format Drizzle schema |
 
 ## Database Scripts
 
@@ -103,10 +103,10 @@ bun run db:push:prod       # Push schema to prod
 # Database management
 bun run db:reset:dev       # Reset dev database
 bun run db:seed:dev        # Seed dev database
-bun run db:studio:dev      # Open Prisma Studio
+bun run db:studio:dev      # Open Drizzle Studio
 
 # Client generation
-bun run db:generate        # Generate Prisma client
+bun run db:generate        # Generate Drizzle migrations
 ```
 
 ## Linting and Formatting

@@ -70,7 +70,7 @@ const createMockChallenge = (overrides?: Record<string, unknown>): Challenge =>
   }) as unknown as Challenge;
 
 describe("challengeRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockAdminUser: User;
   let mockUser: User;

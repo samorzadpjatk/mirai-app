@@ -86,7 +86,7 @@ services:
       - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Database migration completed'"
     environment:
       DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-      PRISMA_MIGRATE_SKIP_SEED: "1"
+
     depends_on:
       db:
         condition: service_healthy

@@ -12,7 +12,7 @@ The oRPC server initialization in `packages/trpc/src/api/trpc.ts` SHALL provide 
 #### Scenario: Context factory creates database and auth context
 - **WHEN** `createORPCContext` is called with headers, database URL, Supabase URL, and Supabase key
 - **THEN** it SHALL create a lazy-initialized Supabase singleton client
-- **AND** it SHALL create a Prisma database client
+  - **AND** it SHALL create a Drizzle database client
 - **AND** it SHALL extract the access token from Authorization header, connection params, or URL query params
 - **AND** it SHALL return `{ db, supabase, headers, accessToken }`
 

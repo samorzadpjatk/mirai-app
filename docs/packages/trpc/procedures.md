@@ -16,7 +16,7 @@ import { publicProcedure } from '../trpc';
 export const userRouter = router({
   list: publicProcedure
     .query(async ({ ctx }) => {
-      return ctx.prisma.user.findMany();
+      return ctx.db.query.users.findMany();
     }),
 });
 ```
@@ -33,9 +33,11 @@ export const userRouter = router({
     .input(z.object({ name: z.string() }))
     .mutation(async ({ input, ctx }) => {
       // ctx.user is guaranteed to exist
-      return ctx.prisma.user.create({
-        data: { ...input, createdBy: ctx.user.id }
-      });
+      const [created] = await ctx.db.insert(users).values({
+        ...input,
+        createdBy: ctx.user.id,
+      }).returning();
+      return created;
     }),
 });
 ```
@@ -47,7 +49,7 @@ export const userRouter = router({
 ```typescript
 list: publicProcedure
   .query(async ({ ctx }) => {
-    return ctx.prisma.user.findMany();
+    return ctx.db.query.users.findMany();
   })
 ```
 
@@ -57,8 +59,8 @@ list: publicProcedure
 getById: publicProcedure
   .input(z.object({ id: z.string() }))
   .query(async ({ input, ctx }) => {
-    return ctx.prisma.user.findUnique({
-      where: { id: input.id }
+    return ctx.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, input.id),
     });
   })
 ```
@@ -72,18 +74,18 @@ list: publicProcedure
     limit: z.number().min(1).max(100).default(20),
   }))
   .query(async ({ input, ctx }) => {
-    const users = await ctx.prisma.user.findMany({
-      take: input.limit + 1,
-      cursor: input.cursor ? { id: input.cursor } : undefined,
+    const userList = await ctx.db.query.users.findMany({
+      limit: input.limit + 1,
+      offset: input.cursor ? parseInt(input.cursor, 10) : 0,
     });
-    
+
     let nextCursor: typeof input.cursor = undefined;
-    if (users.length > input.limit) {
-      const nextItem = users.pop();
+    if (userList.length > input.limit) {
+      const nextItem = userList.pop();
       nextCursor = nextItem!.id;
     }
-    
-    return { users, nextCursor };
+
+    return { users: userList, nextCursor };
   })
 ```
 
@@ -96,18 +98,15 @@ search: publicProcedure
     status: z.enum(['active', 'inactive']).optional(),
   }))
   .query(async ({ input, ctx }) => {
-    return ctx.prisma.user.findMany({
-      where: {
-        AND: [
-          input.query ? {
-            OR: [
-              { name: { contains: input.query, mode: 'insensitive' } },
-              { email: { contains: input.query, mode: 'insensitive' } },
-            ]
-          } : undefined,
-          input.status ? { status: input.status } : undefined,
-        ].filter(Boolean),
-      }
+    const conditions = [];
+    if (input.query) {
+      conditions.push(or(ilike(users.name, `%${input.query}%`), ilike(users.email, `%${input.query}%`)));
+    }
+    if (input.status) {
+      conditions.push(eq(users.status, input.status));
+    }
+    return ctx.db.query.users.findMany({
+      where: conditions.length > 0 ? and(...conditions) : undefined,
     });
   })
 ```
@@ -123,9 +122,8 @@ create: protectedProcedure
     name: z.string().min(1).max(100),
   }))
   .mutation(async ({ input, ctx }) => {
-    return ctx.prisma.user.create({
-      data: input,
-    });
+    const [created] = await ctx.db.insert(users).values(input).returning();
+    return created;
   })
 ```
 
@@ -140,10 +138,11 @@ update: protectedProcedure
   }))
   .mutation(async ({ input, ctx }) => {
     const { id, ...data } = input;
-    return ctx.prisma.user.update({
-      where: { id },
-      data,
-    });
+    const [updated] = await ctx.db.update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
   })
 ```
 
@@ -153,9 +152,10 @@ update: protectedProcedure
 delete: protectedProcedure
   .input(z.object({ id: z.string() }))
   .mutation(async ({ input, ctx }) => {
-    return ctx.prisma.user.delete({
-      where: { id: input.id }
-    });
+    const [deleted] = await ctx.db.delete(users)
+      .where(eq(users.id, input.id))
+      .returning();
+    return deleted;
   })
 ```
 
@@ -205,7 +205,7 @@ create: protectedProcedure
 query: publicProcedure
   .query(async ({ ctx }) => {
     // Available in context:
-    ctx.prisma      // Database client
+    ctx.db          // Database client
     ctx.user        // Current user (if authenticated)
     ctx.req         // Request object (server)
     ctx.res         // Response object (server)

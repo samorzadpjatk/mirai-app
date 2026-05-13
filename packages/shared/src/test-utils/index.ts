@@ -32,7 +32,7 @@ export {
 // Export Vitest setup helpers
 export {
   setupSupabaseMocks,
-  setupPrismaMocks,
+  setupDbMocks,
   setupExpoMocks,
   setupReactNativeMocks,
   setupNodeMocks,

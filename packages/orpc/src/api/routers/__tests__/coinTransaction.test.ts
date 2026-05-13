@@ -55,7 +55,7 @@ const createMockCoinTransaction = (overrides: Partial<CoinTransaction> = {}): Co
 });
 
 describe("coinTransactionRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModeratorUser: User;

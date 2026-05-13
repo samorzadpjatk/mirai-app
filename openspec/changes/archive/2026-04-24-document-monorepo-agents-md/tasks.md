@@ -17,9 +17,9 @@
 - [x] 2.1 Create `packages/auth/AGENTS.md` documenting auth package purpose, exports, and usage
 - [x] 2.2 Add "Inherited Conventions" section to packages/auth/AGENTS.md referencing root AGENTS.md
 - [x] 2.3 Create `docs/packages/auth/setup.md` with detailed auth package documentation
-- [x] 2.4 Create `packages/db/AGENTS.md` documenting db package, Prisma client, and database operations
+- [x] 2.4 Create `packages/db/AGENTS.md` documenting db package, Drizzle client, and database operations
 - [x] 2.5 Add "Inherited Conventions" section to packages/db/AGENTS.md referencing root AGENTS.md
-- [x] 2.6 Create `docs/packages/db/prisma.md` documenting Prisma schema and client usage
+- [x] 2.6 Create `docs/packages/db/drizzle.md` documenting Drizzle schema and client usage
 - [x] 2.7 Create `docs/packages/db/migrations.md` documenting migration workflows and best practices
 - [x] 2.8 Create `docs/packages/db/schema.md` documenting schema design conventions
 - [x] 2.9 Create `packages/shared/AGENTS.md` documenting shared utilities package
@@ -28,12 +28,12 @@
 - [x] 2.12 Create `packages/supabase/AGENTS.md` documenting Supabase client configuration
 - [x] 2.13 Add "Inherited Conventions" section to packages/supabase/AGENTS.md referencing root AGENTS.md
 - [x] 2.14 Create `docs/packages/supabase/client.md` documenting Supabase client setup and usage
-- [x] 2.15 Create `packages/trpc/AGENTS.md` documenting tRPC router structure and client usage
-- [x] 2.16 Add "Inherited Conventions" section to packages/trpc/AGENTS.md referencing root AGENTS.md
-- [x] 2.17 Create `docs/packages/trpc/router-structure.md` documenting router composition patterns
-- [x] 2.18 Create `docs/packages/trpc/procedures.md` documenting query and mutation patterns
-- [x] 2.19 Create `docs/packages/trpc/middleware.md` documenting middleware patterns
-- [x] 2.20 Create `docs/packages/trpc/error-handling.md` documenting error handling patterns
+- [x] 2.15 Create `packages/orpc/AGENTS.md` documenting oRPC router structure and client usage
+- [x] 2.16 Add "Inherited Conventions" section to packages/orpc/AGENTS.md referencing root AGENTS.md
+- [x] 2.17 Create `docs/packages/orpc/router-structure.md` documenting router composition patterns
+- [x] 2.18 Create `docs/packages/orpc/procedures.md` documenting query and mutation patterns
+- [x] 2.19 Create `docs/packages/orpc/middleware.md` documenting middleware patterns
+- [x] 2.20 Create `docs/packages/orpc/error-handling.md` documenting error handling patterns
 
 ## 3. Create App Documentation
 
@@ -47,7 +47,7 @@
 - [x] 3.8 Create `apps/backend-server/AGENTS.md` documenting Fastify + tRPC server structure
 - [x] 3.9 Add "Inherited Conventions" and any overrides section to apps/backend-server/AGENTS.md
 - [x] 3.10 Create `docs/apps/backend-server/setup.md` with detailed backend server setup
-- [x] 3.11 Create `docs/apps/backend-server/trpc.md` documenting tRPC integration with Fastify
+- [x] 3.11 Create `docs/apps/backend-server/orpc.md` documenting oRPC integration with Fastify
 - [x] 3.12 Create `docs/apps/backend-server/api-structure.md` documenting API organization
 - [x] 3.13 Create `apps/notification-sender/AGENTS.md` documenting notification sender app
 - [x] 3.14 Add "Inherited Conventions" section to apps/notification-sender/AGENTS.md referencing root

@@ -38,7 +38,7 @@ Applications are deployable units:
 Packages are shared libraries:
 
 - **auth**: Authentication utilities and state management
-- **db**: Prisma schema and database client
+- **db**: Drizzle schema and database client
 - **shared**: Shared utilities and design tokens
 - **supabase**: Supabase client configuration
 - **trpc**: oRPC routers and client utilities

@@ -64,7 +64,7 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 describe("storageRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   const originalEnv = process.env;

@@ -88,21 +88,22 @@ import { router, publicProcedure, protectedProcedure, adminProcedure } from '../
 export const userRouter = router({
   // No auth required
   list: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.user.findMany();
+    return ctx.db.query.users.findMany();
   }),
-  
+
   // Auth required
   create: protectedProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ input, ctx }) => {
       // ctx.user is guaranteed to exist
-      return ctx.prisma.user.create({ data: input });
+      const [created] = await ctx.db.insert(users).values(input).returning();
+      return created;
     }),
-    
+
   // Admin only
   deleteAll: adminProcedure
     .mutation(async ({ ctx }) => {
-      return ctx.prisma.user.deleteMany();
+      return ctx.db.delete(users);
     }),
 });
 ```
@@ -137,10 +138,10 @@ Middleware can add to the context:
 
 ```typescript
 export const withOrganization = middleware(async ({ ctx, next }) => {
-  const organization = await ctx.prisma.organization.findFirst({
-    where: { members: { some: { userId: ctx.user.id } } }
+  const organization = await ctx.db.query.organizations.findFirst({
+    where: (o, { eq }) => eq(o.id, ctx.user.organizationId),
   });
-  
+
   return next({
     ctx: {
       ...ctx,

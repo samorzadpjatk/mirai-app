@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
-import type { Prisma } from "@mirai-app/db";
+import type { TransactionDB } from "@mirai-app/db";
 
  
 const noop = (): void => {};
@@ -23,7 +23,7 @@ vi.mock("../resilience", () => ({
 }));
 
 describe("notifications", () => {
-  let mockDb: Prisma.TransactionClient;
+  let mockDb: TransactionDB;
 
   beforeEach(() => {
     vi.clearAllMocks();

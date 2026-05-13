@@ -129,7 +129,7 @@ const createMockChallenge = (overrides: Partial<Challenge> = {}): Challenge =>
   }) as unknown as Challenge;
 
 describe("rewardRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModeratorUser: User;

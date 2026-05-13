@@ -55,17 +55,17 @@ throw new TRPCError({
 getById: publicProcedure
   .input(z.object({ id: z.string() }))
   .query(async ({ input, ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: input.id }
+    const user = await ctx.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, input.id),
     });
-    
+
     if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: `User with id ${input.id} not found`,
       });
     }
-    
+
     return user;
   })
 ```
@@ -76,18 +76,19 @@ getById: publicProcedure
 create: protectedProcedure
   .input(z.object({ email: z.string().email() }))
   .mutation(async ({ input, ctx }) => {
-    const existing = await ctx.prisma.user.findUnique({
-      where: { email: input.email }
+    const existing = await ctx.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.email, input.email),
     });
-    
+
     if (existing) {
       throw new TRPCError({
         code: 'CONFLICT',
         message: 'User with this email already exists',
       });
     }
-    
-    return ctx.prisma.user.create({ data: input });
+
+    const [created] = await ctx.db.insert(users).values(input).returning();
+    return created;
   })
 ```
 
@@ -138,8 +139,9 @@ create: protectedProcedure
         message: 'Password cannot be the same as email',
       });
     }
-    
-    return ctx.prisma.user.create({ data: input });
+
+    const [created] = await ctx.db.insert(users).values(input).returning();
+    return created;
   })
 ```
 

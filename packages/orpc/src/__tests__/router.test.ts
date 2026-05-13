@@ -71,7 +71,7 @@ const testRouter = createORPCRouter({
 const createCaller = (ctx: TRPCContext) => createRouterClient(testRouter, { context: ctx });
 
 describe("oRPC Router Testing Patterns", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
 
   beforeEach(() => {
@@ -89,7 +89,7 @@ describe("oRPC Router Testing Patterns", () => {
         delete: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
         count: vi.fn<() => Promise<number>>().mockResolvedValue(0),
       },
-      $transaction: vi.fn<(cb: (prisma: PrismaClient) => Promise<unknown>) => Promise<unknown>>((cb) => cb(mockDb)),
+      $transaction: vi.fn<(cb: (db: DB) => Promise<unknown>) => Promise<unknown>>((cb) => cb(mockDb)),
     };
 
     // Setup mock Supabase client

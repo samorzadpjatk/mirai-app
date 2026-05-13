@@ -14,7 +14,7 @@ import * as auth from "@mirai-app/auth";
 const createCaller = (ctx: TRPCContext) => createRouterClient(sponsorRouter, { context: ctx });
 
 describe("sponsorRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
 
   const createMockSponsor = (overrides: Partial<Sponsor> = {}): Sponsor => ({
