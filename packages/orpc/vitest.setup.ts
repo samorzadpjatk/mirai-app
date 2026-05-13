@@ -177,6 +177,7 @@ export function createMockSupabase(): MockSupabaseClient {
 
 function singularize(name: string): string {
   if (name.endsWith("ies")) return name.slice(0, -3) + "y";
+  if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("ses") || name.endsWith("zes")) return name.slice(0, -2);
   if (name.endsWith("s")) return name.slice(0, -1);
   return name;
 }

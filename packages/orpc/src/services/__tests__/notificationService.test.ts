@@ -270,6 +270,9 @@ describe("sendMobileNotifications", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue(mockNotificationPush),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        upsert: vi.fn().mockImplementation((args: any) => {
+          return mockDb.notificationPush.createMany(args);
+        }),
       },
       pushSubscription: {
         findMany: vi.fn().mockResolvedValue([mockPushSubscription]),
