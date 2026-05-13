@@ -1,20 +1,21 @@
 # @mirai-app/db
 
-Common package managing database schema and Prisma migrations for the MIRAI app monorepo.
+Common package managing database schema and Drizzle migrations for the MIRAI app monorepo.
 
 ## Structure
 
 ```
 packages/db/
+├── drizzle/
+│   └── meta/              # Drizzle migration metadata
 ├── src/
-│   ├── index.ts         # Exported Prisma client
-│   ├── client.ts        # Prisma client configuration
-│   ├── prisma/
-│   │   ├── schema.prisma    # Database schema
-│   │   ├── migrations/      # Migration history
-│   │   └── lib/            # Generated Prisma client
-├── prisma.config.ts      # Prisma configuration
-└── Dockerfile.migrations # Migration container configuration
+│   ├── schema/            # Drizzle schema definitions
+│   ├── utils/
+│   │   └── uuid.ts        # Cross-platform UUID helper
+│   ├── index.ts           # Exported Drizzle client, schema, and types
+│   └── client.ts          # Drizzle client configuration
+├── drizzle.config.ts      # Drizzle Kit configuration
+└── Dockerfile.migrations  # Migration container configuration
 ```
 
 ## Available Commands
@@ -33,7 +34,7 @@ cd packages/db && bun run <command>
 
 #### `db:generate`
 
-Generates Prisma client based on schema. Runs automatically after `bun install`.
+Generates Drizzle migration SQL based on schema changes.
 
 ```bash
 cd packages/db && bun run db:generate
@@ -49,23 +50,13 @@ cd packages/db && bun run db:push
 
 #### `db:studio`
 
-Opens Prisma Studio - graphical interface for viewing and editing database data.
+Opens Drizzle Studio - graphical interface for viewing and editing database data.
 
 ```bash
 cd packages/db && bun run db:studio
 ```
 
 ### Migration Commands (Production)
-
-#### `db:migrate:dev`
-
-Creates new migration based on schema changes and applies it to development database.
-
-```bash
-cd packages/db && bun run db:migrate:dev
-```
-
-You'll be prompted for migration name after execution.
 
 #### `db:migrate`
 
@@ -75,16 +66,6 @@ Applies pending migrations to database. **Used in production environment**.
 cd packages/db && bun run db:migrate
 ```
 
-#### `db:reset`
-
-Resets database: removes all data, reapplies all migrations, and runs seed.
-
-**⚠️ WARNING: Deletes all data from database! Use only in development environment!**
-
-```bash
-cd packages/db && bun run db:reset
-```
-
 ## Development Workflow
 
 ### 1. Project Initialization
@@ -92,7 +73,7 @@ cd packages/db && bun run db:reset
 After cloning the repository:
 
 ```bash
-# Install dependencies (automatically runs db:generate)
+# Install dependencies
 bun install
 
 # Fill database with initial data
@@ -101,14 +82,14 @@ cd apps/seed && bun run start
 
 ### 2. Schema Modification
 
-After changing `src/prisma/schema.prisma`:
+After changing files in `src/schema/`:
 
 ```bash
 # In development environment - quick prototyping
 cd packages/db && bun run db:push
 
 # OR with migrations - for changes going to production
-cd packages/db && bun run db:migrate:dev
+cd packages/db && bun run db:generate
 ```
 
 ### 3. Data Viewing
@@ -117,7 +98,7 @@ cd packages/db && bun run db:migrate:dev
 cd packages/db && bun run db:studio
 ```
 
-Opens in browser at `http://localhost:5555`
+Opens in browser at `http://localhost:4983`
 
 ## Configuration
 
@@ -130,10 +111,13 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 ## Usage in Applications
 
 ```typescript
-import { prisma } from "@mirai-app/db";
+import { createDb, users } from "@mirai-app/db";
+
+// Create client
+const db = createDb(process.env.DATABASE_URL);
 
 // Example usage
-const users = await prisma.user.findMany();
+const allUsers = await db.query.users.findMany();
 ```
 
 ## Testing
@@ -141,11 +125,11 @@ const users = await prisma.user.findMany();
 This package follows an **integration-only testing approach**. We don't maintain unit tests here because:
 
 - Database schema changes require a real database to validate properly
-- Prisma client behavior depends on actual database state and responses
-- The package contains no business logic, only schema definitions and generated client exports
+- Drizzle ORM behavior depends on actual database state and responses
+- The package contains no business logic, only schema definitions and client exports
 
 Database commands serve as implicit integration tests:
-- `db:generate` validates schema syntax and generates the type-safe client
+- `db:generate` validates schema syntax and generates migration SQL
 - `db:push` and `db:migrate` verify migrations apply correctly
 - `db:studio` provides manual verification of schema changes
 
@@ -153,6 +137,5 @@ For detailed testing rationale and patterns for consuming packages, see [TESTING
 
 ## More Information
 
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Prisma Schema Reference](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference)
-- [Prisma Migrate](https://www.prisma.io/docs/concepts/components/prisma-migrate)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/)
+- [Drizzle Kit Documentation](https://orm.drizzle.team/kit-docs/overview)

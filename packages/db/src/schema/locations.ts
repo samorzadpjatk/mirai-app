@@ -1,0 +1,76 @@
+import {
+  pgTable,
+  varchar,
+  timestamp,
+  real,
+  boolean,
+  index,
+  uniqueIndex,
+  primaryKey,
+} from "drizzle-orm/pg-core";
+import { randomUUID } from "../utils/uuid";
+import { users } from "./users";
+import { locationSharingRequestStatusEnum } from "./enums";
+
+export const locations = pgTable("locations", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
+  userId: varchar("user_id", { length: 36 })
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
+  isSharingLocation: boolean("is_sharing_location").default(false).notNull(),
+  accuracy: real("accuracy"),
+  altitude: real("altitude"),
+  altitudeAccuracy: real("altitude_accuracy"),
+  heading: real("heading"),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  speed: real("speed"),
+  lastInactivityNotification: timestamp("last_inactivity_notification", {
+    withTimezone: true,
+  }),
+});
+
+export const locationSharingRequests = pgTable(
+  "location_sharing_requests",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    senderId: varchar("sender_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    receiverId: varchar("receiver_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: locationSharingRequestStatusEnum("status").default("PENDING").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("location_sharing_requests_sender_id_receiver_id_unique").on(
+      t.senderId,
+      t.receiverId,
+    ),
+    index("location_sharing_requests_receiver_id_status_idx").on(t.receiverId, t.status),
+    index("location_sharing_requests_sender_id_status_idx").on(t.senderId, t.status),
+  ],
+);
+
+export const locationShares = pgTable(
+  "location_shares",
+  {
+    locationId: varchar("location_id", { length: 36 })
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.locationId, t.userId] })],
+);

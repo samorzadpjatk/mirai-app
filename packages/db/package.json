@@ -11,8 +11,10 @@
   },
   "scripts": {
     "clean": "rm -rf node_modules",
-    "db:generate": "bunx --bun prisma generate",
-    "db:migrate": "bunx --bun prisma migrate deploy",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
@@ -22,12 +24,12 @@
   },
   "dependencies": {
     "@mirai-app/supabase": "workspace:*",
-    "@prisma/client": "^7.3.0",
-    "@prisma/adapter-pg": "^7.3.0"
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.0.0",
-    "prisma": "^7.3.0",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.3",
     "vitest": "^3.0.0"
   }

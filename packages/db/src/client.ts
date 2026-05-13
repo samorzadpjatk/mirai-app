@@ -1,15 +1,18 @@
-import { PrismaClient as _PrismaClient } from "./prisma/lib/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema";
 
-let _prisma: _PrismaClient | undefined;
+let _db: ReturnType<typeof createDrizzleDb> | undefined;
 
-const getPrisma = (databaseUrl: string): _PrismaClient => {
-  _prisma ??= new _PrismaClient({
-    adapter: new PrismaPg({
-      connectionString: databaseUrl,
-    }),
-  });
-  return _prisma;
-}
+const createDrizzleDb = (databaseUrl: string) => {
+  const client = postgres(databaseUrl);
+  return drizzle(client, { schema });
+};
 
-export const createDb = (databaseUrl: string) => getPrisma(databaseUrl);
+export const createDb = (databaseUrl: string) => {
+  _db ??= createDrizzleDb(databaseUrl);
+  return _db;
+};
+
+export type DB = ReturnType<typeof createDb>;
+export type TransactionDB = Parameters<Parameters<DB["transaction"]>[0]>[0];
