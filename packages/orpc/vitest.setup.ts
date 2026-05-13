@@ -300,16 +300,15 @@ export function createMockDb(): MockDbClient {
     ),
   };
 
-  return mockDb;
+  return createDrizzleProxy(mockDb) as unknown as MockDbClient;
 }
 
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
   const mockSupabase = createMockSupabase();
   const mockDb = createMockDb();
-  const drizzleDb = createDrizzleProxy(mockDb);
 
   return {
-    db: drizzleDb,
+    db: mockDb as unknown as DB,
     supabase: mockSupabase as unknown as SupabaseClient,
     headers: new Headers(),
     accessToken: null,
@@ -335,11 +334,10 @@ vi.mock("@mirai-app/supabase", () => {
 vi.mock("@mirai-app/db", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@mirai-app/db")>();
   const mockDbClient = createMockDb();
-  const drizzleDb = createDrizzleProxy(mockDbClient);
 
   return {
     ...actual,
-    createDb: vi.fn(() => drizzleDb),
+    createDb: vi.fn(() => mockDbClient),
   };
 });
 
