@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ORPCError } from "@orpc/server";
 import { createORPCRouter, moderatorProcedure } from "../../api/trpc";
+import { eq, sql } from "drizzle-orm";
+import { coinTransactions, groups } from "@mirai-app/db";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
@@ -18,52 +20,53 @@ export const coinRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.$transaction(async (tx) => {
+      return await context.db.transaction(async (tx) => {
         const previousRankingSnapshot = await captureTripRankingSnapshot(
           tx,
           input.tripId,
         );
 
         // Verify group exists and belongs to the trip
-        const group = await tx.group.findUnique({
-          where: { id: input.groupId },
+        const group = await tx.query.groups.findFirst({
+          where: (g, { eq }) => eq(g.id, input.groupId),
         });
-        
+
         if (group?.tripId !== input.tripId || group.isDeleted) {
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
         // Update group coins within the transaction
-        await tx.group.update({
-          where: { id: input.groupId },
-          data: { coins: { increment: input.amount } },
-        });
+        await tx.update(groups).set({
+          coins: sql`${groups.coins} + ${input.amount}`,
+        }).where(eq(groups.id, input.groupId));
 
         // Create transaction record
-        const transaction = await tx.coinTransaction.create({
-          data: {
-            groupId: input.groupId,
-            amount: input.amount,
-            reason: input.reason,
-            adminId: context.dbUser.id,
-          },
-          include: {
+        const inserted = await tx.insert(coinTransactions).values({
+          groupId: input.groupId,
+          amount: input.amount,
+          reason: input.reason,
+          adminId: context.dbUser.id,
+        }).returning();
+
+        if (!inserted[0]) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
+        }
+
+        const transaction = await tx.query.coinTransactions.findFirst({
+          where: (ct, { eq }) => eq(ct.id, inserted[0]!.id),
+          with: {
             group: {
-              select: {
-                id: true,
-                name: true,
-                coins: true,
-              },
+              columns: { id: true, name: true, coins: true },
             },
             admin: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
+              columns: { id: true, firstName: true, lastName: true },
             },
           },
         });
+
+        if (!transaction) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retrieve created transaction" });
+        }
 
         await createRankChangeActivities({
           tx,
@@ -87,16 +90,16 @@ export const coinRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.$transaction(async (tx) => {
+      return await context.db.transaction(async (tx) => {
         const previousRankingSnapshot = await captureTripRankingSnapshot(
           tx,
           input.tripId,
         );
 
         // Lock the group row for update to prevent race conditions
-        const group = await tx.group.findUnique({
-          where: { id: input.groupId },
-          select: { coins: true, tripId: true, isDeleted: true },
+        const group = await tx.query.groups.findFirst({
+          where: (g, { eq }) => eq(g.id, input.groupId),
+          columns: { coins: true, tripId: true, isDeleted: true },
         });
 
         if (
@@ -108,36 +111,37 @@ export const coinRouter = createORPCRouter({
         }
 
         // Update group coins within the transaction
-        await tx.group.update({
-          where: { id: input.groupId },
-          data: { coins: { decrement: input.amount } },
-        });
+        await tx.update(groups).set({
+          coins: sql`${groups.coins} - ${input.amount}`,
+        }).where(eq(groups.id, input.groupId));
 
         // Create transaction record
-        const transaction = await tx.coinTransaction.create({
-          data: {
-            groupId: input.groupId,
-            amount: -input.amount, // Negative amount for removal
-            reason: input.reason,
-            adminId: context.dbUser.id,
-          },
-          include: {
+        const inserted = await tx.insert(coinTransactions).values({
+          groupId: input.groupId,
+          amount: -input.amount,
+          reason: input.reason,
+          adminId: context.dbUser.id,
+        }).returning();
+
+        if (!inserted[0]) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
+        }
+
+        const transaction = await tx.query.coinTransactions.findFirst({
+          where: (ct, { eq }) => eq(ct.id, inserted[0]!.id),
+          with: {
             group: {
-              select: {
-                id: true,
-                name: true,
-                coins: true,
-              },
+              columns: { id: true, name: true, coins: true },
             },
             admin: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
+              columns: { id: true, firstName: true, lastName: true },
             },
           },
         });
+
+        if (!transaction) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retrieve created transaction" });
+        }
 
         await createRankChangeActivities({
           tx,

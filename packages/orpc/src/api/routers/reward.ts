@@ -2,27 +2,25 @@ import { z } from "zod";
 import { ORPCError } from "@orpc/server";
 import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
-import { type PrismaClient, type Prisma } from "@mirai-app/db";
+import { type DB, rewards, rewardPurchases, coinTransactions, groups, challenges } from "@mirai-app/db";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
+import { eq, and, count, sql, inArray } from "drizzle-orm";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
 
 // Function to calculate total available points for a trip
-const calculateTotalAvailablePoints = async (db: PrismaClient | Prisma.TransactionClient, tripId: string) => {
-  const challenges = await db.challenge.findMany({
-    where: { tripId },
-    select: {
-      basePoints: true,
-      firstPlacePoints: true,
-      secondPlacePoints: true,
-      thirdPlacePoints: true,
-      scoringCategory: true,
-    },
-  });
+const calculateTotalAvailablePoints = async (db: DB, tripId: string) => {
+  const challengeRows = await db.select({
+    basePoints: challenges.basePoints,
+    firstPlacePoints: challenges.firstPlacePoints,
+    secondPlacePoints: challenges.secondPlacePoints,
+    thirdPlacePoints: challenges.thirdPlacePoints,
+    scoringCategory: challenges.scoringCategory,
+  }).from(challenges).where(eq(challenges.tripId, tripId));
 
   let totalPoints = 0;
   
-  for (const challenge of challenges) {
+  for (const challenge of challengeRows) {
     const basePoints = challenge.basePoints ?? 0;
     
     if (challenge.scoringCategory === "UNLIMITED") {
@@ -166,48 +164,51 @@ export const rewardRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const isAllTrips = input.tripId === "all";
 
-      const rewards = await context.db.reward.findMany({
-        where: isAllTrips ? { isHidden: false } : { tripId: input.tripId, isHidden: false },
-        include: {
+      const rewardRows = await context.db.query.rewards.findMany({
+        where: (r, { eq, and }) => isAllTrips
+          ? eq(r.isHidden, false)
+          : and(eq(r.tripId, input.tripId), eq(r.isHidden, false)),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
             },
           },
-          _count: {
-            select: {
-              purchases: true,
-            },
-          },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: (r, { desc }) => desc(r.createdAt),
       });
 
+      const rewardIds = rewardRows.map((r) => r.id);
+      const purchaseCounts = rewardIds.length > 0
+        ? await context.db.select({ rewardId: rewardPurchases.rewardId, count: count() })
+            .from(rewardPurchases)
+            .where(inArray(rewardPurchases.rewardId, rewardIds))
+            .groupBy(rewardPurchases.rewardId)
+        : [];
+      const countMap = new Map(purchaseCounts.map((pc) => [pc.rewardId, pc.count]));
+
       const rewardsWithSignedImages = await Promise.all(
-        rewards.map(async (reward) => {
+        rewardRows.map(async (reward) => {
           const imageData = await resolveRewardImageData(context.supabase, reward.image);
           return { ...reward, ...imageData };
         }),
       );
 
       // Calculate total available points for dynamic pricing
-      const totalAvailablePoints = isAllTrips 
+      const totalAvailablePoints = isAllTrips
         ? 0 // Cannot calculate for all trips
         : await calculateTotalAvailablePoints(context.db, input.tripId);
 
       // Get user's group to check if they can afford rewards
       const userGroup = isAllTrips
         ? null
-        : await context.db.tripParticipant.findFirst({
-            where: {
-              userId: context.dbUser.id,
-              tripId: input.tripId,
-            },
-            include: {
+        : await context.db.query.tripParticipants.findFirst({
+            where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+            with: {
               group: {
-                select: {
+                columns: {
                   id: true,
                   coins: true,
                   organizerId: true,
@@ -222,12 +223,12 @@ export const rewardRouter = createORPCRouter({
       return rewardsWithSignedImages.map((reward) => {
         // Calculate dynamic coin cost based on percentage of total available points
         let dynamicCoinCost = reward.coinCost; // Default to static cost
-        
+
         if (!isAllTrips && totalAvailablePoints > 0) {
           // Convert percentage to coin cost: coinCost represents percentage of total points
           const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
           dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-          
+
           // Ensure minimum cost of 1 coin
           dynamicCoinCost = Math.max(1, dynamicCoinCost);
         }
@@ -239,7 +240,7 @@ export const rewardRouter = createORPCRouter({
           canAfford: groupCoins >= dynamicCoinCost,
           isEligibleToBuy: isGroupLeader,
           isOutOfStock: reward.availableQuantity <= 0,
-          purchasedCount: reward._count.purchases,
+          purchasedCount: countMap.get(reward.id) ?? 0,
         };
       });
     }),
@@ -261,41 +262,47 @@ export const rewardRouter = createORPCRouter({
       const isAllTrips = input.tripId === "all";
       const limit = input.pagination?.limit ?? 30;
       const offset = input.pagination?.offset ?? 0;
-      const where = isAllTrips ? undefined : { tripId: input.tripId };
+      const where = isAllTrips ? undefined : eq(rewards.tripId, input.tripId);
 
-      const [rewards, total] = await Promise.all([
-        context.db.reward.findMany({
+      const [rewardRows, totalResult] = await Promise.all([
+        context.db.query.rewards.findMany({
           where,
-          include: {
+          with: {
             createdBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
-            _count: {
-              select: {
-                purchases: true,
-              },
-            },
           },
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          skip: offset,
+          orderBy: (r, { desc }) => desc(r.createdAt),
+          limit,
+          offset,
         }),
-        context.db.reward.count({ where }),
+        context.db.select({ count: count() }).from(rewards).where(where),
       ]);
 
+      const rewardIds = rewardRows.map((r) => r.id);
+      const purchaseCounts = rewardIds.length > 0
+        ? await context.db.select({ rewardId: rewardPurchases.rewardId, count: count() })
+            .from(rewardPurchases)
+            .where(inArray(rewardPurchases.rewardId, rewardIds))
+            .groupBy(rewardPurchases.rewardId)
+        : [];
+      const countMap = new Map(purchaseCounts.map((pc) => [pc.rewardId, pc.count]));
+
+      const total = totalResult[0]?.count ?? 0;
+
       const rewardsWithSignedImages = await Promise.all(
-        rewards.map(async (reward) => {
+        rewardRows.map(async (reward) => {
           const imageData = await resolveRewardImageData(context.supabase, reward.image);
           return { ...reward, ...imageData };
         }),
       );
 
       // Calculate total available points for dynamic pricing (only for specific trips)
-      const totalAvailablePoints = isAllTrips 
+      const totalAvailablePoints = isAllTrips
         ? 0 // Cannot calculate for all trips
         : await calculateTotalAvailablePoints(context.db, input.tripId);
 
@@ -319,7 +326,7 @@ export const rewardRouter = createORPCRouter({
           canAfford: false, // Not relevant for admin
           isEligibleToBuy: false, // Not relevant for admin
           isOutOfStock: reward.availableQuantity <= 0,
-          purchasedCount: reward._count.purchases,
+          purchasedCount: countMap.get(reward.id) ?? 0,
         };
       });
 
@@ -338,45 +345,40 @@ export const rewardRouter = createORPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const reward = await context.db.reward.findUnique({
-        where: { id: input.id },
-        include: {
+      const reward = await context.db.query.rewards.findFirst({
+        where: (r, { eq }) => eq(r.id, input.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
             },
           },
           purchases: {
-            include: {
+            with: {
               group: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                 },
               },
               purchasedBy: {
-                select: {
+                columns: {
                   id: true,
                   firstName: true,
                   lastName: true,
                 },
               },
               statusUpdatedBy: {
-                select: {
+                columns: {
                   id: true,
                   firstName: true,
                   lastName: true,
                 },
               },
             },
-            orderBy: { purchasedAt: "desc" },
-          },
-          _count: {
-            select: {
-              purchases: true,
-            },
+            orderBy: (rp, { desc }) => desc(rp.purchasedAt),
           },
         },
       });
@@ -395,24 +397,29 @@ export const rewardRouter = createORPCRouter({
       // Calculate total available points for dynamic pricing
       const totalAvailablePoints = await calculateTotalAvailablePoints(context.db, reward.tripId);
 
+      const [purchaseCountResult] = await context.db.select({ count: count() })
+        .from(rewardPurchases)
+        .where(eq(rewardPurchases.rewardId, input.id));
+      const purchasedCount = purchaseCountResult?.count ?? 0;
+
       // Calculate dynamic coin cost based on percentage of total available points
       let dynamicCoinCost = reward.coinCost; // Default to static cost
-      
+
       if (totalAvailablePoints > 0) {
         // Convert percentage to coin cost: coinCost represents percentage of total points
         const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
         dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-        
+
         // Ensure minimum cost of 1 coin
         dynamicCoinCost = Math.max(1, dynamicCoinCost);
       }
 
-      return { 
-        ...reward, 
+      return {
+        ...reward,
         ...imageData,
         coinCost: dynamicCoinCost, // Use dynamic cost
         originalCoinCost: reward.coinCost, // Keep original for reference
-        purchasedCount: reward._count.purchases,
+        purchasedCount,
       };
     }),
 
@@ -439,20 +446,26 @@ export const rewardRouter = createORPCRouter({
             : [],
       );
 
-      return await context.db.reward.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          availableQuantity: input.availableQuantity,
-          image: serializeRewardImages(normalizedImages),
-          coinCost: input.coinCost,
-          isHidden: input.isHidden ?? false,
-          tripId: input.tripId,
-          createdById: context.dbUser.id,
-        },
-        include: {
+      const [inserted] = await context.db.insert(rewards).values({
+        name: input.name,
+        description: input.description,
+        availableQuantity: input.availableQuantity,
+        image: serializeRewardImages(normalizedImages),
+        coinCost: input.coinCost,
+        isHidden: input.isHidden ?? false,
+        tripId: input.tripId,
+        createdById: context.dbUser.id,
+      }).returning();
+
+      if (!inserted) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create reward" });
+      }
+
+      return await context.db.query.rewards.findFirst({
+        where: (r, { eq }) => eq(r.id, inserted.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -488,24 +501,29 @@ export const rewardRouter = createORPCRouter({
         "image",
       );
 
-      const reward = await context.db.reward.update({
-        where: { id },
-        data: {
-          ...restUpdate,
-          ...(hasImagesProp
-            ? {
-                image: serializeRewardImages(
-                  normalizeRewardImagesInput(images),
-                ),
-              }
-            : hasImageProp
-              ? { image: image ?? null }
-              : {}),
-          updatedAt: new Date(),
-        },
-        include: {
+      const [updated] = await context.db.update(rewards).set({
+        ...restUpdate,
+        ...(hasImagesProp
+          ? {
+              image: serializeRewardImages(
+                normalizeRewardImagesInput(images),
+              ),
+            }
+          : hasImageProp
+            ? { image: image ?? null }
+            : {}),
+        updatedAt: new Date(),
+      }).where(eq(rewards.id, id)).returning();
+
+      if (!updated) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update reward" });
+      }
+
+      return await context.db.query.rewards.findFirst({
+        where: (r, { eq }) => eq(r.id, updated.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -513,8 +531,6 @@ export const rewardRouter = createORPCRouter({
           },
         },
       });
-
-      return reward;
     }),
 
   setHidden: moderatorProcedure
@@ -525,15 +541,20 @@ export const rewardRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.reward.update({
-        where: { id: input.id },
-        data: {
-          isHidden: input.isHidden,
-          updatedAt: new Date(),
-        },
-        include: {
+      const [updated] = await context.db.update(rewards).set({
+        isHidden: input.isHidden,
+        updatedAt: new Date(),
+      }).where(eq(rewards.id, input.id)).returning();
+
+      if (!updated) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update reward" });
+      }
+
+      return await context.db.query.rewards.findFirst({
+        where: (r, { eq }) => eq(r.id, updated.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -548,17 +569,16 @@ export const rewardRouter = createORPCRouter({
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
       // Check if reward has any purchases
-      const purchaseCount = await context.db.rewardPurchase.count({
-        where: { rewardId: input.id },
-      });
+      const [purchaseCountResult] = await context.db.select({ count: count() })
+        .from(rewardPurchases)
+        .where(eq(rewardPurchases.rewardId, input.id));
+      const purchaseCount = purchaseCountResult?.count ?? 0;
 
       if (purchaseCount > 0) {
         throw new ORPCError("BAD_REQUEST", { message: "Cannot delete reward with existing purchases" });
       }
 
-      await context.db.reward.delete({
-        where: { id: input.id },
-      });
+      await context.db.delete(rewards).where(eq(rewards.id, input.id));
 
       return { success: true };
     }),
@@ -572,17 +592,17 @@ export const rewardRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.$transaction(async (tx) => {
+      return await context.db.transaction(async (tx) => {
         // Get reward and lock it for update
-        const reward = await tx.reward.findUnique({
-          where: { id: input.rewardId },
+        const reward = await tx.query.rewards.findFirst({
+          where: (r, { eq }) => eq(r.id, input.rewardId),
         });
 
         if (!reward) {
           throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
         }
 
-        await ensureTripNotEnded(context.db, reward.tripId);
+        await ensureTripNotEnded(tx as unknown as DB, reward.tripId);
 
         if (reward.isHidden) {
           throw new ORPCError("BAD_REQUEST", { message: "Reward is hidden" });
@@ -593,14 +613,11 @@ export const rewardRouter = createORPCRouter({
         }
 
         // Get user's group and verify they are the organizer
-        const userParticipant = await tx.tripParticipant.findFirst({
-          where: {
-            userId: context.dbUser.id,
-            tripId: reward.tripId,
-          },
-          include: {
+        const userParticipant = await tx.query.tripParticipants.findFirst({
+          where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, reward.tripId)),
+          with: {
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 coins: true,
@@ -620,14 +637,14 @@ export const rewardRouter = createORPCRouter({
         }
 
         // Calculate dynamic coin cost at time of purchase
-        const totalAvailablePoints = await calculateTotalAvailablePoints(tx, reward.tripId);
+        const totalAvailablePoints = await calculateTotalAvailablePoints(tx as unknown as DB, reward.tripId);
         let dynamicCoinCost = reward.coinCost; // Default to static cost
-        
+
         if (totalAvailablePoints > 0) {
           // Convert percentage to coin cost: coinCost represents percentage of total points
           const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
           dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-          
+
           // Ensure minimum cost of 1 coin
           dynamicCoinCost = Math.max(1, dynamicCoinCost);
         }
@@ -639,49 +656,59 @@ export const rewardRouter = createORPCRouter({
         }
 
         // Update reward quantity
-        await tx.reward.update({
-          where: { id: input.rewardId },
-          data: {
-            availableQuantity: { decrement: input.quantity },
-            updatedAt: new Date(),
-          },
-        });
+        await tx.update(rewards).set({
+          availableQuantity: sql`${rewards.availableQuantity} - ${input.quantity}`,
+          updatedAt: new Date(),
+        }).where(eq(rewards.id, input.rewardId));
 
         // Deduct coins from group
-        await tx.group.update({
-          where: { id: userParticipant.group.id },
-          data: { coins: { decrement: totalCost } },
-        });
+        await tx.update(groups).set({
+          coins: sql`${groups.coins} - ${totalCost}`,
+        }).where(eq(groups.id, userParticipant.group.id));
 
         // Create purchase record
-        const purchase = await tx.rewardPurchase.create({
-          data: {
-            rewardId: input.rewardId,
-            groupId: userParticipant.group.id,
-            quantity: input.quantity,
-            totalCost,
-            purchasedById: context.dbUser.id,
-            status: "BOUGHT",
-            statusUpdatedById: context.dbUser.id,
-            statusUpdatedAt: new Date(),
-          },
-          include: {
+        const [insertedPurchase] = await tx.insert(rewardPurchases).values({
+          rewardId: input.rewardId,
+          groupId: userParticipant.group.id,
+          quantity: input.quantity,
+          totalCost,
+          purchasedById: context.dbUser.id,
+          status: "BOUGHT",
+          statusUpdatedById: context.dbUser.id,
+          statusUpdatedAt: new Date(),
+        }).returning();
+
+        if (!insertedPurchase) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create purchase" });
+        }
+
+        // Create coin transaction record
+        await tx.insert(coinTransactions).values({
+          groupId: userParticipant.group.id,
+          amount: -totalCost,
+          reason: `Claimed ${input.quantity}x ${reward.name}`,
+          adminId: context.dbUser.id,
+        }).returning();
+
+        return await tx.query.rewardPurchases.findFirst({
+          where: (rp, { eq }) => eq(rp.id, insertedPurchase.id),
+          with: {
             reward: true,
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             purchasedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
             statusUpdatedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
@@ -689,18 +716,6 @@ export const rewardRouter = createORPCRouter({
             },
           },
         });
-
-        // Create coin transaction record
-        await tx.coinTransaction.create({
-          data: {
-            groupId: userParticipant.group.id,
-            amount: -totalCost,
-            reason: `Claimed ${input.quantity}x ${reward.name}`,
-            adminId: context.dbUser.id,
-          },
-        });
-
-        return purchase;
       });
     }),
 
@@ -712,18 +727,18 @@ export const rewardRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.$transaction(async (tx) => {
-        const purchase = await tx.rewardPurchase.findUnique({
-          where: { id: input.purchaseId },
-          include: {
+      return await context.db.transaction(async (tx) => {
+        const purchase = await tx.query.rewardPurchases.findFirst({
+          where: (rp, { eq }) => eq(rp.id, input.purchaseId),
+          with: {
             reward: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             group: {
-              select: {
+              columns: {
                 id: true,
                 organizerId: true,
               },
@@ -746,30 +761,35 @@ export const rewardRouter = createORPCRouter({
             throw new ORPCError("BAD_REQUEST", { message: "Purchase can be moved to in delivery only after acceptance" });
           }
 
-          return await tx.rewardPurchase.update({
-            where: { id: purchase.id },
-            data: {
-              status: "IN_DELIVERY",
-              statusUpdatedById: context.dbUser.id,
-              statusUpdatedAt: new Date(),
-            },
-            include: {
+          const [updated] = await tx.update(rewardPurchases).set({
+            status: "IN_DELIVERY",
+            statusUpdatedById: context.dbUser.id,
+            statusUpdatedAt: new Date(),
+          }).where(eq(rewardPurchases.id, purchase.id)).returning();
+
+          if (!updated) {
+            throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
+          }
+
+          return await tx.query.rewardPurchases.findFirst({
+            where: (rp, { eq }) => eq(rp.id, updated.id),
+            with: {
               reward: true,
               group: {
-                select: {
+                columns: {
                   id: true,
                   name: true,
                 },
               },
               purchasedBy: {
-                select: {
+                columns: {
                   id: true,
                   firstName: true,
                   lastName: true,
                 },
               },
               statusUpdatedBy: {
-                select: {
+                columns: {
                   id: true,
                   firstName: true,
                   lastName: true,
@@ -783,49 +803,50 @@ export const rewardRouter = createORPCRouter({
           throw new ORPCError("BAD_REQUEST", { message: "Only pending purchases can be cancelled by user" });
         }
 
-        await tx.group.update({
-          where: { id: purchase.groupId },
-          data: { coins: { increment: purchase.totalCost } },
-        });
+        await tx.update(groups).set({
+          coins: sql`${groups.coins} + ${purchase.totalCost}`,
+        }).where(eq(groups.id, purchase.groupId));
 
-        await tx.reward.update({
-          where: { id: purchase.rewardId },
-          data: { availableQuantity: { increment: purchase.quantity } },
-        });
+        await tx.update(rewards).set({
+          availableQuantity: sql`${rewards.availableQuantity} + ${purchase.quantity}`,
+        }).where(eq(rewards.id, purchase.rewardId));
 
-        await tx.coinTransaction.create({
-          data: {
-            groupId: purchase.groupId,
-            amount: purchase.totalCost,
-            reason: `Cancelled reward claim by user: ${purchase.quantity}x ${purchase.reward.name}`,
-            adminId: context.dbUser.id,
-          },
-        });
+        await tx.insert(coinTransactions).values({
+          groupId: purchase.groupId,
+          amount: purchase.totalCost,
+          reason: `Cancelled reward claim by user: ${purchase.quantity}x ${purchase.reward.name}`,
+          adminId: context.dbUser.id,
+        }).returning();
 
-        return await tx.rewardPurchase.update({
-          where: { id: purchase.id },
-          data: {
-            status: "CANCELLED",
-            statusUpdatedById: context.dbUser.id,
-            statusUpdatedAt: new Date(),
-          },
-          include: {
+        const [updated] = await tx.update(rewardPurchases).set({
+          status: "CANCELLED",
+          statusUpdatedById: context.dbUser.id,
+          statusUpdatedAt: new Date(),
+        }).where(eq(rewardPurchases.id, purchase.id)).returning();
+
+        if (!updated) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
+        }
+
+        return await tx.query.rewardPurchases.findFirst({
+          where: (rp, { eq }) => eq(rp.id, updated.id),
+          with: {
             reward: true,
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             purchasedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
             statusUpdatedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
@@ -845,18 +866,18 @@ export const rewardRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.$transaction(async (tx) => {
-        const purchase = await tx.rewardPurchase.findUnique({
-          where: { id: input.purchaseId },
-          include: {
+      return await context.db.transaction(async (tx) => {
+        const purchase = await tx.query.rewardPurchases.findFirst({
+          where: (rp, { eq }) => eq(rp.id, input.purchaseId),
+          with: {
             reward: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
                 coins: true,
@@ -889,53 +910,54 @@ export const rewardRouter = createORPCRouter({
         }
 
         if (nextStatus === "CANCELLED" && currentStatus !== "CANCELLED") {
-          await tx.group.update({
-            where: { id: purchase.groupId },
-            data: { coins: { increment: purchase.totalCost } },
-          });
+          await tx.update(groups).set({
+            coins: sql`${groups.coins} + ${purchase.totalCost}`,
+          }).where(eq(groups.id, purchase.groupId));
 
-          await tx.reward.update({
-            where: { id: purchase.rewardId },
-            data: { availableQuantity: { increment: purchase.quantity } },
-          });
+          await tx.update(rewards).set({
+            availableQuantity: sql`${rewards.availableQuantity} + ${purchase.quantity}`,
+          }).where(eq(rewards.id, purchase.rewardId));
 
-          await tx.coinTransaction.create({
-            data: {
-              groupId: purchase.groupId,
-              amount: purchase.totalCost,
-              reason: `Refunded reward claim: ${purchase.quantity}x ${purchase.reward.name}`,
-              adminId: context.dbUser.id,
-            },
-          });
+          await tx.insert(coinTransactions).values({
+            groupId: purchase.groupId,
+            amount: purchase.totalCost,
+            reason: `Refunded reward claim: ${purchase.quantity}x ${purchase.reward.name}`,
+            adminId: context.dbUser.id,
+          }).returning();
         }
 
-        return await tx.rewardPurchase.update({
-          where: { id: purchase.id },
-          data: {
-            status: nextStatus,
-            statusUpdatedById: context.dbUser.id,
-            statusUpdatedAt: new Date(),
-            ...(input.collectionMethod?.trim()
-              ? { collectionMethod: input.collectionMethod.trim() }
-              : {}),
-          },
-          include: {
+        const [updated] = await tx.update(rewardPurchases).set({
+          status: nextStatus,
+          statusUpdatedById: context.dbUser.id,
+          statusUpdatedAt: new Date(),
+          ...(input.collectionMethod?.trim()
+            ? { collectionMethod: input.collectionMethod.trim() }
+            : {}),
+        }).where(eq(rewardPurchases.id, purchase.id)).returning();
+
+        if (!updated) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
+        }
+
+        return await tx.query.rewardPurchases.findFirst({
+          where: (rp, { eq }) => eq(rp.id, updated.id),
+          with: {
             reward: true,
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             purchasedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
             statusUpdatedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
@@ -966,12 +988,9 @@ export const rewardRouter = createORPCRouter({
       const offset = input.pagination?.offset ?? 0;
 
       if (!isStaff) {
-        const participant = await context.db.tripParticipant.findFirst({
-          where: {
-            userId: context.dbUser.id,
-            tripId: input.tripId,
-          },
-          select: {
+        const participant = await context.db.query.tripParticipants.findFirst({
+          where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+          columns: {
             groupId: true,
           },
         });
@@ -983,46 +1002,54 @@ export const rewardRouter = createORPCRouter({
         groupIdFilter = participant.groupId;
       }
 
-      const where = {
-        reward: { tripId: input.tripId },
-        ...(groupIdFilter ? { groupId: groupIdFilter } : {}),
-      };
+      const tripRewardIds = await context.db.select({ id: rewards.id })
+        .from(rewards)
+        .where(eq(rewards.tripId, input.tripId));
+      const rewardIds = tripRewardIds.map((r) => r.id);
 
-      const [purchases, total] = await Promise.all([
-        context.db.rewardPurchase.findMany({
+      const where = rewardIds.length > 0
+        ? groupIdFilter
+          ? and(inArray(rewardPurchases.rewardId, rewardIds), eq(rewardPurchases.groupId, groupIdFilter))
+          : inArray(rewardPurchases.rewardId, rewardIds)
+        : undefined;
+
+      const [purchaseRows, totalResult] = await Promise.all([
+        context.db.query.rewardPurchases.findMany({
           where,
-          include: {
+          with: {
             reward: true,
             group: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
             purchasedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
             statusUpdatedBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
               },
             },
           },
-          orderBy: { purchasedAt: "desc" },
-          take: limit,
-          skip: offset,
+          orderBy: (rp, { desc }) => desc(rp.purchasedAt),
+          limit,
+          offset,
         }),
-        context.db.rewardPurchase.count({ where }),
+        context.db.select({ count: count() }).from(rewardPurchases).where(where),
       ]);
 
+      const total = totalResult[0]?.count ?? 0;
+
       return {
-        purchases,
+        purchases: purchaseRows,
         pagination: {
           total,
           limit,

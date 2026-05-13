@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { userRouter } from "../user";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, TripParticipant, Group } from "@mirai-app/db";
+import type { DB, User, TripParticipant, Group } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
@@ -35,19 +35,19 @@ import { requireAuth, requireAdmin, requireModerator } from "@mirai-app/auth";
 const createCaller = (ctx: TRPCContext) => createRouterClient(userRouter, { context: ctx });
 
 describe("userRouter", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockDb: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockSupabase: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockBuildAuthEmailLookup: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockBuildAuthUserSummaryLookup: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireAuth: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireAdmin: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireModerator: any;
 
   // Test data factories

@@ -12,7 +12,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../api/trpc";
 import { z } from "zod";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User } from "@mirai-app/db";
+import type { DB, User } from "@mirai-app/db";
 
 /**
  * Example oRPC Router Tests
@@ -90,7 +90,7 @@ describe("oRPC Router Testing Patterns", () => {
         count: vi.fn<() => Promise<number>>().mockResolvedValue(0),
       },
       $transaction: vi.fn<(cb: (prisma: PrismaClient) => Promise<unknown>) => Promise<unknown>>((cb) => cb(mockDb)),
-    } as unknown as PrismaClient;
+    };
 
     // Setup mock Supabase client
     interface MockQueryBuilder {
@@ -204,15 +204,15 @@ describe("oRPC Router Testing Patterns", () => {
       };
 
       // Mock successful auth
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       } as never);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -230,7 +230,7 @@ describe("oRPC Router Testing Patterns", () => {
       try {
         await caller.getMe();
       } catch {
-        // eslint-disable-next-line @typescript-eslint/unbound-method
+         
         expect(mockSupabase.auth.getUser).toHaveBeenCalledWith("test-token");
       }
     });
@@ -242,8 +242,8 @@ describe("oRPC Router Testing Patterns", () => {
         lastName: "Name",
       };
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      vi.mocked(mockDb.user.update).mockResolvedValue(mockUpdatedUser as unknown as User);
+       
+      vi.mocked(mockDb.user.update).mockResolvedValue(mockUpdatedUser);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -261,7 +261,7 @@ describe("oRPC Router Testing Patterns", () => {
       }
 
       // Verify the mock was set up correctly
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.user.update).toBeDefined();
     });
   });
@@ -276,12 +276,12 @@ describe("oRPC Router Testing Patterns", () => {
       };
 
       // Mock non-admin user
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.user.findFirst).mockResolvedValue({
         id: "db-123",
         authUserId: "auth-123",
         role: "USER",
-      } as unknown as User);
+      });
 
       const caller = createCaller(ctx);
 
@@ -292,7 +292,7 @@ describe("oRPC Router Testing Patterns", () => {
       }
 
       // The procedure should attempt to verify admin status
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.user.findFirst).toBeDefined();
     });
 
@@ -322,7 +322,7 @@ describe("oRPC Router Testing Patterns", () => {
         },
       ];
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.user.findMany).mockResolvedValue(mockUsers);
 
       const ctx: TRPCContext = {
@@ -380,7 +380,7 @@ describe("oRPC Router Testing Patterns", () => {
 
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.user.findMany).mockRejectedValue(
         new Error("Database connection failed")
       );

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { tripRouter } from "../trip";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Trip, TripParticipant, TripGroup, TripResource, TripInsurance, TripInsuranceStep, TripSponsor, Sponsor } from "@mirai-app/db";
+import type { DB, User, Trip, TripParticipant, TripGroup, TripResource, TripInsurance, TripInsuranceStep, TripSponsor, Sponsor } from "@mirai-app/db";
 import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } from "@mirai-app/auth";
 
 /**
@@ -496,7 +496,7 @@ describe("tripRouter", () => {
       const result = await caller.getById({ id: "trip-1" });
 
       expect(result.groups[0]?.image).toBe("https://signed-url.example.com/image.jpg");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 

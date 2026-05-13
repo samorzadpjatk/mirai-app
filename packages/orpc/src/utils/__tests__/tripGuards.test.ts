@@ -7,7 +7,7 @@ import {
   ensureTripNotEnded,
   ensureTripNotEndedByGroupId,
 } from "../tripGuards";
-import type { PrismaClient } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 
 describe("tripGuards", () => {
   let mockDb: PrismaClient;
@@ -22,17 +22,17 @@ describe("tripGuards", () => {
       group: {
         findUnique: vi.fn(),
       },
-    } as unknown as PrismaClient;
+    };
   });
 
   describe("ensureTripNotEnded", () => {
     it("should not throw for active trip", async () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: futureDate,
-      } as never);
+      });
 
       await expect(
         ensureTripNotEnded(mockDb, "trip-1")
@@ -41,11 +41,11 @@ describe("tripGuards", () => {
 
     it("should not throw for trip ended within grace period", async () => {
       const recentEndDate = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: recentEndDate,
-      } as never);
+      });
 
       await expect(
         ensureTripNotEnded(mockDb, "trip-1")
@@ -53,7 +53,7 @@ describe("tripGuards", () => {
     });
 
     it("should throw NOT_FOUND for non-existent trip", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue(null);
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
@@ -72,11 +72,11 @@ describe("tripGuards", () => {
 
     it("should throw FORBIDDEN for trip ended beyond grace period", async () => {
       const oldEndDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: oldEndDate,
-      } as never);
+      });
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
         ORPCError
@@ -96,11 +96,11 @@ describe("tripGuards", () => {
       const gracePeriodBoundary = new Date(
         Date.now() - 24 * 60 * 60 * 1000 - 1000
       );
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: gracePeriodBoundary,
-      } as never);
+      });
 
       await expect(ensureTripNotEnded(mockDb, "trip-1")).rejects.toThrow(
         ORPCError
@@ -115,15 +115,15 @@ describe("tripGuards", () => {
 
     it("should query trip with correct ID", async () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: futureDate,
-      } as never);
+      });
 
       await ensureTripNotEnded(mockDb, "trip-1");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.trip.findUnique).toHaveBeenCalledWith({
         where: { id: "trip-1" },
         select: { endDate: true },
@@ -134,17 +134,17 @@ describe("tripGuards", () => {
   describe("ensureTripNotEndedByGroupId", () => {
     it("should return tripId for valid active group", async () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: false,
-      } as never);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      });
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: futureDate,
-      } as never);
+      });
 
       const result = await ensureTripNotEndedByGroupId(mockDb, "group-1");
 
@@ -152,7 +152,7 @@ describe("tripGuards", () => {
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -170,12 +170,12 @@ describe("tripGuards", () => {
     });
 
     it("should throw NOT_FOUND for deleted group", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: true,
-      } as never);
+      });
 
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
@@ -193,17 +193,17 @@ describe("tripGuards", () => {
 
     it("should throw FORBIDDEN when trip has ended", async () => {
       const oldEndDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: false,
-      } as never);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      });
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: oldEndDate,
-      } as never);
+      });
 
       await expect(
         ensureTripNotEndedByGroupId(mockDb, "group-1")
@@ -215,21 +215,21 @@ describe("tripGuards", () => {
 
     it("should query group with correct ID", async () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: false,
-      } as never);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      });
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: futureDate,
-      } as never);
+      });
 
       await ensureTripNotEndedByGroupId(mockDb, "group-1");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.findUnique).toHaveBeenCalledWith({
         where: { id: "group-1" },
         select: { tripId: true, isDeleted: true },
@@ -238,21 +238,21 @@ describe("tripGuards", () => {
 
     it("should query trip with correct tripId from group", async () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: false,
-      } as never);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      });
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: futureDate,
-      } as never);
+      });
 
       await ensureTripNotEndedByGroupId(mockDb, "group-1");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.trip.findUnique).toHaveBeenCalledWith({
         where: { id: "trip-1" },
         select: { endDate: true },
@@ -261,17 +261,17 @@ describe("tripGuards", () => {
 
     it("should work with group in grace period trip", async () => {
       const recentEndDate = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue({
         id: "group-1",
         tripId: "trip-1",
         isDeleted: false,
-      } as never);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      });
+       
       vi.mocked(mockDb.trip.findUnique).mockResolvedValue({
         id: "trip-1",
         endDate: recentEndDate,
-      } as never);
+      });
 
       const result = await ensureTripNotEndedByGroupId(mockDb, "group-1");
 

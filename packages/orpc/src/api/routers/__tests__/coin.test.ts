@@ -1,6 +1,6 @@
  
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { coinRouter } from "../../routers/coin";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Group, CoinTransaction } from "@mirai-app/db";
+import type { DB, User, Group, CoinTransaction } from "@mirai-app/db";
 
 // Mock the utility modules
 vi.mock("../../../utils/activityFeed", () => ({
@@ -140,7 +140,7 @@ describe("coinRouter", () => {
         }
         return Promise.all(callback as unknown[]);
       }),
-    } as unknown as PrismaClient;
+    };
   });
 
   // Helper to create authenticated context
@@ -174,11 +174,11 @@ describe("coinRouter", () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.findUnique).mockResolvedValue(mockGroup);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.group.update).mockResolvedValue(updatedGroup);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockDb.coinTransaction.create).mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -193,12 +193,12 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(50);
       expect(result.group.coins).toBe(150);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { increment: 50 } },
       });
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.create).toHaveBeenCalled();
     });
 
@@ -336,7 +336,7 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(-50);
       expect(result.group.coins).toBe(50);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { decrement: 50 } },

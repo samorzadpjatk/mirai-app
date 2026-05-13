@@ -8,7 +8,7 @@ import { storageRouter } from "../../routers/storage";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User } from "@mirai-app/db";
+import type { DB, User } from "@mirai-app/db";
 
 vi.mock("../../../utils/storage", () => ({
   normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string) => {
@@ -117,7 +117,7 @@ describe("storageRouter", () => {
         findUnique: vi.fn().mockResolvedValue(mockUser),
         findFirst: vi.fn().mockResolvedValue(mockUser),
       },
-    } as unknown as PrismaClient;
+    };
   });
 
   afterEach(() => {
@@ -160,7 +160,7 @@ describe("storageRouter", () => {
       });
 
       expect(result.token).toBe("upload-token-123");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 

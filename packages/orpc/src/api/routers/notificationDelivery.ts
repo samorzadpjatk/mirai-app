@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ORPCError } from "@orpc/server";
 import { adminProcedure, createORPCRouter } from "../trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { eq, and, or, gte, lte, count, sum, avg } from "drizzle-orm";
+import { notificationDeliveries } from "@mirai-app/db";
 
 export const notificationDeliveryRouter = createORPCRouter({
   getDeliveries: adminProcedure
@@ -22,45 +24,39 @@ export const notificationDeliveryRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const filters: {
-          tripId?: string;
-          status?: string;
-          scheduleId?: string;
-          deliveryStartedAt?: {
-            gte?: Date;
-            lte?: Date;
-          };
-        } = { tripId: input?.tripId };
+        const conditions = [];
+
+        if (input?.tripId) {
+          conditions.push(eq(notificationDeliveries.tripId, input.tripId));
+        }
 
         if (input?.status) {
-          filters.status = input.status;
+          conditions.push(eq(notificationDeliveries.status, input.status));
         }
 
         if (input?.scheduleId) {
-          filters.scheduleId = input.scheduleId;
+          conditions.push(eq(notificationDeliveries.scheduleId, input.scheduleId));
         }
 
-        if (input?.startDate || input?.endDate) {
-          filters.deliveryStartedAt = {};
-          if (input.startDate) {
-            filters.deliveryStartedAt.gte = input.startDate;
-          }
-          if (input.endDate) {
-            filters.deliveryStartedAt.lte = input.endDate;
-          }
+        if (input?.startDate) {
+          conditions.push(gte(notificationDeliveries.deliveryStartedAt, input.startDate));
         }
 
-        const [deliveries, total] = await Promise.all([
-          context.db.notificationDelivery.findMany({
-            where: filters,
-            orderBy: {
-              deliveryStartedAt: "desc",
-            },
-            take: input?.limit ?? 50,
-            skip: input?.offset ?? 0,
-            include: {
+        if (input?.endDate) {
+          conditions.push(lte(notificationDeliveries.deliveryStartedAt, input.endDate));
+        }
+
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const [deliveries, totalResult] = await Promise.all([
+          context.db.query.notificationDeliveries.findMany({
+            where: whereClause,
+            orderBy: (nd, { desc }) => [desc(nd.deliveryStartedAt)],
+            limit: input?.limit ?? 50,
+            offset: input?.offset ?? 0,
+            with: {
               notification: {
-                select: {
+                columns: {
                   id: true,
                   title: true,
                   body: true,
@@ -69,10 +65,10 @@ export const notificationDeliveryRouter = createORPCRouter({
               },
             },
           }),
-          context.db.notificationDelivery.count({
-            where: filters,
-          }),
+          context.db.select({ count: count() }).from(notificationDeliveries).where(whereClause),
         ]);
+
+        const total = totalResult[0]?.count ?? 0;
 
         return {
           deliveries,
@@ -96,21 +92,21 @@ export const notificationDeliveryRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const delivery = await context.db.notificationDelivery.findUnique({
-          where: {
-            notificationId: input.notificationId,
-          },
-          include: {
+        const delivery = await context.db.query.notificationDeliveries.findFirst({
+          where: (nd, { eq }) => eq(nd.notificationId, input.notificationId),
+          with: {
             notification: {
-              select: {
+              columns: {
                 id: true,
                 title: true,
                 body: true,
                 url: true,
                 createdAt: true,
                 tripId: true,
+              },
+              with: {
                 createdBy: {
-                  select: {
+                  columns: {
                     id: true,
                     firstName: true,
                     lastName: true,
@@ -169,71 +165,60 @@ export const notificationDeliveryRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const filters: {
-          tripId?: string;
-          deliveryStartedAt?: {
-            gte?: Date;
-            lte?: Date;
-          };
-          scheduleId?: string;
-        } = { tripId: input?.tripId };
+        const conditions = [];
 
-        if (input?.startDate || input?.endDate) {
-          filters.deliveryStartedAt = {};
-          if (input.startDate) {
-            filters.deliveryStartedAt.gte = input.startDate;
-          }
-          if (input.endDate) {
-            filters.deliveryStartedAt.lte = input.endDate;
-          }
+        if (input?.tripId) {
+          conditions.push(eq(notificationDeliveries.tripId, input.tripId));
+        }
+
+        if (input?.startDate) {
+          conditions.push(gte(notificationDeliveries.deliveryStartedAt, input.startDate));
+        }
+
+        if (input?.endDate) {
+          conditions.push(lte(notificationDeliveries.deliveryStartedAt, input.endDate));
         }
 
         if (input?.scheduleId) {
-          filters.scheduleId = input.scheduleId;
+          conditions.push(eq(notificationDeliveries.scheduleId, input.scheduleId));
         }
 
-        const [stats, statusBreakdown] = await Promise.all([
-          context.db.notificationDelivery.aggregate({
-            where: filters,
-            _count: {
-              id: true,
-            },
-            _sum: {
-              totalRecipients: true,
-              successCount: true,
-              failureCount: true,
-            },
-            _avg: {
-              successCount: true,
-              failureCount: true,
-            },
-          }),
-          context.db.notificationDelivery.groupBy({
-            by: ["status"],
-            where: filters,
-            _count: {
-              id: true,
-            },
-          }),
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const [statsResult, statusBreakdown] = await Promise.all([
+          context.db.select({
+            count: count(notificationDeliveries.id),
+            totalRecipients: sum(notificationDeliveries.totalRecipients),
+            successCount: sum(notificationDeliveries.successCount),
+            failureCount: sum(notificationDeliveries.failureCount),
+            avgSuccess: avg(notificationDeliveries.successCount),
+            avgFailure: avg(notificationDeliveries.failureCount),
+          }).from(notificationDeliveries).where(whereClause),
+          context.db.select({
+            status: notificationDeliveries.status,
+            count: count(notificationDeliveries.id),
+          }).from(notificationDeliveries)
+            .where(whereClause)
+            .groupBy(notificationDeliveries.status),
         ]);
 
+        const stats = statsResult[0];
         const successRate =
-          stats._sum.totalRecipients && stats._sum.totalRecipients > 0
-            ? ((stats._sum.successCount ?? 0) / stats._sum.totalRecipients) *
-              100
+          stats?.totalRecipients && Number(stats.totalRecipients) > 0
+            ? ((Number(stats.successCount ?? 0) / Number(stats.totalRecipients)) * 100)
             : 0;
 
         return {
-          totalDeliveries: stats._count.id,
-          totalRecipients: stats._sum.totalRecipients ?? 0,
-          totalSuccess: stats._sum.successCount ?? 0,
-          totalFailures: stats._sum.failureCount ?? 0,
-          avgSuccessPerDelivery: stats._avg.successCount ?? 0,
-          avgFailuresPerDelivery: stats._avg.failureCount ?? 0,
+          totalDeliveries: stats?.count ?? 0,
+          totalRecipients: Number(stats?.totalRecipients ?? 0),
+          totalSuccess: Number(stats?.successCount ?? 0),
+          totalFailures: Number(stats?.failureCount ?? 0),
+          avgSuccessPerDelivery: Number(stats?.avgSuccess ?? 0),
+          avgFailuresPerDelivery: Number(stats?.avgFailure ?? 0),
           successRate,
           statusBreakdown: statusBreakdown.reduce(
             (acc, item) => {
-              acc[item.status] = item._count.id;
+              acc[item.status] = item.count;
               return acc;
             },
             {} as Record<string, number>,
@@ -258,26 +243,31 @@ export const notificationDeliveryRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const [deliveries, total] = await Promise.all([
-          context.db.notificationDelivery.findMany({
-            where: {
-              tripId: input?.tripId,
-              OR: [{ status: "failure" }, { status: "partial_failure" }],
-            },
-            orderBy: {
-              deliveryStartedAt: "desc",
-            },
-            take: input?.limit ?? 20,
-            skip: input?.offset ?? 0,
-            include: {
+        const whereClause = and(
+          input?.tripId ? eq(notificationDeliveries.tripId, input.tripId) : undefined,
+          or(
+            eq(notificationDeliveries.status, "failure"),
+            eq(notificationDeliveries.status, "partial_failure"),
+          ),
+        );
+
+        const [deliveries, totalResult] = await Promise.all([
+          context.db.query.notificationDeliveries.findMany({
+            where: whereClause,
+            orderBy: (nd, { desc }) => [desc(nd.deliveryStartedAt)],
+            limit: input?.limit ?? 20,
+            offset: input?.offset ?? 0,
+            with: {
               notification: {
-                select: {
+                columns: {
                   id: true,
                   title: true,
                   body: true,
                   createdAt: true,
+                },
+                with: {
                   createdBy: {
-                    select: {
+                    columns: {
                       id: true,
                       firstName: true,
                       lastName: true,
@@ -287,13 +277,10 @@ export const notificationDeliveryRouter = createORPCRouter({
               },
             },
           }),
-          context.db.notificationDelivery.count({
-            where: {
-              tripId: input?.tripId,
-              OR: [{ status: "failure" }, { status: "partial_failure" }],
-            },
-          }),
+          context.db.select({ count: count() }).from(notificationDeliveries).where(whereClause),
         ]);
+
+        const total = totalResult[0]?.count ?? 0;
 
         return {
           deliveries,

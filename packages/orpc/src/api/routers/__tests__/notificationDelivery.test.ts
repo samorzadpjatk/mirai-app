@@ -1,6 +1,6 @@
  
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { notificationDeliveryRouter } from "../../routers/notificationDelivery";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, NotificationDelivery, Notification } from "@mirai-app/db";
+import type { DB, User, NotificationDelivery, Notification } from "@mirai-app/db";
 
 // Mock the authEmails utilities
 vi.mock("../../../utils/authEmails", () => ({
@@ -132,7 +132,7 @@ describe("notificationDeliveryRouter", () => {
       notification: {
         findUnique: vi.fn().mockResolvedValue(createMockNotification()),
       },
-    } as unknown as PrismaClient;
+    };
   });
 
   // Helper to create authenticated context
@@ -207,7 +207,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
            
@@ -237,7 +237,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
            
@@ -444,7 +444,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(2);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalledWith(
         expect.objectContaining({
            
@@ -478,7 +478,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(3);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalledWith(
         expect.objectContaining({
            
@@ -510,7 +510,7 @@ describe("notificationDeliveryRouter", () => {
 
       expect(result.deliveries).toHaveLength(2);
       expect(result.total).toBe(2);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
            

@@ -8,7 +8,7 @@ import { coinTransactionRouter } from "../../routers/coinTransaction";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, CoinTransaction, Group } from "@mirai-app/db";
+import type { DB, User, CoinTransaction, Group } from "@mirai-app/db";
 
 const createCaller = (ctx: TRPCContext) => createRouterClient(coinTransactionRouter, { context: ctx });
 
@@ -123,7 +123,7 @@ describe("coinTransactionRouter", () => {
         findFirst: vi.fn().mockResolvedValue(mockModeratorUser),
         findUnique: vi.fn().mockResolvedValue({ firstName: "Test", lastName: "Admin" }),
       },
-    } as unknown as PrismaClient;
+    };
   });
 
   // Helper to create authenticated context
@@ -178,7 +178,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getStatistics({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.count).toHaveBeenCalledWith({
         where: { group: { tripId: "trip-123" } },
       });
@@ -219,7 +219,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getMostActiveAdminStats({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.groupBy).toHaveBeenCalledWith({
         by: ["adminId"],
         _sum: { amount: true },
@@ -265,7 +265,7 @@ describe("coinTransactionRouter", () => {
 
       expect(result.transactions).toHaveLength(1);
       expect(result.pagination.hasMore).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 1,
@@ -283,7 +283,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 50,
@@ -301,7 +301,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { createdAt: "desc" },
@@ -452,7 +452,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAdditionalInsights({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 5,
@@ -477,7 +477,7 @@ describe("coinTransactionRouter", () => {
       const result = await caller.getCoinTransactions({ tripId: "trip-123" });
 
       expect(result).toHaveLength(1);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { group: { tripId: "trip-123" } },
@@ -500,7 +500,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { groupId: "group-123", group: { tripId: "trip-123" } },
@@ -588,7 +588,7 @@ describe("coinTransactionRouter", () => {
 
       await caller.getCoinTransactions({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           take: 50,

@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { Prisma } from "@mirai-app/db";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+ 
 const noop = (): void => {};
 
 type RetryFunction<T> = () => Promise<T>;
@@ -41,7 +41,7 @@ describe("notifications", () => {
       tripParticipant: {
         findMany: vi.fn(),
       },
-    } as unknown as Prisma.TransactionClient;
+    };
 
     vi.spyOn(console, "error").mockImplementation(noop);
   });
@@ -71,7 +71,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationId).toBe("notif-1");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notification.create).toHaveBeenCalledWith({
         data: {
           title: "Test Title",
@@ -100,7 +100,7 @@ describe("notifications", () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
         data: [
           {
@@ -132,7 +132,7 @@ describe("notifications", () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
         data: [
           {
@@ -180,7 +180,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When userIds is empty, createMany is not called (implementation skips it)
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 
@@ -201,7 +201,7 @@ describe("notifications", () => {
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notification.create).toHaveBeenCalledWith({
          
         data: expect.objectContaining({
@@ -262,7 +262,7 @@ describe("notifications", () => {
       });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notification.create).toHaveBeenCalledTimes(2);
     });
   });
@@ -296,7 +296,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationIds).toHaveLength(3);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.findMany).toHaveBeenCalledWith({
         where: { tripId: "trip-1", isDeleted: false },
         orderBy: { coins: "desc" },
@@ -363,7 +363,7 @@ describe("notifications", () => {
         tripId: "trip-1",
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.tripParticipant.findMany).toHaveBeenCalledWith({
         where: { tripId: "trip-1", groupId: "group-1" },
         select: { userId: true },
@@ -389,7 +389,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When there are no participants, createMany is not called (implementation skips it)
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 

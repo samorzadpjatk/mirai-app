@@ -1,4 +1,5 @@
-import { type Prisma } from "@mirai-app/db";
+import { challenges } from "@mirai-app/db";
+import type { DB, TransactionDB } from "@mirai-app/db";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -91,31 +92,6 @@ export interface RecurringTemplate {
   isRecurring: boolean;
 }
 
-const recurringTemplateSelect: Prisma.ChallengeSelect = {
-  id: true,
-  tripId: true,
-  name: true,
-  description: true,
-  image: true,
-  submissionType: true,
-  scoringCategory: true,
-  basePoints: true,
-  firstPlacePoints: true,
-  secondPlacePoints: true,
-  thirdPlacePoints: true,
-  status: true,
-  startTime: true,
-  endTime: true,
-  dailyStartTime: true,
-  dailyEndTime: true,
-  targetLatitude: true,
-  targetLongitude: true,
-  expectedValue: true,
-  autoApprove: true,
-  createdAt: true,
-  isRecurring: true,
-} as const;
-
 const toInstanceName = (templateName: string, dayIndex: number) =>
   `${templateName} #${dayIndex}`;
 
@@ -124,7 +100,7 @@ const shouldGenerateFromTemplate = (template: RecurringTemplate) =>
   (template.status === "VISIBLE" || template.status === "ACTIVE");
 
 export const ensureRecurringInstanceForTemplate = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: DB | TransactionDB;
   template: RecurringTemplate;
   now?: Date;
 }) => {
@@ -159,58 +135,54 @@ export const ensureRecurringInstanceForTemplate = async (params: {
   const dayIndex = Math.floor((today.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
   const instanceName = toInstanceName(template.name, dayIndex);
 
-  const existing = await params.tx.challenge.findFirst({
-    where: {
-      tripId: template.tripId,
-      isRecurring: false,
-      name: instanceName,
-      startTime: dailyBounds.start,
-      endTime: dailyBounds.end,
-    },
-    select: { id: true, status: true },
+  const existing = await params.tx.query.challenges.findFirst({
+    where: (c, { eq, and }) => and(
+      eq(c.tripId, template.tripId),
+      eq(c.isRecurring, false),
+      eq(c.name, instanceName),
+      eq(c.startTime, dailyBounds.start),
+      eq(c.endTime, dailyBounds.end),
+    ),
   });
 
   if (existing) {
     return { id: existing.id, status: existing.status, created: false };
   }
 
-  const created = await params.tx.challenge.create({
-    data: {
-      tripId: template.tripId,
-      name: instanceName,
-      description: template.description,
-      image: template.image,
-      submissionType: template.submissionType,
-      scoringCategory: template.scoringCategory,
-      isRecurring: false,
-      dailyStartTime: null,
-      dailyEndTime: null,
-      basePoints: template.basePoints,
-      firstPlacePoints: template.firstPlacePoints,
-      secondPlacePoints: template.secondPlacePoints,
-      thirdPlacePoints: template.thirdPlacePoints,
-      status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
-      startTime: dailyBounds.start,
-      endTime: dailyBounds.end,
-      votingStartTime: null,
-      votingEndTime: null,
-      targetLatitude: template.targetLatitude,
-      targetLongitude: template.targetLongitude,
-      expectedValue: template.expectedValue,
-      autoApprove: template.autoApprove,
-    },
-    select: { id: true, status: true },
-  });
+  const created = await params.tx.insert(challenges).values({
+    tripId: template.tripId,
+    name: instanceName,
+    description: template.description,
+    image: template.image,
+    submissionType: template.submissionType,
+    scoringCategory: template.scoringCategory,
+    isRecurring: false,
+    dailyStartTime: null,
+    dailyEndTime: null,
+    basePoints: template.basePoints,
+    firstPlacePoints: template.firstPlacePoints,
+    secondPlacePoints: template.secondPlacePoints,
+    thirdPlacePoints: template.thirdPlacePoints,
+    status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
+    startTime: dailyBounds.start,
+    endTime: dailyBounds.end,
+    votingStartTime: null,
+    votingEndTime: null,
+    targetLatitude: template.targetLatitude,
+    targetLongitude: template.targetLongitude,
+    expectedValue: template.expectedValue,
+    autoApprove: template.autoApprove,
+  }).returning({ id: challenges.id, status: challenges.status });
 
-  if (!created) {
+  if (!created[0]) {
     return null;
   }
 
-  return { id: created.id, status: created.status, created: true };
+  return { id: created[0].id, status: created[0].status, created: true };
 };
 
 export const precreateRecurringInstancesForTemplate = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: DB | TransactionDB;
   template: RecurringTemplate;
   now?: Date;
 }) => {
@@ -243,15 +215,14 @@ export const precreateRecurringInstancesForTemplate = async (params: {
       continue;
     }
 
-    const existing = await params.tx.challenge.findFirst({
-      where: {
-        tripId: template.tripId,
-        isRecurring: false,
-        name: instanceName,
-        startTime: dailyBounds.start,
-        endTime: dailyBounds.end,
-      },
-      select: { id: true, status: true },
+    const existing = await params.tx.query.challenges.findFirst({
+      where: (c, { eq, and }) => and(
+        eq(c.tripId, template.tripId),
+        eq(c.isRecurring, false),
+        eq(c.name, instanceName),
+        eq(c.startTime, dailyBounds.start),
+        eq(c.endTime, dailyBounds.end),
+      ),
     });
 
     if (existing) {
@@ -259,51 +230,46 @@ export const precreateRecurringInstancesForTemplate = async (params: {
       continue;
     }
 
-    const created = await params.tx.challenge.create({
-      data: {
-        tripId: template.tripId,
-        name: instanceName,
-        description: template.description,
-        image: template.image,
-        submissionType: template.submissionType,
-        scoringCategory: template.scoringCategory,
-        isRecurring: false,
-        dailyStartTime: null,
-        dailyEndTime: null,
-        basePoints: template.basePoints,
-        firstPlacePoints: template.firstPlacePoints,
-        secondPlacePoints: template.secondPlacePoints,
-        thirdPlacePoints: template.thirdPlacePoints,
-        status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
-        startTime: dailyBounds.start,
-        endTime: dailyBounds.end,
-        votingStartTime: null,
-        votingEndTime: null,
-        targetLatitude: template.targetLatitude,
-        targetLongitude: template.targetLongitude,
-        expectedValue: template.expectedValue,
-        autoApprove: template.autoApprove,
-      },
-      select: { id: true, status: true },
-    });
+    const created = await params.tx.insert(challenges).values({
+      tripId: template.tripId,
+      name: instanceName,
+      description: template.description,
+      image: template.image,
+      submissionType: template.submissionType,
+      scoringCategory: template.scoringCategory,
+      isRecurring: false,
+      dailyStartTime: null,
+      dailyEndTime: null,
+      basePoints: template.basePoints,
+      firstPlacePoints: template.firstPlacePoints,
+      secondPlacePoints: template.secondPlacePoints,
+      thirdPlacePoints: template.thirdPlacePoints,
+      status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
+      startTime: dailyBounds.start,
+      endTime: dailyBounds.end,
+      votingStartTime: null,
+      votingEndTime: null,
+      targetLatitude: template.targetLatitude,
+      targetLongitude: template.targetLongitude,
+      expectedValue: template.expectedValue,
+      autoApprove: template.autoApprove,
+    }).returning({ id: challenges.id, status: challenges.status });
 
-    results.push({ id: created.id, status: created.status, created: true });
+    if (created[0]) {
+      results.push({ id: created[0].id, status: created[0].status, created: true });
+    }
   }
 
   return results;
 };
 
 export const ensureRecurringInstancesForTrip = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: DB | TransactionDB;
   tripId: string;
   now?: Date;
 }) => {
-  const templates = await params.tx.challenge.findMany({
-    where: {
-      tripId: params.tripId,
-      isRecurring: true,
-    },
-    select: recurringTemplateSelect,
+  const templates = await params.tx.query.challenges.findMany({
+    where: (c, { eq, and }) => and(eq(c.tripId, params.tripId), eq(c.isRecurring, true)),
   });
 
   const results: { id: string; status: string; created: boolean }[] = [];
@@ -321,17 +287,13 @@ export const ensureRecurringInstancesForTrip = async (params: {
 };
 
 export const resolveRecurringChallengeIdForTrip = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: DB | TransactionDB;
   tripId: string;
   challengeId: string;
   now?: Date;
 }) => {
-  const challenge = await params.tx.challenge.findFirst({
-    where: {
-      id: params.challengeId,
-      tripId: params.tripId,
-    },
-    select: recurringTemplateSelect,
+  const challenge = await params.tx.query.challenges.findFirst({
+    where: (c, { eq, and }) => and(eq(c.id, params.challengeId), eq(c.tripId, params.tripId)),
   });
 
   if (!challenge) {

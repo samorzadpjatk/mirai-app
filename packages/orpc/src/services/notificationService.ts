@@ -1,11 +1,17 @@
 import { executeWithRetry } from "../utils/resilience";
-import { type PrismaClient } from "@mirai-app/db";
+import { type DB } from "@mirai-app/db";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import {
   applyRankingTemplate,
   containsRankingTemplate,
   type RankingTemplateValues,
 } from "../utils/notificationTemplates";
+import {
+  tripParticipants,
+  challenges,
+  notificationPushes,
+} from "@mirai-app/db";
+import { eq, and, count } from "drizzle-orm";
 
 export interface NotificationData {
   title: string;
@@ -89,37 +95,27 @@ function formatCurrentTime(date: Date): string {
 }
 
 async function getRankingTemplateValuesByUser(
-  db: PrismaClient,
+  db: DB,
   tripId: string,
 ): Promise<Map<string, RankingTemplateValues>> {
   const now = new Date();
-  const [participants, rankedGroups, activeChallengesCount, trip] = await Promise.all([
-    db.tripParticipant.findMany({
-      where: { tripId },
-      select: {
-        userId: true,
-        groupId: true,
-      },
+  const [participants, rankedGroups, activeChallengesResult, trip] = await Promise.all([
+    db.select({ userId: tripParticipants.userId, groupId: tripParticipants.groupId })
+      .from(tripParticipants)
+      .where(eq(tripParticipants.tripId, tripId)),
+    db.query.groups.findMany({
+      where: (g, { eq, and }) => and(eq(g.tripId, tripId), eq(g.isDeleted, false)),
+      orderBy: (g, { desc }) => [desc(g.coins), g.name],
     }),
-    db.group.findMany({
-      where: { tripId, isDeleted: false },
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: [{ coins: "desc" }, { name: "asc" }],
-    }),
-    db.challenge.count({
-      where: {
-        tripId,
-        status: "ACTIVE",
-      },
-    }),
-    db.trip.findUnique({
-      where: { id: tripId },
-      select: { name: true },
+    db.select({ count: count() })
+      .from(challenges)
+      .where(and(eq(challenges.tripId, tripId), eq(challenges.status, "ACTIVE"))),
+    db.query.trips.findFirst({
+      where: (t, { eq }) => eq(t.id, tripId),
     }),
   ]);
+
+  const activeChallengesCount = activeChallengesResult[0]?.count ?? 0;
 
   const groupById = new Map(rankedGroups.map((group) => [group.id, group]));
   const groupRankById = new Map(
@@ -238,20 +234,16 @@ export class NotificationService {
 }
 
 export async function sendMobileNotifications(
-  db: PrismaClient,
+  db: DB,
   notificationId: string,
 ) {
-  const notification = await db.notification.findUnique({
-    where: { id: notificationId },
+  const notification = await db.query.notifications.findFirst({
+    where: (n, { eq }) => eq(n.id, notificationId),
   });
   if (!notification) return { success: false, sent: 0, failed: 0, total: 0 };
 
-  const existingPushRows = await db.notificationPush.findMany({
-    where: { notificationId: notification.id },
-    select: {
-      targetUserId: true,
-      status: true,
-    },
+  const existingPushRows = await db.query.notificationPushes.findMany({
+    where: (np, { eq }) => eq(np.notificationId, notification.id),
   });
   const hasExplicitAudience = existingPushRows.length > 0;
   const pendingAudienceUserIds = new Set(
@@ -272,7 +264,7 @@ export async function sendMobileNotifications(
     };
   }
 
-  const subs = await db.pushSubscription.findMany();
+  const subs = await db.query.pushSubscriptions.findMany();
   if (subs.length === 0) {
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
@@ -283,25 +275,23 @@ export async function sendMobileNotifications(
   if (hasExplicitAudience) {
     scopedSubs = subs.filter((sub) => pendingAudienceUserIds.has(sub.userId));
   } else if (notification.tripId) {
-    const tripParticipants = await db.tripParticipant.findMany({
-      where: { tripId: notification.tripId },
-      select: { userId: true },
-    });
+    const tripParticipantRows = await db.select({ userId: tripParticipants.userId })
+      .from(tripParticipants)
+      .where(eq(tripParticipants.tripId, notification.tripId));
     const participantIds = new Set(
-      tripParticipants.map((participant) => participant.userId),
+      tripParticipantRows.map((participant) => participant.userId),
     );
     scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
 
     if (parsedAudience.audienceMode === "group" && parsedAudience.audienceGroupId) {
-      const groupParticipants = await db.tripParticipant.findMany({
-        where: {
-          tripId: notification.tripId,
-          groupId: parsedAudience.audienceGroupId,
-        },
-        select: { userId: true },
-      });
+      const groupParticipantRows = await db.select({ userId: tripParticipants.userId })
+        .from(tripParticipants)
+        .where(and(
+          eq(tripParticipants.tripId, notification.tripId),
+          eq(tripParticipants.groupId, parsedAudience.audienceGroupId),
+        ));
       const groupParticipantIds = new Set(
-        groupParticipants.map((participant) => participant.userId),
+        groupParticipantRows.map((participant) => participant.userId),
       );
       scopedSubs = scopedSubs.filter((sub) => groupParticipantIds.has(sub.userId));
     }
@@ -319,17 +309,16 @@ export async function sendMobileNotifications(
 
   if (scopedSubs.length === 0) {
     if (hasExplicitAudience) {
-      await db.notificationPush.updateMany({
-        where: {
-          notificationId: notification.id,
-          status: "pending",
-        },
-        data: {
+      await db.update(notificationPushes)
+        .set({
           status: "failed",
           sentAt: new Date(),
           failureReason: "no_valid_push_token",
-        },
-      });
+        })
+        .where(and(
+          eq(notificationPushes.notificationId, notification.id),
+          eq(notificationPushes.status, "pending"),
+        ));
     }
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
@@ -443,19 +432,16 @@ export async function sendMobileNotifications(
     if (sentUserIds.length > 0) {
       await Promise.all(
         sentUserIds.map((userId) =>
-          db.notificationPush.update({
-            where: {
-              targetUserId_notificationId: {
-                targetUserId: userId,
-                notificationId: notification.id,
-              },
-            },
-            data: {
+          db.update(notificationPushes)
+            .set({
               status: "sent",
               sentAt: new Date(),
               failureReason: null,
-            },
-          }),
+            })
+            .where(and(
+              eq(notificationPushes.targetUserId, userId),
+              eq(notificationPushes.notificationId, notification.id),
+            )),
         ),
       );
     }
@@ -466,44 +452,40 @@ export async function sendMobileNotifications(
     if (allFailedUserIds.length > 0) {
       await Promise.all(
         allFailedUserIds.map((userId) =>
-          db.notificationPush.update({
-            where: {
-              targetUserId_notificationId: {
-                targetUserId: userId,
-                notificationId: notification.id,
-              },
-            },
-            data: {
+          db.update(notificationPushes)
+            .set({
               status: "failed",
               sentAt: new Date(),
               failureReason: attemptedUserIds.has(userId)
                 ? "expo"
                 : "no_valid_push_token",
-            },
-          }),
+            })
+            .where(and(
+              eq(notificationPushes.targetUserId, userId),
+              eq(notificationPushes.notificationId, notification.id),
+            )),
         ),
       );
     }
   } else if (sentUserIds.length + failedUserIds.length > 0) {
-    await db.notificationPush.createMany({
-      data: [
+    await db.insert(notificationPushes).values(
+      [
         ...sentUserIds.map((targetUserId) => ({
           notificationId: notification.id,
           targetUserId,
-          status: "sent",
+          status: "sent" as const,
           sentAt: new Date(),
-          failureReason: null,
+          failureReason: null as string | null,
         })),
         ...failedUserIds.map((targetUserId) => ({
           notificationId: notification.id,
           targetUserId,
-          status: "failed",
+          status: "failed" as const,
           sentAt: new Date(),
-          failureReason: "expo",
+          failureReason: "expo" as const,
         })),
       ],
-      skipDuplicates: true,
-    });
+    ).onConflictDoNothing();
   }
 
   const failedCount = hasExplicitAudience

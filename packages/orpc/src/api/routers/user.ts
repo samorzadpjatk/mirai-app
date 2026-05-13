@@ -13,6 +13,8 @@ import {
   resolveAuthEmail,
 } from "../../utils/authEmails";
 import type { SupabaseUser } from "@mirai-app/supabase";
+import { eq, and, count, ilike, asc } from "drizzle-orm";
+import { users, tripParticipants, groups } from "@mirai-app/db";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 const nameSchema = z
   .string()
@@ -219,8 +221,8 @@ export const userRouter = createORPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const dbUser = await context.db.user.findUnique({
-        where: { id: input.id },
+      const dbUser = await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, input.id),
       });
 
       if (!dbUser) return null;
@@ -237,11 +239,9 @@ export const userRouter = createORPCRouter({
   getTripParticipant: moderatorProcedure
     .input(z.object({ userId: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      return context.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        select: {
+      return context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+        columns: {
           userId: true,
           tripId: true,
           wristNumber: true,
@@ -252,47 +252,51 @@ export const userRouter = createORPCRouter({
   getByIdWithGroup: moderatorProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      return await context.db.user.findUnique({
-        where: { id: input.id },
-        select: {
+      return await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, input.id),
+        columns: {
           id: true,
           firstName: true,
           lastName: true,
+        },
+        with: {
           trips: {
-            where: { tripId: input.tripId },
-            include: {
-              group: { select: { id: true, name: true } },
-              trip: { select: { id: true, name: true } },
+            where: (tp, { eq }) => eq(tp.tripId, input.tripId),
+            with: {
+              group: { columns: { id: true, name: true } },
+              trip: { columns: { id: true, name: true } },
             },
           },
-          organizerGroup: { select: { id: true, name: true } },
+          organizerGroup: { columns: { id: true, name: true } },
         },
       });
     }),
   getMyWithGroup: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      return await context.db.user.findUnique({
-        where: { id: context.dbUser.id },
-        select: {
+      return await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, context.dbUser.id),
+        columns: {
           id: true,
           firstName: true,
           lastName: true,
+        },
+        with: {
           trips: {
-            where: { tripId: input.tripId },
-            include: {
-              group: { select: { id: true, name: true } },
-              trip: { select: { id: true, name: true } },
+            where: (tp, { eq }) => eq(tp.tripId, input.tripId),
+            with: {
+              group: { columns: { id: true, name: true } },
+              trip: { columns: { id: true, name: true } },
             },
           },
-          organizerGroup: { select: { id: true, name: true } },
+          organizerGroup: { columns: { id: true, name: true } },
         },
       });
     }),
   getMy: protectedProcedure
     .handler(async ({ context }) => {
-      const baseUser = await context.db.user.findUnique({
-        where: { id: context.dbUser.id },
+      const baseUser = await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, context.dbUser.id),
       });
       if (!baseUser) return null;
 
@@ -310,10 +314,10 @@ export const userRouter = createORPCRouter({
   updateAvatar: protectedProcedure
     .input(z.object({ hasAvatar: z.boolean() }))
     .handler(async ({ context, input }) => {
-      const updatedUser = await context.db.user.update({
-        where: { id: context.dbUser.id },
-        data: { hasAvatar: input.hasAvatar },
-        select: { hasAvatar: true },
+      const [updatedUser] = await context.db.update(users).set({
+        hasAvatar: input.hasAvatar,
+      }).where(eq(users.id, context.dbUser.id)).returning({
+        hasAvatar: users.hasAvatar,
       });
 
       return updatedUser;
@@ -326,34 +330,37 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.user.update({
-        where: { id: context.dbUser.id },
-        data: {
-          firstName: input.firstName,
-          lastName: input.lastName,
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
+      const [updatedUser] = await context.db.update(users).set({
+        firstName: input.firstName,
+        lastName: input.lastName,
+      }).where(eq(users.id, context.dbUser.id)).returning({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
       });
+
+      return updatedUser;
     }),
   getAll: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const participants = (await context.db.tripParticipant.findMany({
-        where: { tripId: input.tripId },
-        include: {
-          user: {
-            select: userWithAuthSelect,
-          },
-          group: { select: { id: true, name: true } },
+      const rows = await context.db.select()
+        .from(tripParticipants)
+        .innerJoin(users, eq(tripParticipants.userId, users.id))
+        .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
+        .where(eq(tripParticipants.tripId, input.tripId))
+        .orderBy(asc(users.firstName), asc(users.lastName));
+
+      const participants = rows.map((r) => ({
+        ...r.trip_participants,
+        user: {
+          id: r.users.id,
+          authUserId: r.users.authUserId,
+          firstName: r.users.firstName,
+          lastName: r.users.lastName,
+          role: r.users.role,
         },
-        orderBy: [
-          { user: { firstName: "asc" } },
-          { user: { lastName: "asc" } },
-        ],
+        group: r.groups ? { id: r.groups.id, name: r.groups.name } : null,
       }));
 
       const emailByAuthUserId = await buildAuthEmailLookup(
@@ -370,14 +377,14 @@ export const userRouter = createORPCRouter({
       }));
     }),
   getAllAdminsNames: moderatorProcedure.handler(async ({ context }) => {
-    return await context.db.user.findMany({
-      where: { role: roleSchema.enum.ADMIN },
-      select: {
+    return await context.db.query.users.findMany({
+      where: (u, { eq }) => eq(u.role, roleSchema.enum.ADMIN),
+      columns: {
         id: true,
         firstName: true,
         lastName: true,
       },
-      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      orderBy: (u, { asc }) => [asc(u.firstName), asc(u.lastName)],
     });
   }),
   // Update user role
@@ -397,11 +404,19 @@ export const userRouter = createORPCRouter({
         throw new ORPCError("FORBIDDEN", { message: "Nie możesz usunąć swoich uprawnień administratora" });
       }
 
-      const updatedUser = await context.db.user.update({
-        where: { id: input.userId },
-        data: { role: input.role },
-        select: userWithAuthSelect,
+      const [updatedUser] = await context.db.update(users).set({
+        role: input.role,
+      }).where(eq(users.id, input.userId)).returning({
+        id: users.id,
+        authUserId: users.authUserId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
       });
+
+      if (!updatedUser) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update user" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         updatedUser.authUserId,
@@ -436,43 +451,58 @@ export const userRouter = createORPCRouter({
 
       const authUserId = data.user.id;
 
-      const result = await context.db.$transaction(async (tx) => {
-        const existingUser = await tx.user.findUnique({
-          where: { authUserId },
-          select: userWithAuthSelect,
+      const result = await context.db.transaction(async (tx) => {
+        const existingUser = await tx.query.users.findFirst({
+          where: (u, { eq }) => eq(u.authUserId, authUserId),
+          columns: userWithAuthSelect,
         });
 
-        const dbUser =
-          existingUser ??
-          (await tx.user.create({
-            data: {
-              authUserId,
-              firstName,
-              lastName,
-              role: roleSchema.enum.USER,
-            },
-            select: userWithAuthSelect,
-          }));
+        let dbUser = existingUser;
+        if (!dbUser) {
+          const [inserted] = await tx.insert(users).values({
+            authUserId,
+            firstName,
+            lastName,
+            role: roleSchema.enum.USER,
+          }).returning({
+            id: users.id,
+            authUserId: users.authUserId,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role,
+          });
+          if (!inserted) {
+            throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create user" });
+          }
+          dbUser = inserted;
+        }
 
-        const participant = await tx.tripParticipant.upsert({
-          where: {
-            userId_tripId: { userId: dbUser.id, tripId: input.tripId },
-          },
-          update: {},
-          create: {
-            userId: dbUser.id,
-            tripId: input.tripId,
-          },
-          select: {
+        await tx.insert(tripParticipants).values({
+          userId: dbUser.id,
+          tripId: input.tripId,
+        }).onConflictDoUpdate({
+          target: [tripParticipants.userId, tripParticipants.tripId],
+          set: {},
+        }).returning();
+
+        const participant = await tx.query.tripParticipants.findFirst({
+          where: (tp, { eq, and }) => and(eq(tp.userId, dbUser.id), eq(tp.tripId, input.tripId)),
+          with: {
             user: {
-              select: userWithAuthSelect,
+              columns: userWithAuthSelect,
             },
+            group: { columns: { id: true, name: true } },
+          },
+          columns: {
             wristNumber: true,
             houseNumber: true,
-            group: { select: { id: true, name: true } },
             tripId: true,
           },
         });
+
+        if (!participant) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create or update participant" });
+        }
 
         return { participant, dbUser };
       });
@@ -498,14 +528,20 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const updatedUser = await context.db.user.update({
-        where: { id: input.userId },
-        data: {
-          firstName: input.firstName.trim(),
-          lastName: input.lastName.trim(),
-        },
-        select: userWithAuthSelect,
+      const [updatedUser] = await context.db.update(users).set({
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+      }).where(eq(users.id, input.userId)).returning({
+        id: users.id,
+        authUserId: users.authUserId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
       });
+
+      if (!updatedUser) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update user" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         updatedUser.authUserId,
@@ -522,9 +558,9 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const user = await context.db.user.findUnique({
-        where: { id: input.userId },
-        select: { authUserId: true },
+      const user = await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, input.userId),
+        columns: { authUserId: true },
       });
 
       if (!user) {
@@ -580,39 +616,36 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const user = await context.db.user.findUnique({
-        where: { id: input.userId },
-        select: { id: true, authUserId: true },
+      const user = await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, input.userId),
+        columns: { id: true, authUserId: true },
       });
 
       if (!user) {
         throw new ORPCError("NOT_FOUND", { message: "User not found" });
       }
 
-      const result = await context.db.$transaction(async (tx) => {
-        const participant = await tx.tripParticipant.findUnique({
-          where: {
-            userId_tripId: { userId: input.userId, tripId: input.tripId },
-          },
-          select: { id: true },
+      const result = await context.db.transaction(async (tx) => {
+        const participant = await tx.query.tripParticipants.findFirst({
+          where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+          columns: { id: true },
         });
 
         if (!participant) {
           throw new ORPCError("NOT_FOUND", { message: "User is not assigned to this trip" });
         }
 
-        await tx.tripParticipant.delete({
-          where: {
-            userId_tripId: { userId: input.userId, tripId: input.tripId },
-          },
-        });
+        await tx.delete(tripParticipants).where(
+          and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
+        );
 
-        const remainingTrips = await tx.tripParticipant.count({
-          where: { userId: input.userId },
-        });
+        const [remainingResult] = await tx.select({ count: count() })
+          .from(tripParticipants)
+          .where(eq(tripParticipants.userId, input.userId));
+        const remainingTrips = remainingResult?.count ?? 0;
 
         if (remainingTrips === 0) {
-          await tx.user.delete({ where: { id: input.userId } });
+          await tx.delete(users).where(eq(users.id, input.userId));
         }
 
         return { remainingTrips };
@@ -644,13 +677,18 @@ export const userRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       // Check if wrist number is already taken by another user
-      const existingParticipant = await context.db.tripParticipant.findFirst({
-        where: {
-          tripId: input.tripId,
-          wristNumber: input.wristNumber,
-          NOT: { userId: input.userId },
+      const existingParticipant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and, ne }) => and(
+          eq(tp.tripId, input.tripId),
+          eq(tp.wristNumber, input.wristNumber),
+          ne(tp.userId, input.userId)
+        ),
+        with: {
+          user: {
+            columns: userWithAuthSelect,
+          },
         },
-        select: { userId: true, user: { select: userWithAuthSelect } },
+        columns: { userId: true },
       });
 
       if (existingParticipant) {
@@ -662,24 +700,31 @@ export const userRouter = createORPCRouter({
         )}` });
       }
 
-      const participant = await context.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        update: { wristNumber: input.wristNumber },
-        create: {
-          userId: input.userId,
-          tripId: input.tripId,
-          wristNumber: input.wristNumber,
-        },
-        select: {
+      await context.db.insert(tripParticipants).values({
+        userId: input.userId,
+        tripId: input.tripId,
+        wristNumber: input.wristNumber,
+      }).onConflictDoUpdate({
+        target: [tripParticipants.userId, tripParticipants.tripId],
+        set: { wristNumber: input.wristNumber },
+      }).returning();
+
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+        with: {
           user: {
-            select: userWithAuthSelect,
+            columns: userWithAuthSelect,
           },
+        },
+        columns: {
           wristNumber: true,
           tripId: true,
         },
       });
+
+      if (!participant) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update wrist number" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         participant.user.authUserId,
@@ -700,19 +745,28 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const participant = await context.db.tripParticipant.update({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        data: { wristNumber: null },
-        select: {
+      await context.db.update(tripParticipants).set({
+        wristNumber: null,
+      }).where(
+        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
+      ).returning();
+
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+        with: {
           user: {
-            select: userWithAuthSelect,
+            columns: userWithAuthSelect,
           },
+        },
+        columns: {
           wristNumber: true,
           tripId: true,
         },
       });
+
+      if (!participant) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove wrist number" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         participant.user.authUserId,
@@ -737,24 +791,31 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const participant = await context.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        update: { houseNumber: input.houseNumber },
-        create: {
-          userId: input.userId,
-          tripId: input.tripId,
-          houseNumber: input.houseNumber,
-        },
-        select: {
+      await context.db.insert(tripParticipants).values({
+        userId: input.userId,
+        tripId: input.tripId,
+        houseNumber: input.houseNumber,
+      }).onConflictDoUpdate({
+        target: [tripParticipants.userId, tripParticipants.tripId],
+        set: { houseNumber: input.houseNumber },
+      }).returning();
+
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+        with: {
           user: {
-            select: userWithAuthSelect,
+            columns: userWithAuthSelect,
           },
+        },
+        columns: {
           houseNumber: true,
           tripId: true,
         },
       });
+
+      if (!participant) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update house number" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         participant.user.authUserId,
@@ -775,19 +836,28 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const participant = await context.db.tripParticipant.update({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        data: { houseNumber: null },
-        select: {
+      await context.db.update(tripParticipants).set({
+        houseNumber: null,
+      }).where(
+        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
+      ).returning();
+
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
+        with: {
           user: {
-            select: userWithAuthSelect,
+            columns: userWithAuthSelect,
           },
+        },
+        columns: {
           houseNumber: true,
           tripId: true,
         },
       });
+
+      if (!participant) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove house number" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         participant.user.authUserId,
@@ -848,27 +918,23 @@ export const userRouter = createORPCRouter({
       };
 
       if (field === "email") {
-        const participants = (await context.db.tripParticipant.findMany({
-          where: { tripId },
-          include: {
+        const participantRows = await context.db.query.tripParticipants.findMany({
+          where: (tp, { eq }) => eq(tp.tripId, tripId),
+          with: {
             user: {
-              select: userWithAuthSelect,
+              columns: userWithAuthSelect,
             },
-            group: { select: { id: true, name: true } },
+            group: { columns: { id: true, name: true } },
           },
-          orderBy: [
-            { user: { firstName: "asc" } },
-            { user: { lastName: "asc" } },
-          ],
-        }));
+        });
 
         const authSummaryById = await buildAuthUserSummaryLookup(
           context.supabase,
-          participants.map((participant) => participant.user.authUserId),
+          participantRows.map((participant) => participant.user.authUserId),
         );
 
         const normalizedSearch = searchTerm?.toLowerCase();
-        const filtered = participants.filter((participant) => {
+        const filtered = participantRows.filter((participant) => {
           if (!normalizedSearch) return true;
           const email =
             authSummaryById.get(participant.user.authUserId)?.email ?? null;
@@ -906,61 +972,57 @@ export const userRouter = createORPCRouter({
         };
       }
 
-      const searchConditions = (() => {
-        if (!searchTerm) {
-          return undefined;
-        }
+      const buildWhere = () => {
+        const base = eq(tripParticipants.tripId, tripId);
+        if (!searchTerm) return base;
         if (field === "groupName") {
-          return {
-            group: {
-              name: {
-                contains: searchTerm,
-                mode: "insensitive" as const,
-              },
-            },
-          };
+          return and(base, ilike(groups.name, `%${searchTerm}%`));
         }
-        if (field === "firstName" || field === "lastName") {
-          return {
-            user: {
-              [field]: {
-                contains: searchTerm,
-                mode: "insensitive" as const,
-              },
-            },
-          };
+        if (field === "firstName") {
+          return and(base, ilike(users.firstName, `%${searchTerm}%`));
         }
-        return {
-          [field]: {
-            contains: searchTerm,
-            mode: "insensitive" as const,
-          },
-        };
-      })();
+        if (field === "lastName") {
+          return and(base, ilike(users.lastName, `%${searchTerm}%`));
+        }
+        if (field === "wristNumber") {
+          return and(base, ilike(tripParticipants.wristNumber, `%${searchTerm}%`));
+        }
+        if (field === "houseNumber") {
+          return and(base, ilike(tripParticipants.houseNumber, `%${searchTerm}%`));
+        }
+        return base;
+      };
 
-      const where = {
-        tripId,
-        ...(searchConditions ? { AND: searchConditions } : {}),
-      } as const;
+      const where = buildWhere();
 
-      const total = await context.db.tripParticipant.count({
-        where,
-      });
+      const [rows, totalResult] = await Promise.all([
+        context.db.select()
+          .from(tripParticipants)
+          .innerJoin(users, eq(tripParticipants.userId, users.id))
+          .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
+          .where(where)
+          .orderBy(asc(users.firstName), asc(users.lastName))
+          .limit(limit)
+          .offset(offset),
+        context.db.select({ count: count() })
+          .from(tripParticipants)
+          .innerJoin(users, eq(tripParticipants.userId, users.id))
+          .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
+          .where(where),
+      ]);
 
-      const participants = (await context.db.tripParticipant.findMany({
-        where,
-        include: {
-          user: {
-            select: userWithAuthSelect,
-          },
-          group: { select: { id: true, name: true } },
+      const total = totalResult[0]?.count ?? 0;
+
+      const participants = rows.map((r) => ({
+        ...r.trip_participants,
+        user: {
+          id: r.users.id,
+          authUserId: r.users.authUserId,
+          firstName: r.users.firstName,
+          lastName: r.users.lastName,
+          role: r.users.role,
         },
-        orderBy: [
-          { user: { firstName: "asc" } },
-          { user: { lastName: "asc" } },
-        ],
-        skip: offset,
-        take: limit,
+        group: r.groups ? { id: r.groups.id, name: r.groups.name } : null,
       }));
 
       const authSummaryById = await buildAuthUserSummaryLookup(

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { locationRouter } from "../../routers/location";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Location, TripParticipant, LocationSharingRequest } from "@mirai-app/db";
+import type { DB, User, Location, TripParticipant, LocationSharingRequest } from "@mirai-app/db";
 import type * as locationValidationModule from "../../../utils/location-validation";
 
 vi.mock("../../../utils/location-validation", async (importOriginal) => {
@@ -139,7 +139,7 @@ describe("locationRouter", () => {
         }
         return Promise.all(fn);
       }),
-    } as unknown as PrismaClient;
+    };
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -194,7 +194,7 @@ describe("locationRouter", () => {
 
       expect(result.latitude).toBe(52.2297);
       expect(result.longitude).toBe(21.0122);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.upsert).toHaveBeenCalledWith({
         where: { userId: "user-123" },
         update: {
@@ -233,7 +233,7 @@ describe("locationRouter", () => {
       });
 
       expect(result).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.upsert).toHaveBeenCalled();
     });
 
@@ -278,7 +278,7 @@ describe("locationRouter", () => {
       const result = await caller.getMyLocation();
 
       expect(result).toEqual(mockLocation);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.findUnique).toHaveBeenCalledWith({
         where: { userId: "user-123" },
       });
@@ -333,7 +333,7 @@ describe("locationRouter", () => {
       const result = await caller.getFriendsLocations();
 
       expect(result).toEqual([]);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.findMany).toHaveBeenCalledWith({
         where: {
           isSharingLocation: true,
@@ -408,7 +408,7 @@ describe("locationRouter", () => {
       });
 
       expect(result.isSharingLocation).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.upsert).toHaveBeenCalled();
     });
 
@@ -574,7 +574,7 @@ describe("locationRouter", () => {
       const result = await caller.removeUserFromSharing({ userId: "user-456" });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.location.update).toHaveBeenCalledWith({
         where: { userId: "user-123" },
         data: {
@@ -717,7 +717,7 @@ describe("locationRouter", () => {
       const result = await caller.requestLocationSharing({ receiverId: "user-456" });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.locationSharingRequest.update).toHaveBeenCalled();
     });
   });
@@ -884,7 +884,7 @@ describe("locationRouter", () => {
       const result = await caller.getPendingLocationSharingRequests();
 
       expect(result).toHaveLength(2);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.locationSharingRequest.findMany).toHaveBeenCalledWith({
         where: {
           receiverId: "user-123",

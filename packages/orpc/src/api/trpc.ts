@@ -17,7 +17,7 @@ import {
   AuthorizationError,
 } from "@mirai-app/auth";
 import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
-import { createDb, type PrismaClient } from "@mirai-app/db";
+import { createDb, type DB, userAgents } from "@mirai-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization =
@@ -109,7 +109,7 @@ const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" |
 };
 
 export interface ORPCContext {
-  db: PrismaClient;
+  db: DB;
   supabase: SupabaseClient;
   headers: Headers;
   accessToken: string | null;
@@ -204,17 +204,16 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
 
     if (userAgent && platform) {
       // Log to database asynchronously (fire and forget)
-      void context.db.userAgent.create({
-        data: {
+      void context.db.insert(userAgents)
+        .values({
           userAgent,
           platform,
           userId,
           endpoint: path.join("/"),
-        },
-      }).catch((error: unknown) => {
-        // Log errors but don't block the request
-        console.error("[UserAgent Logging] Failed to log user agent:", error);
-      });
+        })
+        .catch((error: unknown) => {
+          console.error("[UserAgent Logging] Failed to log user agent:", error);
+        });
     }
   } catch (error) {
     console.error("[UserAgent Logging] Unexpected error:", error);

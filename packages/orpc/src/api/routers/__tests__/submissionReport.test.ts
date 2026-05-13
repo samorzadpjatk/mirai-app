@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { submissionReportRouter } from "../../routers/submissionReport";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
+import type { DB, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
@@ -203,7 +203,7 @@ describe("submissionReportRouter", () => {
         count: vi.fn().mockResolvedValue(1),
       },
       $transaction: vi.fn(<T>(cb: (db: typeof mockDb) => T): T => cb(mockDb)),
-    } as unknown as PrismaClient;
+    };
   });
 
   describe("create (protectedProcedure)", () => {
@@ -233,7 +233,7 @@ describe("submissionReportRouter", () => {
       expect(result.submissionId).toBe("submission-1");
       expect(result.reporter).toBeDefined();
       expect(result.reporter.user.email).toBe("user@example.com");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.submissionReport.create).toHaveBeenCalledWith({
         data: {
           submissionId: "submission-1",
@@ -492,7 +492,7 @@ describe("submissionReportRouter", () => {
       expect(result[1].reason).toBe("Inappropriate content");
       expect(result[0].reporter.user.email).toBe("user1@example.com");
       expect(result[1].reporter.user.email).toBe("user2@example.com");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.submissionReport.findMany).toHaveBeenCalledWith({
         where: { submissionId: "submission-1" },
          
@@ -568,7 +568,7 @@ describe("submissionReportRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _result = await caller.getBySubmission({ submissionId: "submission-1" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.submissionReport.findMany).toHaveBeenCalledWith(
          
         expect.objectContaining({

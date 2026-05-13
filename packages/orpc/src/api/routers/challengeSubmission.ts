@@ -6,7 +6,16 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@mirai-app/db";
+import { eq, and, sql, notInArray, lte, isNull } from "drizzle-orm";
+import {
+  challenges,
+  challengeSubmissions,
+  groups,
+  coinTransactions,
+  activityFeeds,
+  submissionActivities,
+} from "@mirai-app/db";
+import type { DB, TransactionDB, ChallengeSubmission } from "@mirai-app/db";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { calculateDistance } from "../../utils/location-validation";
 import {
@@ -19,7 +28,7 @@ import {
 import { resolveRecurringChallengeIdForTrip } from "../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 
-const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
+const submissionBaseColumns = {
   id: true,
   challengeId: true,
   groupId: true,
@@ -41,10 +50,9 @@ const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   updatedAt: true,
 } as const;
 
-const submissionSelect: Prisma.ChallengeSubmissionSelect = {
-  ...submissionBaseSelect,
+const submissionWithRelations = {
   group: {
-    select: {
+    columns: {
       id: true,
       name: true,
       description: true,
@@ -52,35 +60,11 @@ const submissionSelect: Prisma.ChallengeSubmissionSelect = {
     },
   },
   reviewedBy: {
-    select: {
+    columns: {
       id: true,
       firstName: true,
       lastName: true,
       authUserId: true,
-    },
-  },
-} as const;
-
-const submissionApprovalActivitySelect: Prisma.ChallengeSubmissionSelect = {
-  id: true,
-  challengeId: true,
-  groupId: true,
-  imageIds: true,
-  videoId: true,
-  awardedPoints: true,
-  bonusPoints: true,
-  ranking: true,
-  challenge: {
-    select: {
-      id: true,
-      tripId: true,
-      name: true,
-    },
-  },
-  group: {
-    select: {
-      id: true,
-      name: true,
     },
   },
 } as const;
@@ -98,11 +82,12 @@ const attachReviewerEmail = <T extends { authUserId?: string | null }>(
 };
 
 const ensureTripParticipant = async (
-  context: { db: Prisma.TransactionClient; dbUser: { id: string } },
+  context: { db: DB | TransactionDB; dbUser: { id: string } },
   tripId: string,
 ) => {
-  const participant = await context.db.tripParticipant.findUnique({
-    where: { userId_tripId: { userId: context.dbUser.id, tripId } },
+  const participant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq, and }) =>
+      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
   });
   if (!participant) {
     throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
@@ -111,24 +96,24 @@ const ensureTripParticipant = async (
 };
 
 const ensureChallengeInTrip = async (
-  context: { db: Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   challengeId: string,
   tripId: string,
 ) => {
   const now = new Date();
 
-  await context.db.challenge.updateMany({
-    where: {
-      id: challengeId,
-      tripId,
-      status: "VISIBLE",
-      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
-      endTime: { lte: now },
-    },
-    data: {
-      status: "COMPLETED",
-    },
-  });
+  await context.db
+    .update(challenges)
+    .set({ status: "COMPLETED" })
+    .where(
+      and(
+        eq(challenges.id, challengeId),
+        eq(challenges.tripId, tripId),
+        eq(challenges.status, "VISIBLE"),
+        notInArray(challenges.scoringCategory, ["PEER_VOTING", "JUDGED_STAFF"]),
+        lte(challenges.endTime, now),
+      ),
+    );
 
   await promoteVisibleChallengesToActiveWithFeed({
     tx: context.db,
@@ -142,22 +127,23 @@ const ensureChallengeInTrip = async (
     createdByAdmin: null,
   });
 
-  await context.db.challenge.updateMany({
-    where: {
-      id: challengeId,
-      tripId,
-      status: "ACTIVE",
-      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
-      endTime: { lte: now },
-    },
-    data: {
-      status: "COMPLETED",
-    },
-  });
+  await context.db
+    .update(challenges)
+    .set({ status: "COMPLETED" })
+    .where(
+      and(
+        eq(challenges.id, challengeId),
+        eq(challenges.tripId, tripId),
+        eq(challenges.status, "ACTIVE"),
+        notInArray(challenges.scoringCategory, ["PEER_VOTING", "JUDGED_STAFF"]),
+        lte(challenges.endTime, now),
+      ),
+    );
 
-  const challenge = await context.db.challenge.findFirst({
-    where: { id: challengeId, tripId },
-    select: {
+  const challenge = await context.db.query.challenges.findFirst({
+    where: (c, { eq, and }) =>
+      and(eq(c.id, challengeId), eq(c.tripId, tripId)),
+    columns: {
       id: true,
       name: true,
       status: true,
@@ -351,7 +337,7 @@ const resolveAwardedPoints = (
 };
 
 const rebalanceSpeedRankings = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: DB | TransactionDB;
   challenge: {
     id: string;
     name: string;
@@ -362,12 +348,10 @@ const rebalanceSpeedRankings = async (params: {
   };
   adminId: string;
 }) => {
-  const approved = await params.tx.challengeSubmission.findMany({
-    where: {
-      challengeId: params.challenge.id,
-      status: "APPROVED",
-    },
-    select: {
+  const approved = await params.tx.query.challengeSubmissions.findMany({
+    where: (cs, { eq, and }) =>
+      and(eq(cs.challengeId, params.challenge.id), eq(cs.status, "APPROVED")),
+    columns: {
       id: true,
       groupId: true,
       createdAt: true,
@@ -375,7 +359,7 @@ const rebalanceSpeedRankings = async (params: {
       awardedPoints: true,
       bonusPoints: true,
     },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    orderBy: (cs, { asc }) => [asc(cs.createdAt), asc(cs.id)],
   });
 
   for (let index = 0; index < approved.length; index += 1) {
@@ -398,31 +382,30 @@ const rebalanceSpeedRankings = async (params: {
       continue;
     }
 
-    await params.tx.challengeSubmission.update({
-      where: { id: submission.id },
-      data: {
+    await params.tx
+      .update(challengeSubmissions)
+      .set({
         ranking: nextRanking,
         awardedPoints: nextAwardedPoints,
-      },
-    });
+      })
+      .where(eq(challengeSubmissions.id, submission.id));
 
     if (delta !== 0) {
-      await params.tx.group.update({
-        where: { id: submission.groupId },
-        data: { coins: { increment: delta } },
-      });
-      await params.tx.coinTransaction.create({
-        data: {
-          groupId: submission.groupId,
-          amount: delta,
-          reason: `Speed ranking update: ${params.challenge.name} (#${nextRanking})`,
-          adminId: params.adminId,
-        },
+      await params.tx
+        .update(groups)
+        .set({
+          coins: sql`${groups.coins} + ${delta}`,
+        })
+        .where(eq(groups.id, submission.groupId));
+      await params.tx.insert(coinTransactions).values({
+        groupId: submission.groupId,
+        amount: delta,
+        reason: `Speed ranking update: ${params.challenge.name} (#${nextRanking})`,
+        adminId: params.adminId,
       });
     }
   }
 };
-
 
 export const challengeSubmissionRouter = createORPCRouter({
   getByChallengeForAdmin: moderatorProcedure
@@ -436,10 +419,11 @@ export const challengeSubmissionRouter = createORPCRouter({
         })) ?? input.challengeId;
       await ensureChallengeInTrip(context, resolvedChallengeId, input.tripId);
 
-      const submissions = await context.db.challengeSubmission.findMany({
-        where: { challengeId: resolvedChallengeId },
-        select: submissionSelect,
-        orderBy: [{ voteScore: "desc" }, { createdAt: "asc" }],
+      const submissions = await context.db.query.challengeSubmissions.findMany({
+        where: (cs, { eq }) => eq(cs.challengeId, resolvedChallengeId),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
+        orderBy: (cs, { desc, asc }) => [desc(cs.voteScore), asc(cs.createdAt)],
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(
@@ -467,10 +451,11 @@ export const challengeSubmissionRouter = createORPCRouter({
           tripId: input.tripId,
         })) ?? input.challengeId;
 
-      const submissions = await context.db.challengeSubmission.findMany({
-        where: { challengeId: resolvedChallengeId },
-        select: submissionSelect,
-        orderBy: [{ voteScore: "desc" }, { createdAt: "asc" }],
+      const submissions = await context.db.query.challengeSubmissions.findMany({
+        where: (cs, { eq }) => eq(cs.challengeId, resolvedChallengeId),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
+        orderBy: (cs, { desc, asc }) => [desc(cs.voteScore), asc(cs.createdAt)],
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(
@@ -507,12 +492,23 @@ export const challengeSubmissionRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       await ensureTripParticipant(context, input.tripId);
 
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: { id: input.id, challenge: { tripId: input.tripId } },
-        select: submissionSelect,
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq }) => eq(cs.id, input.id),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
       });
 
       if (!submission) {
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
+      }
+
+      // Verify the challenge belongs to the requested trip
+      const challengeCheck = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, submission.challengeId), eq(c.tripId, input.tripId)),
+        columns: { id: true },
+      });
+      if (!challengeCheck) {
         throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
@@ -541,31 +537,30 @@ export const challengeSubmissionRouter = createORPCRouter({
           tripId: input.tripId,
         })) ?? input.challengeId;
 
-      return context.db.challengeSubmission
-        .findUnique({
-          where: {
-            challengeId_groupId: {
-              challengeId: resolvedChallengeId,
-              groupId: participant.groupId,
-            },
-          },
-          select: submissionSelect,
-        })
-        .then(async (submission) => {
-          if (!submission) return submission;
+      const participantGroupId = participant.groupId;
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq, and }) =>
+          and(
+            eq(cs.challengeId, resolvedChallengeId),
+            participantGroupId ? eq(cs.groupId, participantGroupId) : isNull(cs.groupId),
+          ),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
+      });
 
-          const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
-            submission.reviewedBy?.authUserId,
-          ]);
+      if (!submission) return null;
 
-          return {
-            ...submission,
-            reviewedBy: attachReviewerEmail(
-              submission.reviewedBy,
-              emailByAuthUserId,
-            ),
-          };
-        });
+      const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
+        submission.reviewedBy?.authUserId,
+      ]);
+
+      return {
+        ...submission,
+        reviewedBy: attachReviewerEmail(
+          submission.reviewedBy,
+          emailByAuthUserId,
+        ),
+      };
     }),
 
   create: protectedProcedure
@@ -608,14 +603,13 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
       }
 
-      const existing = await context.db.challengeSubmission.findUnique({
-        where: {
-          challengeId_groupId: {
-            challengeId: resolvedChallengeId,
-            groupId: participantGroupId,
-          },
-        },
-        select: { id: true },
+      const existing = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq, and }) =>
+          and(
+            eq(cs.challengeId, resolvedChallengeId),
+            eq(cs.groupId, participantGroupId),
+          ),
+        columns: { id: true },
       });
 
       if (existing) {
@@ -644,13 +638,14 @@ export const challengeSubmissionRouter = createORPCRouter({
         : 0;
       const shouldAwardCoins = autoApproved && awardPoints > 0;
 
-      const createdSubmissionId = await context.db.$transaction(async (tx) => {
+      const createdSubmissionId = await context.db.transaction(async (tx) => {
         const previousRankingSnapshot = shouldAwardCoins
           ? await captureTripRankingSnapshot(tx, input.tripId)
           : null;
 
-        const createdSubmission = await tx.challengeSubmission.create({
-          data: {
+        const [createdSubmission] = await tx
+          .insert(challengeSubmissions)
+          .values({
             challengeId: resolvedChallengeId,
             groupId: participantGroupId,
             imageIds: input.imageIds ?? [],
@@ -660,22 +655,21 @@ export const challengeSubmissionRouter = createORPCRouter({
             longitude: input.longitude,
             status: autoApproved ? "APPROVED" : "PENDING",
             reviewedAt: autoApproved ? now : undefined,
-          },
-          select: { id: true },
-        });
+          })
+          .returning({ id: challengeSubmissions.id });
 
         if (shouldAwardCoins) {
-          await tx.group.update({
-            where: { id: participantGroupId },
-            data: { coins: { increment: awardPoints } },
-          });
-          await tx.coinTransaction.create({
-            data: {
-              groupId: participantGroupId,
-              amount: awardPoints,
-              reason: `Auto-approved challenge: ${challenge.name}`,
-              adminId: context.dbUser.id,
-            },
+          await tx
+            .update(groups)
+            .set({
+              coins: sql`${groups.coins} + ${awardPoints}`,
+            })
+            .where(eq(groups.id, participantGroupId));
+          await tx.insert(coinTransactions).values({
+            groupId: participantGroupId,
+            amount: awardPoints,
+            reason: `Auto-approved challenge: ${challenge.name}`,
+            adminId: context.dbUser.id,
           });
 
           if (previousRankingSnapshot) {
@@ -691,9 +685,13 @@ export const challengeSubmissionRouter = createORPCRouter({
         return createdSubmission;
       });
 
-      const submission = await context.db.challengeSubmission.findUnique({
-        where: { id: createdSubmissionId.id },
-        select: submissionSelect,
+      if (!createdSubmissionId) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create submission" });
+      }
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq }) => eq(cs.id, createdSubmissionId.id),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
       });
 
       if (!submission) {
@@ -732,13 +730,11 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Uzytkownik nie jest przypisany do grupy" });
       }
 
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: {
-          id: input.id,
-          groupId: participant.groupId,
-          challenge: { tripId: input.tripId },
-        },
-        select: {
+      const participantGroupId = participant.groupId;
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq, and }) =>
+          and(eq(cs.id, input.id), eq(cs.groupId, participantGroupId)),
+        columns: {
           id: true,
           status: true,
           imageIds: true,
@@ -746,9 +742,12 @@ export const challengeSubmissionRouter = createORPCRouter({
           textContent: true,
           latitude: true,
           longitude: true,
+        },
+        with: {
           challenge: {
-            select: {
+            columns: {
               id: true,
+              tripId: true,
               status: true,
               scoringCategory: true,
               startTime: true,
@@ -765,7 +764,7 @@ export const challengeSubmissionRouter = createORPCRouter({
         },
       });
 
-      if (!submission) {
+      if (submission?.challenge.tripId !== input.tripId) {
         throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
@@ -775,21 +774,24 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       const currentTime = new Date();
 
-      const updatedSubmission = await context.db.$transaction(async (tx) => {
+      const updatedSubmissionId = await context.db.transaction(async (tx): Promise<ChallengeSubmission> => {
         if (
           submission.challenge.status === "VISIBLE" &&
           submission.challenge.startTime &&
           submission.challenge.startTime <= currentTime
         ) {
-          const activation = await tx.challenge.updateMany({
-            where: {
-              id: submission.challenge.id,
-              status: "VISIBLE",
-            },
-            data: { status: "ACTIVE" },
-          });
+          const activation = await tx
+            .update(challenges)
+            .set({ status: "ACTIVE" })
+            .where(
+              and(
+                eq(challenges.id, submission.challenge.id),
+                eq(challenges.status, "VISIBLE"),
+              ),
+            )
+            .returning({ id: challenges.id });
 
-          if (activation.count > 0) {
+          if (activation.length > 0) {
             await createChallengeStatusActivityById({
               tx,
               challengeId: submission.challenge.id,
@@ -806,17 +808,20 @@ export const challengeSubmissionRouter = createORPCRouter({
           submission.challenge.votingStartTime &&
           submission.challenge.votingStartTime <= currentTime
         ) {
-          const movedToVoting = await tx.challenge.updateMany({
-            where: {
-              id: submission.challenge.id,
-              status: "ACTIVE",
-              scoringCategory: "PEER_VOTING",
-              votingStartTime: { lte: currentTime },
-            },
-            data: { status: "VOTING_PHASE" },
-          });
+          const movedToVoting = await tx
+            .update(challenges)
+            .set({ status: "VOTING_PHASE" })
+            .where(
+              and(
+                eq(challenges.id, submission.challenge.id),
+                eq(challenges.status, "ACTIVE"),
+                eq(challenges.scoringCategory, "PEER_VOTING"),
+                lte(challenges.votingStartTime, currentTime),
+              ),
+            )
+            .returning({ id: challenges.id });
 
-          if (movedToVoting.count > 0) {
+          if (movedToVoting.length > 0) {
             await createChallengeStatusActivityById({
               tx,
               challengeId: submission.challenge.id,
@@ -833,10 +838,10 @@ export const challengeSubmissionRouter = createORPCRouter({
           submission.challenge.endTime &&
           submission.challenge.endTime <= currentTime
         ) {
-          await tx.challenge.update({
-            where: { id: submission.challenge.id },
-            data: { status: "COMPLETED" },
-          });
+          await tx
+            .update(challenges)
+            .set({ status: "COMPLETED" })
+            .where(eq(challenges.id, submission.challenge.id));
           submission.challenge.status = "COMPLETED";
         }
 
@@ -874,9 +879,9 @@ export const challengeSubmissionRouter = createORPCRouter({
         });
         const now = new Date();
 
-        const updated = await tx.challengeSubmission.update({
-          where: { id: input.id },
-          data: {
+        const updated = await tx
+          .update(challengeSubmissions)
+          .set({
             imageIds: input.imageIds,
             videoId: input.videoId,
             textContent: input.textContent,
@@ -886,21 +891,37 @@ export const challengeSubmissionRouter = createORPCRouter({
             reviewedAt: autoApproved ? now : null,
             reviewedById: null,
             rejectionReason: null,
-          },
-          select: submissionSelect,
-        });
+          })
+          .where(eq(challengeSubmissions.id, input.id))
+          .returning();
 
-        return updated;
+        const updatedRow = Array.isArray(updated) ? updated[0] : updated;
+        if (!updatedRow) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update submission" });
+        }
+        return updatedRow;
       });
 
+      const enrichedSubmission = await context.db.query.challengeSubmissions.findFirst(
+        {
+          where: (cs, { eq }) => eq(cs.id, updatedSubmissionId.id),
+          columns: submissionBaseColumns,
+          with: submissionWithRelations,
+        },
+      );
+
+      if (!enrichedSubmission) {
+        throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
+      }
+
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
-        updatedSubmission.reviewedBy?.authUserId,
+        enrichedSubmission.reviewedBy?.authUserId,
       ]);
 
       return {
-        ...updatedSubmission,
+        ...enrichedSubmission,
         reviewedBy: attachReviewerEmail(
-          updatedSubmission.reviewedBy,
+          enrichedSubmission.reviewedBy,
           emailByAuthUserId,
         ),
       };
@@ -915,14 +936,22 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Użytkownik nie jest przypisany do grupy" });
       }
 
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: {
-          id: input.id,
-          groupId: participant.groupId,
-          challenge: { tripId: input.tripId },
-        },
-        select: { id: true, status: true },
-      });
+      const result = await context.db
+        .select({
+          id: challengeSubmissions.id,
+          status: challengeSubmissions.status,
+        })
+        .from(challengeSubmissions)
+        .innerJoin(challenges, eq(challengeSubmissions.challengeId, challenges.id))
+        .where(
+          and(
+            eq(challengeSubmissions.id, input.id),
+            eq(challengeSubmissions.groupId, participant.groupId),
+            eq(challenges.tripId, input.tripId),
+          ),
+        );
+
+      const submission = result[0];
 
       if (!submission) {
         throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
@@ -932,7 +961,9 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("FORBIDDEN", { message: "Nie można usunąć zatwierdzonego zgłoszenia" });
       }
 
-      await context.db.challengeSubmission.delete({ where: { id: input.id } });
+      await context.db
+        .delete(challengeSubmissions)
+        .where(eq(challengeSubmissions.id, input.id));
       return { success: true };
     }),
 
@@ -952,17 +983,19 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest powód odrzucenia" });
       }
 
-      const submission = await context.db.challengeSubmission.findUnique({
-        where: { id: input.id },
-        select: {
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq }) => eq(cs.id, input.id),
+        columns: {
           id: true,
           status: true,
           groupId: true,
           awardedPoints: true,
           bonusPoints: true,
           ranking: true,
+        },
+        with: {
           challenge: {
-            select: {
+            columns: {
               id: true,
               tripId: true,
               name: true,
@@ -1001,15 +1034,15 @@ export const challengeSubmissionRouter = createORPCRouter({
       const bonusPoints = shouldAwardCoins ? (input.bonusPoints ?? 0) : 0;
       const totalAwardPoints = awardPoints + bonusPoints;
 
-      const updatedSubmission = await context.db.$transaction(async (tx) => {
+      const updatedSubmission = await context.db.transaction(async (tx) => {
         const shouldCaptureRankingSnapshot = shouldCreateApprovalActivity;
         const previousRankingSnapshot = shouldCaptureRankingSnapshot
           ? await captureTripRankingSnapshot(tx, submission.challenge.tripId)
           : null;
 
-        await tx.challengeSubmission.update({
-          where: { id: input.id },
-          data: {
+        await tx
+          .update(challengeSubmissions)
+          .set({
             status: input.status,
             rejectionReason:
               input.status === "REJECTED" ? input.rejectionReason : null,
@@ -1018,8 +1051,8 @@ export const challengeSubmissionRouter = createORPCRouter({
             awardedPoints: isSpeed ? undefined : input.awardedPoints,
             bonusPoints: input.bonusPoints,
             ranking: isSpeed ? undefined : input.ranking,
-          },
-        });
+          })
+          .where(eq(challengeSubmissions.id, input.id));
 
         if (isSpeed && input.status === "APPROVED") {
           await rebalanceSpeedRankings({
@@ -1028,17 +1061,17 @@ export const challengeSubmissionRouter = createORPCRouter({
             adminId: context.dbUser.id,
           });
         } else if (shouldAwardCoins && totalAwardPoints > 0) {
-          await tx.group.update({
-            where: { id: submission.groupId },
-            data: { coins: { increment: totalAwardPoints } },
-          });
-          await tx.coinTransaction.create({
-            data: {
-              groupId: submission.groupId,
-              amount: totalAwardPoints,
-              reason: `Challenge approved: ${submission.challenge.name}`,
-              adminId: context.dbUser.id,
-            },
+          await tx
+            .update(groups)
+            .set({
+              coins: sql`${groups.coins} + ${totalAwardPoints}`,
+            })
+            .where(eq(groups.id, submission.groupId));
+          await tx.insert(coinTransactions).values({
+            groupId: submission.groupId,
+            amount: totalAwardPoints,
+            reason: `Challenge approved: ${submission.challenge.name}`,
+            adminId: context.dbUser.id,
           });
         }
 
@@ -1050,10 +1083,13 @@ export const challengeSubmissionRouter = createORPCRouter({
           });
         }
 
-        const refreshedForResponse = await tx.challengeSubmission.findUnique({
-          where: { id: input.id },
-          select: submissionSelect,
-        });
+        const refreshedForResponse = await tx.query.challengeSubmissions.findFirst(
+          {
+            where: (cs, { eq }) => eq(cs.id, input.id),
+            columns: submissionBaseColumns,
+            with: submissionWithRelations,
+          },
+        );
 
         if (!refreshedForResponse) {
           throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
@@ -1061,16 +1097,33 @@ export const challengeSubmissionRouter = createORPCRouter({
 
         if (shouldCreateApprovalActivity) {
           const existingSubmissionActivity =
-            await tx.submissionActivity.findFirst({
-              where: { submissionId: input.id },
-              select: { activityId: true },
+            await tx.query.submissionActivities.findFirst({
+              where: (sa, { eq }) => eq(sa.submissionId, input.id),
+              columns: { activityId: true },
             });
 
           if (!existingSubmissionActivity) {
             const refreshedForActivity =
-              await tx.challengeSubmission.findUnique({
-                where: { id: input.id },
-                select: submissionApprovalActivitySelect,
+              await tx.query.challengeSubmissions.findFirst({
+                where: (cs, { eq }) => eq(cs.id, input.id),
+                columns: {
+                  id: true,
+                  challengeId: true,
+                  groupId: true,
+                  imageIds: true,
+                  videoId: true,
+                  awardedPoints: true,
+                  bonusPoints: true,
+                  ranking: true,
+                },
+                with: {
+                  challenge: {
+                    columns: { id: true, tripId: true, name: true },
+                  },
+                  group: {
+                    columns: { id: true, name: true },
+                  },
+                },
               });
 
             if (!refreshedForActivity) {
@@ -1081,26 +1134,28 @@ export const challengeSubmissionRouter = createORPCRouter({
               (refreshedForActivity.awardedPoints ?? 0) +
               (refreshedForActivity.bonusPoints ?? 0);
 
-            await tx.activityFeed.create({
-              data: {
-                tripId: refreshedForActivity.challenge.tripId,
-                activityType: "submission",
-                title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
-                description: "Nie czekaj, ty też podejmij wyzwanie!",
-                imageUrl: refreshedForActivity.imageIds[0],
-                createdByAdmin: context.dbUser.id,
-                submissionActivity: {
-                  create: {
-                    submissionId: refreshedForActivity.id,
-                    challengeId: refreshedForActivity.challengeId,
-                    groupId: refreshedForActivity.groupId,
-                    hasVideo: Boolean(refreshedForActivity.videoId),
-                    isWinner: refreshedForActivity.ranking === 1,
-                    ranking: refreshedForActivity.ranking,
-                    pointsAwarded: totalPoints,
-                  },
-                },
-              },
+            const [feed] = await tx.insert(activityFeeds).values({
+              tripId: refreshedForActivity.challenge.tripId,
+              activityType: "submission",
+              title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
+              description: "Nie czekaj, ty też podejmij wyzwanie!",
+              imageUrl: refreshedForActivity.imageIds[0],
+              createdByAdmin: context.dbUser.id,
+            }).returning();
+
+            if (!feed) {
+              throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create activity feed" });
+            }
+
+            await tx.insert(submissionActivities).values({
+              activityId: feed.id,
+              submissionId: refreshedForActivity.id,
+              challengeId: refreshedForActivity.challengeId,
+              groupId: refreshedForActivity.groupId,
+              hasVideo: Boolean(refreshedForActivity.videoId),
+              isWinner: refreshedForActivity.ranking === 1,
+              ranking: refreshedForActivity.ranking,
+              pointsAwarded: totalPoints,
             });
           }
         }
@@ -1133,7 +1188,9 @@ export const challengeSubmissionRouter = createORPCRouter({
   adminDelete: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      await context.db.challengeSubmission.delete({ where: { id: input.id } });
+      await context.db
+        .delete(challengeSubmissions)
+        .where(eq(challengeSubmissions.id, input.id));
       return { success: true };
     }),
 });

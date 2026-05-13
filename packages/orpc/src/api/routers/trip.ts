@@ -5,6 +5,11 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+import {
+  trips,
+  tripParticipants,
+} from "@mirai-app/db";
+import { eq, inArray, sql } from "drizzle-orm";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
@@ -58,38 +63,47 @@ export const tripRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const limit = input?.pagination?.limit ?? 30;
       const offset = input?.pagination?.offset ?? 0;
-      const where = {
-        participants: {
-          some: { userId: context.dbUser.id },
-        },
-      };
 
-      const [trips, total] = await Promise.all([
-        context.db.trip.findMany({
-          where,
-          orderBy: { startDate: "asc" },
-          include: {
+      const participantRows = await context.db.select({ tripId: tripParticipants.tripId })
+        .from(tripParticipants)
+        .where(eq(tripParticipants.userId, context.dbUser.id));
+      const tripIds = participantRows.map((r) => r.tripId);
+
+      if (tripIds.length === 0) {
+        return {
+          trips: [],
+          pagination: { total: 0, limit, offset, hasMore: false },
+        };
+      }
+
+      const [tripsList, totalRows] = await Promise.all([
+        context.db.query.trips.findMany({
+          where: (t, { inArray }) => inArray(t.id, tripIds),
+          with: {
             groups: {
-              where: { isDeleted: false },
-              select: { id: true, name: true },
+              where: (g, { eq }) => eq(g.isDeleted, false),
             },
             tripSponsors: {
-              where: {
-                sponsor: { isActive: true }
-              },
-              include: {
+              with: {
                 sponsor: true,
               },
             },
           },
-          take: limit,
-          skip: offset,
+          orderBy: (t, { asc }) => asc(t.startDate),
+          limit,
+          offset,
         }),
-        context.db.trip.count({ where }),
+        context.db.select({ count: sql<number>`count(*)` }).from(trips)
+          .where(inArray(trips.id, tripIds)),
       ]);
 
+      const total = totalRows[0]?.count ?? 0;
+
       return {
-        trips,
+        trips: tripsList.map((trip) => ({
+          ...trip,
+          tripSponsors: trip.tripSponsors.filter((ts) => ts.sponsor?.isActive),
+        })),
         pagination: {
           total,
           limit,
@@ -101,67 +115,29 @@ export const tripRouter = createORPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const isParticipant = await context.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: {
-            userId: context.dbUser.id,
-            tripId: input.id,
-          },
-        },
-        select: { userId: true },
+      const isParticipant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.id)),
       });
 
       if (!isParticipant) {
         throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
-      const trip = await context.db.trip.findUnique({
-        where: { id: input.id },
-        include: {
+      const trip = await context.db.query.trips.findFirst({
+        where: (t, { eq }) => eq(t.id, input.id),
+        with: {
           groups: {
-            where: { isDeleted: false },
-            select: {
-              id: true,
-              name: true,
-              code: true,
-              image: true,
-              coins: true,
-              _count: {
-                select: { participants: true }
-              }
-            },
+            where: (g, { eq }) => eq(g.isDeleted, false),
           },
           tripSponsors: {
-            where: {
-              sponsor: { isActive: true }
-            },
-            include: {
+            with: {
               sponsor: true,
             },
           },
           participants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  authUserId: true,
-                  role: true,
-                },
-              },
-              group: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                  coins: true,
-                  isDeleted: true,
-                  _count: {
-                    select: { participants: true }
-                  }
-                },
-              },
+            with: {
+              user: true,
+              group: true,
             },
           },
         },
@@ -170,21 +146,37 @@ export const tripRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
+      const groupIds = trip.groups.map((g) => g.id);
+      let countMap = new Map<string, number>();
+      if (groupIds.length > 0) {
+        const participantCounts = await context.db.select({
+          groupId: tripParticipants.groupId,
+          count: sql<number>`count(*)`,
+        }).from(tripParticipants)
+          .where(inArray(tripParticipants.groupId, groupIds))
+          .groupBy(tripParticipants.groupId);
+        countMap = new Map(participantCounts.map((c) => [c.groupId!, c.count]));
+      }
+
       const emailByAuthUserId = await buildAuthEmailLookup(
         context.supabase,
-        trip.participants.map((participant) => participant.user.authUserId),
+        trip.participants.map((participant) => participant.user?.authUserId).filter(Boolean),
       );
 
       return {
         ...trip,
-        tripSponsors: trip.tripSponsors,
+        tripSponsors: trip.tripSponsors.filter((ts) => ts.sponsor?.isActive),
         groups: await Promise.all(
           trip.groups.map(async (group) => ({
             ...group,
+            _count: { participants: countMap.get(group.id) ?? 0 },
             image: await resolveGroupImage(context.supabase, group.image),
           })),
         ),
         participants: trip.participants.map((participant) => {
+          if (!participant.user) {
+            return participant;
+          }
           const { authUserId, ...user } = participant.user;
           return {
             ...participant,
@@ -193,6 +185,7 @@ export const tripRouter = createORPCRouter({
                 ? null
                 : {
                   ...participant.group,
+                  _count: { participants: countMap.get(participant.group.id) ?? 0 },
                   image: participant.group.image,
                 }
               : participant.group,
@@ -207,53 +200,21 @@ export const tripRouter = createORPCRouter({
   getByIdAdmin: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const trip = await context.db.trip.findUnique({
-        where: { id: input.id },
-        include: {
+      const trip = await context.db.query.trips.findFirst({
+        where: (t, { eq }) => eq(t.id, input.id),
+        with: {
           groups: {
-            where: { isDeleted: false },
-            select: {
-              id: true,
-              name: true,
-              code: true,
-              image: true,
-              coins: true,
-              _count: {
-                select: { participants: true }
-              }
-            },
+            where: (g, { eq }) => eq(g.isDeleted, false),
           },
           tripSponsors: {
-            where: {
-              sponsor: { isActive: true }
-            },
-            include: {
+            with: {
               sponsor: true,
             },
           },
           participants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  authUserId: true,
-                  role: true,
-                },
-              },
-              group: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                  coins: true,
-                  isDeleted: true,
-                  _count: {
-                    select: { participants: true }
-                  }
-                },
-              },
+            with: {
+              user: true,
+              group: true,
             },
           },
         },
@@ -262,20 +223,37 @@ export const tripRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
+      const groupIds = trip.groups.map((g) => g.id);
+      let countMap = new Map<string, number>();
+      if (groupIds.length > 0) {
+        const participantCounts = await context.db.select({
+          groupId: tripParticipants.groupId,
+          count: sql<number>`count(*)`,
+        }).from(tripParticipants)
+          .where(inArray(tripParticipants.groupId, groupIds))
+          .groupBy(tripParticipants.groupId);
+        countMap = new Map(participantCounts.map((c) => [c.groupId!, c.count]));
+      }
+
       const emailByAuthUserId = await buildAuthEmailLookup(
         context.supabase,
-        trip.participants.map((participant) => participant.user.authUserId),
+        trip.participants.map((participant) => participant.user?.authUserId).filter(Boolean),
       );
 
       return {
         ...trip,
+        tripSponsors: trip.tripSponsors.filter((ts) => ts.sponsor?.isActive),
         groups: await Promise.all(
           trip.groups.map(async (group) => ({
             ...group,
+            _count: { participants: countMap.get(group.id) ?? 0 },
             image: await resolveGroupImage(context.supabase, group.image),
           })),
         ),
         participants: trip.participants.map((participant) => {
+          if (!participant.user) {
+            return participant;
+          }
           const { authUserId, ...user } = participant.user;
           return {
             ...participant,
@@ -284,6 +262,7 @@ export const tripRouter = createORPCRouter({
                 ? null
                 : {
                   ...participant.group,
+                  _count: { participants: countMap.get(participant.group.id) ?? 0 },
                   image: participant.group.image,
                 }
               : participant.group,
@@ -306,15 +285,14 @@ export const tripRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return context.db.trip.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          backgroundImagePath: input.backgroundImagePath,
-        },
-      });
+      const [trip] = await context.db.insert(trips).values({
+        name: input.name,
+        description: input.description,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        backgroundImagePath: input.backgroundImagePath,
+      }).returning();
+      return trip;
     }),
   update: adminProcedure
     .input(
@@ -329,46 +307,44 @@ export const tripRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       const { id, ...data } = input;
-      const trip = await context.db.trip.findUnique({ where: { id } });
+      const trip = await context.db.query.trips.findFirst({
+        where: (t, { eq }) => eq(t.id, id),
+      });
       if (!trip) {
         throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
-      return context.db.trip.update({
-        where: { id },
-        data,
-      });
+      const [updated] = await context.db.update(trips).set(data).where(eq(trips.id, id)).returning();
+      return updated;
     }),
   getResources: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      // verify participant access
-      const isParticipant = await context.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: {
-            userId: context.dbUser.id,
-            tripId: input.tripId,
-          },
-        },
-        select: { userId: true },
+      const isParticipant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
       });
 
       if (!isParticipant) {
         throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
-      const resources = await context.db.tripResource.findMany({
-        where: { tripId: input.tripId },
-        orderBy: { sortOrder: "asc" },
+      const resources = await context.db.query.tripResources.findMany({
+        where: (tr, { eq }) => eq(tr.tripId, input.tripId),
+        orderBy: (tr, { asc }) => asc(tr.sortOrder),
       });
-      const insurance = await context.db.tripInsurance.findUnique({
-        where: { tripId: input.tripId },
-        include: { steps: { orderBy: { stepNumber: "asc" } } },
+      const insurance = await context.db.query.tripInsurances.findFirst({
+        where: (ti, { eq }) => eq(ti.tripId, input.tripId),
+        with: {
+          steps: {
+            orderBy: (s, { asc }) => asc(s.stepNumber),
+          },
+        },
       });
       return { resources, insurance };
     }),
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      return context.db.trip.delete({ where: { id: input.id } });
+      const [deleted] = await context.db.delete(trips).where(eq(trips.id, input.id)).returning();
+      return deleted;
     }),
 });

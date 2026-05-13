@@ -8,7 +8,7 @@ import { appRouter } from "../../root";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 
 const createCaller = (ctx: TRPCContext) => createRouterClient(appRouter, { context: ctx });
 

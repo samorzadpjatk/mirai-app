@@ -5,20 +5,22 @@ import {
   adminProcedure,
   publicProcedure,
 } from "../../api/trpc";
+import { sponsors, tripSponsors } from "@mirai-app/db";
+import { eq, and } from "drizzle-orm";
 
 export const sponsorRouter = createORPCRouter({
   getAll: publicProcedure.handler(async ({ context }) => {
-    return context.db.sponsor.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: "asc" },
+    return context.db.query.sponsors.findMany({
+      where: (s, { eq }) => eq(s.isActive, true),
+      orderBy: (s, { asc }) => asc(s.createdAt),
     });
   }),
 
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const sponsor = await context.db.sponsor.findUnique({
-        where: { id: input.id },
+      const sponsor = await context.db.query.sponsors.findFirst({
+        where: (s, { eq }) => eq(s.id, input.id),
       });
 
       if (!sponsor) {
@@ -31,18 +33,17 @@ export const sponsorRouter = createORPCRouter({
   getByTripId: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const tripSponsors = await context.db.tripSponsor.findMany({
-        where: { 
-          tripId: input.tripId,
-          sponsor: { isActive: true }
-        },
-        include: {
+      const tripSponsorsList = await context.db.query.tripSponsors.findMany({
+        where: (ts, { eq }) => eq(ts.tripId, input.tripId),
+        with: {
           sponsor: true,
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: (ts, { asc }) => asc(ts.createdAt),
       });
 
-      return tripSponsors.map((tripSponsor) => tripSponsor.sponsor);
+      return tripSponsorsList
+        .filter((ts) => ts.sponsor?.isActive)
+        .map((tripSponsor) => tripSponsor.sponsor);
     }),
 
   create: adminProcedure
@@ -58,9 +59,8 @@ export const sponsorRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return context.db.sponsor.create({
-        data: input,
-      });
+      const [sponsor] = await context.db.insert(sponsors).values(input).returning();
+      return sponsor;
     }),
 
   update: adminProcedure
@@ -78,20 +78,21 @@ export const sponsorRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       const { id, ...data } = input;
-      const sponsor = await context.db.sponsor.findUnique({ where: { id } });
+      const sponsor = await context.db.query.sponsors.findFirst({
+        where: (s, { eq }) => eq(s.id, id),
+      });
       if (!sponsor) {
         throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
-      return context.db.sponsor.update({
-        where: { id },
-        data,
-      });
+      const [updated] = await context.db.update(sponsors).set(data).where(eq(sponsors.id, id)).returning();
+      return updated;
     }),
 
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      return context.db.sponsor.delete({ where: { id: input.id } });
+      const [sponsor] = await context.db.delete(sponsors).where(eq(sponsors.id, input.id)).returning();
+      return sponsor;
     }),
 
   addToTrip: adminProcedure
@@ -102,42 +103,33 @@ export const sponsorRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      // Check if trip exists
-      const trip = await context.db.trip.findUnique({
-        where: { id: input.tripId },
+      const trip = await context.db.query.trips.findFirst({
+        where: (t, { eq }) => eq(t.id, input.tripId),
       });
       if (!trip) {
         throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
       }
 
-      // Check if sponsor exists
-      const sponsor = await context.db.sponsor.findUnique({
-        where: { id: input.sponsorId },
+      const sponsor = await context.db.query.sponsors.findFirst({
+        where: (s, { eq }) => eq(s.id, input.sponsorId),
       });
       if (!sponsor) {
         throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
 
-      // Check if already associated
-      const existing = await context.db.tripSponsor.findUnique({
-        where: {
-          tripId_sponsorId: {
-            tripId: input.tripId,
-            sponsorId: input.sponsorId,
-          },
-        },
+      const existing = await context.db.query.tripSponsors.findFirst({
+        where: (ts, { eq, and }) => and(eq(ts.tripId, input.tripId), eq(ts.sponsorId, input.sponsorId)),
       });
 
       if (existing) {
         throw new ORPCError("CONFLICT", { message: "Sponsor is already associated with this trip" });
       }
 
-      return context.db.tripSponsor.create({
-        data: {
-          tripId: input.tripId,
-          sponsorId: input.sponsorId,
-        },
-      });
+      const [tripSponsor] = await context.db.insert(tripSponsors).values({
+        tripId: input.tripId,
+        sponsorId: input.sponsorId,
+      }).returning();
+      return tripSponsor;
     }),
 
   removeFromTrip: adminProcedure
@@ -148,13 +140,9 @@ export const sponsorRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return context.db.tripSponsor.delete({
-        where: {
-          tripId_sponsorId: {
-            tripId: input.tripId,
-            sponsorId: input.sponsorId,
-          },
-        },
-      });
-  }),
+      const [tripSponsor] = await context.db.delete(tripSponsors).where(
+        and(eq(tripSponsors.tripId, input.tripId), eq(tripSponsors.sponsorId, input.sponsorId))
+      ).returning();
+      return tripSponsor;
+    }),
 });

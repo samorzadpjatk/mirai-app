@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { rewardRouter } from "../../routers/reward";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Reward, RewardPurchase, Group, Challenge } from "@mirai-app/db";
+import type { DB, User, Reward, RewardPurchase, Group, Challenge } from "@mirai-app/db";
 
 vi.mock("@mirai-app/auth", () => ({
   requireAuth: vi.fn(),
@@ -232,7 +232,7 @@ describe("rewardRouter", () => {
           callback: T extends (tx: unknown) => Promise<unknown>
             ? (tx: typeof mockDb) => Promise<unknown>
             : Promise<unknown>[]
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
         ): Promise<any> => {
           if (typeof callback === "function") {
             const tx = {
@@ -269,7 +269,7 @@ describe("rewardRouter", () => {
           return Promise.all(callback);
         }
       ),
-    } as unknown as PrismaClient;
+    };
   });
 
   // Helper to create authenticated context
@@ -336,7 +336,7 @@ describe("rewardRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getByTrip({ tripId: "all" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { isHidden: false },
@@ -520,7 +520,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.name).toBe("Test Reward");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -553,7 +553,7 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -578,7 +578,7 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -617,7 +617,7 @@ describe("rewardRouter", () => {
         images: ["new-image.jpg"],
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -638,7 +638,7 @@ describe("rewardRouter", () => {
         image: null,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -690,7 +690,7 @@ describe("rewardRouter", () => {
       const result = await caller.delete({ id: "reward-123" });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.delete).toHaveBeenCalledWith({
         where: { id: "reward-123" },
       });
@@ -733,7 +733,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.quantity).toBe(1);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -857,7 +857,7 @@ describe("rewardRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getPurchaseHistory({ tripId: "trip-123" });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.rewardPurchase.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({

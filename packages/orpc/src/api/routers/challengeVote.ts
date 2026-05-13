@@ -6,11 +6,19 @@ import {
   protectedProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
-import { type Prisma, type PrismaClient } from "@mirai-app/db";
+import { eq, and, count, inArray, ne } from "drizzle-orm";
+import {
+  challenges,
+  challengeSubmissions,
+  challengeVotes,
+  tripParticipants,
+  users,
+} from "@mirai-app/db";
+import type { DB, TransactionDB } from "@mirai-app/db";
 import { createChallengeCompletionWithWinnersById } from "../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 
-const voteSelect: Prisma.ChallengeVoteSelect = {
+const voteColumns = {
   id: true,
   challengeId: true,
   submissionId: true,
@@ -21,17 +29,18 @@ const voteSelect: Prisma.ChallengeVoteSelect = {
   votedAt: true,
 } as const;
 
-const challengeVotingSelect = {
+const challengeColumns = {
   id: true,
   tripId: true,
   status: true,
   scoringCategory: true,
   endTime: true,
-} as const satisfies Prisma.ChallengeSelect;
+} as const;
 
-type ChallengeForVoting = Prisma.ChallengeGetPayload<{
-  select: typeof challengeVotingSelect;
-}>;
+type ChallengeForVoting = Pick<
+  typeof challenges.$inferSelect,
+  "id" | "tripId" | "status" | "scoringCategory" | "endTime"
+>;
 
 interface JudgedStaffVotingProgress {
   requiredPositions: number;
@@ -43,11 +52,12 @@ interface JudgedStaffVotingProgress {
 }
 
 const ensureTripParticipant = async (
-  context: { db: PrismaClient; dbUser: { id: string } },
+  context: { db: DB; dbUser: { id: string } },
   tripId: string,
 ) => {
-  const participant = await context.db.tripParticipant.findUnique({
-    where: { userId_tripId: { userId: context.dbUser.id, tripId } },
+  const participant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq, and }) =>
+      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
   });
   if (!participant) {
     throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
@@ -56,13 +66,13 @@ const ensureTripParticipant = async (
 };
 
 const getChallengeInTrip = async (
-  context: { db: PrismaClient },
+  context: { db: DB | TransactionDB },
   challengeId: string,
   tripId: string,
 ) => {
-  const challenge = await context.db.challenge.findFirst({
-    where: { id: challengeId, tripId },
-    select: challengeVotingSelect,
+  const challenge = await context.db.query.challenges.findFirst({
+    where: (c, { eq, and }) => and(eq(c.id, challengeId), eq(c.tripId, tripId)),
+    columns: challengeColumns,
   });
 
   if (!challenge) {
@@ -111,17 +121,17 @@ const ensureChallengeVoting = (params: {
 };
 
 const recomputeSubmissionVotes = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   challengeId: string,
 ) => {
-  const submissions = await context.db.challengeSubmission.findMany({
-    where: { challengeId },
-    select: { id: true },
+  const submissions = await context.db.query.challengeSubmissions.findMany({
+    where: (cs, { eq }) => eq(cs.challengeId, challengeId),
+    columns: { id: true },
   });
 
-  const votes = await context.db.challengeVote.findMany({
-    where: { challengeId },
-    select: { submissionId: true, votePoints: true, normalizedWeight: true },
+  const votes = await context.db.query.challengeVotes.findMany({
+    where: (cv, { eq }) => eq(cv.challengeId, challengeId),
+    columns: { submissionId: true, votePoints: true, normalizedWeight: true },
   });
 
   const tally = new Map<string, { count: number; score: number }>();
@@ -132,41 +142,33 @@ const recomputeSubmissionVotes = async (
     tally.set(vote.submissionId, current);
   }
 
-  // Handle both PrismaClient and TransactionClient
-  if ('$transaction' in context.db) {
-    // Regular PrismaClient - use its transaction method
-    await context.db.$transaction(
-      submissions.map((submission) => {
-        const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-        return context.db.challengeSubmission.update({
-          where: { id: submission.id },
-          data: { voteCount: stats.count, voteScore: stats.score },
-        });
-      }),
-    );
-  } else {
-    // TransactionClient - execute updates sequentially within the existing transaction
-    const txDb = context.db as Prisma.TransactionClient;
-    for (const submission of submissions) {
-      const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-      await txDb.challengeSubmission.update({
-        where: { id: submission.id },
-        data: { voteCount: stats.count, voteScore: stats.score },
-      });
-    }
+  for (const submission of submissions) {
+    const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
+    await context.db
+      .update(challengeSubmissions)
+      .set({
+        voteCount: stats.count,
+        voteScore: stats.score,
+      })
+      .where(eq(challengeSubmissions.id, submission.id));
   }
 };
 
 const resolveRequiredVotePositions = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   challengeId: string,
 ) => {
-  const eligibleSubmissionsCount = await context.db.challengeSubmission.count({
-    where: {
-      challengeId,
-      status: { not: "REJECTED" },
-    },
-  });
+  const result = await context.db
+    .select({ count: count() })
+    .from(challengeSubmissions)
+    .where(
+      and(
+        eq(challengeSubmissions.challengeId, challengeId),
+        ne(challengeSubmissions.status, "REJECTED"),
+      ),
+    );
+
+  const eligibleSubmissionsCount = result[0]?.count ?? 0;
 
   const requiredPositions =
     eligibleSubmissionsCount >= 2 ? Math.min(3, eligibleSubmissionsCount) : 0;
@@ -178,18 +180,16 @@ const resolveRequiredVotePositions = async (
 };
 
 const getTripAdminParticipantIds = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   tripId: string,
 ) => {
-  const admins = await context.db.tripParticipant.findMany({
-    where: {
-      tripId,
-      user: {
-        role: "ADMIN",
-      },
-    },
-    select: { id: true },
-  });
+  const admins = await context.db
+    .select({ id: tripParticipants.id })
+    .from(tripParticipants)
+    .innerJoin(users, eq(tripParticipants.userId, users.id))
+    .where(
+      and(eq(tripParticipants.tripId, tripId), eq(users.role, "ADMIN")),
+    );
 
   return admins.map((admin) => admin.id);
 };
@@ -210,7 +210,7 @@ const hasAllRequiredPositions = (
 };
 
 const getJudgedStaffVotingProgress = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   params: { challengeId: string; tripId: string },
 ): Promise<JudgedStaffVotingProgress> => {
   const [{ requiredPositions, eligibleSubmissionsCount }, adminParticipantIds] =
@@ -230,12 +230,13 @@ const getJudgedStaffVotingProgress = async (
     };
   }
 
-  const votes = await context.db.challengeVote.findMany({
-    where: {
-      challengeId: params.challengeId,
-      voterId: { in: adminParticipantIds },
-    },
-    select: {
+  const votes = await context.db.query.challengeVotes.findMany({
+    where: (cv, { eq, and, inArray }) =>
+      and(
+        eq(cv.challengeId, params.challengeId),
+        inArray(cv.voterId, adminParticipantIds),
+      ),
+    columns: {
       voterId: true,
       votePosition: true,
     },
@@ -262,12 +263,13 @@ const getJudgedStaffVotingProgress = async (
     totalAdmins,
     votedAdmins,
     pendingAdmins,
-    allAdminsVoted: requiredPositions > 0 && totalAdmins > 0 && votedAdmins >= totalAdmins,
+    allAdminsVoted:
+      requiredPositions > 0 && totalAdmins > 0 && votedAdmins >= totalAdmins,
   };
 };
 
 const maybeFinalizeJudgedStaffVoting = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   params: {
     challenge: ChallengeForVoting;
     createdByAdminId: string;
@@ -286,31 +288,32 @@ const maybeFinalizeJudgedStaffVoting = async (
     return { finalized: false, progress };
   }
 
-  const result = await context.db.challenge.updateMany({
-    where: {
-      id: params.challenge.id,
-      tripId: params.challenge.tripId,
-      scoringCategory: "JUDGED_STAFF",
-      status: { in: ["ACTIVE", "VOTING_PHASE"] },
-    },
-    data: {
-      status: "COMPLETED",
-    },
-  });
+  const updated = await context.db
+    .update(challenges)
+    .set({ status: "COMPLETED" })
+    .where(
+      and(
+        eq(challenges.id, params.challenge.id),
+        eq(challenges.tripId, params.challenge.tripId),
+        eq(challenges.scoringCategory, "JUDGED_STAFF"),
+        inArray(challenges.status, ["ACTIVE", "VOTING_PHASE"]),
+      ),
+    )
+    .returning({ id: challenges.id });
 
-  if (result.count > 0) {
+  if (updated.length > 0) {
     await createChallengeCompletionWithWinnersById({
-      tx: context.db,
+        tx: context.db,
       challengeId: params.challenge.id,
       createdByAdmin: params.createdByAdminId,
     });
   }
 
-  return { finalized: result.count > 0, progress };
+  return { finalized: updated.length > 0, progress };
 };
 
 const validateJudgedStaffVotePayload = async (
-  context: { db: PrismaClient | Prisma.TransactionClient },
+  context: { db: DB | TransactionDB },
   params: {
     challengeId: string;
     votePositions: number[];
@@ -343,20 +346,21 @@ export const challengeVoteRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const participant = await ensureTripParticipant(context, input.tripId);
 
-      return context.db.challengeVote.findMany({
-        where: { challengeId: input.challengeId, voterId: participant.id },
-        select: voteSelect,
-        orderBy: { votePosition: "asc" },
+      return context.db.query.challengeVotes.findMany({
+        where: (cv, { eq, and }) =>
+          and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id)),
+        columns: voteColumns,
+        orderBy: (cv, { asc }) => [asc(cv.votePosition)],
       });
     }),
 
   getByChallenge: moderatorProcedure
     .input(z.object({ challengeId: z.string() }))
     .handler(async ({ context, input }) => {
-      return context.db.challengeVote.findMany({
-        where: { challengeId: input.challengeId },
-        select: voteSelect,
-        orderBy: [{ voterId: "asc" }, { votePosition: "asc" }],
+      return context.db.query.challengeVotes.findMany({
+        where: (cv, { eq }) => eq(cv.challengeId, input.challengeId),
+        columns: voteColumns,
+        orderBy: (cv, { asc }) => [asc(cv.voterId), asc(cv.votePosition)],
       });
     }),
 
@@ -401,30 +405,31 @@ export const challengeVoteRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "You can force end staff voting only after submission phase ends" });
       }
 
-      const result = await context.db.$transaction(async (tx) => {
+      const result = await context.db.transaction(async (tx) => {
         await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
-        const updateResult = await tx.challenge.updateMany({
-          where: {
-            id: challenge.id,
-            tripId: challenge.tripId,
-            scoringCategory: "JUDGED_STAFF",
-            status: { in: ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE"] },
-          },
-          data: {
-            status: "COMPLETED",
-          },
-        });
+        const updated = await tx
+          .update(challenges)
+          .set({ status: "COMPLETED" })
+          .where(
+            and(
+              eq(challenges.id, challenge.id),
+              eq(challenges.tripId, challenge.tripId),
+              eq(challenges.scoringCategory, "JUDGED_STAFF"),
+              inArray(challenges.status, ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE"]),
+            ),
+          )
+          .returning({ id: challenges.id });
 
-        if (updateResult.count > 0) {
+        if (updated.length > 0) {
           await createChallengeCompletionWithWinnersById({
-            tx: tx,
+            tx,
             challengeId: challenge.id,
             createdByAdmin: context.dbUser.id,
           });
         }
 
-        return updateResult.count > 0;
+        return updated.length > 0;
       });
 
       const progress = await getJudgedStaffVotingProgress(context, {
@@ -473,9 +478,13 @@ export const challengeVoteRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Pozycje glosow musza byc unikalne" });
       }
 
-      const submissions = await context.db.challengeSubmission.findMany({
-        where: { id: { in: [...uniqueSubmissionIds] }, challengeId: input.challengeId },
-        select: { id: true, groupId: true },
+      const submissions = await context.db.query.challengeSubmissions.findMany({
+        where: (cs, { eq, and, inArray }) =>
+          and(
+            inArray(cs.id, [...uniqueSubmissionIds]),
+            eq(cs.challengeId, input.challengeId),
+          ),
+        columns: { id: true, groupId: true },
       });
 
       if (submissions.length !== uniqueSubmissionIds.size) {
@@ -492,12 +501,10 @@ export const challengeVoteRouter = createORPCRouter({
       }
 
       // Check for existing votes to prevent updates (both peer voting and judged staff)
-      const existingVotes = await context.db.challengeVote.findMany({
-        where: {
-          challengeId: input.challengeId,
-          voterId: participant.id,
-        },
-        select: { votePosition: true },
+      const existingVotes = await context.db.query.challengeVotes.findMany({
+        where: (cv, { eq, and }) =>
+          and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id)),
+        columns: { votePosition: true },
       });
 
       if (existingVotes.length > 0) {
@@ -505,9 +512,9 @@ export const challengeVoteRouter = createORPCRouter({
       }
 
       // Create new votes (no deletion allowed for any voting type)
-      const result = await context.db.$transaction(async (tx) => {
-        await tx.challengeVote.createMany({
-          data: input.votes.map((vote) => ({
+      const result = await context.db.transaction(async (tx) => {
+        await tx.insert(challengeVotes).values(
+          input.votes.map((vote) => ({
             challengeId: input.challengeId,
             submissionId: vote.submissionId,
             voterId: participant.id,
@@ -515,7 +522,7 @@ export const challengeVoteRouter = createORPCRouter({
             votePoints: vote.votePoints,
             normalizedWeight: vote.normalizedWeight ?? 1.0,
           })),
-        });
+        );
 
         await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
@@ -526,10 +533,11 @@ export const challengeVoteRouter = createORPCRouter({
           });
         }
 
-        return await tx.challengeVote.findMany({
-          where: { challengeId: input.challengeId, voterId: participant.id },
-          select: voteSelect,
-          orderBy: { votePosition: "asc" },
+        return await tx.query.challengeVotes.findMany({
+          where: (cv, { eq, and }) =>
+            and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id)),
+          columns: voteColumns,
+          orderBy: (cv, { asc }) => [asc(cv.votePosition)],
         });
       });
 
@@ -560,12 +568,10 @@ export const challengeVoteRouter = createORPCRouter({
         });
       }
 
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: {
-          id: input.submissionId,
-          challengeId: input.challengeId,
-        },
-        select: { id: true, groupId: true },
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq, and }) =>
+          and(eq(cs.id, input.submissionId), eq(cs.challengeId, input.challengeId)),
+        columns: { id: true, groupId: true },
       });
 
       if (!submission) {
@@ -577,12 +583,10 @@ export const challengeVoteRouter = createORPCRouter({
       }
 
       // Check for any existing votes to prevent updates (for all voting types)
-      const existingVotes = await context.db.challengeVote.findMany({
-        where: {
-          challengeId: input.challengeId,
-          voterId: participant.id,
-        },
-        select: { id: true, votePosition: true, submissionId: true },
+      const existingVotes = await context.db.query.challengeVotes.findMany({
+        where: (cv, { eq, and }) =>
+          and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id)),
+        columns: { id: true, votePosition: true, submissionId: true },
       });
 
       if (existingVotes.length > 0) {
@@ -590,12 +594,12 @@ export const challengeVoteRouter = createORPCRouter({
         if (challenge.scoringCategory === "PEER_VOTING") {
           throw new ORPCError("CONFLICT", { message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu." });
         }
-        
+
         // For judged staff voting, check if position is already taken
         const existingByPosition = existingVotes.find(
           (vote) => vote.votePosition === input.votePosition,
         );
-        
+
         if (existingByPosition) {
           if (existingByPosition.submissionId === input.submissionId) {
             throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
@@ -605,18 +609,15 @@ export const challengeVoteRouter = createORPCRouter({
       }
 
       try {
-        const result = await context.db.$transaction(async (tx) => {
-          const createdVote = await tx.challengeVote.create({
-            data: {
-              challengeId: input.challengeId,
-              submissionId: input.submissionId,
-              voterId: participant.id,
-              votePosition: input.votePosition,
-              votePoints: input.votePoints,
-              normalizedWeight: input.normalizedWeight ?? 1.0,
-            },
-            select: voteSelect,
-          });
+        const result = await context.db.transaction(async (tx) => {
+          const [createdVote] = await tx.insert(challengeVotes).values({
+            challengeId: input.challengeId,
+            submissionId: input.submissionId,
+            voterId: participant.id,
+            votePosition: input.votePosition,
+            votePoints: input.votePoints,
+            normalizedWeight: input.normalizedWeight ?? 1.0,
+          }).returning();
 
           await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
@@ -632,13 +633,13 @@ export const challengeVoteRouter = createORPCRouter({
 
         return result;
       } catch (error: unknown) {
-        const prismaCode =
+        const pgCode =
           typeof error === "object" && error !== null && "code" in error
             ? (error as { code?: unknown }).code
             : undefined;
-        const prismaCodeValue =
-          typeof prismaCode === "string" ? prismaCode : "";
-        if (prismaCodeValue === "P2002") {
+        const pgCodeValue =
+          typeof pgCode === "string" ? pgCode : "";
+        if (pgCodeValue === "23505") {
           throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
         }
         throw error;

@@ -6,7 +6,25 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@mirai-app/db";
+import {
+  eq,
+  and,
+  or,
+  lt,
+  count,
+  sql,
+  inArray,
+} from "drizzle-orm";
+import {
+  activityFeeds,
+  activityReactions,
+  submissionActivities,
+  challengeActivities,
+  rankChangeActivities,
+  userPosts,
+  users,
+} from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
 const REACTION_TYPES = ["heart", "fire", "clap", "star"] as const;
@@ -53,19 +71,14 @@ const normalizeImageReference = (value: string | undefined) => {
   return value;
 };
 
-
 const ensureTripParticipant = async (
-  context: { db: Prisma.TransactionClient; dbUser: { id: string } },
+  context: { db: DB; dbUser: { id: string } },
   tripId: string,
 ) => {
-  const participant = await context.db.tripParticipant.findUnique({
-    where: {
-      userId_tripId: {
-        userId: context.dbUser.id,
-        tripId,
-      },
-    },
-    select: {
+  const participant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq, and }) =>
+      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
+    columns: {
       id: true,
       tripId: true,
       groupId: true,
@@ -73,19 +86,18 @@ const ensureTripParticipant = async (
   });
 
   if (!participant) {
-    throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
+    throw new ORPCError("FORBIDDEN", {
+      message: "You are not a participant of this trip",
+    });
   }
 
   return participant;
 };
 
-const ensureTripExists = async (
-  context: { db: Prisma.TransactionClient },
-  tripId: string,
-) => {
-  const trip = await context.db.trip.findUnique({
-    where: { id: tripId },
-    select: { id: true },
+const ensureTripExists = async (context: { db: DB }, tripId: string) => {
+  const trip = await context.db.query.trips.findFirst({
+    where: (t, { eq }) => eq(t.id, tripId),
+    columns: { id: true },
   });
 
   if (!trip) {
@@ -96,160 +108,114 @@ const ensureTripExists = async (
 };
 
 const updateUserLastSeenOn = async (context: {
-  db: Prisma.TransactionClient;
+  db: DB;
   dbUser: { id: string };
 }) => {
-  await context.db.$executeRaw`
-    UPDATE "User"
-    SET "last_seen_on" = NOW()
-    WHERE "id" = ${context.dbUser.id}
-  `;
+  await context.db
+    .update(users)
+    .set({ lastSeenOn: new Date() })
+    .where(eq(users.id, context.dbUser.id));
 };
 
-const activitySelect = {
-  id: true,
-  tripId: true,
-  activityType: true,
-  title: true,
-  description: true,
-  imageUrl: true,
-  isPinned: true,
-  isHidden: true,
-  hiddenAt: true,
-  hiddenReason: true,
-  createdByAdmin: true,
-  createdAt: true,
-  updatedAt: true,
-  admin: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-    },
-  },
-  hiddenBy: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-    },
-  },
+interface ActivityWithRelations {
+  id: string;
+  tripId: string;
+  activityType: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  isPinned: boolean;
+  isHidden: boolean;
+  hiddenAt: Date | null;
+  hiddenReason: string | null;
+  createdByAdmin: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  admin: { id: string; firstName: string; lastName: string } | null;
+  hiddenBy: { id: string; firstName: string; lastName: string } | null;
   submissionActivity: {
-    select: {
-      submissionId: true,
-      challengeId: true,
-      groupId: true,
-      hasVideo: true,
-      isWinner: true,
-      ranking: true,
-      pointsAwarded: true,
-      submission: {
-        select: {
-          id: true,
-          status: true,
-          awardedPoints: true,
-          bonusPoints: true,
-          ranking: true,
-          createdAt: true,
-        },
-      },
-      challenge: {
-        select: {
-          id: true,
-          name: true,
-          status: true,
-          submissionType: true,
-          endTime: true,
-        },
-      },
-      group: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          coins: true,
-        },
-      },
-    },
-  },
+    submissionId: string;
+    challengeId: string;
+    groupId: string;
+    hasVideo: boolean;
+    isWinner: boolean;
+    ranking: number | null;
+    pointsAwarded: number | null;
+    submission: {
+      id: string;
+      status: string;
+      awardedPoints: number | null;
+      bonusPoints: number | null;
+      ranking: number | null;
+      createdAt: Date;
+    } | null;
+    challenge: {
+      id: string;
+      name: string;
+      status: string;
+      submissionType: string | null;
+      endTime: Date | null;
+    } | null;
+    group: {
+      id: string;
+      name: string;
+      image: string | null;
+      coins: number;
+    } | null;
+  } | null;
   challengeActivity: {
-    select: {
-      challengeId: true,
-      eventType: true,
-      endTime: true,
-      submissionType: true,
-      basePoints: true,
-      submissionCount: true,
-      challenge: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          image: true,
-          status: true,
-          startTime: true,
-          endTime: true,
-          votingStartTime: true,
-          votingEndTime: true,
-        },
-      },
-    },
-  },
+    challengeId: string;
+    eventType: string;
+    endTime: Date | null;
+    submissionType: string | null;
+    basePoints: number | null;
+    submissionCount: number | null;
+    challenge: {
+      id: string;
+      name: string;
+      description: string | null;
+      image: string | null;
+      status: string;
+      startTime: Date | null;
+      endTime: Date | null;
+      votingStartTime: Date | null;
+      votingEndTime: Date | null;
+    } | null;
+  } | null;
   rankChangeActivity: {
-    select: {
-      groupId: true,
-      newRank: true,
-      totalCoins: true,
-      coinsGained: true,
-      group: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          coins: true,
-        },
-      },
-    },
-  },
+    groupId: string;
+    newRank: number;
+    totalCoins: number;
+    coinsGained: number;
+    group: {
+      id: string;
+      name: string;
+      image: string | null;
+      coins: number;
+    } | null;
+  } | null;
   userPost: {
-    select: {
-      authorId: true,
-      additionalImages: true,
-      author: {
-        select: {
-          id: true,
-          userId: true,
-          tripId: true,
-          groupId: true,
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              hasAvatar: true,
-            },
-          },
-          group: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-  },
-  _count: {
-    select: {
-      reactions: true,
-    },
-  },
-} satisfies Prisma.ActivityFeedSelect;
-
-type SelectedActivity = Prisma.ActivityFeedGetPayload<{
-  select: typeof activitySelect;
-}>;
+    authorId: string;
+    additionalImages: string[];
+    author: {
+      id: string;
+      userId: string;
+      tripId: string;
+      groupId: string | null;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        hasAvatar: boolean;
+      } | null;
+      group: {
+        id: string;
+        name: string;
+        image: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
 
 const emptyReactionCounts = () => ({
   heart: 0,
@@ -265,7 +231,10 @@ const resolveActivityImage = async (
         createSignedUrl: (
           path: string,
           expiresIn: number,
-        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+        ) => Promise<{
+          data: { signedUrl?: string | null } | null;
+          error: unknown;
+        }>;
       };
     };
   },
@@ -291,20 +260,23 @@ const resolveActivityImage = async (
 
 const enrichActivities = async (
   context: {
-    db: Prisma.TransactionClient;
+    db: DB;
     supabase: {
       storage: {
         from: (bucket: string) => {
           createSignedUrl: (
             path: string,
             expiresIn: number,
-          ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+          ) => Promise<{
+            data: { signedUrl?: string | null } | null;
+            error: unknown;
+          }>;
         };
       };
     };
     dbUser: { id: string };
   },
-  activities: SelectedActivity[],
+  activities: ActivityWithRelations[],
 ) => {
   if (activities.length === 0) {
     return activities;
@@ -313,25 +285,22 @@ const enrichActivities = async (
   const activityIds = activities.map((activity) => activity.id);
 
   const [reactionGroups, myReactions] = await Promise.all([
-    context.db.activityReaction.groupBy({
-      by: ["activityId", "reactionType"],
-      where: {
-        activityId: {
-          in: activityIds,
-        },
-      },
-      _count: {
-        _all: true,
-      },
-    }),
-    context.db.activityReaction.findMany({
-      where: {
-        activityId: {
-          in: activityIds,
-        },
-        userId: context.dbUser.id,
-      },
-      select: {
+    context.db
+      .select({
+        activityId: activityReactions.activityId,
+        reactionType: activityReactions.reactionType,
+        count: count(),
+      })
+      .from(activityReactions)
+      .where(inArray(activityReactions.activityId, activityIds))
+      .groupBy(activityReactions.activityId, activityReactions.reactionType),
+    context.db.query.activityReactions.findMany({
+      where: (ar, { eq, and, inArray }) =>
+        and(
+          inArray(ar.activityId, activityIds),
+          eq(ar.userId, context.dbUser.id),
+        ),
+      columns: {
         activityId: true,
         reactionType: true,
       },
@@ -344,16 +313,18 @@ const enrichActivities = async (
   >();
 
   for (const group of reactionGroups) {
-    const counts = countsByActivity.get(group.activityId) ?? emptyReactionCounts();
+    const counts =
+      countsByActivity.get(group.activityId) ?? emptyReactionCounts();
     if (group.reactionType in counts) {
-      counts[group.reactionType as keyof typeof counts] = group._count._all;
+      counts[group.reactionType as keyof typeof counts] = Number(group.count);
     }
     countsByActivity.set(group.activityId, counts);
   }
 
   const myReactionsByActivity = new Map<string, Set<string>>();
   for (const reaction of myReactions) {
-    const values = myReactionsByActivity.get(reaction.activityId) ?? new Set<string>();
+    const values =
+      myReactionsByActivity.get(reaction.activityId) ?? new Set<string>();
     values.add(reaction.reactionType);
     myReactionsByActivity.set(reaction.activityId, values);
   }
@@ -371,10 +342,11 @@ const enrichActivities = async (
 
   await Promise.all(
     submissionTripIds.map(async (tripId) => {
-      const rankedGroups = await context.db.group.findMany({
-        where: { tripId, isDeleted: false },
-        orderBy: [{ coins: "desc" }, { id: "asc" }],
-        select: { id: true },
+      const rankedGroups = await context.db.query.groups.findMany({
+        where: (g, { eq, and }) =>
+          and(eq(g.tripId, tripId), eq(g.isDeleted, false)),
+        orderBy: (g, { desc, asc }) => [desc(g.coins), asc(g.id)],
+        columns: { id: true },
       });
 
       rankedGroups.forEach((group, index) => {
@@ -409,7 +381,9 @@ const enrichActivities = async (
               ) ?? null,
             group: {
               ...activity.submissionActivity.group,
-              image: await getResolvedImage(activity.submissionActivity.group.image),
+              image: await getResolvedImage(
+                activity.submissionActivity.group?.image,
+              ),
             },
           }
         : null;
@@ -419,7 +393,9 @@ const enrichActivities = async (
             ...activity.challengeActivity,
             challenge: {
               ...activity.challengeActivity.challenge,
-              image: await getResolvedImage(activity.challengeActivity.challenge.image),
+              image: await getResolvedImage(
+                activity.challengeActivity.challenge?.image,
+              ),
             },
           }
         : null;
@@ -429,7 +405,9 @@ const enrichActivities = async (
             ...activity.rankChangeActivity,
             group: {
               ...activity.rankChangeActivity.group,
-              image: await getResolvedImage(activity.rankChangeActivity.group.image),
+              image: await getResolvedImage(
+                activity.rankChangeActivity.group?.image,
+              ),
             },
           }
         : null;
@@ -438,19 +416,30 @@ const enrichActivities = async (
         ? {
             ...activity.userPost,
             additionalImages: await Promise.all(
-              activity.userPost.additionalImages.map((image) => getResolvedImage(image)),
+              activity.userPost.additionalImages.map((image) =>
+                getResolvedImage(image),
+              ),
             ),
             author: {
               ...activity.userPost.author,
-              group: activity.userPost.author.group
+              group: activity.userPost.author?.group
                 ? {
                     ...activity.userPost.author.group,
-                    image: await getResolvedImage(activity.userPost.author.group.image),
+                    image: await getResolvedImage(
+                      activity.userPost.author.group.image,
+                    ),
                   }
                 : null,
             },
           }
         : null;
+
+      const counts =
+        countsByActivity.get(activity.id) ?? emptyReactionCounts();
+      const total = Object.values(counts).reduce(
+        (sum, value) => sum + value,
+        0,
+      );
 
       return {
         ...activity,
@@ -460,25 +449,191 @@ const enrichActivities = async (
         rankChangeActivity,
         userPost,
         reactionsSummary: {
-          total: activity._count.reactions,
-          counts: countsByActivity.get(activity.id) ?? emptyReactionCounts(),
-          myReactions: Array.from(myReactionsByActivity.get(activity.id) ?? []),
+          total,
+          counts,
+          myReactions: Array.from(
+            myReactionsByActivity.get(activity.id) ?? [],
+          ),
         },
       };
     }),
   );
 };
 
+const buildActivityWhere = (
+  tripId: string,
+  includeHidden: boolean,
+  cursor?: { id: string; createdAt: Date; isPinned: boolean },
+) => {
+  const baseWhere = and(
+    eq(activityFeeds.tripId, tripId),
+    includeHidden ? undefined : eq(activityFeeds.isHidden, false),
+  );
+
+  if (!cursor) {
+    return baseWhere;
+  }
+
+  const cursorWhere = cursor.isPinned
+    ? or(
+        and(
+          eq(activityFeeds.isPinned, true),
+          or(
+            lt(activityFeeds.createdAt, cursor.createdAt),
+            and(
+              eq(activityFeeds.createdAt, cursor.createdAt),
+              lt(activityFeeds.id, cursor.id),
+            ),
+          ),
+        ),
+        eq(activityFeeds.isPinned, false),
+      )
+    : and(
+        eq(activityFeeds.isPinned, false),
+        or(
+          lt(activityFeeds.createdAt, cursor.createdAt),
+          and(
+            eq(activityFeeds.createdAt, cursor.createdAt),
+            lt(activityFeeds.id, cursor.id),
+          ),
+        ),
+      );
+
+  return and(baseWhere, cursorWhere);
+};
+
+const fetchActivityWithRelationsById = async (db: DB, id: string) => {
+  return db.query.activityFeeds.findFirst({
+    where: (af, { eq }) => eq(af.id, id),
+    columns: {
+      id: true,
+      tripId: true,
+      activityType: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      isPinned: true,
+      isHidden: true,
+      hiddenAt: true,
+      hiddenReason: true,
+      createdByAdmin: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    with: {
+      admin: { columns: { id: true, firstName: true, lastName: true } },
+      hiddenBy: { columns: { id: true, firstName: true, lastName: true } },
+      submissionActivity: {
+        columns: {
+          submissionId: true,
+          challengeId: true,
+          groupId: true,
+          hasVideo: true,
+          isWinner: true,
+          ranking: true,
+          pointsAwarded: true,
+        },
+        with: {
+          submission: {
+            columns: {
+              id: true,
+              status: true,
+              awardedPoints: true,
+              bonusPoints: true,
+              ranking: true,
+              createdAt: true,
+            },
+          },
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              status: true,
+              submissionType: true,
+              endTime: true,
+            },
+          },
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      challengeActivity: {
+        columns: {
+          challengeId: true,
+          eventType: true,
+          endTime: true,
+          submissionType: true,
+          basePoints: true,
+          submissionCount: true,
+        },
+        with: {
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              image: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+              votingStartTime: true,
+              votingEndTime: true,
+            },
+          },
+        },
+      },
+      rankChangeActivity: {
+        columns: {
+          groupId: true,
+          newRank: true,
+          totalCoins: true,
+          coinsGained: true,
+        },
+        with: {
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      userPost: {
+        columns: { authorId: true, additionalImages: true },
+        with: {
+          author: {
+            columns: { id: true, userId: true, tripId: true, groupId: true },
+            with: {
+              user: {
+                columns: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  hasAvatar: true,
+                },
+              },
+              group: {
+                columns: { id: true, name: true, image: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
 const getActivitiesPage = async (params: {
   context: {
-    db: Prisma.TransactionClient;
+    db: DB;
     supabase: {
       storage: {
         from: (bucket: string) => {
           createSignedUrl: (
             path: string,
             expiresIn: number,
-          ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+          ) => Promise<{
+            data: { signedUrl?: string | null } | null;
+            error: unknown;
+          }>;
         };
       };
     };
@@ -489,24 +644,151 @@ const getActivitiesPage = async (params: {
   pageSize: number;
   includeHidden: boolean;
 }) => {
-  const where: Prisma.ActivityFeedWhereInput = {
-    tripId: params.tripId,
-    ...(params.includeHidden ? {} : { isHidden: false }),
-  };
+  const whereClause = buildActivityWhere(
+    params.tripId,
+    params.includeHidden,
+  );
 
-  const count = await params.context.db.activityFeed.count({ where });
+  const countResult = await params.context.db
+    .select({ count: sql<number>`count(*)` })
+    .from(activityFeeds)
+    .where(whereClause);
+  const count = countResult[0]?.count ?? 0;
   const totalPages = Math.ceil(count / params.pageSize);
 
   if (params.page > totalPages && totalPages > 0) {
-    throw new ORPCError("BAD_REQUEST", { message: `Page ${params.page} exceeds total pages ${totalPages}` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Page ${params.page} exceeds total pages ${totalPages}`,
+    });
   }
 
-  const activities = await params.context.db.activityFeed.findMany({
-    where,
-    select: activitySelect,
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
-    take: params.pageSize,
-    skip: (params.page - 1) * params.pageSize,
+  const activities = await params.context.db.query.activityFeeds.findMany({
+    where: whereClause,
+    columns: {
+      id: true,
+      tripId: true,
+      activityType: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      isPinned: true,
+      isHidden: true,
+      hiddenAt: true,
+      hiddenReason: true,
+      createdByAdmin: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    with: {
+      admin: { columns: { id: true, firstName: true, lastName: true } },
+      hiddenBy: { columns: { id: true, firstName: true, lastName: true } },
+      submissionActivity: {
+        columns: {
+          submissionId: true,
+          challengeId: true,
+          groupId: true,
+          hasVideo: true,
+          isWinner: true,
+          ranking: true,
+          pointsAwarded: true,
+        },
+        with: {
+          submission: {
+            columns: {
+              id: true,
+              status: true,
+              awardedPoints: true,
+              bonusPoints: true,
+              ranking: true,
+              createdAt: true,
+            },
+          },
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              status: true,
+              submissionType: true,
+              endTime: true,
+            },
+          },
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      challengeActivity: {
+        columns: {
+          challengeId: true,
+          eventType: true,
+          endTime: true,
+          submissionType: true,
+          basePoints: true,
+          submissionCount: true,
+        },
+        with: {
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              image: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+              votingStartTime: true,
+              votingEndTime: true,
+            },
+          },
+        },
+      },
+      rankChangeActivity: {
+        columns: {
+          groupId: true,
+          newRank: true,
+          totalCoins: true,
+          coinsGained: true,
+        },
+        with: {
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      userPost: {
+        columns: { authorId: true, additionalImages: true },
+        with: {
+          author: {
+            columns: {
+              id: true,
+              userId: true,
+              tripId: true,
+              groupId: true,
+            },
+            with: {
+              user: {
+                columns: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  hasAvatar: true,
+                },
+              },
+              group: {
+                columns: { id: true, name: true, image: true },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: (af, { desc }) => [
+      desc(af.isPinned),
+      desc(af.createdAt),
+      desc(af.id),
+    ],
+    limit: params.pageSize,
+    offset: (params.page - 1) * params.pageSize,
   });
 
   return {
@@ -524,7 +806,7 @@ const getActivitiesPage = async (params: {
 
 const getActivitiesCursorPage = async (params: {
   context: {
-    db: Prisma.TransactionClient;
+    db: DB;
     supabase: {
       storage: {
         from: (bucket: string) => {
@@ -549,65 +831,146 @@ const getActivitiesCursorPage = async (params: {
     isPinned: boolean;
   } | null;
 }) => {
-  const baseWhere: Prisma.ActivityFeedWhereInput = {
-    tripId: params.tripId,
-    ...(params.includeHidden ? {} : { isHidden: false }),
-  };
+  const whereClause = buildActivityWhere(
+    params.tripId,
+    params.includeHidden,
+    params.cursor ?? undefined,
+  );
 
-  const cursorWhere: Prisma.ActivityFeedWhereInput | undefined = params.cursor
-    ? params.cursor.isPinned
-      ? {
-          OR: [
-            {
-              isPinned: true,
-              OR: [
-                {
-                  createdAt: { lt: params.cursor.createdAt },
+  const activities = await params.context.db.query.activityFeeds.findMany({
+    where: whereClause,
+    columns: {
+      id: true,
+      tripId: true,
+      activityType: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      isPinned: true,
+      isHidden: true,
+      hiddenAt: true,
+      hiddenReason: true,
+      createdByAdmin: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    with: {
+      admin: { columns: { id: true, firstName: true, lastName: true } },
+      hiddenBy: { columns: { id: true, firstName: true, lastName: true } },
+      submissionActivity: {
+        columns: {
+          submissionId: true,
+          challengeId: true,
+          groupId: true,
+          hasVideo: true,
+          isWinner: true,
+          ranking: true,
+          pointsAwarded: true,
+        },
+        with: {
+          submission: {
+            columns: {
+              id: true,
+              status: true,
+              awardedPoints: true,
+              bonusPoints: true,
+              ranking: true,
+              createdAt: true,
+            },
+          },
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              status: true,
+              submissionType: true,
+              endTime: true,
+            },
+          },
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      challengeActivity: {
+        columns: {
+          challengeId: true,
+          eventType: true,
+          endTime: true,
+          submissionType: true,
+          basePoints: true,
+          submissionCount: true,
+        },
+        with: {
+          challenge: {
+            columns: {
+              id: true,
+              name: true,
+              description: true,
+              image: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+              votingStartTime: true,
+              votingEndTime: true,
+            },
+          },
+        },
+      },
+      rankChangeActivity: {
+        columns: {
+          groupId: true,
+          newRank: true,
+          totalCoins: true,
+          coinsGained: true,
+        },
+        with: {
+          group: {
+            columns: { id: true, name: true, image: true, coins: true },
+          },
+        },
+      },
+      userPost: {
+        columns: { authorId: true, additionalImages: true },
+        with: {
+          author: {
+            columns: {
+              id: true,
+              userId: true,
+              tripId: true,
+              groupId: true,
+            },
+            with: {
+              user: {
+                columns: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  hasAvatar: true,
                 },
-                {
-                  createdAt: params.cursor.createdAt,
-                  id: { lt: params.cursor.id },
-                },
-              ],
+              },
+              group: {
+                columns: { id: true, name: true, image: true },
+              },
             },
-            {
-              isPinned: false,
-            },
-          ],
-        }
-      : {
-          isPinned: false,
-          OR: [
-            {
-              createdAt: { lt: params.cursor.createdAt },
-            },
-            {
-              createdAt: params.cursor.createdAt,
-              id: { lt: params.cursor.id },
-            },
-          ],
-        }
-    : undefined;
-
-  const where: Prisma.ActivityFeedWhereInput = cursorWhere
-    ? {
-        ...baseWhere,
-        ...cursorWhere,
-      }
-    : baseWhere;
-
-  const activities = await params.context.db.activityFeed.findMany({
-    where,
-    select: activitySelect,
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
-    take: params.pageSize + 1,
+          },
+        },
+      },
+    },
+    orderBy: (af, { desc }) => [
+      desc(af.isPinned),
+      desc(af.createdAt),
+      desc(af.id),
+    ],
+    limit: params.pageSize + 1,
   });
 
   const hasMore = activities.length > params.pageSize;
   const currentPageActivities = hasMore
     ? activities.slice(0, params.pageSize)
     : activities;
-  const lastActivity = currentPageActivities[currentPageActivities.length - 1];
+  const lastActivity =
+    currentPageActivities[currentPageActivities.length - 1];
 
   return {
     activities: await enrichActivities(params.context, currentPageActivities),
@@ -630,21 +993,25 @@ const getActivitiesCursorPage = async (params: {
 };
 
 const getReactionSummary = async (params: {
-  context: { db: Prisma.TransactionClient; dbUser: { id: string } };
+  context: { db: DB; dbUser: { id: string } };
   activityId: string;
 }) => {
   const [countsRaw, myReactionsRaw] = await Promise.all([
-    params.context.db.activityReaction.groupBy({
-      by: ["reactionType"],
-      where: { activityId: params.activityId },
-      _count: { _all: true },
-    }),
-    params.context.db.activityReaction.findMany({
-      where: {
-        activityId: params.activityId,
-        userId: params.context.dbUser.id,
-      },
-      select: {
+    params.context.db
+      .select({
+        reactionType: activityReactions.reactionType,
+        count: count(),
+      })
+      .from(activityReactions)
+      .where(eq(activityReactions.activityId, params.activityId))
+      .groupBy(activityReactions.reactionType),
+    params.context.db.query.activityReactions.findMany({
+      where: (ar, { eq, and }) =>
+        and(
+          eq(ar.activityId, params.activityId),
+          eq(ar.userId, params.context.dbUser.id),
+        ),
+      columns: {
         reactionType: true,
       },
     }),
@@ -653,7 +1020,7 @@ const getReactionSummary = async (params: {
   const counts = emptyReactionCounts();
   for (const item of countsRaw) {
     if (item.reactionType in counts) {
-      counts[item.reactionType as keyof typeof counts] = item._count._all;
+      counts[item.reactionType as keyof typeof counts] = Number(item.count);
     }
   }
 
@@ -680,7 +1047,6 @@ export const activityFeedRouter = createORPCRouter({
       await ensureTripParticipant(context, input.tripId);
 
       const activitiesPromise =
-        // Backward-compat for old callers that still page with page > 1.
         !input.cursor && input.page > 1
           ? getActivitiesPage({
               context,
@@ -728,10 +1094,10 @@ export const activityFeedRouter = createORPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const activity = await context.db.activityFeed.findUnique({
-        where: { id: input.id },
-        select: activitySelect,
-      });
+      const activity = await fetchActivityWithRelationsById(
+        context.db,
+        input.id,
+      );
 
       if (!activity) {
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
@@ -754,8 +1120,9 @@ export const activityFeedRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       await ensureTripExists(context, input.tripId);
 
-      const activity = await context.db.activityFeed.create({
-        data: {
+      const [activity] = await context.db
+        .insert(activityFeeds)
+        .values({
           tripId: input.tripId,
           activityType: "custom",
           title: input.title,
@@ -763,11 +1130,26 @@ export const activityFeedRouter = createORPCRouter({
           imageUrl: normalizeImageReference(input.imageUrl),
           isPinned: input.isPinned,
           createdByAdmin: context.dbUser.id,
-        },
-        select: activitySelect,
-      });
+        })
+        .returning();
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      if (!activity) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create activity",
+        });
+      }
+
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch created activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -784,26 +1166,43 @@ export const activityFeedRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const participant = await ensureTripParticipant(context, input.tripId);
 
-      const activity = await context.db.activityFeed.create({
-        data: {
+      const activity = await context.db.transaction(async (tx) => {
+        const [feed] = await tx.insert(activityFeeds).values({
           tripId: input.tripId,
           activityType: "user_post",
           title: input.title,
           description: input.description,
           imageUrl: normalizeImageReference(input.imageUrl),
-          userPost: {
-            create: {
-              authorId: participant.id,
-              additionalImages: (input.additionalImages ?? []).map((image) =>
-                normalizeImageReference(image) ?? image,
-              ),
-            },
-          },
-        },
-        select: activitySelect,
+        }).returning();
+
+        if (!feed) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create activity",
+          });
+        }
+
+        await tx.insert(userPosts).values({
+          activityId: feed.id,
+          authorId: participant.id,
+          additionalImages: (input.additionalImages ?? []).map((image) =>
+            normalizeImageReference(image) ?? image,
+          ),
+        });
+
+        return feed;
       });
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch created activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -825,52 +1224,73 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: {
-          id: input.submissionId,
-          challengeId: input.challengeId,
-          groupId: input.groupId,
-          challenge: {
-            tripId: input.tripId,
+      const submission = await context.db.query.challengeSubmissions.findFirst(
+        {
+          where: (cs, { eq, and }) =>
+            and(
+              eq(cs.id, input.submissionId),
+              eq(cs.challengeId, input.challengeId),
+              eq(cs.groupId, input.groupId),
+            ),
+          columns: {
+            id: true,
+            videoId: true,
+            imageIds: true,
+          },
+          with: {
+            challenge: { columns: { tripId: true } },
           },
         },
-        select: {
-          id: true,
-          videoId: true,
-          imageIds: true,
-        },
-      });
+      );
 
-      if (!submission) {
-        throw new ORPCError("NOT_FOUND", { message: "Submission not found in selected trip" });
+      if (!submission || submission.challenge?.tripId !== input.tripId) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Submission not found in selected trip",
+        });
       }
 
-      const activity = await context.db.activityFeed.create({
-        data: {
+      const activity = await context.db.transaction(async (tx) => {
+        const [feed] = await tx.insert(activityFeeds).values({
           tripId: input.tripId,
           activityType: "submission",
           title: input.title,
           description: input.description,
-          // Keep activity image tied to the original submission asset.
           imageUrl: submission.imageIds[0] ?? null,
           isPinned: input.isPinned,
           createdByAdmin: context.dbUser.id,
-          submissionActivity: {
-            create: {
-              submissionId: input.submissionId,
-              challengeId: input.challengeId,
-              groupId: input.groupId,
-              hasVideo: input.hasVideo ?? Boolean(submission.videoId),
-              isWinner: input.isWinner,
-              ranking: input.ranking,
-              pointsAwarded: input.pointsAwarded,
-            },
-          },
-        },
-        select: activitySelect,
+        }).returning();
+
+        if (!feed) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create activity",
+          });
+        }
+
+        await tx.insert(submissionActivities).values({
+          activityId: feed.id,
+          submissionId: input.submissionId,
+          challengeId: input.challengeId,
+          groupId: input.groupId,
+          hasVideo: input.hasVideo ?? Boolean(submission.videoId),
+          isWinner: input.isWinner ?? false,
+          ranking: input.ranking,
+          pointsAwarded: input.pointsAwarded,
+        });
+
+        return feed;
       });
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch created activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -900,12 +1320,10 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const challenge = await context.db.challenge.findFirst({
-        where: {
-          id: input.challengeId,
-          tripId: input.tripId,
-        },
-        select: {
+      const challenge = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, input.challengeId), eq(c.tripId, input.tripId)),
+        columns: {
           id: true,
           description: true,
           image: true,
@@ -916,34 +1334,52 @@ export const activityFeedRouter = createORPCRouter({
       });
 
       if (!challenge) {
-        throw new ORPCError("NOT_FOUND", { message: "Challenge not found in selected trip" });
+        throw new ORPCError("NOT_FOUND", {
+          message: "Challenge not found in selected trip",
+        });
       }
 
-      const activity = await context.db.activityFeed.create({
-        data: {
+      const activity = await context.db.transaction(async (tx) => {
+        const [feed] = await tx.insert(activityFeeds).values({
           tripId: input.tripId,
           activityType: "challenge_event",
           title: input.title,
           description: input.description ?? challenge.description ?? undefined,
-          // Reuse source challenge image instead of duplicating another upload.
           imageUrl: challenge.image,
           isPinned: input.isPinned,
           createdByAdmin: context.dbUser.id,
-          challengeActivity: {
-            create: {
-              challengeId: input.challengeId,
-              eventType: input.eventType,
-              endTime: input.endTime ?? challenge.endTime,
-              submissionType: input.submissionType ?? challenge.submissionType,
-              basePoints: input.basePoints ?? challenge.basePoints,
-              submissionCount: input.submissionCount,
-            },
-          },
-        },
-        select: activitySelect,
+        }).returning();
+
+        if (!feed) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create activity",
+          });
+        }
+
+        await tx.insert(challengeActivities).values({
+          activityId: feed.id,
+          challengeId: input.challengeId,
+          eventType: input.eventType,
+          endTime: input.endTime ?? challenge.endTime,
+          submissionType: input.submissionType ?? challenge.submissionType,
+          basePoints: input.basePoints ?? challenge.basePoints,
+          submissionCount: input.submissionCount,
+        });
+
+        return feed;
       });
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch created activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -961,44 +1397,60 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const group = await context.db.group.findFirst({
-        where: {
-          id: input.groupId,
-          tripId: input.tripId,
-        },
-        select: {
+      const group = await context.db.query.groups.findFirst({
+        where: (g, { eq, and }) =>
+          and(eq(g.id, input.groupId), eq(g.tripId, input.tripId)),
+        columns: {
           id: true,
           image: true,
         },
       });
 
       if (!group) {
-        throw new ORPCError("NOT_FOUND", { message: "Group not found in selected trip" });
+        throw new ORPCError("NOT_FOUND", {
+          message: "Group not found in selected trip",
+        });
       }
 
-      const activity = await context.db.activityFeed.create({
-        data: {
+      const activity = await context.db.transaction(async (tx) => {
+        const [feed] = await tx.insert(activityFeeds).values({
           tripId: input.tripId,
           activityType: "rank_change",
           title: input.title,
           description: input.description,
-          // Reuse source group image instead of duplicating another upload.
           imageUrl: group.image,
           isPinned: input.isPinned,
           createdByAdmin: context.dbUser.id,
-          rankChangeActivity: {
-            create: {
-              groupId: input.groupId,
-              newRank: input.newRank,
-              totalCoins: input.totalCoins,
-              coinsGained: input.coinsGained,
-            },
-          },
-        },
-        select: activitySelect,
+        }).returning();
+
+        if (!feed) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create activity",
+          });
+        }
+
+        await tx.insert(rankChangeActivities).values({
+          activityId: feed.id,
+          groupId: input.groupId,
+          newRank: input.newRank,
+          totalCoins: input.totalCoins,
+          coinsGained: input.coinsGained,
+        });
+
+        return feed;
       });
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch created activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -1012,7 +1464,7 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const updateData: Prisma.ActivityFeedUpdateInput = {};
+      const updateData: Record<string, unknown> = {};
 
       if (input.title !== undefined) {
         updateData.title = input.title;
@@ -1025,16 +1477,32 @@ export const activityFeedRouter = createORPCRouter({
       }
 
       if (Object.keys(updateData).length === 0) {
-        throw new ORPCError("BAD_REQUEST", { message: "No fields provided to update" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "No fields provided to update",
+        });
       }
 
-      const activity = await context.db.activityFeed.update({
-        where: { id: input.activityId },
-        data: updateData,
-        select: activitySelect,
-      });
+      const [activity] = await context.db
+        .update(activityFeeds)
+        .set(updateData)
+        .where(eq(activityFeeds.id, input.activityId))
+        .returning();
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      if (!activity) {
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
+      }
+
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch updated activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -1046,13 +1514,27 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const activity = await context.db.activityFeed.update({
-        where: { id: input.activityId },
-        data: { isPinned: input.isPinned },
-        select: activitySelect,
-      });
+      const [activity] = await context.db
+        .update(activityFeeds)
+        .set({ isPinned: input.isPinned })
+        .where(eq(activityFeeds.id, input.activityId))
+        .returning();
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      if (!activity) {
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
+      }
+
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch updated activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -1064,36 +1546,64 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const activity = await context.db.activityFeed.update({
-        where: { id: input.activityId },
-        data: {
+      const [activity] = await context.db
+        .update(activityFeeds)
+        .set({
           isHidden: true,
           hiddenByAdmin: context.dbUser.id,
           hiddenAt: new Date(),
           hiddenReason: input.reason,
-        },
-        select: activitySelect,
-      });
+        })
+        .where(eq(activityFeeds.id, input.activityId))
+        .returning();
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      if (!activity) {
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
+      }
+
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch updated activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
   unhide: moderatorProcedure
     .input(z.object({ activityId: z.string() }))
     .handler(async ({ context, input }) => {
-      const activity = await context.db.activityFeed.update({
-        where: { id: input.activityId },
-        data: {
+      const [activity] = await context.db
+        .update(activityFeeds)
+        .set({
           isHidden: false,
           hiddenByAdmin: null,
           hiddenAt: null,
           hiddenReason: null,
-        },
-        select: activitySelect,
-      });
+        })
+        .where(eq(activityFeeds.id, input.activityId))
+        .returning();
 
-      const [enriched] = await enrichActivities(context, [activity]);
+      if (!activity) {
+        throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
+      }
+
+      const result = await fetchActivityWithRelationsById(
+        context.db,
+        activity.id,
+      );
+      if (!result) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to fetch updated activity",
+        });
+      }
+
+      const [enriched] = await enrichActivities(context, [result]);
       return enriched;
     }),
 
@@ -1105,9 +1615,9 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const activity = await context.db.activityFeed.findUnique({
-        where: { id: input.activityId },
-        select: {
+      const activity = await context.db.query.activityFeeds.findFirst({
+        where: (af, { eq }) => eq(af.id, input.activityId),
+        columns: {
           id: true,
           tripId: true,
           isHidden: true,
@@ -1121,18 +1631,19 @@ export const activityFeedRouter = createORPCRouter({
       await ensureTripParticipant(context, activity.tripId);
 
       if (activity.isHidden) {
-        throw new ORPCError("FORBIDDEN", { message: "This activity is hidden" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "This activity is hidden",
+        });
       }
 
-      const existing = await context.db.activityReaction.findUnique({
-        where: {
-          activityId_userId_reactionType: {
-            activityId: input.activityId,
-            userId: context.dbUser.id,
-            reactionType: input.reactionType,
-          },
-        },
-        select: {
+      const existing = await context.db.query.activityReactions.findFirst({
+        where: (ar, { eq, and }) =>
+          and(
+            eq(ar.activityId, input.activityId),
+            eq(ar.userId, context.dbUser.id),
+            eq(ar.reactionType, input.reactionType),
+          ),
+        columns: {
           id: true,
         },
       });
@@ -1140,16 +1651,14 @@ export const activityFeedRouter = createORPCRouter({
       const isActive = !existing;
 
       if (existing) {
-        await context.db.activityReaction.delete({
-          where: { id: existing.id },
-        });
+        await context.db
+          .delete(activityReactions)
+          .where(eq(activityReactions.id, existing.id));
       } else {
-        await context.db.activityReaction.create({
-          data: {
-            activityId: input.activityId,
-            userId: context.dbUser.id,
-            reactionType: input.reactionType,
-          },
+        await context.db.insert(activityReactions).values({
+          activityId: input.activityId,
+          userId: context.dbUser.id,
+          reactionType: input.reactionType,
         });
       }
 
@@ -1167,9 +1676,9 @@ export const activityFeedRouter = createORPCRouter({
   delete: adminProcedure
     .input(z.object({ activityId: z.string() }))
     .handler(async ({ context, input }) => {
-      await context.db.activityFeed.delete({
-        where: { id: input.activityId },
-      });
+      await context.db
+        .delete(activityFeeds)
+        .where(eq(activityFeeds.id, input.activityId));
 
       return { success: true };
     }),

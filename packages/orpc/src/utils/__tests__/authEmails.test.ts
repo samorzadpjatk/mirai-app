@@ -43,7 +43,7 @@ describe("authEmails", () => {
     });
 
     it("should fetch email for single user ID", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -57,14 +57,14 @@ describe("authEmails", () => {
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
       expect(result.get("user-1")).toBe("user1@example.com");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledWith(
         "user-1"
       );
     });
 
     it("should fetch emails for multiple user IDs", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById)
         .mockResolvedValueOnce({
           data: { user: { id: "user-1", email: "user1@example.com" } },
@@ -85,7 +85,7 @@ describe("authEmails", () => {
     });
 
     it("should deduplicate user IDs", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
@@ -97,12 +97,12 @@ describe("authEmails", () => {
         "user-1",
       ]);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledTimes(1);
     });
 
     it("should handle null email in response", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: { id: "user-1", email: null } },
         error: null,
@@ -114,7 +114,7 @@ describe("authEmails", () => {
     });
 
     it("should handle user not found", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -126,7 +126,7 @@ describe("authEmails", () => {
     });
 
     it("should handle API error and log warning", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: { message: "User not found" },
@@ -141,7 +141,7 @@ describe("authEmails", () => {
     });
 
     it("should filter out null/undefined IDs and process valid ones", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
@@ -177,7 +177,7 @@ describe("authEmails", () => {
         .toISOString()
         .split("T")[0];
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -202,7 +202,7 @@ describe("authEmails", () => {
     });
 
     it("should build summary for non-banned user", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -231,7 +231,7 @@ describe("authEmails", () => {
         .toISOString()
         .split("T")[0];
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -252,7 +252,7 @@ describe("authEmails", () => {
     });
 
     it("should handle user with empty banned_until string", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -273,7 +273,7 @@ describe("authEmails", () => {
     });
 
     it("should handle user with invalid ban date", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -293,7 +293,7 @@ describe("authEmails", () => {
     });
 
     it("should handle API error with default summary", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: { message: "API Error" },
@@ -314,7 +314,7 @@ describe("authEmails", () => {
     });
 
     it("should deduplicate user IDs", async () => {
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: {
           user: {
@@ -329,7 +329,7 @@ describe("authEmails", () => {
 
       await buildAuthUserSummaryLookup(mockSupabase, ["user-1", "user-1"]);
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledTimes(1);
     });
 
@@ -338,7 +338,7 @@ describe("authEmails", () => {
         .toISOString()
         .split("T")[0];
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       vi.mocked(mockSupabase.auth.admin.getUserById)
         .mockResolvedValueOnce({
           data: {

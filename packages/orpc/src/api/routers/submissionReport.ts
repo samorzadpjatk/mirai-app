@@ -5,38 +5,17 @@ import {
   protectedProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@mirai-app/db";
+import { type DB, challengeSubmissions, challenges, submissionReports } from "@mirai-app/db";
+import { eq, and } from "drizzle-orm";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 
-const reportSelect = {
-  id: true,
-  submissionId: true,
-  reporterId: true,
-  reason: true,
-  details: true,
-  createdAt: true,
-  reporter: {
-    select: {
-      id: true,
-      user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          authUserId: true,
-        },
-      },
-    },
-  },
-} as const satisfies Prisma.SubmissionReportSelect;
-
 const ensureTripParticipant = async (
-  context: { db: Prisma.TransactionClient; dbUser: { id: string } },
+  context: { db: DB; dbUser: { id: string } },
   tripId: string,
 ) => {
-  const participant = await context.db.tripParticipant.findUnique({
-    where: { userId_tripId: { userId: context.dbUser.id, tripId } },
+  const participant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
   });
   if (!participant) {
     throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
@@ -58,24 +37,44 @@ export const submissionReportRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       const participant = await ensureTripParticipant(context, input.tripId);
 
-      const submission = await context.db.challengeSubmission.findFirst({
-        where: { id: input.submissionId, challenge: { tripId: input.tripId } },
-        select: { id: true },
-      });
+      const submission = await context.db.select({ id: challengeSubmissions.id })
+        .from(challengeSubmissions)
+        .innerJoin(challenges, eq(challengeSubmissions.challengeId, challenges.id))
+        .where(and(
+          eq(challengeSubmissions.id, input.submissionId),
+          eq(challenges.tripId, input.tripId)
+        ))
+        .then(rows => rows[0] ?? null);
 
       if (!submission) {
         throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
-      const report = await context.db.submissionReport.create({
-        data: {
-          submissionId: input.submissionId,
-          reporterId: participant.id,
-          reason: input.reason,
-          details: input.details,
+      const [inserted] = await context.db.insert(submissionReports).values({
+        submissionId: input.submissionId,
+        reporterId: participant.id,
+        reason: input.reason,
+        details: input.details,
+      }).returning();
+
+      if (!inserted) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create report" });
+      }
+
+      const report = await context.db.query.submissionReports.findFirst({
+        where: (sr, { eq }) => eq(sr.id, inserted.id),
+        with: {
+          reporter: {
+            with: {
+              user: true,
+            },
+          },
         },
-        select: reportSelect,
       });
+
+      if (!report?.reporter?.user) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to load report relations" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         report.reporter.user.authUserId,
@@ -98,18 +97,27 @@ export const submissionReportRouter = createORPCRouter({
   getBySubmission: moderatorProcedure
     .input(z.object({ submissionId: z.string() }))
     .handler(async ({ context, input }) => {
-      const reports = await context.db.submissionReport.findMany({
-        where: { submissionId: input.submissionId },
-        select: reportSelect,
-        orderBy: { createdAt: "desc" },
+      const reports = await context.db.query.submissionReports.findMany({
+        where: (sr, { eq }) => eq(sr.submissionId, input.submissionId),
+        with: {
+          reporter: {
+            with: {
+              user: true,
+            },
+          },
+        },
+        orderBy: (sr, { desc }) => desc(sr.createdAt),
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(
         context.supabase,
-        reports.map((report) => report.reporter.user.authUserId),
+        reports.map((report) => report.reporter?.user?.authUserId).filter(Boolean),
       );
 
       return reports.map((report) => {
+        if (!report.reporter?.user) {
+          return report;
+        }
         const { authUserId, ...reporterUser } = report.reporter.user;
         return {
           ...report,

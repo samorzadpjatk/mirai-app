@@ -5,6 +5,8 @@ import {
   moderatorProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+import { eq, and, inArray, count, sql, gt, lt } from "drizzle-orm";
+import { coinTransactions, groups } from "@mirai-app/db";
 
 const formatUserFullName = (user?: {
   firstName?: string | null;
@@ -24,61 +26,71 @@ export const coinTransactionRouter = createORPCRouter({
   getStatistics: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const [transactionCount, addedCoins, removedCoins] = await Promise.all([
-        context.db.coinTransaction.count({
-          where: { group: { tripId: input.tripId } },
-        }),
-        context.db.coinTransaction.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            amount: {
-              gt: 0,
-            },
-            group: { tripId: input.tripId },
-          },
-        }),
-        context.db.coinTransaction.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            amount: {
-              lt: 0,
-            },
-            group: { tripId: input.tripId },
-          },
-        }),
+      const groupIds = await context.db.select({ id: groups.id })
+        .from(groups)
+        .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+
+      const groupIdList = groupIds.map((g) => g.id);
+
+      if (groupIdList.length === 0) {
+        return {
+          transactionCount: 0,
+          addedCoins: 0,
+          removedCoins: 0,
+          netBalance: 0,
+          time: new Date(),
+        };
+      }
+
+      const whereExpr = inArray(coinTransactions.groupId, groupIdList);
+
+      const [transactionCountResult, addedCoinsResult, removedCoinsResult] = await Promise.all([
+        context.db.select({ count: count() }).from(coinTransactions).where(whereExpr),
+        context.db.select({ totalAmount: sql<number>`sum(${coinTransactions.amount})` })
+          .from(coinTransactions)
+          .where(and(whereExpr, gt(coinTransactions.amount, 0))),
+        context.db.select({ totalAmount: sql<number>`sum(${coinTransactions.amount})` })
+          .from(coinTransactions)
+          .where(and(whereExpr, lt(coinTransactions.amount, 0))),
       ]);
+
       return {
-        transactionCount,
-        addedCoins: addedCoins._sum.amount ?? 0,
-        removedCoins: removedCoins._sum.amount ?? 0,
+        transactionCount: transactionCountResult[0]?.count ?? 0,
+        addedCoins: addedCoinsResult[0]?.totalAmount ?? 0,
+        removedCoins: removedCoinsResult[0]?.totalAmount ?? 0,
         netBalance:
-          (addedCoins._sum.amount ?? 0) + (removedCoins._sum.amount ?? 0),
+          (addedCoinsResult[0]?.totalAmount ?? 0) + (removedCoinsResult[0]?.totalAmount ?? 0),
         time: new Date(),
       };
     }),
   getMostActiveAdminStats: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      return await context.db.coinTransaction.groupBy({
-        by: ["adminId"],
-        _sum: {
-          amount: true,
-        },
-        _count: {
-          id: true,
-        },
-        where: { group: { tripId: input.tripId } },
-        take: 1,
-        orderBy: {
-          _sum: {
-            amount: "desc",
-          },
-        },
-      });
+      const groupIds = await context.db.select({ id: groups.id })
+        .from(groups)
+        .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+
+      const groupIdList = groupIds.map((g) => g.id);
+
+      if (groupIdList.length === 0) {
+        return [];
+      }
+
+      const result = await context.db.select({
+        adminId: coinTransactions.adminId,
+        totalAmount: sql<number>`sum(${coinTransactions.amount})`,
+        count: count(coinTransactions.id),
+      }).from(coinTransactions)
+        .where(inArray(coinTransactions.groupId, groupIdList))
+        .groupBy(coinTransactions.adminId)
+        .orderBy(sql`sum(${coinTransactions.amount}) desc`)
+        .limit(1);
+
+      return result.map((row) => ({
+        adminId: row.adminId,
+        _sum: { amount: row.totalAmount },
+        _count: { id: row.count },
+      }));
     }),
   getAll: moderatorProcedure
     .input(
@@ -95,25 +107,52 @@ export const coinTransactionRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const limit = input.pagination?.limit ?? 50;
       const offset = input.pagination?.offset ?? 0;
-      const where = { group: { tripId: input.tripId } };
 
-      const [transactions, total] = await Promise.all([
-        context.db.coinTransaction.findMany({
-          where,
-          select: {
+      const groupIds = await context.db.select({ id: groups.id })
+        .from(groups)
+        .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+
+      const groupIdList = groupIds.map((g) => g.id);
+
+      if (groupIdList.length === 0) {
+        return {
+          transactions: [],
+          pagination: {
+            total: 0,
+            limit,
+            offset,
+            hasMore: false,
+          },
+        };
+      }
+
+      const whereExpr = inArray(coinTransactions.groupId, groupIdList);
+
+      const [transactions, totalResult] = await Promise.all([
+        context.db.query.coinTransactions.findMany({
+          where: whereExpr,
+          columns: {
             id: true,
             amount: true,
             reason: true,
             createdAt: true,
-            group: { select: { id: true, name: true } },
-            admin: { select: { id: true, firstName: true, lastName: true } },
           },
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          skip: offset,
+          with: {
+            group: {
+              columns: { id: true, name: true },
+            },
+            admin: {
+              columns: { id: true, firstName: true, lastName: true },
+            },
+          },
+          orderBy: (ct, { desc }) => [desc(ct.createdAt)],
+          limit,
+          offset,
         }),
-        context.db.coinTransaction.count({ where }),
+        context.db.select({ count: count() }).from(coinTransactions).where(whereExpr),
       ]);
+
+      const total = totalResult[0]?.count ?? 0;
 
       return {
         transactions,
@@ -128,44 +167,51 @@ export const coinTransactionRouter = createORPCRouter({
   getQuickStats: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const totalCoins = await context.db.coinTransaction.aggregate({
-        _sum: {
-          amount: true,
-        },
-        _count: {
-          id: true,
-        },
-        where: { group: { tripId: input.tripId } },
-      });
-      if (!totalCoins._sum.amount) return null;
-      const averageCoinsPerGroup = totalCoins._count.id
-        ? Math.round(totalCoins._sum.amount / totalCoins._count.id)
+      const groupIds = await context.db.select({ id: groups.id })
+        .from(groups)
+        .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+
+      const groupIdList = groupIds.map((g) => g.id);
+
+      if (groupIdList.length === 0) {
+        return null;
+      }
+
+      const totalCoinsResult = await context.db.select({
+        totalAmount: sql<number>`sum(${coinTransactions.amount})`,
+        count: count(coinTransactions.id),
+      }).from(coinTransactions)
+        .where(inArray(coinTransactions.groupId, groupIdList));
+
+      const totalCoins = totalCoinsResult[0];
+      if (!totalCoins?.totalAmount) return null;
+
+      const averageCoinsPerGroup = totalCoins.count
+        ? Math.round(totalCoins.totalAmount / totalCoins.count)
         : 0;
-      const richestGroupId = await context.db.coinTransaction.groupBy({
-        by: ["groupId"],
-        _sum: {
-          amount: true,
-        },
-        where: { group: { tripId: input.tripId } },
-        orderBy: {
-          _sum: {
-            amount: "desc",
-          },
-        },
-        take: 1,
+
+      const richestGroupResult = await context.db.select({
+        groupId: coinTransactions.groupId,
+        totalAmount: sql<number>`sum(${coinTransactions.amount})`,
+      }).from(coinTransactions)
+        .where(inArray(coinTransactions.groupId, groupIdList))
+        .groupBy(coinTransactions.groupId)
+        .orderBy(sql`sum(${coinTransactions.amount}) desc`)
+        .limit(1);
+
+      const richestGroupFirst = richestGroupResult[0];
+      if (!richestGroupFirst?.groupId) return null;
+
+      const richestGroupName = await context.db.query.groups.findFirst({
+        where: (g, { eq }) => eq(g.id, richestGroupFirst.groupId),
+        columns: { name: true },
       });
-      const richestGroupName = await context.db.group.findUnique({
-        where: {
-          id: richestGroupId[0]?.groupId,
-        },
-        select: {
-          name: true,
-        },
-      });
+
       if (!richestGroupName) return null;
+
       return {
-        totalCoins: totalCoins._sum.amount,
-        totalGroups: totalCoins._count.id,
+        totalCoins: totalCoins.totalAmount,
+        totalGroups: totalCoins.count,
         averageCoinsPerGroup,
         richestGroupName: richestGroupName.name,
         time: new Date(),
@@ -174,44 +220,60 @@ export const coinTransactionRouter = createORPCRouter({
   getAdditionalInsights: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const [recentTransactions, mostActiveAdminStats] = await Promise.all([
-        context.db.coinTransaction.findMany({
-          where: { group: { tripId: input.tripId } },
-          orderBy: { createdAt: "desc" },
-          select: {
+      const groupIds = await context.db.select({ id: groups.id })
+        .from(groups)
+        .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+
+      const groupIdList = groupIds.map((g) => g.id);
+
+      if (groupIdList.length === 0) {
+        return null;
+      }
+
+      const whereExpr = inArray(coinTransactions.groupId, groupIdList);
+
+      const [recentTransactions, mostActiveAdminStatsResult] = await Promise.all([
+        context.db.query.coinTransactions.findMany({
+          where: whereExpr,
+          columns: {
             id: true,
             amount: true,
             reason: true,
             createdAt: true,
-            group: { select: { name: true } },
           },
-          take: 5,
-        }),
-        context.db.coinTransaction.groupBy({
-          by: ["adminId"],
-          _count: {
-            id: true,
-          },
-          where: { group: { tripId: input.tripId } },
-          orderBy: {
-            _count: {
-              id: "desc",
+          with: {
+            group: {
+              columns: { name: true },
             },
           },
-          take: 1,
+          orderBy: (ct, { desc }) => [desc(ct.createdAt)],
+          limit: 5,
         }),
+        context.db.select({
+          adminId: coinTransactions.adminId,
+          count: count(coinTransactions.id),
+        }).from(coinTransactions)
+          .where(whereExpr)
+          .groupBy(coinTransactions.adminId)
+          .orderBy(sql`count(${coinTransactions.id}) desc`)
+          .limit(1),
       ]);
-      if (recentTransactions.length === 0 || !mostActiveAdminStats[0])
+
+      if (recentTransactions.length === 0 || !mostActiveAdminStatsResult[0])
         return null;
-      const mostActiveAdmin = await context.db.user.findUnique({
-        where: { id: mostActiveAdminStats[0].adminId },
-        select: { firstName: true, lastName: true },
+
+      const firstAdminStat = mostActiveAdminStatsResult[0];
+      const mostActiveAdmin = await context.db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, firstAdminStat.adminId),
+        columns: { firstName: true, lastName: true },
       });
+
       if (!mostActiveAdmin) return null;
+
       return {
         mostActiveAdmin: {
           name: formatUserFullName(mostActiveAdmin),
-          transactionCount: mostActiveAdminStats[0]._count.id,
+          transactionCount: firstAdminStat.count,
         },
         recentTransactions,
       };
@@ -225,24 +287,22 @@ export const coinTransactionRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const participant = await context.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: {
-            userId: context.dbUser.id,
-            tripId: input.tripId,
-          },
-        },
-        select: { userId: true },
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { and, eq }) => and(
+          eq(tp.userId, context.dbUser.id),
+          eq(tp.tripId, input.tripId),
+        ),
+        columns: { userId: true },
       });
 
       if (!participant) {
         throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
       }
 
-      if (input.groupId) {
-        const group = await context.db.group.findUnique({
-          where: { id: input.groupId },
-          select: { id: true, tripId: true, isDeleted: true },
+      const groupId = input.groupId;
+      if (groupId) {
+        const group = await context.db.query.groups.findFirst({
+          where: (g, { eq }) => eq(g.id, groupId),
         });
 
         if (!group?.tripId || group.tripId !== input.tripId || group.isDeleted) {
@@ -250,29 +310,36 @@ export const coinTransactionRouter = createORPCRouter({
         }
       }
 
-      const where = input.groupId
-        ? { groupId: input.groupId, group: { tripId: input.tripId } }
-        : { group: { tripId: input.tripId } };
-      return await context.db.coinTransaction.findMany({
-        where,
-        include: {
+      let whereExpr;
+      if (input.groupId) {
+        whereExpr = eq(coinTransactions.groupId, input.groupId);
+      } else {
+        const groupIds = await context.db.select({ id: groups.id })
+          .from(groups)
+          .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+        whereExpr = inArray(coinTransactions.groupId, groupIds.map((g) => g.id));
+      }
+
+      return await context.db.query.coinTransactions.findMany({
+        where: whereExpr,
+        with: {
           group: {
-            select: {
+            columns: {
               id: true,
               name: true,
               coins: true,
             },
           },
           admin: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
             },
           },
         },
-        orderBy: { createdAt: "desc" },
-        take: input.limit,
+        orderBy: (ct, { desc }) => [desc(ct.createdAt)],
+        limit: input.limit,
       });
     }),
 });

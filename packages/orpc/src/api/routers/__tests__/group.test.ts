@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
+ 
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { groupRouter } from "../../routers/group";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Group, TripParticipant, GroupJoinRequest, CoinTransaction } from "@mirai-app/db";
+import type { DB, User, Group, TripParticipant, GroupJoinRequest, CoinTransaction } from "@mirai-app/db";
 
 // Mock the utility modules
 vi.mock("../../../utils/authEmails", () => ({
@@ -236,7 +236,7 @@ describe("groupRouter", () => {
       const result = await caller.getAllNames({ tripId: "trip-123" });
 
       expect(result).toEqual(mockGroups);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.findMany).toHaveBeenCalledWith({
         select: { id: true, name: true },
         where: { tripId: "trip-123", isDeleted: false },
@@ -521,7 +521,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.name).toBe("New Group");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.create).toHaveBeenCalled();
     });
 
@@ -618,7 +618,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.name).toBe("New Group");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.create).toHaveBeenCalledTimes(2);
     });
 
@@ -877,7 +877,7 @@ describe("groupRouter", () => {
       const result = await caller.delete({ id: "group-123" });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { isDeleted: true },
@@ -987,7 +987,7 @@ describe("groupRouter", () => {
       const result = await caller.join({ id: "group-123", tripId: "trip-123" });
 
       expect(result).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
@@ -1079,7 +1079,7 @@ describe("groupRouter", () => {
       const result = await caller.requestToJoin({ groupId: "group-123" });
 
       expect(result.id).toBe("request-123");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.groupJoinRequest.create).toHaveBeenCalled();
     });
 
@@ -1221,7 +1221,7 @@ describe("groupRouter", () => {
       const result = await caller.cancelMyJoinRequest({ groupId: "group-123" });
 
       expect(result.success).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.groupJoinRequest.delete).toHaveBeenCalledWith({
         where: { id: "request-123" },
       });
@@ -1498,7 +1498,7 @@ describe("groupRouter", () => {
       });
 
       expect(result).toBeDefined();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
@@ -1667,7 +1667,7 @@ describe("groupRouter", () => {
       });
 
       // Should only call upsert twice (once per unique user)
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.tripParticipant.upsert).toHaveBeenCalledTimes(2);
     });
 
@@ -1805,7 +1805,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.groupId).toBeNull();
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { isDeleted: true },
@@ -1854,7 +1854,7 @@ describe("groupRouter", () => {
         tripId: "trip-123",
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { organizerId: "user-789" },
@@ -2106,7 +2106,7 @@ describe("groupRouter", () => {
       });
 
       expect(result.amount).toBe(100);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.update).toHaveBeenCalledWith({
         where: { id: "group-123" },
         data: { coins: { increment: 100 } },
@@ -2246,7 +2246,7 @@ describe("groupRouter", () => {
       const result = await caller.ranking({ tripId: "trip-123" });
 
       expect(result.data).toHaveLength(0);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.group.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { tripId: "trip-123", isDeleted: false },

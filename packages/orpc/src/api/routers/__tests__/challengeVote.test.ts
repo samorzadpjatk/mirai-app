@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -8,7 +8,7 @@ import { challengeVoteRouter } from "../../routers/challengeVote";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
+import type { DB, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
 
 // Mock the utility modules
 vi.mock("../../../utils/activityFeed", () => ({
@@ -239,7 +239,7 @@ describe("challengeVoteRouter", () => {
         }
         return Promise.all(callback as unknown[]);
       }),
-    } as unknown as PrismaClient;
+    };
   });
 
   // Helper to create authenticated context
@@ -320,7 +320,7 @@ describe("challengeVoteRouter", () => {
       });
 
       expect(result).toHaveLength(2);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockDb.challengeVote.findMany).toHaveBeenCalledWith({
         where: { challengeId: "challenge-123" },
         select: expect.any(Object),
