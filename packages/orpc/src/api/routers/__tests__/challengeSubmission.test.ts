@@ -267,6 +267,36 @@ describe("challengeSubmissionRouter", () => {
       $transaction: vi.fn((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
     };
 
+    // Add Drizzle query API layer to mockDb
+    (mockDb as any).query = {
+      challenges: mockDb.challenge,
+      challengeSubmissions: mockDb.challengeSubmission,
+      tripParticipants: mockDb.tripParticipant,
+      groups: mockDb.group,
+      coinTransactions: mockDb.coinTransaction,
+      activityFeeds: mockDb.activityFeed,
+      submissionActivities: mockDb.submissionActivity,
+      challengeActivities: mockDb.challengeActivity,
+      users: mockDb.user,
+      userAgents: mockDb.userAgent,
+      trips: mockDb.trip,
+    };
+
+    // Add Drizzle query API layer to mockTx
+    (mockTx as any).query = {
+      challenges: mockTx.challenge,
+      challengeSubmissions: mockTx.challengeSubmission,
+      tripParticipants: mockTx.tripParticipant,
+      groups: mockTx.group,
+      coinTransactions: mockTx.coinTransaction,
+      activityFeeds: mockTx.activityFeed,
+      submissionActivities: mockTx.submissionActivity,
+      challengeActivities: mockTx.challengeActivity,
+      users: mockTx.user,
+      userAgents: mockTx.userAgent,
+      trips: mockTx.trip,
+    };
+
     // Setup mock Supabase client
     mockSupabase = {
       auth: {

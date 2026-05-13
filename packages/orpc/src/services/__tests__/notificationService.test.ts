@@ -294,6 +294,17 @@ describe("sendMobileNotifications", () => {
       $transaction: vi.fn((cb: (client: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      notifications: mockDb.notification,
+      notificationPushes: mockDb.notificationPush,
+      pushSubscriptions: mockDb.pushSubscription,
+      tripParticipants: mockDb.tripParticipant,
+      groups: mockDb.group,
+      challenges: mockDb.challenge,
+      trips: mockDb.trip,
+    };
+
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;
   });
