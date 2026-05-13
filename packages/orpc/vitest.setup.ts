@@ -442,9 +442,6 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
               const method = String(methodName);
               if (method === "findFirst" || method === "findUnique") {
                 return async (...args: unknown[]) => {
-                  if (method === "findFirst" && lastResults[modelName] !== undefined) {
-                    return lastResults[modelName];
-                  }
                   if (modelObj[method]) {
                     const result = await modelObj[method](...args);
                     if (result !== null && result !== undefined) {
