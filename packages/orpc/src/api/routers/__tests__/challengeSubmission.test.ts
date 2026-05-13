@@ -212,7 +212,7 @@ describe("challengeSubmissionRouter", () => {
         findFirst: vi.fn().mockResolvedValue(null),
         findUnique: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
-        create: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "submission-1" }),
         update: vi.fn().mockResolvedValue(null),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         delete: vi.fn().mockResolvedValue(null),
@@ -270,7 +270,7 @@ describe("challengeSubmissionRouter", () => {
         findFirst: vi.fn().mockResolvedValue(null),
         findUnique: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
-        create: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "submission-1" }),
         update: vi.fn().mockResolvedValue(null),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         delete: vi.fn().mockResolvedValue(null),
@@ -337,60 +337,6 @@ describe("challengeSubmissionRouter", () => {
 
     mockDb = createDrizzleProxy(mockDb as any);
     mockTx = createDrizzleProxy(mockTx as any);
-    (mockDb as Record<string, unknown>).transaction = (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx);
-
-    // Ensure transactions pass mockTx, not mockDb, so per-test tx mocks are honored
-    (mockDb as any).transaction = (callback: (tx: typeof mockTx) => unknown) => callback(mockTx);
-
-    // Make Drizzle insert/update/delete bridge to Prisma model mocks
-    const getTableName = (table: unknown): string | undefined => {
-      if (typeof table === "string") return table;
-      if (table && typeof table === "object") {
-        const obj = table as Record<string | symbol, unknown>;
-        if (obj.name && typeof obj.name === "string") return obj.name;
-        const sym = Object.getOwnPropertySymbols(obj).find((s) => s.description === "drizzle:Name");
-        if (sym && typeof obj[sym] === "string") return obj[sym] as string;
-      }
-      return undefined;
-    };
-    const getModelName = (table: unknown): string => {
-      const name = getTableName(table);
-      return name ? name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()).replace(/s$/, "") : "unknown";
-    };
-    const passthroughReturning = (data: unknown) => ({
-      returning: () => Promise.resolve([data]),
-      onConflictDoNothing: () => Promise.resolve([data]),
-      onConflictDoUpdate: () => Promise.resolve([data]),
-    });
-    [mockDb, mockTx].forEach((db) => {
-      (db as any).insert = (table: unknown) => ({
-        values: (data: unknown) => {
-          const modelName = getModelName(table);
-          const model = (db as Record<string, unknown>)[modelName];
-          if (model && typeof model === "object" && "create" in model && typeof (model as Record<string, unknown>).create === "function") {
-            const createFn = (model as any).create;
-            return passthroughReturning(createFn({ data }));
-          }
-          return passthroughReturning(data);
-        },
-      });
-      (db as any).update = (table: unknown) => ({
-        set: (data: unknown) => ({
-          where: () => {
-            const modelName = getModelName(table);
-            const model = (db as Record<string, unknown>)[modelName];
-            if (model && typeof model === "object" && "update" in model && typeof (model as Record<string, unknown>).update === "function") {
-              const updateFn = (model as any).update;
-            return updateFn({ data, where: {} }).then((result: unknown) => passthroughReturning(result));
-            }
-            return passthroughReturning(data);
-          },
-        }),
-      });
-      (db as any).delete = () => ({
-        where: () => Promise.resolve({ count: 1 }),
-      });
-    });
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -1301,7 +1247,9 @@ describe("challengeSubmissionRouter", () => {
       });
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challengeSubmission.findFirst.mockResolvedValue(mockSubmission);
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(mockSubmission)
+        .mockResolvedValueOnce(updatedSubmission);
       mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }));
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
       mockTx.challengeSubmission.update.mockResolvedValue(updatedSubmission);

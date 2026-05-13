@@ -213,7 +213,9 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
 
   function createReturningChainable(modelName: string, method: string, args?: unknown) {
     const execute = () => {
+      console.log("[PROXY execute] modelName:", modelName, "method:", method, "args:", args);
       const model = (mockDb as Record<string, unknown>)[modelName];
+      console.log("[PROXY execute] model found:", !!model, "method in model:", model ? method in model : false, "fn type:", model && typeof (model as Record<string, unknown>)[method] === "function" ? "function" : "not function");
       if (model && typeof model === "object" && method in model) {
         const fn = (model as Record<string, unknown>)[method];
         if (typeof fn === "function") {
@@ -256,6 +258,7 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
   }
 
   function createDeleteChainable(modelName: string) {
+    console.log("[PROXY createDeleteChainable] modelName:", modelName);
     return {
       where: (_condition: unknown) => createReturningChainable(modelName, "delete"),
     };
