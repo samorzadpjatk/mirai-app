@@ -43,7 +43,7 @@ interface MockContext extends Omit<TRPCContext, "db" | "supabase"> {
 }
 
 const createMockDb = () =>
-  ({
+  createDrizzleProxy(({
     user: {
       findFirst: vi.fn(() => Promise.resolve(null)),
     },
@@ -83,7 +83,7 @@ const createMockDb = () =>
       findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
-  }) as unknown as DB;
+  }) as unknown as MockDbClient);
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>

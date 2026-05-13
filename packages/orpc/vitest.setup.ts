@@ -5,12 +5,17 @@ import type { TRPCContext } from "./src/api/trpc";
 
 declare global {
   var mocked: typeof vitestMocked;
+  var createDrizzleProxy: (mockDb: MockDbClient) => DB;
 }
 // @ts-expect-error - adding to globalThis for test compatibility
 globalThis.mocked = vitestMocked;
+// @ts-expect-error - adding to globalThis for test compatibility
+globalThis.createDrizzleProxy = createDrizzleProxy;
 if (typeof global !== 'undefined') {
   // @ts-expect-error - adding to global for test compatibility
   global.mocked = vitestMocked;
+  // @ts-expect-error - adding to global for test compatibility
+  global.createDrizzleProxy = createDrizzleProxy;
 }
 
 type MockedFunction<T extends (...args: never[]) => unknown> = Mocked<T>;
@@ -188,66 +193,52 @@ function createDrizzleProxy(mockDb: MockDbClient): DB {
     then: (resolve: (value: unknown) => unknown) => resolve([]),
   };
 
-  return new Proxy(mockDb as unknown as DB, {
-    get(target, prop) {
-      if (prop === "query") {
-        return new Proxy(
-          {},
-          {
-            get(_, tableName) {
-              const modelName = singularize(String(tableName));
-              const model = (target as Record<string, unknown>)[modelName];
-              if (model && typeof model === "object") {
-                return model;
-              }
-              return {
-                findFirst: vi.fn(() => Promise.resolve(null)),
-                findUnique: vi.fn(() => Promise.resolve(null)),
-                findMany: vi.fn(() => Promise.resolve([])),
-                count: vi.fn(() => Promise.resolve(0)),
-              };
-            },
-          }
-        );
-      }
+  const db = mockDb as unknown as DB & Record<string, unknown>;
 
-      if (prop === "insert") {
-        return () => ({
-          values: () => ({
-            returning: () => Promise.resolve([{}]),
-          }),
-        });
-      }
+  db.query = new Proxy(
+    {},
+    {
+      get(_, tableName) {
+        const modelName = singularize(String(tableName));
+        const model = (mockDb as Record<string, unknown>)[modelName];
+        if (model && typeof model === "object") {
+          return model;
+        }
+        return {
+          findFirst: vi.fn(() => Promise.resolve(null)),
+          findUnique: vi.fn(() => Promise.resolve(null)),
+          findMany: vi.fn(() => Promise.resolve([])),
+          count: vi.fn(() => Promise.resolve(0)),
+        };
+      },
+    }
+  );
 
-      if (prop === "update") {
-        return (table: unknown) => ({
-          set: () => ({
-            where: () => ({
-              returning: () => Promise.resolve([{}]),
-            }),
-          }),
-        });
-      }
-
-      if (prop === "delete") {
-        return () => ({
-          where: () => ({
-            returning: () => Promise.resolve([{}]),
-          }),
-        });
-      }
-
-      if (prop === "select") {
-        return () => chainable;
-      }
-
-      if (prop === "transaction") {
-        return (callback: (tx: DB) => Promise<unknown>) => callback(target as DB);
-      }
-
-      return (target as Record<string, unknown>)[String(prop)];
-    },
+  db.insert = () => ({
+    values: () => ({
+      returning: () => Promise.resolve([{}]),
+    }),
   });
+
+  db.update = () => ({
+    set: () => ({
+      where: () => ({
+        returning: () => Promise.resolve([{}]),
+      }),
+    }),
+  });
+
+  db.delete = () => ({
+    where: () => ({
+      returning: () => Promise.resolve([{}]),
+    }),
+  });
+
+  db.select = () => chainable;
+
+  db.transaction = (callback: (tx: DB) => Promise<unknown>) => callback(db);
+
+  return db;
 }
 
 export function createMockDb(): MockDbClient {
