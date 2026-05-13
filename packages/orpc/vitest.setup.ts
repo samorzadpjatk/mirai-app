@@ -181,18 +181,44 @@ function singularize(name: string): string {
 }
 
 export function createDrizzleProxy(mockDb: MockDbClient): DB {
-  const chainable = {
-    from: () => chainable,
-    where: () => chainable,
-    innerJoin: () => chainable,
-    leftJoin: () => chainable,
-    orderBy: () => chainable,
-    limit: () => chainable,
-    offset: () => chainable,
-    groupBy: () => chainable,
-    having: () => chainable,
-    then: (resolve: (value: unknown) => unknown) => resolve([]),
+  const returningChainable = {
+    returning: () => Promise.resolve([{}]),
   };
+
+  function createChainable(tableName?: string) {
+    const chainable = {
+      from: (table: unknown) => {
+        if (typeof table === "string") {
+          return createChainable(singularize(table));
+        }
+        if (table && typeof table === "object") {
+          const obj = table as Record<string, unknown>;
+          if (obj.name && typeof obj.name === "string") {
+            return createChainable(singularize(obj.name));
+          }
+        }
+        return createChainable(tableName);
+      },
+      where: () => chainable,
+      innerJoin: () => chainable,
+      leftJoin: () => chainable,
+      orderBy: () => chainable,
+      limit: () => chainable,
+      offset: () => chainable,
+      groupBy: () => chainable,
+      having: () => chainable,
+      then: (resolve: (value: unknown) => unknown) => {
+        if (tableName) {
+          const model = (mockDb as Record<string, unknown>)[tableName];
+          if (model && typeof model === "object" && "findMany" in model) {
+            return (model as { findMany: () => Promise<unknown[]> }).findMany().then(resolve);
+          }
+        }
+        return resolve([]);
+      },
+    };
+    return chainable;
+  }
 
   const db = mockDb as DB & Record<string, unknown>;
 
@@ -215,10 +241,6 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     }
   );
 
-  const returningChainable = {
-    returning: () => Promise.resolve([{}]),
-  };
-
   db.insert = (_table: unknown) => ({
     values: (_data: unknown) => returningChainable,
     onConflictDoNothing: () => returningChainable,
@@ -235,7 +257,7 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     where: (_condition: unknown) => returningChainable,
   });
 
-  db.select = () => chainable;
+  db.select = () => createChainable();
 
   db.transaction = (callback: (tx: DB) => Promise<unknown>) => callback(db);
 
