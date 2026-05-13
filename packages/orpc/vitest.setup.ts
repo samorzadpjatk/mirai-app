@@ -243,7 +243,7 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     return {
       values: (data: unknown) => ({
         ...createReturningChainable(modelName, "create", { data }),
-        onConflictDoNothing: () => createReturningChainable(modelName, "upsert", { data }),
+        onConflictDoNothing: () => createReturningChainable(modelName, "createMany", { data, skipDuplicates: true }),
         onConflictDoUpdate: (_opts: unknown) => createReturningChainable(modelName, "upsert", { data }),
       }),
     };
@@ -437,7 +437,14 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                     if (result !== null && result !== undefined) {
                       return result;
                     }
-                    return lastResults[modelName] ?? null;
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                    if (modelObj[otherMethod]) {
+                      const fb = await modelObj[otherMethod](...args);
+                      if (fb !== null && fb !== undefined) {
+                        return fb;
+                      }
+                    }
+                    return null;
                   }
                   const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                   if (modelObj[otherMethod]) {
