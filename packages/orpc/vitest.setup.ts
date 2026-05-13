@@ -189,17 +189,14 @@ function getTableName(table: unknown): string | undefined {
   if (table && typeof table === "object") {
     const obj = table as Record<string | symbol, unknown>;
     if (obj.name && typeof obj.name === "string") {
-      console.log("[DEBUG getTableName] found name:", obj.name);
       return obj.name;
     }
     const sym = Object.getOwnPropertySymbols(obj).find(
       (s) => s.description === "drizzle:Name"
     );
     if (sym && typeof obj[sym] === "string") {
-      console.log("[DEBUG getTableName] found symbol:", obj[sym]);
       return obj[sym] as string;
     }
-    console.log("[DEBUG getTableName] no name found for:", table);
   }
   return undefined;
 }
@@ -210,7 +207,6 @@ function getModelName(table: unknown): string {
 }
 
 export function createDrizzleProxy(mockDb: MockDbClient): DB {
-  console.log("[DEBUG] createDrizzleProxy called");
   const lastResults: Record<string, unknown> = {};
 
   function createReturningChainable(modelName: string, method: string) {
@@ -290,7 +286,6 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
       groupBy: () => chainable,
       having: () => chainable,
       then: (resolve: (value: unknown) => unknown) => {
-        console.log("[DEBUG SELECT] primaryTable:", primaryTable, "hasCount:", selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>));
         if (primaryTable) {
           const model = (mockDb as Record<string, unknown>)[primaryTable];
           if (model && typeof model === "object") {
@@ -299,7 +294,6 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
               if ("count" in model) {
                 const countFn = (model as { count: () => Promise<number> }).count;
                 return countFn().then((result) => {
-                  console.log("[DEBUG SELECT] count result for", primaryTable, ":", result);
                   return resolve([{ count: result }]);
                 });
               }
