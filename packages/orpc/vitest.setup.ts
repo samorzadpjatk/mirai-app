@@ -392,6 +392,15 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                       }
                     }
                     row[primaryTableRaw ?? primaryTable] = item;
+                    // When selectFields is provided, also flatten primary-table fields
+                    // to the top level so code like `admins.map((a) => a.id)` works.
+                    if (selectFields && typeof selectFields === "object") {
+                      for (const field of Object.keys(selectFields as Record<string, unknown>)) {
+                        if (field in item) {
+                          row[field] = item[field];
+                        }
+                      }
+                    }
                     return row;
                   });
                   return resolve(transformed);
