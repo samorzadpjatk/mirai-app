@@ -329,17 +329,14 @@ describe("groupRouter", () => {
         createMockGroup({ id: "group-2", name: "Group Two", participants: [], organizer: { id: "user-2", firstName: "Test", lastName: "User", authUserId: "auth-2", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] }),
       ];
 
-      mockDb.group.findMany.mockImplementation((args) => {
-        if (args === undefined) return Promise.resolve([{ count: 2 }]);
-        return Promise.resolve(mockGroups);
-      });
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
+      mockDb.group.count.mockResolvedValue(2);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       const result = await caller.getAll({ tripId: "trip-123" });
 
-      console.log("[TEST DEBUG] result:", JSON.stringify(result, null, 2));
       expect(result.groups).toHaveLength(2);
       expect(result.pagination.total).toBe(2);
       expect(result.pagination.hasMore).toBe(false);
@@ -348,10 +345,8 @@ describe("groupRouter", () => {
     it("should respect pagination parameters", async () => {
       const mockGroups = [createMockGroup({ id: "group-1", name: "Group One", participants: [], organizer: { id: "user-1", firstName: "Test", lastName: "User", authUserId: "auth-1", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] })];
 
-      mockDb.group.findMany.mockImplementation((args) => {
-        if (args === undefined) return Promise.resolve([{ count: 2 }]);
-        return Promise.resolve(mockGroups);
-      });
+      mockDb.group.findMany.mockResolvedValue(mockGroups);
+      mockDb.group.count.mockResolvedValue(2);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -489,7 +484,7 @@ describe("groupRouter", () => {
       };
 
       mockDb.group.findFirst.mockResolvedValue(mockGroup);
-      mockDb.tripParticipant.findMany.mockResolvedValue([{ count: 5 }]);
+      mockDb.tripParticipant.count.mockResolvedValue(5);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -666,7 +661,9 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findFirst.mockResolvedValue(existingGroup);
+      mockDb.group.findFirst
+        .mockResolvedValueOnce(existingGroup)
+        .mockResolvedValueOnce(null);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
@@ -713,7 +710,9 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findFirst.mockResolvedValue(existingGroup);
+      mockDb.group.findFirst
+        .mockResolvedValueOnce(existingGroup)
+        .mockResolvedValueOnce(null);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
@@ -759,7 +758,9 @@ describe("groupRouter", () => {
         },
       });
 
-      mockDb.group.findFirst.mockResolvedValue(existingGroup);
+      mockDb.group.findFirst
+        .mockResolvedValueOnce(existingGroup)
+        .mockResolvedValueOnce(null);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
@@ -963,7 +964,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findFirst.mockResolvedValue(existingGroup);
-      mockDb.tripParticipant.create.mockResolvedValue(createMockParticipant());
+      mockDb.tripParticipant.upsert.mockResolvedValue(createMockParticipant());
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -971,7 +972,7 @@ describe("groupRouter", () => {
       const result = await caller.join({ id: "group-123", tripId: "trip-123" });
 
       expect(result).toBeDefined();
-      expect(mockDb.tripParticipant.create).toHaveBeenCalled();
+      expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -1466,7 +1467,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.findFirst.mockResolvedValue(existingGroup);
-      mockDb.tripParticipant.create.mockResolvedValue(createMockParticipant());
+      mockDb.tripParticipant.upsert.mockResolvedValue(createMockParticipant());
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -1478,7 +1479,7 @@ describe("groupRouter", () => {
       });
 
       expect(result).toBeDefined();
-      expect(mockDb.tripParticipant.create).toHaveBeenCalled();
+      expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -1632,7 +1633,7 @@ describe("groupRouter", () => {
         userIds: ["user-456", "user-456", "user-789"],
       });
 
-      expect(mockDb.tripParticipant.create).toHaveBeenCalledTimes(2);
+      expect(mockDb.tripParticipant.upsert).toHaveBeenCalledTimes(2);
     });
 
     it("should throw NOT_FOUND for group in different trip", async () => {
