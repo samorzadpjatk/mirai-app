@@ -43,21 +43,21 @@ describe("LeaderboardRankingsSection", () => {
 
   it("should render section title", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("Full Rankings")).toBeOnTheScreen();
   });
 
   it("should render subtitle", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("Global Standings")).toBeOnTheScreen();
   });
 
   it("should render all group names", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("Group 1")).toBeOnTheScreen();
     expect(screen.getByText("Group 2")).toBeOnTheScreen();
@@ -66,7 +66,7 @@ describe("LeaderboardRankingsSection", () => {
 
   it("should render all group ranks", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("4")).toBeOnTheScreen();
     expect(screen.getByText("5")).toBeOnTheScreen();
@@ -75,7 +75,7 @@ describe("LeaderboardRankingsSection", () => {
 
   it("should call onPressGroup when a group is pressed", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     const groupElements = screen.getAllByText(/Group \d/);
     fireEvent.press(groupElements[0]!);
@@ -96,7 +96,7 @@ describe("LeaderboardRankingsSection", () => {
   it("should handle single group", () => {
     const singleGroup = [mockGroups[0]!];
     renderWithProviders(
-      <LeaderboardRankingsSection groups={singleGroup} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={singleGroup} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("Group 1")).toBeOnTheScreen();
     expect(screen.getByText("4")).toBeOnTheScreen();
@@ -104,14 +104,14 @@ describe("LeaderboardRankingsSection", () => {
 
   it("should render with container styling", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByTestId("leaderboard-rankings-section")).toBeOnTheScreen();
   });
 
   it("should mark current user group with YOUR GROUP badge", () => {
     renderWithProviders(
-      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />
+      <LeaderboardRankingsSection groups={mockGroups} onPressGroup={mockOnPressGroup} />,
     );
     expect(screen.getByText("YOUR GROUP")).toBeOnTheScreen();
   });

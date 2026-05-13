@@ -55,7 +55,7 @@ describe("MembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
     expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
@@ -69,7 +69,7 @@ describe("MembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("john@example.com")).toBeOnTheScreen();
     expect(screen.getByText("jane@example.com")).toBeOnTheScreen();
@@ -83,7 +83,7 @@ describe("MembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("JD")).toBeOnTheScreen();
     expect(screen.getByText("JS")).toBeOnTheScreen();
@@ -97,20 +97,20 @@ describe("MembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={true}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     const activityIndicator = screen.getByTestId("activity-indicator");
     expect(activityIndicator).toBeOnTheScreen();
   });
 
-it("should call onToggleMember when a member is pressed", () => {
+  it("should call onToggleMember when a member is pressed", () => {
     renderWithProviders(
       <MembersPicker
         participants={mockParticipants}
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     const pressableElements = screen.getAllByTestId(/checkbox-/);
     const firstPressableElement = pressableElements[0];
@@ -127,7 +127,7 @@ it("should call onToggleMember when a member is pressed", () => {
         selectedMembers={selectedMembers}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     const checkboxes = screen.getAllByTestId(/checkbox-/);
     expect(checkboxes.length).toBeGreaterThan(0);
@@ -142,7 +142,7 @@ it("should call onToggleMember when a member is pressed", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("No participants found")).toBeOnTheScreen();
   });
@@ -164,7 +164,7 @@ it("should call onToggleMember when a member is pressed", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("?")).toBeOnTheScreen();
     expect(screen.getByText("unknown@example.com")).toBeOnTheScreen();
@@ -178,7 +178,7 @@ it("should call onToggleMember when a member is pressed", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={mockOnToggleMember}
-      />
+      />,
     );
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
   });

@@ -29,7 +29,9 @@ describe("FilterChip", () => {
   });
 
   it("should apply selected style when selected is true", () => {
-    renderWithProviders(<FilterChip label="Selected" selected={true} testID="filter-chip-selected" />);
+    renderWithProviders(
+      <FilterChip label="Selected" selected={true} testID="filter-chip-selected" />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-selected");
     const style = touchable.props.style as ChipStyle;
@@ -38,7 +40,9 @@ describe("FilterChip", () => {
   });
 
   it("should apply unselected style when selected is false", () => {
-    renderWithProviders(<FilterChip label="Unselected" selected={false} testID="filter-chip-unselected" />);
+    renderWithProviders(
+      <FilterChip label="Unselected" selected={false} testID="filter-chip-unselected" />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-unselected");
     const style = touchable.props.style as ChipStyle;
@@ -82,14 +86,23 @@ describe("FilterChip", () => {
 
   it("should be disabled when disabled prop is true", () => {
     const onPress = jest.fn();
-    renderWithProviders(<FilterChip label="Disabled" onPress={onPress} disabled={true} testID="filter-chip-disabled" />);
+    renderWithProviders(
+      <FilterChip
+        label="Disabled"
+        onPress={onPress}
+        disabled={true}
+        testID="filter-chip-disabled"
+      />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-disabled");
     expect(touchable.props.accessibilityState?.disabled).toBe(true);
   });
 
   it("should apply disabled style when disabled", () => {
-    renderWithProviders(<FilterChip label="Disabled" disabled={true} testID="filter-chip-disabled-style" />);
+    renderWithProviders(
+      <FilterChip label="Disabled" disabled={true} testID="filter-chip-disabled-style" />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-disabled-style");
     const style = touchable.props.style as ChipStyle;
@@ -98,7 +111,9 @@ describe("FilterChip", () => {
 
   it("should apply custom style", () => {
     const customStyle = { marginRight: 10 };
-    renderWithProviders(<FilterChip label="Styled" style={customStyle} testID="filter-chip-custom-style" />);
+    renderWithProviders(
+      <FilterChip label="Styled" style={customStyle} testID="filter-chip-custom-style" />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-custom-style");
     expect(touchable.props.style).toMatchObject(customStyle);
@@ -110,13 +125,20 @@ describe("FilterChip", () => {
 
     const text = screen.getByText("Styled Text");
     expect(text.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customTextStyle)])
+      expect.arrayContaining([expect.objectContaining(customTextStyle)]),
     );
   });
 
   it("should apply custom count pill style", () => {
     const customPillStyle = { backgroundColor: "red" };
-    renderWithProviders(<FilterChip label="Items" count={5} countPillStyle={customPillStyle} testID="filter-chip-pill-style" />);
+    renderWithProviders(
+      <FilterChip
+        label="Items"
+        count={5}
+        countPillStyle={customPillStyle}
+        testID="filter-chip-pill-style"
+      />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-pill-style");
     expect(touchable).toBeTruthy();
@@ -124,16 +146,24 @@ describe("FilterChip", () => {
 
   it("should apply custom count text style", () => {
     const customCountTextStyle = { fontWeight: "bold" as const };
-    renderWithProviders(<FilterChip label="Items" count={5} countTextStyle={customCountTextStyle} />);
+    renderWithProviders(
+      <FilterChip label="Items" count={5} countTextStyle={customCountTextStyle} />,
+    );
 
     const countText = screen.getByText("5");
     expect(countText.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customCountTextStyle)])
+      expect.arrayContaining([expect.objectContaining(customCountTextStyle)]),
     );
   });
 
   it("should have correct accessibility role", () => {
-    renderWithProviders(<FilterChip label="Accessible" accessibilityLabel="Filter by category" testID="filter-chip-accessible" />);
+    renderWithProviders(
+      <FilterChip
+        label="Accessible"
+        accessibilityLabel="Filter by category"
+        testID="filter-chip-accessible"
+      />,
+    );
 
     const touchable = screen.getByTestId("filter-chip-accessible");
     expect(touchable.props.accessibilityRole).toBe("button");

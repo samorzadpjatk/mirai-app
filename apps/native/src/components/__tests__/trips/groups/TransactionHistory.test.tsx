@@ -41,52 +41,38 @@ describe("TransactionHistory", () => {
   ];
 
   it("should render title", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText("Coin Transactions")).toBeOnTheScreen();
   });
 
   it("should render positive amount with plus sign", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText("+100")).toBeOnTheScreen();
   });
 
   it("should render negative amount with minus sign", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText("-50")).toBeOnTheScreen();
   });
 
   it("should render 'coins' label", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     const coinLabels = screen.getAllByText("coins");
     expect(coinLabels.length).toBeGreaterThan(0);
   });
 
   it("should render admin name", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText(/John Doe/)).toBeOnTheScreen();
   });
 
   it("should render 'Unknown Admin' when admin name is null", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText(/Unknown Admin/)).toBeOnTheScreen();
   });
 
   it("should render reason when provided", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     const reasonLabels = screen.getAllByText("Reason:");
     expect(reasonLabels.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Challenge completion bonus")).toBeOnTheScreen();
@@ -106,24 +92,20 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    renderWithProviders(
-      <TransactionHistory transactions={transactionsWithNullReason} />
-    );
+    renderWithProviders(<TransactionHistory transactions={transactionsWithNullReason} />);
     expect(screen.queryByText("Reason:")).toBeNull();
   });
 
   it("should render empty state when no transactions", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={[]} />
-    );
+    renderWithProviders(<TransactionHistory transactions={[]} />);
     expect(screen.getByText("No transactions yet")).toBeOnTheScreen();
   });
 
   it("should render empty state subtitle", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={[]} />
-    );
-    expect(screen.getByText("Coin transactions will appear here once coins are added or removed")).toBeOnTheScreen();
+    renderWithProviders(<TransactionHistory transactions={[]} />);
+    expect(
+      screen.getByText("Coin transactions will appear here once coins are added or removed"),
+    ).toBeOnTheScreen();
   });
 
   it("should handle Date object for createdAt", () => {
@@ -140,9 +122,7 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    renderWithProviders(
-      <TransactionHistory transactions={transactionsWithDate} />
-    );
+    renderWithProviders(<TransactionHistory transactions={transactionsWithDate} />);
     expect(screen.getByText("Coin Transactions")).toBeOnTheScreen();
   });
 
@@ -160,9 +140,7 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    renderWithProviders(
-      <TransactionHistory transactions={transactionsWithPartialName} />
-    );
+    renderWithProviders(<TransactionHistory transactions={transactionsWithPartialName} />);
     expect(screen.getByText(/John/)).toBeOnTheScreen();
   });
 
@@ -180,16 +158,12 @@ describe("TransactionHistory", () => {
         },
       },
     ];
-    renderWithProviders(
-      <TransactionHistory transactions={transactionsWithPartialName} />
-    );
+    renderWithProviders(<TransactionHistory transactions={transactionsWithPartialName} />);
     expect(screen.getByText(/Doe/)).toBeOnTheScreen();
   });
 
   it("should render multiple transactions", () => {
-    renderWithProviders(
-      <TransactionHistory transactions={mockTransactions} />
-    );
+    renderWithProviders(<TransactionHistory transactions={mockTransactions} />);
     expect(screen.getByText("+100")).toBeOnTheScreen();
     expect(screen.getByText("-50")).toBeOnTheScreen();
     expect(screen.getByText("+200")).toBeOnTheScreen();

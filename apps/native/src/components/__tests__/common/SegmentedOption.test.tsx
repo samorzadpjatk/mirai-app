@@ -10,18 +10,14 @@ const noop = (): void => {
 
 describe("SegmentedOption", () => {
   it("should render with label", () => {
-    renderWithProviders(
-      <SegmentedOption label="Option 1" selected={false} onPress={noop} />
-    );
+    renderWithProviders(<SegmentedOption label="Option 1" selected={false} onPress={noop} />);
 
     expect(screen.getByText("Option 1")).toBeOnTheScreen();
   });
 
   it("should call onPress when pressed", async () => {
     const onPress = jest.fn();
-    renderWithProviders(
-      <SegmentedOption label="Option 1" selected={false} onPress={onPress} />
-    );
+    renderWithProviders(<SegmentedOption label="Option 1" selected={false} onPress={onPress} />);
 
     const user = userEvent.setup();
     await user.press(screen.getByText("Option 1"));
@@ -39,7 +35,7 @@ describe("SegmentedOption", () => {
           style={{ marginHorizontal: 10 }}
         />
         <Text>Extra</Text>
-      </>
+      </>,
     );
 
     expect(screen.getByText("Selected")).toBeOnTheScreen();

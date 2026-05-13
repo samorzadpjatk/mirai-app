@@ -15,9 +15,13 @@ describe("DateTimePickerModal", () => {
         visible={false}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.queryByText("Cancel")).toBeNull();
@@ -26,15 +30,19 @@ describe("DateTimePickerModal", () => {
 
   it("should render on Android without modal", () => {
     Object.defineProperty(Platform, "OS", { value: "android" });
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -42,15 +50,19 @@ describe("DateTimePickerModal", () => {
 
   it("should render modal on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByText("Cancel")).toBeOnTheScreen();
@@ -63,15 +75,17 @@ describe("DateTimePickerModal", () => {
   it("should call onCancel when Cancel button is pressed on iOS", async () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onCancel = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
+        onConfirm={() => {
+          /* noop */
+        }}
         onCancel={onCancel}
-      />
+      />,
     );
 
     const user = userEvent.setup();
@@ -82,15 +96,17 @@ describe("DateTimePickerModal", () => {
   it("should call onConfirm when Done button is pressed on iOS", async () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onConfirm = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
         onConfirm={onConfirm}
-        onCancel={() => { /* noop */ }}
-      />
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     const user = userEvent.setup();
@@ -101,15 +117,17 @@ describe("DateTimePickerModal", () => {
   it("should call onCancel when overlay is pressed on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onCancel = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
+        onConfirm={() => {
+          /* noop */
+        }}
         onCancel={onCancel}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByTestId("datetime-picker-overlay"));
@@ -118,15 +136,19 @@ describe("DateTimePickerModal", () => {
 
   it("should handle date mode", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -140,9 +162,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="time"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -156,9 +182,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="datetime"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -172,9 +202,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="datetime"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -189,9 +223,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={testDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -200,15 +238,17 @@ describe("DateTimePickerModal", () => {
   it("should handle onRequestClose on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onCancel = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
+        onConfirm={() => {
+          /* noop */
+        }}
         onCancel={onCancel}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByTestId("datetime-picker-overlay"));
@@ -217,15 +257,19 @@ describe("DateTimePickerModal", () => {
 
   it("should stop propagation when card is pressed on iOS", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker-card")).toBeTruthy();
@@ -234,15 +278,17 @@ describe("DateTimePickerModal", () => {
   it("should update draft date when date changes on iOS", async () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
     const onConfirm = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
         onConfirm={onConfirm}
-        onCancel={() => { /* noop */ }}
-      />
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     const user = userEvent.setup();
@@ -253,15 +299,17 @@ describe("DateTimePickerModal", () => {
   it("should handle Android change event - dismissed", () => {
     Object.defineProperty(Platform, "OS", { value: "android" });
     const onCancel = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
+        onConfirm={() => {
+          /* noop */
+        }}
         onCancel={onCancel}
-      />
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -271,7 +319,7 @@ describe("DateTimePickerModal", () => {
     Object.defineProperty(Platform, "OS", { value: "android" });
     const onConfirm = jest.fn();
     const onCancel = jest.fn();
-    
+
     renderWithProviders(
       <DateTimePickerModal
         visible={true}
@@ -279,7 +327,7 @@ describe("DateTimePickerModal", () => {
         mode="date"
         onConfirm={onConfirm}
         onCancel={onCancel}
-      />
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -293,9 +341,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -309,9 +361,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -319,15 +375,19 @@ describe("DateTimePickerModal", () => {
 
   it("should regenerate key when value or mode changes", () => {
     Object.defineProperty(Platform, "OS", { value: "ios" });
-    
+
     const { rerender } = renderWithProviders(
       <DateTimePickerModal
         visible={true}
         value={mockDate}
         mode="date"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();
@@ -338,9 +398,13 @@ describe("DateTimePickerModal", () => {
         visible={true}
         value={newDate}
         mode="time"
-        onConfirm={() => { /* noop */ }}
-        onCancel={() => { /* noop */ }}
-      />
+        onConfirm={() => {
+          /* noop */
+        }}
+        onCancel={() => {
+          /* noop */
+        }}
+      />,
     );
 
     expect(screen.getByTestId("datetime-picker")).toBeOnTheScreen();

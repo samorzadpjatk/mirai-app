@@ -26,11 +26,7 @@ describe("AdminChallengeListCard", () => {
 
   it("renders challenge title", () => {
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("Test Challenge")).toBeTruthy();
@@ -38,11 +34,7 @@ describe("AdminChallengeListCard", () => {
 
   it("renders challenge points", () => {
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("100 PTS")).toBeTruthy();
@@ -50,11 +42,7 @@ describe("AdminChallengeListCard", () => {
 
   it("renders challenge status", () => {
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("ACTIVE")).toBeTruthy();
@@ -62,11 +50,7 @@ describe("AdminChallengeListCard", () => {
 
   it("renders participant count", () => {
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("5")).toBeTruthy();
@@ -74,11 +58,7 @@ describe("AdminChallengeListCard", () => {
 
   it("renders pending submissions count", () => {
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("2")).toBeTruthy();
@@ -86,11 +66,7 @@ describe("AdminChallengeListCard", () => {
 
   it("calls onDelete when delete button is pressed", () => {
     const { getAllByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={mockChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={mockChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     const deleteButtons = getAllByText("trash");
@@ -105,7 +81,7 @@ describe("AdminChallengeListCard", () => {
         challenge={hiddenChallenge}
         onDelete={mockOnDelete}
         tripId="trip-1"
-      />
+      />,
     );
 
     expect(getByText("HIDDEN")).toBeTruthy();
@@ -118,7 +94,7 @@ describe("AdminChallengeListCard", () => {
         challenge={highPointChallenge}
         onDelete={mockOnDelete}
         tripId="trip-1"
-      />
+      />,
     );
 
     expect(getByText("250 PTS")).toBeTruthy();
@@ -127,11 +103,7 @@ describe("AdminChallengeListCard", () => {
   it("renders with SPEED scoring category", () => {
     const speedChallenge = { ...mockChallenge, scoringCategory: "SPEED" as const };
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={speedChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={speedChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("Test Challenge")).toBeTruthy();
@@ -140,11 +112,7 @@ describe("AdminChallengeListCard", () => {
   it("renders with VIDEO submission type", () => {
     const videoChallenge = { ...mockChallenge, submissionType: "VIDEO" as const };
     const { getByText } = renderWithProviders(
-      <AdminChallengeListCard
-        challenge={videoChallenge}
-        onDelete={mockOnDelete}
-        tripId="trip-1"
-      />
+      <AdminChallengeListCard challenge={videoChallenge} onDelete={mockOnDelete} tripId="trip-1" />,
     );
 
     expect(getByText("Test Challenge")).toBeTruthy();

@@ -32,7 +32,7 @@ describe("ThemedTextInput", () => {
     expect(inputStyle).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ borderColor: expect.any(String) as string }),
-      ])
+      ]),
     );
   });
 
@@ -41,30 +41,24 @@ describe("ThemedTextInput", () => {
 
     const input = screen.getByPlaceholderText("Enter text");
     const styles = input.props.style as TextInputStyle[];
-    const hasErrorBorder = styles.some(
-      (s: TextInputStyle) => s?.borderColor === "danger"
-    );
+    const hasErrorBorder = styles.some((s: TextInputStyle) => s?.borderColor === "danger");
     expect(hasErrorBorder).toBe(false);
   });
 
   it("should apply custom style", () => {
     const customStyle = { fontSize: 20 };
-    renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" style={customStyle} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" style={customStyle} />);
 
     const input = screen.getByPlaceholderText("Enter text");
     expect(input.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
+      expect.arrayContaining([expect.objectContaining(customStyle)]),
     );
   });
 
   it("should call onChangeText when text changes", async () => {
     const onChangeText = jest.fn();
     const user = userEvent.setup();
-    renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" onChangeText={onChangeText} />
-    );
+    renderWithProviders(<ThemedTextInput placeholder="Enter text" onChangeText={onChangeText} />);
 
     const input = screen.getByPlaceholderText("Enter text");
     await user.type(input, "new text");
@@ -86,7 +80,7 @@ describe("ThemedTextInput", () => {
         autoCapitalize="none"
         secureTextEntry={true}
         maxLength={50}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText("Enter text");
@@ -98,7 +92,7 @@ describe("ThemedTextInput", () => {
 
   it("should handle multiline prop", () => {
     renderWithProviders(
-      <ThemedTextInput placeholder="Enter text" multiline={true} numberOfLines={4} />
+      <ThemedTextInput placeholder="Enter text" multiline={true} numberOfLines={4} />,
     );
 
     const input = screen.getByPlaceholderText("Enter text");

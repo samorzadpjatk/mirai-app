@@ -7,15 +7,19 @@ const mockGetAllByTripQuery = jest.fn((options: { input: { tripId: string } }) =
   queryKey: ["challenge", "getAllByTrip", options.input.tripId],
 }));
 
-const mockGetAllByTripInfiniteOptions = jest.fn((options: {
-  input: (pageParam: number) => unknown;
-  initialPageParam: number;
-  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
-  enabled?: boolean;
-}) => ({
-  ...options,
-  queryKey: ["challenge", "getAllByTrip"],
-}));
+const mockGetAllByTripInfiniteOptions = jest.fn(
+  (options: {
+    input: (pageParam: number) => unknown;
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }) => number | undefined;
+    enabled?: boolean;
+  }) => ({
+    ...options,
+    queryKey: ["challenge", "getAllByTrip"],
+  }),
+);
 
 const mockDeleteMutation = jest.fn(() => ({
   mutationFn: jest.fn(),
@@ -26,7 +30,14 @@ jest.mock("@mirai-app/orpc/client", () => ({
     challenge: {
       getAllByTrip: {
         queryOptions: (options: { input: { tripId: string } }) => mockGetAllByTripQuery(options),
-        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined; enabled?: boolean }) => mockGetAllByTripInfiniteOptions(options),
+        infiniteOptions: (options: {
+          input: (pageParam: number) => unknown;
+          initialPageParam: number;
+          getNextPageParam: (lastPage: {
+            pagination: { hasMore: boolean; offset: number; limit: number };
+          }) => number | undefined;
+          enabled?: boolean;
+        }) => mockGetAllByTripInfiniteOptions(options),
       },
       delete: {
         mutationOptions: () => mockDeleteMutation(),
@@ -237,9 +248,30 @@ describe("useAdminChallengesByTrip", () => {
 
   it("should calculate stats correctly", async () => {
     const mockChallenges = [
-      { id: "1", name: "C1", description: "D1", basePoints: 100, status: "ACTIVE", tripId: "trip-123" },
-      { id: "2", name: "C2", description: "D2", basePoints: 200, status: "HIDDEN", tripId: "trip-123" },
-      { id: "3", name: "C3", description: "D3", basePoints: 300, status: "ACTIVE", tripId: "trip-123" },
+      {
+        id: "1",
+        name: "C1",
+        description: "D1",
+        basePoints: 100,
+        status: "ACTIVE",
+        tripId: "trip-123",
+      },
+      {
+        id: "2",
+        name: "C2",
+        description: "D2",
+        basePoints: 200,
+        status: "HIDDEN",
+        tripId: "trip-123",
+      },
+      {
+        id: "3",
+        name: "C3",
+        description: "D3",
+        basePoints: 300,
+        status: "ACTIVE",
+        tripId: "trip-123",
+      },
     ];
 
     mockUseInfiniteQuery.mockReturnValue({
@@ -274,7 +306,9 @@ describe("useAdminChallengesByTrip", () => {
   });
 
   it("should delete challenge", async () => {
-    const mockDelete = jest.fn<(data: { id: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockDelete = jest
+      .fn<(data: { id: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },
@@ -331,7 +365,16 @@ describe("useAdminChallengesByTrip", () => {
       data: {
         pages: [
           {
-            challenges: [{ id: "1", name: "C1", description: "D1", basePoints: 100, status: "ACTIVE", tripId: "trip-123" }],
+            challenges: [
+              {
+                id: "1",
+                name: "C1",
+                description: "D1",
+                basePoints: 100,
+                status: "ACTIVE",
+                tripId: "trip-123",
+              },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 30 },
           },
         ],
@@ -435,13 +478,27 @@ describe("useAdminChallengesByTrip", () => {
         pages: [
           {
             challenges: [
-              { id: "1", name: "C1", description: "D1", basePoints: 100, status: "ACTIVE", tripId: "trip-123" },
+              {
+                id: "1",
+                name: "C1",
+                description: "D1",
+                basePoints: 100,
+                status: "ACTIVE",
+                tripId: "trip-123",
+              },
             ],
             pagination: { hasMore: true, offset: 0, limit: 30 },
           },
           {
             challenges: [
-              { id: "2", name: "C2", description: "D2", basePoints: 200, status: "HIDDEN", tripId: "trip-123" },
+              {
+                id: "2",
+                name: "C2",
+                description: "D2",
+                basePoints: 200,
+                status: "HIDDEN",
+                tripId: "trip-123",
+              },
             ],
             pagination: { hasMore: false, offset: 30, limit: 30 },
           },

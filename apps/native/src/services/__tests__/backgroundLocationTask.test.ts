@@ -2,15 +2,40 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { LocationObject } from "expo-location";
 
 // Mock function types
-const mockDefineTask = jest.fn<(name: string, handler: (props: {
-  data?: { locations?: LocationObject[] };
-  error?: Error | null;
-}) => Promise<void>) => void>();
+const mockDefineTask =
+  jest.fn<
+    (
+      name: string,
+      handler: (props: {
+        data?: { locations?: LocationObject[] };
+        error?: Error | null;
+      }) => Promise<void>,
+    ) => void
+  >();
 const mockGetItem = jest.fn<(key: string) => Promise<string | null>>();
-const mockGetSession = jest.fn<() => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>>();
-const mockMutate = jest.fn<(input: { tripId: string; latitude: number; longitude: number }) => Promise<{ success: boolean }>>();
+const mockGetSession =
+  jest.fn<
+    () => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>
+  >();
+const mockMutate =
+  jest.fn<
+    (input: {
+      tripId: string;
+      latitude: number;
+      longitude: number;
+    }) => Promise<{ success: boolean }>
+  >();
 const mockCleanup = jest.fn<() => Promise<void>>();
-const mockGetTRPCClient = jest.fn<(url: string, key: string, wsUrl: string) => { client: { location: { updateLocation: { mutate: typeof mockMutate } } }; cleanup: typeof mockCleanup }>();
+const mockGetTRPCClient = jest.fn<
+  (
+    url: string,
+    key: string,
+    wsUrl: string,
+  ) => {
+    client: { location: { updateLocation: { mutate: typeof mockMutate } } };
+    cleanup: typeof mockCleanup;
+  }
+>();
 
 // Require helper for the module under test (using require for Jest compatibility)
 function loadBackgroundLocationTask(): unknown {
@@ -18,10 +43,12 @@ function loadBackgroundLocationTask(): unknown {
 }
 
 jest.mock("expo-task-manager", () => ({
-  defineTask: (...args: [string, (props: {
-    data?: { locations?: LocationObject[] };
-    error?: Error | null;
-  }) => Promise<void>]) => mockDefineTask(...args),
+  defineTask: (
+    ...args: [
+      string,
+      (props: { data?: { locations?: LocationObject[] }; error?: Error | null }) => Promise<void>,
+    ]
+  ) => mockDefineTask(...args),
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
@@ -89,7 +116,7 @@ describe("Background Location Task", () => {
 
       expect(mockDefineTask).toHaveBeenCalledWith(
         "integral.background-location-updates",
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -112,7 +139,9 @@ describe("Background Location Task", () => {
     });
 
     it("should handle task error", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
 
       await taskHandler({
         data: undefined,
@@ -121,7 +150,7 @@ describe("Background Location Task", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "[BackgroundLocationTask] Task failed:",
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -134,7 +163,9 @@ describe("Background Location Task", () => {
       });
 
       await taskHandler({
-        data: { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+        data: {
+          locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[],
+        },
         error: null,
       });
 

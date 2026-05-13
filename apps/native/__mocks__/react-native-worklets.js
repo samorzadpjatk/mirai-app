@@ -26,14 +26,17 @@ const WorkletAPI = {
   createSynchronizable: ID,
   callMicrotasks: NOOP,
   executeOnUIRuntimeSync: ID,
-  runOnJS: (fun) =>
+  runOnJS:
+    (fun) =>
     (...args) =>
       queueMicrotask(args.length ? () => fun(...args) : fun),
-  runOnUI: (worklet) =>
+  runOnUI:
+    (worklet) =>
     (...args) => {
       worklet(...args);
     },
-  runOnUIAsync: (worklet) =>
+  runOnUIAsync:
+    (worklet) =>
     (...args) => {
       return new Promise((resolve) => {
         const result = worklet(...args);

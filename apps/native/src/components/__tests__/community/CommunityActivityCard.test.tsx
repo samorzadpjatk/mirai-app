@@ -1,6 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
-import { CommunityActivityCard, type CommunityFeedActivity } from "../../community/CommunityActivityCard";
+import {
+  CommunityActivityCard,
+  type CommunityFeedActivity,
+} from "../../community/CommunityActivityCard";
 
 describe("CommunityActivityCard", () => {
   const baseActivity: CommunityFeedActivity = {
@@ -141,7 +144,7 @@ describe("CommunityActivityCard", () => {
     };
 
     render(<CommunityActivityCard activity={activityWithImage} />);
-    
+
     expect(screen.getByText("Test Activity")).toBeOnTheScreen();
   });
 
@@ -224,7 +227,7 @@ describe("CommunityActivityCard", () => {
 
   it("renders with avatarUri when provided", () => {
     render(
-      <CommunityActivityCard activity={baseActivity} avatarUri="https://example.com/avatar.jpg" />
+      <CommunityActivityCard activity={baseActivity} avatarUri="https://example.com/avatar.jpg" />,
     );
 
     expect(screen.getByText("Test Activity")).toBeOnTheScreen();

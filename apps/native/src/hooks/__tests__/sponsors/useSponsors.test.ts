@@ -1,10 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook } from "@testing-library/react-native";
-import {
-  useSponsors,
-  useSponsorById,
-  useTripSponsors,
-} from "../../sponsors/useSponsors";
+import { useSponsors, useSponsorById, useTripSponsors } from "../../sponsors/useSponsors";
 
 // Mock oRPC
 const mockGetAllQuery = jest.fn(() => ({
@@ -144,7 +140,7 @@ describe("useSponsorById", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         enabled: false,
-      })
+      }),
     );
   });
 
@@ -160,7 +156,7 @@ describe("useSponsorById", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         enabled: true,
-      })
+      }),
     );
   });
 });
@@ -171,9 +167,7 @@ describe("useTripSponsors", () => {
   });
 
   it("should return sponsors for a trip", () => {
-    const mockSponsors = [
-      { id: "sponsor-1", name: "Trip Sponsor", tier: "gold" },
-    ];
+    const mockSponsors = [{ id: "sponsor-1", name: "Trip Sponsor", tier: "gold" }];
 
     mockUseQuery.mockReturnValue({
       data: mockSponsors,
@@ -198,7 +192,7 @@ describe("useTripSponsors", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         enabled: false,
-      })
+      }),
     );
   });
 
@@ -214,7 +208,7 @@ describe("useTripSponsors", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         enabled: true,
-      })
+      }),
     );
   });
 });

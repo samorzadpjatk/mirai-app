@@ -19,7 +19,12 @@ const mockGetMapOverlayStore = jest.fn(() => ({
   setShowManageModal: mockSetShowManageModal,
   sharingSettings: {
     usersToShareWith: [
-      { id: "user-1", firstName: "John", lastName: "Doe", image: "https://example.com/avatar1.jpg" },
+      {
+        id: "user-1",
+        firstName: "John",
+        lastName: "Doe",
+        image: "https://example.com/avatar1.jpg",
+      },
       { id: "user-2", firstName: "Jane", lastName: "Smith", image: null },
     ] as SharingUser[],
   },
@@ -44,9 +49,11 @@ jest.mock("~/components/map/modals/MapModalShell", () => {
   return {
     MapModalShell: function MockMapModalShell(props: MapModalShellProps) {
       if (!props.visible) return null;
-      return createElement(View, { testID: "modal-shell" },
+      return createElement(
+        View,
+        { testID: "modal-shell" },
         createElement(Text, { testID: "modal-title" }, props.title),
-        props.children
+        props.children,
       );
     },
   };
@@ -64,10 +71,12 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => {
 
   return {
     MapModalUserItem: function MockMapModalUserItem(props: MapModalUserItemProps) {
-      return createElement(View, { testID: "user-item" },
+      return createElement(
+        View,
+        { testID: "user-item" },
         createElement(Text, { testID: "user-name" }, props.name),
         props.subtitle && createElement(Text, { testID: "user-subtitle" }, props.subtitle),
-        props.rightElement
+        props.rightElement,
       );
     },
   };
@@ -81,7 +90,12 @@ describe("ManageSharingModal", () => {
       setShowManageModal: mockSetShowManageModal,
       sharingSettings: {
         usersToShareWith: [
-          { id: "user-1", firstName: "John", lastName: "Doe", image: "https://example.com/avatar1.jpg" },
+          {
+            id: "user-1",
+            firstName: "John",
+            lastName: "Doe",
+            image: "https://example.com/avatar1.jpg",
+          },
           { id: "user-2", firstName: "Jane", lastName: "Smith", image: null },
         ] as SharingUser[],
       },
@@ -153,7 +167,9 @@ describe("ManageSharingModal", () => {
       showManageModal: true,
       setShowManageModal: mockSetShowManageModal,
       sharingSettings: {
-        usersToShareWith: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }] as SharingUser[],
+        usersToShareWith: [
+          { id: "user-1", firstName: "John", lastName: "Doe", image: null },
+        ] as SharingUser[],
       },
       isRemovingUser: true,
       handleRemoveUser: mockHandleRemoveUser,

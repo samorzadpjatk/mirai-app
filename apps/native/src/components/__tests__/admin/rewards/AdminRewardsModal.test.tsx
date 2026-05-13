@@ -99,7 +99,13 @@ jest.mock("~/components/common/ui", () => {
           {children}
         </View>
       ),
-    AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) => (
+    AppModalFooter: ({
+      primaryLabel,
+      onPrimary,
+      isPrimaryLoading,
+      secondaryLabel,
+      onSecondary,
+    }: AppModalFooterProps) => (
       <View testID="modal-footer">
         <TouchableOpacity testID="primary-button" onPress={onPrimary}>
           <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
@@ -115,7 +121,13 @@ jest.mock("~/components/common/ui", () => {
         {children}
       </View>
     ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+      keyboardType,
+      multiline,
+    }: ThemedTextInputProps) => (
       <TextInput
         testID="text-input"
         placeholder={placeholder}
@@ -152,7 +164,7 @@ jest.mock("~/components/map/LocationPicker", () => {
 describe("AdminRewardsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => {});
     uploadedArgs.length = 0;
     mockMutateAsync.mockResolvedValue({});
     mockUpload.mockImplementation((args: UploadArgs) => {
@@ -169,73 +181,55 @@ describe("AdminRewardsModal", () => {
 
   describe("rendering", () => {
     it("should render modal with title", () => {
-      const { getByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByTestId("modal-title").children[0]).toBe("New Reward");
     });
 
     it("should not render when not visible", () => {
       const { queryByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} visible={false} />
+        <AdminRewardsModal {...defaultProps} visible={false} />,
       );
       expect(queryByTestId("modal-shell")).toBeNull();
     });
 
     it("should render all form fields", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const formFields = getAllByTestId("form-field");
       expect(formFields.length).toBeGreaterThanOrEqual(4);
     });
 
     it("should render reward name field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Reward name *")).toBeTruthy();
     });
 
     it("should render description field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Description *")).toBeTruthy();
     });
 
     it("should render available quantity field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Available quantity *")).toBeTruthy();
     });
 
     it("should render cost percentage field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Cost (% of total points) *")).toBeTruthy();
     });
 
     it("should render visibility field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Visibility")).toBeTruthy();
     });
 
     it("should render image upload field", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Reward images (optional)")).toBeTruthy();
     });
 
     it("should render footer buttons", () => {
-      const { getByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByTestId("primary-button")).toBeTruthy();
       expect(getByTestId("secondary-button")).toBeTruthy();
     });
@@ -243,65 +237,49 @@ describe("AdminRewardsModal", () => {
 
   describe("form interactions", () => {
     it("should update reward name when typing", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[0]!, "Branded T-shirt");
       expect(inputs[0]!.props.value).toBe("Branded T-shirt");
     });
 
     it("should update description when typing", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[1]!, "A cool branded t-shirt");
       expect(inputs[1]!.props.value).toBe("A cool branded t-shirt");
     });
 
     it("should update available quantity when typing", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[2]!, "50");
       expect(inputs[2]!.props.value).toBe("50");
     });
 
     it("should update coin cost when typing", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const inputs = getAllByTestId("text-input");
       fireEvent.changeText(inputs[3]!, "10");
       expect(inputs[3]!.props.value).toBe("10");
     });
 
     it("should handle numeric keyboard for quantity field", () => {
-      const { getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       const inputs = getAllByTestId("text-input");
-      const numericInputs = inputs.filter(
-        (input) => input.props.keyboardType === "numeric"
-      );
+      const numericInputs = inputs.filter((input) => input.props.keyboardType === "numeric");
       expect(numericInputs.length).toBeGreaterThanOrEqual(2);
     });
   });
 
   describe("visibility toggle", () => {
     it("should have visible option", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Visible")).toBeTruthy();
     });
 
     it("should have hidden option", () => {
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       expect(getByText("Hidden")).toBeTruthy();
     });
   });
@@ -309,7 +287,7 @@ describe("AdminRewardsModal", () => {
   describe("form submission", () => {
     it("should show error when tripId is not provided", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} tripId={null} />
+        <AdminRewardsModal {...defaultProps} tripId={null} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -321,16 +299,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Select a trip in the admin panel first"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
       });
     });
 
     it("should show error when tripId is 'all'", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} tripId="all" />
+        <AdminRewardsModal {...defaultProps} tripId="all" />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -342,17 +317,12 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Select a trip in the admin panel first"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
       });
     });
 
     it("should show error when required fields are empty", async () => {
-      const { getByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
       fireEvent.press(getByTestId("primary-button"));
 
@@ -363,7 +333,7 @@ describe("AdminRewardsModal", () => {
 
     it("should show error when coin cost is less than 1", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -375,16 +345,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Cost must be between 1% and 100%"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
       });
     });
 
     it("should show error when coin cost is greater than 100", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -396,16 +363,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Cost must be between 1% and 100%"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
       });
     });
 
     it("should show error when coin cost is not a number", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -417,16 +381,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Cost must be between 1% and 100%"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
       });
     });
 
     it("should successfully create reward with valid data", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -452,7 +413,7 @@ describe("AdminRewardsModal", () => {
 
     it("should show success alert after creating reward", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -470,7 +431,7 @@ describe("AdminRewardsModal", () => {
 
     it("should call onClose after successful creation", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -488,7 +449,7 @@ describe("AdminRewardsModal", () => {
 
     it("should reset form after successful creation", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -511,7 +472,7 @@ describe("AdminRewardsModal", () => {
       mockMutateAsync.mockRejectedValue(new Error("Creation failed"));
 
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -530,9 +491,7 @@ describe("AdminRewardsModal", () => {
 
   describe("cancel action", () => {
     it("should call onClose when cancel button is pressed", () => {
-      const { getByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
       fireEvent.press(getByTestId("secondary-button"));
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -545,9 +504,7 @@ describe("AdminRewardsModal", () => {
         assets: null,
       });
 
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
       const addImagesButton = getByText("Add images");
       fireEvent.press(addImagesButton);
@@ -571,14 +528,12 @@ describe("AdminRewardsModal", () => {
             fileName: "test-image.jpg",
             width: 100,
             height: 100,
-            type: 'image' as const,
+            type: "image" as const,
           },
         ],
       });
 
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
       const addImagesButton = getByText("Add images");
       fireEvent.press(addImagesButton);
@@ -601,15 +556,13 @@ describe("AdminRewardsModal", () => {
             fileName: "test-image.jpg",
             width: 100,
             height: 100,
-            type: 'image' as const,
+            type: "image" as const,
           },
         ],
       });
       mockUpload.mockRejectedValue(new Error("Upload failed"));
 
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
       const addImagesButton = getByText("Add images");
       fireEvent.press(addImagesButton);
@@ -623,26 +576,24 @@ describe("AdminRewardsModal", () => {
       mockLaunchImageLibraryAsync.mockResolvedValue({
         canceled: false,
         assets: [
-          { 
-            uri: "file:///test/image1.jpg", 
+          {
+            uri: "file:///test/image1.jpg",
             fileName: "image1.jpg",
             width: 100,
             height: 100,
-            type: 'image' as const,
+            type: "image" as const,
           },
-          { 
-            uri: "file:///test/image2.jpg", 
+          {
+            uri: "file:///test/image2.jpg",
             fileName: "image2.jpg",
             width: 100,
             height: 100,
-            type: 'image' as const,
+            type: "image" as const,
           },
         ],
       });
 
-      const { getByText } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
       const addImagesButton = getByText("Add images");
       fireEvent.press(addImagesButton);
@@ -656,7 +607,7 @@ describe("AdminRewardsModal", () => {
   describe("edge cases", () => {
     it("should handle empty tripId string", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} tripId="" />
+        <AdminRewardsModal {...defaultProps} tripId="" />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -668,16 +619,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(Alert.alert).toHaveBeenCalledWith(
-          "Error",
-          "Select a trip in the admin panel first"
-        );
+        expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
       });
     });
 
     it("should handle coin cost of exactly 1", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -689,15 +637,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(mockMutateAsync).toHaveBeenCalledWith(
-          expect.objectContaining({ coinCost: 1 })
-        );
+        expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ coinCost: 1 }));
       });
     });
 
     it("should handle coin cost of exactly 100", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -709,15 +655,13 @@ describe("AdminRewardsModal", () => {
       fireEvent.press(getByTestId("primary-button"));
 
       await waitFor(() => {
-        expect(mockMutateAsync).toHaveBeenCalledWith(
-          expect.objectContaining({ coinCost: 100 })
-        );
+        expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ coinCost: 100 }));
       });
     });
 
     it("should handle available quantity of 0", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -730,14 +674,14 @@ describe("AdminRewardsModal", () => {
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(
-          expect.objectContaining({ availableQuantity: 0 })
+          expect.objectContaining({ availableQuantity: 0 }),
         );
       });
     });
 
     it("should handle large available quantity", async () => {
       const { getByTestId, getAllByTestId } = renderWithProviders(
-        <AdminRewardsModal {...defaultProps} />
+        <AdminRewardsModal {...defaultProps} />,
       );
 
       const inputs = getAllByTestId("text-input");
@@ -750,7 +694,7 @@ describe("AdminRewardsModal", () => {
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(
-          expect.objectContaining({ availableQuantity: 999999 })
+          expect.objectContaining({ availableQuantity: 999999 }),
         );
       });
     });

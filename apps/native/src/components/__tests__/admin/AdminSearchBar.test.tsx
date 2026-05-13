@@ -26,7 +26,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText("Search by first name...")).toBeTruthy();
@@ -41,7 +41,7 @@ describe("AdminSearchBar", () => {
         onFieldChange={jest.fn()}
         fields={mockFields}
         placeholder="Custom placeholder"
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText("Custom placeholder")).toBeTruthy();
@@ -55,7 +55,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByDisplayValue("John")).toBeTruthy();
@@ -70,7 +70,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText("Search by first name...");
@@ -86,7 +86,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByText("First Name")).toBeTruthy();
@@ -103,7 +103,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={onFieldChange}
         fields={mockFields}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByText("Last Name"));
@@ -118,7 +118,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText("Search by first name...")).toBeTruthy();
@@ -130,7 +130,7 @@ describe("AdminSearchBar", () => {
         selectedField="email"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText("Search by email...")).toBeTruthy();
@@ -144,7 +144,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={[]}
-      />
+      />,
     );
 
     expect(screen.getByPlaceholderText("Search by items...")).toBeTruthy();
@@ -158,7 +158,7 @@ describe("AdminSearchBar", () => {
         selectedField="firstName"
         onFieldChange={jest.fn()}
         fields={mockFields}
-      />
+      />,
     );
 
     expect(screen.getByText("search")).toBeTruthy();

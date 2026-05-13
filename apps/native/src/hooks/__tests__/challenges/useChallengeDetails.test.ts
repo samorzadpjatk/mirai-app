@@ -3,10 +3,12 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import { useChallengeDetails } from "../../challenges/useChallengeDetails";
 
 // Mock oRPC
-const mockChallengeGetByIdQueryOptions = jest.fn((params: { input: { id: string; tripId: string }; enabled?: boolean }) => ({
-  queryKey: ["challenge", "getById", params.input.id],
-  enabled: params.enabled,
-}));
+const mockChallengeGetByIdQueryOptions = jest.fn(
+  (params: { input: { id: string; tripId: string }; enabled?: boolean }) => ({
+    queryKey: ["challenge", "getById", params.input.id],
+    enabled: params.enabled,
+  }),
+);
 
 const mockUserGetMyQueryOptions = jest.fn((params: { input: Record<string, never> }) => ({
   queryKey: ["user", "getMy"],
@@ -17,12 +19,14 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     challenge: {
       getById: {
-        queryOptions: (params: { input: { id: string; tripId: string }; enabled?: boolean }) => mockChallengeGetByIdQueryOptions(params),
+        queryOptions: (params: { input: { id: string; tripId: string }; enabled?: boolean }) =>
+          mockChallengeGetByIdQueryOptions(params),
       },
     },
     user: {
       getMy: {
-        queryOptions: (params: { input: Record<string, never> }) => mockUserGetMyQueryOptions(params),
+        queryOptions: (params: { input: Record<string, never> }) =>
+          mockUserGetMyQueryOptions(params),
       },
     },
   },
@@ -205,7 +209,10 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", "trip-123"));
 
-    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "challenge-123", tripId: "trip-123" }, enabled: true });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({
+      input: { id: "challenge-123", tripId: "trip-123" },
+      enabled: true,
+    });
   });
 
   it("should disable query when challengeId is missing", () => {
@@ -221,7 +228,10 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails(null, "trip-123"));
 
-    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "", tripId: "trip-123" }, enabled: false });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({
+      input: { id: "", tripId: "trip-123" },
+      enabled: false,
+    });
   });
 
   it("should disable query when tripId is missing", () => {
@@ -237,7 +247,10 @@ describe("useChallengeDetails", () => {
 
     renderHook(() => useChallengeDetails("challenge-123", null));
 
-    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "challenge-123", tripId: "" }, enabled: false });
+    expect(mockChallengeGetByIdQueryOptions).toHaveBeenCalledWith({
+      input: { id: "challenge-123", tripId: "" },
+      enabled: false,
+    });
   });
 
   it("should handle challenge with all properties", async () => {

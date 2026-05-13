@@ -52,7 +52,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
         mutationOptions: (options: { onSuccess: () => void }) => mockToggleMutation(options),
       },
       upsertTemplate: {
-        mutationOptions: (options: { onSuccess: () => void }) => mockUpsertTemplateMutation(options),
+        mutationOptions: (options: { onSuccess: () => void }) =>
+          mockUpsertTemplateMutation(options),
       },
     },
   },
@@ -61,7 +62,6 @@ jest.mock("@mirai-app/orpc/client", () => ({
 jest.mock("@mirai-app/orpc/client/query", () => ({
   invalidateNotificationQueries: jest.fn(),
 }));
-
 
 // Mock React Query
 const mockUseQuery = jest.fn();
@@ -161,7 +161,9 @@ describe("useAdminSchedules", () => {
   });
 
   it("should create schedule", async () => {
-    const mockCreate = jest.fn<(data: unknown) => Promise<{ id: string }>>().mockResolvedValue({ id: "schedule-new" });
+    const mockCreate = jest
+      .fn<(data: unknown) => Promise<{ id: string }>>()
+      .mockResolvedValue({ id: "schedule-new" });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -191,14 +193,18 @@ describe("useAdminSchedules", () => {
     };
 
     await act(async () => {
-      await (result.current.createSchedule as unknown as (data: typeof createData) => Promise<void>)(createData);
+      await (
+        result.current.createSchedule as unknown as (data: typeof createData) => Promise<void>
+      )(createData);
     });
 
     expect(mockCreate).toHaveBeenCalledWith(createData);
   });
 
   it("should update schedule", async () => {
-    const mockUpdate = jest.fn<(data: unknown) => Promise<{ id: string }>>().mockResolvedValue({ id: "schedule-1" });
+    const mockUpdate = jest
+      .fn<(data: unknown) => Promise<{ id: string }>>()
+      .mockResolvedValue({ id: "schedule-1" });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -229,14 +235,18 @@ describe("useAdminSchedules", () => {
     };
 
     await act(async () => {
-      await (result.current.updateSchedule as unknown as (data: typeof updateData) => Promise<void>)(updateData);
+      await (
+        result.current.updateSchedule as unknown as (data: typeof updateData) => Promise<void>
+      )(updateData);
     });
 
     expect(mockUpdate).toHaveBeenCalledWith(updateData);
   });
 
   it("should delete schedule", async () => {
-    const mockDelete = jest.fn<(data: { id: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockDelete = jest
+      .fn<(data: { id: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -271,7 +281,9 @@ describe("useAdminSchedules", () => {
   });
 
   it("should toggle schedule active state", async () => {
-    const mockToggle = jest.fn<(data: { id: string }) => Promise<{ id: string; isActive: boolean }>>().mockResolvedValue({ id: "schedule-1", isActive: false });
+    const mockToggle = jest
+      .fn<(data: { id: string }) => Promise<{ id: string; isActive: boolean }>>()
+      .mockResolvedValue({ id: "schedule-1", isActive: false });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -310,7 +322,9 @@ describe("useAdminSchedules", () => {
   });
 
   it("should upsert template schedule", async () => {
-    const mockUpsert = jest.fn<(data: { tripId: string; templateKey: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "schedule-template" });
+    const mockUpsert = jest
+      .fn<(data: { tripId: string; templateKey: string }) => Promise<{ id: string }>>()
+      .mockResolvedValue({ id: "schedule-template" });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },

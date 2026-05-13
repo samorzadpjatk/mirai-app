@@ -37,9 +37,7 @@ describe("TripQuickAccessGrid", () => {
 
   it("should call onOpenGroups when Groups card is pressed", () => {
     const onOpenGroups = jest.fn();
-    renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenGroups={onOpenGroups} />
-    );
+    renderWithProviders(<TripQuickAccessGrid {...defaultProps} onOpenGroups={onOpenGroups} />);
 
     fireEvent.press(screen.getByText("Groups"));
     expect(onOpenGroups).toHaveBeenCalledTimes(1);
@@ -47,9 +45,7 @@ describe("TripQuickAccessGrid", () => {
 
   it("should call onOpenMap when Map card is pressed", () => {
     const onOpenMap = jest.fn();
-    renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenMap={onOpenMap} />
-    );
+    renderWithProviders(<TripQuickAccessGrid {...defaultProps} onOpenMap={onOpenMap} />);
 
     fireEvent.press(screen.getByText("Map"));
     expect(onOpenMap).toHaveBeenCalledTimes(1);
@@ -58,7 +54,7 @@ describe("TripQuickAccessGrid", () => {
   it("should call onOpenChallenges when Challenges card is pressed", () => {
     const onOpenChallenges = jest.fn();
     renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenChallenges={onOpenChallenges} />
+      <TripQuickAccessGrid {...defaultProps} onOpenChallenges={onOpenChallenges} />,
     );
 
     fireEvent.press(screen.getByText("Challenges"));
@@ -68,7 +64,7 @@ describe("TripQuickAccessGrid", () => {
   it("should call onOpenLeaderboard when Leaderboard card is pressed", () => {
     const onOpenLeaderboard = jest.fn();
     renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenLeaderboard={onOpenLeaderboard} />
+      <TripQuickAccessGrid {...defaultProps} onOpenLeaderboard={onOpenLeaderboard} />,
     );
 
     fireEvent.press(screen.getByText("Leaderboard"));
@@ -77,9 +73,7 @@ describe("TripQuickAccessGrid", () => {
 
   it("should call onOpenRewards when Rewards card is pressed", () => {
     const onOpenRewards = jest.fn();
-    renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenRewards={onOpenRewards} />
-    );
+    renderWithProviders(<TripQuickAccessGrid {...defaultProps} onOpenRewards={onOpenRewards} />);
 
     fireEvent.press(screen.getByText("Rewards"));
     expect(onOpenRewards).toHaveBeenCalledTimes(1);
@@ -87,9 +81,7 @@ describe("TripQuickAccessGrid", () => {
 
   it("should call onOpenInfo when Trip Info card is pressed", () => {
     const onOpenInfo = jest.fn();
-    renderWithProviders(
-      <TripQuickAccessGrid {...defaultProps} onOpenInfo={onOpenInfo} />
-    );
+    renderWithProviders(<TripQuickAccessGrid {...defaultProps} onOpenInfo={onOpenInfo} />);
 
     fireEvent.press(screen.getByText("Trip Info"));
     expect(onOpenInfo).toHaveBeenCalledTimes(1);

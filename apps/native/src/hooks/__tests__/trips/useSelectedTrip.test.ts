@@ -30,7 +30,10 @@ interface MutationConfig {
 }
 
 interface MutationResult {
-  mutate: (tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => void;
+  mutate: (
+    tripId: string | null,
+    options?: { onSuccess?: () => void; onError?: (error: unknown) => void },
+  ) => void;
   isLoading: boolean;
   error: Error | null;
 }
@@ -111,11 +114,16 @@ describe("useSelectedTrip", () => {
   });
 
   it("should set selected trip id", async () => {
-    const mutateMock = jest.fn((tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => {
-      if (options?.onSuccess) {
-        options.onSuccess();
-      }
-    });
+    const mutateMock = jest.fn(
+      (
+        tripId: string | null,
+        options?: { onSuccess?: () => void; onError?: (error: unknown) => void },
+      ) => {
+        if (options?.onSuccess) {
+          options.onSuccess();
+        }
+      },
+    );
 
     mockUseQuery.mockReturnValue({
       data: null,
@@ -140,11 +148,16 @@ describe("useSelectedTrip", () => {
   });
 
   it("should clear selected trip id when null is passed", async () => {
-    const mutateMock = jest.fn((tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => {
-      if (options?.onSuccess) {
-        options.onSuccess();
-      }
-    });
+    const mutateMock = jest.fn(
+      (
+        tripId: string | null,
+        options?: { onSuccess?: () => void; onError?: (error: unknown) => void },
+      ) => {
+        if (options?.onSuccess) {
+          options.onSuccess();
+        }
+      },
+    );
 
     mockUseQuery.mockReturnValue({
       data: "trip-123",
@@ -194,7 +207,7 @@ describe("useSelectedTrip", () => {
         expect.objectContaining({
           onSuccess: expect.any(Function),
           onError: expect.any(Function),
-        })
+        }),
       );
     });
   });
@@ -203,11 +216,13 @@ describe("useSelectedTrip", () => {
     const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const error = new Error("Storage error");
 
-    const mutateMock = jest.fn((tripId: string | null, options?: { onError?: (error: unknown) => void }) => {
-      if (options?.onError) {
-        options.onError(error);
-      }
-    });
+    const mutateMock = jest.fn(
+      (tripId: string | null, options?: { onError?: (error: unknown) => void }) => {
+        if (options?.onError) {
+          options.onError(error);
+        }
+      },
+    );
 
     mockUseQuery.mockReturnValue({
       data: null,
@@ -227,10 +242,7 @@ describe("useSelectedTrip", () => {
     });
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to persist selected trip in storage:",
-        error
-      );
+      expect(consoleSpy).toHaveBeenCalledWith("Failed to persist selected trip in storage:", error);
     });
 
     consoleSpy.mockRestore();
@@ -347,15 +359,17 @@ describe("useSelectedTrip", () => {
     mockUseMutation.mockImplementation((config?: MutationConfig) => {
       capturedMutationFn = config?.mutationFn;
       return {
-        mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
-          if (capturedMutationFn) {
-            void capturedMutationFn(tripId).then((result) => {
-              if (options?.onSuccess) {
-                options.onSuccess(result);
-              }
-            });
-          }
-        }),
+        mutate: jest.fn(
+          (tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
+            if (capturedMutationFn) {
+              void capturedMutationFn(tripId).then((result) => {
+                if (options?.onSuccess) {
+                  options.onSuccess(result);
+                }
+              });
+            }
+          },
+        ),
         isLoading: false,
         error: null,
       };
@@ -380,15 +394,17 @@ describe("useSelectedTrip", () => {
     mockUseMutation.mockImplementation((config?: MutationConfig) => {
       capturedMutationFn = config?.mutationFn;
       return {
-        mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
-          if (capturedMutationFn) {
-            void capturedMutationFn(tripId).then((result) => {
-              if (options?.onSuccess) {
-                options.onSuccess(result);
-              }
-            });
-          }
-        }),
+        mutate: jest.fn(
+          (tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
+            if (capturedMutationFn) {
+              void capturedMutationFn(tripId).then((result) => {
+                if (options?.onSuccess) {
+                  options.onSuccess(result);
+                }
+              });
+            }
+          },
+        ),
         isLoading: false,
         error: null,
       };
@@ -413,14 +429,16 @@ describe("useSelectedTrip", () => {
     mockUseMutation.mockImplementation((config?: MutationConfig) => {
       capturedOnSuccess = config?.onSuccess;
       return {
-        mutate: jest.fn((tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
-          void mockSetSelectedTripIdInStorage(tripId).then(() => {
-            const onSuccessCallback = options?.onSuccess ?? capturedOnSuccess;
-            if (onSuccessCallback) {
-              onSuccessCallback(tripId);
-            }
-          });
-        }),
+        mutate: jest.fn(
+          (tripId: string | null, options?: { onSuccess?: (data: string | null) => void }) => {
+            void mockSetSelectedTripIdInStorage(tripId).then(() => {
+              const onSuccessCallback = options?.onSuccess ?? capturedOnSuccess;
+              if (onSuccessCallback) {
+                onSuccessCallback(tripId);
+              }
+            });
+          },
+        ),
         isLoading: false,
         error: null,
       };
@@ -468,24 +486,34 @@ describe("useSelectedTrip", () => {
 
     if (capturedOnError) {
       capturedOnError(storageError);
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to persist selected trip in storage:", storageError);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Failed to persist selected trip in storage:",
+        storageError,
+      );
     }
 
     consoleSpy.mockRestore();
   });
 
   it("should handle setSelectedTripId with callback execution", async () => {
-    const mutateMock = jest.fn((tripId: string | null, options?: { onSuccess?: () => void; onError?: (error: unknown) => void }) => {
-      void mockSetSelectedTripIdInStorage(tripId).then(() => {
-        if (options?.onSuccess) {
-          options.onSuccess();
-        }
-      }).catch((err: Error) => {
-        if (options?.onError) {
-          options.onError(err);
-        }
-      });
-    });
+    const mutateMock = jest.fn(
+      (
+        tripId: string | null,
+        options?: { onSuccess?: () => void; onError?: (error: unknown) => void },
+      ) => {
+        void mockSetSelectedTripIdInStorage(tripId)
+          .then(() => {
+            if (options?.onSuccess) {
+              options.onSuccess();
+            }
+          })
+          .catch((err: Error) => {
+            if (options?.onError) {
+              options.onError(err);
+            }
+          });
+      },
+    );
 
     mockUseMutation.mockReturnValue({
       mutate: mutateMock,

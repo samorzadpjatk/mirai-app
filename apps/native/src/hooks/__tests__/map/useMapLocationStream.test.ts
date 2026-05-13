@@ -97,16 +97,23 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle upsert event and add location", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John", lastName: "Doe", image: "https://example.com/john.jpg" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: {
+              id: "user-1",
+              firstName: "John",
+              lastName: "Doe",
+              image: "https://example.com/john.jpg",
+            },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -124,16 +131,18 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle upsert event with partial user data", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "Jane" },
-          coords: { latitude: 52.24, longitude: 21.02 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "Jane" },
+            coords: { latitude: 52.24, longitude: 21.02 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -146,15 +155,17 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle upsert event without user data", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          coords: { latitude: 52.25, longitude: 21.03 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            coords: { latitude: 52.25, longitude: 21.03 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -168,17 +179,19 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle delete event and remove location", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John", lastName: "Doe" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "John", lastName: "Doe" },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-      { type: "delete", userId: "user-1" },
-    ]));
+        { type: "delete", userId: "user-1" },
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -187,17 +200,19 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle delete event with missing userId gracefully", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "John" },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-      { type: "delete", userId: null },
-    ]));
+        { type: "delete", userId: null },
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -205,24 +220,26 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle multiple upsert events for different users", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John", lastName: "Doe" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "John", lastName: "Doe" },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-2", firstName: "Jane", lastName: "Smith" },
-          coords: { latitude: 52.24, longitude: 21.02 },
-          timestamp: 1704067201000,
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-2", firstName: "Jane", lastName: "Smith" },
+            coords: { latitude: 52.24, longitude: 21.02 },
+            timestamp: 1704067201000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -230,24 +247,26 @@ describe("useMapLocationStream", () => {
   });
 
   it("should update existing location on upsert", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "John" },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "John", lastName: "Updated" },
-          coords: { latitude: 52.25, longitude: 21.05 },
-          timestamp: 1704067201000,
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "John", lastName: "Updated" },
+            coords: { latitude: 52.25, longitude: 21.05 },
+            timestamp: 1704067201000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 
@@ -257,27 +276,34 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle subscription errors", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
     mockCall.mockResolvedValue(createStream([], new Error("Subscription failed")));
 
     renderHook(() => useMapLocationStream(true));
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Location subscription error:", expect.any(Error));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Location subscription error:",
+        expect.any(Error),
+      );
     });
 
     consoleErrorSpy.mockRestore();
   });
 
   it("should handle UNAUTHORIZED errors as warnings", async () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
     mockCall.mockResolvedValue(createStream([], new Error("UNAUTHORIZED: User not logged in")));
 
     renderHook(() => useMapLocationStream(true));
 
     await waitFor(() => {
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Location subscription unauthorized - user may not be logged in"
+        "Location subscription unauthorized - user may not be logged in",
       );
     });
 
@@ -307,7 +333,9 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle non-Error objects in error callback", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
     mockCall.mockResolvedValue(createStream([], "string error"));
 
     renderHook(() => useMapLocationStream(true));
@@ -320,16 +348,18 @@ describe("useMapLocationStream", () => {
   });
 
   it("should handle upsert with empty user name", async () => {
-    mockCall.mockResolvedValue(createStream([
-      {
-        type: "upsert",
-        location: {
-          user: { id: "user-1", firstName: "", lastName: "" },
-          coords: { latitude: 52.23, longitude: 21.01 },
-          timestamp: 1704067200000,
+    mockCall.mockResolvedValue(
+      createStream([
+        {
+          type: "upsert",
+          location: {
+            user: { id: "user-1", firstName: "", lastName: "" },
+            coords: { latitude: 52.23, longitude: 21.01 },
+            timestamp: 1704067200000,
+          },
         },
-      },
-    ]));
+      ]),
+    );
 
     const { result } = renderHook(() => useMapLocationStream(true));
 

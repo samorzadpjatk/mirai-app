@@ -4,25 +4,27 @@ import { useCommunityFeed } from "../../community/useCommunityFeed";
 
 // Mock oRPC client
 const mockToggleReaction = jest.fn();
-const mockGetByTripQuery = jest.fn<(input: unknown) => Promise<{
-  activities: {
-    id: string;
-    activityType: string;
-    reactionsSummary?: {
-      total: number;
-      counts: Record<string, number>;
-      myReactions: string[];
+const mockGetByTripQuery = jest.fn<
+  (input: unknown) => Promise<{
+    activities: {
+      id: string;
+      activityType: string;
+      reactionsSummary?: {
+        total: number;
+        counts: Record<string, number>;
+        myReactions: string[];
+      };
+    }[];
+    pagination: {
+      total: number | null;
+      page: number | null;
+      pageSize: number;
+      totalPages: number | null;
+      hasMore: boolean;
     };
-  }[];
-  pagination: {
-    total: number | null;
-    page: number | null;
-    pageSize: number;
-    totalPages: number | null;
-    hasMore: boolean;
-  };
-  nextCursor: unknown;
-}>>();
+    nextCursor: unknown;
+  }>
+>();
 
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
@@ -109,7 +111,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: null,
         selectedFilter: "all",
-      })
+      }),
     );
 
     expect(result.current.filteredActivities).toEqual([]);
@@ -182,7 +184,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -233,7 +235,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "user_post",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -284,7 +286,7 @@ describe("useCommunityFeed", () => {
         selectedTripId: "trip-1",
         selectedFilter: "all",
         focusActivityId: "activity-2",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -324,21 +326,25 @@ describe("useCommunityFeed", () => {
       fetchNextPage: jest.fn(),
     });
 
-    const mockMutateAsync = jest.fn<() => Promise<{
-      activityId: string;
-      reactionsSummary: {
-        total: number;
-        counts: { heart: number; fire: number; clap: number; star: number };
-        myReactions: string[];
-      };
-    }>>().mockResolvedValue({
-      activityId: "activity-1",
-      reactionsSummary: {
-        total: 4,
-        counts: { heart: 2, fire: 1, clap: 1, star: 0 },
-        myReactions: [],
-      },
-    });
+    const mockMutateAsync = jest
+      .fn<
+        () => Promise<{
+          activityId: string;
+          reactionsSummary: {
+            total: number;
+            counts: { heart: number; fire: number; clap: number; star: number };
+            myReactions: string[];
+          };
+        }>
+      >()
+      .mockResolvedValue({
+        activityId: "activity-1",
+        reactionsSummary: {
+          total: 4,
+          counts: { heart: 2, fire: 1, clap: 1, star: 0 },
+          myReactions: [],
+        },
+      });
 
     mockUseMutation.mockReturnValue({
       mutateAsync: mockMutateAsync,
@@ -348,7 +354,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -379,7 +385,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     expect(result.current.feedQuery.isLoading).toBe(true);
@@ -420,7 +426,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -434,14 +440,22 @@ describe("useCommunityFeed", () => {
         pages: [
           {
             activities: [
-              { id: "activity-1", activityType: "user_post", reactionsSummary: { total: 0, counts: {}, myReactions: [] } },
+              {
+                id: "activity-1",
+                activityType: "user_post",
+                reactionsSummary: { total: 0, counts: {}, myReactions: [] },
+              },
             ],
             pagination: { total: 2, page: 1, pageSize: 1, totalPages: 2, hasMore: true },
             nextCursor: { id: "cursor-1", createdAt: new Date(), isPinned: false },
           },
           {
             activities: [
-              { id: "activity-2", activityType: "admin_announcement", reactionsSummary: { total: 0, counts: {}, myReactions: [] } },
+              {
+                id: "activity-2",
+                activityType: "admin_announcement",
+                reactionsSummary: { total: 0, counts: {}, myReactions: [] },
+              },
             ],
             pagination: { total: 2, page: 2, pageSize: 1, totalPages: 2, hasMore: false },
             nextCursor: null,
@@ -462,7 +476,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -493,7 +507,9 @@ describe("useCommunityFeed", () => {
       const opts = options as { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> };
       // Simulate calling the queryFn
       if (opts.queryFn) {
-        opts.queryFn({ pageParam: null }).catch(() => { /* noop */ });
+        opts.queryFn({ pageParam: null }).catch(() => {
+          /* noop */
+        });
       }
       return {
         data: {
@@ -520,7 +536,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Verify queryFn was invoked
@@ -534,7 +550,9 @@ describe("useCommunityFeed", () => {
       const opts = options as { queryFn?: (ctx: { pageParam: null }) => Promise<unknown> };
       // Simulate calling the queryFn
       if (opts.queryFn) {
-        opts.queryFn({ pageParam: null }).catch(() => { /* noop */ });
+        opts.queryFn({ pageParam: null }).catch(() => {
+          /* noop */
+        });
       }
       return {
         data: {
@@ -561,7 +579,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: null,
         selectedFilter: "all",
-      })
+      }),
     );
 
     expect(result.current.filteredActivities).toEqual([]);
@@ -605,7 +623,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Verify the hook was rendered
@@ -645,7 +663,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      const opts = options as {
+        onMutate?: (variables: { activityId: string }) => Promise<unknown>;
+      };
       capturedOnMutate = opts.onMutate;
       return {
         mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
@@ -663,7 +683,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Verify onMutate was captured
@@ -688,7 +708,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      const opts = options as {
+        onMutate?: (variables: { activityId: string }) => Promise<unknown>;
+      };
       capturedOnMutate = opts.onMutate;
       return {
         mutateAsync: jest.fn(),
@@ -699,7 +721,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: null,
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Call onMutate when no trip selected - should return undefined
@@ -710,7 +732,9 @@ describe("useCommunityFeed", () => {
   });
 
   it("should handle onError rollback", () => {
-    let capturedOnError: ((error: Error, variables: { activityId: string }, context: unknown) => void) | undefined;
+    let capturedOnError:
+      | ((error: Error, variables: { activityId: string }, context: unknown) => void)
+      | undefined;
     const previousData = {
       pages: [
         {
@@ -736,10 +760,14 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void };
+      const opts = options as {
+        onError?: (error: Error, variables: { activityId: string }, context: unknown) => void;
+      };
       capturedOnError = opts.onError;
       return {
-        mutateAsync: jest.fn<() => Promise<unknown>>().mockRejectedValue(new Error("Toggle failed")),
+        mutateAsync: jest
+          .fn<() => Promise<unknown>>()
+          .mockRejectedValue(new Error("Toggle failed")),
       };
     });
 
@@ -747,21 +775,27 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Call onError to test rollback
     if (capturedOnError) {
-      capturedOnError(new Error("Toggle failed"), { activityId: "activity-1" }, {
-        queryKey: ["community-feed", "trip-1", 30],
-        previousData,
-      });
+      capturedOnError(
+        new Error("Toggle failed"),
+        { activityId: "activity-1" },
+        {
+          queryKey: ["community-feed", "trip-1", 30],
+          previousData,
+        },
+      );
       expect(mockSetQueryData).toHaveBeenCalled();
     }
   });
 
   it("should handle onError when no context provided", () => {
-    let capturedOnError: ((error: Error, variables: { activityId: string }, context: unknown) => void) | undefined;
+    let capturedOnError:
+      | ((error: Error, variables: { activityId: string }, context: unknown) => void)
+      | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
       data: null,
@@ -772,7 +806,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onError?: (error: Error, variables: { activityId: string }, context: unknown) => void };
+      const opts = options as {
+        onError?: (error: Error, variables: { activityId: string }, context: unknown) => void;
+      };
       capturedOnError = opts.onError;
       return {
         mutateAsync: jest.fn(),
@@ -783,7 +819,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Call onError with no context - should not throw
@@ -795,7 +831,9 @@ describe("useCommunityFeed", () => {
   });
 
   it("should handle onSuccess with server response", () => {
-    let capturedOnSuccess: ((result: unknown, variables: { activityId: string }, context: unknown) => void) | undefined;
+    let capturedOnSuccess:
+      | ((result: unknown, variables: { activityId: string }, context: unknown) => void)
+      | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
@@ -820,7 +858,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void };
+      const opts = options as {
+        onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void;
+      };
       capturedOnSuccess = opts.onSuccess;
       return {
         mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
@@ -838,7 +878,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Call onSuccess to test server response update
@@ -853,14 +893,16 @@ describe("useCommunityFeed", () => {
           },
         },
         { activityId: "activity-1" },
-        null
+        null,
       );
       expect(mockSetQueryData).toHaveBeenCalled();
     }
   });
 
   it("should handle onSuccess with undefined summary", () => {
-    let capturedOnSuccess: ((result: unknown, variables: { activityId: string }, context: unknown) => void) | undefined;
+    let capturedOnSuccess:
+      | ((result: unknown, variables: { activityId: string }, context: unknown) => void)
+      | undefined;
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
@@ -885,7 +927,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void };
+      const opts = options as {
+        onSuccess?: (result: unknown, variables: { activityId: string }, context: unknown) => void;
+      };
       capturedOnSuccess = opts.onSuccess;
       return {
         mutateAsync: jest.fn(),
@@ -896,7 +940,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Call onSuccess with no context - should still work
@@ -907,7 +951,7 @@ describe("useCommunityFeed", () => {
           reactionsSummary: { total: 5, counts: { heart: 3 }, myReactions: ["heart"] },
         },
         { activityId: "activity-1" },
-        null
+        null,
       );
       // Should still call setQueryData even without context
       expect(mockSetQueryData).toHaveBeenCalled();
@@ -959,7 +1003,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -1012,7 +1056,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -1059,7 +1103,7 @@ describe("useCommunityFeed", () => {
         selectedTripId: "trip-1",
         selectedFilter: "all",
         focusActivityId: "non-existent-activity",
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -1103,7 +1147,9 @@ describe("useCommunityFeed", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const opts = options as { onMutate?: (variables: { activityId: string }) => Promise<unknown> };
+      const opts = options as {
+        onMutate?: (variables: { activityId: string }) => Promise<unknown>;
+      };
       capturedOnMutate = opts.onMutate;
       return {
         mutateAsync: jest.fn<() => Promise<unknown>>().mockResolvedValue({
@@ -1121,7 +1167,7 @@ describe("useCommunityFeed", () => {
       useCommunityFeed({
         selectedTripId: "trip-1",
         selectedFilter: "all",
-      })
+      }),
     );
 
     // Test that onMutate uses function updater for applyReactionSummaryToFeed

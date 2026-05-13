@@ -27,7 +27,7 @@ describe("NotificationFilters", () => {
         groups={groups}
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
-      />
+      />,
     );
 
     expect(getByPlaceholderText("Search notifications...")).toBeTruthy();
@@ -50,7 +50,7 @@ describe("NotificationFilters", () => {
         groups={groups}
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
-      />
+      />,
     );
 
     fireEvent.changeText(getByPlaceholderText("Search notifications..."), "alert");
@@ -67,7 +67,7 @@ describe("NotificationFilters", () => {
         groups={groups}
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
-      />
+      />,
     );
 
     fireEvent.press(getByText("Sent"));

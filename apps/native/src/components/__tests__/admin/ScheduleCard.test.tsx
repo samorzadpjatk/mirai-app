@@ -25,7 +25,6 @@ const baseSchedule: NotificationSchedule = {
 };
 
 describe("ScheduleCard", () => {
-
   const onEdit = jest.fn();
   const onDelete = jest.fn();
   const onToggle = jest.fn();
@@ -43,7 +42,7 @@ describe("ScheduleCard", () => {
         onDelete={onDelete}
         onToggle={onToggle}
         onTrigger={onTrigger}
-      />
+      />,
     );
 
     expect(screen.getByText("Morning Update")).toBeOnTheScreen();
@@ -60,7 +59,7 @@ describe("ScheduleCard", () => {
         onDelete={onDelete}
         onToggle={onToggle}
         onTrigger={onTrigger}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByText("Edit"));
@@ -83,7 +82,7 @@ describe("ScheduleCard", () => {
         onDelete={onDelete}
         onToggle={onToggle}
         onTrigger={onTrigger}
-      />
+      />,
     );
 
     expect(screen.getByText("Inactive")).toBeOnTheScreen();

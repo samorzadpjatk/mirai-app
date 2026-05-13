@@ -9,7 +9,12 @@ jest.mock("~/components/common/ui", () => {
   const { View, Text, Pressable } = require("react-native");
 
   return {
-    AppModalShell: ({ children, visible, title, onClose }: {
+    AppModalShell: ({
+      children,
+      visible,
+      title,
+      onClose,
+    }: {
       children: React.ReactNode;
       visible: boolean;
       title: string;
@@ -34,7 +39,7 @@ describe("AdminModal", () => {
     const { getByText } = renderWithProviders(
       <AdminModal visible onClose={jest.fn()} title="Test Modal" actions={<Text>Actions</Text>}>
         <Text>Modal Content</Text>
-      </AdminModal>
+      </AdminModal>,
     );
 
     expect(getByText("Test Modal")).toBeTruthy();
@@ -46,7 +51,7 @@ describe("AdminModal", () => {
     const { queryByText } = renderWithProviders(
       <AdminModal visible={false} onClose={jest.fn()} title="Test Modal">
         <Text>Modal Content</Text>
-      </AdminModal>
+      </AdminModal>,
     );
 
     expect(queryByText("Test Modal")).toBeNull();
@@ -57,7 +62,9 @@ describe("AdminModal", () => {
 describe("AdminModalButton", () => {
   it("calls onPress when enabled", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(<AdminModalButton title="Confirm" onPress={onPress} />);
+    const { getByText } = renderWithProviders(
+      <AdminModalButton title="Confirm" onPress={onPress} />,
+    );
 
     fireEvent.press(getByText("Confirm"));
     expect(onPress).toHaveBeenCalled();
@@ -65,14 +72,18 @@ describe("AdminModalButton", () => {
 
   it("does not call onPress when disabled", () => {
     const onPress = jest.fn();
-    const { getByText } = renderWithProviders(<AdminModalButton title="Disabled" onPress={onPress} disabled />);
+    const { getByText } = renderWithProviders(
+      <AdminModalButton title="Disabled" onPress={onPress} disabled />,
+    );
 
     fireEvent.press(getByText("Disabled"));
     expect(onPress).not.toHaveBeenCalled();
   });
 
   it("shows a spinner when loading", () => {
-    const { queryByText } = renderWithProviders(<AdminModalButton title="Loading" onPress={jest.fn()} loading />);
+    const { queryByText } = renderWithProviders(
+      <AdminModalButton title="Loading" onPress={jest.fn()} loading />,
+    );
 
     expect(queryByText("Loading")).toBeNull();
   });

@@ -8,23 +8,25 @@ jest.mock("@tanstack/react-query", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
-const mockGroupGetMyQueryOptions = jest.fn((params: { input: { tripId: string }; enabled?: boolean }) => ({
-  queryKey: ["group", "getMy", params.input.tripId],
-  enabled: params.enabled,
-}));
+const mockGroupGetMyQueryOptions = jest.fn(
+  (params: { input: { tripId: string }; enabled?: boolean }) => ({
+    queryKey: ["group", "getMy", params.input.tripId],
+    enabled: params.enabled,
+  }),
+);
 
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     group: {
       getMy: {
-        queryOptions: (params: { input: { tripId: string }; enabled?: boolean }) => mockGroupGetMyQueryOptions(params),
+        queryOptions: (params: { input: { tripId: string }; enabled?: boolean }) =>
+          mockGroupGetMyQueryOptions(params),
       },
     },
   },
 }));
 
 describe("useMyGroup", () => {
-
   describe("query initialization", () => {
     it("should fetch my group when tripId is provided", () => {
       mockUseQuery.mockReturnValue({
@@ -35,7 +37,10 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup("trip-123"));
 
-      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "trip-123" }, enabled: true });
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({
+        input: { tripId: "trip-123" },
+        enabled: true,
+      });
     });
 
     it("should disable query when tripId is null", () => {
@@ -47,7 +52,10 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup(null));
 
-      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "" }, enabled: false });
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({
+        input: { tripId: "" },
+        enabled: false,
+      });
     });
 
     it("should disable query when tripId is undefined", () => {
@@ -59,7 +67,10 @@ describe("useMyGroup", () => {
 
       renderHook(() => useMyGroup(undefined));
 
-      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({ input: { tripId: "" }, enabled: false });
+      expect(mockGroupGetMyQueryOptions).toHaveBeenCalledWith({
+        input: { tripId: "" },
+        enabled: false,
+      });
     });
   });
 

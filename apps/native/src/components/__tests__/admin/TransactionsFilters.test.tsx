@@ -24,7 +24,7 @@ describe("TransactionsFilters", () => {
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
         groups={groups}
-      />
+      />,
     );
 
     expect(getByPlaceholderText("Search transactions...")).toBeTruthy();
@@ -41,7 +41,7 @@ describe("TransactionsFilters", () => {
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
         groups={groups}
-      />
+      />,
     );
 
     fireEvent.changeText(getByPlaceholderText("Search transactions..."), "coffee");
@@ -56,7 +56,7 @@ describe("TransactionsFilters", () => {
         selectedGroupId="all"
         onGroupChange={mockOnGroupChange}
         groups={groups}
-      />
+      />,
     );
 
     fireEvent.press(getByText("Group A"));

@@ -13,7 +13,7 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add item"
         testID="fab-button"
-      />
+      />,
     );
 
     expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
@@ -29,7 +29,7 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         testID="fab-button"
-      />
+      />,
     );
 
     await user.press(screen.getByTestId("fab-button"));
@@ -44,7 +44,7 @@ describe("FloatingActionButton", () => {
         accessibilityLabel="Add"
         disabled={true}
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");
@@ -59,7 +59,7 @@ describe("FloatingActionButton", () => {
         accessibilityLabel="Add"
         disabled={false}
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");
@@ -75,7 +75,7 @@ describe("FloatingActionButton", () => {
         accessibilityLabel="Add"
         style={customStyle}
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");
@@ -90,7 +90,7 @@ describe("FloatingActionButton", () => {
         accessibilityLabel="Add"
         iconSize={48}
         testID="fab-button"
-      />
+      />,
     );
 
     expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
@@ -103,7 +103,7 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         testID="fab-button"
-      />
+      />,
     );
 
     expect(screen.getByTestId("fab-button")).toBeOnTheScreen();
@@ -117,7 +117,7 @@ describe("FloatingActionButton", () => {
         accessibilityLabel="Add"
         activeOpacity={0.5}
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");
@@ -131,7 +131,7 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add"
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");
@@ -145,7 +145,7 @@ describe("FloatingActionButton", () => {
         iconName="add"
         accessibilityLabel="Add new item"
         testID="fab-button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("fab-button");

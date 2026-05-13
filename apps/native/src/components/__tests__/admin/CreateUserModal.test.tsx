@@ -7,7 +7,17 @@ jest.mock("~/components/common/ui", () => {
   const { Text, TouchableOpacity, View, TextInput } = require("react-native");
 
   return {
-    AppModalShell: ({ children, visible, title, onClose }: { children: ReactNode; visible: boolean; title: string; onClose: () => void }) => {
+    AppModalShell: ({
+      children,
+      visible,
+      title,
+      onClose,
+    }: {
+      children: ReactNode;
+      visible: boolean;
+      title: string;
+      onClose: () => void;
+    }) => {
       if (!visible) return null;
       return (
         <View>
@@ -19,7 +29,15 @@ jest.mock("~/components/common/ui", () => {
         </View>
       );
     },
-    FormField: ({ children, label, required }: { children: ReactNode; label: string; required?: boolean }) => {
+    FormField: ({
+      children,
+      label,
+      required,
+    }: {
+      children: ReactNode;
+      label: string;
+      required?: boolean;
+    }) => {
       return (
         <View>
           <Text>{required ? `${label}*` : label}</Text>
@@ -27,7 +45,15 @@ jest.mock("~/components/common/ui", () => {
         </View>
       );
     },
-    ThemedTextInput: ({ value, onChangeText, placeholder }: { value: string; onChangeText: (text: string) => void; placeholder?: string }) => {
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+    }: {
+      value: string;
+      onChangeText: (text: string) => void;
+      placeholder?: string;
+    }) => {
       return <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />;
     },
   };
@@ -43,7 +69,9 @@ describe("CreateUserModal", () => {
 
   it("creates a user with trimmed values", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />);
+    renderWithProviders(
+      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />,
+    );
 
     await user.type(screen.getByPlaceholderText("Enter first name..."), "  Jane  ");
     await user.type(screen.getByPlaceholderText("Enter last name..."), "  Smith  ");
@@ -60,7 +88,7 @@ describe("CreateUserModal", () => {
   it("resets fields when cancelled", async () => {
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />
+      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />,
     );
 
     await user.type(screen.getByPlaceholderText("Enter first name..."), "Jane");
@@ -73,7 +101,9 @@ describe("CreateUserModal", () => {
 
   it("does not create when fields are empty", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />);
+    renderWithProviders(
+      <CreateUserModal visible onClose={onClose} onCreate={onCreate} isCreating={false} />,
+    );
 
     await user.press(screen.getByText("Create"));
     expect(onCreate).not.toHaveBeenCalled();

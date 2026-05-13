@@ -48,7 +48,12 @@ describe("SubmissionReviewCard", () => {
 
   it("renders submission data", () => {
     const { getByText } = renderWithProviders(
-      <SubmissionReviewCard submission={baseSubmission} isReviewing={false} onApprove={jest.fn()} onReject={jest.fn()} />
+      <SubmissionReviewCard
+        submission={baseSubmission}
+        isReviewing={false}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
     );
 
     expect(getByText("Test Group")).toBeTruthy();
@@ -61,7 +66,12 @@ describe("SubmissionReviewCard", () => {
     const onApprove = jest.fn();
     const onReject = jest.fn();
     const { getByText } = renderWithProviders(
-      <SubmissionReviewCard submission={baseSubmission} isReviewing={false} onApprove={onApprove} onReject={onReject} />
+      <SubmissionReviewCard
+        submission={baseSubmission}
+        isReviewing={false}
+        onApprove={onApprove}
+        onReject={onReject}
+      />,
     );
 
     fireEvent.press(getByText("Set approved"));
@@ -80,7 +90,12 @@ describe("SubmissionReviewCard", () => {
     };
 
     const { getByText, queryByText } = renderWithProviders(
-      <SubmissionReviewCard submission={approved} isReviewing={false} onApprove={jest.fn()} onReject={jest.fn()} />
+      <SubmissionReviewCard
+        submission={approved}
+        isReviewing={false}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
     );
 
     expect(getByText(/Admin User/)).toBeTruthy();
@@ -89,9 +104,18 @@ describe("SubmissionReviewCard", () => {
   });
 
   it("shows rejection reason for rejected submissions", () => {
-    const rejected = { ...baseSubmission, status: "REJECTED" as const, rejectionReason: "Invalid submission" };
+    const rejected = {
+      ...baseSubmission,
+      status: "REJECTED" as const,
+      rejectionReason: "Invalid submission",
+    };
     const { getByText, queryByText } = renderWithProviders(
-      <SubmissionReviewCard submission={rejected} isReviewing={false} onApprove={jest.fn()} onReject={jest.fn()} />
+      <SubmissionReviewCard
+        submission={rejected}
+        isReviewing={false}
+        onApprove={jest.fn()}
+        onReject={jest.fn()}
+      />,
     );
 
     expect(getByText("Invalid submission")).toBeTruthy();

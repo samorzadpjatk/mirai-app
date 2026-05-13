@@ -41,7 +41,7 @@ const mockSubmission = createMockSubmission();
 describe("QueuedSubmissionCard", () => {
   it("should render group name", () => {
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("Test Group")).toBeTruthy();
@@ -49,7 +49,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should render group initials", () => {
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("TG")).toBeTruthy();
@@ -57,7 +57,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should render 'Next in line' hint", () => {
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("Next in line")).toBeTruthy();
@@ -65,7 +65,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should render time icon", () => {
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("time")).toBeTruthy();
@@ -73,7 +73,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should render 'Queued submission' placeholder text", () => {
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("Queued submission")).toBeTruthy();
@@ -81,7 +81,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should apply maxCardHeight", () => {
     const { getByTestId } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={400} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={400} />,
     );
 
     const card = getByTestId("queued-submission-card");
@@ -99,7 +99,7 @@ describe("QueuedSubmissionCard", () => {
     });
 
     const { getByText } = renderWithProviders(
-      <QueuedSubmissionCard submission={differentSubmission} maxCardHeight={500} />
+      <QueuedSubmissionCard submission={differentSubmission} maxCardHeight={500} />,
     );
 
     expect(getByText("Another Group Name")).toBeTruthy();
@@ -107,7 +107,7 @@ describe("QueuedSubmissionCard", () => {
 
   it("should render with different maxCardHeight values", () => {
     const { getByText, rerender } = renderWithProviders(
-      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={300} />
+      <QueuedSubmissionCard submission={mockSubmission} maxCardHeight={300} />,
     );
 
     expect(getByText("Test Group")).toBeTruthy();

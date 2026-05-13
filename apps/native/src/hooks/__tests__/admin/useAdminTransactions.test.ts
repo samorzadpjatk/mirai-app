@@ -3,10 +3,19 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminTransactions } from "../../admin/useAdminTransactions";
 
 // Mock oRPC
-const mockGetAllInfiniteOptions = jest.fn((options: { input: unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => ({
-  queryKey: ["coinTransaction", "getAll"],
-  ...options,
-}));
+const mockGetAllInfiniteOptions = jest.fn(
+  (options: {
+    input: unknown;
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }) => unknown;
+    enabled: boolean;
+  }) => ({
+    queryKey: ["coinTransaction", "getAll"],
+    ...options,
+  }),
+);
 
 const mockGetAllNamesQuery = jest.fn((options: { input: unknown; enabled: boolean }) => ({
   queryKey: ["group", "getAllNames"],
@@ -17,12 +26,20 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     coinTransaction: {
       getAll: {
-        infiniteOptions: (options: { input: unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => mockGetAllInfiniteOptions(options),
+        infiniteOptions: (options: {
+          input: unknown;
+          initialPageParam: number;
+          getNextPageParam: (lastPage: {
+            pagination: { hasMore: boolean; offset: number; limit: number };
+          }) => unknown;
+          enabled: boolean;
+        }) => mockGetAllInfiniteOptions(options),
       },
     },
     group: {
       getAllNames: {
-        queryOptions: (options: { input: unknown; enabled: boolean }) => mockGetAllNamesQuery(options),
+        queryOptions: (options: { input: unknown; enabled: boolean }) =>
+          mockGetAllNamesQuery(options),
       },
     },
   },
@@ -162,7 +179,16 @@ describe("useAdminTransactions", () => {
       data: {
         pages: [
           {
-            transactions: [{ id: "tx-1", amount: 100, reason: "Test", createdAt: "2024-01-01T00:00:00Z", group: { id: "g-1", name: "G1" }, admin: { id: "a-1", firstName: "A", lastName: "B" } }],
+            transactions: [
+              {
+                id: "tx-1",
+                amount: 100,
+                reason: "Test",
+                createdAt: "2024-01-01T00:00:00Z",
+                group: { id: "g-1", name: "G1" },
+                admin: { id: "a-1", firstName: "A", lastName: "B" },
+              },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 50 },
           },
         ],
@@ -284,8 +310,14 @@ describe("useAdminTransactions", () => {
     mockUseInfiniteQuery.mockReturnValue({
       data: {
         pages: [
-          { transactions: [mockTransactions[0]], pagination: { hasMore: true, offset: 0, limit: 50 } },
-          { transactions: [mockTransactions[1]], pagination: { hasMore: false, offset: 50, limit: 50 } },
+          {
+            transactions: [mockTransactions[0]],
+            pagination: { hasMore: true, offset: 0, limit: 50 },
+          },
+          {
+            transactions: [mockTransactions[1]],
+            pagination: { hasMore: false, offset: 50, limit: 50 },
+          },
         ],
       },
       isLoading: false,

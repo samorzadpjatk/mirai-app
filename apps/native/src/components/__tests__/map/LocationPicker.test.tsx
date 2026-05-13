@@ -27,9 +27,12 @@ jest.mock("@maplibre/maplibre-react-native", () => {
     return createElement(View, { testID: "camera" });
   });
 
-  const MapView = (props: MapViewProps) => createElement(View, { testID: "map-view" }, props.children);
-  const MarkerView = (props: MarkerViewProps) => createElement(View, { testID: "marker-view" }, props.children);
-  const RasterSource = (props: RasterSourceProps) => createElement(View, { testID: "raster-source" }, props.children);
+  const MapView = (props: MapViewProps) =>
+    createElement(View, { testID: "map-view" }, props.children);
+  const MarkerView = (props: MarkerViewProps) =>
+    createElement(View, { testID: "marker-view" }, props.children);
+  const RasterSource = (props: RasterSourceProps) =>
+    createElement(View, { testID: "raster-source" }, props.children);
   const RasterLayer = () => createElement(View, { testID: "raster-layer" });
 
   return {
@@ -53,7 +56,7 @@ interface LocationPosition {
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ status: "granted" })),
   getCurrentPositionAsync: jest.fn(() =>
-    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } })
+    Promise.resolve({ coords: { latitude: 52.23, longitude: 21.01 } }),
   ),
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
   Accuracy: { Balanced: 2 },
@@ -67,7 +70,8 @@ jest.mock("react-native-safe-area-context", () => {
   const { createElement } = require("react");
   const { View } = require("react-native");
 
-  const SafeAreaProvider = (props: SafeAreaProviderProps) => createElement(View, null, props.children);
+  const SafeAreaProvider = (props: SafeAreaProviderProps) =>
+    createElement(View, null, props.children);
 
   return {
     SafeAreaProvider,

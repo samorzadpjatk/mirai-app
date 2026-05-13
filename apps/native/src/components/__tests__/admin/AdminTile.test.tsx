@@ -38,7 +38,7 @@ describe("AdminTile", () => {
         icon="people"
         accent="#00ced1"
         accentBg="rgba(0, 206, 209, 0.1)"
-      />
+      />,
     );
 
     expect(screen.getByText("Users")).toBeOnTheScreen();
@@ -53,7 +53,7 @@ describe("AdminTile", () => {
         icon="people"
         accent="#00ced1"
         accentBg="rgba(0, 206, 209, 0.1)"
-      />
+      />,
     );
 
     expect(screen.getByText("people")).toBeOnTheScreen();
@@ -71,7 +71,7 @@ describe("AdminTile", () => {
         accent="#00ced1"
         accentBg="rgba(0, 206, 209, 0.1)"
         onPress={onPress}
-      />
+      />,
     );
 
     await user.press(screen.getByTestId("admin-tile"));
@@ -91,7 +91,7 @@ describe("AdminTile", () => {
         accentBg="rgba(0, 206, 209, 0.1)"
         route="/users"
         tripId="trip-123"
-      />
+      />,
     );
 
     await user.press(screen.getByTestId("admin-tile"));
@@ -111,7 +111,7 @@ describe("AdminTile", () => {
         icon="people"
         accent="#00ced1"
         accentBg="rgba(0, 206, 209, 0.1)"
-      />
+      />,
     );
 
     await user.press(screen.getByTestId("admin-tile"));
@@ -129,7 +129,7 @@ describe("AdminTile", () => {
         accent="#00ced1"
         accentBg="rgba(0, 206, 209, 0.1)"
         route="/users"
-      />
+      />,
     );
 
     await user.press(screen.getByTestId("admin-tile"));
@@ -144,7 +144,7 @@ describe("AdminTile", () => {
         icon="trophy"
         accent="#ff6b6b"
         accentBg="rgba(255, 107, 107, 0.1)"
-      />
+      />,
     );
 
     expect(screen.getByText("Challenges")).toBeOnTheScreen();
@@ -159,7 +159,7 @@ describe("AdminTile", () => {
         icon="settings"
         accent="#9b59b6"
         accentBg="rgba(155, 89, 182, 0.1)"
-      />
+      />,
     );
 
     expect(screen.getByText("settings")).toBeOnTheScreen();

@@ -6,10 +6,7 @@ import { TripsEmptyState } from "../../../trips/list/TripsEmptyState";
 describe("TripsEmptyState", () => {
   it("should render with title and subtitle", () => {
     renderWithProviders(
-      <TripsEmptyState
-        title="No Trips Available"
-        subtitle="Check back later for upcoming trips"
-      />
+      <TripsEmptyState title="No Trips Available" subtitle="Check back later for upcoming trips" />,
     );
 
     expect(screen.getByText("No Trips Available")).toBeOnTheScreen();
@@ -18,10 +15,7 @@ describe("TripsEmptyState", () => {
 
   it("should render with custom title", () => {
     renderWithProviders(
-      <TripsEmptyState
-        title="All Trips Completed"
-        subtitle="You've participated in all trips"
-      />
+      <TripsEmptyState title="All Trips Completed" subtitle="You've participated in all trips" />,
     );
 
     expect(screen.getByText("All Trips Completed")).toBeOnTheScreen();
@@ -29,22 +23,14 @@ describe("TripsEmptyState", () => {
 
   it("should render with custom subtitle", () => {
     renderWithProviders(
-      <TripsEmptyState
-        title="No Active Trips"
-        subtitle="There are no trips happening right now"
-      />
+      <TripsEmptyState title="No Active Trips" subtitle="There are no trips happening right now" />,
     );
 
     expect(screen.getByText("There are no trips happening right now")).toBeOnTheScreen();
   });
 
   it("should render empty state container", () => {
-    renderWithProviders(
-      <TripsEmptyState
-        title="Empty Title"
-        subtitle="Empty Subtitle"
-      />
-    );
+    renderWithProviders(<TripsEmptyState title="Empty Title" subtitle="Empty Subtitle" />);
 
     expect(screen.getByText("Empty Title")).toBeOnTheScreen();
     expect(screen.getByText("Empty Subtitle")).toBeOnTheScreen();

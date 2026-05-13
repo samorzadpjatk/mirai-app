@@ -29,11 +29,7 @@ describe("GroupCard", () => {
 
   it("renders group name", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     expect(screen.getByText("Test Group")).toBeTruthy();
@@ -41,11 +37,7 @@ describe("GroupCard", () => {
 
   it("renders organizer name", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     expect(screen.getByText("Organizer: John Doe")).toBeTruthy();
@@ -53,11 +45,7 @@ describe("GroupCard", () => {
 
   it("renders coin count", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     expect(screen.getByText("150")).toBeTruthy();
@@ -65,11 +53,7 @@ describe("GroupCard", () => {
 
   it("renders member count", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     expect(screen.getByText("5 members")).toBeTruthy();
@@ -77,11 +61,7 @@ describe("GroupCard", () => {
 
   it("calls onAddCoins when add button is pressed", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     fireEvent.press(screen.getByText("Add Coins"));
@@ -90,11 +70,7 @@ describe("GroupCard", () => {
 
   it("calls onRemoveCoins when remove button is pressed", () => {
     renderWithProviders(
-      <GroupCard
-        group={mockGroup}
-        onAddCoins={mockOnAddCoins}
-        onRemoveCoins={mockOnRemoveCoins}
-      />
+      <GroupCard group={mockGroup} onAddCoins={mockOnAddCoins} onRemoveCoins={mockOnRemoveCoins} />,
     );
 
     fireEvent.press(screen.getByText("Remove Coins"));
@@ -108,7 +84,7 @@ describe("GroupCard", () => {
         group={groupWithZeroCoins}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.getByText("0")).toBeTruthy();
@@ -121,7 +97,7 @@ describe("GroupCard", () => {
         group={groupWithOneMember}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.getByText("1 members")).toBeTruthy();
@@ -134,7 +110,7 @@ describe("GroupCard", () => {
         group={groupWithoutOrganizer}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.queryByText(/Organizer:/)).toBeNull();
@@ -150,7 +126,7 @@ describe("GroupCard", () => {
         group={groupWithPartialOrganizer}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.getByText("Organizer: Jane")).toBeTruthy();
@@ -166,7 +142,7 @@ describe("GroupCard", () => {
         group={groupWithPartialOrganizer}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.getByText("Organizer: Smith")).toBeTruthy();
@@ -179,7 +155,7 @@ describe("GroupCard", () => {
         group={groupWithManyCoins}
         onAddCoins={mockOnAddCoins}
         onRemoveCoins={mockOnRemoveCoins}
-      />
+      />,
     );
 
     expect(screen.getByText("999999")).toBeTruthy();

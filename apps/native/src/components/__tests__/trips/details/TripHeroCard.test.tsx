@@ -14,7 +14,7 @@ describe("TripHeroCard", () => {
         name="Summer Adventure"
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
-      />
+      />,
     );
 
     expect(screen.getByText("Summer Adventure")).toBeOnTheScreen();
@@ -27,7 +27,7 @@ describe("TripHeroCard", () => {
         description="An amazing summer trip"
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
-      />
+      />,
     );
 
     expect(screen.getByText("An amazing summer trip")).toBeOnTheScreen();
@@ -39,7 +39,7 @@ describe("TripHeroCard", () => {
         name="Summer Adventure"
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
-      />
+      />,
     );
 
     expect(screen.queryByText("An amazing summer trip")).toBeNull();
@@ -50,11 +50,7 @@ describe("TripHeroCard", () => {
     const ongoingEnd = new Date(Date.now() + 86400000);
 
     renderWithProviders(
-      <TripHeroCard
-        name="Current Trip"
-        startDate={ongoingStart}
-        endDate={ongoingEnd}
-      />
+      <TripHeroCard name="Current Trip" startDate={ongoingStart} endDate={ongoingEnd} />,
     );
 
     expect(screen.getByText("Ongoing Trip")).toBeOnTheScreen();
@@ -66,7 +62,7 @@ describe("TripHeroCard", () => {
         name="Past Trip"
         startDate={new Date("2023-01-01")}
         endDate={new Date("2023-01-07")}
-      />
+      />,
     );
 
     const pastTripElements = screen.getAllByText("Past Trip");
@@ -79,7 +75,7 @@ describe("TripHeroCard", () => {
         name="Future Trip"
         startDate={new Date("2025-01-01")}
         endDate={new Date("2025-01-07")}
-      />
+      />,
     );
 
     expect(screen.getByText("Future Trip")).toBeOnTheScreen();
@@ -87,11 +83,7 @@ describe("TripHeroCard", () => {
 
   it("should handle string dates", () => {
     renderWithProviders(
-      <TripHeroCard
-        name="String Date Trip"
-        startDate="2024-07-01"
-        endDate="2024-07-07"
-      />
+      <TripHeroCard name="String Date Trip" startDate="2024-07-01" endDate="2024-07-07" />,
     );
 
     expect(screen.getByText("String Date Trip")).toBeOnTheScreen();
@@ -104,7 +96,7 @@ describe("TripHeroCard", () => {
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
         imageUrl="https://example.com/image.jpg"
-      />
+      />,
     );
 
     expect(screen.getByText("Trip With Image")).toBeOnTheScreen();
@@ -117,7 +109,7 @@ describe("TripHeroCard", () => {
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
         backgroundImagePath="/path/to/image.jpg"
-      />
+      />,
     );
 
     expect(screen.getByText("Trip With Background")).toBeOnTheScreen();
@@ -130,7 +122,7 @@ describe("TripHeroCard", () => {
         description={null}
         startDate={new Date("2024-07-01")}
         endDate={new Date("2024-07-07")}
-      />
+      />,
     );
 
     expect(screen.queryByText("Some description")).toBeNull();

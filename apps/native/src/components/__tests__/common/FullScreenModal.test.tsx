@@ -10,10 +10,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Modal Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByText("Test Modal")).toBeOnTheScreen();
@@ -23,13 +25,9 @@ describe("FullScreenModal", () => {
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <FullScreenModal
-        visible={true}
-        title="Test Modal"
-        onClose={onClose}
-      >
+      <FullScreenModal visible={true} title="Test Modal" onClose={onClose}>
         <Text>Modal Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     fireEvent.press(screen.getByTestId("fullscreen-modal-close"));
@@ -41,10 +39,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Modal Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     const modal = screen.getByTestId("fullscreen-modal");
@@ -59,10 +59,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Modal Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByText("close")).toBeOnTheScreen();
@@ -73,13 +75,15 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <View>
           <Text>Child 1</Text>
           <Text>Child 2</Text>
         </View>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByText("Child 1")).toBeOnTheScreen();
@@ -91,10 +95,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByText("Test Modal")).toBeOnTheScreen();
@@ -104,13 +110,9 @@ describe("FullScreenModal", () => {
   it("should handle onRequestClose", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <FullScreenModal
-        visible={true}
-        title="Test Modal"
-        onClose={onClose}
-      >
+      <FullScreenModal visible={true} title="Test Modal" onClose={onClose}>
         <Text>Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     const modal = screen.getByTestId("fullscreen-modal");
@@ -122,10 +124,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByTestId("fullscreen-modal")).toBeOnTheScreen();
@@ -136,10 +140,12 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Test Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <Text>Content</Text>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByTestId("fullscreen-modal")).toBeOnTheScreen();
@@ -150,7 +156,9 @@ describe("FullScreenModal", () => {
       <FullScreenModal
         visible={true}
         title="Complex Modal"
-        onClose={() => { /* noop */ }}
+        onClose={() => {
+          /* noop */
+        }}
       >
         <View>
           <Text>Section 1</Text>
@@ -159,7 +167,7 @@ describe("FullScreenModal", () => {
           </View>
           <Text>Section 2</Text>
         </View>
-      </FullScreenModal>
+      </FullScreenModal>,
     );
 
     expect(screen.getByText("Section 1")).toBeOnTheScreen();

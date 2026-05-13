@@ -5,12 +5,16 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
 jest.mock("~/components/common/ui", () => {
-    
   const { createElement } = require("react");
   const { View, Text, Pressable } = require("react-native");
 
   return {
-    AppModalShell: (props: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) =>
+    AppModalShell: (props: {
+      visible: boolean;
+      title: string;
+      onClose: () => void;
+      children: React.ReactNode;
+    }) =>
       !props.visible
         ? null
         : createElement(
@@ -20,12 +24,11 @@ jest.mock("~/components/common/ui", () => {
             createElement(
               Pressable,
               { testID: "close-modal-button", onPress: props.onClose },
-              createElement(Text, null, "Close")
+              createElement(Text, null, "Close"),
             ),
-            props.children
+            props.children,
           ),
   };
-    
 });
 
 const noop = (): void => undefined;
@@ -35,7 +38,7 @@ describe("MapModalShell", () => {
     renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.getByTestId("modal-title").children[0]).toBe("Test Modal");
@@ -45,7 +48,7 @@ describe("MapModalShell", () => {
     renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.getByTestId("child-content")).toBeOnTheScreen();
@@ -55,7 +58,7 @@ describe("MapModalShell", () => {
     renderWithProviders(
       <MapModalShell visible={false} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.queryByTestId("app-modal-shell")).toBeNull();
@@ -65,7 +68,7 @@ describe("MapModalShell", () => {
     renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop} maxHeight="70%">
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
@@ -80,7 +83,7 @@ describe("MapModalShell", () => {
         contentStyle={{ padding: 20 }}
       >
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
@@ -90,7 +93,7 @@ describe("MapModalShell", () => {
     renderWithProviders(
       <MapModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text testID="child-content">Child Content</Text>
-      </MapModalShell>
+      </MapModalShell>,
     );
 
     expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();

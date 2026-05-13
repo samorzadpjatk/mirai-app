@@ -27,18 +27,14 @@ describe("PrimaryAddButton", () => {
   });
 
   it("should have disabled prop when disabled is true", () => {
-    renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Disabled" disabled={true} />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={noop} label="Disabled" disabled={true} />);
 
     const button = screen.getByRole("button", { name: "Disabled" });
     expect(button).toBeDisabled();
   });
 
   it("should not have disabled prop when disabled is false", () => {
-    renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Enabled" disabled={false} />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={noop} label="Enabled" disabled={false} />);
 
     const button = screen.getByRole("button", { name: "Enabled" });
     expect(button).not.toBeDisabled();
@@ -46,9 +42,7 @@ describe("PrimaryAddButton", () => {
 
   it("should apply custom style", () => {
     const customStyle = { marginTop: 20 };
-    renderWithProviders(
-      <PrimaryAddButton onPress={noop} label="Styled" style={customStyle} />
-    );
+    renderWithProviders(<PrimaryAddButton onPress={noop} label="Styled" style={customStyle} />);
 
     const button = screen.getByRole("button", { name: "Styled" });
     expect(button).toHaveStyle(customStyle);
@@ -57,16 +51,12 @@ describe("PrimaryAddButton", () => {
   it("should apply custom text style", () => {
     const customTextStyle = { fontSize: 18 };
     renderWithProviders(
-      <PrimaryAddButton
-        onPress={noop}
-        label="Styled Text"
-        textStyle={customTextStyle}
-      />
+      <PrimaryAddButton onPress={noop} label="Styled Text" textStyle={customTextStyle} />,
     );
 
     const text = screen.getByText("Styled Text");
     expect(text.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customTextStyle)])
+      expect.arrayContaining([expect.objectContaining(customTextStyle)]),
     );
   });
 

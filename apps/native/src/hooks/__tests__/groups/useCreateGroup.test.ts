@@ -20,7 +20,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     group: {
       create: {
-        mutationOptions: (options: Record<string, unknown>) => mockCreateGroupMutationOptions(options),
+        mutationOptions: (options: Record<string, unknown>) =>
+          mockCreateGroupMutationOptions(options),
       },
     },
   },
@@ -80,11 +81,19 @@ describe("useCreateGroup", () => {
 
   describe("createGroup function", () => {
     it("should create group with name only", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string; code: string }>>().mockResolvedValue({
-        id: "new-group-123",
-        name: "New Group",
-        code: "NG001",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string; code: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group-123",
+          name: "New Group",
+          code: "NG001",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -108,12 +117,20 @@ describe("useCreateGroup", () => {
     });
 
     it("should create group with name and image", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string; code: string; image: string }>>().mockResolvedValue({
-        id: "new-group-456",
-        name: "Group With Image",
-        code: "GWI001",
-        image: "https://example.com/image.jpg",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string; code: string; image: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group-456",
+          name: "Group With Image",
+          code: "GWI001",
+          image: "https://example.com/image.jpg",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -135,10 +152,18 @@ describe("useCreateGroup", () => {
     });
 
     it("should use empty string for tripId when not provided", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group-789",
-        name: "Test Group",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group-789",
+          name: "Test Group",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -158,7 +183,9 @@ describe("useCreateGroup", () => {
 
     it("should handle mutation errors", async () => {
       const mockError = new Error("Failed to create group");
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<never>>().mockRejectedValue(mockError);
+      const mockMutateAsync = jest
+        .fn<(data: { tripId: string; name: string; image?: string }) => Promise<never>>()
+        .mockRejectedValue(mockError);
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -167,8 +194,9 @@ describe("useCreateGroup", () => {
 
       const { result } = renderHook(() => useCreateGroup("trip-123"));
 
-      await expect(result.current.createGroup({ name: "Test Group" }))
-        .rejects.toThrow("Failed to create group");
+      await expect(result.current.createGroup({ name: "Test Group" })).rejects.toThrow(
+        "Failed to create group",
+      );
     });
   });
 
@@ -204,7 +232,9 @@ describe("useCreateGroup", () => {
         const opts = options as { onSuccess?: () => Promise<void> };
         onSuccessCallback = opts?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "new-group" }),
+          mutateAsync: jest
+            .fn<() => Promise<{ id: string }>>()
+            .mockResolvedValue({ id: "new-group" }),
           isPending: false,
         };
       });
@@ -225,7 +255,9 @@ describe("useCreateGroup", () => {
         const opts = options as { onSuccess?: () => Promise<void> };
         onSuccessCallback = opts?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "new-group" }),
+          mutateAsync: jest
+            .fn<() => Promise<{ id: string }>>()
+            .mockResolvedValue({ id: "new-group" }),
           isPending: false,
         };
       });
@@ -280,10 +312,18 @@ describe("useCreateGroup", () => {
 
   describe("edge cases", () => {
     it("should handle empty name", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group",
-        name: "",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group",
+          name: "",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -303,10 +343,18 @@ describe("useCreateGroup", () => {
 
     it("should handle very long name", async () => {
       const longName = "A".repeat(100);
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group",
-        name: longName,
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group",
+          name: longName,
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -326,10 +374,18 @@ describe("useCreateGroup", () => {
 
     it("should handle special characters in name", async () => {
       const specialName = "Group with special chars";
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group",
-        name: specialName,
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group",
+          name: specialName,
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -348,10 +404,18 @@ describe("useCreateGroup", () => {
     });
 
     it("should handle undefined image", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group",
-        name: "Test Group",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group",
+          name: "Test Group",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,
@@ -370,10 +434,18 @@ describe("useCreateGroup", () => {
     });
 
     it("should handle null image", async () => {
-      const mockMutateAsync = jest.fn<(data: { tripId: string; name: string; image?: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-        id: "new-group",
-        name: "Test Group",
-      });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            tripId: string;
+            name: string;
+            image?: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({
+          id: "new-group",
+          name: "Test Group",
+        });
 
       mockUseMutation.mockReturnValue({
         mutateAsync: mockMutateAsync,

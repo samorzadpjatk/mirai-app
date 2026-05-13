@@ -37,7 +37,7 @@ describe("useExpoUpdates", () => {
     mockCheckForUpdateAsync.mockReset().mockResolvedValue({ isAvailable: false });
     mockFetchUpdateAsync.mockReset().mockResolvedValue(undefined);
     mockReloadAsync.mockReset().mockResolvedValue(undefined);
-    (global as unknown as { __DEV__: boolean }).__DEV__ = false;
+    Object.defineProperty(globalThis, "__DEV__", { value: false, writable: true, configurable: true });
     mockIsEnabled.value = false;
   });
 
@@ -59,7 +59,7 @@ describe("useExpoUpdates", () => {
   });
 
   it("should skip update check in development mode", async () => {
-    (global as unknown as { __DEV__: boolean }).__DEV__ = true;
+    Object.defineProperty(globalThis, "__DEV__", { value: true, writable: true, configurable: true });
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -190,7 +190,9 @@ describe("useExpoUpdates", () => {
     const pendingPromise = new Promise((resolve) => {
       resolvePromise = resolve;
     });
-    mockCheckForUpdateAsync.mockImplementation(() => pendingPromise as Promise<{ isAvailable: boolean }>);
+    mockCheckForUpdateAsync.mockImplementation(
+      () => pendingPromise as Promise<{ isAvailable: boolean }>,
+    );
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -258,7 +260,7 @@ describe("useExpoUpdates", () => {
 
   it("should not auto-check for updates in development", async () => {
     mockIsEnabled.value = true;
-    (global as unknown as { __DEV__: boolean }).__DEV__ = true;
+    Object.defineProperty(globalThis, "__DEV__", { value: true, writable: true, configurable: true });
     mockCheckForUpdateAsync.mockResolvedValue({ isAvailable: false });
 
     const { result } = renderHook(() => useExpoUpdates());

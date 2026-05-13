@@ -11,9 +11,7 @@ describe("EmptyState", () => {
   });
 
   it("should render with subtitle when provided", () => {
-    renderWithProviders(
-      <EmptyState title="No Data" subtitle="Try refreshing the page" />
-    );
+    renderWithProviders(<EmptyState title="No Data" subtitle="Try refreshing the page" />);
 
     expect(screen.getByText("No Data")).toBeOnTheScreen();
     expect(screen.getByText("Try refreshing the page")).toBeOnTheScreen();
@@ -73,9 +71,7 @@ describe("EmptyState", () => {
   });
 
   it("should render with different icon names", () => {
-    const { rerender } = renderWithProviders(
-      <EmptyState title="No Data" icon="home" />
-    );
+    const { rerender } = renderWithProviders(<EmptyState title="No Data" icon="home" />);
 
     expect(screen.getByText("home")).toBeOnTheScreen();
 

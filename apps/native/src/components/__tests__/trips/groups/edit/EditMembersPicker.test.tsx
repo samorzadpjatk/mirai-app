@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditMembersPicker } from "../../../../trips/groups/edit/EditMembersPicker";
@@ -43,7 +39,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={true}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId("edit-members-picker-indicator")).toBeTruthy();
@@ -56,7 +52,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
@@ -71,7 +67,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("john@example.com")).toBeOnTheScreen();
@@ -86,7 +82,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("No participants found")).toBeOnTheScreen();
@@ -100,7 +96,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={onToggleMember}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByText("John Doe"));
@@ -116,7 +112,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={selectedMembers}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId("member-item-user-1")).toBeTruthy();
@@ -133,7 +129,7 @@ describe("EditMembersPicker", () => {
         isLoading={false}
         organizerId="user-1"
         onToggleMember={onToggleMember}
-      />
+      />,
     );
 
     expect(screen.getByText("john@example.com (Organizer)")).toBeOnTheScreen();
@@ -148,7 +144,7 @@ describe("EditMembersPicker", () => {
         isLoading={false}
         organizerId="user-1"
         onToggleMember={onToggleMember}
-      />
+      />,
     );
 
     const organizerTouchable = screen.getByTestId("member-item-user-1");
@@ -162,7 +158,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("JD")).toBeOnTheScreen();
@@ -188,7 +184,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("?")).toBeOnTheScreen();
@@ -212,7 +208,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("A")).toBeOnTheScreen();
@@ -226,7 +222,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={onToggleMember}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByText("John Doe"));
@@ -247,7 +243,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={onToggleMember}
-      />
+      />,
     );
 
     fireEvent.press(screen.getByText("John Doe"));
@@ -267,7 +263,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId("edit-members-picker-scroll")).toBeTruthy();
@@ -291,7 +287,7 @@ describe("EditMembersPicker", () => {
         selectedMembers={new Set()}
         isLoading={false}
         onToggleMember={jest.fn()}
-      />
+      />,
     );
 
     expect(screen.getByText("?")).toBeOnTheScreen();

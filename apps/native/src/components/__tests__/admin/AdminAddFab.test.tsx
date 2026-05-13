@@ -32,10 +32,7 @@ jest.mock("~/components/common/FloatingActionButton", () => ({
 describe("AdminAddFab", () => {
   it("renders with required props", () => {
     const { getByTestId, getByLabelText } = renderWithProviders(
-      <AdminAddFab
-        onPress={jest.fn()}
-        accessibilityLabel="Add new item"
-      />
+      <AdminAddFab onPress={jest.fn()} accessibilityLabel="Add new item" />,
     );
 
     expect(getByTestId("fab-button")).toBeTruthy();
@@ -45,10 +42,7 @@ describe("AdminAddFab", () => {
   it("calls onPress when pressed", () => {
     const onPress = jest.fn();
     const { getByTestId } = renderWithProviders(
-      <AdminAddFab
-        onPress={onPress}
-        accessibilityLabel="Add new item"
-      />
+      <AdminAddFab onPress={onPress} accessibilityLabel="Add new item" />,
     );
 
     fireEvent.press(getByTestId("fab-button"));
@@ -58,11 +52,7 @@ describe("AdminAddFab", () => {
   it("is disabled when disabled prop is true", () => {
     const onPress = jest.fn();
     const { getByTestId } = renderWithProviders(
-      <AdminAddFab
-        onPress={onPress}
-        accessibilityLabel="Add new item"
-        disabled={true}
-      />
+      <AdminAddFab onPress={onPress} accessibilityLabel="Add new item" disabled={true} />,
     );
 
     const button = getByTestId("fab-button");
@@ -71,12 +61,7 @@ describe("AdminAddFab", () => {
 
   it("renders with custom position props", () => {
     const { getByTestId } = renderWithProviders(
-      <AdminAddFab
-        onPress={jest.fn()}
-        accessibilityLabel="Add new item"
-        bottom={120}
-        right={30}
-      />
+      <AdminAddFab onPress={jest.fn()} accessibilityLabel="Add new item" bottom={120} right={30} />,
     );
 
     expect(getByTestId("fab-button")).toBeTruthy();
@@ -88,7 +73,7 @@ describe("AdminAddFab", () => {
         onPress={jest.fn()}
         accessibilityLabel="Add new item"
         style={{ opacity: 0.5 }}
-      />
+      />,
     );
 
     expect(getByTestId("fab-button")).toBeTruthy();
@@ -96,10 +81,7 @@ describe("AdminAddFab", () => {
 
   it("uses default position values", () => {
     const { getByTestId } = renderWithProviders(
-      <AdminAddFab
-        onPress={jest.fn()}
-        accessibilityLabel="Add new item"
-      />
+      <AdminAddFab onPress={jest.fn()} accessibilityLabel="Add new item" />,
     );
 
     expect(getByTestId("fab-button")).toBeTruthy();

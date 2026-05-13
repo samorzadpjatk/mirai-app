@@ -165,7 +165,9 @@ describe("useNotificationSchedules", () => {
 
   it("should delete schedule", () => {
     const mockDelete = jest.fn();
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -194,7 +196,9 @@ describe("useNotificationSchedules", () => {
 
   it("should toggle schedule active state", () => {
     const mockToggle = jest.fn();
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
 
     mockUseQuery.mockReturnValue({
       data: { schedules: [] },
@@ -267,7 +271,8 @@ describe("useNotificationSchedules", () => {
   });
 
   it("should refetch schedules", async () => {
-    const mockRefetch = jest.fn<() => Promise<{ data: { schedules: unknown[] } }>>()
+    const mockRefetch = jest
+      .fn<() => Promise<{ data: { schedules: unknown[] } }>>()
       .mockResolvedValue({ data: { schedules: [] } });
 
     mockUseQuery.mockReturnValue({
@@ -352,5 +357,4 @@ describe("useNotificationSchedules", () => {
 
     expect(result.current.schedules).toEqual([]);
   });
-
 });

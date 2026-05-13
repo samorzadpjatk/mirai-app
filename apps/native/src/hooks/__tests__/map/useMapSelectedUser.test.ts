@@ -92,7 +92,12 @@ describe("useMapSelectedUser", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
     act(() => {
-      result.current.selectUser({ id: "non-existent", name: "Unknown", coordinate: [0, 0], lastActiveAt: Date.now() });
+      result.current.selectUser({
+        id: "non-existent",
+        name: "Unknown",
+        coordinate: [0, 0],
+        lastActiveAt: Date.now(),
+      });
     });
 
     expect(result.current.selectedUserId).toBe("non-existent");
@@ -197,7 +202,7 @@ describe("useMapSelectedUser", () => {
   it("should update selectedUser when users array changes", () => {
     const { result, rerender } = renderHook(
       ({ users }: { users: UserLocation[] }) => useMapSelectedUser({ ...defaultArgs, users }),
-      { initialProps: { users: mockUsers } }
+      { initialProps: { users: mockUsers } },
     );
 
     act(() => {
@@ -259,7 +264,7 @@ describe("useMapSelectedUser", () => {
   it("should memoize selectedUser", () => {
     const { result, rerender } = renderHook(
       ({ users }: { users: UserLocation[] }) => useMapSelectedUser({ ...defaultArgs, users }),
-      { initialProps: { users: mockUsers } }
+      { initialProps: { users: mockUsers } },
     );
 
     act(() => {

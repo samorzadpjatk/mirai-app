@@ -28,13 +28,15 @@ jest.mock("expo-file-system", () => {
     })),
     File: Object.assign(
       jest.fn().mockImplementation(() => ({
-        get exists() { return mockFileExists(); },
+        get exists() {
+          return mockFileExists();
+        },
         delete: mockFileDelete,
         type: "image/jpeg",
         size: 1024,
         uri: "file:///cache/downloads/test-file.jpg",
       })),
-      { downloadFileAsync: mockDownloadFileAsync }
+      { downloadFileAsync: mockDownloadFileAsync },
     ),
     Paths: {
       cache: "/cache",
@@ -115,10 +117,14 @@ describe("useFileDownload", () => {
     const { result } = renderHook(() => useFileDownload());
 
     act(() => {
-      result.current.download({
-        storagePath: "test/file.jpg",
-        expiresInSeconds: 3600,
-      }).catch(() => { /* noop */ });
+      result.current
+        .download({
+          storagePath: "test/file.jpg",
+          expiresInSeconds: 3600,
+        })
+        .catch(() => {
+          /* noop */
+        });
     });
 
     expect(result.current.status).toBe("loading");
@@ -148,7 +154,7 @@ describe("useFileDownload", () => {
     await expect(
       result.current.download({
         storagePath: "test/file.jpg",
-      })
+      }),
     ).rejects.toThrow("Download failed");
   });
 });
@@ -172,5 +178,4 @@ describe("deleteCachedDownload", () => {
     await expect(deleteCachedDownload("test/file.jpg")).resolves.not.toThrow();
     expect(mockFileDelete).not.toHaveBeenCalled();
   });
-
 });

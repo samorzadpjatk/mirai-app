@@ -3,15 +3,19 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminGroups } from "../../admin/useAdminGroups";
 
 // Mock oRPC
-const mockGetAllInfiniteOptions = jest.fn((options: {
-  input: (pageParam: number) => unknown;
-  initialPageParam: number;
-  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
-  enabled?: boolean;
-}) => ({
-  ...options,
-  queryKey: ["group", "getAll"],
-}));
+const mockGetAllInfiniteOptions = jest.fn(
+  (options: {
+    input: (pageParam: number) => unknown;
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }) => number | undefined;
+    enabled?: boolean;
+  }) => ({
+    ...options,
+    queryKey: ["group", "getAll"],
+  }),
+);
 
 const mockGetAllUsersQuery = jest.fn((options: { input: { tripId: string } }) => ({
   queryKey: ["user", "getAll", options.input.tripId],
@@ -33,7 +37,14 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     group: {
       getAll: {
-        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined; enabled?: boolean }) => mockGetAllInfiniteOptions(options),
+        infiniteOptions: (options: {
+          input: (pageParam: number) => unknown;
+          initialPageParam: number;
+          getNextPageParam: (lastPage: {
+            pagination: { hasMore: boolean; offset: number; limit: number };
+          }) => number | undefined;
+          enabled?: boolean;
+        }) => mockGetAllInfiniteOptions(options),
       },
       create: {
         mutationOptions: () => mockCreateMutation(),
@@ -254,11 +265,18 @@ describe("useAdminGroups", () => {
   });
 
   it("should create group", async () => {
-    const mockCreate = jest.fn<(data: { name: string; tripId: string }) => Promise<{ id: string; name: string; tripId: string }>>().mockResolvedValue({
-      id: "group-new",
-      name: "New Group",
-      tripId: "trip-123",
-    });
+    const mockCreate = jest
+      .fn<
+        (data: {
+          name: string;
+          tripId: string;
+        }) => Promise<{ id: string; name: string; tripId: string }>
+      >()
+      .mockResolvedValue({
+        id: "group-new",
+        name: "New Group",
+        tripId: "trip-123",
+      });
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },
@@ -293,10 +311,18 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with name only", async () => {
-    const mockUpdate = jest.fn<(data: { id: string; tripId: string; name: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-      id: "group-1",
-      name: "Updated Group",
-    });
+    const mockUpdate = jest
+      .fn<
+        (data: {
+          id: string;
+          tripId: string;
+          name: string;
+        }) => Promise<{ id: string; name: string }>
+      >()
+      .mockResolvedValue({
+        id: "group-1",
+        name: "Updated Group",
+      });
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },
@@ -332,10 +358,18 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with organizer only", async () => {
-    const mockUpdate = jest.fn<(data: { id: string; tripId: string; organizerId: string }) => Promise<{ id: string; organizerId: string }>>().mockResolvedValue({
-      id: "group-1",
-      organizerId: "user-2",
-    });
+    const mockUpdate = jest
+      .fn<
+        (data: {
+          id: string;
+          tripId: string;
+          organizerId: string;
+        }) => Promise<{ id: string; organizerId: string }>
+      >()
+      .mockResolvedValue({
+        id: "group-1",
+        organizerId: "user-2",
+      });
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },
@@ -371,11 +405,20 @@ describe("useAdminGroups", () => {
   });
 
   it("should update group with both name and organizer", async () => {
-    const mockUpdate = jest.fn<(data: { id: string; tripId: string; name: string; organizerId: string }) => Promise<{ id: string; name: string; organizerId: string }>>().mockResolvedValue({
-      id: "group-1",
-      name: "Updated Group",
-      organizerId: "user-2",
-    });
+    const mockUpdate = jest
+      .fn<
+        (data: {
+          id: string;
+          tripId: string;
+          name: string;
+          organizerId: string;
+        }) => Promise<{ id: string; name: string; organizerId: string }>
+      >()
+      .mockResolvedValue({
+        id: "group-1",
+        name: "Updated Group",
+        organizerId: "user-2",
+      });
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },
@@ -412,7 +455,9 @@ describe("useAdminGroups", () => {
   });
 
   it("should delete group", async () => {
-    const mockDelete = jest.fn<(data: { id: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockDelete = jest
+      .fn<(data: { id: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseInfiniteQuery.mockReturnValue({
       data: { pages: [] },

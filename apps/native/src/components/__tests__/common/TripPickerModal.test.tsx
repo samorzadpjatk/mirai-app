@@ -19,12 +19,7 @@ describe("TripPickerModal", () => {
 
   it("should not render modal content when not visible", () => {
     renderWithProviders(
-      <TripPickerModal
-        visible={false}
-        onClose={noop}
-        onSelectTrip={noop}
-        trips={mockTrips}
-      />
+      <TripPickerModal visible={false} onClose={noop} onSelectTrip={noop} trips={mockTrips} />,
     );
 
     // When visible=false, Modal doesn't render children, so content is not in tree
@@ -33,12 +28,7 @@ describe("TripPickerModal", () => {
 
   it("should render when visible is true", () => {
     renderWithProviders(
-      <TripPickerModal
-        visible={true}
-        onClose={noop}
-        onSelectTrip={noop}
-        trips={mockTrips}
-      />
+      <TripPickerModal visible={true} onClose={noop} onSelectTrip={noop} trips={mockTrips} />,
     );
 
     expect(screen.getByText("Select trip")).toBeOnTheScreen();
@@ -46,12 +36,7 @@ describe("TripPickerModal", () => {
 
   it("should render all trips in the list", () => {
     renderWithProviders(
-      <TripPickerModal
-        visible={true}
-        onClose={noop}
-        onSelectTrip={noop}
-        trips={mockTrips}
-      />
+      <TripPickerModal visible={true} onClose={noop} onSelectTrip={noop} trips={mockTrips} />,
     );
 
     expect(screen.getByText("Trip to Paris")).toBeOnTheScreen();
@@ -62,12 +47,7 @@ describe("TripPickerModal", () => {
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <TripPickerModal
-        visible={true}
-        onClose={onClose}
-        onSelectTrip={noop}
-        trips={mockTrips}
-      />
+      <TripPickerModal visible={true} onClose={onClose} onSelectTrip={noop} trips={mockTrips} />,
     );
 
     const closeButton = screen.getByTestId("close-button");
@@ -85,7 +65,7 @@ describe("TripPickerModal", () => {
         onClose={onClose}
         onSelectTrip={onSelectTrip}
         trips={mockTrips}
-      />
+      />,
     );
 
     await user.press(screen.getByText("Trip to Paris"));
@@ -101,7 +81,7 @@ describe("TripPickerModal", () => {
         onSelectTrip={noop}
         trips={mockTrips}
         selectedTripId="2"
-      />
+      />,
     );
 
     const checkmark = screen.getByTestId("checkmark-icon");
@@ -110,12 +90,7 @@ describe("TripPickerModal", () => {
 
   it("should show empty state when no trips available", () => {
     renderWithProviders(
-      <TripPickerModal
-        visible={true}
-        onClose={noop}
-        onSelectTrip={noop}
-        trips={[]}
-      />
+      <TripPickerModal visible={true} onClose={noop} onSelectTrip={noop} trips={[]} />,
     );
 
     expect(screen.getByText("No trips available")).toBeOnTheScreen();
@@ -129,7 +104,7 @@ describe("TripPickerModal", () => {
         onSelectTrip={noop}
         trips={[]}
         isLoading={true}
-      />
+      />,
     );
 
     expect(screen.queryByText("No trips available")).toBeNull();
@@ -143,7 +118,7 @@ describe("TripPickerModal", () => {
         onSelectTrip={noop}
         trips={mockTrips}
         isFetchingMore={true}
-      />
+      />,
     );
 
     expect(screen.getByText("Loading more trips...")).toBeOnTheScreen();
@@ -158,7 +133,7 @@ describe("TripPickerModal", () => {
         onSelectTrip={noop}
         trips={mockTrips}
         onLoadMore={onLoadMore}
-      />
+      />,
     );
 
     const scrollView = screen.getByTestId("trip-list-scrollview");

@@ -39,7 +39,15 @@ jest.mock("@tanstack/react-query", () => ({
 jest.mock("@expo/vector-icons", () => {
   const { View } = require("react-native");
   return {
-    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+    Ionicons: function MockIonicons({
+      name,
+      size,
+      color,
+    }: {
+      name: string;
+      size: number;
+      color: string;
+    }) {
       return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
     },
   };
@@ -126,7 +134,7 @@ describe("AccountInfoSection", () => {
     expect(mockUseQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         queryKey: ["user", "getMy"],
-      })
+      }),
     );
   });
 

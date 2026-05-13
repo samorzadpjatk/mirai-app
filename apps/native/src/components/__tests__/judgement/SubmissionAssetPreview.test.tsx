@@ -21,7 +21,7 @@ interface VideoPlayerMock {
 }
 
 interface DownloadState {
-  download: jest.Mock<Promise<void>, [{ storagePath: string; skipCache: boolean }]>
+  download: jest.Mock<Promise<void>, [{ storagePath: string; skipCache: boolean }]>;
   status: string;
   file: { uri: string } | null;
   reset: jest.Mock<void, []>;
@@ -33,12 +33,14 @@ const mockText = Text;
 const mockView = View;
 
 const mockUseFileDownload = jest.fn();
-const mockUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPlayerMock) => void]>(() => ({
-  play: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
-  pause: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
-  muted: false,
-  loop: false,
-}));
+const mockUseVideoPlayer = jest.fn<VideoPlayerMock, [unknown, (player: VideoPlayerMock) => void]>(
+  () => ({
+    play: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
+    pause: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
+    muted: false,
+    loop: false,
+  }),
+);
 
 const createMockSubmission = (overrides: Partial<Submission> = {}): Submission => ({
   id: "sub-1",
@@ -63,21 +65,26 @@ jest.mock("@expo/vector-icons", () => ({
 }));
 
 jest.mock("expo-image", () => ({
-  Image: ({ source }: ImageProps) => mockReact.createElement(mockText, { testID: "image" }, source.uri),
+  Image: ({ source }: ImageProps) =>
+    mockReact.createElement(mockText, { testID: "image" }, source.uri),
 }));
 
 jest.mock("expo-video", () => ({
   VideoView: () => mockReact.createElement(mockView, { testID: "video-view" }),
-  useVideoPlayer: (source: unknown, callback?: (player: VideoPlayerMock) => void) => mockUseVideoPlayer(source, callback ?? (() => {})),
+  useVideoPlayer: (source: unknown, callback?: (player: VideoPlayerMock) => void) =>
+    mockUseVideoPlayer(source, callback ?? (() => {})),
 }));
 
 jest.mock("~/hooks/files", () => ({
   __esModule: true,
-  useFileDownload: (storagePath: string, skipCache?: boolean) => mockUseFileDownload(storagePath, skipCache),
+  useFileDownload: (storagePath: string, skipCache?: boolean) =>
+    mockUseFileDownload(storagePath, skipCache),
 }));
 
 const createState = (status: string, file: { uri: string } | null): DownloadState => ({
-  download: jest.fn<Promise<void>, [{ storagePath: string; skipCache: boolean }]>().mockResolvedValue(undefined),
+  download: jest
+    .fn<Promise<void>, [{ storagePath: string; skipCache: boolean }]>()
+    .mockResolvedValue(undefined),
   status,
   file,
   reset: jest.fn<void, []>(),
@@ -85,9 +92,21 @@ const createState = (status: string, file: { uri: string } | null): DownloadStat
 });
 
 const mockSubmissionNoAssets = createMockSubmission({ id: "sub-1", imageIds: [], videoId: null });
-const mockSubmissionWithImages = createMockSubmission({ id: "sub-2", imageIds: ["image-1.jpg"], videoId: null });
-const mockSubmissionWithMultipleImages = createMockSubmission({ id: "sub-3", imageIds: ["image-1.jpg", "image-2.jpg", "image-3.jpg"], videoId: null });
-const mockSubmissionWithVideo = createMockSubmission({ id: "sub-4", imageIds: [], videoId: "video-1.mp4" });
+const mockSubmissionWithImages = createMockSubmission({
+  id: "sub-2",
+  imageIds: ["image-1.jpg"],
+  videoId: null,
+});
+const mockSubmissionWithMultipleImages = createMockSubmission({
+  id: "sub-3",
+  imageIds: ["image-1.jpg", "image-2.jpg", "image-3.jpg"],
+  videoId: null,
+});
+const mockSubmissionWithVideo = createMockSubmission({
+  id: "sub-4",
+  imageIds: [],
+  videoId: "video-1.mp4",
+});
 
 describe("SubmissionAssetPreview", () => {
   beforeEach(() => {
@@ -102,76 +121,116 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render nothing when no assets exist", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("idle", null))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { queryByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionNoAssets} />);
+    const { queryByText } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionNoAssets} />,
+    );
     expect(queryByText("Image unavailable")).toBeNull();
     expect(queryByText("Video submission")).toBeNull();
   });
 
   it("should render image loading state", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("loading", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("loading", null))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    const { getByTestId } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
+    );
     expect(getByTestId("image-loading")).toBeTruthy();
   });
 
   it("should render image when file is available", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getAllByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    const { getAllByTestId } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
+    );
     expect(getAllByTestId("image").length).toBeGreaterThan(0);
   });
 
   it("should render image unavailable state", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("error", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("error", null))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getAllByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    const { getAllByText } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
+    );
     expect(getAllByText("Image unavailable").length).toBeGreaterThan(0);
     expect(getAllByText("image").length).toBeGreaterThan(0);
   });
 
   it("should render image count badge for multiple images", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithMultipleImages} />);
+    const { getByText } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithMultipleImages} />,
+    );
     expect(getByText("3")).toBeTruthy();
     expect(getByText("images")).toBeTruthy();
   });
 
   it("should not render badge for single image", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { queryByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    const { queryByText } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
+    );
     expect(queryByText("images")).toBeNull();
   });
 
   it("should render video player when video is available", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("success", { uri: "file://downloaded-video.mp4" }));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("idle", null))
+      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-video.mp4" }));
 
-    const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
+    const { getByTestId } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
+    );
     expect(getByTestId("video-view")).toBeTruthy();
   });
 
   it("should render video loading state", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("loading", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("idle", null))
+      .mockReturnValueOnce(createState("loading", null));
 
-    const { getByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
+    const { getByTestId } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
+    );
     expect(getByTestId("video-loading")).toBeTruthy();
   });
 
   it("should render video placeholder when no video file", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("idle", null)).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("idle", null))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getByText } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithVideo} />);
+    const { getByText } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
+    );
     expect(getByText("Video submission")).toBeTruthy();
     expect(getByText("play-circle")).toBeTruthy();
   });
 
   it("should open fullscreen image when image is pressed", () => {
-    mockUseFileDownload.mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" })).mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload
+      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
+      .mockReturnValueOnce(createState("idle", null));
 
-    const { getAllByTestId } = renderWithProviders(<SubmissionAssetPreview submission={mockSubmissionWithImages} />);
+    const { getAllByTestId } = renderWithProviders(
+      <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
+    );
     const pressable = getAllByTestId("image")[0]?.parent;
     expect(pressable).toBeTruthy();
   });

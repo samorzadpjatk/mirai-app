@@ -10,12 +10,15 @@ interface DownloadResult {
 }
 
 interface FileDownloadState {
-  download: jest.Mock<(opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>>;
+  download: jest.Mock<
+    (opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>
+  >;
   status: "idle" | "loading" | "success" | "error";
   error: Error | null;
 }
 
-const mockDownload = jest.fn<(opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>>();
+const mockDownload =
+  jest.fn<(opts: { storagePath: string; expiresInSeconds: number }) => Promise<DownloadResult>>();
 const mockUseFileDownload = jest.fn<() => FileDownloadState>();
 
 jest.mock("~/hooks/files/useFileDownload", () => ({
@@ -35,7 +38,9 @@ describe("useTripBackgroundImageDownload", () => {
       error: null,
     });
 
-    const { result } = renderHook(() => useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"));
+    const { result } = renderHook(() =>
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
+    );
 
     expect(result.current.imageUrl).toBeNull();
     expect(result.current.error).toBeNull();
@@ -70,7 +75,7 @@ describe("useTripBackgroundImageDownload", () => {
     });
 
     const { result } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     await waitFor(() => {
@@ -88,7 +93,12 @@ describe("useTripBackgroundImageDownload", () => {
   });
 
   it("should indicate loading during download", async () => {
-    mockDownload.mockImplementation(() => new Promise(() => { /* noop - pending promise for loading state */ }));
+    mockDownload.mockImplementation(
+      () =>
+        new Promise(() => {
+          /* noop - pending promise for loading state */
+        }),
+    );
 
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
@@ -97,7 +107,7 @@ describe("useTripBackgroundImageDownload", () => {
     });
 
     const { result } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     await waitFor(() => {
@@ -118,7 +128,7 @@ describe("useTripBackgroundImageDownload", () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const { result } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     await waitFor(() => {
@@ -148,7 +158,7 @@ describe("useTripBackgroundImageDownload", () => {
       expect(mockDownload).toHaveBeenCalledWith(
         expect.objectContaining({
           expiresInSeconds: 60 * 60,
-        })
+        }),
       );
     });
   });
@@ -171,7 +181,7 @@ describe("useTripBackgroundImageDownload", () => {
       ({ path }: { path: string }) => useTripBackgroundImageDownload(path),
       {
         initialProps: { path: "trips/backgrounds/trip-1.jpg" },
-      }
+      },
     );
 
     await waitFor(() => {
@@ -195,8 +205,6 @@ describe("useTripBackgroundImageDownload", () => {
     });
   });
 
-
-
   it("should handle component unmount gracefully", () => {
     const abortError = new Error("component unmounted");
     mockDownload.mockRejectedValue(abortError);
@@ -210,7 +218,7 @@ describe("useTripBackgroundImageDownload", () => {
     const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const { unmount } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     unmount();
@@ -228,7 +236,7 @@ describe("useTripBackgroundImageDownload", () => {
     });
 
     const { result } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     expect(result.current.status).toBe("loading");
@@ -247,7 +255,7 @@ describe("useTripBackgroundImageDownload", () => {
     const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
     const { result } = renderHook(() =>
-      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg")
+      useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
     await waitFor(() => {
@@ -257,5 +265,4 @@ describe("useTripBackgroundImageDownload", () => {
     consoleSpy.mockRestore();
     consoleWarnSpy.mockRestore();
   });
-
 });

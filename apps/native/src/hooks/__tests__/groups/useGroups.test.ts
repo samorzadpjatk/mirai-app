@@ -3,10 +3,19 @@ import { renderHook } from "@testing-library/react-native";
 import { useGroups } from "../../groups/useGroups";
 
 const mockUseInfiniteQuery = jest.fn();
-const mockGetAllInfiniteOptions = jest.fn((options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => ({
-  queryKey: ["groups", "getAll"],
-  ...options,
-}));
+const mockGetAllInfiniteOptions = jest.fn(
+  (options: {
+    input: (pageParam: number) => unknown;
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }) => unknown;
+    enabled: boolean;
+  }) => ({
+    queryKey: ["groups", "getAll"],
+    ...options,
+  }),
+);
 
 jest.mock("@tanstack/react-query", () => ({
   useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
@@ -16,7 +25,14 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     group: {
       getAll: {
-        infiniteOptions: (options: { input: (pageParam: number) => unknown; initialPageParam: number; getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => unknown; enabled: boolean }) => mockGetAllInfiniteOptions(options),
+        infiniteOptions: (options: {
+          input: (pageParam: number) => unknown;
+          initialPageParam: number;
+          getNextPageParam: (lastPage: {
+            pagination: { hasMore: boolean; offset: number; limit: number };
+          }) => unknown;
+          enabled: boolean;
+        }) => mockGetAllInfiniteOptions(options),
       },
     },
   },
@@ -59,7 +75,7 @@ describe("useGroups", () => {
       renderHook(() => useGroups("trip-123"));
 
       expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
-        expect.objectContaining({ enabled: true })
+        expect.objectContaining({ enabled: true }),
       );
     });
 
@@ -77,7 +93,7 @@ describe("useGroups", () => {
       renderHook(() => useGroups(null));
 
       expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
-        expect.objectContaining({ enabled: false })
+        expect.objectContaining({ enabled: false }),
       );
     });
 
@@ -95,7 +111,7 @@ describe("useGroups", () => {
       renderHook(() => useGroups(undefined));
 
       expect(mockGetAllInfiniteOptions).toHaveBeenCalledWith(
-        expect.objectContaining({ enabled: false })
+        expect.objectContaining({ enabled: false }),
       );
     });
   });
@@ -103,15 +119,25 @@ describe("useGroups", () => {
   describe("groups data processing", () => {
     it("should flatten paginated groups data", () => {
       const mockGroups = [
-        { id: "group-1", name: "Group 1", code: "G1", image: "img1.jpg", participants: [{ id: "p1" }] },
-        { id: "group-2", name: "Group 2", code: "G2", image: "img2.jpg", participants: [{ id: "p1" }, { id: "p2" }] },
+        {
+          id: "group-1",
+          name: "Group 1",
+          code: "G1",
+          image: "img1.jpg",
+          participants: [{ id: "p1" }],
+        },
+        {
+          id: "group-2",
+          name: "Group 2",
+          code: "G2",
+          image: "img2.jpg",
+          participants: [{ id: "p1" }, { id: "p2" }],
+        },
       ];
 
       mockUseInfiniteQuery.mockReturnValue({
         data: {
-          pages: [
-            { groups: mockGroups, pagination: { hasMore: true, offset: 0, limit: 30 } },
-          ],
+          pages: [{ groups: mockGroups, pagination: { hasMore: true, offset: 0, limit: 30 } }],
         },
         isLoading: false,
         isRefetching: false,
@@ -196,17 +222,27 @@ describe("useGroups", () => {
 
   describe("filtered groups", () => {
     const mockGroups = [
-      { id: "group-1", name: "Alpha Team", code: "AT1", image: "img1.jpg", participants: [{ id: "p1" }] },
-      { id: "group-2", name: "Beta Squad", code: "BS1", image: "img2.jpg", participants: [{ id: "p1" }, { id: "p2" }] },
+      {
+        id: "group-1",
+        name: "Alpha Team",
+        code: "AT1",
+        image: "img1.jpg",
+        participants: [{ id: "p1" }],
+      },
+      {
+        id: "group-2",
+        name: "Beta Squad",
+        code: "BS1",
+        image: "img2.jpg",
+        participants: [{ id: "p1" }, { id: "p2" }],
+      },
       { id: "group-3", name: "Gamma Group", code: "GG1", image: "img3.jpg", participants: [] },
     ];
 
     beforeEach(() => {
       mockUseInfiniteQuery.mockReturnValue({
         data: {
-          pages: [
-            { groups: mockGroups, pagination: { hasMore: false, offset: 0, limit: 30 } },
-          ],
+          pages: [{ groups: mockGroups, pagination: { hasMore: false, offset: 0, limit: 30 } }],
         },
         isLoading: false,
         isRefetching: false,

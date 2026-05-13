@@ -7,8 +7,7 @@ jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   const { Text } = require("react-native");
   return {
-    Ionicons: ({ name }: { name: string }) =>
-      React.createElement(Text, null, name),
+    Ionicons: ({ name }: { name: string }) => React.createElement(Text, null, name),
   };
 });
 
@@ -21,7 +20,14 @@ interface Challenge {
   icon: string;
   category: "standard" | "wintegral" | "special";
   status: string;
-  submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
+  submissionType:
+    | "IMAGE"
+    | "MULTI_IMAGE"
+    | "VIDEO"
+    | "TEXT"
+    | "IMAGE_LOCATION"
+    | "LOCATION"
+    | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   targetLatitude?: number | null;
   targetLongitude?: number | null;
@@ -65,7 +71,9 @@ describe("Admin ChallengeCard", () => {
   it("calls edit and delete handlers", () => {
     const onEdit = jest.fn();
     const onDelete = jest.fn();
-    renderWithProviders(<ChallengeCard challenge={baseChallenge} onEdit={onEdit} onDelete={onDelete} />);
+    renderWithProviders(
+      <ChallengeCard challenge={baseChallenge} onEdit={onEdit} onDelete={onDelete} />,
+    );
     fireEvent.press(screen.getByText("create"));
     fireEvent.press(screen.getByText("trash"));
     expect(onEdit).toHaveBeenCalledWith(baseChallenge);

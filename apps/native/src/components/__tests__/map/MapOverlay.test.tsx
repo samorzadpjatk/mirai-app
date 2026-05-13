@@ -6,7 +6,12 @@ import { MapOverlay } from "../../map/overlays/MapOverlay";
 jest.mock("expo-linear-gradient", () => {
   const { createElement } = jest.requireActual("react");
   return {
-    LinearGradient: function MockLinearGradient({ children }: { children: React.ReactNode; colors: string[] }) {
+    LinearGradient: function MockLinearGradient({
+      children,
+    }: {
+      children: React.ReactNode;
+      colors: string[];
+    }) {
       return createElement("View", { testID: "linear-gradient" }, children);
     },
   };
@@ -36,9 +41,7 @@ describe("MapOverlay", () => {
 
   it("renders the recenter action when provided", () => {
     const mockOnRecenter = jest.fn();
-    renderWithProviders(
-      <MapOverlay {...defaultProps} onRecenter={mockOnRecenter} />
-    );
+    renderWithProviders(<MapOverlay {...defaultProps} onRecenter={mockOnRecenter} />);
 
     fireEvent.press(screen.getByText("Center"));
     expect(mockOnRecenter).toHaveBeenCalled();
@@ -52,7 +55,7 @@ describe("MapOverlay", () => {
 
   it("supports custom title and subtitle", () => {
     renderWithProviders(
-      <MapOverlay {...defaultProps} title="Custom Title" subtitle="Custom subtitle" />
+      <MapOverlay {...defaultProps} title="Custom Title" subtitle="Custom subtitle" />,
     );
 
     expect(screen.getByText("Custom Title")).toBeOnTheScreen();

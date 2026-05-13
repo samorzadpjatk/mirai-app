@@ -143,7 +143,9 @@ describe("ShareLocationModal", () => {
   it("should show empty state when search query is too short", () => {
     renderWithProviders(<ShareLocationModal />);
 
-    expect(screen.getByText("Type at least 2 characters to search for a person.")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Type at least 2 characters to search for a person."),
+    ).toBeOnTheScreen();
   });
 
   it("should call setSearchQuery when typing", () => {
@@ -172,7 +174,7 @@ describe("ShareLocationModal", () => {
           { id: "user-2", firstName: "Jane", lastName: "Smith", image: null },
         ],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -196,7 +198,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -219,7 +221,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -242,7 +244,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     const user = userEvent.setup();
@@ -267,7 +269,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -290,7 +292,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     const user = userEvent.setup();
@@ -315,7 +317,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-2", firstName: "Jane", lastName: "Smith", image: null }],
         sharingUserIds: ["user-2"],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -338,7 +340,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-2", firstName: "Jane", lastName: "Smith", image: null }],
         sharingUserIds: ["user-2"],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -361,7 +363,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-1", firstName: "John", lastName: "Doe", image: null }],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);
@@ -384,7 +386,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [{ id: "user-2", firstName: "Jane", lastName: "Smith", image: null }],
         sharingUserIds: ["user-2"],
-      })
+      }),
     );
 
     const user = userEvent.setup();
@@ -411,7 +413,7 @@ describe("ShareLocationModal", () => {
         },
         allAvailableUsers: [],
         sharingUserIds: [],
-      })
+      }),
     );
 
     renderWithProviders(<ShareLocationModal />);

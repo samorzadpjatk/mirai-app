@@ -252,10 +252,22 @@ describe("useTripResources", () => {
     const resourcesData = {
       resources: [
         { id: "res-1", type: TRIP_RESOURCE_TYPES.HERO_IMAGE, url: "https://example.com/hero.jpg" },
-        { id: "res-2", type: TRIP_RESOURCE_TYPES.MAP_BG_IMAGE, url: "https://example.com/map-bg.jpg" },
-        { id: "res-3", type: TRIP_RESOURCE_TYPES.INTERACTIVE_MAP, url: "https://example.com/interactive" },
+        {
+          id: "res-2",
+          type: TRIP_RESOURCE_TYPES.MAP_BG_IMAGE,
+          url: "https://example.com/map-bg.jpg",
+        },
+        {
+          id: "res-3",
+          type: TRIP_RESOURCE_TYPES.INTERACTIVE_MAP,
+          url: "https://example.com/interactive",
+        },
         { id: "res-4", type: TRIP_RESOURCE_TYPES.PDF_MAP, url: "https://example.com/map.pdf" },
-        { id: "res-5", type: TRIP_RESOURCE_TYPES.INFOPACK, url: "https://example.com/infopack.pdf" },
+        {
+          id: "res-5",
+          type: TRIP_RESOURCE_TYPES.INFOPACK,
+          url: "https://example.com/infopack.pdf",
+        },
         { id: "res-6", type: TRIP_RESOURCE_TYPES.WHATSAPP, url: "https://chat.whatsapp.com/group" },
         { id: "res-7", type: TRIP_RESOURCE_TYPES.SOS, url: "tel:+1234567890" },
       ],
@@ -282,7 +294,9 @@ describe("useTripResources", () => {
 
     expect(result.current.getResource("HERO_IMAGE")!.type).toBe(TRIP_RESOURCE_TYPES.HERO_IMAGE);
     expect(result.current.getResource("MAP_BG_IMAGE")!.type).toBe(TRIP_RESOURCE_TYPES.MAP_BG_IMAGE);
-    expect(result.current.getResource("INTERACTIVE_MAP")!.type).toBe(TRIP_RESOURCE_TYPES.INTERACTIVE_MAP);
+    expect(result.current.getResource("INTERACTIVE_MAP")!.type).toBe(
+      TRIP_RESOURCE_TYPES.INTERACTIVE_MAP,
+    );
     expect(result.current.getResource("PDF_MAP")!.type).toBe(TRIP_RESOURCE_TYPES.PDF_MAP);
     expect(result.current.getResource("INFOPACK")!.type).toBe(TRIP_RESOURCE_TYPES.INFOPACK);
     expect(result.current.getResource("WHATSAPP")!.type).toBe(TRIP_RESOURCE_TYPES.WHATSAPP);

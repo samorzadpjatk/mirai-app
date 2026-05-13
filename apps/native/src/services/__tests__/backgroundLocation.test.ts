@@ -2,7 +2,8 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
 // Mock expo-location
 const mockHasStartedLocationUpdatesAsync = jest.fn<(taskName: string) => Promise<boolean>>();
-const mockStartLocationUpdatesAsync = jest.fn<(taskName: string, options: Record<string, unknown>) => Promise<void>>();
+const mockStartLocationUpdatesAsync =
+  jest.fn<(taskName: string, options: Record<string, unknown>) => Promise<void>>();
 const mockStopLocationUpdatesAsync = jest.fn<(taskName: string) => Promise<void>>();
 
 jest.mock("expo-location", () => ({
@@ -16,8 +17,7 @@ jest.mock("expo-location", () => ({
     mockHasStartedLocationUpdatesAsync(...args),
   startLocationUpdatesAsync: (...args: [string, Record<string, unknown>]) =>
     mockStartLocationUpdatesAsync(...args),
-  stopLocationUpdatesAsync: (...args: [string]) =>
-    mockStopLocationUpdatesAsync(...args),
+  stopLocationUpdatesAsync: (...args: [string]) => mockStopLocationUpdatesAsync(...args),
 }));
 
 // Mock AsyncStorage
@@ -49,9 +49,7 @@ describe("Background Location Service", () => {
       const result = await getBackgroundLocationPreference();
 
       expect(result).toBe(true);
-      expect(mockGetItem).toHaveBeenCalledWith(
-        "background_location_updates_enabled"
-      );
+      expect(mockGetItem).toHaveBeenCalledWith("background_location_updates_enabled");
     });
 
     it("should return false when preference is disabled", async () => {
@@ -80,7 +78,7 @@ describe("Background Location Service", () => {
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to read background location preference:",
-        error
+        error,
       );
       consoleSpy.mockRestore();
     });
@@ -90,19 +88,13 @@ describe("Background Location Service", () => {
     it("should set preference to true", async () => {
       await setBackgroundLocationPreference(true);
 
-      expect(mockSetItem).toHaveBeenCalledWith(
-        "background_location_updates_enabled",
-        "true"
-      );
+      expect(mockSetItem).toHaveBeenCalledWith("background_location_updates_enabled", "true");
     });
 
     it("should set preference to false", async () => {
       await setBackgroundLocationPreference(false);
 
-      expect(mockSetItem).toHaveBeenCalledWith(
-        "background_location_updates_enabled",
-        "false"
-      );
+      expect(mockSetItem).toHaveBeenCalledWith("background_location_updates_enabled", "false");
     });
   });
 
@@ -114,7 +106,7 @@ describe("Background Location Service", () => {
 
       expect(result).toBe(true);
       expect(mockHasStartedLocationUpdatesAsync).toHaveBeenCalledWith(
-        "integral.background-location-updates"
+        "integral.background-location-updates",
       );
     });
 
@@ -136,7 +128,7 @@ describe("Background Location Service", () => {
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to check background location task state:",
-        error
+        error,
       );
       consoleSpy.mockRestore();
     });
@@ -166,7 +158,7 @@ describe("Background Location Service", () => {
             notificationColor: "#00ced1",
             killServiceOnDestroy: false,
           }),
-        })
+        }),
       );
     });
 
@@ -189,7 +181,7 @@ describe("Background Location Service", () => {
 
       expect(mockHasStartedLocationUpdatesAsync).toHaveBeenCalled();
       expect(mockStopLocationUpdatesAsync).toHaveBeenCalledWith(
-        "integral.background-location-updates"
+        "integral.background-location-updates",
       );
     });
 

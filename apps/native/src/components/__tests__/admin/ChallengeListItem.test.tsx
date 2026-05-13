@@ -26,7 +26,7 @@ describe("ChallengeListItem", () => {
         challenge={mockChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("Test Challenge")).toBeTruthy();
@@ -38,7 +38,7 @@ describe("ChallengeListItem", () => {
         challenge={mockChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("100 PTS")).toBeTruthy();
@@ -50,7 +50,7 @@ describe("ChallengeListItem", () => {
         challenge={mockChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("active")).toBeTruthy();
@@ -62,7 +62,7 @@ describe("ChallengeListItem", () => {
         challenge={mockChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("Test description")).toBeTruthy();
@@ -74,7 +74,7 @@ describe("ChallengeListItem", () => {
         challenge={mockChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     const deleteButtons = screen.getAllByText("trash");
@@ -89,7 +89,7 @@ describe("ChallengeListItem", () => {
         challenge={highPointChallenge}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("500 PTS")).toBeTruthy();
@@ -102,7 +102,7 @@ describe("ChallengeListItem", () => {
         challenge={challengeWithoutDesc}
         onDelete={mockOnDelete}
         onDeletePress={mockOnDeletePress}
-      />
+      />,
     );
 
     expect(screen.getByText("Test Challenge")).toBeTruthy();

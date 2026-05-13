@@ -48,7 +48,7 @@ describe("SaveGroupButton", () => {
     const onPress = jest.fn();
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <SaveGroupButton isSubmitting={true} onPress={onPress} />
+      <SaveGroupButton isSubmitting={true} onPress={onPress} />,
     );
 
     const button = screen.getByTestId("save-group-button");
@@ -64,7 +64,7 @@ describe("SaveGroupButton", () => {
     const onPress = jest.fn();
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <SaveGroupButton isSubmitting={false} onPress={onPress} />
+      <SaveGroupButton isSubmitting={false} onPress={onPress} />,
     );
 
     await user.press(screen.getByText("Save Changes"));
@@ -92,7 +92,7 @@ describe("SaveGroupButton", () => {
   it("should have disabled prop when isSubmitting is true", () => {
     const onPress = jest.fn();
     const { rerender } = renderWithProviders(
-      <SaveGroupButton isSubmitting={false} onPress={onPress} />
+      <SaveGroupButton isSubmitting={false} onPress={onPress} />,
     );
 
     let button = screen.getByTestId("save-group-button");

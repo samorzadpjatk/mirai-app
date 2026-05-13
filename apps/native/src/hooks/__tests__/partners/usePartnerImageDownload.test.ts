@@ -42,7 +42,12 @@ describe("usePartnerImageDownload", () => {
   });
 
   it("should indicate loading state during download", () => {
-    mockDownload.mockImplementation(() => new Promise((_resolve) => { /* noop */ }));
+    mockDownload.mockImplementation(
+      () =>
+        new Promise((_resolve) => {
+          /* noop */
+        }),
+    );
 
     const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
 
@@ -62,7 +67,7 @@ describe("usePartnerImageDownload", () => {
 
     const { result, rerender } = renderHook(
       (props: string | null) => usePartnerImageDownload(props),
-      { initialProps: "partners/logo1.jpg" }
+      { initialProps: "partners/logo1.jpg" },
     );
 
     await waitFor(() => {
@@ -77,5 +82,4 @@ describe("usePartnerImageDownload", () => {
       expect(mockDownload).toHaveBeenCalledTimes(2);
     });
   });
-
 });

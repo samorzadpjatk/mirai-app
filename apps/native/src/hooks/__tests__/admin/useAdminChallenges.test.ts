@@ -190,18 +190,22 @@ describe("useAdminChallenges", () => {
   });
 
   it("should create challenge", async () => {
-    const mockCreate = jest.fn<(data: {
-      tripId: string;
-      name: string;
-      description: string;
-      submissionType: string;
-      scoringCategory: string;
-      targetLatitude: number;
-      targetLongitude: number;
-    }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-      id: "challenge-new",
-      name: "New Challenge",
-    });
+    const mockCreate = jest
+      .fn<
+        (data: {
+          tripId: string;
+          name: string;
+          description: string;
+          submissionType: string;
+          scoringCategory: string;
+          targetLatitude: number;
+          targetLongitude: number;
+        }) => Promise<{ id: string; name: string }>
+      >()
+      .mockResolvedValue({
+        id: "challenge-new",
+        name: "New Challenge",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -244,14 +248,18 @@ describe("useAdminChallenges", () => {
   });
 
   it("should convert MULTI_IMAGE submission type to IMAGE", async () => {
-    const mockCreate = jest.fn<(data: {
-      tripId: string;
-      name: string;
-      submissionType: string;
-    }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-      id: "challenge-new",
-      name: "New Challenge",
-    });
+    const mockCreate = jest
+      .fn<
+        (data: {
+          tripId: string;
+          name: string;
+          submissionType: string;
+        }) => Promise<{ id: string; name: string }>
+      >()
+      .mockResolvedValue({
+        id: "challenge-new",
+        name: "New Challenge",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -286,15 +294,19 @@ describe("useAdminChallenges", () => {
   });
 
   it("should update challenge", async () => {
-    const mockUpdate = jest.fn<(data: {
-      id: string;
-      tripId: string;
-      name: string;
-      description: string;
-    }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-      id: "challenge-1",
-      name: "Updated Challenge",
-    });
+    const mockUpdate = jest
+      .fn<
+        (data: {
+          id: string;
+          tripId: string;
+          name: string;
+          description: string;
+        }) => Promise<{ id: string; name: string }>
+      >()
+      .mockResolvedValue({
+        id: "challenge-1",
+        name: "Updated Challenge",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -334,7 +346,9 @@ describe("useAdminChallenges", () => {
   });
 
   it("should delete challenge", async () => {
-    const mockDelete = jest.fn<(data: { id: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockDelete = jest
+      .fn<(data: { id: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -437,15 +451,19 @@ describe("useAdminChallenges", () => {
   });
 
   it("should use default submission type and scoring category", async () => {
-    const mockCreate = jest.fn<(data: {
-      tripId: string;
-      name: string;
-      submissionType: string;
-      scoringCategory: string;
-    }) => Promise<{ id: string; name: string }>>().mockResolvedValue({
-      id: "challenge-new",
-      name: "New Challenge",
-    });
+    const mockCreate = jest
+      .fn<
+        (data: {
+          tripId: string;
+          name: string;
+          submissionType: string;
+          scoringCategory: string;
+        }) => Promise<{ id: string; name: string }>
+      >()
+      .mockResolvedValue({
+        id: "challenge-new",
+        name: "New Challenge",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],

@@ -1,14 +1,28 @@
-const mockGetForegroundPermissionsAsync = jest.fn(() => Promise.resolve({ status: "undetermined" }));
+const mockGetForegroundPermissionsAsync = jest.fn(() =>
+  Promise.resolve({ status: "undetermined" }),
+);
 const mockRequestForegroundPermissionsAsync = jest.fn(() => Promise.resolve({ status: "granted" }));
-const mockGetBackgroundPermissionsAsync = jest.fn(() => Promise.resolve({ status: "undetermined" }));
+const mockGetBackgroundPermissionsAsync = jest.fn(() =>
+  Promise.resolve({ status: "undetermined" }),
+);
 const mockRequestBackgroundPermissionsAsync = jest.fn(() => Promise.resolve({ status: "granted" }));
 const mockHasStartedLocationUpdatesAsync = jest.fn(() => Promise.resolve(false));
 const mockStartLocationUpdatesAsync = jest.fn(() => Promise.resolve(undefined));
 const mockStopLocationUpdatesAsync = jest.fn(() => Promise.resolve(undefined));
 
 export const Accuracy = { Balanced: 2, High: 3, Low: 1, Lowest: 0, BestForNavigation: 4 };
-export const ActivityType = { Other: 0, Fitness: 1, AutomotiveNavigation: 2, OtherNavigation: 3, Airborne: 4 };
-export const PermissionStatus = { GRANTED: "granted", DENIED: "denied", UNDETERMINED: "undetermined" };
+export const ActivityType = {
+  Other: 0,
+  Fitness: 1,
+  AutomotiveNavigation: 2,
+  OtherNavigation: 3,
+  Airborne: 4,
+};
+export const PermissionStatus = {
+  GRANTED: "granted",
+  DENIED: "denied",
+  UNDETERMINED: "undetermined",
+};
 export const getForegroundPermissionsAsync = mockGetForegroundPermissionsAsync;
 export const requestForegroundPermissionsAsync = mockRequestForegroundPermissionsAsync;
 export const getBackgroundPermissionsAsync = mockGetBackgroundPermissionsAsync;
@@ -16,6 +30,8 @@ export const requestBackgroundPermissionsAsync = mockRequestBackgroundPermission
 export const hasStartedLocationUpdatesAsync = mockHasStartedLocationUpdatesAsync;
 export const startLocationUpdatesAsync = mockStartLocationUpdatesAsync;
 export const stopLocationUpdatesAsync = mockStopLocationUpdatesAsync;
-export const getCurrentPositionAsync = jest.fn(() => Promise.resolve({ coords: { latitude: 0, longitude: 0 } }));
+export const getCurrentPositionAsync = jest.fn(() =>
+  Promise.resolve({ coords: { latitude: 0, longitude: 0 } }),
+);
 export const getLastKnownPositionAsync = jest.fn(() => Promise.resolve(null));
 export const watchPositionAsync = jest.fn(() => Promise.resolve({ remove: jest.fn() }));

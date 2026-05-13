@@ -33,7 +33,7 @@ describe("AdminHeader", () => {
   it("calls onBackPress when back button is pressed", () => {
     const onBackPress = jest.fn();
     renderWithProviders(
-      <AdminHeader title="Test Title" showBackButton onBackPress={onBackPress} />
+      <AdminHeader title="Test Title" showBackButton onBackPress={onBackPress} />,
     );
 
     fireEvent.press(screen.getByTestId("back-button"));
@@ -42,10 +42,7 @@ describe("AdminHeader", () => {
 
   it("renders right component when provided", () => {
     renderWithProviders(
-      <AdminHeader
-        title="Test Title"
-        rightComponent={<Text>Right Content</Text>}
-      />
+      <AdminHeader title="Test Title" rightComponent={<Text>Right Content</Text>} />,
     );
 
     expect(screen.getByText("Right Content")).toBeTruthy();

@@ -59,7 +59,9 @@ describe("AdminActivityCard", () => {
   });
 
   it("renders activity content and group name", () => {
-    renderWithProviders(<AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />);
+    renderWithProviders(
+      <AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />,
+    );
 
     expect(screen.getByText("Test Activity")).toBeTruthy();
     expect(screen.getByText("submission")).toBeTruthy();
@@ -69,7 +71,9 @@ describe("AdminActivityCard", () => {
   });
 
   it("invokes callbacks from action buttons", () => {
-    renderWithProviders(<AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />);
+    renderWithProviders(
+      <AdminActivityCard item={baseActivity} canDelete isBusy={false} {...callbacks} />,
+    );
 
     fireEvent.press(screen.getByText("Edit"));
     fireEvent.press(screen.getByText("Pin"));
@@ -89,7 +93,7 @@ describe("AdminActivityCard", () => {
         canDelete={false}
         isBusy={false}
         {...callbacks}
-      />
+      />,
     );
 
     expect(screen.getByText("Pinned")).toBeTruthy();

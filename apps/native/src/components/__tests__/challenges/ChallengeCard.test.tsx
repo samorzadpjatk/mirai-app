@@ -18,12 +18,39 @@ jest.mock("@expo/vector-icons", () => {
   };
 });
 
-const mockChallenge: Challenge = { id: "1", title: "Test Challenge", description: "A test challenge description", points: 100, icon: "trophy", iconColor: "#FFD700", status: ChallengeStatus.INCOMPLETE, size: "normal" };
+const mockChallenge: Challenge = {
+  id: "1",
+  title: "Test Challenge",
+  description: "A test challenge description",
+  points: 100,
+  icon: "trophy",
+  iconColor: "#FFD700",
+  status: ChallengeStatus.INCOMPLETE,
+  size: "normal",
+};
 const mockWideChallenge: Challenge = { ...mockChallenge, id: "2", size: "wide" };
-const mockTallChallenge: Challenge = { ...mockChallenge, id: "3", size: "tall", participantAvatars: ["https://example.com/avatar1.jpg"], additionalParticipants: 2 };
-const mockLockedChallenge: Challenge = { ...mockChallenge, id: "4", status: ChallengeStatus.LOCKED };
-const mockSelectedChallenge: Challenge = { ...mockChallenge, id: "5", status: ChallengeStatus.SELECTED };
-const mockCompletedChallenge: Challenge = { ...mockChallenge, id: "6", status: ChallengeStatus.COMPLETED };
+const mockTallChallenge: Challenge = {
+  ...mockChallenge,
+  id: "3",
+  size: "tall",
+  participantAvatars: ["https://example.com/avatar1.jpg"],
+  additionalParticipants: 2,
+};
+const mockLockedChallenge: Challenge = {
+  ...mockChallenge,
+  id: "4",
+  status: ChallengeStatus.LOCKED,
+};
+const mockSelectedChallenge: Challenge = {
+  ...mockChallenge,
+  id: "5",
+  status: ChallengeStatus.SELECTED,
+};
+const mockCompletedChallenge: Challenge = {
+  ...mockChallenge,
+  id: "6",
+  status: ChallengeStatus.COMPLETED,
+};
 
 describe("ChallengeCard", () => {
   it("renders the challenge title and icon", () => {
@@ -40,13 +67,13 @@ describe("ChallengeCard", () => {
   it("renders the correct status text", () => {
     renderWithProviders(<ChallengeCard challenge={mockChallenge} />);
     expect(screen.getByText("Incomplete")).toBeTruthy();
-    
+
     renderWithProviders(<ChallengeCard challenge={mockSelectedChallenge} />);
     expect(screen.getByText("Selected")).toBeTruthy();
-    
+
     renderWithProviders(<ChallengeCard challenge={mockCompletedChallenge} />);
     expect(screen.getByText("Completed")).toBeTruthy();
-    
+
     renderWithProviders(<ChallengeCard challenge={mockLockedChallenge} />);
     expect(screen.getByText("Locked")).toBeTruthy();
   });

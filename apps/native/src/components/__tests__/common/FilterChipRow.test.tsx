@@ -6,8 +6,8 @@ import { FilterChipRow } from "../../common/ui/FilterChipRow";
 import { FilterChip } from "../../common/ui/FilterChip";
 
 interface ContentContainerStyle extends ViewStyle {
-  flexDirection?: 'row' | 'column';
-  alignItems?: 'center' | 'flex-start' | 'flex-end' | 'stretch' | 'baseline';
+  flexDirection?: "row" | "column";
+  alignItems?: "center" | "flex-start" | "flex-end" | "stretch" | "baseline";
   gap?: number;
   paddingRight?: number;
 }
@@ -18,7 +18,7 @@ describe("FilterChipRow", () => {
       <FilterChipRow>
         <FilterChip label="Chip 1" />
         <FilterChip label="Chip 2" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     expect(screen.getByText("Chip 1")).toBeOnTheScreen();
@@ -29,7 +29,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
@@ -41,7 +41,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
@@ -52,7 +52,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
@@ -69,14 +69,12 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow horizontalSpacing={20}>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
     expect(scrollView.props.contentContainerStyle).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ gap: 20 }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ gap: 20 })]),
     );
   });
 
@@ -85,12 +83,12 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow style={customStyle}>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
     expect(scrollView.props.contentContainerStyle).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
+      expect.arrayContaining([expect.objectContaining(customStyle)]),
     );
   });
 
@@ -101,7 +99,7 @@ describe("FilterChipRow", () => {
         <FilterChip label="Active" />
         <FilterChip label="Completed" />
         <FilterChip label="Archived" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     expect(screen.getByText("All")).toBeOnTheScreen();
@@ -114,7 +112,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Single Chip" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     expect(screen.getByText("Single Chip")).toBeOnTheScreen();
@@ -125,7 +123,7 @@ describe("FilterChipRow", () => {
       <FilterChipRow>
         <FilterChip label="Chip" />
         <Text>Text Element</Text>
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     expect(screen.getByText("Chip")).toBeOnTheScreen();
@@ -139,7 +137,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" onPress={handlePress} />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     await user.press(screen.getByText("Chip 1"));
@@ -151,7 +149,7 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <></>
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
@@ -162,14 +160,14 @@ describe("FilterChipRow", () => {
     renderWithProviders(
       <FilterChipRow>
         <FilterChip label="Chip 1" />
-      </FilterChipRow>
+      </FilterChipRow>,
     );
 
     const scrollView = screen.getByTestId("filter-chip-row");
     const scrollViewProps = scrollView.props as ScrollViewProps;
     const contentStyle = scrollViewProps.contentContainerStyle as ContentContainerStyle[];
     const hasRowDirection = contentStyle.some(
-      (s: ContentContainerStyle) => s?.flexDirection === "row"
+      (s: ContentContainerStyle) => s?.flexDirection === "row",
     );
     expect(hasRowDirection).toBe(true);
   });

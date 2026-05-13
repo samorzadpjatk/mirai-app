@@ -9,13 +9,9 @@ const noop = (): void => undefined;
 describe("AppModalShell", () => {
   it("should render when visible is true", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text>Modal Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     expect(screen.getByText("Test Modal")).toBeOnTheScreen();
@@ -25,13 +21,9 @@ describe("AppModalShell", () => {
   it("should call onClose when close button is pressed", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={onClose}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={onClose}>
         <Text>Modal Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     fireEvent.press(screen.getByText("✕"));
@@ -41,14 +33,9 @@ describe("AppModalShell", () => {
   it("should call onClose when overlay is pressed (card variant)", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={onClose}
-        variant="card"
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={onClose} variant="card">
         <Text>Modal Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     fireEvent.press(screen.getByTestId("app-modal-overlay"));
@@ -57,13 +44,9 @@ describe("AppModalShell", () => {
 
   it("should render with card variant by default", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -73,14 +56,9 @@ describe("AppModalShell", () => {
 
   it("should render with pageSheet variant", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-        variant="pageSheet"
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop} variant="pageSheet">
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -91,14 +69,9 @@ describe("AppModalShell", () => {
 
   it("should apply custom maxHeight", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-        maxHeight="60%"
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop} maxHeight="60%">
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -107,14 +80,9 @@ describe("AppModalShell", () => {
 
   it("should apply custom maxWidth", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-        maxWidth={400}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop} maxWidth={400}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -124,14 +92,9 @@ describe("AppModalShell", () => {
   it("should apply custom contentStyle", () => {
     const customStyle = { padding: 20 };
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-        contentStyle={customStyle}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop} contentStyle={customStyle}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -141,13 +104,9 @@ describe("AppModalShell", () => {
   it("should handle onRequestClose", () => {
     const onClose = jest.fn();
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={onClose}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={onClose}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -156,14 +115,9 @@ describe("AppModalShell", () => {
 
   it("should stop propagation when content is pressed", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={jest.fn()}
-        variant="card"
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={jest.fn()} variant="card">
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     expect(screen.getByTestId("app-modal-content")).toBeTruthy();
@@ -171,17 +125,13 @@ describe("AppModalShell", () => {
 
   it("should render complex children", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Complex Modal"
-        onClose={noop}
-      >
+      <AppModalShell visible={true} title="Complex Modal" onClose={noop}>
         <View>
           <Text>Header</Text>
           <Text>Body</Text>
           <Text>Footer</Text>
         </View>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     expect(screen.getByText("Header")).toBeOnTheScreen();
@@ -191,13 +141,9 @@ describe("AppModalShell", () => {
 
   it("should render with default maxHeight", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const modal = screen.getByTestId("app-modal");
@@ -206,13 +152,9 @@ describe("AppModalShell", () => {
 
   it("should render close button with correct styling", () => {
     renderWithProviders(
-      <AppModalShell
-        visible={true}
-        title="Test Modal"
-        onClose={noop}
-      >
+      <AppModalShell visible={true} title="Test Modal" onClose={noop}>
         <Text>Content</Text>
-      </AppModalShell>
+      </AppModalShell>,
     );
 
     const closeButton = screen.getByText("✕");
@@ -221,7 +163,7 @@ describe("AppModalShell", () => {
       expect.objectContaining({
         fontSize: 24,
         fontWeight: "600",
-      })
+      }),
     );
   });
 });

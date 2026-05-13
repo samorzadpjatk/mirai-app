@@ -28,7 +28,7 @@ jest.mock("~/components/judgement/CardStack", () => ({
   },
 }));
 
-const mockUseJudgement = (jest.requireMock("~/stores/judgement")).useJudgement;
+const mockUseJudgement = jest.requireMock("~/stores/judgement").useJudgement;
 
 describe("JudgementContent", () => {
   const defaultProps = { tripId: "trip-1", challengeId: "challenge-1" };
@@ -49,14 +49,18 @@ describe("JudgementContent", () => {
   });
 
   it("should render with provided tripId and challengeId", () => {
-    const { getByTestId } = renderWithProviders(<JudgementContent tripId="trip-2" challengeId="challenge-2" />);
+    const { getByTestId } = renderWithProviders(
+      <JudgementContent tripId="trip-2" challengeId="challenge-2" />,
+    );
     expect(getByTestId("judgement-header")).toBeTruthy();
     expect(getByTestId("card-stack")).toBeTruthy();
   });
 
   it("should render loading indicator when isLoading is true", () => {
     mockUseJudgement.mockReturnValueOnce({ isLoading: true });
-    const { getByTestId } = renderWithProviders(<JudgementContent tripId="trip-1" challengeId="challenge-1" />);
+    const { getByTestId } = renderWithProviders(
+      <JudgementContent tripId="trip-1" challengeId="challenge-1" />,
+    );
     expect(getByTestId("judgement-loading")).toBeTruthy();
   });
 });

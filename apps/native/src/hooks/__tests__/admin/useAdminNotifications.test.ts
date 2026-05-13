@@ -3,14 +3,18 @@ import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useAdminNotifications } from "../../admin/useAdminNotifications";
 
 // Mock oRPC
-const mockGetAllInfiniteOptions = jest.fn((options: {
-  input: (pageParam: number) => unknown;
-  initialPageParam: number;
-  getNextPageParam: (lastPage: { pagination?: { hasMore?: boolean; offset: number; limit: number } }) => unknown;
-}) => ({
-  queryKey: ["notifications", "getAll"],
-  ...options,
-}));
+const mockGetAllInfiniteOptions = jest.fn(
+  (options: {
+    input: (pageParam: number) => unknown;
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination?: { hasMore?: boolean; offset: number; limit: number };
+    }) => unknown;
+  }) => ({
+    queryKey: ["notifications", "getAll"],
+    ...options,
+  }),
+);
 
 const mockRetryNotificationMutation = jest.fn((options: { onSuccess: () => void }) => ({
   mutationFn: jest.fn(),
@@ -26,13 +30,26 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     notifications: {
       getAll: {
-        infiniteOptions: (options: { input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } }; initialPageParam: number; getNextPageParam: (lastPage: { pagination?: { hasMore?: boolean | undefined; offset: number; limit: number; } | undefined; }) => unknown; }) => mockGetAllInfiniteOptions(options),
+        infiniteOptions: (options: {
+          input: (pageParam: number) => {
+            tripId: string;
+            pagination: { limit: number; offset: number };
+          };
+          initialPageParam: number;
+          getNextPageParam: (lastPage: {
+            pagination?:
+              | { hasMore?: boolean | undefined; offset: number; limit: number }
+              | undefined;
+          }) => unknown;
+        }) => mockGetAllInfiniteOptions(options),
       },
       retryNotification: {
-        mutationOptions: (options: { onSuccess: () => void }) => mockRetryNotificationMutation(options),
+        mutationOptions: (options: { onSuccess: () => void }) =>
+          mockRetryNotificationMutation(options),
       },
       delete: {
-        mutationOptions: (options: { onSuccess: () => void }) => mockDeleteNotificationMutation(options),
+        mutationOptions: (options: { onSuccess: () => void }) =>
+          mockDeleteNotificationMutation(options),
       },
     },
   },
@@ -104,7 +121,12 @@ describe("useAdminNotifications", () => {
         createdAt: "2024-01-02T00:00:00Z",
         createdBy: { id: "user-2", firstName: "Jane", lastName: "Smith" },
         pushes: [
-          { targetUserId: "user-3", status: "failed", sentAt: null, failureReason: "Network error" },
+          {
+            targetUserId: "user-3",
+            status: "failed",
+            sentAt: null,
+            failureReason: "Network error",
+          },
         ],
       },
     ];
@@ -180,7 +202,9 @@ describe("useAdminNotifications", () => {
   });
 
   it("should retry notification", async () => {
-    const mockRetry = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockRetry = jest
+      .fn<() => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
     const mockRefetch = jest.fn();
 
     mockUseInfiniteQuery.mockReturnValue({
@@ -213,7 +237,9 @@ describe("useAdminNotifications", () => {
   });
 
   it("should delete notification", async () => {
-    const mockDelete = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockDelete = jest
+      .fn<() => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
     const mockRefetch = jest.fn();
 
     mockUseInfiniteQuery.mockReturnValue({

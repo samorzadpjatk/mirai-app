@@ -175,7 +175,10 @@ jest.mock("~/components/common/ui", () => {
     }: AppModalFooterProps) => (
       <View testID="modal-footer">
         <TouchableOpacity testID="primary-button" onPress={onPrimary} disabled={isPrimaryDisabled}>
-          <Text testID="primary-button-text">{isPrimaryLoading ? "Loading..." : primaryLabel}{isPrimaryDisabled ? " [disabled]" : ""}</Text>
+          <Text testID="primary-button-text">
+            {isPrimaryLoading ? "Loading..." : primaryLabel}
+            {isPrimaryDisabled ? " [disabled]" : ""}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
           <Text>{secondaryLabel}</Text>
@@ -204,7 +207,10 @@ jest.mock("~/components/common/ui", () => {
         accessibilityState={{ selected }}
         style={style}
       >
-        <Text testID={`segment-${label}-text`}>{label}{selected ? ' (selected)' : ''}</Text>
+        <Text testID={`segment-${label}-text`}>
+          {label}
+          {selected ? " (selected)" : ""}
+        </Text>
       </TouchableOpacity>
     ),
   };
@@ -440,7 +446,9 @@ describe("CreateScheduleModal", () => {
     });
 
     const primaryButton = screen.getByTestId("primary-button");
-    expect(primaryButton.props.accessibilityState?.disabled ?? primaryButton.props.disabled).toBe(true);
+    expect(primaryButton.props.accessibilityState?.disabled ?? primaryButton.props.disabled).toBe(
+      true,
+    );
   });
 
   it("should not render when modal is closed", async () => {

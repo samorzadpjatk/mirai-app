@@ -56,7 +56,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     user: {
       searchWithPagination: {
-        infiniteOptions: (options: { input: { tripId: string } }) => mockSearchWithPaginationQuery(options),
+        infiniteOptions: (options: { input: { tripId: string } }) =>
+          mockSearchWithPaginationQuery(options),
       },
       createUser: {
         mutationOptions: () => mockCreateUserMutation(),
@@ -255,12 +256,20 @@ describe("useAdminUsers", () => {
   });
 
   it("should assign user to group", async () => {
-    const mockAssign = jest.fn<(data: { userId: string; groupId: string; tripId: string }) => Promise<{ id: string; userId: string; groupId: string; tripId: string }>>().mockResolvedValue({
-      id: "assignment-1",
-      userId: "user-1",
-      groupId: "group-1",
-      tripId: "trip-123",
-    });
+    const mockAssign = jest
+      .fn<
+        (data: {
+          userId: string;
+          groupId: string;
+          tripId: string;
+        }) => Promise<{ id: string; userId: string; groupId: string; tripId: string }>
+      >()
+      .mockResolvedValue({
+        id: "assignment-1",
+        userId: "user-1",
+        groupId: "group-1",
+        tripId: "trip-123",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -301,7 +310,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should remove user from group", async () => {
-    const mockRemove = jest.fn<(data: { userId: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockRemove = jest
+      .fn<(data: { userId: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -345,12 +356,21 @@ describe("useAdminUsers", () => {
   });
 
   it("should create user", async () => {
-    const mockCreate = jest.fn<(data: { tripId: string; firstName: string; lastName: string; email: string }) => Promise<{ id: string; firstName: string; lastName: string; email: string }>>().mockResolvedValue({
-      id: "user-new",
-      firstName: "New",
-      lastName: "User",
-      email: "new@example.com",
-    });
+    const mockCreate = jest
+      .fn<
+        (data: {
+          tripId: string;
+          firstName: string;
+          lastName: string;
+          email: string;
+        }) => Promise<{ id: string; firstName: string; lastName: string; email: string }>
+      >()
+      .mockResolvedValue({
+        id: "user-new",
+        firstName: "New",
+        lastName: "User",
+        email: "new@example.com",
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -400,7 +420,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should ban user", async () => {
-    const mockBan = jest.fn<(data: { userId: string; bannedUntilMs: number; reason: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockBan = jest
+      .fn<(data: { userId: string; bannedUntilMs: number; reason: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -449,7 +471,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should delete user", async () => {
-    const mockDelete = jest.fn<(data: { userId: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockDelete = jest
+      .fn<(data: { userId: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -497,7 +521,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should update user name with trimmed values", async () => {
-    const mockUpdateName = jest.fn<(data: { userId: string; firstName: string; lastName: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockUpdateName = jest
+      .fn<(data: { userId: string; firstName: string; lastName: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -548,7 +574,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should update wrist number", async () => {
-    const mockUpdateWrist = jest.fn<(data: { userId: string; tripId: string; wristNumber: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockUpdateWrist = jest
+      .fn<(data: { userId: string; tripId: string; wristNumber: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -596,7 +624,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should remove wrist number when empty string provided", async () => {
-    const mockRemoveWrist = jest.fn<(data: { userId: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockRemoveWrist = jest
+      .fn<(data: { userId: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -644,7 +674,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should update house number", async () => {
-    const mockUpdateHouse = jest.fn<(data: { userId: string; tripId: string; houseNumber: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockUpdateHouse = jest
+      .fn<(data: { userId: string; tripId: string; houseNumber: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -694,7 +726,9 @@ describe("useAdminUsers", () => {
   });
 
   it("should remove house number when empty string provided", async () => {
-    const mockRemoveHouse = jest.fn<(data: { userId: string; tripId: string }) => Promise<undefined>>().mockResolvedValue(undefined);
+    const mockRemoveHouse = jest
+      .fn<(data: { userId: string; tripId: string }) => Promise<undefined>>()
+      .mockResolvedValue(undefined);
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -790,7 +824,16 @@ describe("useAdminUsers", () => {
       data: {
         pages: [
           {
-            users: [{ id: "user-1", firstName: "John", lastName: "Doe", email: "john@example.com", role: "USER", tripId: "trip-123" }],
+            users: [
+              {
+                id: "user-1",
+                firstName: "John",
+                lastName: "Doe",
+                email: "john@example.com",
+                role: "USER",
+                tripId: "trip-123",
+              },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 30 },
           },
         ],

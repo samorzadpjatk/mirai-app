@@ -190,7 +190,13 @@ describe("useTripDetails", () => {
 
     mockUseQuery.mockImplementation((options?: MockQueryOptions): MockQueryResult => {
       if (options?.queryKey?.includes("user")) {
-        return { data: currentUser, isLoading: false, isError: false, error: null, refetch: jest.fn() };
+        return {
+          data: currentUser,
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: jest.fn(),
+        };
       }
       return {
         data: null,
@@ -445,9 +451,12 @@ describe("useTripDetails", () => {
       };
     });
 
-    const { result, rerender } = renderHook(({ tripId }: { tripId: string }) => useTripDetails(tripId), {
-      initialProps: { tripId: "trip-1" },
-    });
+    const { result, rerender } = renderHook(
+      ({ tripId }: { tripId: string }) => useTripDetails(tripId),
+      {
+        initialProps: { tripId: "trip-1" },
+      },
+    );
 
     interface TripWithId {
       id: string;

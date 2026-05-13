@@ -16,7 +16,7 @@ describe("TopBar", () => {
         isAuthenticated={false}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Sign In")).toBeTruthy();
@@ -29,7 +29,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("John Doe")).toBeTruthy();
@@ -43,7 +43,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Jane Smith")).toBeTruthy();
@@ -57,7 +57,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("John Doe")).toBeTruthy();
@@ -70,7 +70,7 @@ describe("TopBar", () => {
         isAuthenticated={false}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Sign In")).toBeTruthy();
@@ -82,7 +82,7 @@ describe("TopBar", () => {
         isAuthenticated={false}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     const signButton = screen.getByText("Sign In");
@@ -98,7 +98,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     const signOutButton = screen.getByText("Sign Out");
@@ -114,7 +114,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Madonna")).toBeTruthy();
@@ -128,7 +128,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Sign Out")).toBeTruthy();
@@ -141,7 +141,7 @@ describe("TopBar", () => {
         isAuthenticated={true}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(screen.getByText("Sign Out")).toBeTruthy();
@@ -153,7 +153,7 @@ describe("TopBar", () => {
         isAuthenticated={false}
         onHomePress={mockOnHomePress}
         onSignPress={mockOnSignPress}
-      />
+      />,
     );
 
     expect(queryByText("John Doe")).toBeNull();

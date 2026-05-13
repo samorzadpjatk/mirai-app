@@ -21,9 +21,13 @@ jest.mock("~/components/common/ui", () => ({
         ? React.createElement(Text, { testID: "item-subtitle" }, props.subtitle)
         : null,
       props.leftAvatar && typeof props.leftAvatar === "object" && props.leftAvatar !== null
-        ? React.createElement(Text, { testID: "item-avatar" }, (props.leftAvatar as Record<string, string>).name)
+        ? React.createElement(
+            Text,
+            { testID: "item-avatar" },
+            (props.leftAvatar as Record<string, string>).name,
+          )
         : null,
-      props.rightElement
+      props.rightElement,
     );
   },
 }));
@@ -36,16 +40,14 @@ describe("MapModalUserItem", () => {
   });
 
   it("should render with subtitle", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" subtitle="Sharing location" />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" subtitle="Sharing location" />);
 
     expect(screen.getByTestId("item-subtitle").children[0]).toBe("Sharing location");
   });
 
   it("should render with imageUrl", () => {
     renderWithProviders(
-      <MapModalUserItem name="John Doe" imageUrl="https://example.com/avatar.jpg" />
+      <MapModalUserItem name="John Doe" imageUrl="https://example.com/avatar.jpg" />,
     );
 
     expect(screen.getByTestId("item-avatar").children[0]).toBe("John Doe");
@@ -53,34 +55,26 @@ describe("MapModalUserItem", () => {
 
   it("should handle onPress", () => {
     const mockOnPress = jest.fn();
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" onPress={mockOnPress} />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" onPress={mockOnPress} />);
 
     fireEvent.press(screen.getByTestId("themed-list-item"));
     expect(mockOnPress).toHaveBeenCalled();
   });
 
   it("should handle disabled state", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" disabled={true} />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" disabled={true} />);
 
     expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should handle selected state", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" selected={true} />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" selected={true} />);
 
     expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should handle bordered state", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" bordered={true} />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" bordered={true} />);
 
     expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
@@ -90,7 +84,7 @@ describe("MapModalUserItem", () => {
       <MapModalUserItem
         name="John Doe"
         rightElement={<Text testID="right-element">Remove</Text>}
-      />
+      />,
     );
 
     expect(screen.getByText("Remove")).toBeOnTheScreen();
@@ -103,17 +97,13 @@ describe("MapModalUserItem", () => {
   });
 
   it("should handle null imageUrl", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" imageUrl={null} />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" imageUrl={null} />);
 
     expect(screen.getByTestId("item-avatar").children[0]).toBe("John Doe");
   });
 
   it("should render without optional props", () => {
-    renderWithProviders(
-      <MapModalUserItem name="John Doe" />
-    );
+    renderWithProviders(<MapModalUserItem name="John Doe" />);
 
     expect(screen.getByTestId("item-title")).toBeOnTheScreen();
     expect(screen.queryByTestId("item-subtitle")).toBeNull();

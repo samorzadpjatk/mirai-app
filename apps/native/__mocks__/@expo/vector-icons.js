@@ -8,21 +8,17 @@ import { Text } from "react-native";
  */
 const createIconSetMock = (iconSetName) => {
   const MockIcon = ({ name, testID, ...props }) =>
-    createElement(
-      Text,
-      { testID: testID || `icon-${name}`, ...props },
-      name
-    );
+    createElement(Text, { testID: testID || `icon-${name}`, ...props }, name);
   MockIcon.displayName = iconSetName;
   return MockIcon;
 };
 
 /**
  * Global mock for @expo/vector-icons
- * 
+ *
  * This mock prevents React act() warnings by avoiding async font loading
  * and renders icon names as text for testability.
- * 
+ *
  * Benefits:
  * - Eliminates "An update to Icon inside a test was not wrapped in act(...)" warnings
  * - Makes icon names queryable via getByText("icon-name")
@@ -41,4 +37,6 @@ export const Octicons = createIconSetMock("Octicons");
 export const Zocial = createIconSetMock("Zocial");
 export const SimpleLineIcons = createIconSetMock("SimpleLineIcons");
 export const Fontisto = createIconSetMock("Fontisto");
-export function createIconSet() { return createIconSetMock("CustomIconSet"); }
+export function createIconSet() {
+  return createIconSetMock("CustomIconSet");
+}
