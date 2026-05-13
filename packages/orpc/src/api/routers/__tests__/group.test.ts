@@ -211,7 +211,7 @@ describe("groupRouter", () => {
       }),
     };
 
-    mockDb = createDrizzleProxy(mockDbBase as MockDbClient) as unknown as DB;
+    mockDb = createDrizzleProxy(mockDbBase);
   });
 
   // Helper to create authenticated context
@@ -2560,8 +2560,8 @@ describe("groupRouter", () => {
       const mockParticipant = createMockParticipant({ groupId: "group-123" });
       const mockGroup = createMockGroup({
         id: "group-123",
-        organizerId: null as unknown as string | undefined,
-        organizer: null as unknown as User | undefined,
+        organizerId: null,
+        organizer: null,
         participants: [],
         coinTransactions: [],
       });

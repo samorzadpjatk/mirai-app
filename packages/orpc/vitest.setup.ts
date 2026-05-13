@@ -193,7 +193,7 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     then: (resolve: (value: unknown) => unknown) => resolve([]),
   };
 
-  const db = mockDb as unknown as DB & Record<string, unknown>;
+  const db = mockDb as DB & Record<string, unknown>;
 
   db.query = new Proxy(
     {},
@@ -291,7 +291,7 @@ export function createMockDb(): MockDbClient {
     ),
   };
 
-  return createDrizzleProxy(mockDb) as unknown as MockDbClient;
+  return createDrizzleProxy(mockDb);
 }
 
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
@@ -299,8 +299,8 @@ export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCCon
   const mockDb = createMockDb();
 
   return {
-    db: createDrizzleProxy(mockDb) as unknown as DB,
-    supabase: mockSupabase as unknown as SupabaseClient,
+    db: createDrizzleProxy(mockDb),
+    supabase: mockSupabase,
     headers: new Headers(),
     accessToken: null,
     ...overrides,

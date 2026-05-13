@@ -81,7 +81,7 @@ describe("sponsorRouter", () => {
           getUserById: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123", email: "admin@example.com" } }, error: null }),
         },
       },
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
   });
 
   describe("getAll", () => {

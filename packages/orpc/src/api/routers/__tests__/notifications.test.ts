@@ -209,7 +209,7 @@ describe("notificationRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     mockDb = {
       user: {

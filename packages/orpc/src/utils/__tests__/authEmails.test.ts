@@ -22,7 +22,7 @@ describe("authEmails", () => {
           getUserById: vi.fn(),
         },
       },
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     vi.spyOn(console, "warn").mockImplementation(noop);
   });

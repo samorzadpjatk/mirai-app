@@ -121,7 +121,7 @@ describe("oRPC Router Testing Patterns", () => {
         },
       },
       from: vi.fn<(table: string) => MockQueryBuilder>(() => createMockQueryBuilder()),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
   });
 
   describe("Public Procedures", () => {
@@ -164,7 +164,7 @@ describe("oRPC Router Testing Patterns", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.greet({ name: 123 as unknown as string })).rejects.toThrow();
+      await expect(caller.greet({ name: 123 as any })).rejects.toThrow();
     });
   });
 

@@ -103,7 +103,7 @@ const createMockRewardPurchase = (overrides: Partial<RewardPurchase> = {}): Rewa
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  }) as unknown as RewardPurchase;
+  }) satisfies RewardPurchase;
 
 // Helper to create mock challenge
 const createMockChallenge = (overrides: Partial<Challenge> = {}): Challenge =>
@@ -126,7 +126,7 @@ const createMockChallenge = (overrides: Partial<Challenge> = {}): Challenge =>
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  }) as unknown as Challenge;
+  }) satisfies Challenge;
 
 describe("rewardRouter", () => {
   let mockDb: DB;
@@ -182,7 +182,7 @@ describe("rewardRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     // Setup mock database client
     mockDb = {

@@ -67,7 +67,7 @@ const createMockChallenge = (overrides?: Record<string, unknown>): Challenge =>
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  }) as unknown as Challenge;
+  }) satisfies Challenge;
 
 describe("challengeRouter", () => {
   let mockDb: DB;
@@ -173,7 +173,7 @@ describe("challengeRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     // Setup mock database client
     mockDb = {

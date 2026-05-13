@@ -96,7 +96,7 @@ describe("coinTransactionRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     // Setup mock database client
     mockDb = {
@@ -139,7 +139,7 @@ describe("coinTransactionRouter", () => {
   describe("getStatistics (moderatorProcedure)", () => {
     it("should return transaction statistics for trip", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(10);
-      (mockDb.coinTransaction.aggregate as unknown as ReturnType<typeof vi.fn>)
+      vi.mocked(mockDb.coinTransaction.aggregate)
         .mockResolvedValueOnce({ _sum: { amount: 500 } }) // addedCoins
         .mockResolvedValueOnce({ _sum: { amount: -200 } }); // removedCoins
 
@@ -157,7 +157,7 @@ describe("coinTransactionRouter", () => {
 
     it("should handle zero transactions", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      (mockDb.coinTransaction.aggregate as unknown as ReturnType<typeof vi.fn>)
+      vi.mocked(mockDb.coinTransaction.aggregate)
         .mockResolvedValueOnce({ _sum: { amount: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } });
 

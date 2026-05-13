@@ -195,7 +195,7 @@ describe("notificactionSchedule-validation", () => {
 
     it("should not throw when URL is null", () => {
       expect(() =>
-        validateNotificationContent("custom", "Title", "Body", null as unknown as undefined)
+        validateNotificationContent("custom", "Title", "Body", undefined)
       ).not.toThrow();
     });
 

@@ -198,7 +198,7 @@ describe("WebSocket Client Creation", () => {
     getORPCClient(httpUrl, wsUrl, token);
 
     expect(WebSocket).toHaveBeenCalled();
-    const wsUrlArg = (WebSocket as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
+    const wsUrlArg = (WebSocket as any).mock.calls[0]?.[0] as string;
     expect(wsUrlArg).toContain("authorization=");
     expect(wsUrlArg).toContain(encodeURIComponent("Bearer token123"));
   });

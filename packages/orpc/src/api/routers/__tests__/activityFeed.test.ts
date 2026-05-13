@@ -83,7 +83,7 @@ const createMockDb = () =>
       findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
-  }) as unknown as MockDbClient);
+  }) as MockDbClient;
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>
@@ -110,7 +110,7 @@ const createMockSupabase = () => {
         }),
       }),
     },
-  } as unknown as SupabaseClient;
+  } satisfies SupabaseClient;
 };
 
 describe("activityFeed router", () => {

@@ -24,7 +24,7 @@ describe("tripGuards", () => {
           findFirst: vi.fn(),
         },
       },
-    } as unknown as DB;
+    };
   });
 
   describe("ensureTripNotEnded", () => {
