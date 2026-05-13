@@ -10,12 +10,44 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Trip, TripParticipant, TripGroup, TripResource, TripInsurance, TripInsuranceStep, TripSponsor, Sponsor } from "@mirai-app/db";
 import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } from "@mirai-app/auth";
 
-vi.mock("@mirai-app/auth", () => ({
-  requireAuth: vi.fn(),
-  requireAdmin: vi.fn(),
-  AuthenticationError: class extends Error {},
-  AuthorizationError: class extends Error {},
-}));
+vi.mock("@mirai-app/auth", () => {
+  const mockSupabaseUser = {
+    id: "test-auth-user-id",
+    email: "test@example.com",
+    user_metadata: { firstName: "Test", lastName: "User" },
+  };
+
+  const mockDbUser = {
+    id: "test-db-user-id",
+    authUserId: "test-auth-user-id",
+    firstName: "Test",
+    lastName: "User",
+    role: "USER",
+  };
+
+  return {
+    requireAuth: vi.fn().mockResolvedValue({
+      user: mockSupabaseUser,
+      dbUser: mockDbUser,
+    }),
+    requireAdmin: vi.fn().mockResolvedValue({
+      ...mockDbUser,
+      role: "ADMIN",
+    }),
+    AuthenticationError: class extends Error {
+      constructor(message = "Not Authenticated") {
+        super(message);
+        this.name = "AuthenticationError";
+      }
+    },
+    AuthorizationError: class extends Error {
+      constructor(message = "Missing Required Permissions") {
+        super(message);
+        this.name = "AuthorizationError";
+      }
+    },
+  };
+});
 
 /**
  * Trip Router Tests

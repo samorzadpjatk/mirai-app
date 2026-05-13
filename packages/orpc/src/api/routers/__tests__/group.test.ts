@@ -339,6 +339,7 @@ describe("groupRouter", () => {
 
       const result = await caller.getAll({ tripId: "trip-123" });
 
+      console.log("[TEST DEBUG] result:", JSON.stringify(result, null, 2));
       expect(result.groups).toHaveLength(2);
       expect(result.pagination.total).toBe(2);
       expect(result.pagination.hasMore).toBe(false);

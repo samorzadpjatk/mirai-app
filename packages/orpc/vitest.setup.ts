@@ -180,50 +180,149 @@ function singularize(name: string): string {
   return name;
 }
 
-export function createDrizzleProxy(mockDb: MockDbClient): DB {
-  const returningChainable = {
-    returning: () => Promise.resolve([{}]),
-  };
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
 
-  function createChainable(tableName?: string) {
-    const chainable = {
-      from: (table: unknown) => {
-        if (typeof table === "string") {
-          return createChainable(singularize(table));
-        }
-        if (table && typeof table === "object") {
-          const obj = table as Record<string, unknown>;
-          if (obj.name && typeof obj.name === "string") {
-            return createChainable(singularize(obj.name));
+function getTableName(table: unknown): string | undefined {
+  if (typeof table === "string") return table;
+  if (table && typeof table === "object") {
+    const obj = table as Record<string | symbol, unknown>;
+    if (obj.name && typeof obj.name === "string") {
+      console.log("[DEBUG getTableName] found name:", obj.name);
+      return obj.name;
+    }
+    const sym = Object.getOwnPropertySymbols(obj).find(
+      (s) => s.description === "drizzle:Name"
+    );
+    if (sym && typeof obj[sym] === "string") {
+      console.log("[DEBUG getTableName] found symbol:", obj[sym]);
+      return obj[sym] as string;
+    }
+    console.log("[DEBUG getTableName] no name found for:", table);
+  }
+  return undefined;
+}
+
+function getModelName(table: unknown): string {
+  const name = getTableName(table);
+  return toCamelCase(singularize(name ?? "unknown"));
+}
+
+export function createDrizzleProxy(mockDb: MockDbClient): DB {
+  console.log("[DEBUG] createDrizzleProxy called");
+  const lastResults: Record<string, unknown> = {};
+
+  function createReturningChainable(modelName: string, method: string) {
+    return {
+      returning: () => {
+        const model = (mockDb as Record<string, unknown>)[modelName];
+        if (model && typeof model === "object" && method in model) {
+          const fn = (model as Record<string, unknown>)[method];
+          if (typeof fn === "function") {
+            const result = (fn as () => unknown)();
+            const promise = result instanceof Promise ? result : Promise.resolve(result);
+            return promise.then((result: unknown) => {
+              if (result !== null && result !== undefined) {
+                lastResults[modelName] = result;
+              }
+              if (Array.isArray(result)) return result;
+              return [result];
+            });
           }
         }
-        return createChainable(tableName);
+        return Promise.resolve([{}]);
+      },
+    };
+  }
+
+  function createInsertChainable(modelName: string) {
+    return {
+      values: (_data: unknown) => ({
+        ...createReturningChainable(modelName, "create"),
+        onConflictDoNothing: () => createReturningChainable(modelName, "upsert"),
+        onConflictDoUpdate: (_opts: unknown) => createReturningChainable(modelName, "upsert"),
+      }),
+    };
+  }
+
+  function createUpdateChainable(modelName: string) {
+    return {
+      set: (_data: unknown) => ({
+        where: (_condition: unknown) => createReturningChainable(modelName, "update"),
+      }),
+    };
+  }
+
+  function createDeleteChainable(modelName: string) {
+    return {
+      where: (_condition: unknown) => createReturningChainable(modelName, "delete"),
+    };
+  }
+
+  function createChainable(primaryTable?: string, selectFields?: unknown, joins: string[] = []) {
+    const chainable = {
+      from: (table: unknown) => {
+        const name = getTableName(table);
+        if (name) {
+          return createChainable(toCamelCase(singularize(name)), selectFields);
+        }
+        return createChainable(primaryTable, selectFields);
+      },
+      innerJoin: (table: unknown) => {
+        const name = getTableName(table);
+        if (name) {
+          return createChainable(primaryTable, selectFields, [...joins, name]);
+        }
+        return chainable;
+      },
+      leftJoin: (table: unknown) => {
+        const name = getTableName(table);
+        if (name) {
+          return createChainable(primaryTable, selectFields, [...joins, name]);
+        }
+        return chainable;
       },
       where: () => chainable,
-      innerJoin: () => chainable,
-      leftJoin: () => chainable,
       orderBy: () => chainable,
       limit: () => chainable,
       offset: () => chainable,
       groupBy: () => chainable,
       having: () => chainable,
       then: (resolve: (value: unknown) => unknown) => {
-        if (tableName) {
-          const model = (mockDb as Record<string, unknown>)[tableName];
+        console.log("[DEBUG SELECT] primaryTable:", primaryTable, "hasCount:", selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>));
+        if (primaryTable) {
+          const model = (mockDb as Record<string, unknown>)[primaryTable];
           if (model && typeof model === "object") {
             const hasCount = selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>);
             if (hasCount) {
               if ("count" in model) {
                 const countFn = (model as { count: () => Promise<number> }).count;
                 return countFn().then((result) => {
-                  console.log("[DEBUG] select count for", tableName, "result:", result);
+                  console.log("[DEBUG SELECT] count result for", primaryTable, ":", result);
                   return resolve([{ count: result }]);
                 });
               }
             }
             if ("findMany" in model) {
-              return (model as { findMany: () => Promise<unknown[]> }).findMany().then(resolve);
-            }
+                return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
+                  const transformed = (results as Record<string, unknown>[]).map((record) => {
+                    const item = { ...record };
+                    if (joins.length === 0) return item;
+                    const row: Record<string, unknown> = {};
+                    for (const joinTable of joins) {
+                      const joinModelName = toCamelCase(singularize(joinTable));
+                      if (joinModelName in item) {
+                        row[joinTable] = item[joinModelName];
+                        delete item[joinModelName];
+                      }
+                    }
+                    row[primaryTable] = item;
+                    return row;
+                  });
+                  return resolve(transformed);
+                });
+              }
           }
         }
         return resolve([]);
@@ -238,10 +337,28 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     {},
     {
       get(_, tableName) {
-        const modelName = singularize(String(tableName));
+        const modelName = toCamelCase(singularize(String(tableName)));
         const model = (mockDb as Record<string, unknown>)[modelName];
         if (model && typeof model === "object") {
-          return model;
+          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
+          return new Proxy(modelObj, {
+            get(_, methodName) {
+              const method = String(methodName);
+              if (method === "findFirst" || method === "findUnique") {
+                return (...args: unknown[]) => {
+                  if (modelObj[method]) {
+                    return modelObj[method](...args);
+                  }
+                  const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                  if (modelObj[otherMethod]) {
+                    return modelObj[otherMethod](...args);
+                  }
+                  return Promise.resolve(lastResults[modelName] ?? null);
+                };
+              }
+              return modelObj[method];
+            },
+          });
         }
         return {
           findFirst: vi.fn(() => Promise.resolve(null)),
@@ -253,23 +370,13 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     }
   );
 
-  db.insert = (_table: unknown) => ({
-    values: (_data: unknown) => returningChainable,
-    onConflictDoNothing: () => returningChainable,
-    onConflictDoUpdate: () => returningChainable,
-  });
+  db.insert = (table: unknown) => createInsertChainable(getModelName(table));
 
-  db.update = (_table: unknown) => ({
-    set: (_data: unknown) => ({
-      where: (_condition: unknown) => returningChainable,
-    }),
-  });
+  db.update = (table: unknown) => createUpdateChainable(getModelName(table));
 
-  db.delete = (_table: unknown) => ({
-    where: (_condition: unknown) => returningChainable,
-  });
+  db.delete = (table: unknown) => createDeleteChainable(getModelName(table));
 
-  db.select = () => createChainable();
+  db.select = (fields?: unknown) => createChainable(undefined, fields);
 
   db.transaction = (callback: (tx: DB) => Promise<unknown>) => callback(db);
 
