@@ -8,7 +8,6 @@ import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, TripParticipant, Group } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
 
 // Mock the authEmails utilities
@@ -23,9 +22,16 @@ vi.mock("../../../utils/authEmails", () => ({
 
 // Mock the auth module
 vi.mock("@mirai-app/auth", () => ({
-  requireAuth: vi.fn(),
-  requireAdmin: vi.fn(),
-  requireModerator: vi.fn(),
+  requireAuth: vi.fn().mockResolvedValue({
+    user: { id: "auth-1", email: "user@example.com" },
+    dbUser: { id: "user-1", authUserId: "auth-1", email: "user@example.com", firstName: "John", lastName: "Doe", role: "USER" },
+  }),
+  requireAdmin: vi.fn().mockResolvedValue({
+    id: "admin-1", authUserId: "auth-1", email: "admin@example.com", firstName: "Admin", lastName: "User", role: "ADMIN",
+  }),
+  requireModerator: vi.fn().mockResolvedValue({
+    id: "moderator-1", authUserId: "auth-1", email: "moderator@example.com", firstName: "Moderator", lastName: "User", role: "MODERATOR",
+  }),
   AuthenticationError: class AuthenticationError extends Error {},
   AuthorizationError: class AuthorizationError extends Error {},
 }));

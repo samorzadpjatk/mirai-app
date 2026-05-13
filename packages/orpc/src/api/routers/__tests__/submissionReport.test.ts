@@ -8,7 +8,6 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
 import * as tripGuards from "../../../utils/tripGuards";
 
@@ -35,8 +34,8 @@ describe("submissionReportRouter", () => {
   let mockParticipant: TripParticipant;
   let mockSubmission: ChallengeSubmission;
   let mockReport: SubmissionReport;
-  let mockBuildAuthEmailLookup: ReturnType<typeof vi.mocked<typeof authEmails.buildAuthEmailLookup>>;
-  let mockEnsureTripNotEnded: ReturnType<typeof vi.mocked<typeof tripGuards.ensureTripNotEnded>>;
+  let mockBuildAuthEmailLookup: ReturnType<typeof vi.fn>;
+  let mockEnsureTripNotEnded: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -204,6 +203,8 @@ describe("submissionReportRouter", () => {
       },
       $transaction: vi.fn(<T>(cb: (db: typeof mockDb) => T): T => cb(mockDb)),
     };
+
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   describe("create (protectedProcedure)", () => {

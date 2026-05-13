@@ -176,6 +176,7 @@ export function createMockSupabase(): MockSupabaseClient {
 }
 
 function singularize(name: string): string {
+  if (name.endsWith("ies")) return name.slice(0, -3) + "y";
   if (name.endsWith("s")) return name.slice(0, -1);
   return name;
 }
@@ -210,25 +211,28 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
   const lastResults: Record<string, unknown> = {};
 
   function createReturningChainable(modelName: string, method: string) {
-    return {
-      returning: () => {
-        const model = (mockDb as Record<string, unknown>)[modelName];
-        if (model && typeof model === "object" && method in model) {
-          const fn = (model as Record<string, unknown>)[method];
-          if (typeof fn === "function") {
-            const result = (fn as () => unknown)();
-            const promise = result instanceof Promise ? result : Promise.resolve(result);
-            return promise.then((result: unknown) => {
-              if (result !== null && result !== undefined) {
-                lastResults[modelName] = result;
-              }
-              if (Array.isArray(result)) return result;
-              return [result];
-            });
-          }
+    const execute = () => {
+      const model = (mockDb as Record<string, unknown>)[modelName];
+      if (model && typeof model === "object" && method in model) {
+        const fn = (model as Record<string, unknown>)[method];
+        if (typeof fn === "function") {
+          const result = (fn as () => unknown)();
+          const promise = result instanceof Promise ? result : Promise.resolve(result);
+          return promise.then((result: unknown) => {
+            if (result !== null && result !== undefined) {
+              lastResults[modelName] = result;
+            }
+            if (Array.isArray(result)) return result;
+            return [result];
+          });
         }
-        return Promise.resolve([{}]);
-      },
+      }
+      return Promise.resolve([{}]);
+    };
+
+    return {
+      returning: () => execute(),
+      then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
     };
   }
 
@@ -256,26 +260,26 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
     };
   }
 
-  function createChainable(primaryTable?: string, selectFields?: unknown, joins: string[] = []) {
+  function createChainable(primaryTable?: string, selectFields?: unknown, joins: string[] = [], primaryTableRaw?: string, hasGroupBy = false) {
     const chainable = {
       from: (table: unknown) => {
         const name = getTableName(table);
         if (name) {
-          return createChainable(toCamelCase(singularize(name)), selectFields);
+          return createChainable(toCamelCase(singularize(name)), selectFields, [], name, hasGroupBy);
         }
-        return createChainable(primaryTable, selectFields);
+        return createChainable(primaryTable, selectFields, joins, primaryTableRaw, hasGroupBy);
       },
       innerJoin: (table: unknown) => {
         const name = getTableName(table);
         if (name) {
-          return createChainable(primaryTable, selectFields, [...joins, name]);
+          return createChainable(primaryTable, selectFields, [...joins, name], primaryTableRaw, hasGroupBy);
         }
         return chainable;
       },
       leftJoin: (table: unknown) => {
         const name = getTableName(table);
         if (name) {
-          return createChainable(primaryTable, selectFields, [...joins, name]);
+          return createChainable(primaryTable, selectFields, [...joins, name], primaryTableRaw, hasGroupBy);
         }
         return chainable;
       },
@@ -283,20 +287,90 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
       orderBy: () => chainable,
       limit: () => chainable,
       offset: () => chainable,
-      groupBy: () => chainable,
+      groupBy: () => createChainable(primaryTable, selectFields, joins, primaryTableRaw, true),
       having: () => chainable,
       then: (resolve: (value: unknown) => unknown) => {
         if (primaryTable) {
           const model = (mockDb as Record<string, unknown>)[primaryTable];
           if (model && typeof model === "object") {
-            const hasCount = selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>);
-            if (hasCount) {
+            const fieldNames = selectFields && typeof selectFields === "object" ? Object.keys(selectFields as Record<string, unknown>) : [];
+            const hasAggregateFields = fieldNames.some((f) => ["count", "sum", "avg", "min", "max", "total", "totalAmount", "totalRecipients", "successCount", "failureCount", "avgSuccess", "avgFailure"].includes(f));
+
+            const hasCountOnly = selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>) && fieldNames.length === 1;
+            if (hasCountOnly) {
               if ("count" in model) {
                 const countFn = (model as { count: () => Promise<number> }).count;
                 return countFn().then((result) => {
                   return resolve([{ count: result }]);
                 });
               }
+            }
+            if (hasAggregateFields && hasGroupBy && "groupBy" in model) {
+              const groupByFn = (model as { groupBy: () => Promise<unknown[]> }).groupBy;
+              return groupByFn().then((results) => {
+                return resolve(results.map((row: unknown) => {
+                  const mapped: Record<string, unknown> = {};
+                  const r = row as Record<string, unknown>;
+                  for (const field of fieldNames) {
+                    if (field in r) mapped[field] = r[field];
+                    else if (field === "count" && (r as Record<string, Record<string, unknown>>)._count) {
+                      mapped.count = (r as Record<string, Record<string, unknown>>)._count.id ?? (r as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                    }
+                  }
+                  return mapped;
+                }));
+              });
+            }
+            if (hasAggregateFields && "aggregate" in model) {
+              const aggregateFn = (model as { aggregate: () => Promise<Record<string, unknown>> }).aggregate;
+              return aggregateFn().then((aggResult) => {
+                const mapped: Record<string, unknown> = {};
+                const agg = aggResult as Record<string, Record<string, unknown>>;
+                for (const field of fieldNames) {
+                  if (field === "count" && agg._count) {
+                    mapped.count = agg._count.id ?? agg._count._all ?? 0;
+                  } else if (agg._sum && field in agg._sum) {
+                    mapped[field] = agg._sum[field];
+                  } else if (agg._avg && field in agg._avg) {
+                    mapped[field] = agg._avg[field];
+                  }
+                }
+                return resolve([mapped]);
+              });
+            }
+            if (hasGroupBy && "groupBy" in model) {
+              const groupByFn = (model as { groupBy: () => Promise<Record<string, unknown>[]> }).groupBy;
+              return groupByFn().then((groups) => {
+                const mapped = (groups as Record<string, unknown>[]).map((row) => {
+                  const item: Record<string, unknown> = {};
+                  for (const field of fieldNames) {
+                    if (field in row) {
+                      item[field] = row[field];
+                    } else if (field === "count" && (row as Record<string, Record<string, unknown>>)._count) {
+                      item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                    }
+                  }
+                  return item;
+                });
+                return resolve(mapped);
+              });
+            }
+            if (hasAggregateFields && "aggregate" in model) {
+              const aggregateFn = (model as { aggregate: () => Promise<Record<string, unknown>> }).aggregate;
+              return aggregateFn().then((aggResult) => {
+                const mapped: Record<string, unknown> = {};
+                const agg = aggResult as Record<string, Record<string, unknown>>;
+                for (const field of fieldNames) {
+                  if (field === "count" && agg._count) {
+                    mapped.count = agg._count.id ?? agg._count._all ?? 0;
+                  } else if (agg._sum && field in agg._sum) {
+                    mapped[field] = agg._sum[field];
+                  } else if (agg._avg && field in agg._avg) {
+                    mapped[field] = agg._avg[field];
+                  }
+                }
+                return resolve([mapped]);
+              });
             }
             if ("findMany" in model) {
                 return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
@@ -311,7 +385,7 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                         delete item[joinModelName];
                       }
                     }
-                    row[primaryTable] = item;
+                    row[primaryTableRaw ?? primaryTable] = item;
                     return row;
                   });
                   return resolve(transformed);
@@ -339,15 +413,26 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
             get(_, methodName) {
               const method = String(methodName);
               if (method === "findFirst" || method === "findUnique") {
-                return (...args: unknown[]) => {
+                return async (...args: unknown[]) => {
                   if (modelObj[method]) {
-                    return modelObj[method](...args);
+                    const result = await modelObj[method](...args);
+                    if (result !== null && result !== undefined) {
+                      return result;
+                    }
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                    if (modelObj[otherMethod]) {
+                      const fb = await modelObj[otherMethod](...args);
+                      if (fb !== null && fb !== undefined) {
+                        return fb;
+                      }
+                    }
+                    return lastResults[modelName] ?? null;
                   }
                   const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                   if (modelObj[otherMethod]) {
                     return modelObj[otherMethod](...args);
                   }
-                  return Promise.resolve(lastResults[modelName] ?? null);
+                  return lastResults[modelName] ?? null;
                 };
               }
               return modelObj[method];
@@ -372,7 +457,15 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
 
   db.select = (fields?: unknown) => createChainable(undefined, fields);
 
-  db.transaction = (callback: (tx: DB) => Promise<unknown>) => callback(db);
+  db.transaction = (callback: (tx: DB) => Promise<unknown>) => {
+    if (typeof (mockDb as Record<string, unknown>).$transaction === "function") {
+      return (mockDb as Record<string, unknown>).$transaction((txDb: MockDbClient) => {
+        const txProxy = createDrizzleProxy(txDb);
+        return callback(txProxy as DB);
+      });
+    }
+    return callback(db);
+  };
 
   return db;
 }
