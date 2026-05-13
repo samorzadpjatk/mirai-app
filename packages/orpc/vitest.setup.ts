@@ -422,21 +422,15 @@ export function createDrizzleProxy(mockDb: MockDbClient): DB {
                 return async (...args: unknown[]) => {
                   if (modelObj[method]) {
                     const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
-                    }
-                    // Method exists but returned null/undefined - respect the explicit null,
-                    // don't fall back to other method which may have a stale default value.
-                    // Use lastResults only if it has a more recent value (e.g. after insert/update).
-                    return lastResults[modelName] ?? null;
+                    // If method exists and returns explicit null/undefined, respect it.
+                    // Don't fall back to lastResults (which may have stale update values)
+                    // or other methods (which may have unrelated default mocks).
+                    return result ?? null;
                   }
                   // Method doesn't exist on model - fall back to the other method
                   const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                   if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
+                    return modelObj[otherMethod](...args);
                   }
                   return lastResults[modelName] ?? null;
                 };
