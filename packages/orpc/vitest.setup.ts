@@ -180,7 +180,7 @@ function singularize(name: string): string {
   return name;
 }
 
-function createDrizzleProxy(mockDb: MockDbClient): DB {
+export function createDrizzleProxy(mockDb: MockDbClient): DB {
   const chainable = {
     where: () => chainable,
     innerJoin: () => chainable,
@@ -299,7 +299,7 @@ export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCCon
   const mockDb = createMockDb();
 
   return {
-    db: mockDb as unknown as DB,
+    db: createDrizzleProxy(mockDb) as unknown as DB,
     supabase: mockSupabase as unknown as SupabaseClient,
     headers: new Headers(),
     accessToken: null,

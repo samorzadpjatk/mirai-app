@@ -150,7 +150,7 @@ describe("groupRouter", () => {
     } as SupabaseClient;
 
     // Setup mock database client
-    mockDb = {
+    const mockDbBase = {
       group: {
         findMany: vi.fn().mockResolvedValue([]),
         findUnique: vi.fn().mockResolvedValue(null),
@@ -202,14 +202,16 @@ describe("groupRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn(async (callback: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
+      $transaction: vi.fn(async (callback: ((db: typeof mockDbBase) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
         if (typeof callback === "function") {
-          return await callback(mockDb);
+          return await callback(mockDbBase);
         }
         // Handle array of promises
         return Promise.all(callback);
       }),
-    } as DB;
+    };
+
+    mockDb = createDrizzleProxy(mockDbBase as MockDbClient) as unknown as DB;
   });
 
   // Helper to create authenticated context
