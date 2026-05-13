@@ -357,6 +357,7 @@ describe("notificationScheduleRouter", () => {
         },
       });
 
+      (mockDb.notificationSchedule as any).findFirst = vi.fn().mockResolvedValue(schedule);
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
 
       const { buildAuthEmailLookup, resolveAuthEmail } = await import("../../../utils/authEmails");
@@ -645,7 +646,7 @@ describe("notificationScheduleRouter", () => {
 
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(originalSchedule)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(duplicatedSchedule);
       (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -677,7 +678,7 @@ describe("notificationScheduleRouter", () => {
 
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(schedule)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(toggledSchedule);
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -694,7 +695,7 @@ describe("notificationScheduleRouter", () => {
 
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(schedule)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(toggledSchedule);
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
