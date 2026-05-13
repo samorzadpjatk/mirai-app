@@ -307,7 +307,8 @@ describe("rewardRouter", () => {
           const modelName = getModelName(table);
           const model = (db as Record<string, unknown>)[modelName];
           if (model && typeof model === "object" && "create" in model && typeof (model as Record<string, unknown>).create === "function") {
-            return passthroughReturning((model as Record<string, (...args: unknown[]) => Promise<unknown>).create({ data }));
+            const createFn = (model as any).create;
+            return passthroughReturning(createFn({ data }));
           }
           return passthroughReturning(data);
         },
@@ -318,7 +319,8 @@ describe("rewardRouter", () => {
             const modelName = getModelName(table);
             const model = (db as Record<string, unknown>)[modelName];
             if (model && typeof model === "object" && "update" in model && typeof (model as Record<string, unknown>).update === "function") {
-              return (model as Record<string, (...args: unknown[]) => Promise<unknown>).update({ data, where: {} }).then((result: unknown) => passthroughReturning(result));
+              const updateFn = (model as any).update;
+              return updateFn({ data, where: {} }).then((result: unknown) => passthroughReturning(result));
             }
             return passthroughReturning(data);
           },
