@@ -32,13 +32,12 @@ describe("config/db", () => {
     expect(mockCreateDb).toHaveBeenCalledWith(mockDbUrl);
   });
 
-  it("should export prisma instance", async () => {
-    const mockPrisma = {
-      user: { findMany: vi.fn() },
-      trip: { create: vi.fn() },
+    it("should export db instance", async () => {
+    const mockDb = {
+      query: { users: { findMany: vi.fn() }, trips: { create: vi.fn() } },
     };
     
-    mockCreateDb.mockReturnValue(mockPrisma);
+    mockCreateDb.mockReturnValue(mockDb);
 
     vi.doMock("../../config/env", () => ({
       env: {
@@ -46,9 +45,9 @@ describe("config/db", () => {
       },
     }));
 
-    const { prisma } = await import("../../config/db");
+    const { db } = await import("../../config/db");
 
-    expect(prisma).toBe(mockPrisma);
+    expect(db).toBe(mockDb);
   });
 
   it("should handle different database URLs", async () => {

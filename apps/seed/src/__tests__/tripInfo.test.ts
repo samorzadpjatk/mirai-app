@@ -5,7 +5,7 @@ import type { TripInfoConfig } from "../types";
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
-const mockCreateDb: ReturnType<typeof vi.fn> = vi.fn();
+const mockCreateDb = vi.fn();
 const mockUpload = vi.fn();
 const mockGetPublicUrl = vi.fn();
 
