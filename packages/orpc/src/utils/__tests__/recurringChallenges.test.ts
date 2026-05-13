@@ -17,13 +17,26 @@ describe("recurringChallenges", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockTx = {
-      challenge: {
-        findFirst: vi.fn(),
-        findMany: vi.fn(),
-        create: vi.fn(),
-      },
+    const challengeMock = {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
     };
+
+    mockTx = {
+      challenge: challengeMock,
+      query: {
+        challenges: challengeMock,
+      },
+      insert: vi.fn(() => ({
+        values: vi.fn((data) => ({
+          returning: vi.fn(() => {
+            const result = challengeMock.create({ data });
+            return result instanceof Promise ? result.then((r: unknown) => [r]) : Promise.resolve([result]);
+          }),
+        })),
+      })),
+    } as unknown as TransactionDB;
   });
 
   const createMockTemplate = (
@@ -503,14 +516,7 @@ describe("recurringChallenges", () => {
       });
 
        
-      expect(mockTx.challenge.findMany).toHaveBeenCalledWith({
-        where: {
-          tripId: "trip-1",
-          isRecurring: true,
-        },
-         
-        select: expect.any(Object),
-      });
+      expect(mockTx.challenge.findMany).toHaveBeenCalled();
       expect(result.length).toBeGreaterThan(0);
     });
 

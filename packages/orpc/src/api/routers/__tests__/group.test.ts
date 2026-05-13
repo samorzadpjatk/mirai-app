@@ -2308,6 +2308,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.create.mockResolvedValue(newGroup);
+      mockDb.group.findFirst.mockResolvedValue(newGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -2329,6 +2330,7 @@ describe("groupRouter", () => {
       });
 
       mockDb.group.create.mockResolvedValue(newGroup);
+      mockDb.group.findFirst.mockResolvedValue(newGroup);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
