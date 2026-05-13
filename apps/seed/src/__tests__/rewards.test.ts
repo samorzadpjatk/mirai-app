@@ -33,20 +33,27 @@ vi.mock("../config/env", () => ({
 }));
 
 describe("rewards", () => {
-  const mockRewardCreate: ReturnType<typeof vi.fn> = vi.fn();
+  const mockInsertValues: ReturnType<typeof vi.fn> = vi.fn();
+  const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
   const mockUserFindFirst: ReturnType<typeof vi.fn> = vi.fn();
   const mockCreateDb = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockCreateDb.mockReturnValue({
-      reward: { create: mockRewardCreate },
-      user: { findFirst: mockUserFindFirst },
+      query: {
+        users: {
+          findFirst: mockUserFindFirst,
+        },
+      },
+      insert: mockInsert,
     });
 
     vi.doMock("@mirai-app/db", () => ({
-      createDb: (...args: unknown[]) => mockCreateDb(...args) as { reward: { create: typeof mockRewardCreate }; user: { findFirst: typeof mockUserFindFirst } },
+      createDb: (...args: unknown[]) => mockCreateDb(...args) as { query: { users: { findFirst: typeof mockUserFindFirst } }; insert: typeof mockInsert },
+      users: "mock-users-table",
+      rewards: "mock-rewards-table",
     }));
   });
 
@@ -149,10 +156,10 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockRewardCreate).toHaveBeenCalledTimes(2);
-      expect(mockRewardCreate).toHaveBeenNthCalledWith(1, {
+      expect(mockInsertValues).toHaveBeenCalledTimes(2);
+      expect(mockInsertValues).toHaveBeenNthCalledWith(1,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+        expect.objectContaining({
           name: "Reward 1",
           description: "Desc 1",
           availableQuantity: 10,
@@ -161,7 +168,7 @@ describe("rewards", () => {
           tripId: "trip-1",
           createdById: "admin-1",
         }),
-      });
+      );
 
       consoleSpy.mockRestore();
     });
@@ -188,12 +195,12 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockRewardCreate).toHaveBeenCalledWith({
+      expect(mockInsertValues).toHaveBeenCalledWith(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+        expect.objectContaining({
           createdById: "admin-1",
         }),
-      });
+      );
 
       consoleSpy.mockRestore();
     });
@@ -213,12 +220,12 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockRewardCreate).toHaveBeenCalledWith({
+      expect(mockInsertValues).toHaveBeenCalledWith(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+        expect.objectContaining({
           createdById: "mod-1",
         }),
-      });
+      );
 
       consoleSpy.mockRestore();
     });
@@ -237,7 +244,7 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockRewardCreate).not.toHaveBeenCalled();
+      expect(mockInsertValues).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("No valid database user found to create rewards");
 
       consoleSpy.mockRestore();
@@ -252,7 +259,7 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards([], "trip-1", authUsers);
 
-      expect(mockRewardCreate).not.toHaveBeenCalled();
+      expect(mockInsertValues).not.toHaveBeenCalled();
     });
 
     it("should normalize image paths", async () => {
@@ -271,19 +278,19 @@ describe("rewards", () => {
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockRewardCreate).toHaveBeenNthCalledWith(1, {
+      expect(mockInsertValues).toHaveBeenNthCalledWith(1,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+        expect.objectContaining({
           image: "rewards/image.jpg",
         }),
-      });
+      );
 
-      expect(mockRewardCreate).toHaveBeenNthCalledWith(2, {
+      expect(mockInsertValues).toHaveBeenNthCalledWith(2,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+        expect.objectContaining({
           image: "rewards/image.jpg",
         }),
-      });
+      );
 
       consoleSpy.mockRestore();
     });
@@ -291,7 +298,7 @@ describe("rewards", () => {
     it("should handle database errors gracefully", async () => {
       const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst.mockResolvedValue(mockUser);
-      mockRewardCreate.mockRejectedValue(new Error("DB Error"));
+      mockInsertValues.mockRejectedValue(new Error("DB Error"));
 
       const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
@@ -333,7 +340,7 @@ describe("rewards", () => {
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockUserFindFirst).toHaveBeenCalledTimes(2);
-      expect(mockRewardCreate).toHaveBeenCalled();
+      expect(mockInsertValues).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
     });
