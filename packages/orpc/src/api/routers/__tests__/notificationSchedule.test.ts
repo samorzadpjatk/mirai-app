@@ -3,7 +3,6 @@
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import { notificationScheduleRouter } from "../../routers/notificationSchedule";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
@@ -165,26 +164,21 @@ describe("notificationScheduleRouter", () => {
     // Setup mock database client
     mockDb = {
       user: {
-        findFirst: vi.fn().mockResolvedValue(mockModeratorUser),
         findUnique: vi.fn().mockResolvedValue(mockModeratorUser),
       },
       notificationSchedule: {
         findMany: vi.fn().mockResolvedValue([createMockSchedule()]),
         findUnique: vi.fn().mockResolvedValue(createMockSchedule()),
-        findFirst: vi.fn().mockResolvedValue(createMockSchedule()),
         count: vi.fn().mockResolvedValue(1),
         create: vi.fn().mockResolvedValue(createMockSchedule()),
         update: vi.fn().mockResolvedValue(createMockSchedule()),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         delete: vi.fn().mockResolvedValue(createMockSchedule()),
-        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       notificationScheduleExecution: {
         findMany: vi.fn().mockResolvedValue([]),
         count: vi.fn().mockResolvedValue(0),
       },
       trip: {
-        findFirst: vi.fn().mockResolvedValue(createMockTrip()),
         findUnique: vi.fn().mockResolvedValue(createMockTrip()),
       },
     };
@@ -426,6 +420,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(newSchedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(newSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -450,7 +445,6 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.id).toBe("new-schedule");
-       
       expect(mockDb.notificationSchedule.create).toHaveBeenCalled();
     });
 
@@ -483,7 +477,7 @@ describe("notificationScheduleRouter", () => {
 
   describe("upsertTemplate", () => {
     it("should create new template schedule", async () => {
-      (mockDb.notificationSchedule.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockSchedule({ id: "template-schedule", name: "Daily Ranking" })
       );
@@ -501,7 +495,7 @@ describe("notificationScheduleRouter", () => {
     });
 
     it("should update existing template schedule", async () => {
-      (mockDb.notificationSchedule.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockSchedule({ id: "existing-schedule", name: "Daily Ranking" })
       );
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -585,6 +579,7 @@ describe("notificationScheduleRouter", () => {
 
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
       (mockDb.notificationSchedule.delete as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
+      (mockDb.notificationScheduleExecution.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -612,7 +607,10 @@ describe("notificationScheduleRouter", () => {
         { id: "schedule-1" },
         { id: "schedule-2" },
       ]);
-      (mockDb.notificationSchedule.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
+      (mockDb.notificationSchedule.delete as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockSchedule({ id: "schedule-1" }),
+        createMockSchedule({ id: "schedule-2" }),
+      ]);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -645,7 +643,9 @@ describe("notificationScheduleRouter", () => {
         isActive: false,
       });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(originalSchedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(originalSchedule)
+        .mockResolvedValueOnce(null);
       (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -675,7 +675,9 @@ describe("notificationScheduleRouter", () => {
       const schedule = createMockSchedule({ id: "schedule-123", isActive: true });
       const toggledSchedule = createMockSchedule({ id: "schedule-123", isActive: false });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(schedule)
+        .mockResolvedValueOnce(null);
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -690,7 +692,9 @@ describe("notificationScheduleRouter", () => {
       const schedule = createMockSchedule({ id: "schedule-123", isActive: false });
       const toggledSchedule = createMockSchedule({ id: "schedule-123", isActive: true });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce(schedule)
+        .mockResolvedValueOnce(null);
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -704,7 +708,11 @@ describe("notificationScheduleRouter", () => {
 
   describe("bulkToggleActive", () => {
     it("should bulk toggle schedules to active", async () => {
-      (mockDb.notificationSchedule.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 3 });
+      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockSchedule({ id: "schedule-1", isActive: true }),
+        createMockSchedule({ id: "schedule-2", isActive: true }),
+        createMockSchedule({ id: "schedule-3", isActive: true }),
+      ]);
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
