@@ -25,24 +25,47 @@ vi.mock("yaml", () => ({
   },
 }));
 
-describe("sponsors", () => {
-  const mockSponsorUpsert: ReturnType<typeof vi.fn> = vi.fn();
-  const mockTripSponsorUpsert: ReturnType<typeof vi.fn> = vi.fn();
-  const mockCreateDb = vi.fn();
+const sponsorsTable = { id: { name: "id" } };
+const tripSponsorsTable = {
+  tripId: { name: "tripId" },
+  sponsorId: { name: "sponsorId" },
+};
 
+const mockSponsorOnConflict = vi.fn().mockResolvedValue(undefined);
+const mockSponsorValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
+
+const mockTripSponsorOnConflict = vi.fn().mockResolvedValue(undefined);
+const mockTripSponsorValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
+
+const mockDbInsert = vi.fn((table: unknown) => {
+  if (table === sponsorsTable) return { values: mockSponsorValues };
+  if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
+  throw new Error("Unknown table");
+});
+
+describe("sponsors", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSponsorUpsert.mockReset();
-    mockTripSponsorUpsert.mockReset();
-    mockCreateDb.mockReset();
-    
-    mockCreateDb.mockReturnValue({
-      sponsor: { upsert: mockSponsorUpsert },
-      tripSponsor: { upsert: mockTripSponsorUpsert },
+
+    mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
+    mockTripSponsorOnConflict.mockReset().mockResolvedValue(undefined);
+
+    mockSponsorValues.mockClear().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
+    mockTripSponsorValues.mockClear().mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
+    mockDbInsert.mockClear().mockImplementation((table: unknown) => {
+      if (table === sponsorsTable) return { values: mockSponsorValues };
+      if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
+      throw new Error("Unknown table");
     });
 
+    vi.doMock("../config/db", () => ({
+      db: { insert: (table: unknown) => mockDbInsert(table) },
+    }));
+
     vi.doMock("@mirai-app/db", () => ({
-      createDb: (...args: unknown[]) => mockCreateDb(...args) as { sponsor: { upsert: typeof mockSponsorUpsert }; tripSponsor: { upsert: typeof mockTripSponsorUpsert } },
+      sponsors: sponsorsTable,
+      tripSponsors: tripSponsorsTable,
+      createDb: vi.fn(),
     }));
   });
 
@@ -122,7 +145,7 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", []);
 
-      expect(mockSponsorUpsert).not.toHaveBeenCalled();
+      expect(mockDbInsert).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("No sponsors configured, skipping...");
 
       consoleSpy.mockRestore();
@@ -146,19 +169,20 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
-      expect(mockSponsorUpsert).toHaveBeenCalledWith({
-        where: { id: "sponsor-1" },
-        update: {
-          name: "Acme Corp",
-          description: "A great sponsor",
-          logoPath: "images/sponsors/acme.png",
-          height: 20,
-          offsetX: 5,
-          offsetY: 10,
-          isActive: true,
-        },
-        create: {
-          id: "sponsor-1",
+      expect(mockDbInsert).toHaveBeenCalledWith(sponsorsTable);
+      expect(mockSponsorValues).toHaveBeenCalledWith({
+        id: "sponsor-1",
+        name: "Acme Corp",
+        description: "A great sponsor",
+        logoPath: "images/sponsors/acme.png",
+        height: 20,
+        offsetX: 5,
+        offsetY: 10,
+        isActive: true,
+      });
+      expect(mockSponsorOnConflict).toHaveBeenCalledWith({
+        target: sponsorsTable.id,
+        set: {
           name: "Acme Corp",
           description: "A great sponsor",
           logoPath: "images/sponsors/acme.png",
@@ -187,21 +211,22 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
-      expect(mockSponsorUpsert).toHaveBeenCalledWith({
-        where: { id: "sponsor-1" },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        update: expect.objectContaining({
+      expect(mockSponsorValues).toHaveBeenCalledWith(
+        expect.objectContaining({
           height: null,
           offsetX: null,
           offsetY: null,
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        create: expect.objectContaining({
-          height: null,
-          offsetX: null,
-          offsetY: null,
-        }),
-      });
+        })
+      );
+      expect(mockSponsorOnConflict).toHaveBeenCalledWith(
+        expect.objectContaining({
+          set: expect.objectContaining({
+            height: null,
+            offsetX: null,
+            offsetY: null,
+          }),
+        })
+      );
 
       consoleSpy.mockRestore();
     });
@@ -221,18 +246,14 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
-      expect(mockTripSponsorUpsert).toHaveBeenCalledWith({
-        where: {
-          tripId_sponsorId: {
-            tripId: "trip-1",
-            sponsorId: "sponsor-1",
-          },
-        },
-        update: {
-          tripId: "trip-1",
-          sponsorId: "sponsor-1",
-        },
-        create: {
+      expect(mockDbInsert).toHaveBeenCalledWith(tripSponsorsTable);
+      expect(mockTripSponsorValues).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        sponsorId: "sponsor-1",
+      });
+      expect(mockTripSponsorOnConflict).toHaveBeenCalledWith({
+        target: [tripSponsorsTable.tripId, tripSponsorsTable.sponsorId],
+        set: {
           tripId: "trip-1",
           sponsorId: "sponsor-1",
         },
@@ -253,8 +274,10 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
-      expect(mockSponsorUpsert).toHaveBeenCalledTimes(3);
-      expect(mockTripSponsorUpsert).toHaveBeenCalledTimes(3);
+      const sponsorCalls = mockDbInsert.mock.calls.filter(([table]) => table === sponsorsTable);
+      const tripSponsorCalls = mockDbInsert.mock.calls.filter(([table]) => table === tripSponsorsTable);
+      expect(sponsorCalls).toHaveLength(3);
+      expect(tripSponsorCalls).toHaveLength(3);
 
       consoleSpy.mockRestore();
     });
@@ -264,28 +287,13 @@ describe("sponsors", () => {
         { id: "sponsor-1", name: "Sponsor 1", description: "Desc 1", logoPath: "img.png" },
       ];
 
-      mockSponsorUpsert.mockRejectedValue(new Error("DB Error"));
+      mockSponsorOnConflict.mockRejectedValue(new Error("DB Error"));
 
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
 
       const { seedSponsors } = await import("../sponsors");
       await expect(seedSponsors("db-url", "trip-1", "dev", sponsorConfigs)).rejects.toThrow("DB Error");
       expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed sponsors:", expect.any(Error));
-
-      consoleSpy.mockRestore();
-    });
-
-    it("should create database client with provided URL", async () => {
-      const sponsorConfigs: SponsorConfig[] = [
-        { id: "sponsor-1", name: "Sponsor 1", description: "Desc 1", logoPath: "img.png" },
-      ];
-
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-
-      const { seedSponsors } = await import("../sponsors");
-      await seedSponsors("postgresql://test:5432/db", "trip-1", "dev", sponsorConfigs);
-
-      expect(mockCreateDb).toHaveBeenCalledWith("postgresql://test:5432/db");
 
       consoleSpy.mockRestore();
     });
