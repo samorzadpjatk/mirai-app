@@ -123,6 +123,29 @@ describe("coinTransactionRouter", () => {
         findFirst: vi.fn().mockResolvedValue(mockModeratorUser),
         findUnique: vi.fn().mockResolvedValue({ firstName: "Test", lastName: "Admin" }),
       },
+      // Drizzle API methods
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            groupBy: vi.fn(() => ({
+              orderBy: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([{ adminId: "user-123", _sum: { amount: 500 }, _count: { id: 5 } }])),
+              })),
+            })),
+            limit: vi.fn(() => Promise.resolve([])),
+            then: vi.fn((resolve: (value: unknown) => unknown) => resolve([mockGroup])),
+          })),
+          then: vi.fn((resolve: (value: unknown) => unknown) => resolve([mockGroup])),
+        })),
+      })),
+    };
+
+    // Add Drizzle query API layer
+    (mockDb as any).query = {
+      coinTransactions: mockDb.coinTransaction,
+      groups: mockDb.group,
+      tripParticipants: mockDb.tripParticipant,
+      users: mockDb.user,
     };
   });
 
