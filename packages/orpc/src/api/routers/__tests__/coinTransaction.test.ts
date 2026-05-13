@@ -3,7 +3,6 @@
  
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import { coinTransactionRouter } from "../../routers/coinTransaction";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
@@ -267,7 +266,7 @@ describe("coinTransactionRouter", () => {
   describe("getStatistics (moderatorProcedure)", () => {
     it("should return transaction statistics for trip", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(10);
-      vi.mocked(mockDb.coinTransaction.aggregate)
+      (mockDb.coinTransaction.aggregate as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ _sum: { amount: 500 } }) // addedCoins
         .mockResolvedValueOnce({ _sum: { amount: -200 } }); // removedCoins
 
@@ -285,7 +284,7 @@ describe("coinTransactionRouter", () => {
 
     it("should handle zero transactions", async () => {
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
-      vi.mocked(mockDb.coinTransaction.aggregate)
+      (mockDb.coinTransaction.aggregate as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ _sum: { amount: null } })
         .mockResolvedValueOnce({ _sum: { amount: null } });
 
@@ -673,7 +672,7 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -690,7 +689,7 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+      ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
         createMockGroup({ id: "group-123", tripId: "different-trip" })
       );
 
