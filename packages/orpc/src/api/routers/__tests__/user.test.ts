@@ -1317,13 +1317,17 @@ describe("userRouter", () => {
             tripParticipant: {
               ...mockDb.tripParticipant,
               upsert: vi.fn().mockResolvedValue(participant),
+              findFirst: vi.fn().mockResolvedValue(participant),
+              findUnique: vi.fn().mockResolvedValue(participant),
             },
             user: {
               ...mockDb.user,
               upsert: vi.fn().mockResolvedValue(newUser),
+              findFirst: vi.fn().mockResolvedValue(newUser),
+              findUnique: vi.fn().mockResolvedValue(newUser),
             },
           };
-          return fn(tx);
+          return fn(createDrizzleProxy(tx as any));
         });
 
         const ctx: TRPCContext = {
@@ -1363,13 +1367,17 @@ describe("userRouter", () => {
             tripParticipant: {
               ...mockDb.tripParticipant,
               upsert: vi.fn().mockResolvedValue(participant),
+              findFirst: vi.fn().mockResolvedValue(participant),
+              findUnique: vi.fn().mockResolvedValue(participant),
             },
             user: {
               ...mockDb.user,
               upsert: vi.fn().mockResolvedValue(existingUser),
+              findFirst: vi.fn().mockResolvedValue(existingUser),
+              findUnique: vi.fn().mockResolvedValue(existingUser),
             },
           };
-          return fn(tx);
+          return fn(createDrizzleProxy(tx as any));
         });
 
         const ctx: TRPCContext = {
@@ -1785,7 +1793,10 @@ describe("userRouter", () => {
           wristNumber: "W123",
         });
 
-        mockDb.tripParticipant.findFirst.mockResolvedValue(null);
+        mockDb.tripParticipant.findFirst
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(null);
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
@@ -1875,6 +1886,8 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.update.mockResolvedValue(participant);
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
         const ctx: TRPCContext = {
@@ -1904,6 +1917,8 @@ describe("userRouter", () => {
           houseNumber: "H101",
         });
 
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
@@ -1963,6 +1978,8 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.update.mockResolvedValue(participant);
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
         const ctx: TRPCContext = {

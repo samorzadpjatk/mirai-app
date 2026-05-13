@@ -663,14 +663,14 @@ describe("groupRouter", () => {
 
       mockDb.group.findFirst
         .mockResolvedValueOnce(existingGroup)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(updatedGroup);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
       requireAuth.mockResolvedValue({
-        user: { id: "auth-123", email: "test@example.com" },
-        dbUser: mockUser,
+        user: { id: "auth-admin-123", email: "admin@example.com" },
+        dbUser: mockAdminUser,
       });
 
       const ctx = createAuthContext(mockUser);
@@ -712,7 +712,7 @@ describe("groupRouter", () => {
 
       mockDb.group.findFirst
         .mockResolvedValueOnce(existingGroup)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(updatedGroup);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test
@@ -760,7 +760,7 @@ describe("groupRouter", () => {
 
       mockDb.group.findFirst
         .mockResolvedValueOnce(existingGroup)
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(updatedGroup);
       mockDb.group.update.mockResolvedValue(updatedGroup);
 
       // Override the requireAuth mock to return the correct user for this test

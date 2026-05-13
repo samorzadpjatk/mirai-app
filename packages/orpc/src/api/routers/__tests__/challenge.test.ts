@@ -453,6 +453,7 @@ describe("challengeRouter", () => {
        
        
       mockDb.challenge.findFirst.mockResolvedValue(null);
+            mockDb.challenge.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1018,6 +1019,7 @@ describe("challengeRouter", () => {
        
        
       mockDb.challenge.findFirst.mockResolvedValue(null);
+            mockDb.challenge.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1343,6 +1345,7 @@ describe("challengeRouter", () => {
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
       mockDb.challenge.findFirst.mockResolvedValue(null);
+            mockDb.challenge.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1387,6 +1390,7 @@ describe("challengeRouter", () => {
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
       mockDb.challenge.findFirst.mockResolvedValue(null);
+            mockDb.challenge.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,

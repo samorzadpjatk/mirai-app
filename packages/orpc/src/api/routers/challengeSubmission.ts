@@ -612,6 +612,7 @@ export const challengeSubmissionRouter = createORPCRouter({
         columns: { id: true },
       });
 
+      console.log("[ROUTER] existing:", existing, "truthy:", !!existing);
       if (existing) {
         throw new ORPCError("CONFLICT", { message: "Zgłoszenie dla tej grupy już istnieje" });
       }

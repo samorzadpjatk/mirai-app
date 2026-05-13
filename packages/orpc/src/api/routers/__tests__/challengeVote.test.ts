@@ -342,6 +342,7 @@ describe("challengeVoteRouter", () => {
 
     it("should throw FORBIDDEN when user is not a trip participant", async () => {
       mockDb.tripParticipant.findFirst.mockResolvedValue(null);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

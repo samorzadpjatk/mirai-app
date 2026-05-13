@@ -51,10 +51,13 @@ import { ensureTripNotEnded } from "~/utils/tripGuards";
 const createCaller = (ctx: TRPCContext) => createRouterClient(challengeSubmissionRouter, { context: ctx });
 
 function syncFindFirstWithFindUnique(model: Record<string, unknown>) {
-  if (model && typeof model.findFirst === "function" && typeof model.findUnique === "function") {
-    const shared = vi.fn().mockResolvedValue(null);
-    model.findFirst = shared;
-    model.findUnique = shared;
+  if (model && typeof model.findFirst === "function" && !model.findUnique) {
+    const findFirstFn = model.findFirst as (...args: unknown[]) => Promise<unknown>;
+    model.findUnique = vi.fn().mockImplementation((...args: unknown[]) => findFirstFn(...args));
+  }
+  if (model && typeof model.findUnique === "function" && !model.findFirst) {
+    const findUniqueFn = model.findUnique as (...args: unknown[]) => Promise<unknown>;
+    model.findFirst = vi.fn().mockImplementation((...args: unknown[]) => findUniqueFn(...args));
   }
 }
 

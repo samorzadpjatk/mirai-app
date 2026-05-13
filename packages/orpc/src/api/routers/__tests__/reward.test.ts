@@ -857,6 +857,7 @@ describe("rewardRouter", () => {
 
     it("should throw FORBIDDEN when user has no group", async () => {
       mockDb.tripParticipant.findFirst.mockResolvedValue(null);
+      mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

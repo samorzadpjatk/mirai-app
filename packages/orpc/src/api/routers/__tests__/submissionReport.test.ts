@@ -249,6 +249,12 @@ describe("submissionReportRouter", () => {
     });
 
     it("should create a report without optional details", async () => {
+      mockDb.submissionReport.findFirst.mockResolvedValue({
+        ...mockReport,
+        reason: "Spam",
+        details: undefined,
+      });
+
       const ctx: TRPCContext = {
         db: mockDb,
         supabase: mockSupabase,
@@ -723,6 +729,10 @@ describe("submissionReportRouter", () => {
 
     it("should handle very long reason text", async () => {
       const longReason = "a".repeat(1000);
+      mockDb.submissionReport.findFirst.mockResolvedValue({
+        ...mockReport,
+        reason: longReason,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -744,6 +754,11 @@ describe("submissionReportRouter", () => {
     it("should handle special characters in reason and details", async () => {
       const specialReason = "Inappropriate <script>alert('xss')</script> content";
       const specialDetails = "Details with unicode: 日本語 🎉 \\n \\t";
+      mockDb.submissionReport.findFirst.mockResolvedValue({
+        ...mockReport,
+        reason: specialReason,
+        details: specialDetails,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,

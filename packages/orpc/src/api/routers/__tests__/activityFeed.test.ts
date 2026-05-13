@@ -83,7 +83,7 @@ const createMockDb = () =>
       findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
-  }) as MockDbClient;
+  }) as MockDbClient);
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>
@@ -362,6 +362,7 @@ describe("activityFeed router", () => {
         id: "sub-1",
         videoId: null,
         imageIds: ["img-1"],
+        challenge: { tripId: "trip-1" },
       });
       mockCtx.db.activityFeed.create.mockResolvedValueOnce({
         id: "activity-new",
