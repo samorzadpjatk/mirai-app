@@ -187,13 +187,7 @@ describe("notificationScheduleRouter", () => {
       },
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      users: mockDb.user,
-      notificationSchedules: mockDb.notificationSchedule,
-      notificationScheduleExecutions: mockDb.notificationScheduleExecution,
-      trips: mockDb.trip,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   // Helper to create authenticated context

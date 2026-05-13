@@ -74,12 +74,7 @@ describe("sponsorRouter", () => {
       },
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      sponsors: mockDb.sponsor,
-      tripSponsors: mockDb.tripSponsor,
-      trips: mockDb.trip,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
 
     mockSupabase = {
       auth: {

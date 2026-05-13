@@ -241,15 +241,7 @@ describe("challengeVoteRouter", () => {
       }),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      challenges: mockDb.challenge,
-      challengeSubmissions: mockDb.challengeSubmission,
-      challengeVotes: mockDb.challengeVote,
-      tripParticipants: mockDb.tripParticipant,
-      users: mockDb.user,
-      trips: mockDb.trip,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   // Helper to create authenticated context

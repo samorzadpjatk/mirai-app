@@ -139,11 +139,7 @@ describe("userRouter", () => {
       $transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      users: mockDb.user,
-      tripParticipants: mockDb.tripParticipant,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
 
     // Setup mock Supabase client
     mockSupabase = {

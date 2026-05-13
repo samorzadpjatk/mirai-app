@@ -294,15 +294,7 @@ describe("rewardRouter", () => {
       })),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      rewards: mockDb.reward,
-      rewardPurchases: mockDb.rewardPurchase,
-      groups: mockDb.group,
-      tripParticipants: mockDb.tripParticipant,
-      challenges: mockDb.challenge,
-      coinTransactions: mockDb.coinTransaction,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   // Helper to create authenticated context

@@ -140,13 +140,7 @@ describe("coinTransactionRouter", () => {
       })),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      coinTransactions: mockDb.coinTransaction,
-      groups: mockDb.group,
-      tripParticipants: mockDb.tripParticipant,
-      users: mockDb.user,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   // Helper to create authenticated context

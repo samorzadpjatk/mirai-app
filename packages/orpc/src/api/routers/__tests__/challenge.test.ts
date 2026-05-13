@@ -272,19 +272,7 @@ describe("challengeRouter", () => {
       transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      challenges: mockDb.challenge,
-      challengeSubmissions: mockDb.challengeSubmission,
-      tripParticipants: mockDb.tripParticipant,
-      users: mockDb.user,
-      groups: mockDb.group,
-      coinTransactions: mockDb.coinTransaction,
-      userAgents: mockDb.userAgent,
-      activityFeeds: mockDb.activityFeed,
-      challengeActivities: mockDb.challengeActivity,
-      submissionActivities: mockDb.submissionActivity,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
   });
 
   describe("getAll (adminProcedure)", () => {

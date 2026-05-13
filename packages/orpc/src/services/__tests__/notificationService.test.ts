@@ -7,7 +7,7 @@ import {
   sendMobileNotifications,
   type NotificationData,
 } from "../notificationService";
-import type { DB, Notification, PushSubscription, NotificationPush } from "@mirai-app/db";
+import { type DB, type Notification, type PushSubscription, type NotificationPush, notificationPushes, tripParticipants, challenges } from "@mirai-app/db";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Expo } from "expo-server-sdk";
 import { executeWithRetry } from "../../utils/resilience";
@@ -290,20 +290,105 @@ describe("sendMobileNotifications", () => {
       trip: {
         findUnique: vi.fn().mockResolvedValue({ id: "trip-1", name: "Test Trip" }),
       },
-       
+
       $transaction: vi.fn((cb: (client: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
+
+      query: {
+        notifications: {
+          findFirst: vi.fn(async ({ where }: any) => {
+            const n = await mockDb.notification.findUnique();
+            if (!n) return null;
+            if (where) {
+              return where(n, { eq: (a: unknown, b: unknown) => a === b }) ? n : null;
+            }
+            return n;
+          }),
+        },
+        notificationPushes: {
+          findMany: vi.fn(async ({ where }: any) => {
+            const rows = await mockDb.notificationPush.findMany();
+            if (where) {
+              return rows.filter((row: NotificationPush) => where(row, { eq: (a: unknown, b: unknown) => a === b }));
+            }
+            return rows;
+          }),
+        },
+        pushSubscriptions: {
+          findMany: vi.fn(async () => mockDb.pushSubscription.findMany()),
+        },
+        tripParticipants: {
+          findMany: vi.fn(async () => mockDb.tripParticipant.findMany()),
+        },
+        groups: {
+          findMany: vi.fn(async ({ where, orderBy }: any) => {
+            const rows = await mockDb.group.findMany();
+            if (where) {
+              return rows.filter((row: any) => where(row, { eq: (a: unknown, b: unknown) => a === b, and: (...conds: boolean[]) => conds.every(Boolean) }));
+            }
+            return rows;
+          }),
+        },
+        challenges: {
+          findMany: vi.fn(async () => []),
+        },
+        trips: {
+          findFirst: vi.fn(async ({ where }: any) => {
+            const t = await mockDb.trip.findUnique();
+            if (!t) return null;
+            if (where) {
+              return where(t, { eq: (a: unknown, b: unknown) => a === b }) ? t : null;
+            }
+            return t;
+          }),
+        },
+      },
+
+      select: vi.fn((fields?: unknown) => ({
+        from: vi.fn((table: unknown) => ({
+          where: vi.fn(async (condition: unknown) => {
+            if (table === tripParticipants) {
+              const rows = await mockDb.tripParticipant.findMany();
+              return rows.map((r: any) => (fields ? { userId: r.userId, groupId: r.groupId } : r));
+            }
+            if (table === challenges) {
+              const c = await mockDb.challenge.count();
+              return [{ count: c }];
+            }
+            return [];
+          }),
+        })),
+      })),
+
+      update: vi.fn((table: unknown) => ({
+        set: vi.fn((values: unknown) => ({
+          where: vi.fn(async (condition: unknown) => {
+            if (table === notificationPushes) {
+              await mockDb.notificationPush.update();
+            }
+            return { count: 1 };
+          }),
+        })),
+      })),
+
+      insert: vi.fn((table: unknown) => ({
+        values: vi.fn((rows: unknown[]) => ({
+          onConflictDoNothing: vi.fn(async () => {
+            if (table === notificationPushes) {
+              await mockDb.notificationPush.createMany();
+            }
+            return { count: rows.length };
+          }),
+        })),
+      })),
+
+      delete: vi.fn((table: unknown) => ({
+        where: vi.fn(async (condition: unknown) => {
+          return { count: 1 };
+        }),
+      })),
     };
 
-    // Add Drizzle query API layer
-    (mockDb as any).query = {
-      notifications: mockDb.notification,
-      notificationPushes: mockDb.notificationPush,
-      pushSubscriptions: mockDb.pushSubscription,
-      tripParticipants: mockDb.tripParticipant,
-      groups: mockDb.group,
-      challenges: mockDb.challenge,
-      trips: mockDb.trip,
-    };
+    mockDb = createDrizzleProxy(mockDb as any);
 
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;
