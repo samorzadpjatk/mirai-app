@@ -57,12 +57,7 @@ export function GroupInfoCard({
       </View>
 
       <View style={styles.pointsRow}>
-        <Text
-          style={[
-            styles.pointsValue,
-            isLeading ? styles.leadingValue : styles.behindValue,
-          ]}
-        >
+        <Text style={[styles.pointsValue, isLeading ? styles.leadingValue : styles.behindValue]}>
           {deltaPoints} pts
         </Text>
         <Text style={styles.pointsMeta}>{pointsContext}</Text>
@@ -71,12 +66,8 @@ export function GroupInfoCard({
       <View style={styles.progressRow}>
         <Text style={styles.progressLabel}>Challenges done</Text>
         <View style={styles.progressValueRow}>
-          <Text style={styles.progressValue}>
-            {completedChallengesCount ?? 0}
-          </Text>
-          <Text style={styles.progressValueSuffix}>
-            / {totalChallengesCount ?? 0}
-          </Text>
+          <Text style={styles.progressValue}>{completedChallengesCount ?? 0}</Text>
+          <Text style={styles.progressValueSuffix}>/ {totalChallengesCount ?? 0}</Text>
         </View>
       </View>
     </View>

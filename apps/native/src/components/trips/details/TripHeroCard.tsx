@@ -37,14 +37,10 @@ export function TripHeroCard({
       <View style={styles.heroCard}>
         <View style={styles.heroContent}>
           <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>
-              {getTripStatus(startDate, endDate)}
-            </Text>
+            <Text style={styles.heroBadgeText}>{getTripStatus(startDate, endDate)}</Text>
           </View>
           <Text style={styles.heroTitle}>{name}</Text>
-          {description ? (
-            <Text style={styles.heroSubtitle}>{description}</Text>
-          ) : null}
+          {description ? <Text style={styles.heroSubtitle}>{description}</Text> : null}
         </View>
       </View>
     );
@@ -56,14 +52,10 @@ export function TripHeroCard({
       <Image source={{ uri: finalImageUrl }} style={styles.heroImage} />
       <View style={styles.heroContent}>
         <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>
-            {getTripStatus(startDate, endDate)}
-          </Text>
+          <Text style={styles.heroBadgeText}>{getTripStatus(startDate, endDate)}</Text>
         </View>
         <Text style={styles.heroTitle}>{name}</Text>
-        {description ? (
-          <Text style={styles.heroSubtitle}>{description}</Text>
-        ) : null}
+        {description ? <Text style={styles.heroSubtitle}>{description}</Text> : null}
       </View>
     </View>
   );

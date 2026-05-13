@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useMutation, useInfiniteQuery } from '@tanstack/react-query';
-import { orpc } from '@mirai-app/orpc/client';
+import { useState } from "react";
+import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
+import { orpc } from "@mirai-app/orpc/client";
 
 export interface Notification {
   id: string;
@@ -22,54 +22,53 @@ export interface Notification {
   }[];
 }
 
-export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'all';
+export type NotificationStatus = "pending" | "sent" | "failed" | "all";
 
 const PAGE_SIZE = 50;
 
 export function useAdminNotifications(tripId?: string) {
-  const [status, setStatus] = useState<NotificationStatus>('all');
+  const [status, setStatus] = useState<NotificationStatus>("all");
 
   const notificationsQueryInput = tripId ? { tripId } : undefined;
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    isRefetching,
-    hasNextPage,
-    fetchNextPage,
-    refetch,
-  } = useInfiniteQuery(orpc.notifications.getAll.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return {
-        ...(notificationsQueryInput ?? {}),
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
+  const { data, isLoading, isFetchingNextPage, isRefetching, hasNextPage, fetchNextPage, refetch } =
+    useInfiniteQuery(
+      orpc.notifications.getAll.infiniteOptions({
+        input: (pageParam: number) => {
+          const offset = typeof pageParam === "number" ? pageParam : 0;
+          return {
+            ...(notificationsQueryInput ?? {}),
+            pagination: {
+              limit: PAGE_SIZE,
+              offset,
+            },
+          };
         },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination?.hasMore) {
-        return undefined;
-      }
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-  }));
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.pagination?.hasMore) {
+            return undefined;
+          }
+          return lastPage.pagination.offset + lastPage.pagination.limit;
+        },
+      }),
+    );
 
-  const retryMutation = useMutation(orpc.notifications.retryNotification.mutationOptions({
-    onSuccess: () => {
-      void refetch();
-    },
-  }));
+  const retryMutation = useMutation(
+    orpc.notifications.retryNotification.mutationOptions({
+      onSuccess: () => {
+        void refetch();
+      },
+    }),
+  );
 
-  const deleteMutation = useMutation(orpc.notifications.delete.mutationOptions({
-    onSuccess: () => {
-      void refetch();
-    },
-  }));
+  const deleteMutation = useMutation(
+    orpc.notifications.delete.mutationOptions({
+      onSuccess: () => {
+        void refetch();
+      },
+    }),
+  );
 
   const notifications = (data?.pages ?? []).flatMap((page) => page.notifications ?? []);
 
@@ -83,14 +82,14 @@ export function useAdminNotifications(tripId?: string) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'sent':
-        return { color: '#10b981', text: 'Sent' };
-      case 'failed':
-        return { color: '#ef4444', text: 'Failed' };
-      case 'pending':
-        return { color: '#3b82f6', text: 'Pending' };
+      case "sent":
+        return { color: "#10b981", text: "Sent" };
+      case "failed":
+        return { color: "#ef4444", text: "Failed" };
+      case "pending":
+        return { color: "#3b82f6", text: "Pending" };
       default:
-        return { color: '#9ca3af', text: status };
+        return { color: "#9ca3af", text: status };
     }
   };
 

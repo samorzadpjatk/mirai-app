@@ -5,17 +5,10 @@ interface ChallengeUploadProgressCardProps {
   progress?: number | null;
 }
 
-export function ChallengeUploadProgressCard({
-  progress,
-}: ChallengeUploadProgressCardProps) {
-  const resolvedProgress =
-    typeof progress === "number"
-      ? Math.min(Math.max(progress, 0), 1)
-      : null;
+export function ChallengeUploadProgressCard({ progress }: ChallengeUploadProgressCardProps) {
+  const resolvedProgress = typeof progress === "number" ? Math.min(Math.max(progress, 0), 1) : null;
   const percentLabel =
-    resolvedProgress === null
-      ? "Preparing upload..."
-      : `${Math.round(resolvedProgress * 100)}%`;
+    resolvedProgress === null ? "Preparing upload..." : `${Math.round(resolvedProgress * 100)}%`;
 
   return (
     <View testID="upload-progress-card" style={styles.container}>
@@ -27,10 +20,7 @@ export function ChallengeUploadProgressCard({
       <View testID="progress-track" style={styles.progressTrack}>
         <View
           testID="progress-fill"
-          style={[
-            styles.progressFill,
-            { flex: resolvedProgress ?? 0, minWidth: 0 },
-          ]}
+          style={[styles.progressFill, { flex: resolvedProgress ?? 0, minWidth: 0 }]}
         />
       </View>
     </View>

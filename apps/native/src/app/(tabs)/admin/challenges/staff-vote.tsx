@@ -15,10 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
-import {
-  useStaffVoting,
-  type VotingSubmission,
-} from "~/hooks/admin/useStaffVoting";
+import { useStaffVoting, type VotingSubmission } from "~/hooks/admin/useStaffVoting";
 import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
 
 export default function AdminChallengeStaffVotingScreen() {
@@ -28,11 +25,8 @@ export default function AdminChallengeStaffVotingScreen() {
   const insets = useSafeAreaInsets();
 
   const challengeId =
-    typeof params.challengeId === "string"
-      ? params.challengeId
-      : params.challengeId?.[0];
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+    typeof params.challengeId === "string" ? params.challengeId : params.challengeId?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
   const challengeQuery = orpc.challenge.getById.queryOptions({
     input: {
@@ -40,26 +34,24 @@ export default function AdminChallengeStaffVotingScreen() {
       tripId: tripId ?? "",
     },
   });
-  const submissionsQuery =
-    orpc.challengeSubmission.getByChallengeForAdmin.queryOptions({
-      input: {
-        challengeId: challengeId ?? "",
-        tripId: tripId ?? "",
-      },
-    });
+  const submissionsQuery = orpc.challengeSubmission.getByChallengeForAdmin.queryOptions({
+    input: {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
+  });
   const myVotesQuery = orpc.challengeVote.getMyByChallenge.queryOptions({
     input: {
       challengeId: challengeId ?? "",
       tripId: tripId ?? "",
     },
   });
-  const judgedStaffProgressQuery =
-    orpc.challengeVote.getJudgedStaffProgress.queryOptions({
-      input: {
-        challengeId: challengeId ?? "",
-        tripId: tripId ?? "",
-      },
-    });
+  const judgedStaffProgressQuery = orpc.challengeVote.getJudgedStaffProgress.queryOptions({
+    input: {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
+  });
 
   const { data: challenge, isLoading: isLoadingChallenge } = useQuery({
     ...challengeQuery,
@@ -83,16 +75,11 @@ export default function AdminChallengeStaffVotingScreen() {
     error: judgedStaffProgressError,
   } = useQuery({
     ...judgedStaffProgressQuery,
-    enabled:
-      !!challengeId &&
-      !!tripId &&
-      challenge?.scoringCategory === "JUDGED_STAFF",
+    enabled: !!challengeId && !!tripId && challenge?.scoringCategory === "JUDGED_STAFF",
     refetchInterval: 10_000,
   });
 
-  const submitVoteMutation = useMutation(
-    orpc.challengeVote.submitVotes.mutationOptions(),
-  );
+  const submitVoteMutation = useMutation(orpc.challengeVote.submitVotes.mutationOptions());
   const forceEndMutation = useMutation(
     orpc.challengeVote.forceEndJudgedStaffVoting.mutationOptions(),
   );
@@ -118,20 +105,16 @@ export default function AdminChallengeStaffVotingScreen() {
       }));
   }, [submissionsData]);
 
-  const requiredVotePositions = Math.max(
-    judgedStaffProgress?.requiredPositions ?? 0,
-    0,
-  );
+  const requiredVotePositions = Math.max(judgedStaffProgress?.requiredPositions ?? 0, 0);
   const myVotePositions = useMemo(
     () => new Set((myVotes ?? []).map((vote) => vote.votePosition)),
     [myVotes],
   );
   const hasMyCompleteVote =
     requiredVotePositions > 0 &&
-    Array.from(
-      { length: requiredVotePositions },
-      (_, index) => index + 1,
-    ).every((position) => myVotePositions.has(position));
+    Array.from({ length: requiredVotePositions }, (_, index) => index + 1).every((position) =>
+      myVotePositions.has(position),
+    );
   const voting = useStaffVoting({
     votingSubmissions,
     hasMyCompleteVote,
@@ -141,9 +124,7 @@ export default function AdminChallengeStaffVotingScreen() {
     judgedStaffProgressError,
     challenge,
   });
-  const submissionEndTimestamp = challenge?.endTime
-    ? new Date(challenge.endTime).getTime()
-    : null;
+  const submissionEndTimestamp = challenge?.endTime ? new Date(challenge.endTime).getTime() : null;
   const isSubmissionPhaseEnded =
     submissionEndTimestamp !== null &&
     Number.isFinite(submissionEndTimestamp) &&
@@ -176,11 +157,7 @@ export default function AdminChallengeStaffVotingScreen() {
   ]);
 
   const handleSubmitPodium = async () => {
-    if (
-      !tripId ||
-      !challengeId ||
-      voting.finalTopThree.length < voting.MIN_SUBMISSIONS_TO_VOTE
-    ) {
+    if (!tripId || !challengeId || voting.finalTopThree.length < voting.MIN_SUBMISSIONS_TO_VOTE) {
       return;
     }
 
@@ -220,8 +197,7 @@ export default function AdminChallengeStaffVotingScreen() {
         queryKey: challengeQuery.queryKey,
       });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to submit votes";
+      const message = error instanceof Error ? error.message : "Failed to submit votes";
       const normalized = message.toLowerCase();
       const alreadyVoted =
         normalized.includes("oddales juz glos") ||
@@ -278,9 +254,7 @@ export default function AdminChallengeStaffVotingScreen() {
               })
               .catch((error: unknown) => {
                 const message =
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to force end voting";
+                  error instanceof Error ? error.message : "Failed to force end voting";
                 Alert.alert("Force end failed", message);
               });
           },
@@ -344,9 +318,7 @@ export default function AdminChallengeStaffVotingScreen() {
               disabled={forceEndMutation.isPending}
             >
               <Text style={styles.forceButtonText}>
-                {forceEndMutation.isPending
-                  ? "Finalizing..."
-                  : "Force End Voting"}
+                {forceEndMutation.isPending ? "Finalizing..." : "Force End Voting"}
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -356,9 +328,7 @@ export default function AdminChallengeStaffVotingScreen() {
           <>
             <View style={styles.progressWrap}>
               <View style={styles.progressTrack}>
-                <View
-                  style={[styles.progressFill, { width: `${progress * 100}%` }]}
-                />
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
               </View>
               <Text style={styles.progressLabel}>
                 {voting.comparisonCount}/{voting.hardCap} comparisons
@@ -371,17 +341,13 @@ export default function AdminChallengeStaffVotingScreen() {
                   submission={voting.currentLeft}
                   title="Pick this"
                   subtitle="Tap to select winner"
-                  onPress={() =>
-                    voting.handlePickWinner(voting.currentLeft!.id)
-                  }
+                  onPress={() => voting.handlePickWinner(voting.currentLeft!.id)}
                 />
                 <SubmissionImageCard
                   submission={voting.currentRight}
                   title="Pick this"
                   subtitle="Tap to select winner"
-                  onPress={() =>
-                    voting.handlePickWinner(voting.currentRight!.id)
-                  }
+                  onPress={() => voting.handlePickWinner(voting.currentRight!.id)}
                 />
               </View>
             ) : (
@@ -392,8 +358,7 @@ export default function AdminChallengeStaffVotingScreen() {
 
             {voting.stableTop3Count > 0 ? (
               <Text style={styles.hintText}>
-                Top 3 stable streak: {voting.stableTop3Count}/
-                {voting.TOP3_STABILITY_REQUIRED}
+                Top 3 stable streak: {voting.stableTop3Count}/{voting.TOP3_STABILITY_REQUIRED}
               </Text>
             ) : null}
           </>
@@ -411,13 +376,7 @@ export default function AdminChallengeStaffVotingScreen() {
                   key={`${submission.id}-${index + 1}`}
                   submission={submission}
                   title={`#${index + 1}`}
-                  subtitle={
-                    index === 0
-                      ? "3 points"
-                      : index === 1
-                        ? "2 points"
-                        : "1 point"
-                  }
+                  subtitle={index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"}
                 />
               ))}
             </View>
@@ -434,9 +393,7 @@ export default function AdminChallengeStaffVotingScreen() {
                 disabled={submitVoteMutation.isPending}
               >
                 <Text style={styles.actionPrimaryText}>
-                  {submitVoteMutation.isPending
-                    ? "Submitting..."
-                    : "Confirm Podium"}
+                  {submitVoteMutation.isPending ? "Submitting..." : "Confirm Podium"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -446,9 +403,7 @@ export default function AdminChallengeStaffVotingScreen() {
         {voting.phase === "done" ? (
           <View style={styles.doneCard}>
             <Text style={styles.doneTitle}>
-              {challenge.status === "COMPLETED"
-                ? "Voting completed"
-                : "Vote submitted"}
+              {challenge.status === "COMPLETED" ? "Voting completed" : "Vote submitted"}
             </Text>
             <Text style={styles.doneText}>
               {challenge.status === "COMPLETED"
@@ -458,11 +413,7 @@ export default function AdminChallengeStaffVotingScreen() {
                   } admin(s).`}
             </Text>
             <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionPrimary,
-                styles.doneButton,
-              ]}
+              style={[styles.actionButton, styles.actionPrimary, styles.doneButton]}
               onPress={navigateBackToChallenges}
             >
               <Text style={styles.actionPrimaryText}>Back</Text>
@@ -477,11 +428,7 @@ export default function AdminChallengeStaffVotingScreen() {
               {voting.blockedReason ?? "Voting is not available right now."}
             </Text>
             <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionPrimary,
-                styles.doneButton,
-              ]}
+              style={[styles.actionButton, styles.actionPrimary, styles.doneButton]}
               onPress={navigateBackToChallenges}
             >
               <Text style={styles.actionPrimaryText}>Back</Text>

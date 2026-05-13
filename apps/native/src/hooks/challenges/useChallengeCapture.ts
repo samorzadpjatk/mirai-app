@@ -22,20 +22,27 @@ interface SubmissionLocation {
   longitude: number;
 }
 
-export function useChallengeCapture({
-  tripId,
-  challengeId,
-}: ChallengeCaptureOptions) {
+export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOptions) {
   const router = useRouter();
-  
+
   const queryClient = useQueryClient();
-  const userQuery = useQuery(orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" }, enabled: !!tripId }));
-  const createSubmissionMutation = useMutation(orpc.challengeSubmission.create.mutationOptions({
-    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
-  }));
-  const deleteSubmissionMutation = useMutation(orpc.challengeSubmission.deleteMine.mutationOptions({
-    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
-  }));
+  const userQuery = useQuery(
+    orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" }, enabled: !!tripId }),
+  );
+  const createSubmissionMutation = useMutation(
+    orpc.challengeSubmission.create.mutationOptions({
+      onSuccess: async () => {
+        await invalidateChallengeQueries(queryClient);
+      },
+    }),
+  );
+  const deleteSubmissionMutation = useMutation(
+    orpc.challengeSubmission.deleteMine.mutationOptions({
+      onSuccess: async () => {
+        await invalidateChallengeQueries(queryClient);
+      },
+    }),
+  );
 
   const userTrip = userQuery.data;
   const currentUserLoading = userQuery.isLoading;
@@ -63,8 +70,7 @@ export function useChallengeCapture({
     const contentType = asset.mimeType ?? "";
     if (contentType === "image/png") return "png";
     if (contentType === "image/webp") return "webp";
-    if (contentType === "image/heic" || contentType === "image/heif")
-      return "heic";
+    if (contentType === "image/heic" || contentType === "image/heif") return "heic";
     if (contentType === "video/quicktime") return "mov";
     if (contentType === "video/x-m4v") return "m4v";
     if (contentType === "video/mp4") return "mp4";
@@ -94,28 +100,21 @@ export function useChallengeCapture({
     }
   }, []);
 
-  const resolveFileName = useCallback(
-    (asset: ChallengeUploadAsset, extension: string) => {
-      if (asset.fileName && asset.fileName.trim().length > 0) {
-        return asset.fileName;
-      }
+  const resolveFileName = useCallback((asset: ChallengeUploadAsset, extension: string) => {
+    if (asset.fileName && asset.fileName.trim().length > 0) {
+      return asset.fileName;
+    }
 
-      const uriLastSegment = asset.uri.split("/").pop();
-      if (uriLastSegment?.includes(".")) {
-        return uriLastSegment;
-      }
+    const uriLastSegment = asset.uri.split("/").pop();
+    if (uriLastSegment?.includes(".")) {
+      return uriLastSegment;
+    }
 
-      return `challenge-${Date.now()}.${extension}`;
-    },
-    [],
-  );
+    return `challenge-${Date.now()}.${extension}`;
+  }, []);
 
   const showSuccessAlert = useCallback(
-    (
-      challengeName?: string,
-      points?: number,
-      destinationTripId?: string | null,
-    ) => {
+    (challengeName?: string, points?: number, destinationTripId?: string | null) => {
       const resolvedTripId = destinationTripId ?? tripId;
       Alert.alert(
         "Submission sent",
@@ -158,7 +157,7 @@ export function useChallengeCapture({
         return;
       }
 
-      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const userTripForCurrentTrip = userTrip?.trips?.find((t) => t.tripId === tripId);
       const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {
@@ -205,8 +204,7 @@ export function useChallengeCapture({
             // Ignore cleanup failures, original upload error is shown below.
           }
         }
-        const message =
-          error instanceof Error ? error.message : "Failed to submit challenge";
+        const message = error instanceof Error ? error.message : "Failed to submit challenge";
         Alert.alert("Upload Failed", message);
       } finally {
         setIsLoading(false);
@@ -266,11 +264,7 @@ export function useChallengeCapture({
   };
 
   const submitVideoAsset = useCallback(
-    async (
-      asset: ChallengeUploadAsset,
-      challengeName?: string,
-      points?: number,
-    ) => {
+    async (asset: ChallengeUploadAsset, challengeName?: string, points?: number) => {
       if (!tripId || !challengeId) {
         Alert.alert("Error", "Missing trip or challenge information.");
         return;
@@ -281,7 +275,7 @@ export function useChallengeCapture({
         return;
       }
 
-      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const userTripForCurrentTrip = userTrip?.trips?.find((t) => t.tripId === tripId);
       const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {
@@ -326,8 +320,7 @@ export function useChallengeCapture({
             // Ignore cleanup failures, original upload error is shown below.
           }
         }
-        const message =
-          error instanceof Error ? error.message : "Failed to submit challenge";
+        const message = error instanceof Error ? error.message : "Failed to submit challenge";
         Alert.alert("Upload Failed", message);
       } finally {
         setIsLoading(false);
@@ -392,13 +385,7 @@ export function useChallengeCapture({
     }
 
     setSubmissionId(null);
-  }, [
-    abortUpload,
-    deleteSubmissionMutation,
-    resetUpload,
-    submissionId,
-    tripId,
-  ]);
+  }, [abortUpload, deleteSubmissionMutation, resetUpload, submissionId, tripId]);
 
   return {
     isLoading: isLoading || currentUserLoading,

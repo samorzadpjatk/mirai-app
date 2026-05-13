@@ -1,6 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { Alert, Linking } from "react-native";
-import { locationStore, setLocationServerUpdater, type ServerSharingUpdater } from "../locationStore";
+import {
+  locationStore,
+  setLocationServerUpdater,
+  type ServerSharingUpdater,
+} from "../locationStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import * as backgroundLocation from "~/services/location/backgroundLocation";
@@ -55,11 +59,20 @@ describe("locationStore", () => {
     mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
     mockOpenSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue(undefined);
 
-    mockGetBackgroundLocationPreference = backgroundLocation.getBackgroundLocationPreference as jest.Mock<() => Promise<boolean>>;
-    mockSetBackgroundLocationPreference = backgroundLocation.setBackgroundLocationPreference as jest.Mock<(enabled: boolean) => Promise<void>>;
-    mockHasBackgroundLocationTaskStarted = backgroundLocation.hasBackgroundLocationTaskStarted as jest.Mock<() => Promise<boolean>>;
-    mockStartBackgroundLocationTask = backgroundLocation.startBackgroundLocationTask as jest.Mock<() => Promise<void>>;
-    mockStopBackgroundLocationTask = backgroundLocation.stopBackgroundLocationTask as jest.Mock<() => Promise<void>>;
+    mockGetBackgroundLocationPreference =
+      backgroundLocation.getBackgroundLocationPreference as jest.Mock<() => Promise<boolean>>;
+    mockSetBackgroundLocationPreference =
+      backgroundLocation.setBackgroundLocationPreference as jest.Mock<
+        (enabled: boolean) => Promise<void>
+      >;
+    mockHasBackgroundLocationTaskStarted =
+      backgroundLocation.hasBackgroundLocationTaskStarted as jest.Mock<() => Promise<boolean>>;
+    mockStartBackgroundLocationTask = backgroundLocation.startBackgroundLocationTask as jest.Mock<
+      () => Promise<void>
+    >;
+    mockStopBackgroundLocationTask = backgroundLocation.stopBackgroundLocationTask as jest.Mock<
+      () => Promise<void>
+    >;
 
     mockGetBackgroundLocationPreference.mockResolvedValue(false);
     mockSetBackgroundLocationPreference.mockResolvedValue(undefined);
@@ -166,7 +179,9 @@ describe("locationStore", () => {
     });
 
     it("should handle permission denied", async () => {
-      mockRequestForegroundPermissionsAsync.mockResolvedValueOnce({ status: Location.PermissionStatus.DENIED });
+      mockRequestForegroundPermissionsAsync.mockResolvedValueOnce({
+        status: Location.PermissionStatus.DENIED,
+      });
 
       const { requestLocationPermissions } = locationStore.getState();
       const result = await requestLocationPermissions();
@@ -202,7 +217,7 @@ describe("locationStore", () => {
       const mockSetItem = AsyncStorage.setItem;
 
       locationStore.setState({ isLocationSharingEnabled: true });
-      
+
       const { toggleLocationSharing } = locationStore.getState();
       await toggleLocationSharing();
 
@@ -227,10 +242,10 @@ describe("locationStore", () => {
 
     it("should set isUpdatingSharing during toggle", async () => {
       const { toggleLocationSharing } = locationStore.getState();
-      
+
       const promise = toggleLocationSharing();
       expect(locationStore.getState().isUpdatingSharing).toBe(true);
-      
+
       await promise;
       expect(locationStore.getState().isUpdatingSharing).toBe(false);
     });
@@ -243,9 +258,9 @@ describe("locationStore", () => {
     });
 
     it("should stop background task when disabling", async () => {
-      locationStore.setState({ 
+      locationStore.setState({
         isLocationSharingEnabled: true,
-        isBackgroundLocationActive: true 
+        isBackgroundLocationActive: true,
       });
 
       const { toggleLocationSharing } = locationStore.getState();
@@ -279,7 +294,7 @@ describe("locationStore", () => {
 
       expect(mockSetBackgroundLocationPreference).toHaveBeenCalledWith(true);
       expect(mockStartBackgroundLocationTask).toHaveBeenCalled();
-      
+
       const state = locationStore.getState();
       expect(state.isBackgroundLocationEnabled).toBe(true);
       expect(state.isBackgroundLocationActive).toBe(true);
@@ -297,7 +312,7 @@ describe("locationStore", () => {
 
       expect(mockSetBackgroundLocationPreference).toHaveBeenCalledWith(false);
       expect(mockStopBackgroundLocationTask).toHaveBeenCalled();
-      
+
       const state = locationStore.getState();
       expect(state.isBackgroundLocationEnabled).toBe(false);
       expect(state.isBackgroundLocationActive).toBe(false);
@@ -307,10 +322,7 @@ describe("locationStore", () => {
       const { toggleBackgroundLocationUpdates } = locationStore.getState();
       await toggleBackgroundLocationUpdates();
 
-      expect(mockAlert).toHaveBeenCalledWith(
-        "Enable Location Sharing",
-        expect.any(String)
-      );
+      expect(mockAlert).toHaveBeenCalledWith("Enable Location Sharing", expect.any(String));
     });
 
     it("should request permissions when enabling", async () => {
@@ -319,9 +331,15 @@ describe("locationStore", () => {
         permissionStatus: "undetermined",
       });
 
-      mockGetForegroundPermissionsAsync.mockResolvedValueOnce({ status: Location.PermissionStatus.UNDETERMINED });
-      mockRequestForegroundPermissionsAsync.mockResolvedValueOnce({ status: Location.PermissionStatus.GRANTED });
-      mockGetBackgroundPermissionsAsync.mockResolvedValueOnce({ status: Location.PermissionStatus.GRANTED });
+      mockGetForegroundPermissionsAsync.mockResolvedValueOnce({
+        status: Location.PermissionStatus.UNDETERMINED,
+      });
+      mockRequestForegroundPermissionsAsync.mockResolvedValueOnce({
+        status: Location.PermissionStatus.GRANTED,
+      });
+      mockGetBackgroundPermissionsAsync.mockResolvedValueOnce({
+        status: Location.PermissionStatus.GRANTED,
+      });
 
       const { toggleBackgroundLocationUpdates } = locationStore.getState();
       await toggleBackgroundLocationUpdates();
@@ -337,10 +355,10 @@ describe("locationStore", () => {
       });
 
       const { toggleBackgroundLocationUpdates } = locationStore.getState();
-      
+
       const promise = toggleBackgroundLocationUpdates();
       expect(locationStore.getState().isUpdatingBackgroundLocation).toBe(true);
-      
+
       await promise;
       expect(locationStore.getState().isUpdatingBackgroundLocation).toBe(false);
     });
@@ -360,10 +378,7 @@ describe("locationStore", () => {
       const { openSystemLocationSettings } = locationStore.getState();
       await openSystemLocationSettings();
 
-      expect(mockAlert).toHaveBeenCalledWith(
-        "Settings Unavailable",
-        expect.any(String)
-      );
+      expect(mockAlert).toHaveBeenCalledWith("Settings Unavailable", expect.any(String));
     });
   });
 

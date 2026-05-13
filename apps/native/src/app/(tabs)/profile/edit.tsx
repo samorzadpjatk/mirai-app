@@ -1,4 +1,4 @@
-'use no memo';
+"use no memo";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -45,9 +45,7 @@ export default function EditProfileScreen() {
   const [lastName, setLastName] = useState(initialLastName);
   const [isPicking, setIsPicking] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<
-    string | null
-  >(null);
+  const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<string | null>(null);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const {
@@ -73,9 +71,7 @@ export default function EditProfileScreen() {
     async (skipCache = false) => {
       if (!avatarStoragePath) return;
       resetAvatar();
-      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(
-        () => undefined,
-      );
+      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(() => undefined);
     },
     [avatarStoragePath, downloadAvatar, resetAvatar],
   );
@@ -144,14 +140,7 @@ export default function EditProfileScreen() {
       await updateAvatarMutation.mutateAsync({ hasAvatar: true });
       await refreshAvatar(true);
     },
-    [
-      avatarStoragePath,
-      currentUser?.id,
-      refreshAvatar,
-      resetUpload,
-      updateAvatarMutation,
-      upload,
-    ],
+    [avatarStoragePath, currentUser?.id, refreshAvatar, resetUpload, updateAvatarMutation, upload],
   );
 
   const pickAvatarFromLibrary = useCallback(async () => {
@@ -159,8 +148,7 @@ export default function EditProfileScreen() {
 
     try {
       setIsPicking(true);
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (permissionResult.status !== ImagePicker.PermissionStatus.GRANTED) {
         Alert.alert(
@@ -180,8 +168,7 @@ export default function EditProfileScreen() {
       if (result.canceled || !result.assets[0]) return;
       await uploadAvatarAsset(result.assets[0]);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update avatar";
+      const message = error instanceof Error ? error.message : "Failed to update avatar";
       Alert.alert("Upload Failed", message);
     } finally {
       setIsPicking(false);
@@ -193,21 +180,13 @@ export default function EditProfileScreen() {
     if (!cameraPermission?.granted) {
       const granted = await requestCameraPermission();
       if (!granted.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Camera access is required to take a profile photo.",
-        );
+        Alert.alert("Permission Required", "Camera access is required to take a profile photo.");
         return;
       }
     }
 
     setIsCameraOpen(true);
-  }, [
-    avatarStoragePath,
-    cameraPermission,
-    currentUser?.id,
-    requestCameraPermission,
-  ]);
+  }, [avatarStoragePath, cameraPermission, currentUser?.id, requestCameraPermission]);
 
   const handleUseCapturedPhoto = useCallback(
     async (photo: { uri: string; mimeType: "image/jpeg" | "image/png" }) => {
@@ -222,8 +201,7 @@ export default function EditProfileScreen() {
         });
         setIsCameraOpen(false);
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to update avatar";
+        const message = error instanceof Error ? error.message : "Failed to update avatar";
         Alert.alert("Upload Failed", message);
       } finally {
         setIsPicking(false);
@@ -250,17 +228,11 @@ export default function EditProfileScreen() {
       return;
     }
     if (trimmedFirstName.length < 2 || trimmedLastName.length < 2) {
-      Alert.alert(
-        "Validation Error",
-        "First name and last name must have at least 2 characters.",
-      );
+      Alert.alert("Validation Error", "First name and last name must have at least 2 characters.");
       return;
     }
     if (/\d/.test(trimmedFirstName) || /\d/.test(trimmedLastName)) {
-      Alert.alert(
-        "Validation Error",
-        "First name and last name cannot contain digits.",
-      );
+      Alert.alert("Validation Error", "First name and last name cannot contain digits.");
       return;
     }
 
@@ -271,8 +243,7 @@ export default function EditProfileScreen() {
       });
       router.back();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to save profile";
+      const message = error instanceof Error ? error.message : "Failed to save profile";
       Alert.alert("Save Failed", message);
     }
   }, [firstName, lastName, router, updateProfileMutation]);
@@ -307,11 +278,7 @@ export default function EditProfileScreen() {
               />
             ) : (
               <View style={styles.placeholder}>
-                <Ionicons
-                  name="person-circle-outline"
-                  size={32}
-                  color={colors.primary}
-                />
+                <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
                 <Text style={styles.placeholderText}>No photo selected</Text>
               </View>
             )}
@@ -328,14 +295,8 @@ export default function EditProfileScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons
-                    name="camera-outline"
-                    size={16}
-                    color={colors.white}
-                  />
-                  <Text style={styles.badgeText}>
-                    {avatarUri ? "Change Photo" : "Add Photo"}
-                  </Text>
+                  <Ionicons name="camera-outline" size={16} color={colors.white} />
+                  <Text style={styles.badgeText}>{avatarUri ? "Change Photo" : "Add Photo"}</Text>
                 </>
               )}
             </View>
@@ -375,8 +336,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (updateProfileMutation.isPending || isUploading) &&
-              styles.saveButtonDisabled,
+            (updateProfileMutation.isPending || isUploading) && styles.saveButtonDisabled,
           ]}
           onPress={() => void handleSave()}
           disabled={updateProfileMutation.isPending || isUploading}

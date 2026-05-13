@@ -6,15 +6,11 @@ interface ChallengeDescriptionCardProps {
   imageUrl?: string | null;
 }
 
-export function ChallengeDescriptionCard({
-  description,
-  imageUrl,
-}: ChallengeDescriptionCardProps) {
+export function ChallengeDescriptionCard({ description, imageUrl }: ChallengeDescriptionCardProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.description}>
-        {description ??
-          "Complete this challenge to earn points for your group!"}
+        {description ?? "Complete this challenge to earn points for your group!"}
       </Text>
       {imageUrl ? (
         <Image

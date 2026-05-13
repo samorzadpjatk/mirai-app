@@ -23,10 +23,7 @@ export function TripQuickAccessGrid({
 }: TripQuickAccessGridProps) {
   return (
     <View style={styles.gridContainer}>
-      <TouchableOpacity
-        style={[styles.gridCard, styles.gridCardGlow]}
-        onPress={onOpenGroups}
-      >
+      <TouchableOpacity style={[styles.gridCard, styles.gridCardGlow]} onPress={onOpenGroups}>
         <View style={styles.gridIconWrapper}>
           <Ionicons name="grid" size={24} color={colors.primary} />
         </View>
@@ -80,17 +77,11 @@ export function TripQuickAccessGrid({
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenInfo}>
         <View style={styles.gridIconWrapper}>
-          <Ionicons
-            name="information-circle"
-            size={24}
-            color={colors.primary}
-          />
+          <Ionicons name="information-circle" size={24} color={colors.primary} />
         </View>
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Trip Info</Text>
-          <Text style={styles.gridCardSubtitle}>
-            Schedules & Rules
-          </Text>
+          <Text style={styles.gridCardSubtitle}>Schedules & Rules</Text>
         </View>
       </TouchableOpacity>
     </View>

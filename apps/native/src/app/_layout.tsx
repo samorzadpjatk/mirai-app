@@ -3,9 +3,7 @@ import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  SafeAreaProvider,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
@@ -33,19 +31,11 @@ import {
   IBMPlexSans_700Bold,
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
-import {
-  useAuth,
-  useAuthLoading,
-} from "@mirai-app/auth/client";
+import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { QueryProvider, orpc } from "@mirai-app/orpc/client";
-import {
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
-  TRPC_HTTP_URL,
-  TRPC_WS_URL,
-} from "~/config/runtimeEnv";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
@@ -59,11 +49,7 @@ const colors = {
   textLight: "#000000",
 };
 
-const supabaseClient = createSupabaseClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  authStorage,
-);
+const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
 
 function AutoPushSubscription() {
   useAutoPushSubscription();
@@ -73,13 +59,8 @@ function AutoPushSubscription() {
 function App() {
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
-  const {
-    showUpdatePopup,
-    startUpdate,
-    skipUpdate,
-    isDownloading,
-    downloadProgress,
-  } = useExpoUpdates();
+  const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =
+    useExpoUpdates();
 
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
@@ -120,7 +101,6 @@ function App() {
               options={{
                 title: "Admin Challenges",
                 headerShown: false,
-
               }}
             />
             <Stack.Screen
@@ -128,7 +108,6 @@ function App() {
               options={{
                 title: "Admin Challenges",
                 headerShown: false,
-
               }}
             />
           </Stack.Protected>
@@ -143,7 +122,6 @@ function App() {
               }}
             />
           </Stack.Protected>
-
         </Stack>
       )}
 
@@ -164,7 +142,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
     try {
       const user = await orpc.user.getMy.call({});
       if (!user) return null;
-      
+
       // Transform database user to AuthUser format
       return {
         id: user.id,
@@ -172,7 +150,10 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.lastName || null,
+        name:
+          user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.firstName || user.lastName || null,
         emailVerified: null, // TODO: Add email verification logic when available
         role: user.role,
       };

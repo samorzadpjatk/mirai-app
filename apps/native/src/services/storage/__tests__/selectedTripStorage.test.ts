@@ -60,10 +60,7 @@ describe("Selected Trip Storage", () => {
     it("should store trip id in secure storage", async () => {
       await setSelectedTripIdInStorage("trip-123");
 
-      expect(mockSecureSetItemAsync).toHaveBeenCalledWith(
-        "selected_trip_id",
-        "trip-123"
-      );
+      expect(mockSecureSetItemAsync).toHaveBeenCalledWith("selected_trip_id", "trip-123");
     });
   });
 
@@ -85,10 +82,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should return cached trips", async () => {
-      const trips = [
-        createMockTrip("trip-1", "Trip 1"),
-        createMockTrip("trip-2", "Trip 2"),
-      ];
+      const trips = [createMockTrip("trip-1", "Trip 1"), createMockTrip("trip-2", "Trip 2")];
       mockAsyncGetItem.mockResolvedValue(JSON.stringify(trips));
 
       const result = await getCachedTrips();
@@ -131,7 +125,7 @@ describe("Selected Trip Storage", () => {
       expect(result).toEqual([]);
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to read cache key "trips.cache.v1":',
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -162,10 +156,7 @@ describe("Selected Trip Storage", () => {
 
       await setCachedTrips(trips);
 
-      expect(mockAsyncSetItem).toHaveBeenCalledWith(
-        "trips.cache.v1",
-        JSON.stringify(trips)
-      );
+      expect(mockAsyncSetItem).toHaveBeenCalledWith("trips.cache.v1", JSON.stringify(trips));
     });
 
     it("should handle storage errors gracefully", async () => {
@@ -176,7 +167,7 @@ describe("Selected Trip Storage", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to write cache key "trips.cache.v1":',
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -347,7 +338,7 @@ describe("Selected Trip Storage", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to write cache key "trip.details.cache.v1":',
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });

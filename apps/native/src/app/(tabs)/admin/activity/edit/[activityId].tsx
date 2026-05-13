@@ -10,14 +10,13 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 
-
 export default function AdminEditActivityScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ activityId: string; tripId?: string }>();
   const activityId = params.activityId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -31,7 +30,7 @@ export default function AdminEditActivityScreen() {
   });
 
   const { data: activity, isLoading } = useQuery(
-    orpc.activityFeed.getById.queryOptions({ input: { id: activityId }, enabled: !!activityId })
+    orpc.activityFeed.getById.queryOptions({ input: { id: activityId }, enabled: !!activityId }),
   );
 
   // Initialize form with activity data when it loads
@@ -130,10 +129,7 @@ export default function AdminEditActivityScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Edit Activity"
-        subtitle="Update activity information"
-      />
+      <AdminHeader title="Edit Activity" subtitle="Update activity information" />
 
       <ScrollView
         style={styles.scroll}
@@ -149,11 +145,7 @@ export default function AdminEditActivityScreen() {
         </View>
 
         <FormField label="Title" required>
-          <ThemedTextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-          />
+          <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
         </FormField>
 
         <FormField label="Description">

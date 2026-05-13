@@ -1,10 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  StyleSheet,
-  TouchableOpacity,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
 import { colors } from "~/styles";
 
 interface FloatingActionButtonProps {

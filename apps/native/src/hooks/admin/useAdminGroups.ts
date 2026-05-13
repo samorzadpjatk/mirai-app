@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { orpc } from '@mirai-app/orpc/client';
-import { invalidateGroupQueries } from '@mirai-app/orpc/client/query';
+import { useMemo } from "react";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 
 const GROUPS_PER_PAGE = 30;
 
@@ -41,27 +41,29 @@ export function useAdminGroups(tripId: string) {
     isFetchingNextPage: groupsFetchingNextPage,
     fetchNextPage: fetchMoreGroups,
     refetch: refetchGroups,
-  } = useInfiniteQuery(orpc.group.getAll.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return {
-        tripId,
-        pagination: {
-          limit: GROUPS_PER_PAGE,
-          offset,
-        },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+  } = useInfiniteQuery(
+    orpc.group.getAll.infiniteOptions({
+      input: (pageParam: number) => {
+        const offset = typeof pageParam === "number" ? pageParam : 0;
+        return {
+          tripId,
+          pagination: {
+            limit: GROUPS_PER_PAGE,
+            offset,
+          },
+        };
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.pagination.hasMore) {
+          return undefined;
+        }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-    enabled: Boolean(tripId),
-  }));
+        return lastPage.pagination.offset + lastPage.pagination.limit;
+      },
+      enabled: Boolean(tripId),
+    }),
+  );
 
   const groups = useMemo(
     () =>
@@ -83,28 +85,39 @@ export function useAdminGroups(tripId: string) {
     [data?.pages],
   );
 
-  const groupsPagination = useMemo(
-    () => data?.pages?.[data.pages.length - 1]?.pagination,
-    [data],
-  );
+  const groupsPagination = useMemo(() => data?.pages?.[data.pages.length - 1]?.pagination, [data]);
 
   // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
-  const { data: usersData, isLoading: usersLoading } = useQuery(orpc.user.getAll.queryOptions({ input: { tripId } }));
+  const { data: usersData, isLoading: usersLoading } = useQuery(
+    orpc.user.getAll.queryOptions({ input: { tripId } }),
+  );
   const users = (usersData ?? []) as User[];
 
   // Use direct oRPC + React Query for mutations
-  const createGroupMutation = useMutation(orpc.group.create.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
-  }));
+  const createGroupMutation = useMutation(
+    orpc.group.create.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient, true);
+      },
+    }),
+  );
 
-  const updateGroupMutation = useMutation(orpc.group.update.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
-  }));
+  const updateGroupMutation = useMutation(
+    orpc.group.update.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient, true);
+      },
+    }),
+  );
 
-  const deleteGroupMutation = useMutation(orpc.group.delete.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
-  }));
+  const deleteGroupMutation = useMutation(
+    orpc.group.delete.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient, true);
+      },
+    }),
+  );
 
   const createGroup = (name: string) => {
     return createGroupMutation.mutateAsync({

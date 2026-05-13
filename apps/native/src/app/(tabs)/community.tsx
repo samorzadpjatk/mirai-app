@@ -26,12 +26,7 @@ import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
-import {
-  EmptyState,
-  FilterChip,
-  FilterChipRow,
-  TripPickerModal,
-} from "~/components/common/ui";
+import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
 import { useAuth } from "@mirai-app/auth/client";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
@@ -70,11 +65,9 @@ export default function CommunityScreen() {
     fetchNextPage: fetchMoreTrips,
     refetch: refetchTrips,
   } = useTrips();
-  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } =
-    useSelectedTrip();
+  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
 
-  const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] =
-    useState(false);
+  const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
   const [hasDismissedAutoPicker, setHasDismissedAutoPicker] = useState(false);
 
   useEffect(() => {
@@ -93,14 +86,11 @@ export default function CommunityScreen() {
   );
 
   const shouldAutoOpenTripPicker =
-    trips.length > 0 &&
-    (!selectedTripId || !selectedTrip) &&
-    !hasDismissedAutoPicker;
+    trips.length > 0 && (!selectedTripId || !selectedTrip) && !hasDismissedAutoPicker;
   const isTripPickerOpen = isTripPickerManuallyOpen || shouldAutoOpenTripPicker;
 
   const selectedFilter = useMemo<ActivityFilter>(() => {
-    const rawFilter =
-      typeof params.filter === "string" ? params.filter : params.filter?.[0];
+    const rawFilter = typeof params.filter === "string" ? params.filter : params.filter?.[0];
 
     if (!rawFilter) return "all";
     if (rawFilter === "news") return "custom";
@@ -119,13 +109,11 @@ export default function CommunityScreen() {
       : params.focusActivityId?.[0];
   }, [params.focusActivityId]);
 
-  const { feedQuery, filteredActivities, handleToggleHeart } = useCommunityFeed(
-    {
-      selectedTripId: selectedTrip?.id ?? null,
-      selectedFilter,
-      focusActivityId,
-    },
-  );
+  const { feedQuery, filteredActivities, handleToggleHeart } = useCommunityFeed({
+    selectedTripId: selectedTrip?.id ?? null,
+    selectedFilter,
+    focusActivityId,
+  });
 
   const { rankingData, avatarUrls } = useCommunityActivityData({
     activities: filteredActivities,
@@ -139,16 +127,10 @@ export default function CommunityScreen() {
     [router],
   );
 
-  const keyExtractor = useCallback(
-    (item: CommunityFeedActivity) => item.id,
-    [],
-  );
+  const keyExtractor = useCallback((item: CommunityFeedActivity) => item.id, []);
 
   const getItemLayout = useCallback(
-    (
-      data: ArrayLike<CommunityFeedActivity> | null | undefined,
-      index: number,
-    ) => ({
+    (data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
       length: 200, // Approximate height of CommunityActivityCard
       offset: 200 * index,
       index,
@@ -157,8 +139,7 @@ export default function CommunityScreen() {
   );
 
   const isRefreshing =
-    isTripsRefetching ||
-    (feedQuery.isRefetching && !feedQuery.isFetchingNextPage);
+    isTripsRefetching || (feedQuery.isRefetching && !feedQuery.isFetchingNextPage);
 
   const handleRefresh = useCallback(() => {
     const requests: Promise<unknown>[] = [refetchTrips()];
@@ -204,10 +185,8 @@ export default function CommunityScreen() {
     }) => {
       if (!hasMoreTrips || isFetchingMoreTrips || isTripsLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
-      const nearBottom =
-        contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
       if (nearBottom) {
         void fetchMoreTrips();
@@ -219,37 +198,25 @@ export default function CommunityScreen() {
   const renderActivityItem = useCallback(
     ({ item }: { item: CommunityFeedActivity }) => {
       const challengeId =
-        item.activityType === "challenge_event"
-          ? item.challengeActivity?.challengeId
-          : null;
-      const leaderboardTripId =
-        item.activityType === "rank_change" ? item.tripId : null;
+        item.activityType === "challenge_event" ? item.challengeActivity?.challengeId : null;
+      const leaderboardTripId = item.activityType === "rank_change" ? item.tripId : null;
       const submissionGroupId =
         item.activityType === "submission"
-          ? (item.submissionActivity?.groupId ??
-            item.submissionActivity?.group?.id)
+          ? (item.submissionActivity?.groupId ?? item.submissionActivity?.group?.id)
           : null;
 
       const getAvatarUri = (activity: CommunityFeedActivity) => {
         const owner =
-          activity.activityType === "user_post"
-            ? activity.userPost?.author?.user
-            : activity.admin;
+          activity.activityType === "user_post" ? activity.userPost?.author?.user : activity.admin;
 
         if (!owner?.id) return null;
 
         // Check if user has a direct avatar image
-        if (
-          activity.activityType === "submission" &&
-          activity.submissionActivity?.group?.image
-        ) {
+        if (activity.activityType === "submission" && activity.submissionActivity?.group?.image) {
           return activity.submissionActivity.group.image;
         }
 
-        if (
-          activity.activityType === "rank_change" &&
-          activity.rankChangeActivity?.group?.image
-        ) {
+        if (activity.activityType === "rank_change" && activity.rankChangeActivity?.group?.image) {
           return activity.rankChangeActivity.group.image;
         }
 
@@ -264,27 +231,15 @@ export default function CommunityScreen() {
           onToggleHeart={handleToggleHeart}
           onPress={
             challengeId
-              ? () =>
-                  router.push(
-                    `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
-                  )
+              ? () => router.push(`/trips/challenges/${challengeId}?tripId=${item.tripId}`)
               : leaderboardTripId
-                ? () =>
-                    router.push(
-                      `/trips/leaderboard?tripId=${leaderboardTripId}`,
-                    )
+                ? () => router.push(`/trips/leaderboard?tripId=${leaderboardTripId}`)
                 : undefined
           }
           onPressOwner={
-            submissionGroupId
-              ? () => router.push(`/trips/groups/${submissionGroupId}`)
-              : undefined
+            submissionGroupId ? () => router.push(`/trips/groups/${submissionGroupId}`) : undefined
           }
-          rankingData={
-            item.activityType === "rank_change"
-              ? rankingData[item.tripId]
-              : undefined
-          }
+          rankingData={item.activityType === "rank_change" ? rankingData[item.tripId] : undefined}
           avatarUri={getAvatarUri(item)}
         />
       );
@@ -311,12 +266,7 @@ export default function CommunityScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View
-        style={[
-          styles.headerWrap,
-          { paddingTop: Math.max(insets.top - spacing.md, 0) },
-        ]}
-      >
+      <View style={[styles.headerWrap, { paddingTop: Math.max(insets.top - spacing.md, 0) }]}>
         <View style={styles.headerTopRow}>
           <View style={styles.brandRow}>
             <View style={styles.logoWrap}>
@@ -342,11 +292,7 @@ export default function CommunityScreen() {
               <Text style={styles.tripTileName} numberOfLines={1}>
                 {selectedTrip?.name ?? "Select trip"}
               </Text>
-              <Ionicons
-                name="swap-horizontal"
-                size={12}
-                color={colors.whiteOpacity70}
-              />
+              <Ionicons name="swap-horizontal" size={12} color={colors.whiteOpacity70} />
             </View>
           </TouchableOpacity>
         </View>

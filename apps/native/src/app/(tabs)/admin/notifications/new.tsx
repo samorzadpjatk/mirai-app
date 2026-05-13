@@ -18,7 +18,13 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { DateTimePickerModal, FilterChip, FilterChipRow, FormField, ThemedTextInput } from "~/components/common/ui";
+import {
+  DateTimePickerModal,
+  FilterChip,
+  FilterChipRow,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
@@ -104,17 +110,14 @@ export default function AdminCreateNotificationScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("instant");
   const [audienceType, setAudienceType] = useState<AudienceType>("all");
   const [groupId, setGroupId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [scheduleDateTime, setScheduleDateTime] = useState<Date>(
-    buildInitialScheduleDateTime,
-  );
+  const [scheduleDateTime, setScheduleDateTime] = useState<Date>(buildInitialScheduleDateTime);
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
 
   const groupsQuery = useQuery({
@@ -138,9 +141,7 @@ export default function AdminCreateNotificationScreen() {
     input: tripId ? { tripId } : {},
   });
 
-  const createScheduleMutation = useMutation(
-    orpc.notificationSchedule.create.mutationOptions(),
-  );
+  const createScheduleMutation = useMutation(orpc.notificationSchedule.create.mutationOptions());
   const sendToAllMutation = useMutation(orpc.notifications.sendToAll.mutationOptions());
   const sendToGroupMutation = useMutation(orpc.notifications.sendToGroup.mutationOptions());
 
@@ -249,10 +250,7 @@ export default function AdminCreateNotificationScreen() {
       const startDate = new Date(scheduleDateTime);
       const minimumDate = new Date(Date.now() + 5 * 60 * 1000);
       if (startDate < minimumDate) {
-        Alert.alert(
-          "Validation",
-          "One-time schedule must be at least 5 minutes in the future.",
-        );
+        Alert.alert("Validation", "One-time schedule must be at least 5 minutes in the future.");
         return;
       }
       const oneTimeEndDate = new Date(startDate.getTime() + 2 * 60 * 1000);
@@ -349,10 +347,7 @@ export default function AdminCreateNotificationScreen() {
                 groups.map((group) => (
                   <TouchableOpacity
                     key={group.id}
-                    style={[
-                      styles.groupButton,
-                      groupId === group.id && styles.groupButtonActive,
-                    ]}
+                    style={[styles.groupButton, groupId === group.id && styles.groupButtonActive]}
                     onPress={() => setGroupId(group.id)}
                   >
                     <Text
@@ -376,11 +371,7 @@ export default function AdminCreateNotificationScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Message</Text>
           <FormField label="Title" required>
-            <ThemedTextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Title"
-            />
+            <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
           </FormField>
           <FormField label="Description" required>
             <ThemedTextInput
@@ -397,10 +388,7 @@ export default function AdminCreateNotificationScreen() {
         {deliveryType === "scheduled_once" ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>One-time schedule</Text>
-            <TouchableOpacity
-              style={styles.pickerButton}
-              onPress={() => openPicker("datetime")}
-            >
+            <TouchableOpacity style={styles.pickerButton} onPress={() => openPicker("datetime")}>
               <Text style={styles.pickerButtonText}>
                 Date & time: {formatDateTimeLabel(scheduleDateTime)}
               </Text>
@@ -414,25 +402,18 @@ export default function AdminCreateNotificationScreen() {
         {deliveryType === "recurring_daily" ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recurring schedule</Text>
-            <TouchableOpacity
-              style={styles.pickerButton}
-              onPress={() => openPicker("time")}
-            >
+            <TouchableOpacity style={styles.pickerButton} onPress={() => openPicker("time")}>
               <Text style={styles.pickerButtonText}>
                 Daily time: {formatTimeLabel(scheduleDateTime)}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.helperText}>
-              Notification will run daily at the selected time.
-            </Text>
+            <Text style={styles.helperText}>Notification will run daily at the selected time.</Text>
           </View>
         ) : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Placeholder legend</Text>
-          <Text style={styles.helperText}>
-            Placeholders can be used in title and description.
-          </Text>
+          <Text style={styles.helperText}>Placeholders can be used in title and description.</Text>
           <View style={styles.legendList}>
             {placeholderLegend.map((item) => (
               <View key={item.key} style={styles.legendItem}>
@@ -454,7 +435,7 @@ export default function AdminCreateNotificationScreen() {
       <DateTimePickerModal
         visible={Boolean(activePicker)}
         value={scheduleDateTime}
-        mode={activePicker === "datetime" ? "datetime" : activePicker ?? "date"}
+        mode={activePicker === "datetime" ? "datetime" : (activePicker ?? "date")}
         onConfirm={(date) => {
           if (activePicker === "datetime") {
             setScheduleDateTime(date);
@@ -498,7 +479,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
     color: colors.white,
   },
-    helperText: {
+  helperText: {
     color: colors.textSecondary,
     fontSize: typography.sm,
   },

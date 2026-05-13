@@ -23,7 +23,6 @@ export function AccountInfoSection() {
             <Text style={styles.infoValue}>{email}</Text>
           </View>
         </View>
-
       </View>
     </View>
   );

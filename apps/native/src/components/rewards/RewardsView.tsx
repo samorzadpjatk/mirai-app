@@ -59,26 +59,26 @@ export default function RewardsView({ tripId }: Props) {
     try {
       // Refresh rewards data to get updated dynamic pricing
       await refetch();
-      
+
       // Also refresh group data to get updated coin balance
       await queryClient.invalidateQueries({ queryKey: [["group"]] });
-      
+
       // Invalidate any reward-related queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: [["reward"]] });
-      
+
       // Update last refresh time and trigger animation
       setLastRefreshTime(new Date());
       setJustRefreshed(true);
-      
+
       // Remove the animation indicator after 2 seconds
       setTimeout(() => setJustRefreshed(false), 2000);
-      
+
       // Show subtle success message
       Alert.alert("Updated", "Reward pricing has been refreshed", [
-        { text: "OK", style: "default" }
+        { text: "OK", style: "default" },
       ]);
     } catch (error) {
-      console.error('Failed to refresh rewards:', error);
+      console.error("Failed to refresh rewards:", error);
       Alert.alert("Error", "Failed to refresh rewards");
     } finally {
       setRefreshing(false);
@@ -117,7 +117,7 @@ export default function RewardsView({ tripId }: Props) {
         rewardId: selectedReward.id,
         quantity: qty,
       });
-      
+
       Alert.alert("Success", `Claimed ${qty}x ${selectedReward.name}`);
       setShowPurchaseModal(false);
       setQuantity("1");
@@ -155,7 +155,7 @@ export default function RewardsView({ tripId }: Props) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
-                <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading rewards...</Text>
+        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading rewards...</Text>
       </View>
     );
   }
@@ -185,20 +185,28 @@ export default function RewardsView({ tripId }: Props) {
   return (
     <View style={commonStyles.container}>
       {/* Header with group coins */}
-      <View style={{
-        padding: 16,
-      }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+      <View
+        style={{
+          padding: 16,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text style={[commonStyles.h3]}>Rewards</Text>
-            {refreshing && (
-              <ActivityIndicator size="small" color="#00ced1" />
-            )}
+            {refreshing && <ActivityIndicator size="small" color="#00ced1" />}
             {lastRefreshTime && !refreshing && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <Ionicons name="refresh" size={14} color="#10b981" />
                 <Text style={[commonStyles.textSecondary, { color: "#10b981", fontSize: 11 }]}>
-                  Updated {lastRefreshTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  Updated{" "}
+                  {lastRefreshTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </Text>
               </View>
             )}
@@ -221,16 +229,15 @@ export default function RewardsView({ tripId }: Props) {
           </TouchableOpacity>
         </View>
 
-        
         {currentUserGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Ionicons name="people" size={16} color="#00ced1" />
-            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}> 
+            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}>
               {currentUserGroup.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="cash" size={16} color="#fbbf24" />
-              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}> 
+              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
                 {groupCoins} coins
               </Text>
             </View>
@@ -250,7 +257,14 @@ export default function RewardsView({ tripId }: Props) {
           />
         }
       >
-        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 16 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            rowGap: 16,
+          }}
+        >
           {safeRewards.map((reward) => {
             const rewardImages = getRewardImages(reward);
             const rewardPrimaryImage = rewardImages[0] ?? null;
@@ -262,7 +276,12 @@ export default function RewardsView({ tripId }: Props) {
                   width: "48%",
                   backgroundColor: "#0f2323",
                   borderWidth: 2,
-                  borderColor: justRefreshed && !reward.isOutOfStock ? "#10b981" : reward.isOutOfStock ? "#ef4444" : "#273a3a",
+                  borderColor:
+                    justRefreshed && !reward.isOutOfStock
+                      ? "#10b981"
+                      : reward.isOutOfStock
+                        ? "#ef4444"
+                        : "#273a3a",
                   borderRadius: 12,
                   padding: 16,
                   shadowColor: justRefreshed ? "#10b981" : "transparent",
@@ -271,102 +290,147 @@ export default function RewardsView({ tripId }: Props) {
                   shadowRadius: justRefreshed ? 4 : 0,
                 }}
               >
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => openRewardDetailsModal(reward)}
-              >
-                {/* Reward Image */}
-                {rewardPrimaryImage ? (
-                  <Image
-                    source={{ uri: rewardPrimaryImage }}
-                    style={{
-                      width: "100%",
-                      aspectRatio: 1,
-                      borderRadius: 8,
-                      marginBottom: 12,
-                    }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: "100%",
-                      aspectRatio: 1,
-                      borderRadius: 8,
-                      marginBottom: 12,
-                      borderWidth: 1,
-                      borderColor: "#273a3a",
-                      backgroundColor: "#0b1a1a",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="gift-outline" size={36} color="#6b7280" />
-                  </View>
-                )}
-
-                {/* Reward Info */}
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={[commonStyles.h4, { marginBottom: 4 }]}>
-                    {reward.name}
-                  </Text>
-                  <Text
-                    numberOfLines={3}
-                    ellipsizeMode="tail"
-                    style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 6 }]}
-                  >
-                    {reward.description}
-                  </Text>
-                  <Text style={[commonStyles.textSecondary, { color: "#00ced1", fontSize: 11, marginBottom: 8 }]}>
-                    Tap to read full description
-                  </Text>
-
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Ionicons name="cash" size={16} color="#fbbf24" />
-                      <View style={{ alignItems: "flex-start" }}>
-                        <Text style={[commonStyles.textPrimary, { color: "#fbbf24", fontSize: 12, lineHeight: 14 }]}>
-                          {reward.coinCost} coins
-                        </Text>
-                        {reward.originalCoinCost && (
-                          <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 10, lineHeight: 12 }]}>
-                            {reward.originalCoinCost}% of total points
-                          </Text>
-                        )}
-                      </View>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => openRewardDetailsModal(reward)}
+                >
+                  {/* Reward Image */}
+                  {rewardPrimaryImage ? (
+                    <Image
+                      source={{ uri: rewardPrimaryImage }}
+                      style={{
+                        width: "100%",
+                        aspectRatio: 1,
+                        borderRadius: 8,
+                        marginBottom: 12,
+                      }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: "100%",
+                        aspectRatio: 1,
+                        borderRadius: 8,
+                        marginBottom: 12,
+                        borderWidth: 1,
+                        borderColor: "#273a3a",
+                        backgroundColor: "#0b1a1a",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="gift-outline" size={36} color="#6b7280" />
                     </View>
+                  )}
 
-                    <Text style={[commonStyles.textPrimary, {
-                      color: reward.isOutOfStock ? "#ef4444" : "#10b981",
-                      fontWeight: "600"
-                    }]}>
-                      {reward.isOutOfStock ? "Sold out" : `${reward.availableQuantity ?? 0} pcs.`}
+                  {/* Reward Info */}
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={[commonStyles.h4, { marginBottom: 4 }]}>{reward.name}</Text>
+                    <Text
+                      numberOfLines={3}
+                      ellipsizeMode="tail"
+                      style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 6 }]}
+                    >
+                      {reward.description}
                     </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+                    <Text
+                      style={[
+                        commonStyles.textSecondary,
+                        { color: "#00ced1", fontSize: 11, marginBottom: 8 },
+                      ]}
+                    >
+                      Tap to read full description
+                    </Text>
 
-              {/* Purchase Button */}
-              <TouchableOpacity
-                onPress={() => openPurchaseModal(reward)}
-                disabled={!reward.canAfford || !reward.isEligibleToBuy || reward.isOutOfStock || isTripPast}
-                style={[
-                  commonStyles.button,
-                  {
-                    backgroundColor: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock && !isTripPast ? "#00ced1" : "#374151",
-                    opacity: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock && !isTripPast ? 1 : 0.5,
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Ionicons name="cash" size={16} color="#fbbf24" />
+                        <View style={{ alignItems: "flex-start" }}>
+                          <Text
+                            style={[
+                              commonStyles.textPrimary,
+                              { color: "#fbbf24", fontSize: 12, lineHeight: 14 },
+                            ]}
+                          >
+                            {reward.coinCost} coins
+                          </Text>
+                          {reward.originalCoinCost && (
+                            <Text
+                              style={[
+                                commonStyles.textSecondary,
+                                { color: "#9ca3af", fontSize: 10, lineHeight: 12 },
+                              ]}
+                            >
+                              {reward.originalCoinCost}% of total points
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+
+                      <Text
+                        style={[
+                          commonStyles.textPrimary,
+                          {
+                            color: reward.isOutOfStock ? "#ef4444" : "#10b981",
+                            fontWeight: "600",
+                          },
+                        ]}
+                      >
+                        {reward.isOutOfStock ? "Sold out" : `${reward.availableQuantity ?? 0} pcs.`}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Purchase Button */}
+                <TouchableOpacity
+                  onPress={() => openPurchaseModal(reward)}
+                  disabled={
+                    !reward.canAfford ||
+                    !reward.isEligibleToBuy ||
+                    reward.isOutOfStock ||
+                    isTripPast
                   }
-                ]}
-              >
-                <Text style={commonStyles.buttonText}>
-                  {isTripPast ? "Trip ended" :
-                   reward.isOutOfStock ? "Sold out" : 
-                   !reward.isEligibleToBuy ? "Only group leader" : 
-                   !reward.canAfford ? "Not enough coins" : 
-                   "Claim reward"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  style={[
+                    commonStyles.button,
+                    {
+                      backgroundColor:
+                        reward.canAfford &&
+                        reward.isEligibleToBuy &&
+                        !reward.isOutOfStock &&
+                        !isTripPast
+                          ? "#00ced1"
+                          : "#374151",
+                      opacity:
+                        reward.canAfford &&
+                        reward.isEligibleToBuy &&
+                        !reward.isOutOfStock &&
+                        !isTripPast
+                          ? 1
+                          : 0.5,
+                    },
+                  ]}
+                >
+                  <Text style={commonStyles.buttonText}>
+                    {isTripPast
+                      ? "Trip ended"
+                      : reward.isOutOfStock
+                        ? "Sold out"
+                        : !reward.isEligibleToBuy
+                          ? "Only group leader"
+                          : !reward.canAfford
+                            ? "Not enough coins"
+                            : "Claim reward"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -381,14 +445,16 @@ export default function RewardsView({ tripId }: Props) {
         onRequestClose={() => setShowPurchaseModal(false)}
       >
         <View style={commonStyles.container}>
-          <View style={{
-            padding: 24,
-            borderBottomWidth: 1,
-            borderBottomColor: "#273a3a",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}>
+          <View
+            style={{
+              padding: 24,
+              borderBottomWidth: 1,
+              borderBottomColor: "#273a3a",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Text style={[commonStyles.h3]}>Claim reward</Text>
             <TouchableOpacity onPress={() => setShowPurchaseModal(false)}>
               <Ionicons name="close" size={24} color="#9ca3af" />
@@ -399,28 +465,44 @@ export default function RewardsView({ tripId }: Props) {
             {selectedReward && (
               <>
                 <View style={{ marginBottom: 20 }}>
-                  <Text style={[commonStyles.h4, { marginBottom: 8 }]}>
-                    {selectedReward.name}
-                  </Text>
-                  <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 16 }]}>
+                  <Text style={[commonStyles.h4, { marginBottom: 8 }]}>{selectedReward.name}</Text>
+                  <Text
+                    style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 16 }]}
+                  >
                     {selectedReward.description}
                   </Text>
-                  
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Ionicons name="cash" size={16} color="#fbbf24" />
                       <View style={{ alignItems: "flex-start" }}>
-                        <Text style={[commonStyles.textPrimary, { color: "#fbbf24", fontSize: 14, lineHeight: 16 }]}>
+                        <Text
+                          style={[
+                            commonStyles.textPrimary,
+                            { color: "#fbbf24", fontSize: 14, lineHeight: 16 },
+                          ]}
+                        >
                           {selectedReward.coinCost} coins / item
                         </Text>
                         {selectedReward.originalCoinCost && (
-                          <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11, lineHeight: 13 }]}>
+                          <Text
+                            style={[
+                              commonStyles.textSecondary,
+                              { color: "#9ca3af", fontSize: 11, lineHeight: 13 },
+                            ]}
+                          >
                             {selectedReward.originalCoinCost}% of total points
                           </Text>
                         )}
                       </View>
                     </View>
-                    
+
                     <Text style={[commonStyles.textPrimary, { color: "#10b981" }]}>
                       Available: {selectedReward.availableQuantity} pcs.
                     </Text>
@@ -428,9 +510,7 @@ export default function RewardsView({ tripId }: Props) {
                 </View>
 
                 <View style={{ marginBottom: 20 }}>
-                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-                    Quantity
-                  </Text>
+                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Quantity</Text>
                   <TextInput
                     style={{
                       backgroundColor: "#0f2323",
@@ -448,15 +528,15 @@ export default function RewardsView({ tripId }: Props) {
                   />
                 </View>
 
-                <View style={{
-                  backgroundColor: "#1f2937",
-                  padding: 16,
-                  borderRadius: 12,
-                  marginBottom: 24,
-                }}>
-                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-                    Total cost:
-                  </Text>
+                <View
+                  style={{
+                    backgroundColor: "#1f2937",
+                    padding: 16,
+                    borderRadius: 12,
+                    marginBottom: 24,
+                  }}
+                >
+                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Total cost:</Text>
                   <Text style={[commonStyles.h4, { color: "#fbbf24" }]}>
                     {selectedReward.coinCost * (parseInt(quantity, 10) || 1)} coins
                   </Text>
@@ -486,14 +566,16 @@ export default function RewardsView({ tripId }: Props) {
         onRequestClose={() => setShowRewardDetailsModal(false)}
       >
         <View style={commonStyles.container}>
-          <View style={{
-            padding: 24,
-            borderBottomWidth: 1,
-            borderBottomColor: "#273a3a",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}>
+          <View
+            style={{
+              padding: 24,
+              borderBottomWidth: 1,
+              borderBottomColor: "#273a3a",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Text style={[commonStyles.h3]}>Reward details</Text>
             <TouchableOpacity onPress={() => setShowRewardDetailsModal(false)}>
               <Ionicons name="close" size={24} color="#9ca3af" />
@@ -504,7 +586,9 @@ export default function RewardsView({ tripId }: Props) {
             {previewReward ? (
               <>
                 {previewImages.length > 0 ? (
-                  <View style={{ width: previewCarouselWidth, alignSelf: "center", marginBottom: 16 }}>
+                  <View
+                    style={{ width: previewCarouselWidth, alignSelf: "center", marginBottom: 16 }}
+                  >
                     <ScrollView
                       horizontal
                       pagingEnabled
@@ -531,7 +615,14 @@ export default function RewardsView({ tripId }: Props) {
                       ))}
                     </ScrollView>
                     {previewImages.length > 1 ? (
-                      <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "center",
+                          gap: 6,
+                          marginTop: 10,
+                        }}
+                      >
                         {previewImages.map((_, index) => (
                           <View
                             key={`dot-${index}`}
@@ -548,38 +639,62 @@ export default function RewardsView({ tripId }: Props) {
                   </View>
                 ) : null}
 
-                <Text style={[commonStyles.h3, { marginBottom: 8 }]}>
-                  {previewReward.name}
-                </Text>
-                <Text style={[commonStyles.textPrimary, { color: "#e5e7eb", lineHeight: 22, marginBottom: 20 }]}>
+                <Text style={[commonStyles.h3, { marginBottom: 8 }]}>{previewReward.name}</Text>
+                <Text
+                  style={[
+                    commonStyles.textPrimary,
+                    { color: "#e5e7eb", lineHeight: 22, marginBottom: 20 },
+                  ]}
+                >
                   {previewReward.description}
                 </Text>
 
-                <View style={{
-                  backgroundColor: "#1f2937",
-                  padding: 16,
-                  borderRadius: 12,
-                  marginBottom: 20,
-                  gap: 8,
-                }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: "#1f2937",
+                    padding: 16,
+                    borderRadius: 12,
+                    marginBottom: 20,
+                    gap: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <Text style={commonStyles.textSecondary}>Price</Text>
                     <View style={{ alignItems: "flex-end" }}>
                       <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
                         {previewReward.coinCost} coins
                       </Text>
                       {previewReward.originalCoinCost && (
-                        <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11 }]}>
+                        <Text
+                          style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11 }]}
+                        >
                           {previewReward.originalCoinCost}% of total points
                         </Text>
                       )}
                     </View>
                   </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <Text style={commonStyles.textSecondary}>Availability</Text>
-                    <Text style={[commonStyles.textPrimary, {
-                      color: previewReward.isOutOfStock ? "#ef4444" : "#10b981",
-                    }]}>
+                    <Text
+                      style={[
+                        commonStyles.textPrimary,
+                        {
+                          color: previewReward.isOutOfStock ? "#ef4444" : "#10b981",
+                        },
+                      ]}
+                    >
                       {previewReward.isOutOfStock
                         ? "Sold out"
                         : `${previewReward.availableQuantity ?? 0} pcs.`}
@@ -592,7 +707,12 @@ export default function RewardsView({ tripId }: Props) {
                     setShowRewardDetailsModal(false);
                     openPurchaseModal(previewReward);
                   }}
-                  disabled={!previewReward.canAfford || !previewReward.isEligibleToBuy || previewReward.isOutOfStock || isTripPast}
+                  disabled={
+                    !previewReward.canAfford ||
+                    !previewReward.isEligibleToBuy ||
+                    previewReward.isOutOfStock ||
+                    isTripPast
+                  }
                   style={[
                     commonStyles.button,
                     {
@@ -615,8 +735,9 @@ export default function RewardsView({ tripId }: Props) {
                   ]}
                 >
                   <Text style={commonStyles.buttonText}>
-                    {isTripPast ? "Trip ended" :
-                      previewReward.isOutOfStock
+                    {isTripPast
+                      ? "Trip ended"
+                      : previewReward.isOutOfStock
                         ? "Sold out"
                         : !previewReward.isEligibleToBuy
                           ? "Only group leader"

@@ -15,7 +15,7 @@ export default function AdminCreateGroupScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [groupName, setGroupName] = useState("");
 
@@ -70,10 +70,7 @@ export default function AdminCreateGroupScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Create Group"
-        subtitle="Add a new group to the trip"
-      />
+      <AdminHeader title="Create Group" subtitle="Add a new group to the trip" />
 
       <ScrollView
         style={styles.scroll}

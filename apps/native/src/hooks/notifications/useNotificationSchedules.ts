@@ -5,14 +5,26 @@ import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 export function useNotificationSchedules() {
   const queryClient = useQueryClient();
   const query = useQuery(orpc.notificationSchedule.getAll.queryOptions({ input: {} }));
-  const deleteMutation = useMutation(orpc.notificationSchedule.delete.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-    onError: (err) => { console.error("Error deleting schedule:", err); },
-  }));
-  const toggleMutation = useMutation(orpc.notificationSchedule.toggleActive.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-    onError: (err) => { console.error("Error toggling schedule:", err); },
-  }));
+  const deleteMutation = useMutation(
+    orpc.notificationSchedule.delete.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+      onError: (err) => {
+        console.error("Error deleting schedule:", err);
+      },
+    }),
+  );
+  const toggleMutation = useMutation(
+    orpc.notificationSchedule.toggleActive.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+      onError: (err) => {
+        console.error("Error toggling schedule:", err);
+      },
+    }),
+  );
 
   const schedules = query.data?.schedules ?? [];
 

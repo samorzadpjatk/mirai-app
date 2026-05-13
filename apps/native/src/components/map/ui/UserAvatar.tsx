@@ -63,14 +63,9 @@ function getColorFromName(name: string): string {
   return colors[index]!;
 }
 
-export const UserAvatar: React.FC<UserAvatarProps> = ({
-  imageUrl,
-  name,
-  size = 38,
-}) => {
+export const UserAvatar: React.FC<UserAvatarProps> = ({ imageUrl, name, size = 38 }) => {
   const [hasImageError, setHasImageError] = useState(false);
   const hasImage = imageUrl && imageUrl.trim().length > 0;
-
 
   if (hasImage && !hasImageError) {
     return (
@@ -102,7 +97,9 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         },
       ]}
     >
-      <Text testID="user-avatar-initials-text" style={[styles.initialsText, { fontSize }]}>{initials}</Text>
+      <Text testID="user-avatar-initials-text" style={[styles.initialsText, { fontSize }]}>
+        {initials}
+      </Text>
     </View>
   );
 };

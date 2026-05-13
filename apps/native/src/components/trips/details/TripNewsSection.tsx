@@ -76,8 +76,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
     }[];
 
     return activities.filter(
-      (activity): activity is AdminNewsItem =>
-        activity.activityType === "custom",
+      (activity): activity is AdminNewsItem => activity.activityType === "custom",
     );
   }, [newsQuery.data?.activities]);
 
@@ -109,11 +108,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
 
         {!newsQuery.isLoading && customNews.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons
-              name="megaphone-outline"
-              size={18}
-              color={colors.textSecondary}
-            />
+            <Ionicons name="megaphone-outline" size={18} color={colors.textSecondary} />
             <Text style={styles.emptyText}>No news yet.</Text>
           </View>
         ) : null}
@@ -140,9 +135,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
             <View style={styles.newsContent}>
               <View style={styles.newsHeader}>
                 <Text style={styles.newsTitle}>{item.title}</Text>
-                <Text style={styles.newsTime}>
-                  {formatRelativeTime(item.createdAt)}
-                </Text>
+                <Text style={styles.newsTime}>{formatRelativeTime(item.createdAt)}</Text>
               </View>
 
               {item.description ? (
@@ -157,9 +150,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
                 />
               ) : null}
 
-              <Text style={styles.newsAuthor}>
-                Added by {formatAdminName(item)}
-              </Text>
+              <Text style={styles.newsAuthor}>Added by {formatAdminName(item)}</Text>
             </View>
           </TouchableOpacity>
         ))}

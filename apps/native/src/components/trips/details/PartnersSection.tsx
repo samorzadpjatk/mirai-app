@@ -55,9 +55,7 @@ export function PartnersSection({ sponsors }: PartnersSectionProps) {
             key={sponsor.id}
             style={styles.slot}
             activeOpacity={0.6}
-            onPress={() =>
-              router.push(`/trips/partners/${sponsor.id}` as const)
-            }
+            onPress={() => router.push(`/trips/partners/${sponsor.id}` as const)}
           >
             <PartnerLogo sponsor={sponsor} />
           </TouchableOpacity>

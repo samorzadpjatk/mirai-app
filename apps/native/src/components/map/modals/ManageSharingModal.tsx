@@ -1,23 +1,12 @@
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  ActivityIndicator,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 
 export function ManageSharingModal() {
-  const {
-    showManageModal,
-    setShowManageModal,
-    sharingSettings,
-    isRemovingUser,
-    handleRemoveUser,
-  } = useMapOverlayStore();
+  const { showManageModal, setShowManageModal, sharingSettings, isRemovingUser, handleRemoveUser } =
+    useMapOverlayStore();
   const users = sharingSettings?.usersToShareWith ?? [];
 
   return (
@@ -30,9 +19,7 @@ export function ManageSharingModal() {
       <View style={styles.modalUsersList}>
         {users.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              You're not sharing your location with anyone
-            </Text>
+            <Text style={styles.emptyStateText}>You're not sharing your location with anyone</Text>
           </View>
         ) : (
           users.map((user) => {
@@ -52,7 +39,11 @@ export function ManageSharingModal() {
                     disabled={isRemovingUser}
                   >
                     {isRemovingUser ? (
-                      <ActivityIndicator testID="remove-loading-indicator" size="small" color={colors.danger} />
+                      <ActivityIndicator
+                        testID="remove-loading-indicator"
+                        size="small"
+                        color={colors.danger}
+                      />
                     ) : (
                       <Text style={styles.removeButtonText}>Remove</Text>
                     )}

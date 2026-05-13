@@ -1,9 +1,5 @@
 import { useCallback, useMemo } from "react";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import type {
   CommunityFeedActivity,
@@ -78,8 +74,7 @@ export const useCommunityFeed = ({
   const trpcClient = orpc;
 
   const feedQueryKey = useMemo(
-    () =>
-      selectedTripId ? (["community-feed", selectedTripId, 30] as const) : null,
+    () => (selectedTripId ? (["community-feed", selectedTripId, 30] as const) : null),
     [selectedTripId],
   );
 
@@ -124,29 +119,24 @@ export const useCommunityFeed = ({
     const queryKey = queryKeyOverride ?? feedQueryKey;
     if (!queryKey) return;
 
-    queryClient.setQueryData(
-      queryKey,
-      (oldData: { pages: FeedPageData[] } | undefined) => {
-        if (!oldData?.pages) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: FeedPageData) => ({
-            ...page,
-            activities: page.activities.map((activity) => {
-              if (activity.id !== activityId) return activity;
-              const nextSummary =
-                typeof updater === "function"
-                  ? updater(activity.reactionsSummary)
-                  : updater;
-              return {
-                ...activity,
-                reactionsSummary: nextSummary,
-              };
-            }),
-          })),
-        };
-      },
-    );
+    queryClient.setQueryData(queryKey, (oldData: { pages: FeedPageData[] } | undefined) => {
+      if (!oldData?.pages) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page: FeedPageData) => ({
+          ...page,
+          activities: page.activities.map((activity) => {
+            if (activity.id !== activityId) return activity;
+            const nextSummary =
+              typeof updater === "function" ? updater(activity.reactionsSummary) : updater;
+            return {
+              ...activity,
+              reactionsSummary: nextSummary,
+            };
+          }),
+        })),
+      };
+    });
   };
 
   const { mutateAsync: toggleHeart } = useMutation({
@@ -164,11 +154,7 @@ export const useCommunityFeed = ({
 
       await queryClient.cancelQueries({ queryKey });
       const previousData = queryClient.getQueryData(feedQueryKey);
-      applyReactionSummaryToFeed(
-        activityId,
-        toggleHeartSummaryLocally,
-        queryKey,
-      );
+      applyReactionSummaryToFeed(activityId, toggleHeartSummaryLocally, queryKey);
       return { queryKey, previousData };
     },
     onError: (_error, _variables, context) => {
@@ -176,11 +162,7 @@ export const useCommunityFeed = ({
       queryClient.setQueryData(context.queryKey, context.previousData);
     },
     onSuccess: (result, _variables, context) => {
-      applyReactionSummaryToFeed(
-        result.activityId,
-        result.reactionsSummary,
-        context?.queryKey,
-      );
+      applyReactionSummaryToFeed(result.activityId, result.reactionsSummary, context?.queryKey);
     },
   });
 
@@ -192,8 +174,7 @@ export const useCommunityFeed = ({
   );
 
   const activities = useMemo(
-    () =>
-      (feedQuery.data?.pages ?? []).flatMap((page) => page.activities ?? []),
+    () => (feedQuery.data?.pages ?? []).flatMap((page) => page.activities ?? []),
     [feedQuery.data?.pages],
   );
 
@@ -201,9 +182,7 @@ export const useCommunityFeed = ({
     const base =
       selectedFilter === "all"
         ? activities
-        : activities.filter(
-            (activity) => activity.activityType === selectedFilter,
-          );
+        : activities.filter((activity) => activity.activityType === selectedFilter);
 
     if (!focusActivityId) return base;
 

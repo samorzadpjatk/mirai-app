@@ -1,20 +1,9 @@
 import React from "react";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-type ActivityType =
-  | "submission"
-  | "challenge_event"
-  | "rank_change"
-  | "custom"
-  | "user_post";
+type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
 
 interface AdminActivity {
   id: string;
@@ -126,16 +115,8 @@ export function AdminActivityCard({
           <Text style={styles.actionText}>Edit</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onPin(item)}
-          disabled={isBusy}
-        >
-          <Ionicons
-            name={item.isPinned ? "pin" : "pin-outline"}
-            size={16}
-            color={colors.primary}
-          />
+        <TouchableOpacity style={styles.actionButton} onPress={() => onPin(item)} disabled={isBusy}>
+          <Ionicons name={item.isPinned ? "pin" : "pin-outline"} size={16} color={colors.primary} />
           <Text style={styles.actionText}>{item.isPinned ? "Unpin" : "Pin"}</Text>
         </TouchableOpacity>
 
@@ -144,14 +125,8 @@ export function AdminActivityCard({
           onPress={() => onHide(item)}
           disabled={isBusy}
         >
-          <Ionicons
-            name={item.isHidden ? "eye" : "eye-off"}
-            size={16}
-            color={colors.warning}
-          />
-          <Text style={styles.actionText}>
-            {item.isHidden ? "Unhide" : "Hide"}
-          </Text>
+          <Ionicons name={item.isHidden ? "eye" : "eye-off"} size={16} color={colors.warning} />
+          <Text style={styles.actionText}>{item.isHidden ? "Unhide" : "Hide"}</Text>
         </TouchableOpacity>
 
         {canDelete ? (

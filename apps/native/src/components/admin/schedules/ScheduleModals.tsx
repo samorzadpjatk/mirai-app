@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AdminModal, AdminModalButton } from '../AdminModal';
-import { colors, spacing, typography } from '~/styles';
-import {
-  FormField,
-  ThemedTextInput,
-} from '~/components/common/ui';
-import type { NotificationSchedule } from '~/hooks/admin/useAdminSchedules';
+import React, { useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { AdminModal, AdminModalButton } from "../AdminModal";
+import { colors, spacing, typography } from "~/styles";
+import { FormField, ThemedTextInput } from "~/components/common/ui";
+import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 
 interface CreateScheduleModalProps {
   visible: boolean;
@@ -15,15 +12,15 @@ interface CreateScheduleModalProps {
   isCreating: boolean;
 }
 
-export function CreateScheduleModal({ 
-  visible, 
-  onClose, 
-  onCreateSchedule, 
-  isCreating 
+export function CreateScheduleModal({
+  visible,
+  onClose,
+  onCreateSchedule,
+  isCreating,
 }: CreateScheduleModalProps) {
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
-  const [triggerTime, setTriggerTime] = useState('');
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [triggerTime, setTriggerTime] = useState("");
 
   const handleCreate = () => {
     if (!name.trim() || !message.trim() || !triggerTime.trim()) {
@@ -39,9 +36,9 @@ export function CreateScheduleModal({
   };
 
   const resetForm = () => {
-    setName('');
-    setMessage('');
-    setTriggerTime('');
+    setName("");
+    setMessage("");
+    setTriggerTime("");
   };
 
   return (
@@ -52,9 +49,9 @@ export function CreateScheduleModal({
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Create" 
-            onPress={handleCreate} 
+          <AdminModalButton
+            title="Create"
+            onPress={handleCreate}
             disabled={!name.trim() || !message.trim() || !triggerTime.trim()}
             loading={isCreating}
           />
@@ -62,11 +59,7 @@ export function CreateScheduleModal({
       }
     >
       <FormField label="Schedule Name" required>
-        <ThemedTextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter schedule name..."
-        />
+        <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter schedule name..." />
       </FormField>
 
       <FormField label="Message" required>
@@ -98,21 +91,21 @@ interface EditScheduleModalProps {
   isUpdating: boolean;
 }
 
-export function EditScheduleModal({ 
-  visible, 
-  onClose, 
-  schedule, 
-  onUpdateSchedule, 
-  isUpdating 
+export function EditScheduleModal({
+  visible,
+  onClose,
+  schedule,
+  onUpdateSchedule,
+  isUpdating,
 }: EditScheduleModalProps) {
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
-  const [triggerTime, setTriggerTime] = useState(schedule?.triggerTime ?? '');
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [triggerTime, setTriggerTime] = useState(schedule?.triggerTime ?? "");
 
   const resetForm = () => {
-    setName('');
-    setMessage('');
-    setTriggerTime('');
+    setName("");
+    setMessage("");
+    setTriggerTime("");
   };
 
   const handleUpdate = () => {
@@ -135,9 +128,9 @@ export function EditScheduleModal({
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Update" 
-            onPress={handleUpdate} 
+          <AdminModalButton
+            title="Update"
+            onPress={handleUpdate}
             disabled={!schedule || !name.trim() || !message.trim() || !triggerTime.trim()}
             loading={isUpdating}
           />
@@ -145,11 +138,7 @@ export function EditScheduleModal({
       }
     >
       <FormField label="Schedule Name" required>
-        <ThemedTextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter schedule name..."
-        />
+        <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter schedule name..." />
       </FormField>
 
       <FormField label="Message" required>
@@ -181,12 +170,12 @@ interface DeleteScheduleModalProps {
   isDeleting: boolean;
 }
 
-export function DeleteScheduleModal({ 
-  visible, 
-  onClose, 
-  schedule, 
-  onDeleteSchedule, 
-  isDeleting 
+export function DeleteScheduleModal({
+  visible,
+  onClose,
+  schedule,
+  onDeleteSchedule,
+  isDeleting,
 }: DeleteScheduleModalProps) {
   const handleDelete = () => {
     if (!schedule) return;
@@ -201,9 +190,9 @@ export function DeleteScheduleModal({
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={onClose} variant="cancel" />
-          <AdminModalButton 
-            title="Delete" 
-            onPress={handleDelete} 
+          <AdminModalButton
+            title="Delete"
+            onPress={handleDelete}
             variant="danger"
             loading={isDeleting}
           />

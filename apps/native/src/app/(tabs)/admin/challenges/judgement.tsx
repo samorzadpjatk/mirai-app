@@ -1,26 +1,20 @@
 import React from "react";
-import {
-  ActivityIndicator,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { JudgementContent } from '~/components/judgement/JudgementContent';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { JudgementContent } from "~/components/judgement/JudgementContent";
+import { viewStyles, textStyles } from "~/styles/judgement";
 
 export default function ChallengeJudgementScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const challengeId =
-    typeof params.challengeId === 'string' ? params.challengeId : params.challengeId?.[0] ?? '';
+    typeof params.challengeId === "string" ? params.challengeId : (params.challengeId?.[0] ?? "");
 
   const challengeQuery = useQuery({
     ...orpc.challenge.getById.queryOptions({
@@ -92,7 +86,7 @@ export default function ChallengeJudgementScreen() {
         },
       ]}
     >
-      <Stack.Screen options={{ title: 'Challenge Judgement' }} />
+      <Stack.Screen options={{ title: "Challenge Judgement" }} />
       <StatusBar barStyle="light-content" />
       <JudgementContent tripId={tripId} challengeId={challengeId} />
     </View>

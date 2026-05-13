@@ -1,10 +1,20 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Alert, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Dimensions,
+} from "react-native";
 import { useLoginForm } from "@mirai-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mirai-app/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@mirai-app/supabase/react";
@@ -43,7 +53,8 @@ export default function LoginScreen() {
   const privacyPolicyPublicUrl = PRIVACY_POLICY_PUBLIC_URL;
 
   const { email, isLoading, isSent, error } = formState;
-  const ghostEmail = (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
+  const ghostEmail =
+    (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
   const isGhostLogin = ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
   const isBusy = isLoading || passwordLoading;
 
@@ -72,11 +83,9 @@ export default function LoginScreen() {
 
   const handleBannedLogin = async (reason: string | null, bannedUntil: string | null) => {
     await signOut();
-    const formattedDate = bannedUntil
-      ? new Date(bannedUntil).toLocaleString()
-      : "unknown date";
-    const message = `Your account is banned until ${formattedDate}.` +
-      (reason ? ` Reason: ${reason}.` : "");
+    const formattedDate = bannedUntil ? new Date(bannedUntil).toLocaleString() : "unknown date";
+    const message =
+      `Your account is banned until ${formattedDate}.` + (reason ? ` Reason: ${reason}.` : "");
     if (isGhostLogin) {
       setPasswordError(message);
     } else {
@@ -134,7 +143,9 @@ export default function LoginScreen() {
       const status = await checkBanStatusByEmail();
       if (status?.exists === false) {
         clearSent();
-        setPrecheckError("This email is not in database. Use your email that you provided on Taksidi site.");
+        setPrecheckError(
+          "This email is not in database. Use your email that you provided on Taksidi site.",
+        );
         return;
       }
       if (status?.banned) {
@@ -142,14 +153,14 @@ export default function LoginScreen() {
         const formattedDate = status.bannedUntil
           ? new Date(status.bannedUntil).toLocaleString()
           : "unknown date";
-        const message = `Your account is banned until ${formattedDate}.` +
+        const message =
+          `Your account is banned until ${formattedDate}.` +
           (status.reason ? ` Reason: ${status.reason}.` : "");
         setPrecheckError(message);
         return;
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to verify ban status";
+      const message = err instanceof Error ? err.message : "Failed to verify ban status";
       setPrecheckError(message);
       return;
     }
@@ -232,10 +243,7 @@ export default function LoginScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
         {/* Header Spacer */}
         <View style={[styles.headerSpacer, { paddingTop: insets.top + 24 }]} />
 
@@ -244,12 +252,8 @@ export default function LoginScreen() {
           <View style={styles.logoWrapper}>
             <Logo size={188} />
           </View>
-          <Text style={styles.title}>
-            PJApp
-          </Text>
-          <Text style={styles.subtitle}>
-            Unlock your next adventure with PJapp
-          </Text>
+          <Text style={styles.title}>PJApp</Text>
+          <Text style={styles.subtitle}>Unlock your next adventure with PJapp</Text>
         </View>
 
         {/* Form Container */}
@@ -266,9 +270,7 @@ export default function LoginScreen() {
           <View style={styles.inputsCard}>
             {/* Email Input */}
             <View style={[styles.inputSection, styles.inputSectionBorder]}>
-              <Text style={styles.inputLabel}>
-                Email
-              </Text>
+              <Text style={styles.inputLabel}>Email</Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconOpacity}>
                   <Ionicons name="at" size={20} color={colors.primary} />
@@ -290,10 +292,7 @@ export default function LoginScreen() {
             {/* Privacy Policy */}
             <View style={[styles.inputSection, styles.inputSectionBorder]}>
               <TouchableOpacity
-                style={[
-                  styles.policyCheckboxRow,
-                  !hasViewedPrivacyPolicy && { opacity: 0.55 },
-                ]}
+                style={[styles.policyCheckboxRow, !hasViewedPrivacyPolicy && { opacity: 0.55 }]}
                 onPress={() => {
                   if (!hasViewedPrivacyPolicy) {
                     setPrivacyPolicyError("Najpierw otworz i przeczytaj polityke prywatnosci.");
@@ -340,15 +339,11 @@ export default function LoginScreen() {
                     editable={!isBusy}
                   />
                 </View>
-                {passwordError && (
-                  <Text style={styles.modalErrorText}>{passwordError}</Text>
-                )}
+                {passwordError && <Text style={styles.modalErrorText}>{passwordError}</Text>}
               </View>
             ) : (
               <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>
-                  How it works
-                </Text>
+                <Text style={styles.inputLabel}>How it works</Text>
                 <View style={[styles.inputWrapper, { paddingVertical: 16 }]}>
                   <Text style={{ color: colors.textSecondary, flex: 1 }}>
                     We'll send a one-time login code to your email. Use the code to sign in.
@@ -382,7 +377,9 @@ export default function LoginScreen() {
             title="Enter verification code"
             onClose={closeModal}
           >
-            <Text style={styles.modalSubtitle}>Enter the 6-digit code we sent to <Text style={{fontWeight: 'bold'}}>{email}</Text></Text>
+            <Text style={styles.modalSubtitle}>
+              Enter the 6-digit code we sent to <Text style={{ fontWeight: "bold" }}>{email}</Text>
+            </Text>
 
             <TextInput
               value={otp}
@@ -404,7 +401,7 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity style={{ marginTop: 12 }} onPress={closeModal}>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>Cancel</Text>
+              <Text style={{ color: colors.textSecondary, textAlign: "center" }}>Cancel</Text>
             </TouchableOpacity>
           </AppModalShell>
 
@@ -419,7 +416,6 @@ export default function LoginScreen() {
 
           <View style={{ height: 32 }} />
         </View>
-
       </ScrollView>
 
       <FullScreenModal
@@ -430,7 +426,9 @@ export default function LoginScreen() {
         {isPolicyLoading ? (
           <View style={styles.policyModalLoading}>
             <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={[styles.policyText, { marginTop: 12, color: colors.textSecondary }]}>Pobieranie...</Text>
+            <Text style={[styles.policyText, { marginTop: 12, color: colors.textSecondary }]}>
+              Pobieranie...
+            </Text>
           </View>
         ) : policyPdfUri ? (
           <Pdf

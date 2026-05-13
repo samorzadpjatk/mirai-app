@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { useTrips } from "~/hooks/trips";
@@ -24,11 +18,7 @@ interface CreateScheduleModalProps {
   onCreated: () => void;
 }
 
-export function CreateScheduleModal({
-  isOpen,
-  onClose,
-  onCreated,
-}: CreateScheduleModalProps) {
+export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateScheduleModalProps) {
   const queryClient = useQueryClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
@@ -209,7 +199,11 @@ export function CreateScheduleModal({
                     disabled={isFetchingNextPage}
                   >
                     {isFetchingNextPage ? (
-                      <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
+                      <ActivityIndicator
+                        testID="loading-indicator"
+                        size="small"
+                        color={colors.primary}
+                      />
                     ) : (
                       <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
                         Load more trips

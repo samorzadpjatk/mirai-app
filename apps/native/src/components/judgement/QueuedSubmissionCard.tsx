@@ -1,9 +1,9 @@
-import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '~/styles';
-import { type Submission } from '~/stores/judgement';
-import { getInitials } from '~/utils/validation';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import { View, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from "~/styles";
+import { type Submission } from "~/stores/judgement";
+import { getInitials } from "~/utils/validation";
+import { viewStyles, textStyles } from "~/styles/judgement";
 
 const QueuedSubmissionCard = ({
   submission,
@@ -13,7 +13,10 @@ const QueuedSubmissionCard = ({
   maxCardHeight: number;
 }) => {
   return (
-    <View testID="queued-submission-card" style={[viewStyles.card, viewStyles.cardBack, { maxHeight: maxCardHeight }]}>
+    <View
+      testID="queued-submission-card"
+      style={[viewStyles.card, viewStyles.cardBack, { maxHeight: maxCardHeight }]}
+    >
       <View style={viewStyles.cardHeader}>
         <View style={viewStyles.groupAvatar}>
           <Text style={textStyles.groupAvatarText}>{getInitials(submission.group.name)}</Text>

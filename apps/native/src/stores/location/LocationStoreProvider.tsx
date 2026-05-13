@@ -33,11 +33,17 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
         console.error("Failed to update location sharing settings:", error);
         const code = (error as { code?: string })?.code;
         if (code === "UNAUTHORIZED") {
-          Alert.alert("Authentication Required", "Please sign in again to update location settings.");
+          Alert.alert(
+            "Authentication Required",
+            "Please sign in again to update location settings.",
+          );
         } else if (code === "FORBIDDEN") {
           Alert.alert("Access Denied", "You don't have permission to update location settings.");
         } else {
-          Alert.alert("Connection Error", "Failed to update location sharing settings. Please check your internet connection and try again.");
+          Alert.alert(
+            "Connection Error",
+            "Failed to update location sharing settings. Please check your internet connection and try again.",
+          );
         }
       },
     }),

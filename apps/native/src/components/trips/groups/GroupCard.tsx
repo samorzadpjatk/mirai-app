@@ -17,7 +17,7 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
       activeOpacity={0.8}
       onPress={() => onPress(group)}
       role="button"
-      aria-label={`Group ${group.name}${isMyGroup ? ' (Your group)' : ''}`}
+      aria-label={`Group ${group.name}${isMyGroup ? " (Your group)" : ""}`}
     >
       <View style={styles.groupImageContainer}>
         {group.image ? (

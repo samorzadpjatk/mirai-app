@@ -4,22 +4,14 @@ import { useMapOverlayStore } from "~/stores/map";
 import { formatRelativeTime } from "~/utils/format";
 
 export function SelectedUserCard() {
-  const {
-    selectedUser,
-    sharingUserIds,
-    canStopSharing,
-    onBackToList,
-    onStopSharing,
-  } = useMapOverlayStore();
+  const { selectedUser, sharingUserIds, canStopSharing, onBackToList, onStopSharing } =
+    useMapOverlayStore();
 
   if (!selectedUser) return null;
 
   const displayName =
-    selectedUser.name && selectedUser.name.trim() !== ""
-      ? selectedUser.name
-      : "Unknown user";
-  const displaySurname =
-    displayName.split(" ").slice(1).join(" ") || "-";
+    selectedUser.name && selectedUser.name.trim() !== "" ? selectedUser.name : "Unknown user";
+  const displaySurname = displayName.split(" ").slice(1).join(" ") || "-";
   const firstName = displayName.split(" ")[0] ?? displayName;
   const isSharingWithSelected = sharingUserIds.includes(selectedUser.id);
 
@@ -31,11 +23,7 @@ export function SelectedUserCard() {
         </Pressable>
         <View style={styles.userHeader}>
           <View style={styles.avatarWrapper}>
-            <UserAvatar
-              imageUrl={selectedUser.avatarUrl}
-              name={displayName}
-              size={60}
-            />
+            <UserAvatar imageUrl={selectedUser.avatarUrl} name={displayName} size={60} />
           </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{firstName}</Text>

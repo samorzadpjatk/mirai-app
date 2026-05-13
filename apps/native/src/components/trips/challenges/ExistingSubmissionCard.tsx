@@ -53,13 +53,7 @@ export function ExistingSubmissionCard({
 }: ExistingSubmissionCardProps) {
   const hasImage = submission.imageIds.length > 0;
   const canWithdraw = submission.status !== "APPROVED";
-  const {
-    download,
-    status: imageStatus,
-    file,
-    reset,
-    abort,
-  } = useFileDownload();
+  const { download, status: imageStatus, file, reset, abort } = useFileDownload();
 
   useEffect(() => {
     if (!hasImage) {
@@ -81,38 +75,24 @@ export function ExistingSubmissionCard({
   }, [abort, download, hasImage, reset, submission.imageIds]);
 
   const handleWithdrawPress = () => {
-    Alert.alert(
-      "Withdraw submission",
-      "Are you sure you want to withdraw this submission?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Withdraw",
-          style: "destructive",
-          onPress: () => {
-            void onWithdraw(submission.id);
-          },
+    Alert.alert("Withdraw submission", "Are you sure you want to withdraw this submission?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Withdraw",
+        style: "destructive",
+        onPress: () => {
+          void onWithdraw(submission.id);
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Submission sent</Text>
-        <View
-          style={[
-            styles.statusPill,
-            { borderColor: getStatusColor(submission.status) },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              { color: getStatusColor(submission.status) },
-            ]}
-          >
+        <View style={[styles.statusPill, { borderColor: getStatusColor(submission.status) }]}>
+          <Text style={[styles.statusText, { color: getStatusColor(submission.status) }]}>
             {getStatusLabel(submission.status)}
           </Text>
         </View>
@@ -157,9 +137,7 @@ export function ExistingSubmissionCard({
       )}
 
       {submission.status === "REJECTED" && submission.rejectionReason && (
-        <Text style={styles.rejectionText}>
-          Rejection reason: {submission.rejectionReason}
-        </Text>
+        <Text style={styles.rejectionText}>Rejection reason: {submission.rejectionReason}</Text>
       )}
 
       {canWithdraw ? (
@@ -174,9 +152,7 @@ export function ExistingSubmissionCard({
           </Text>
         </TouchableOpacity>
       ) : (
-        <Text style={styles.lockedText}>
-          Approved submissions cannot be withdrawn.
-        </Text>
+        <Text style={styles.lockedText}>Approved submissions cannot be withdrawn.</Text>
       )}
     </View>
   );

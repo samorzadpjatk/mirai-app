@@ -15,7 +15,7 @@ export default function AdminCreateUserScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -63,7 +63,8 @@ export default function AdminCreateUserScreen() {
     });
   };
 
-  const isValid = firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0;
+  const isValid =
+    firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0;
 
   return (
     <View
@@ -74,10 +75,7 @@ export default function AdminCreateUserScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Create User"
-        subtitle="Add a new user to the system"
-      />
+      <AdminHeader title="Create User" subtitle="Add a new user to the system" />
 
       <ScrollView
         style={styles.scroll}

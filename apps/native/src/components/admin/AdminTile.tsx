@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { colors, spacing, borderRadius, typography } from "~/styles";
 
 interface AdminTileProps {
   title: string;
   subtitle: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   accent: string;
   accentBg: string;
   route?: string;
@@ -56,8 +56,7 @@ export function AdminTile({
       role="button"
       aria-label={`${title}: ${subtitle}`}
     >
-      <View style={[styles.tileIcon, { backgroundColor: accentBg, borderColor: accent }]}
-      >
+      <View style={[styles.tileIcon, { backgroundColor: accentBg, borderColor: accent }]}>
         <Ionicons name={icon} size={24} color={accent} />
       </View>
       <Text style={styles.tileTitle}>{title}</Text>
@@ -68,7 +67,7 @@ export function AdminTile({
 
 const styles = StyleSheet.create({
   tile: {
-    width: '47%',
+    width: "47%",
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
@@ -79,8 +78,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     marginBottom: spacing.md,
   },

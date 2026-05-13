@@ -47,7 +47,10 @@ export function isTripUpcoming(startDate: Date | string): boolean {
  * @param endDate - The end date of the trip
  * @returns "Ongoing", "Upcoming", or "Past"
  */
-export function getTripStatus(startDate: Date | string, endDate: Date | string): "Ongoing" | "Upcoming" | "Past" {
+export function getTripStatus(
+  startDate: Date | string,
+  endDate: Date | string,
+): "Ongoing" | "Upcoming" | "Past" {
   if (isTripOngoing(startDate, endDate)) return "Ongoing";
   if (isTripUpcoming(startDate)) return "Upcoming";
   return "Past";

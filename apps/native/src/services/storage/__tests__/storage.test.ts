@@ -60,9 +60,7 @@ describe("Auth Storage", () => {
       const error = new Error("Secure store error");
       mockSetItemAsync.mockRejectedValue(error);
 
-      await expect(
-        authStorage.setItem("test-key", "value")
-      ).rejects.toThrow(error);
+      await expect(authStorage.setItem("test-key", "value")).rejects.toThrow(error);
     });
   });
 

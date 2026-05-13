@@ -3,7 +3,9 @@ import { orpc } from "@mirai-app/orpc/client";
 
 export function useGroupDetails(groupId?: string | null) {
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
-  const groupQuery = useQuery(orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }));
+  const groupQuery = useQuery(
+    orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }),
+  );
 
   return {
     currentUser: currentUserQuery.data,

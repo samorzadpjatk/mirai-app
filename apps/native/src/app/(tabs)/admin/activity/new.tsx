@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -27,10 +19,14 @@ export default function AdminCreateActivityScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
-  const { upload, reset: resetUpload, status: uploadStatus, progress: uploadProgress } =
-    useFileUpload();
+  const {
+    upload,
+    reset: resetUpload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -143,10 +139,7 @@ export default function AdminCreateActivityScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Create Activity"
-        subtitle="Add custom activity to feed"
-      />
+      <AdminHeader title="Create Activity" subtitle="Add custom activity to feed" />
 
       <ScrollView
         style={styles.scroll}
@@ -154,11 +147,7 @@ export default function AdminCreateActivityScreen() {
         showsVerticalScrollIndicator={false}
       >
         <FormField label="Title" required>
-          <ThemedTextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-          />
+          <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
         </FormField>
 
         <FormField label="Description">

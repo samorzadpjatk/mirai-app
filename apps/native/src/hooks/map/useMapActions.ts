@@ -4,10 +4,7 @@ import { orpc } from "@mirai-app/orpc/client";
 export function useMapActions() {
   const updateLocationMutation = useMutation(orpc.location.updateLocation.mutationOptions());
 
-  const sendLocation = async (input: {
-    latitude: number;
-    longitude: number;
-  }) => {
+  const sendLocation = async (input: { latitude: number; longitude: number }) => {
     return updateLocationMutation.mutateAsync({
       latitude: input.latitude,
       longitude: input.longitude,

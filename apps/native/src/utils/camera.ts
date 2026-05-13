@@ -1,10 +1,5 @@
 import type { ImagePickerAsset } from "expo-image-picker";
-import {
-  ImageManipulator,
-  FlipType,
-  SaveFormat,
-  manipulateAsync,
-} from "expo-image-manipulator";
+import { ImageManipulator, FlipType, SaveFormat, manipulateAsync } from "expo-image-manipulator";
 import { Platform } from "react-native";
 
 const MIRRORED_ORIENTATIONS = new Set([2, 4, 5, 7]);
@@ -15,14 +10,11 @@ const asExifRecord = (exif: ImagePickerAsset["exif"]): ExifRecord | null => {
   return exif;
 };
 
-const readOrientation = (
-  exif: ImagePickerAsset["exif"],
-): number | null => {
+const readOrientation = (exif: ImagePickerAsset["exif"]): number | null => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return null;
 
-  const directOrientation =
-    exifRecord.Orientation ?? exifRecord.orientation;
+  const directOrientation = exifRecord.Orientation ?? exifRecord.orientation;
   if (typeof directOrientation === "number") return directOrientation;
   if (typeof directOrientation === "string") {
     const parsed = Number.parseInt(directOrientation, 10);
@@ -31,9 +23,7 @@ const readOrientation = (
   return null;
 };
 
-const hasExplicitMirroredFlag = (
-  exif: ImagePickerAsset["exif"],
-): boolean => {
+const hasExplicitMirroredFlag = (exif: ImagePickerAsset["exif"]): boolean => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return false;
 
@@ -49,9 +39,7 @@ const hasExplicitMirroredFlag = (
   });
 };
 
-const isLikelyFrontCamera = (
-  exif: ImagePickerAsset["exif"],
-): boolean => {
+const isLikelyFrontCamera = (exif: ImagePickerAsset["exif"]): boolean => {
   const exifRecord = asExifRecord(exif);
   if (!exifRecord) return false;
 
@@ -63,9 +51,7 @@ const isLikelyFrontCamera = (
   });
 };
 
-const resolveFormat = (
-  mimeType?: string | null,
-): SaveFormat => {
+const resolveFormat = (mimeType?: string | null): SaveFormat => {
   switch (mimeType) {
     case "image/png":
       return SaveFormat.PNG;

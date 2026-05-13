@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 
-export function useChallengeDetails(
-  challengeId?: string | null,
-  tripId?: string | null,
-) {
-  const challengeQuery = useQuery(orpc.challenge.getById.queryOptions({ input: { id: challengeId ?? "", tripId: tripId ?? "" }, enabled: !!challengeId && !!tripId }));
+export function useChallengeDetails(challengeId?: string | null, tripId?: string | null) {
+  const challengeQuery = useQuery(
+    orpc.challenge.getById.queryOptions({
+      input: { id: challengeId ?? "", tripId: tripId ?? "" },
+      enabled: !!challengeId && !!tripId,
+    }),
+  );
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { data: challenge, isLoading: challengeLoading } = challengeQuery;

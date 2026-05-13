@@ -1,9 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import React from "react";
 import {
-  AppModalShell,
-} from '~/components/common/ui';
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import { AppModalShell } from "~/components/common/ui";
 
 interface AdminModalProps {
   visible: boolean;
@@ -18,7 +23,7 @@ interface AdminModalProps {
 interface AdminModalButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'cancel' | 'danger';
+  variant?: "primary" | "cancel" | "danger";
   disabled?: boolean;
   loading?: boolean;
 }
@@ -40,7 +45,7 @@ export function AdminModal({
       variant="card"
       maxWidth={maxWidth}
     >
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         style={{ maxHeight: maxHeight ? maxHeight - 120 : 280 }}
@@ -49,11 +54,7 @@ export function AdminModal({
         {children}
       </ScrollView>
 
-      {actions && (
-        <View style={{ padding: spacing.lg, paddingTop: 0 }}>
-          {actions}
-        </View>
-      )}
+      {actions && <View style={{ padding: spacing.lg, paddingTop: 0 }}>{actions}</View>}
     </AppModalShell>
   );
 }
@@ -61,7 +62,7 @@ export function AdminModal({
 interface AdminModalButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'danger' | 'cancel';
+  variant?: "primary" | "danger" | "cancel";
   disabled?: boolean;
   loading?: boolean;
   flex?: boolean;
@@ -70,16 +71,16 @@ interface AdminModalButtonProps {
 export function AdminModalButton({
   title,
   onPress,
-  variant = 'primary',
+  variant = "primary",
   disabled = false,
   loading = false,
   flex = true,
 }: AdminModalButtonProps) {
   const getButtonStyle = () => {
     switch (variant) {
-      case 'danger':
+      case "danger":
         return styles.dangerButton;
-      case 'cancel':
+      case "cancel":
         return styles.cancelButton;
       default:
         return styles.confirmButton;
@@ -88,7 +89,7 @@ export function AdminModalButton({
 
   const getTextStyle = () => {
     switch (variant) {
-      case 'cancel':
+      case "cancel":
         return styles.cancelButtonText;
       default:
         return styles.confirmButtonText;
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
   modalButton: {
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   confirmButton: {
     backgroundColor: colors.primary,

@@ -26,13 +26,7 @@ function MapScreenContent({
   currentUserName?: string;
   currentUserAvatarUrl?: string | null;
 }) {
-  const {
-    users,
-    onMapUserPress,
-    onMapPress,
-    mapTheme,
-    focusedCoordinate,
-  } = useMapOverlayStore();
+  const { users, onMapUserPress, onMapPress, mapTheme, focusedCoordinate } = useMapOverlayStore();
 
   return (
     <View style={{ flex: 1 }}>
@@ -60,14 +54,20 @@ export default function MapScreen() {
   const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
   const mapTheme = "dark";
-  const [currentCoordinate, setCurrentCoordinate] = useState<
-    [number, number] | null
-  >(null);
-  const { canShareOwnLocation, canViewOthersLocations, isLoading: isLocationLoading } = useLocationContext();
+  const [currentCoordinate, setCurrentCoordinate] = useState<[number, number] | null>(null);
+  const {
+    canShareOwnLocation,
+    canViewOthersLocations,
+    isLoading: isLocationLoading,
+  } = useLocationContext();
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
-    !!session?.access_token && canShareOwnLocation && canViewOthersLocations && !isLocationLoading && !isTripPast,
+    !!session?.access_token &&
+      canShareOwnLocation &&
+      canViewOthersLocations &&
+      !isLocationLoading &&
+      !isTripPast,
   );
   const {
     sharingUserIds,
@@ -84,9 +84,7 @@ export default function MapScreen() {
     reset: resetAvatar,
     abort: abortAvatar,
   } = useFileDownload();
-  const avatarStoragePath = currentUser?.id
-    ? `avatar/${currentUser.id}.jpg`
-    : null;
+  const avatarStoragePath = currentUser?.id ? `avatar/${currentUser.id}.jpg` : null;
   const currentUserName = `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim();
 
   useEffect(() => {
@@ -131,13 +129,24 @@ export default function MapScreen() {
       isRemovingUser,
       mapTheme,
     });
-    
+
     setMapOverlayExternals({
       updateSharing,
       removeUser,
       currentCoordinate,
     });
-  }, [users, session, sharingUserIds, allAvailableUsers, sharingSettings, isRemovingUser, mapTheme, updateSharing, removeUser, currentCoordinate]);
+  }, [
+    users,
+    session,
+    sharingUserIds,
+    allAvailableUsers,
+    sharingSettings,
+    isRemovingUser,
+    mapTheme,
+    updateSharing,
+    removeUser,
+    currentCoordinate,
+  ]);
 
   if (!session?.access_token) {
     return null;

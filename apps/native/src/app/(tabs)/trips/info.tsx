@@ -41,13 +41,11 @@ export default function TripInfoScreen() {
   const [pdfModalUri, setPdfModalUri] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const paramTripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const paramTripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const { selectedTripId } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { getResource, insurance, isLoading, isError } =
-    useTripResources(tripId);
+  const { getResource, insurance, isLoading, isError } = useTripResources(tripId);
 
   // File download hooks for images and PDFs
   const heroImageDownload = useFileDownload();
@@ -62,9 +60,7 @@ export default function TripInfoScreen() {
       const mapBgResource = getResource("MAP_BG_IMAGE");
 
       if (heroResource?.storagePath) {
-        heroImageDownload
-          .download({ storagePath: heroResource.storagePath })
-          .catch(console.error);
+        heroImageDownload.download({ storagePath: heroResource.storagePath }).catch(console.error);
       }
 
       if (mapBgResource?.storagePath) {
@@ -82,14 +78,8 @@ export default function TripInfoScreen() {
       const infopackResource = getResource("INFOPACK");
 
       // Note: File existence checking will be handled by the download hook's cache mechanism
-      console.log(
-        "PDF Map resource:",
-        pdfMapResource ? "available" : "not found",
-      );
-      console.log(
-        "Infopack resource:",
-        infopackResource ? "available" : "not found",
-      );
+      console.log("PDF Map resource:", pdfMapResource ? "available" : "not found");
+      console.log("Infopack resource:", infopackResource ? "available" : "not found");
     }
   }, [isLoading, getResource]);
 
@@ -126,10 +116,7 @@ export default function TripInfoScreen() {
         setIsPdfModalVisible(true);
       } catch (error) {
         console.error("Error handling Infopack PDF:", error);
-        Alert.alert(
-          "Error",
-          "Could not open the infopack. Please try again later.",
-        );
+        Alert.alert("Error", "Could not open the infopack. Please try again later.");
       }
     }
   };
@@ -253,19 +240,12 @@ export default function TripInfoScreen() {
                         />
                       </View>
                       <Text style={styles.mapTitle}>
-                        {getResource("INTERACTIVE_MAP")?.label ??
-                          "Interactive Map"}
+                        {getResource("INTERACTIVE_MAP")?.label ?? "Interactive Map"}
                       </Text>
-                      <Text style={styles.mapSubtitle}>
-                        Navigate trails & lifts
-                      </Text>
+                      <Text style={styles.mapSubtitle}>Navigate trails & lifts</Text>
                       <View style={styles.mapAction}>
                         <Text style={styles.mapActionText}>Explore Map</Text>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color={colors.primary}
-                        />
+                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
                       </View>
                     </View>
                   </ImageBackground>
@@ -297,17 +277,9 @@ export default function TripInfoScreen() {
                           {getResource("PDF_MAP")?.label ?? "PDF Map"}
                         </Text>
                         {mapPdfDownload.file ? (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color="#10b981"
-                          />
+                          <Ionicons name="checkmark-circle" size={14} color="#10b981" />
                         ) : (
-                          <Ionicons
-                            name="download"
-                            size={14}
-                            color={colors.slate400}
-                          />
+                          <Ionicons name="download" size={14} color={colors.slate400} />
                         )}
                       </View>
                       <Text style={styles.pdfMapSubtitle}>
@@ -335,10 +307,7 @@ export default function TripInfoScreen() {
                 >
                   <View style={styles.bentoIconWrapper}>
                     <Ionicons
-                      name={getIconName(
-                        getResource("INFOPACK")?.iconName ?? null,
-                        "document-text",
-                      )}
+                      name={getIconName(getResource("INFOPACK")?.iconName ?? null, "document-text")}
                       size={28}
                       color={colors.white}
                     />
@@ -349,17 +318,9 @@ export default function TripInfoScreen() {
                         {getResource("INFOPACK")?.label ?? "Infopack"}
                       </Text>
                       {infopackDownload.file ? (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={14}
-                          color="#10b981"
-                        />
+                        <Ionicons name="checkmark-circle" size={14} color="#10b981" />
                       ) : (
-                        <Ionicons
-                          name="download"
-                          size={14}
-                          color={colors.slate400}
-                        />
+                        <Ionicons name="download" size={14} color={colors.slate400} />
                       )}
                     </View>
                     <Text style={styles.bentoSubtitle}>
@@ -382,10 +343,7 @@ export default function TripInfoScreen() {
                 >
                   <View style={styles.whatsappIconWrapper}>
                     <Ionicons
-                      name={getIconName(
-                        getResource("WHATSAPP")?.iconName ?? null,
-                        "chatbubble",
-                      )}
+                      name={getIconName(getResource("WHATSAPP")?.iconName ?? null, "chatbubble")}
                       size={28}
                       color={colors.accentMagenta}
                     />
@@ -394,9 +352,7 @@ export default function TripInfoScreen() {
                     <Text style={styles.bentoTitle}>
                       {getResource("WHATSAPP")?.label ?? "WhatsApp"}
                     </Text>
-                    <Text style={styles.whatsappSubtitle}>
-                      Join Trip Community
-                    </Text>
+                    <Text style={styles.whatsappSubtitle}>Join Trip Community</Text>
                   </View>
                 </TouchableOpacity>
               )}
@@ -417,16 +373,11 @@ export default function TripInfoScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons
-                    name={getIconName(
-                      getResource("SOS")?.iconName ?? null,
-                      "alert-circle",
-                    )}
+                    name={getIconName(getResource("SOS")?.iconName ?? null, "alert-circle")}
                     size={24}
                     color={colors.primary}
                   />
-                  <Text style={styles.resourceText}>
-                    {getResource("SOS")?.label ?? "SOS"}
-                  </Text>
+                  <Text style={styles.resourceText}>{getResource("SOS")?.label ?? "SOS"}</Text>
                 </TouchableOpacity>
               )}
 
@@ -437,9 +388,7 @@ export default function TripInfoScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons name="medkit" size={24} color={colors.primary} />
-                  <Text style={styles.resourceText}>
-                    {insurance.label ?? "Insurance"}
-                  </Text>
+                  <Text style={styles.resourceText}>{insurance.label ?? "Insurance"}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -514,11 +463,7 @@ export default function TripInfoScreen() {
                   onPress={handleInsuranceCallPress}
                   activeOpacity={0.85}
                 >
-                  <Ionicons
-                    name="call"
-                    size={18}
-                    color={colors.backgroundDark}
-                  />
+                  <Ionicons name="call" size={18} color={colors.backgroundDark} />
                   <Text style={styles.insuranceActionText}>Zadzwoń</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -526,14 +471,8 @@ export default function TripInfoScreen() {
                   onPress={handleInsuranceCopyPress}
                   activeOpacity={0.85}
                 >
-                  <Ionicons
-                    name="copy-outline"
-                    size={18}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.insuranceActionSecondaryText}>
-                    Kopiuj numer
-                  </Text>
+                  <Ionicons name="copy-outline" size={18} color={colors.primary} />
+                  <Text style={styles.insuranceActionSecondaryText}>Kopiuj numer</Text>
                 </TouchableOpacity>
               </View>
 
@@ -560,16 +499,12 @@ export default function TripInfoScreen() {
                       <Text style={styles.insuranceLabel}>
                         Następnie krótko opiszcie sytuację, np.:
                       </Text>
-                      <Text style={styles.insuranceQuote}>
-                        "{step.exampleCall}"
-                      </Text>
+                      <Text style={styles.insuranceQuote}>"{step.exampleCall}"</Text>
                     </>
                   )}
 
                   {step.additionalText && (
-                    <Text style={styles.insuranceText}>
-                      {step.additionalText}
-                    </Text>
+                    <Text style={styles.insuranceText}>{step.additionalText}</Text>
                   )}
                 </View>
               ))}
@@ -579,10 +514,8 @@ export default function TripInfoScreen() {
                   <Text style={styles.insuranceCardTitle}>Szpital</Text>
                   <Text style={styles.insuranceText}>
                     Najbliższy szpital to {insurance.hospitalName}
-                    {insurance.hospitalAddress &&
-                      `, znajduje się w ${insurance.hospitalAddress}`}
-                    {insurance.hospitalDistance &&
-                      ` (${insurance.hospitalDistance})`}
+                    {insurance.hospitalAddress && `, znajduje się w ${insurance.hospitalAddress}`}
+                    {insurance.hospitalDistance && ` (${insurance.hospitalDistance})`}
                   </Text>
                 </View>
               )}

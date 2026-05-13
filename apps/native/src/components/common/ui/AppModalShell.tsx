@@ -52,9 +52,7 @@ export function AppModalShell({
                 <Text style={styles.pageSheetClose}>✕</Text>
               </Pressable>
             </View>
-            <View style={[styles.pageSheetBody, { maxHeight }, contentStyle]}>
-              {children}
-            </View>
+            <View style={[styles.pageSheetBody, { maxHeight }, contentStyle]}>{children}</View>
           </View>
         </View>
       ) : (
@@ -70,9 +68,7 @@ export function AppModalShell({
                 <Text style={styles.modalClose}>✕</Text>
               </Pressable>
             </View>
-            <View style={[styles.modalBody, contentStyle]}>
-              {children}
-            </View>
+            <View style={[styles.modalBody, contentStyle]}>{children}</View>
           </Pressable>
         </Pressable>
       )}

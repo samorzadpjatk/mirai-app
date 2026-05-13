@@ -24,19 +24,20 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   }>();
 
   const tripId = useMemo(
-    () => (typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? ""),
+    () => (typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "")),
     [params.tripId],
   );
   const groupId = useMemo(
-    () => (typeof params.groupId === "string" ? params.groupId : params.groupId?.[0] ?? ""),
+    () => (typeof params.groupId === "string" ? params.groupId : (params.groupId?.[0] ?? "")),
     [params.groupId],
   );
   const groupName = useMemo(
-    () => (typeof params.groupName === "string" ? params.groupName : params.groupName?.[0] ?? ""),
+    () => (typeof params.groupName === "string" ? params.groupName : (params.groupName?.[0] ?? "")),
     [params.groupName],
   );
   const groupCoins = useMemo(
-    () => (typeof params.groupCoins === "string" ? params.groupCoins : params.groupCoins?.[0] ?? "0"),
+    () =>
+      typeof params.groupCoins === "string" ? params.groupCoins : (params.groupCoins?.[0] ?? "0"),
     [params.groupCoins],
   );
 
@@ -85,7 +86,9 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
     : `${operation === "add" ? "Add" : "Remove"} coins for group`;
   const buttonLabel = operation === "add" ? "Add Coins" : "Remove Coins";
   const reasonPlaceholder =
-    operation === "add" ? "Describe why you are adding coins" : "Describe why you are removing coins";
+    operation === "add"
+      ? "Describe why you are adding coins"
+      : "Describe why you are removing coins";
 
   return (
     <View
@@ -96,10 +99,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title={title}
-        subtitle={subtitle}
-      />
+      <AdminHeader title={title} subtitle={subtitle} />
 
       <ScrollView
         style={styles.scroll}

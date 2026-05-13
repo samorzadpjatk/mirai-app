@@ -41,26 +41,30 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
     queryKey: ["community-rankings", rankingTripIds],
     queryFn: async () => {
       if (rankingTripIds.length === 0) return {};
-      
-      const queries = rankingTripIds.map(tripId =>
-        trpcClient.group.ranking.call({ tripId })
-          .then(data => ({ tripId, data: data.data }))
-          .catch(() => ({ tripId, data: [] }))
+
+      const queries = rankingTripIds.map((tripId) =>
+        trpcClient.group.ranking
+          .call({ tripId })
+          .then((data) => ({ tripId, data: data.data }))
+          .catch(() => ({ tripId, data: [] })),
       );
-      
+
       const results = await Promise.all(queries);
-      return results.reduce((acc, { tripId, data }) => {
-        acc[tripId] = data.map((group, index) => ({
-          id: group.id,
-          name: group.name,
-          image: group.image ?? null,
-          coins: group.coins,
-          memberCount: group.participants.length,
-          rank: index + 1,
-          isCurrentUserGroup: false,
-        }));
-        return acc;
-      }, {} as Record<string, RankedGroup[]>);
+      return results.reduce(
+        (acc, { tripId, data }) => {
+          acc[tripId] = data.map((group, index) => ({
+            id: group.id,
+            name: group.name,
+            image: group.image ?? null,
+            coins: group.coins,
+            memberCount: group.participants.length,
+            rank: index + 1,
+            isCurrentUserGroup: false,
+          }));
+          return acc;
+        },
+        {} as Record<string, RankedGroup[]>,
+      );
     },
     enabled: rankingTripIds.length > 0,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -71,21 +75,25 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
     queryKey: ["community-avatars", avatarUserIds],
     queryFn: async () => {
       if (avatarUserIds.length === 0) return {};
-      
-      const queries = avatarUserIds.map(userId =>
-        trpcClient.storage.createDownloadUrl.call({
-          storagePath: `avatar/${userId}.jpg`,
-          expiresInSeconds: 60 * 60,
-        })
-        .then(data => ({ userId, url: data.signedUrl }))
-        .catch(() => ({ userId, url: null }))
+
+      const queries = avatarUserIds.map((userId) =>
+        trpcClient.storage.createDownloadUrl
+          .call({
+            storagePath: `avatar/${userId}.jpg`,
+            expiresInSeconds: 60 * 60,
+          })
+          .then((data) => ({ userId, url: data.signedUrl }))
+          .catch(() => ({ userId, url: null })),
       );
-      
+
       const results = await Promise.all(queries);
-      return results.reduce((acc, { userId, url }) => {
-        acc[userId] = url;
-        return acc;
-      }, {} as Record<string, string | null>);
+      return results.reduce(
+        (acc, { userId, url }) => {
+          acc[userId] = url;
+          return acc;
+        },
+        {} as Record<string, string | null>,
+      );
     },
     enabled: avatarUserIds.length > 0,
     staleTime: 15 * 60 * 1000, // 15 minutes

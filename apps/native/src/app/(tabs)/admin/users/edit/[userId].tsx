@@ -16,28 +16,27 @@ export default function AdminEditUserScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
   const userId = params.userId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const { data: user, isLoading } = useQuery(
-    orpc.user.getById.queryOptions({ input: { id: userId }, enabled: !!userId })
+    orpc.user.getById.queryOptions({ input: { id: userId }, enabled: !!userId }),
   );
 
   const { data: participant } = useQuery(
     orpc.user.getByIdWithGroup.queryOptions({
       input: { id: userId, tripId },
       enabled: Boolean(userId && tripId),
-    })
+    }),
   );
 
   const { data: groupsResponse, error: groupsError } = useQuery(
     orpc.group.getAll.queryOptions({
       input: { tripId, pagination: { limit: 100, offset: 0 } },
       enabled: Boolean(tripId),
-    })
+    }),
   );
   const groups = groupsResponse?.groups ?? [];
-  console.debug('EditUser groups debug', { tripId, groupsResponse, groups, groupsError });
-
+  console.debug("EditUser groups debug", { tripId, groupsResponse, groups, groupsError });
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
@@ -154,10 +153,9 @@ export default function AdminEditUserScreen() {
       onError: (error) => {
         Alert.alert("Error", `Failed to assign group: ${error.message}`);
       },
-    })
+    }),
   );
 
-  
   const handleSave = async () => {
     if (!user || !userId) return;
 
@@ -202,13 +200,15 @@ export default function AdminEditUserScreen() {
         text: "Ban",
         style: "destructive",
         onPress: () => {
-          banUserMutation.mutateAsync({
-            userId,
-            bannedUntilMs: banUntil.getTime(),
-            reason: banReason.trim(),
-          }).catch(() => {
-            // Error handling is done in the mutation
-          });
+          banUserMutation
+            .mutateAsync({
+              userId,
+              bannedUntilMs: banUntil.getTime(),
+              reason: banReason.trim(),
+            })
+            .catch(() => {
+              // Error handling is done in the mutation
+            });
         },
       },
     ]);
@@ -231,7 +231,11 @@ export default function AdminEditUserScreen() {
     ]);
   };
 
-  const isSaving = updateNameMutation.isPending || updateWristNumberMutation.isPending || updateHouseNumberMutation.isPending || assignToGroupMutation.isPending;
+  const isSaving =
+    updateNameMutation.isPending ||
+    updateWristNumberMutation.isPending ||
+    updateHouseNumberMutation.isPending ||
+    assignToGroupMutation.isPending;
   const isBanReady = banUntil != null && banUntil > new Date();
   const banLabel = banUntil
     ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
@@ -264,10 +268,7 @@ export default function AdminEditUserScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Edit User"
-        subtitle="Update user information and permissions"
-      />
+      <AdminHeader title="Edit User" subtitle="Update user information and permissions" />
 
       <ScrollView
         style={styles.scroll}
@@ -330,7 +331,9 @@ export default function AdminEditUserScreen() {
                     onPress={() => setSelectedGroupId(group.id)}
                     disabled={assignToGroupMutation.isPending}
                   >
-                    <Text style={[styles.groupOptionText, isSelected && styles.groupOptionTextSelected]}>
+                    <Text
+                      style={[styles.groupOptionText, isSelected && styles.groupOptionTextSelected]}
+                    >
                       {group.name}
                     </Text>
                   </TouchableOpacity>
@@ -381,10 +384,7 @@ export default function AdminEditUserScreen() {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.deleteButton,
-            deleteUserMutation.isPending && styles.dangerButtonDisabled,
-          ]}
+          style={[styles.deleteButton, deleteUserMutation.isPending && styles.dangerButtonDisabled]}
           onPress={handleDelete}
           disabled={deleteUserMutation.isPending}
         >

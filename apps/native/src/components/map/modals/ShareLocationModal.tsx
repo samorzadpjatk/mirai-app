@@ -1,10 +1,4 @@
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
@@ -12,8 +6,7 @@ import { colors, spacing, typography, borderRadius } from "~/styles";
 import { ThemedTextInput } from "~/components/common/ui";
 
 export function ShareLocationModal() {
-  const { shareModal, allAvailableUsers, sharingUserIds } =
-    useMapOverlayStore();
+  const { shareModal, allAvailableUsers, sharingUserIds } = useMapOverlayStore();
   const {
     open,
     searchQuery,
@@ -31,8 +24,7 @@ export function ShareLocationModal() {
   const shouldShowSearchResults = normalizedQuery.length >= minimumQueryLength;
   const filteredUsers = shouldShowSearchResults
     ? users?.filter((user) => {
-        const fullName =
-          `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
+        const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
         return fullName.includes(normalizedQuery);
       })
     : [];
@@ -58,46 +50,46 @@ export function ShareLocationModal() {
         </View>
       )}
 
-        <ScrollView style={styles.modalUsersList}>
-          {!shouldShowSearchResults ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                Type at least 2 characters to search for a person.
-              </Text>
-            </View>
-          ) : filteredUsers?.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No matching users found.</Text>
-            </View>
-          ) : (
-            filteredUsers?.map((user) => {
-              const isAlreadySharing = sharingUserIds.includes(user.id);
-              const isSelected = selectedUsers.has(user.id);
-              const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+      <ScrollView style={styles.modalUsersList}>
+        {!shouldShowSearchResults ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              Type at least 2 characters to search for a person.
+            </Text>
+          </View>
+        ) : filteredUsers?.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No matching users found.</Text>
+          </View>
+        ) : (
+          filteredUsers?.map((user) => {
+            const isAlreadySharing = sharingUserIds.includes(user.id);
+            const isSelected = selectedUsers.has(user.id);
+            const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
 
-              return (
-                <MapModalUserItem
-                  key={user.id}
-                  name={fullName}
-                  imageUrl={user.image}
-                  subtitle={isAlreadySharing ? "Already sharing" : undefined}
-                  selected={isAlreadySharing || isSelected}
-                  onPress={() => {
-                    if (isAlreadySharing) return;
-                    toggleSelectedUser(user.id);
-                  }}
-                  rightElement={
-                    isAlreadySharing || isSelected ? (
-                      <Text style={styles.checkmark}>✓</Text>
-                    ) : undefined
-                  }
-                />
-              );
-            })
-          )}
-        </ScrollView>
+            return (
+              <MapModalUserItem
+                key={user.id}
+                name={fullName}
+                imageUrl={user.image}
+                subtitle={isAlreadySharing ? "Already sharing" : undefined}
+                selected={isAlreadySharing || isSelected}
+                onPress={() => {
+                  if (isAlreadySharing) return;
+                  toggleSelectedUser(user.id);
+                }}
+                rightElement={
+                  isAlreadySharing || isSelected ? (
+                    <Text style={styles.checkmark}>✓</Text>
+                  ) : undefined
+                }
+              />
+            );
+          })
+        )}
+      </ScrollView>
 
-        {selectedUsers.size > 0 && (
+      {selectedUsers.size > 0 && (
         <View style={styles.modalFooter}>
           <Pressable style={styles.confirmButton} onPress={confirm}>
             <Text style={styles.confirmButtonText}>

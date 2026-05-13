@@ -28,9 +28,7 @@ interface GroupApprovedChallengesProps {
   submissions: ApprovedSubmissionItem[];
 }
 
-export function GroupApprovedChallenges({
-  submissions,
-}: GroupApprovedChallengesProps) {
+export function GroupApprovedChallenges({ submissions }: GroupApprovedChallengesProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList<ApprovedSubmissionItem>>(null);
@@ -108,21 +106,13 @@ export function GroupApprovedChallenges({
         presentationStyle="fullScreen"
       >
         <View style={styles.fullscreen}>
-          <View
-            style={[
-              styles.fullscreenHeader,
-              { paddingTop: insets.top + spacing.sm },
-            ]}
-          >
+          <View style={[styles.fullscreenHeader, { paddingTop: insets.top + spacing.sm }]}>
             <Text style={styles.fullscreenTitle}>Challenge Photos</Text>
             <View style={styles.fullscreenHeaderRight}>
               <Text style={styles.fullscreenCounter}>
                 {`${activeIndex + 1}/${submissions.length}`}
               </Text>
-              <TouchableOpacity
-                style={styles.fullscreenClose}
-                onPress={closeFullscreen}
-              >
+              <TouchableOpacity style={styles.fullscreenClose} onPress={closeFullscreen}>
                 <Ionicons name="close" size={20} color={colors.white} />
               </TouchableOpacity>
             </View>
@@ -185,9 +175,7 @@ function SubmissionCircle({
     }
 
     reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(
-      () => undefined,
-    );
+    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
 
     return () => {
       abort();
@@ -236,9 +224,7 @@ function FullscreenSubmissionSlide({
     }
 
     reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(
-      () => undefined,
-    );
+    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
 
     return () => {
       abort();
@@ -246,23 +232,14 @@ function FullscreenSubmissionSlide({
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <View
-      style={[
-        styles.fullscreenSlide,
-        { width, minHeight: height - (topInset + 92) },
-      ]}
-    >
+    <View style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
       <View style={styles.fullscreenImageWrap}>
         {status === "loading" ? (
           <View style={styles.fullscreenFallback}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image
-            source={{ uri: file.uri }}
-            style={styles.fullscreenImage}
-            contentFit="contain"
-          />
+          <Image source={{ uri: file.uri }} style={styles.fullscreenImage} contentFit="contain" />
         ) : (
           <View style={styles.fullscreenFallback}>
             <Ionicons name="image-outline" size={28} color={colors.textMuted} />
@@ -274,9 +251,7 @@ function FullscreenSubmissionSlide({
         <Text style={styles.fullscreenChallengeTitle} numberOfLines={1}>
           {submission.challengeTitle}
         </Text>
-        <Text style={styles.fullscreenDate}>
-          {formatDateTime(submission.approvedAt)}
-        </Text>
+        <Text style={styles.fullscreenDate}>{formatDateTime(submission.approvedAt)}</Text>
       </View>
     </View>
   );

@@ -5,21 +5,33 @@ import { render, waitFor } from "@testing-library/react-native";
 import { LocationStoreProvider } from "../LocationStoreProvider";
 import { locationStore, setLocationServerUpdater } from "../locationStore";
 
-const mockGetMySharingSettingsQueryOptions = jest.fn((options: { input: Record<string, unknown>; enabled?: boolean }) => ({
-  queryKey: ["location", "getMySharingSettings"],
-  enabled: options.enabled,
-}));
-const mockUpdateSharingSettingsMutationOptions = jest.fn((options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => ({
-  mutationKey: ["location", "updateSharingSettings"],
-  onSuccess: options.onSuccess,
-  onError: options.onError,
-}));
+const mockGetMySharingSettingsQueryOptions = jest.fn(
+  (options: { input: Record<string, unknown>; enabled?: boolean }) => ({
+    queryKey: ["location", "getMySharingSettings"],
+    enabled: options.enabled,
+  }),
+);
+const mockUpdateSharingSettingsMutationOptions = jest.fn(
+  (options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => ({
+    mutationKey: ["location", "updateSharingSettings"],
+    onSuccess: options.onSuccess,
+    onError: options.onError,
+  }),
+);
 
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     location: {
-      getMySharingSettings: { queryOptions: (options: { input: Record<string, unknown>; enabled?: boolean }) => mockGetMySharingSettingsQueryOptions(options) },
-      updateSharingSettings: { mutationOptions: (options: { onSuccess?: () => void | Promise<void>; onError?: (error: unknown) => void }) => mockUpdateSharingSettingsMutationOptions(options) },
+      getMySharingSettings: {
+        queryOptions: (options: { input: Record<string, unknown>; enabled?: boolean }) =>
+          mockGetMySharingSettingsQueryOptions(options),
+      },
+      updateSharingSettings: {
+        mutationOptions: (options: {
+          onSuccess?: () => void | Promise<void>;
+          onError?: (error: unknown) => void;
+        }) => mockUpdateSharingSettingsMutationOptions(options),
+      },
     },
   },
 }));
@@ -60,7 +72,10 @@ describe("LocationStoreProvider", () => {
     });
 
     mockUseMutation.mockImplementation((options: unknown) => {
-      const typedOptions = options as { onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void>; onError?: (error: unknown) => void };
+      const typedOptions = options as {
+        onSuccess?: (data: unknown, variables: unknown, context: unknown) => void | Promise<void>;
+        onError?: (error: unknown) => void;
+      };
       const mutateAsync = jest.fn(async (input: unknown) => {
         if (typedOptions?.onSuccess) {
           await typedOptions.onSuccess(undefined, input, undefined);
@@ -79,7 +94,7 @@ describe("LocationStoreProvider", () => {
         isIdle: true,
         isSuccess: false,
         isError: false,
-        status: 'idle',
+        status: "idle",
         data: undefined,
         error: null,
         reset: jest.fn(),

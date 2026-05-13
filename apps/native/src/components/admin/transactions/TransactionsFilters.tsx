@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import React from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
 
 interface GroupOption {
   id: string;
@@ -38,40 +38,38 @@ export function TransactionsFilters({
         </View>
       </View>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={styles.groupSelector}
         contentContainerStyle={styles.groupSelectorContent}
       >
         <TouchableOpacity
-          style={[
-            styles.groupOption,
-            selectedGroupId === 'all' && styles.groupOptionSelected,
-          ]}
-          onPress={() => onGroupChange('all')}
+          style={[styles.groupOption, selectedGroupId === "all" && styles.groupOptionSelected]}
+          onPress={() => onGroupChange("all")}
         >
-          <Text style={[
-            styles.groupOptionText,
-            selectedGroupId === 'all' && styles.groupOptionTextSelected,
-          ]}>
+          <Text
+            style={[
+              styles.groupOptionText,
+              selectedGroupId === "all" && styles.groupOptionTextSelected,
+            ]}
+          >
             All Groups
           </Text>
         </TouchableOpacity>
-        
+
         {groups.map((group) => (
           <TouchableOpacity
             key={group.id}
-            style={[
-              styles.groupOption,
-              selectedGroupId === group.id && styles.groupOptionSelected,
-            ]}
+            style={[styles.groupOption, selectedGroupId === group.id && styles.groupOptionSelected]}
             onPress={() => onGroupChange(group.id)}
           >
-            <Text style={[
-              styles.groupOptionText,
-              selectedGroupId === group.id && styles.groupOptionTextSelected,
-            ]}>
+            <Text
+              style={[
+                styles.groupOptionText,
+                selectedGroupId === group.id && styles.groupOptionTextSelected,
+              ]}
+            >
               {group.name}
             </Text>
           </TouchableOpacity>
@@ -90,8 +88,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   searchBar: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,

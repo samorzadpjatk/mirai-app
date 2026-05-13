@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useTrips } from '~/hooks/trips';
+import { useMemo, useState } from "react";
+import { useTrips } from "~/hooks/trips";
 
 export interface Trip {
   id: string;

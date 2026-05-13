@@ -1,7 +1,15 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./ui/UserAvatar";
-import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
+import {
+  MapView,
+  Camera,
+  UserLocation as MapLibreUserLocation,
+  PointAnnotation,
+  VectorSource,
+  RasterSource,
+  RasterLayer,
+} from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 import { useLocationContext } from "~/stores/location";
 
@@ -59,7 +67,7 @@ export interface UserMapProps {
   /**
    * Current map theme: 'dark' | 'light'.
    */
-  mapTheme?: 'dark' | 'light';
+  mapTheme?: "dark" | "light";
   /**
    * Called when user toggles the map theme.
    */
@@ -94,7 +102,7 @@ interface MapStyleConfig {
   rasterOverlays?: MapRasterOverlay[];
 }
 
-const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
+const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   dark: {
     style: "https://tiles.openfreemap.org/styles/fiord",
     rasterOverlays: [
@@ -136,10 +144,7 @@ export function getActivityOpacity(
   lastActiveAt: string | number,
   now: number = Date.now(),
 ): number {
-  const last =
-    typeof lastActiveAt === "number"
-      ? lastActiveAt
-      : new Date(lastActiveAt).getTime();
+  const last = typeof lastActiveAt === "number" ? lastActiveAt : new Date(lastActiveAt).getTime();
 
   if (!Number.isFinite(last)) return 0;
 
@@ -163,7 +168,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   mapStyleURL,
   onLocationUpdate,
   focusedCoordinate,
-  mapTheme = 'dark',
+  mapTheme = "dark",
   currentUserId,
   currentUserName,
   currentUserAvatarUrl,
@@ -171,10 +176,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
-  const { 
-    canShareOwnLocation, 
-    canViewOthersLocations,
-  } = useLocationContext();
+  const { canShareOwnLocation, canViewOthersLocations } = useLocationContext();
 
   // Keep a periodic `now` in state to avoid calling Date.now() during render
   // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
@@ -192,10 +194,12 @@ export const UserMap: React.FC<UserMapProps> = ({
     if (!canViewOthersLocations) {
       return [];
     }
-    
+
     // Start with other users (exclude current user)
-    let displayUsers = users.filter((user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0);
-    
+    let displayUsers = users.filter(
+      (user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0,
+    );
+
     // Add current user if location is available and enabled
     if (currentUserId && currentUserLocation && currentUserName && canShareOwnLocation) {
       const currentUser: UserLocation = {
@@ -207,9 +211,18 @@ export const UserMap: React.FC<UserMapProps> = ({
       };
       displayUsers = [currentUser, ...displayUsers];
     }
-    
+
     return displayUsers;
-  }, [users, now, currentUserId, currentUserLocation, currentUserName, currentUserAvatarUrl, canViewOthersLocations, canShareOwnLocation]);
+  }, [
+    users,
+    now,
+    currentUserId,
+    currentUserLocation,
+    currentUserName,
+    currentUserAvatarUrl,
+    canViewOthersLocations,
+    canShareOwnLocation,
+  ]);
 
   useEffect(() => {
     if (!focusedCoordinate) return;
@@ -306,11 +319,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           >
             <View style={styles.avatarShadow}>
               <View style={styles.avatarBorder}>
-                <UserAvatar
-                  name={user.name}
-                  size={34}
-                  imageUrl={user.avatarUrl}
-                />
+                <UserAvatar name={user.name} size={34} imageUrl={user.avatarUrl} />
               </View>
             </View>
           </PointAnnotation>
@@ -318,9 +327,7 @@ export const UserMap: React.FC<UserMapProps> = ({
       </MapView>
 
       {/* Overlay container for UI elements */}
-      <View style={styles.overlayContainer}>
-        {overlay}
-      </View>
+      <View style={styles.overlayContainer}>{overlay}</View>
     </View>
   );
 };
@@ -364,4 +371,3 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F172A",
   },
 });
-

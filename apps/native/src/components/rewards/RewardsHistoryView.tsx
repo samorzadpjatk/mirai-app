@@ -19,7 +19,10 @@ interface Props {
 
 type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
 
-const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+const statusMeta: Record<
+  PurchaseStatus,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
   BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
   ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
   IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
@@ -48,8 +51,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
     }
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
 
     if (nearBottom) {
       void fetchNextPage();
@@ -60,14 +62,21 @@ export default function RewardsHistoryView({ tripId }: Props) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading claim history...</Text>
+        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>
+          Loading claim history...
+        </Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }]}>
+      <View
+        style={[
+          commonStyles.container,
+          { justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
+        ]}
+      >
         <Ionicons name="warning-outline" size={46} color="#ef4444" />
         <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
           Failed to load claim history
@@ -103,9 +112,10 @@ export default function RewardsHistoryView({ tripId }: Props) {
         ) : (
           <View style={{ gap: 12 }}>
             {purchases.map((purchase) => {
-              const status = (purchase.status ?? "BOUGHT");
+              const status = purchase.status ?? "BOUGHT";
               const statusInfo = statusMeta[status] ?? statusMeta.BOUGHT;
-              const purchaserName = `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
+              const purchaserName =
+                `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
               const isUpdating = updateMyPurchaseStatus.isPending;
 
               const handlePickup = async () => {
@@ -134,10 +144,11 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       text: "Yes, cancel",
                       style: "destructive",
                       onPress: () => {
-                        updateMyPurchaseStatus.mutateAsync({
-                          purchaseId: purchase.id,
-                          status: "CANCELLED",
-                        })
+                        updateMyPurchaseStatus
+                          .mutateAsync({
+                            purchaseId: purchase.id,
+                            status: "CANCELLED",
+                          })
                           .then(() => {
                             Alert.alert("Saved", "Claim cancelled and coins refunded.");
                           })
@@ -166,7 +177,14 @@ export default function RewardsHistoryView({ tripId }: Props) {
                     gap: 10,
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 8,
+                    }}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={[commonStyles.h4, { marginBottom: 4 }]}>
                         {purchase.reward?.name}
@@ -189,13 +207,24 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       }}
                     >
                       <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                      <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                      <Text
+                        style={[
+                          commonStyles.label,
+                          { color: statusInfo.color, letterSpacing: 0.6 },
+                        ]}
+                      >
                         {statusInfo.label}
                       </Text>
                     </View>
                   </View>
 
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
                     <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
                       Total: {purchase.totalCost} coins
                     </Text>
@@ -208,9 +237,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
                     Group: {purchase.group?.name ?? "Unknown"}
                   </Text>
                   {purchaserName ? (
-                    <Text style={[commonStyles.textSecondary]}>
-                      Claimed by: {purchaserName}
-                    </Text>
+                    <Text style={[commonStyles.textSecondary]}>Claimed by: {purchaserName}</Text>
                   ) : null}
                   {purchase.collectionMethod ? (
                     <View
@@ -289,7 +316,9 @@ export default function RewardsHistoryView({ tripId }: Props) {
             {isFetchingNextPage ? (
               <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
                 <ActivityIndicator testID="loading-more-indicator" size="small" color="#00ced1" />
-                <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more claim history...</Text>
+                <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                  Loading more claim history...
+                </Text>
               </View>
             ) : null}
           </View>

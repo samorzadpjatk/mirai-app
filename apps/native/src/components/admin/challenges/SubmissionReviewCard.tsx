@@ -1,12 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -60,11 +53,16 @@ const formatDateTime = (value: string | Date | null | undefined) => {
   return date.toLocaleString();
 };
 
-const formatPersonName = (person: {
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string | null;
-} | null | undefined) => {
+const formatPersonName = (
+  person:
+    | {
+        firstName?: string | null;
+        lastName?: string | null;
+        email?: string | null;
+      }
+    | null
+    | undefined,
+) => {
   if (!person) return "Unknown admin";
   const fullName = `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim();
   if (fullName.length > 0) return fullName;
@@ -82,13 +80,7 @@ export function SubmissionReviewCard({
   const hasText = textContent.length > 0;
   const statusMeta = getStatusMeta(submission.status);
   const reviewerName = formatPersonName(submission.reviewedBy);
-  const {
-    download,
-    status: imageStatus,
-    file,
-    reset,
-    abort,
-  } = useFileDownload();
+  const { download, status: imageStatus, file, reset, abort } = useFileDownload();
 
   useEffect(() => {
     if (!hasImage) {
@@ -97,9 +89,7 @@ export function SubmissionReviewCard({
     }
 
     reset();
-    void download({ storagePath: submission.imageIds[0] ?? "" }).catch(
-      () => undefined,
-    );
+    void download({ storagePath: submission.imageIds[0] ?? "" }).catch(() => undefined);
 
     return () => {
       abort();
@@ -111,9 +101,7 @@ export function SubmissionReviewCard({
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <Text style={styles.groupName}>{submission.group.name}</Text>
-          <Text style={styles.metaText}>
-            Submitted: {formatDateTime(submission.createdAt)}
-          </Text>
+          <Text style={styles.metaText}>Submitted: {formatDateTime(submission.createdAt)}</Text>
           {submission.reviewedAt ? (
             <Text style={styles.metaText}>
               Reviewed: {formatDateTime(submission.reviewedAt)} • {reviewerName}
@@ -126,9 +114,7 @@ export function SubmissionReviewCard({
             { borderColor: statusMeta.color, backgroundColor: statusMeta.bg },
           ]}
         >
-          <Text style={[styles.statusText, { color: statusMeta.color }]}>
-            {submission.status}
-          </Text>
+          <Text style={[styles.statusText, { color: statusMeta.color }]}>{submission.status}</Text>
           {typeof submission.ranking === "number" ? (
             <Text style={[styles.statusText, { color: colors.primary }]}>
               #{submission.ranking}
@@ -173,11 +159,7 @@ export function SubmissionReviewCard({
 
       {!hasImage && !submission.videoId && !hasText ? (
         <View style={styles.assetFallbackBox}>
-          <Ionicons
-            name="document-text-outline"
-            size={22}
-            color={colors.textMuted}
-          />
+          <Ionicons name="document-text-outline" size={22} color={colors.textMuted} />
           <Text style={styles.mediaFallbackText}>No content asset</Text>
         </View>
       ) : null}

@@ -8,17 +8,17 @@ import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
 import { ChallengeFormModals } from "~/components/admin/challenges/ChallengeFormModals";
-import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/admin/challenges/challengeFormConstants";
-
+import {
+  formatIso,
+  toOptionalInt,
+  toVotingDurationHours,
+} from "~/components/admin/challenges/challengeFormConstants";
 
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
 
-  const tripId =
-    typeof params.tripId === "string"
-      ? params.tripId
-      : (params.tripId?.[0] ?? "");
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const formState = useChallengeForm({
     tripId,
@@ -100,9 +100,7 @@ export default function NewChallengeScreen() {
         dailyEndTime: form.isRecurring
           ? formState.formatTime(form.dailyEndTime) || undefined
           : undefined,
-        recurringDays: form.isRecurring
-          ? toOptionalInt(form.recurringDays)
-          : undefined,
+        recurringDays: form.isRecurring ? toOptionalInt(form.recurringDays) : undefined,
         basePoints: toOptionalInt(form.basePoints),
         firstPlacePoints: formState.showPodiumPoints
           ? toOptionalInt(form.firstPlacePoints)
@@ -114,28 +112,17 @@ export default function NewChallengeScreen() {
           ? toOptionalInt(form.thirdPlacePoints)
           : undefined,
         status: form.status as "HIDDEN" | "VISIBLE",
-        startTime: !form.isRecurring
-          ? formatIso(form.startTime) || undefined
-          : undefined,
-        endTime: !form.isRecurring
-          ? formatIso(form.endTime) || undefined
-          : undefined,
+        startTime: !form.isRecurring ? formatIso(form.startTime) || undefined : undefined,
+        endTime: !form.isRecurring ? formatIso(form.endTime) || undefined : undefined,
         votingDurationHours: formState.isPeerVoting
-          ? toVotingDurationHours(
-              form.votingDurationValue,
-              form.votingDurationUnit,
-            )
+          ? toVotingDurationHours(form.votingDurationValue, form.votingDurationUnit)
           : undefined,
         targetLatitude: normalizedTargetLatitude,
         targetLongitude: normalizedTargetLongitude,
         qrCodeValue:
-          form.submissionType === "QR_CODE"
-            ? form.qrCodeValue.trim() || undefined
-            : undefined,
+          form.submissionType === "QR_CODE" ? form.qrCodeValue.trim() || undefined : undefined,
         textExpectedPhrase:
-          form.submissionType === "TEXT"
-            ? form.textExpectedPhrase.trim() || undefined
-            : undefined,
+          form.submissionType === "TEXT" ? form.textExpectedPhrase.trim() || undefined : undefined,
         autoApprove: formState.isAutoApproveForced
           ? true
           : formState.isAutoApproveDisabled

@@ -34,9 +34,7 @@ export function useShareModal({
   const closeModal = () => setOpen(false);
 
   const confirm = async () => {
-    const newIds = [
-      ...new Set([...sharingUserIds, ...Array.from(selectedUsers)]),
-    ];
+    const newIds = [...new Set([...sharingUserIds, ...Array.from(selectedUsers)])];
     try {
       await updateSharing?.(newIds);
     } catch (err) {

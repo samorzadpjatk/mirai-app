@@ -7,10 +7,7 @@ interface MembersSearchBarProps {
   onChangeText: (value: string) => void;
 }
 
-export function MembersSearchBar({
-  value,
-  onChangeText,
-}: MembersSearchBarProps) {
+export function MembersSearchBar({ value, onChangeText }: MembersSearchBarProps) {
   return (
     <View testID="members-search-bar-container" style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>

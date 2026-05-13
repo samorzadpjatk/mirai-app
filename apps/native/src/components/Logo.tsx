@@ -13,11 +13,7 @@ export default function Logo({ size = 120 }: LogoProps) {
       entering={ZoomIn.duration(300).springify()}
       style={{ width: size, height: size, overflow: "hidden" }}
     >
-      <Image
-        source={miraiLogo}
-        style={{ width: "100%", height: "100%" }}
-        contentFit="contain"
-      />
+      <Image source={miraiLogo} style={{ width: "100%", height: "100%" }} contentFit="contain" />
     </Animated.View>
   );
 }

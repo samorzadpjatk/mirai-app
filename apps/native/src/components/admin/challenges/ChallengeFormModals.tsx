@@ -34,9 +34,7 @@ export function ChallengeFormModals({ formState }: ChallengeFormModalsProps) {
         visible={Boolean(activePicker)}
         value={activePicker ? (form[activePicker] ?? new Date()) : new Date()}
         mode={
-          activePicker === "dailyStartTime" || activePicker === "dailyEndTime"
-            ? "time"
-            : "datetime"
+          activePicker === "dailyStartTime" || activePicker === "dailyEndTime" ? "time" : "datetime"
         }
         onConfirm={(date) => {
           if (activePicker) {
@@ -63,10 +61,7 @@ export function ChallengeFormModals({ formState }: ChallengeFormModalsProps) {
         animationType="fade"
         onRequestClose={() => setActiveSelect(null)}
       >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setActiveSelect(null)}
-        >
+        <Pressable style={styles.modalBackdrop} onPress={() => setActiveSelect(null)}>
           <Pressable style={styles.modalCard}>
             {activeSelectOptions.map((option) => (
               <TouchableOpacity

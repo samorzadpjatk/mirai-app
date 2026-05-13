@@ -1,10 +1,5 @@
 import { type ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { colors, spacing, borderRadius } from "~/styles";
 
 interface ThemedCardProps {

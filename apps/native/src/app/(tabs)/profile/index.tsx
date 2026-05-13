@@ -47,10 +47,7 @@ export default function ProfileScreen() {
         <ProfileActionsSection onEditProfile={() => router.push("/profile/edit")} />
 
         {/* App Info */}
-        <AppInfoFooter
-          versionLabel="PJapp v1.0.0"
-          copyrightLabel="© 2025 PJATK"
-        />
+        <AppInfoFooter versionLabel="PJapp v1.0.0" copyrightLabel="© 2025 PJATK" />
       </ScrollView>
     </View>
   );

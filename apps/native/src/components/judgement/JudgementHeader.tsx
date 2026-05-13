@@ -1,6 +1,6 @@
-import { View, Text } from 'react-native';
-import { useJudgement } from '~/stores/judgement';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import { View, Text } from "react-native";
+import { useJudgement } from "~/stores/judgement";
+import { viewStyles, textStyles } from "~/styles/judgement";
 
 interface JudgementHeaderProps {
   tripId: string;

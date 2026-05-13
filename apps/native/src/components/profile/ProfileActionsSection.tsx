@@ -10,15 +10,13 @@ interface ProfileActionsSectionProps {
   onEditProfile?: () => void;
 }
 
-export function ProfileActionsSection({
-  onEditProfile,
-}: ProfileActionsSectionProps) {
+export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionProps) {
   const { signOut } = useAuth();
   const router = useRouter();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
-  const { 
-    isLocationSharingEnabled, 
-    isLoading: isLocationLoading, 
+  const {
+    isLocationSharingEnabled,
+    isLoading: isLocationLoading,
     toggleLocationSharing,
     isBackgroundLocationEnabled,
     isUpdatingBackgroundLocation,
@@ -52,8 +50,7 @@ export function ProfileActionsSection({
         : "Access mode: While in use";
   const isBackgroundControlDisabled =
     !isLocationSharingEnabled || isLocationLoading || isUpdatingBackgroundLocation;
-  const isBackgroundDisplayedOn =
-    isLocationSharingEnabled && isBackgroundLocationEnabled;
+  const isBackgroundDisplayedOn = isLocationSharingEnabled && isBackgroundLocationEnabled;
 
   const handleSignOut = async () => {
     await signOut();
@@ -145,37 +142,29 @@ export function ProfileActionsSection({
           />
         </View>
         <View style={styles.actionTextWrap}>
-          <Text
-            style={[styles.actionTitle, isBackgroundControlDisabled && styles.disabledText]}
-          >
+          <Text style={[styles.actionTitle, isBackgroundControlDisabled && styles.disabledText]}>
             Background Location
           </Text>
-          <Text
-            style={[styles.actionSubtext, isBackgroundControlDisabled && styles.disabledText]}
-          >
+          <Text style={[styles.actionSubtext, isBackgroundControlDisabled && styles.disabledText]}>
             {!isLocationSharingEnabled ? "Enable location sharing first" : permissionModeLabel}
           </Text>
         </View>
         {isUpdatingBackgroundLocation ? (
-          <ActivityIndicator testID="background-location-indicator" size="small" color={colors.primary} />
+          <ActivityIndicator
+            testID="background-location-indicator"
+            size="small"
+            color={colors.primary}
+          />
         ) : (
           <View style={[styles.activeBadge, !isBackgroundDisplayedOn && styles.offBadge]}>
-            <Text
-              style={[
-                styles.activeBadgeText,
-                !isBackgroundDisplayedOn && styles.offBadgeText,
-              ]}
-            >
+            <Text style={[styles.activeBadgeText, !isBackgroundDisplayedOn && styles.offBadgeText]}>
               {isBackgroundDisplayedOn ? "ON" : "OFF"}
             </Text>
           </View>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.settingsAction}
-        onPress={handleOpenSystemSettings}
-      >
+      <TouchableOpacity style={styles.settingsAction} onPress={handleOpenSystemSettings}>
         <Ionicons name="settings-outline" size={16} color={colors.primary} />
         <Text style={styles.settingsActionText}>Open system location settings</Text>
       </TouchableOpacity>

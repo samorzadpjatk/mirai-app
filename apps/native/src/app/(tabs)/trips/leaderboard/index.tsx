@@ -13,8 +13,7 @@ import type { RankedGroup } from "~/components/trips/leaderboard/types";
 export default function LeaderboardScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
@@ -28,9 +27,7 @@ export default function LeaderboardScreen() {
   const rankedGroups: RankedGroup[] = useMemo(() => {
     if (!trip?.groups) return [];
 
-    const userGroupId = trip.participants.find(
-      (p) => p.user.id === currentUser?.id,
-    )?.group?.id;
+    const userGroupId = trip.participants.find((p) => p.user.id === currentUser?.id)?.group?.id;
 
     const sorted = [...trip.groups]
       .sort((a, b) => b.coins - a.coins)

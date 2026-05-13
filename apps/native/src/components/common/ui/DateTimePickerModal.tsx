@@ -1,16 +1,6 @@
 import React, { useState } from "react";
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export type DateTimePickerModalMode = "date" | "time" | "datetime";
@@ -59,10 +49,7 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   const [draft, setDraft] = useState<Date>(value);
 
   if (Platform.OS === "android") {
-    const handleAndroidChange = (
-      event: DateTimePickerEvent,
-      selected?: Date,
-    ) => {
+    const handleAndroidChange = (event: DateTimePickerEvent, selected?: Date) => {
       if (event.type === "dismissed") {
         onCancel();
         return;
@@ -85,12 +72,7 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   }
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.overlay} onPress={onCancel} testID="datetime-picker-overlay">
         <Pressable
           style={styles.card}

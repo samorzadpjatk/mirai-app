@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { orpc } from '@mirai-app/orpc/client';
-import { invalidateGroupQueries } from '@mirai-app/orpc/client/query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 
 export interface Group {
   id: string;
@@ -14,7 +14,7 @@ export interface CoinOperation {
   groupId: string;
   amount: number;
   reason: string;
-  operation: 'add' | 'remove';
+  operation: "add" | "remove";
 }
 
 export function useAdminCoins(tripId: string) {
@@ -23,13 +23,17 @@ export function useAdminCoins(tripId: string) {
   const groupsQuery = orpc.group.getGroupList.queryOptions({ input: { tripId } });
   const { data: groups, isLoading: groupsLoading } = useQuery(groupsQuery);
 
-  const coinsMutation = useMutation(orpc.group.addCoins.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
-  }));
+  const coinsMutation = useMutation(
+    orpc.group.addCoins.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient, true);
+      },
+    }),
+  );
 
   const addCoins = (groupId: string, amount: number, _reason: string) => {
     if (amount <= 0) {
-      throw new Error('Amount must be positive for adding coins');
+      throw new Error("Amount must be positive for adding coins");
     }
     return coinsMutation.mutateAsync({
       groupId,
@@ -40,7 +44,7 @@ export function useAdminCoins(tripId: string) {
 
   const removeCoins = (groupId: string, amount: number, _reason: string) => {
     if (amount <= 0) {
-      throw new Error('Amount must be positive for removing coins');
+      throw new Error("Amount must be positive for removing coins");
     }
     return coinsMutation.mutateAsync({
       groupId,

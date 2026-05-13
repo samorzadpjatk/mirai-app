@@ -9,10 +9,8 @@ export function useLocationContext() {
   const state = useStore(locationStore);
   return {
     ...state,
-    canViewOthersLocations:
-      state.isLocationSharingEnabled && state.permissionStatus === "granted",
-    canShareOwnLocation:
-      state.isLocationSharingEnabled && state.permissionStatus === "granted",
+    canViewOthersLocations: state.isLocationSharingEnabled && state.permissionStatus === "granted",
+    canShareOwnLocation: state.isLocationSharingEnabled && state.permissionStatus === "granted",
   };
 }
 

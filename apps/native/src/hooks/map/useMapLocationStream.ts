@@ -7,16 +7,10 @@ export function useMapLocationStream(enabled: boolean) {
   const { canViewOthersLocations } = useLocationContext();
 
   const [locationsByUserId, setLocationsByUserId] = useState<
-    Record<
-      string,
-      { latitude: number; longitude: number; updatedAt: string | number | Date }
-    >
+    Record<string, { latitude: number; longitude: number; updatedAt: string | number | Date }>
   >({});
   const [usersData, setUsersData] = useState<
-    Record<
-      string,
-      { name?: string; email?: string; image?: string; houseNumber?: string }
-    >
+    Record<string, { name?: string; email?: string; image?: string; houseNumber?: string }>
   >({});
 
   const connectionId = useMemo(() => Crypto.randomUUID(), []);

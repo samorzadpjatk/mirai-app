@@ -12,11 +12,7 @@ interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   error?: boolean;
 }
 
-export function ThemedTextInput({
-  style,
-  error = false,
-  ...props
-}: ThemedTextInputProps) {
+export function ThemedTextInput({ style, error = false, ...props }: ThemedTextInputProps) {
   return (
     <TextInput
       style={[styles.input, error && styles.inputError, style]}

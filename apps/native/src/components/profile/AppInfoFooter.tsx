@@ -6,10 +6,7 @@ interface AppInfoFooterProps {
   copyrightLabel: string;
 }
 
-export function AppInfoFooter({
-  versionLabel,
-  copyrightLabel,
-}: AppInfoFooterProps) {
+export function AppInfoFooter({ versionLabel, copyrightLabel }: AppInfoFooterProps) {
   return (
     <View style={styles.appInfo}>
       <Text style={styles.appInfoText}>{versionLabel}</Text>

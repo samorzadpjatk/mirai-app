@@ -2,10 +2,10 @@ import { type Ionicons } from "@expo/vector-icons";
 import { type ComponentProps } from "react";
 
 export enum ChallengeStatus {
-  LOCKED = 'locked',
-  INCOMPLETE = 'incomplete', 
-  SELECTED = 'selected',
-  COMPLETED = 'completed',
+  LOCKED = "locked",
+  INCOMPLETE = "incomplete",
+  SELECTED = "selected",
+  COMPLETED = "completed",
 }
 
 export interface Challenge {
@@ -13,10 +13,10 @@ export interface Challenge {
   title: string;
   description?: string;
   points: number;
-  icon: ComponentProps<typeof Ionicons>['name'];
+  icon: ComponentProps<typeof Ionicons>["name"];
   iconColor: string;
   status: ChallengeStatus;
-  size: 'normal' | 'wide' | 'tall';
+  size: "normal" | "wide" | "tall";
   participantAvatars?: string[];
   additionalParticipants?: number;
 }
@@ -40,5 +40,5 @@ export interface TripChallengesData {
   progress: ProgressData;
   challenges: Challenge[];
   currentLeader: LeaderboardEntry;
-  groupStatus: 'active' | 'inactive' | 'completed';
+  groupStatus: "active" | "inactive" | "completed";
 }

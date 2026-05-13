@@ -11,7 +11,9 @@ import { isTripPast } from "~/utils/trip";
 
 export function useTripDetails(tripId?: string | null) {
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
-  const tripQuery = useQuery(orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" }, enabled: !!tripId }));
+  const tripQuery = useQuery(
+    orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" }, enabled: !!tripId }),
+  );
 
   const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
 
@@ -65,10 +67,7 @@ export function useTripDetails(tripId?: string | null) {
 
   const localCachedTrip = cachedTripId === (tripId ?? null) ? cachedTrip : null;
   const trip = tripQuery.data ?? localCachedTrip ?? null;
-  const isLoadingTrip =
-    Boolean(tripId) &&
-    !trip &&
-    (tripQuery.isLoading || !isCacheHydrated);
+  const isLoadingTrip = Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 
   const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
 

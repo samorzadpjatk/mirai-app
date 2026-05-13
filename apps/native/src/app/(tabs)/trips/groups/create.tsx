@@ -16,15 +16,12 @@ import { getImageExtension, getImageContentType } from "~/utils/image";
 export default function CreateGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(
-    null,
-  );
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(null);
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { createGroup, isCreating } = useCreateGroup(tripId);
@@ -94,8 +91,7 @@ export default function CreateGroupScreen() {
       setGroupImagePath(storagePath);
       setGroupImagePreviewUri(asset.uri);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to upload image";
+      const message = error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -117,25 +113,17 @@ export default function CreateGroupScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <GroupFormFields
-          groupName={groupName}
-          onChangeName={setGroupName}
-        />
+        <GroupFormFields groupName={groupName} onChangeName={setGroupName} />
         <GroupImagePicker
           imageUri={groupImagePreviewUri}
           onPickImage={() => void handlePickImage()}
           isUploading={uploadStatus === "uploading"}
           uploadPercent={
-            uploadProgress.percent != null
-              ? Math.round(uploadProgress.percent * 100)
-              : null
+            uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null
           }
         />
         {/* Create Button at bottom of scroll */}
-        <CreateGroupButton
-          isSubmitting={isCreating}
-          onPress={handleCreateGroup}
-        />
+        <CreateGroupButton isSubmitting={isCreating} onPress={handleCreateGroup} />
       </ScrollView>
     </View>
   );

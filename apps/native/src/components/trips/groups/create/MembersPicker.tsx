@@ -42,17 +42,13 @@ export function MembersPicker({
 
   return (
     <View style={styles.memberListContainer}>
-      <ScrollView
-        style={styles.memberListScroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.memberListScroll} showsVerticalScrollIndicator={false}>
         {participants.length > 0 ? (
           participants.map((participant) => {
             const isSelected = selectedMembers.has(participant.user.id);
             const firstInitial = participant.user.firstName?.[0] ?? "";
             const lastInitial = participant.user.lastName?.[0] ?? "";
-            const initials =
-              `${firstInitial}${lastInitial}`.toUpperCase() || "?";
+            const initials = `${firstInitial}${lastInitial}`.toUpperCase() || "?";
 
             return (
               <TouchableOpacity
@@ -66,23 +62,21 @@ export function MembersPicker({
                 </View>
                 <View style={styles.memberInfo}>
                   <Text style={styles.memberName}>
-                    {(participant.user.firstName ?? "") +
-                      " " +
-                      (participant.user.lastName ?? "")}
+                    {(participant.user.firstName ?? "") + " " + (participant.user.lastName ?? "")}
                   </Text>
-                  <Text style={styles.memberEmail}>
-                    {participant.user.email}
-                  </Text>
+                  <Text style={styles.memberEmail}>{participant.user.email}</Text>
                 </View>
                 <View
-                  style={[
-                    styles.checkbox,
-                    isSelected && styles.checkboxSelected,
-                  ]}
+                  style={[styles.checkbox, isSelected && styles.checkboxSelected]}
                   testID={`checkbox-${participant.user.id}`}
                   accessibilityState={{ selected: isSelected }}
                 >
-                  {isSelected && <View style={styles.checkboxInner} testID={`checkbox-inner-${participant.user.id}`} />}
+                  {isSelected && (
+                    <View
+                      style={styles.checkboxInner}
+                      testID={`checkbox-inner-${participant.user.id}`}
+                    />
+                  )}
                 </View>
               </TouchableOpacity>
             );

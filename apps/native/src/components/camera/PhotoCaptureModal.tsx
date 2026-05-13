@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import {
-  AppModalShell,
-} from "~/components/common/ui";
+import { AppModalShell } from "~/components/common/ui";
 
 interface CapturedPhoto {
   uri: string;
@@ -88,9 +80,7 @@ export function PhotoCaptureModal({
   const cameraRef = useRef<CameraView | null>(null);
   const [activeFacing, setActiveFacing] = useState<"front" | "back">(() => facing);
   const [availableLenses, setAvailableLenses] = useState<string[]>([]);
-  const [selectedLens, setSelectedLens] = useState<string | undefined>(
-    undefined,
-  );
+  const [selectedLens, setSelectedLens] = useState<string | undefined>(undefined);
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<CapturedPhoto | null>(null);
   const lensPresetOptions = useMemo(
@@ -119,8 +109,7 @@ export function PhotoCaptureModal({
   const persistCapturedPhoto = useCallback((sourceUri: string) => {
     const destinationDir = new Directory(Paths.document, "captured-photos");
     const fileNameSuffix = Math.random().toString(36).slice(2, 8);
-    const extension =
-      sourceUri.split("?")[0]?.split(".").pop()?.toLowerCase() ?? "jpg";
+    const extension = sourceUri.split("?")[0]?.split(".").pop()?.toLowerCase() ?? "jpg";
     const safeExtension = extension.length > 0 ? extension : "jpg";
     const targetFile = new File(
       destinationDir,
@@ -166,11 +155,7 @@ export function PhotoCaptureModal({
     } finally {
       setIsCapturingPhoto(false);
     }
-  }, [
-    isCapturingPhoto,
-    persistCapturedPhoto,
-    quality,
-  ]);
+  }, [isCapturingPhoto, persistCapturedPhoto, quality]);
 
   const handleUsePhoto = useCallback(() => {
     if (!capturedPhoto || isUsingPhoto) return;
@@ -185,14 +170,8 @@ export function PhotoCaptureModal({
   }, [isCapturingPhoto, isUsingPhoto]);
 
   return (
-    <AppModalShell
-      visible={visible}
-      title={title}
-      onClose={handleClose}
-      variant="pageSheet"
-    >
+    <AppModalShell visible={visible} title={title} onClose={handleClose} variant="pageSheet">
       <View style={{ flex: 1 }}>
-
         <View style={{ flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
           {capturedPhoto ? (
             <Image
@@ -226,26 +205,26 @@ export function PhotoCaptureModal({
         </View>
 
         {!capturedPhoto && lensPresetOptions.length > 1 ? (
-          <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, flexWrap: "wrap" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: spacing.sm,
+              paddingHorizontal: spacing.lg,
+              paddingTop: spacing.md,
+              flexWrap: "wrap",
+            }}
+          >
             {lensPresetOptions.map((option) => {
               const lens = option.lens;
               const isSelected = selectedLens === lens;
               return (
                 <TouchableOpacity
                   key={lens}
-                  style={[
-                    styles.lensChip,
-                    isSelected && styles.lensChipSelected,
-                  ]}
+                  style={[styles.lensChip, isSelected && styles.lensChipSelected]}
                   onPress={() => setSelectedLens(lens)}
                   disabled={isCapturingPhoto || isUsingPhoto}
                 >
-                  <Text
-                    style={[
-                      styles.lensChipText,
-                      isSelected && styles.lensChipTextSelected,
-                    ]}
-                  >
+                  <Text style={[styles.lensChipText, isSelected && styles.lensChipTextSelected]}>
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -290,10 +269,7 @@ export function PhotoCaptureModal({
             <View style={styles.captureControlsRow}>
               <View style={styles.captureSideSpacer} />
               <TouchableOpacity
-                style={[
-                  styles.captureButton,
-                  isCapturingPhoto && styles.captureButtonDisabled,
-                ]}
+                style={[styles.captureButton, isCapturingPhoto && styles.captureButtonDisabled]}
                 onPress={() => void handleCapture()}
                 disabled={isCapturingPhoto}
                 activeOpacity={0.85}
@@ -309,11 +285,7 @@ export function PhotoCaptureModal({
                 style={styles.captureSideButton}
                 disabled={isCapturingPhoto || isUsingPhoto}
               >
-                <Ionicons
-                  name="camera-reverse-outline"
-                  size={20}
-                  color={colors.white}
-                />
+                <Ionicons name="camera-reverse-outline" size={20} color={colors.white} />
               </TouchableOpacity>
             </View>
           )}

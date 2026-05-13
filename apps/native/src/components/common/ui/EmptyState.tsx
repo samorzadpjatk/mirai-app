@@ -35,14 +35,15 @@ export function EmptyState({
   return (
     <View testID="empty-state-container" style={[styles.emptyState, style]}>
       {icon && (
-        <View testID="empty-state-icon-wrapper" style={[styles.emptyIcon, { opacity: iconOpacity }]}>
+        <View
+          testID="empty-state-icon-wrapper"
+          style={[styles.emptyIcon, { opacity: iconOpacity }]}
+        >
           <Ionicons name={icon} size={iconSize} color={iconColor} />
         </View>
       )}
       <Text style={styles.emptyStateTitle}>{title}</Text>
-      {subtitle && (
-        <Text style={styles.emptyStateText}>{subtitle}</Text>
-      )}
+      {subtitle && <Text style={styles.emptyStateText}>{subtitle}</Text>}
     </View>
   );
 }

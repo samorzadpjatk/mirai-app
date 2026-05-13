@@ -19,16 +19,14 @@ interface TransactionHistoryProps {
   transactions: CoinTransaction[];
 }
 
-export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
-  transactions,
-}) => {
+export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transactions }) => {
   const formatUserName = (firstName?: string | null, lastName?: string | null) => {
     const name = [firstName, lastName].filter(Boolean).join(" ");
     return name || "Unknown Admin";
   };
 
   const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const dateObj = typeof date === "string" ? new Date(date) : date;
     return dateObj.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
@@ -72,9 +70,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 <Text
                   style={[
                     styles.amount,
-                    transaction.amount > 0
-                      ? styles.positiveAmount
-                      : styles.negativeAmount,
+                    transaction.amount > 0 ? styles.positiveAmount : styles.negativeAmount,
                   ]}
                 >
                   {formatAmount(transaction.amount)}

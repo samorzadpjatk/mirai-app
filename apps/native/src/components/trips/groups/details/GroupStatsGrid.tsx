@@ -8,11 +8,7 @@ interface GroupStatsGridProps {
   rankingPosition?: number | null;
 }
 
-export function GroupStatsGrid({
-  membersCount,
-  coins,
-  rankingPosition,
-}: GroupStatsGridProps) {
+export function GroupStatsGrid({ membersCount, coins, rankingPosition }: GroupStatsGridProps) {
   return (
     <View style={styles.statsGrid}>
       <View style={styles.statCard}>
@@ -22,9 +18,7 @@ export function GroupStatsGrid({
 
       <View style={styles.statCard}>
         <Text style={styles.statLabel}>Coins</Text>
-        <Text style={[styles.statValue, { color: colors.primary }]}>
-          {formatNumber(coins)}
-        </Text>
+        <Text style={[styles.statValue, { color: colors.primary }]}>{formatNumber(coins)}</Text>
       </View>
 
       <View style={styles.statCard}>

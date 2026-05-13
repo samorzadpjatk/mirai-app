@@ -1,9 +1,5 @@
 import { type ReactNode } from "react";
-import {
-  type DimensionValue,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import { AppModalShell } from "~/components/common/ui";
 
 interface MapModalShellProps {

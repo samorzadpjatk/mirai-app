@@ -6,10 +6,7 @@ interface GroupEditPermissionStateProps {
   onGoBack: () => void;
 }
 
-export function GroupEditPermissionState({
-  message,
-  onGoBack,
-}: GroupEditPermissionStateProps) {
+export function GroupEditPermissionState({ message, onGoBack }: GroupEditPermissionStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.errorText}>{message}</Text>

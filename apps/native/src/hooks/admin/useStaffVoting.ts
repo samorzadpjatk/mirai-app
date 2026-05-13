@@ -33,16 +33,11 @@ const MIN_SUBMISSIONS_TO_VOTE = 2;
 const toPairKey = (leftId: string, rightId: string) =>
   leftId < rightId ? `${leftId}|${rightId}` : `${rightId}|${leftId}`;
 
-const rankByRating = (
-  submissions: VotingSubmission[],
-  ratings: Record<string, number>,
-) =>
+const rankByRating = (submissions: VotingSubmission[], ratings: Record<string, number>) =>
   [...submissions].sort((a, b) => {
-    const ratingDelta =
-      (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
+    const ratingDelta = (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
     if (Math.abs(ratingDelta) > 0.0001) return ratingDelta;
-    const createdAtDelta =
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    const createdAtDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     if (createdAtDelta !== 0) return createdAtDelta;
     return a.id.localeCompare(b.id);
   });
@@ -67,8 +62,7 @@ const pickNextPair = (
       const key = toPairKey(left.id, right.id);
       if (comparedPairs.has(key)) continue;
       const diff = Math.abs(
-        (ratings[left.id] ?? ELO_BASE_RATING) -
-          (ratings[right.id] ?? ELO_BASE_RATING),
+        (ratings[left.id] ?? ELO_BASE_RATING) - (ratings[right.id] ?? ELO_BASE_RATING),
       );
       candidates.push({ pair: [left.id, right.id], diff });
     }
@@ -103,10 +97,7 @@ export const useStaffVoting = ({
   const [bootstrapped, setBootstrapped] = useState(false);
 
   const submissionById = useMemo(
-    () =>
-      new Map(
-        votingSubmissions.map((submission) => [submission.id, submission]),
-      ),
+    () => new Map(votingSubmissions.map((submission) => [submission.id, submission])),
     [votingSubmissions],
   );
 
@@ -120,16 +111,12 @@ export const useStaffVoting = ({
     if (finalTopThreeIds.length > 0) {
       return finalTopThreeIds
         .map((id) => submissionById.get(id))
-        .filter((submission): submission is VotingSubmission =>
-          Boolean(submission),
-        );
+        .filter((submission): submission is VotingSubmission => Boolean(submission));
     }
     return calculatedTopThree;
   }, [calculatedTopThree, finalTopThreeIds, submissionById]);
 
-  const submissionEndTimestamp = challenge?.endTime
-    ? new Date(challenge.endTime).getTime()
-    : null;
+  const submissionEndTimestamp = challenge?.endTime ? new Date(challenge.endTime).getTime() : null;
   const isSubmissionPhaseEnded =
     submissionEndTimestamp !== null &&
     Number.isFinite(submissionEndTimestamp) &&
@@ -144,11 +131,7 @@ export const useStaffVoting = ({
       votingSubmissions.map((submission) => [submission.id, ELO_BASE_RATING]),
     );
     const initialCompared = new Set<string>();
-    const pair = pickNextPair(
-      votingSubmissions,
-      initialRatings,
-      initialCompared,
-    );
+    const pair = pickNextPair(votingSubmissions, initialRatings, initialCompared);
 
     setRatings(initialRatings);
     setComparedPairs(initialCompared);
@@ -185,20 +168,13 @@ export const useStaffVoting = ({
       nextCompared.add(toPairKey(leftId, rightId));
       const nextComparisonCount = comparisonCount + 1;
       const nextRanking = rankByRating(votingSubmissions, nextRatings);
-      const nextTop3Ids = nextRanking
-        .slice(0, 3)
-        .map((submission) => submission.id);
+      const nextTop3Ids = nextRanking.slice(0, 3).map((submission) => submission.id);
       const nextTop3Key = nextTop3Ids.join("|");
-      const nextStableTop3Count =
-        previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
+      const nextStableTop3Count = previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
 
       const reachedHardCap = nextComparisonCount >= hardCap;
       const reachedStableTop3 = nextStableTop3Count >= TOP3_STABILITY_REQUIRED;
-      const nextPair = pickNextPair(
-        votingSubmissions,
-        nextRatings,
-        nextCompared,
-      );
+      const nextPair = pickNextPair(votingSubmissions, nextRatings, nextCompared);
       const noMorePairs = !nextPair;
 
       setRatings(nextRatings);
@@ -242,9 +218,7 @@ export const useStaffVoting = ({
     if (!challenge) return;
 
     if (challenge.scoringCategory !== "JUDGED_STAFF") {
-      setBlockedState(
-        "This screen is available only for Judged Staff challenges.",
-      );
+      setBlockedState("This screen is available only for Judged Staff challenges.");
       return;
     }
 
@@ -256,9 +230,7 @@ export const useStaffVoting = ({
     }
 
     if (!isSubmissionPhaseEnded) {
-      setBlockedState(
-        "Staff voting will be available only after submission phase ends.",
-      );
+      setBlockedState("Staff voting will be available only after submission phase ends.");
       return;
     }
 

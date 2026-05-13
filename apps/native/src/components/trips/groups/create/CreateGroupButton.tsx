@@ -5,10 +5,7 @@ interface CreateGroupButtonProps {
   onPress: () => void;
 }
 
-export function CreateGroupButton({
-  isSubmitting,
-  onPress,
-}: CreateGroupButtonProps) {
+export function CreateGroupButton({ isSubmitting, onPress }: CreateGroupButtonProps) {
   return (
     <PrimaryLoadingButton
       label="Create Group"

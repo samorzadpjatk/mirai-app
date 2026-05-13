@@ -1,12 +1,5 @@
 import { type ReactNode } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
 
@@ -54,11 +47,7 @@ export function ThemedListItem({
       <View style={styles.content}>
         {leftAvatar && (
           <View style={styles.avatarWrapper}>
-            <UserAvatar
-              imageUrl={leftAvatar.imageUrl ?? null}
-              name={leftAvatar.name}
-              size={48}
-            />
+            <UserAvatar imageUrl={leftAvatar.imageUrl ?? null} name={leftAvatar.name} size={48} />
           </View>
         )}
         <View style={styles.textContainer}>

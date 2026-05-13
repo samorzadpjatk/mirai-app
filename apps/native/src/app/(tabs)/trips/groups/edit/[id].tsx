@@ -1,24 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { orpc } from "@mirai-app/orpc/client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
-import {
-  borderRadius as radius,
-  colors,
-  spacing,
-  typography,
-} from "../../../../../styles";
+import { borderRadius as radius, colors, spacing, typography } from "../../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
@@ -56,15 +44,9 @@ export default function EditGroupScreen() {
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<
-    string | null
-  >(null);
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(null);
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
-  const {
-    upload,
-    status: uploadStatus,
-    progress: uploadProgress,
-  } = useFileUpload();
+  const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   useEffect(() => {
     if (!group) return;
@@ -79,9 +61,7 @@ export default function EditGroupScreen() {
   }, [group]);
 
   const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
-  const deleteGroupMutation = useMutation(
-    orpc.group.deleteMyGroup.mutationOptions(),
-  );
+  const deleteGroupMutation = useMutation(orpc.group.deleteMyGroup.mutationOptions());
 
   const handleSave = async () => {
     if (!groupName.trim()) {
@@ -100,12 +80,8 @@ export default function EditGroupScreen() {
         image: groupImagePath,
       });
 
-      const originalMembers = new Set(
-        group?.participants?.map((p) => p.user.id) ?? [],
-      );
-      const membersToRemove = Array.from(originalMembers).filter(
-        (id) => !currentMembers.has(id),
-      );
+      const originalMembers = new Set(group?.participants?.map((p) => p.user.id) ?? []);
+      const membersToRemove = Array.from(originalMembers).filter((id) => !currentMembers.has(id));
 
       for (const userId of membersToRemove) {
         await removeUser(userId);
@@ -114,8 +90,7 @@ export default function EditGroupScreen() {
       router.back();
     } catch (error: unknown) {
       console.error("Save error:", error);
-      const message =
-        error instanceof Error ? error.message : "Failed to save group changes";
+      const message = error instanceof Error ? error.message : "Failed to save group changes";
       Alert.alert("Error", message);
     }
   };
@@ -151,8 +126,7 @@ export default function EditGroupScreen() {
       setGroupImagePath(storagePath);
       setGroupImagePreviewUri(asset.uri);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to upload image";
+      const message = error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -172,31 +146,24 @@ export default function EditGroupScreen() {
 
   const handleDeleteGroup = () => {
     if (!group) return;
-    Alert.alert(
-      "Delete Group",
-      "This will archive the group and remove all members. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await deleteGroupMutation.mutateAsync({ groupId: group.id });
-                router.replace(`/trips/groups?tripId=${group.trip.id}`);
-              } catch (error: unknown) {
-                const message =
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to delete group";
-                Alert.alert("Error", message);
-              }
-            })();
-          },
+    Alert.alert("Delete Group", "This will archive the group and remove all members. Continue?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            try {
+              await deleteGroupMutation.mutateAsync({ groupId: group.id });
+              router.replace(`/trips/groups?tripId=${group.trip.id}`);
+            } catch (error: unknown) {
+              const message = error instanceof Error ? error.message : "Failed to delete group";
+              Alert.alert("Error", message);
+            }
+          })();
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const visibleMembers = useMemo(() => {
@@ -204,11 +171,7 @@ export default function EditGroupScreen() {
     return members
       .filter((participant) => currentMembers.has(participant.user.id))
       .sort((a, b) =>
-        a.user.id === group?.organizer?.id
-          ? -1
-          : b.user.id === group?.organizer?.id
-            ? 1
-            : 0,
+        a.user.id === group?.organizer?.id ? -1 : b.user.id === group?.organizer?.id ? 1 : 0,
       );
   }, [currentMembers, group?.organizer?.id, group?.participants]);
 
@@ -248,18 +211,13 @@ export default function EditGroupScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <EditGroupFormFields
-          groupName={groupName}
-          onChangeName={setGroupName}
-        />
+        <EditGroupFormFields groupName={groupName} onChangeName={setGroupName} />
         <GroupImagePicker
           imageUri={groupImagePreviewUri}
           onPickImage={() => void handlePickImage()}
           isUploading={uploadStatus === "uploading"}
           uploadPercent={
-            uploadProgress.percent != null
-              ? Math.round(uploadProgress.percent * 100)
-              : null
+            uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null
           }
         />
 
@@ -269,9 +227,7 @@ export default function EditGroupScreen() {
           <View style={styles.memberListContainer}>
             {visibleMembers.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>
-                  No members left in this group
-                </Text>
+                <Text style={styles.emptyStateText}>No members left in this group</Text>
               </View>
             ) : (
               visibleMembers.map((participant) => {
@@ -282,10 +238,7 @@ export default function EditGroupScreen() {
                   <View key={userId} style={styles.memberItem}>
                     <View style={styles.memberAvatar}>
                       <Text style={styles.memberAvatarText}>
-                        {getInitials(
-                          participant.user.firstName,
-                          participant.user.lastName,
-                        )}
+                        {getInitials(participant.user.firstName, participant.user.lastName)}
                       </Text>
                     </View>
 
@@ -302,12 +255,7 @@ export default function EditGroupScreen() {
                     </View>
 
                     {isLeader ? (
-                      <View
-                        style={[
-                          styles.removeButton,
-                          styles.removeButtonDisabled,
-                        ]}
-                      >
+                      <View style={[styles.removeButton, styles.removeButtonDisabled]}>
                         <Text style={styles.removeButtonText}>Leader</Text>
                       </View>
                     ) : (
@@ -326,10 +274,7 @@ export default function EditGroupScreen() {
           </View>
         </View>
 
-        <SaveGroupButton
-          isSubmitting={isUpdating}
-          onPress={() => void handleSave()}
-        />
+        <SaveGroupButton isSubmitting={isUpdating} onPress={() => void handleSave()} />
 
         <TouchableOpacity
           style={styles.deleteButton}

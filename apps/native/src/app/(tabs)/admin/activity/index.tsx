@@ -19,12 +19,7 @@ import { orpc } from "@mirai-app/orpc/client";
 import { FilterChip, FilterChipRow, EmptyState, ThemedTextInput } from "~/components/common/ui";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 
-type ActivityType =
-  | "submission"
-  | "challenge_event"
-  | "rank_change"
-  | "custom"
-  | "user_post";
+type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
 
 interface AdminActivity {
   id: string;
@@ -59,21 +54,18 @@ const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
   { label: "User Post", value: "user_post" },
 ];
 
-
 const getActivityGroupName = (activity: AdminActivity) =>
   activity.submissionActivity?.group?.name?.trim() ??
   activity.rankChangeActivity?.group?.name?.trim() ??
   activity.userPost?.author?.group?.name?.trim() ??
   "";
 
-
 export default function AdminActivityScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const router = useRouter();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -178,10 +170,7 @@ export default function AdminActivityScreen() {
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Activity"
-        subtitle="Manage community activity feed"
-      />
+      <AdminHeader title="Activity" subtitle="Manage community activity feed" />
 
       <View style={styles.filtersWrap}>
         <ThemedTextInput
@@ -261,10 +250,7 @@ export default function AdminActivityScreen() {
           )}
         />
       )}
-      <AdminAddFab
-        onPress={handleCreateActivity}
-        accessibilityLabel="Add activity"
-      />
+      <AdminAddFab onPress={handleCreateActivity} accessibilityLabel="Add activity" />
     </View>
   );
 }

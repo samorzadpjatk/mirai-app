@@ -127,10 +127,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       await Linking.openSettings();
     } catch (error) {
       console.error("Failed to open system settings:", error);
-      Alert.alert(
-        "Settings Unavailable",
-        "Unable to open system settings on this device.",
-      );
+      Alert.alert("Settings Unavailable", "Unable to open system settings on this device.");
     }
   },
 

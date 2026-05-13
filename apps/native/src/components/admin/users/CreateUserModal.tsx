@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
-import { AdminModal, AdminModalButton } from '../AdminModal';
-import {
-  FormField,
-  ThemedTextInput,
-} from '~/components/common/ui';
+import React, { useState } from "react";
+import { AdminModal, AdminModalButton } from "../AdminModal";
+import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 interface CreateUserModalProps {
   visible: boolean;
@@ -12,20 +9,15 @@ interface CreateUserModalProps {
   isCreating: boolean;
 }
 
-export function CreateUserModal({
-  visible,
-  onClose,
-  onCreate,
-  isCreating,
-}: CreateUserModalProps) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+export function CreateUserModal({ visible, onClose, onCreate, isCreating }: CreateUserModalProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   const handleClose = () => {
-    setFirstName('');
-    setLastName('');
-    setEmail('');
+    setFirstName("");
+    setLastName("");
+    setEmail("");
     onClose();
   };
 
@@ -42,9 +34,7 @@ export function CreateUserModal({
   };
 
   const isValid =
-    firstName.trim().length > 0 &&
-    lastName.trim().length > 0 &&
-    email.trim().length > 0;
+    firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0;
 
   return (
     <AdminModal

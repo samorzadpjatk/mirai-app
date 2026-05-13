@@ -27,8 +27,7 @@ export function AssignedGroupsCard({ groups }: AssignedGroupsCardProps) {
           <Text style={styles.groupName}>{group.group.name}</Text>
           {group.group.organizer && (
             <Text style={styles.groupLeader}>
-              Leader: {group.group.organizer.firstName}{" "}
-              {group.group.organizer.lastName}
+              Leader: {group.group.organizer.firstName} {group.group.organizer.lastName}
             </Text>
           )}
         </View>

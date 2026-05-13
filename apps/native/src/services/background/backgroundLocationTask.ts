@@ -4,38 +4,25 @@ import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { getORPCClient } from "@mirai-app/orpc/client";
 import { authStorage } from "~/services/storage/storage";
-import {
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
-  TRPC_HTTP_URL,
-  TRPC_WS_URL,
-} from "~/config/runtimeEnv";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
-const supabaseClient = createSupabaseClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  authStorage,
-);
+const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
 
 let isSending = false;
 
-const toFiniteNumberOrNull = (
-  value: number | null | undefined,
-): number | null => {
+const toFiniteNumberOrNull = (value: number | null | undefined): number | null => {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return null;
   }
   return value;
 };
 
-const toNonNegativeOrNull = (
-  value: number | null | undefined,
-): number | null => {
+const toNonNegativeOrNull = (value: number | null | undefined): number | null => {
   const normalized = toFiniteNumberOrNull(value);
   if (normalized == null || normalized < 0) {
     return null;
@@ -83,21 +70,14 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   const latitude = toFiniteNumberOrNull(location.coords.latitude);
   const longitude = toFiniteNumberOrNull(location.coords.longitude);
   if (latitude == null || longitude == null) {
-    console.warn(
-      "[BackgroundLocationTask] Skipping update due to invalid coordinates.",
-      {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-    );
+    console.warn("[BackgroundLocationTask] Skipping update due to invalid coordinates.", {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
     return;
   }
 
-  const { client, cleanup } = getORPCClient(
-    TRPC_HTTP_URL,
-    TRPC_WS_URL,
-    accessToken,
-  );
+  const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL, accessToken);
 
   try {
     await client.location.updateLocation({
@@ -115,52 +95,43 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
 }
 
 try {
-  TaskManager.defineTask(
-    BACKGROUND_LOCATION_TASK_NAME,
-    async ({ data, error }) => {
-      if (error) {
-        console.error("[BackgroundLocationTask] Task failed:", error);
+  TaskManager.defineTask(BACKGROUND_LOCATION_TASK_NAME, async ({ data, error }) => {
+    if (error) {
+      console.error("[BackgroundLocationTask] Task failed:", error);
+      return;
+    }
+
+    if (isSending) {
+      return;
+    }
+
+    isSending = true;
+    try {
+      if (!(await shouldSendBackgroundLocation())) {
         return;
       }
 
-      if (isSending) {
+      const taskData = data as
+        | {
+            locations?: LocationObject[];
+          }
+        | undefined;
+
+      const latestLocation = taskData?.locations?.at(-1);
+      if (!latestLocation) {
         return;
       }
 
-      isSending = true;
-      try {
-        if (!(await shouldSendBackgroundLocation())) {
-          return;
-        }
-
-        const taskData = data as
-          | {
-              locations?: LocationObject[];
-            }
-          | undefined;
-
-        const latestLocation = taskData?.locations?.at(-1);
-        if (!latestLocation) {
-          return;
-        }
-
-        await sendLocationUpdate(latestLocation);
-      } catch (taskError) {
-        console.error(
-          "[BackgroundLocationTask] Failed to send location update:",
-          taskError,
-        );
-      } finally {
-        isSending = false;
-      }
-    },
-  );
+      await sendLocationUpdate(latestLocation);
+    } catch (taskError) {
+      console.error("[BackgroundLocationTask] Failed to send location update:", taskError);
+    } finally {
+      isSending = false;
+    }
+  });
 } catch (error) {
   // Hot reload can try to re-register the same task name in development.
-  if (
-    !(error instanceof Error) ||
-    !error.message.includes("has already been defined")
-  ) {
+  if (!(error instanceof Error) || !error.message.includes("has already been defined")) {
     console.error("[BackgroundLocationTask] Failed to define task:", error);
   }
 }

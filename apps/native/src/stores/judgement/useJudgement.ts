@@ -2,9 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { useStore } from "zustand";
-import {
-  judgementStore,
-} from "./judgementStores";
+import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
 
 /**
@@ -22,21 +20,27 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
   const tripId = explicitTripId ?? storeTripId;
   const challengeId = explicitChallengeId ?? storeChallengeId;
 
-  const submissionsQuery = useQuery(orpc.challengeSubmission.getByChallenge.queryOptions({
-    input: { tripId, challengeId },
-    enabled: !!tripId && !!challengeId,
-  }));
+  const submissionsQuery = useQuery(
+    orpc.challengeSubmission.getByChallenge.queryOptions({
+      input: { tripId, challengeId },
+      enabled: !!tripId && !!challengeId,
+    }),
+  );
 
-  const challengeQuery = useQuery(orpc.challenge.getById.queryOptions({
-    input: { id: challengeId, tripId },
-    enabled: !!tripId && !!challengeId,
-  }));
+  const challengeQuery = useQuery(
+    orpc.challenge.getById.queryOptions({
+      input: { id: challengeId, tripId },
+      enabled: !!tripId && !!challengeId,
+    }),
+  );
 
-  const reviewMutation = useMutation(orpc.challengeSubmission.review.mutationOptions({
-    onError: (error) => {
-      console.error(error);
-    },
-  }));
+  const reviewMutation = useMutation(
+    orpc.challengeSubmission.review.mutationOptions({
+      onError: (error) => {
+        console.error(error);
+      },
+    }),
+  );
 
   const submissions = submissionsQuery.data;
   const challenge = challengeQuery.data;
@@ -46,19 +50,14 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
   const activeDismissedIds = useMemo(() => {
     if (!submissions) return dismissedIds;
     return dismissedIds.filter((id) =>
-      submissions.some(
-        (submission) =>
-          submission.id === id && submission.status === "PENDING",
-      ),
+      submissions.some((submission) => submission.id === id && submission.status === "PENDING"),
     );
   }, [dismissedIds, submissions]);
 
   const pendingSubmissions: Submission[] = useMemo(() => {
     return (submissions ?? [])
       .filter((submission) => submission.status === "PENDING")
-      .filter(
-        (submission) => !activeDismissedIds.includes(submission.id),
-      );
+      .filter((submission) => !activeDismissedIds.includes(submission.id));
   }, [submissions, activeDismissedIds]);
 
   const stats = useMemo(() => {
@@ -74,7 +73,6 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
   const currentSubmission = pendingSubmissions[0] ?? null;
   const nextSubmission = pendingSubmissions[1] ?? null;
 
-
   const reviewCurrent = useCallback(
     (status: ReviewStatus, rejectionReason?: string, ranking?: 1 | 2 | 3) => {
       if (!currentSubmission || reviewMutation.isPending) return;
@@ -84,8 +82,7 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
       reviewMutation.mutate({
         id: currentSubmission.id,
         status,
-        rejectionReason:
-          status === "REJECTED" ? normalizedRejectionReason : undefined,
+        rejectionReason: status === "REJECTED" ? normalizedRejectionReason : undefined,
         ranking: status === "APPROVED" ? ranking : undefined,
       });
     },

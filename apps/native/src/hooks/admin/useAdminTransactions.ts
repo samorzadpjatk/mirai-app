@@ -1,5 +1,5 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { orpc } from '@mirai-app/orpc/client';
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { orpc } from "@mirai-app/orpc/client";
 
 export interface TransactionItem {
   id: string;
@@ -20,38 +20,33 @@ export interface TransactionItem {
 const PAGE_SIZE = 50;
 
 export function useAdminTransactions(tripId: string) {
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch,
-  } = useInfiniteQuery(orpc.coinTransaction.getAll.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return {
-        tripId,
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
+  const { data, isLoading, isRefetching, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
+    useInfiniteQuery(
+      orpc.coinTransaction.getAll.infiniteOptions({
+        input: (pageParam: number) => {
+          const offset = typeof pageParam === "number" ? pageParam : 0;
+          return {
+            tripId,
+            pagination: {
+              limit: PAGE_SIZE,
+              offset,
+            },
+          };
         },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.pagination.hasMore) {
+            return undefined;
+          }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-    enabled: Boolean(tripId),
-  }));
+          return lastPage.pagination.offset + lastPage.pagination.limit;
+        },
+        enabled: Boolean(tripId),
+      }),
+    );
 
   const groupsQuery = useQuery(
-    orpc.group.getAllNames.queryOptions({ input: { tripId }, enabled: Boolean(tripId) })
+    orpc.group.getAllNames.queryOptions({ input: { tripId }, enabled: Boolean(tripId) }),
   );
 
   // Transform the data to match our interface
@@ -59,9 +54,9 @@ export function useAdminTransactions(tripId: string) {
     page.transactions.map((transaction) => ({
       id: transaction.id,
       amount: transaction.amount,
-      reason: transaction.reason ?? '',
+      reason: transaction.reason ?? "",
       createdAt:
-        typeof transaction.createdAt === 'string'
+        typeof transaction.createdAt === "string"
           ? transaction.createdAt
           : transaction.createdAt.toISOString(),
       group: {
@@ -73,7 +68,7 @@ export function useAdminTransactions(tripId: string) {
         firstName: transaction.admin.firstName,
         lastName: transaction.admin.lastName,
       },
-    }))
+    })),
   );
 
   const groups = groupsQuery.data ?? [];

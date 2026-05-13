@@ -62,7 +62,7 @@ describe("TUS URL Storage", () => {
       expect(result).toEqual([]);
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to read tus upload storage",
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -84,7 +84,7 @@ describe("TUS URL Storage", () => {
       expect(result).toEqual([]);
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to read tus upload storage",
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -213,7 +213,7 @@ describe("TUS URL Storage", () => {
       expect(result).toBeTruthy();
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to persist tus upload storage",
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });
@@ -289,7 +289,7 @@ describe("TUS URL Storage", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to persist tus upload storage",
-        expect.any(Error)
+        expect.any(Error),
       );
       consoleSpy.mockRestore();
     });

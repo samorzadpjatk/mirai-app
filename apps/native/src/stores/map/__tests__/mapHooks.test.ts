@@ -51,20 +51,20 @@ describe("mapHooks", () => {
 
     it("should react to state changes", () => {
       const { result } = renderHook(() => useMapStore((state) => state.mapTheme));
-      
+
       expect(result.current).toBe("dark");
-      
+
       act(() => {
         mapStore.setState({ mapTheme: "light" });
       });
-      
+
       expect(result.current).toBe("light");
     });
 
     it("should select multiple state properties using stable selector", () => {
       // Use a stable selector that returns a consistent reference when state hasn't changed
       const stableSelector = (state: ReturnType<typeof mapStore.getState>) => state.mapTheme;
-      
+
       const { result } = renderHook(() => useMapStore(stableSelector));
 
       expect(result.current).toBe("dark");
@@ -77,7 +77,7 @@ describe("mapHooks", () => {
 
     it("should call selectUser action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.selectUser));
-      
+
       act(() => {
         result.current("user-123", [52.2297, 21.0122]);
       });
@@ -88,119 +88,119 @@ describe("mapHooks", () => {
 
     it("should call toggleTheme action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.toggleTheme));
-      
+
       expect(mapStore.getState().mapTheme).toBe("dark");
-      
+
       act(() => {
         result.current();
       });
-      
+
       expect(mapStore.getState().mapTheme).toBe("light");
     });
 
     it("should call setShowManageModal action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.setShowManageModal));
-      
+
       act(() => {
         result.current(true);
       });
-      
+
       expect(mapStore.getState().showManageModal).toBe(true);
     });
 
     it("should call setFollowMode action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.setFollowMode));
-      
+
       act(() => {
         result.current("user");
       });
-      
+
       expect(mapStore.getState().followMode).toBe("user");
     });
 
     it("should call setFocusedCoordinate action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.setFocusedCoordinate));
-      
+
       act(() => {
         result.current([40.7128, -74.006]);
       });
-      
+
       expect(mapStore.getState().focusedCoordinate).toEqual([40.7128, -74.006]);
     });
 
     it("should call toggleListExpansion action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.toggleListExpansion));
-      
+
       act(() => {
         result.current();
       });
-      
+
       expect(mapStore.getState().isListExpanded).toBe(true);
     });
 
     it("should call collapseList action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.collapseList));
-      
+
       act(() => {
         mapStore.setState({ isListExpanded: true });
       });
-      
+
       act(() => {
         result.current();
       });
-      
+
       expect(mapStore.getState().isListExpanded).toBe(false);
     });
 
     it("should call deselectUser action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.deselectUser));
-      
+
       act(() => {
         mapStore.setState({ selectedUserId: "user-123" });
       });
-      
+
       act(() => {
         result.current();
       });
-      
+
       expect(mapStore.getState().selectedUserId).toBeNull();
     });
 
     it("should call backToList action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.backToList));
-      
+
       act(() => {
-        mapStore.setState({ 
+        mapStore.setState({
           selectedUserId: "user-123",
-          showUsersList: false 
+          showUsersList: false,
         });
       });
-      
+
       act(() => {
         result.current();
       });
-      
+
       expect(mapStore.getState().showUsersList).toBe(true);
       expect(mapStore.getState().selectedUserId).toBeNull();
     });
 
     it("should call recenter action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.recenter));
-      
+
       act(() => {
         result.current([52.2297, 21.0122]);
       });
-      
+
       expect(mapStore.getState().focusedCoordinate).toEqual([52.2297, 21.0122]);
     });
 
     it("should call handleMapUserPress action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.handleMapUserPress));
-      
+
       act(() => {
         result.current("user-456", [48.8566, 2.3522]);
       });
-      
+
       expect(mapStore.getState().selectedUserId).toBe("user-456");
       expect(mapStore.getState().followMode).toBe("user");
     });

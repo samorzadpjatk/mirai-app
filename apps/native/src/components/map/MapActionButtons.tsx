@@ -23,8 +23,7 @@ export function MapActionButtons() {
   } = useLocationContext();
   const { mapTheme, onRecenter, toggleTheme } = useMapOverlayStore();
 
-  const isBackgroundDisplayedOn =
-    isLocationSharingEnabled && isBackgroundLocationEnabled;
+  const isBackgroundDisplayedOn = isLocationSharingEnabled && isBackgroundLocationEnabled;
   const backgroundStatusLabel = isBackgroundDisplayedOn ? "On" : "Off";
   const isBackgroundControlDisabled =
     !isLocationSharingEnabled || isLoading || isUpdatingBackgroundLocation;
@@ -45,7 +44,11 @@ export function MapActionButtons() {
           disabled={isBackgroundControlDisabled}
         >
           {isUpdatingBackgroundLocation ? (
-            <ActivityIndicator testID="background-loading-indicator" size="small" color={colors.primary} />
+            <ActivityIndicator
+              testID="background-loading-indicator"
+              size="small"
+              color={colors.primary}
+            />
           ) : (
             <>
               <Text
@@ -83,17 +86,18 @@ export function MapActionButtons() {
       <View style={styles.rightButtonsGroup}>
         <TouchableOpacity
           testID="location-toggle-button"
-          style={[
-            styles.locationToggle,
-            isLocationSharingEnabled && styles.locationToggleActive,
-          ]}
+          style={[styles.locationToggle, isLocationSharingEnabled && styles.locationToggleActive]}
           onPress={() => {
             void toggleLocationSharing();
           }}
           disabled={isLoading || isUpdatingSharing}
         >
           {isUpdatingSharing ? (
-            <ActivityIndicator testID="location-loading-indicator" size="small" color={colors.primary} />
+            <ActivityIndicator
+              testID="location-loading-indicator"
+              size="small"
+              color={colors.primary}
+            />
           ) : (
             <>
               <Text style={styles.locationToggleText}>
@@ -112,18 +116,10 @@ export function MapActionButtons() {
           style={styles.themeToggleButton}
           onPress={toggleTheme}
         >
-          <Ionicons
-            name={mapTheme === "dark" ? "sunny" : "moon"}
-            size={22}
-            color="#00ced1"
-          />
+          <Ionicons name={mapTheme === "dark" ? "sunny" : "moon"} size={22} color="#00ced1" />
         </Pressable>
         {isLocationSharingEnabled && (
-          <Pressable
-            testID="recenter-button"
-            style={styles.recenterButton}
-            onPress={onRecenter}
-          >
+          <Pressable testID="recenter-button" style={styles.recenterButton} onPress={onRecenter}>
             <Ionicons name="locate" size={20} color="#00ced1" />
           </Pressable>
         )}

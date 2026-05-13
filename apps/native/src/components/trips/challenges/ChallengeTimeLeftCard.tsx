@@ -18,8 +18,7 @@ const toDate = (value?: Date | string | null) => {
   return value instanceof Date ? value : new Date(value);
 };
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 const parseClockToMinutes = (value?: string | null) => {
   if (!value) return null;
@@ -39,10 +38,7 @@ const parseClockToMinutes = (value?: string | null) => {
   return hours * 60 + minutes;
 };
 
-const getNextRecurringDeadline = (
-  dailyEndTime?: string | null,
-  nowDate?: Date,
-) => {
+const getNextRecurringDeadline = (dailyEndTime?: string | null, nowDate?: Date) => {
   if (!dailyEndTime) return null;
   const [hoursRaw, minutesRaw] = dailyEndTime.split(":");
   const hours = Number(hoursRaw);
@@ -112,10 +108,7 @@ export function ChallengeTimeLeftCard({
 
   const start = toDate(startTime);
   const end = toDate(endTime);
-  const recurringDeadline = getNextRecurringDeadline(
-    dailyEndTime,
-    new Date(now),
-  );
+  const recurringDeadline = getNextRecurringDeadline(dailyEndTime, new Date(now));
   const deadline = isRecurring ? recurringDeadline : end;
   const showScheduleOnly =
     (phaseLabel === "Submission" && status === "VISIBLE") ||
@@ -126,9 +119,7 @@ export function ChallengeTimeLeftCard({
     return null;
   }
 
-  const countdownText = showScheduleOnly
-    ? ""
-    : formatCountdown((activeDeadline!).getTime() - now);
+  const countdownText = showScheduleOnly ? "" : formatCountdown(activeDeadline!.getTime() - now);
   const countdownSubtext = showScheduleOnly
     ? ""
     : isRecurring
@@ -184,21 +175,17 @@ export function ChallengeTimeLeftCard({
         cycleMs = Math.max(dailyMinutes * 60 * 1000, 60 * 1000);
       }
 
-      return clamp(((activeDeadline!).getTime() - now) / cycleMs, 0, 1);
+      return clamp((activeDeadline!.getTime() - now) / cycleMs, 0, 1);
     }
 
     if (!start || !end) return 0;
     const totalMs = end.getTime() - start.getTime();
     if (totalMs <= 0) return 0;
-    return clamp(((activeDeadline!).getTime() - now) / totalMs, 0, 1);
+    return clamp((activeDeadline!.getTime() - now) / totalMs, 0, 1);
   })();
 
   const progressColor =
-    progressRatio > 0.66
-      ? "#22c55e"
-      : progressRatio > 0.33
-        ? "#f59e0b"
-        : "#ef4444";
+    progressRatio > 0.66 ? "#22c55e" : progressRatio > 0.33 ? "#f59e0b" : "#ef4444";
 
   return (
     <View style={styles.container}>
@@ -210,11 +197,7 @@ export function ChallengeTimeLeftCard({
       {showScheduleOnly ? (
         <View style={styles.scheduleCard}>
           <View style={styles.scheduleBadge}>
-            <Ionicons
-              name="calendar-outline"
-              size={14}
-              color={colors.primary}
-            />
+            <Ionicons name="calendar-outline" size={14} color={colors.primary} />
             <Text style={styles.scheduleBadgeText}>Not active yet</Text>
           </View>
           {scheduleRows.map((row) => (

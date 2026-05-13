@@ -19,36 +19,41 @@ export interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
-  const subscriptionQueryOptions =
-    orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} });
-  const { data: subscriptionStatus, isLoading: isStatusLoading } = useQuery(
-    subscriptionQueryOptions,
-  );
+  const subscriptionQueryOptions = orpc.notifications.getSubscriptionStatus.queryOptions({
+    input: {},
+  });
+  const { data: subscriptionStatus, isLoading: isStatusLoading } =
+    useQuery(subscriptionQueryOptions);
 
   const queryClient = useQueryClient();
-  const subscribeMutation = useMutation(orpc.notifications.subscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
-  const unsubscribeMutation = useMutation(orpc.notifications.unsubscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
+  const subscribeMutation = useMutation(
+    orpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
+  const unsubscribeMutation = useMutation(
+    orpc.notifications.unsubscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
 
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,
   );
 
   const isSubscribed =
-    permission === Notifications.PermissionStatus.GRANTED &&
-    !!subscriptionStatus?.isSubscribed;
+    permission === Notifications.PermissionStatus.GRANTED && !!subscriptionStatus?.isSubscribed;
 
   const isSubscribedElsewhere =
-    (subscriptionStatus?.isSubscribed &&
-      permission !== Notifications.PermissionStatus.GRANTED) ??
+    (subscriptionStatus?.isSubscribed && permission !== Notifications.PermissionStatus.GRANTED) ??
     false;
 
   const requestPermission = useCallback(async () => {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== Notifications.PermissionStatus.GRANTED) {
@@ -87,14 +92,10 @@ export function useNotifications(): UseNotificationsReturn {
 
     const finalStatus = await requestPermission();
     if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
-      Alert.alert(
-        "Permission Required",
-        "Please enable notifications in your device settings",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Open Settings", onPress: openAppSettings },
-        ],
-      );
+      Alert.alert("Permission Required", "Please enable notifications in your device settings", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: openAppSettings },
+      ]);
       return;
     }
 

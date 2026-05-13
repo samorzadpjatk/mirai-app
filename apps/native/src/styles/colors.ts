@@ -81,31 +81,31 @@ export const colors = {
   red900Opacity30: "rgba(127, 29, 29, 0.3)",
 
   // Blue variants
-  blue100: "#dbeafe", 
+  blue100: "#dbeafe",
   blue400: "#60a5fa",
   blue500: "#3b82f6",
   blue700: "#1d4ed8",
-  
+
   // Sky variants (for staff voting blues)
   sky400: "#38bdf8",
-  sky500: "#0ea5e9", 
+  sky500: "#0ea5e9",
   sky700: "#0284c7",
-  
+
   // Orange variants
   orange500: "#f97316",
   orange700: "#c2410c",
-  
+
   // Emerald variants (for success states)
   emerald400: "#4ade80",
   emerald500: "#22c55e",
   emerald700: "#16a34a",
-  
+
   // Zinc variants (for borders and backgrounds)
   zinc100: "#f4f4f5",
-  zinc700: "#52525b", 
+  zinc700: "#52525b",
   zinc800: "#27272a",
   zinc900: "#18181b",
-  
+
   // Additional opacity variants
   whiteOpacity90: "rgba(255, 255, 255, 0.9)",
   whiteOpacity70: "rgba(255, 255, 255, 0.7)",
@@ -119,22 +119,22 @@ export const colors = {
   whiteOpacity6: "rgba(255, 255, 255, 0.06)",
   whiteOpacity5: "rgba(255, 255, 255, 0.05)",
   whiteOpacity4: "rgba(255, 255, 255, 0.04)",
-  
+
   // Background variants
   backgroundDarkAlt: "#102222",
   backgroundDarkOpacity45: "rgba(15, 23, 42, 0.45)",
   backgroundDarkOpacity55: "rgba(10, 11, 13, 0.55)",
-  
-  // Card variants  
+
+  // Card variants
   cardDarkOpacity45: "rgba(39, 41, 53, 0.45)",
-  
+
   // Status colors (matching the statusColors object)
   statusHidden: "#64748b",
-  statusVisible: "#0ea5e9", 
+  statusVisible: "#0ea5e9",
   statusActive: "#22c55e",
   statusVotingPhase: "#f59e0b",
   statusCompleted: "#10b981",
-  
+
   // Semantic opacity variants
   successOpacity08: "rgba(16, 185, 129, 0.08)",
   successOpacity12: "rgba(16, 185, 129, 0.12)",
@@ -143,30 +143,30 @@ export const colors = {
   successOpacity45: "rgba(16, 185, 129, 0.5)",
   successOpacity50: "rgba(16, 185, 129, 0.5)",
   successOpacity90: "rgba(34, 197, 94, 0.9)",
-  
+
   dangerOpacity12: "rgba(239, 68, 68, 0.12)",
   dangerOpacity15: "rgba(239, 68, 68, 0.15)",
   dangerOpacity35: "rgba(239, 68, 68, 0.35)",
   dangerOpacity45: "rgba(239, 68, 68, 0.45)",
   dangerOpacity50: "rgba(239, 68, 68, 0.5)",
   dangerOpacity85: "rgba(239, 68, 68, 0.85)",
-  
+
   skyOpacity10: "rgba(14, 165, 233, 0.1)",
   skyOpacity14: "rgba(14, 165, 233, 0.14)",
   skyOpacity35: "rgba(14, 165, 233, 0.35)",
-  
+
   // Red opacity variants for borders
   redOpacity500: "rgba(220, 38, 38, 0.55)",
   redOpacity500Background: "rgba(220, 38, 38, 0.14)",
-  
+
   // Slate opacity variants
   slateOpacity35: "rgba(148, 163, 184, 0.35)",
   slate300: "#cbd5e1",
-  
+
   // Overlay colors
   blackOpacity38: "rgba(0, 0, 0, 0.38)",
   blackOpacity12: "rgba(0, 0, 0, 0.12)",
-  
+
   // Border colors
   borderZinc700: "rgba(48, 54, 61, 1)",
   borderWhite18: "rgba(255, 255, 255, 0.18)",
