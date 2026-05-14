@@ -79,7 +79,7 @@
       "cache": true
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"],
+      "dependsOn": ["^build"],
       "cache": true
     },
     "test": {
