@@ -208,7 +208,7 @@ describe("oRPC Router Testing Patterns", () => {
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
-      } as never);
+      });
 
        
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
@@ -216,7 +216,7 @@ describe("oRPC Router Testing Patterns", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
-      } as never);
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,

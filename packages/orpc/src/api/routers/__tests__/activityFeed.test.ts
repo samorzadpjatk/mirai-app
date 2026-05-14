@@ -160,13 +160,13 @@ const createMockDb = () => {
       } else {
         const drizzleNameSym = Symbol.for('drizzle:Name');
         if (typeof obj[drizzleNameSym] === 'string') {
-          name = obj[drizzleNameSym] as string;
+          name = obj[drizzleNameSym];
         } else {
           const sym = Object.getOwnPropertySymbols(obj).find(
             (s) => s.description === 'drizzle:Name'
           );
           if (sym && typeof obj[sym] === 'string') {
-            name = obj[sym] as string;
+            name = obj[sym];
           }
         }
       }

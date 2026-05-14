@@ -275,7 +275,7 @@ describe("rewardRouter", () => {
     };
 
     addDrizzleApi(mockDb);
-    mockDb = mockDb as DB;
+    mockDb = mockDb;
   });
 
   // Helper to create authenticated context

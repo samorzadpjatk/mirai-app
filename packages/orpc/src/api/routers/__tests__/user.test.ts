@@ -147,7 +147,7 @@ describe("userRouter", () => {
     };
 
     addDrizzleApi(mockDb);
-    mockDb = mockDb as unknown as DB;
+    mockDb = mockDb;
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -1336,8 +1336,8 @@ describe("userRouter", () => {
             tripParticipants: {
               findFirst: vi.fn().mockResolvedValue(participant),
             },
-          } as unknown as typeof tx.query;
-          const result = await fn(tx as unknown as DB);
+          };
+          const result = await fn(tx as unknown);
           return result;
         });
 
@@ -1395,8 +1395,8 @@ describe("userRouter", () => {
             tripParticipants: {
               findFirst: vi.fn().mockResolvedValue(participant),
             },
-          } as unknown as typeof tx.query;
-          return fn(tx as unknown as DB);
+          };
+          return fn(tx as unknown);
         });
 
         const ctx: TRPCContext = {

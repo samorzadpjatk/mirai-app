@@ -51,8 +51,8 @@ describe("getORPCClient", () => {
     vi.clearAllMocks();
     consoleSpy.mockClear();
     mockWebSocketInstances.length = 0;
-    RPCLinkFetch.mockReturnValue({} as never);
-    WSLink.mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   afterEach(() => {
@@ -216,8 +216,8 @@ describe("WebSocket Client Creation", () => {
 describe("HTTP Link Configuration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    RPCLinkFetch.mockReturnValue({} as never);
-    WSLink.mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   it("should configure HTTP link with correct URL", () => {
@@ -274,8 +274,8 @@ describe("HTTP Link Configuration", () => {
 describe("Retry Interceptor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    RPCLinkFetch.mockReturnValue({} as never);
-    WSLink.mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   it("should retry on ORPCError with status >= 500", async () => {

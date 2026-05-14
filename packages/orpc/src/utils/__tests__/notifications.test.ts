@@ -65,7 +65,7 @@ describe("notifications", () => {
           (s) => s.description === "drizzle:Name"
         );
         if (sym && typeof obj[sym] === "string") {
-          return obj[sym] as string;
+          return obj[sym];
         }
       }
       return undefined;
@@ -116,7 +116,7 @@ describe("notifications", () => {
             if (model && typeof model === "object" && "findMany" in model) {
               const results = await (model as { findMany: () => Promise<unknown[]> }).findMany();
               if (fields && typeof fields === "object") {
-                const fieldNames = Object.keys(fields as Record<string, unknown>);
+                const fieldNames = Object.keys(fields);
                 return resolve(results.map((r) => {
                   const mapped: Record<string, unknown> = {};
                   for (const f of fieldNames) {

@@ -52,7 +52,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
@@ -69,11 +69,11 @@ describe("authEmails", () => {
         .mockResolvedValueOnce({
           data: { user: { id: "user-1", email: "user1@example.com" } },
           error: null,
-        } as never)
+        })
         .mockResolvedValueOnce({
           data: { user: { id: "user-2", email: "user2@example.com" } },
           error: null,
-        } as never);
+        });
 
       const result = await buildAuthEmailLookup(mockSupabase, [
         "user-1",
@@ -89,7 +89,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
-      } as never);
+      });
 
       await buildAuthEmailLookup(mockSupabase, [
         "user-1",
@@ -106,7 +106,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: null } },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
@@ -118,7 +118,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
@@ -130,7 +130,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "User not found" },
-      } as never);
+      });
 
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
@@ -145,7 +145,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthEmailLookup(mockSupabase, [
         null,
@@ -188,7 +188,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -213,7 +213,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -242,7 +242,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -263,7 +263,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -284,7 +284,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -297,7 +297,7 @@ describe("authEmails", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "API Error" },
-      } as never);
+      });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
@@ -325,7 +325,7 @@ describe("authEmails", () => {
           },
         },
         error: null,
-      } as never);
+      });
 
       await buildAuthUserSummaryLookup(mockSupabase, ["user-1", "user-1"]);
 
@@ -350,7 +350,7 @@ describe("authEmails", () => {
             },
           },
           error: null,
-        } as never)
+        })
         .mockResolvedValueOnce({
           data: {
             user: {
@@ -361,7 +361,7 @@ describe("authEmails", () => {
             },
           },
           error: null,
-        } as never);
+        });
 
       const result = await buildAuthUserSummaryLookup(mockSupabase, [
         "user-1",

@@ -391,7 +391,7 @@ describe("sendMobileNotifications", () => {
       })),
     };
 
-    mockDb = mockDb as unknown as DB;
+    mockDb = mockDb;
 
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;

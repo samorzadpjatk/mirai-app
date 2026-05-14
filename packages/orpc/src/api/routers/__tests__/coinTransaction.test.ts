@@ -224,10 +224,10 @@ describe("coinTransactionRouter", () => {
     };
 
     (mockDb as any).query = {
-      coinTransactions: { ...mockDb.coinTransaction, findFirst: (mockDb.coinTransaction as any).findFirst || vi.fn() },
-      groups: { ...mockDb.group, findFirst: (mockDb.group as any).findFirst || vi.fn(() => Promise.resolve(mockGroup)) },
-      tripParticipants: { ...mockDb.tripParticipant, findFirst: (mockDb.tripParticipant as any).findFirst || vi.fn() },
-      users: { ...mockDb.user, findFirst: (mockDb.user as any).findFirst || vi.fn() },
+      coinTransactions: { ...mockDb.coinTransaction, findFirst: (mockDb.coinTransaction as any).findFirst ?? vi.fn() },
+      groups: { ...mockDb.group, findFirst: (mockDb.group as any).findFirst ?? vi.fn(() => Promise.resolve(mockGroup)) },
+      tripParticipants: { ...mockDb.tripParticipant, findFirst: (mockDb.tripParticipant as any).findFirst ?? vi.fn() },
+      users: { ...mockDb.user, findFirst: (mockDb.user as any).findFirst ?? vi.fn() },
     };
 
     (mockDb as any).insert = vi.fn(() => ({

@@ -201,13 +201,13 @@ describe("notificationScheduleRouter", () => {
         } else {
           const drizzleNameSym = Symbol.for('drizzle:Name');
           if (typeof obj[drizzleNameSym] === 'string') {
-            name = obj[drizzleNameSym] as string;
+            name = obj[drizzleNameSym];
           } else {
             const sym = Object.getOwnPropertySymbols(obj).find(
               (s) => s.description === 'drizzle:Name'
             );
             if (sym && typeof obj[sym] === 'string') {
-              name = obj[sym] as string;
+              name = obj[sym];
             }
           }
         }
@@ -223,7 +223,7 @@ describe("notificationScheduleRouter", () => {
       get(_, tableName) {
         const name = String(tableName);
         const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
-        const model = db[singular] || db[name];
+        const model = db[singular] ?? db[name];
         if (model && typeof model === 'object') {
           const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
           return new Proxy(modelObj, {
@@ -358,7 +358,7 @@ describe("notificationScheduleRouter", () => {
     db.select = vi.fn((fields?: unknown) => {
       let primaryTable: string | undefined;
       let hasGroupBy = false;
-      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields as Record<string, unknown>) : [];
+      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields) : [];
       const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === 'count';
       const hasAggregateFields = fieldNames.some((f) => ['count', 'sum', 'avg', 'min', 'max'].includes(f));
       const chainable: any = {
