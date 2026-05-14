@@ -35,7 +35,9 @@ const mockSponsorOnConflict = vi.fn().mockResolvedValue(undefined);
 const mockSponsorValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
 
 const mockTripSponsorOnConflict = vi.fn().mockResolvedValue(undefined);
-const mockTripSponsorValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
+const mockTripSponsorValues = vi
+  .fn()
+  .mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
 
 const mockDbInsert = vi.fn((table: unknown) => {
   if (table === sponsorsTable) return { values: mockSponsorValues };
@@ -51,7 +53,7 @@ describe("sponsors", () => {
       () =>
         ({
           text: () => mockBunFileText(),
-        }) as unknown as BunFile
+        }) as unknown as BunFile,
     );
 
     vi.clearAllMocks();
@@ -61,7 +63,9 @@ describe("sponsors", () => {
     mockTripSponsorOnConflict.mockReset().mockResolvedValue(undefined);
 
     mockSponsorValues.mockClear().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
-    mockTripSponsorValues.mockClear().mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
+    mockTripSponsorValues
+      .mockClear()
+      .mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
     mockDbInsert.mockClear().mockImplementation((table: unknown) => {
       if (table === sponsorsTable) return { values: mockSponsorValues };
       if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
@@ -81,23 +85,25 @@ describe("sponsors", () => {
 
   describe("loadSponsorConfigs", () => {
     it("should load sponsor configs from YAML file", async () => {
-      mockBunFileText.mockResolvedValue(JSON.stringify([
-        {
-          id: "sponsor-1",
-          name: "Acme Corp",
-          description: "A great sponsor",
-          logoPath: "images/sponsors/acme.png",
-          height: 20,
-          offsetX: 5,
-          offsetY: 10,
-        },
-        {
-          id: "sponsor-2",
-          name: "Tech Inc",
-          description: "Technology sponsor",
-          logoPath: "images/sponsors/tech.png",
-        },
-      ]));
+      mockBunFileText.mockResolvedValue(
+        JSON.stringify([
+          {
+            id: "sponsor-1",
+            name: "Acme Corp",
+            description: "A great sponsor",
+            logoPath: "images/sponsors/acme.png",
+            height: 20,
+            offsetX: 5,
+            offsetY: 10,
+          },
+          {
+            id: "sponsor-2",
+            name: "Tech Inc",
+            description: "Technology sponsor",
+            logoPath: "images/sponsors/tech.png",
+          },
+        ]),
+      );
 
       const { loadSponsorConfigs } = await import("../sponsors");
       const result = await loadSponsorConfigs("/test/assets/dev", "sponsors/list.yaml");
@@ -150,7 +156,9 @@ describe("sponsors", () => {
 
   describe("seedSponsors", () => {
     it("should skip if no sponsors configured", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", []);
@@ -174,7 +182,9 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -216,7 +226,9 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -226,7 +238,7 @@ describe("sponsors", () => {
           height: null,
           offsetX: null,
           offsetY: null,
-        })
+        }),
       );
       expect(mockSponsorOnConflict).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -235,7 +247,7 @@ describe("sponsors", () => {
             offsetX: null,
             offsetY: null,
           }),
-        })
+        }),
       );
 
       consoleSpy.mockRestore();
@@ -251,7 +263,9 @@ describe("sponsors", () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
@@ -279,13 +293,17 @@ describe("sponsors", () => {
         { id: "sponsor-3", name: "Sponsor 3", description: "Desc 3", logoPath: "img3.png" },
       ];
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
       const sponsorCalls = mockDbInsert.mock.calls.filter(([table]) => table === sponsorsTable);
-      const tripSponsorCalls = mockDbInsert.mock.calls.filter(([table]) => table === tripSponsorsTable);
+      const tripSponsorCalls = mockDbInsert.mock.calls.filter(
+        ([table]) => table === tripSponsorsTable,
+      );
       expect(sponsorCalls).toHaveLength(3);
       expect(tripSponsorCalls).toHaveLength(3);
 
@@ -299,10 +317,14 @@ describe("sponsors", () => {
 
       mockSponsorOnConflict.mockRejectedValue(new Error("DB Error"));
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedSponsors } = await import("../sponsors");
-      await expect(seedSponsors("db-url", "trip-1", "dev", sponsorConfigs)).rejects.toThrow("DB Error");
+      await expect(seedSponsors("db-url", "trip-1", "dev", sponsorConfigs)).rejects.toThrow(
+        "DB Error",
+      );
       expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed sponsors:", expect.any(Error));
 
       consoleSpy.mockRestore();

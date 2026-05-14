@@ -30,12 +30,12 @@ export const runSeed = async () => {
   const trips = await loadTripConfigs(envRoot);
   for (const trip of trips) {
     const seededTrip = await seedTrip(trip, trip.users, envRoot, authUsers);
-    
+
     if (!seededTrip) {
       console.warn(`✗ Failed to seed trip: ${trip.key}`);
       continue;
     }
-    
+
     // Seed sponsors for the trip
     try {
       let sponsorConfigs: SponsorConfig[] = [];
@@ -46,7 +46,7 @@ export const runSeed = async () => {
     } catch (error) {
       console.warn(`✗ Failed to seed sponsors for trip ${trip.key}:`, error);
     }
-    
+
     // Seed rewards if the trip has a rewards config
     if (trip.rewards) {
       try {

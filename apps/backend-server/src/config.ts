@@ -4,9 +4,7 @@ const serverPort = process.env.TRPC_SERVER_PORT;
 const serverHost = process.env.TRPC_SERVER_HOST;
 
 if (!serverPort || !serverHost) {
-  throw new Error(
-    "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
-  );
+  throw new Error("Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.");
 }
 
 export const serverConfig: ServerOptions = {

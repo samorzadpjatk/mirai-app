@@ -51,7 +51,11 @@ describe("rewards", () => {
     });
 
     vi.doMock("@mirai-app/db", () => ({
-      createDb: (...args: unknown[]) => mockCreateDb(...args) as { query: { users: { findFirst: typeof mockUserFindFirst } }; insert: typeof mockInsert },
+      createDb: (...args: unknown[]) =>
+        mockCreateDb(...args) as {
+          query: { users: { findFirst: typeof mockUserFindFirst } };
+          insert: typeof mockInsert;
+        },
       users: "mock-users-table",
       rewards: "mock-rewards-table",
     }));
@@ -59,10 +63,23 @@ describe("rewards", () => {
 
   describe("loadRewardConfigs", () => {
     it("should load reward configs from YAML file", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify([
-        { name: "Free Pizza", description: "Get a free pizza", availableQuantity: 10, coinCost: 50 },
-        { name: "T-shirt", description: "Cool t-shirt", availableQuantity: 5, coinCost: 100, image: "tshirt.jpg" },
-      ]));
+      mockReadTextFile.mockResolvedValue(
+        JSON.stringify([
+          {
+            name: "Free Pizza",
+            description: "Get a free pizza",
+            availableQuantity: 10,
+            coinCost: 50,
+          },
+          {
+            name: "T-shirt",
+            description: "Cool t-shirt",
+            availableQuantity: 5,
+            coinCost: 100,
+            image: "tshirt.jpg",
+          },
+        ]),
+      );
 
       const { loadRewardConfigs } = await import("../rewards");
       const result = await loadRewardConfigs("/test/assets/dev", "rewards/list.yaml");
@@ -84,12 +101,19 @@ describe("rewards", () => {
     });
 
     it("should filter out invalid rewards", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify([
-        { name: "Valid Reward", description: "This is valid", availableQuantity: 10, coinCost: 50 },
-        { name: "Invalid No Description", availableQuantity: 5, coinCost: 100 },
-        { name: "Invalid No Quantity", description: "Missing quantity", coinCost: 100 },
-        { name: "Invalid No Cost", description: "Missing cost", availableQuantity: 5 },
-      ]));
+      mockReadTextFile.mockResolvedValue(
+        JSON.stringify([
+          {
+            name: "Valid Reward",
+            description: "This is valid",
+            availableQuantity: 10,
+            coinCost: 50,
+          },
+          { name: "Invalid No Description", availableQuantity: 5, coinCost: 100 },
+          { name: "Invalid No Quantity", description: "Missing quantity", coinCost: 100 },
+          { name: "Invalid No Cost", description: "Missing cost", availableQuantity: 5 },
+        ]),
+      );
 
       const { loadRewardConfigs } = await import("../rewards");
       const result = await loadRewardConfigs("/test/assets/dev", "rewards/list.yaml");
@@ -103,7 +127,7 @@ describe("rewards", () => {
 
       const { loadRewardConfigs } = await import("../rewards");
       await expect(loadRewardConfigs("/test/assets/dev", "rewards/list.yaml")).rejects.toThrow(
-        "Rewards config must be an array"
+        "Rewards config must be an array",
       );
     });
 
@@ -117,9 +141,16 @@ describe("rewards", () => {
     });
 
     it("should handle YAML with only invalid entries", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify([
-        { name: "", description: "", availableQuantity: "not a number", coinCost: "not a number" },
-      ]));
+      mockReadTextFile.mockResolvedValue(
+        JSON.stringify([
+          {
+            name: "",
+            description: "",
+            availableQuantity: "not a number",
+            coinCost: "not a number",
+          },
+        ]),
+      );
 
       const { loadRewardConfigs } = await import("../rewards");
       const result = await loadRewardConfigs("/test/assets/dev", "rewards/list.yaml");
@@ -128,9 +159,11 @@ describe("rewards", () => {
     });
 
     it("should construct correct file path", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify([
-        { name: "Test", description: "Test reward", availableQuantity: 1, coinCost: 10 },
-      ]));
+      mockReadTextFile.mockResolvedValue(
+        JSON.stringify([
+          { name: "Test", description: "Test reward", availableQuantity: 1, coinCost: 10 },
+        ]),
+      );
 
       const { loadRewardConfigs } = await import("../rewards");
       await loadRewardConfigs("/test/assets/dev", "rewards/test.yaml");
@@ -146,18 +179,29 @@ describe("rewards", () => {
 
       const rewardConfigs: RewardConfig[] = [
         { name: "Reward 1", description: "Desc 1", availableQuantity: 10, coinCost: 50 },
-        { name: "Reward 2", description: "Desc 2", availableQuantity: 5, coinCost: 100, image: "img.jpg" },
+        {
+          name: "Reward 2",
+          description: "Desc 2",
+          availableQuantity: 5,
+          coinCost: 100,
+          image: "img.jpg",
+        },
       ];
 
-      const authUsers = new Map<string, SupabaseUser>([["admin@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["admin@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockInsertValues).toHaveBeenCalledTimes(2);
-      expect(mockInsertValues).toHaveBeenNthCalledWith(1,
+      expect(mockInsertValues).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           name: "Reward 1",
           description: "Desc 1",
@@ -176,9 +220,7 @@ describe("rewards", () => {
       const mockRegularUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       const mockAdminUser: { id: string; role: string } = { id: "admin-1", role: "ADMIN" };
 
-      mockUserFindFirst
-        .mockResolvedValueOnce(mockRegularUser)
-        .mockResolvedValueOnce(mockAdminUser);
+      mockUserFindFirst.mockResolvedValueOnce(mockRegularUser).mockResolvedValueOnce(mockAdminUser);
 
       const rewardConfigs: RewardConfig[] = [
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
@@ -189,7 +231,9 @@ describe("rewards", () => {
         ["admin@test.com", { id: "auth-2" } as SupabaseUser],
       ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
@@ -211,9 +255,13 @@ describe("rewards", () => {
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map<string, SupabaseUser>([["mod@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["mod@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
@@ -234,9 +282,13 @@ describe("rewards", () => {
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["user@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
@@ -251,7 +303,9 @@ describe("rewards", () => {
       const mockUser: { id: string; role: string } = { id: "user-1", role: "USER" };
       mockUserFindFirst.mockResolvedValue(mockUser);
 
-      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["user@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
       const { seedRewards } = await import("../rewards");
       await seedRewards([], "trip-1", authUsers);
@@ -264,24 +318,42 @@ describe("rewards", () => {
       mockUserFindFirst.mockResolvedValue(mockUser);
 
       const rewardConfigs: RewardConfig[] = [
-        { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10, image: "path/to/image.jpg" },
-        { name: "Reward 2", description: "Desc 2", availableQuantity: 1, coinCost: 10, image: "rewards/image.jpg" },
+        {
+          name: "Reward",
+          description: "Desc",
+          availableQuantity: 1,
+          coinCost: 10,
+          image: "path/to/image.jpg",
+        },
+        {
+          name: "Reward 2",
+          description: "Desc 2",
+          availableQuantity: 1,
+          coinCost: 10,
+          image: "rewards/image.jpg",
+        },
       ];
 
-      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["user@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
-      expect(mockInsertValues).toHaveBeenNthCalledWith(1,
+      expect(mockInsertValues).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           image: "rewards/image.jpg",
         }),
       );
 
-      expect(mockInsertValues).toHaveBeenNthCalledWith(2,
+      expect(mockInsertValues).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           image: "rewards/image.jpg",
         }),
@@ -299,16 +371,20 @@ describe("rewards", () => {
         { name: "Reward", description: "Desc", availableQuantity: 1, coinCost: 10 },
       ];
 
-      const authUsers = new Map<string, SupabaseUser>([["user@test.com", { id: "auth-1" } as SupabaseUser]]);
+      const authUsers = new Map<string, SupabaseUser>([
+        ["user@test.com", { id: "auth-1" } as SupabaseUser],
+      ]);
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("Failed to create reward"),
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleSpy.mockRestore();
@@ -329,7 +405,9 @@ describe("rewards", () => {
         ["good@test.com", { id: "auth-2" } as SupabaseUser],
       ]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
 
       const { seedRewards } = await import("../rewards");
       await seedRewards(rewardConfigs, "trip-1", authUsers);

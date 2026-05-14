@@ -1,9 +1,5 @@
 // Export mock factories
-export {
-  createMockSupabaseClient,
-  createMockSession,
-  createMockUser,
-} from "./mock-factories";
+export { createMockSupabaseClient, createMockSession, createMockUser } from "./mock-factories";
 
 // Export test helpers
 export {

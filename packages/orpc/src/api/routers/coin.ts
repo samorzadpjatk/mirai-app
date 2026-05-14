@@ -3,10 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { createORPCRouter, moderatorProcedure } from "../../api/trpc";
 import { eq, sql } from "drizzle-orm";
 import { coinTransactions, groups } from "@mirai-app/db";
-import {
-  captureTripRankingSnapshot,
-  createRankChangeActivities,
-} from "../../utils/activityFeed";
+import { captureTripRankingSnapshot, createRankChangeActivities } from "../../utils/activityFeed";
 
 export const coinRouter = createORPCRouter({
   // Add coins to a group (enhanced version)
@@ -21,10 +18,7 @@ export const coinRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       return await context.db.transaction(async (tx) => {
-        const previousRankingSnapshot = await captureTripRankingSnapshot(
-          tx,
-          input.tripId,
-        );
+        const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
         // Verify group exists and belongs to the trip
         const group = await tx.query.groups.findFirst({
@@ -36,17 +30,23 @@ export const coinRouter = createORPCRouter({
         }
 
         // Update group coins within the transaction
-        await tx.update(groups).set({
-          coins: sql`${groups.coins} + ${input.amount}`,
-        }).where(eq(groups.id, input.groupId));
+        await tx
+          .update(groups)
+          .set({
+            coins: sql`${groups.coins} + ${input.amount}`,
+          })
+          .where(eq(groups.id, input.groupId));
 
         // Create transaction record
-        const inserted = await tx.insert(coinTransactions).values({
-          groupId: input.groupId,
-          amount: input.amount,
-          reason: input.reason,
-          adminId: context.dbUser.id,
-        }).returning();
+        const inserted = await tx
+          .insert(coinTransactions)
+          .values({
+            groupId: input.groupId,
+            amount: input.amount,
+            reason: input.reason,
+            adminId: context.dbUser.id,
+          })
+          .returning();
 
         if (!inserted[0]) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
@@ -65,7 +65,9 @@ export const coinRouter = createORPCRouter({
         });
 
         if (!transaction) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retrieve created transaction" });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to retrieve created transaction",
+          });
         }
 
         await createRankChangeActivities({
@@ -91,10 +93,7 @@ export const coinRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       return await context.db.transaction(async (tx) => {
-        const previousRankingSnapshot = await captureTripRankingSnapshot(
-          tx,
-          input.tripId,
-        );
+        const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
         // Lock the group row for update to prevent race conditions
         const group = await tx.query.groups.findFirst({
@@ -111,17 +110,23 @@ export const coinRouter = createORPCRouter({
         }
 
         // Update group coins within the transaction
-        await tx.update(groups).set({
-          coins: sql`${groups.coins} - ${input.amount}`,
-        }).where(eq(groups.id, input.groupId));
+        await tx
+          .update(groups)
+          .set({
+            coins: sql`${groups.coins} - ${input.amount}`,
+          })
+          .where(eq(groups.id, input.groupId));
 
         // Create transaction record
-        const inserted = await tx.insert(coinTransactions).values({
-          groupId: input.groupId,
-          amount: -input.amount,
-          reason: input.reason,
-          adminId: context.dbUser.id,
-        }).returning();
+        const inserted = await tx
+          .insert(coinTransactions)
+          .values({
+            groupId: input.groupId,
+            amount: -input.amount,
+            reason: input.reason,
+            adminId: context.dbUser.id,
+          })
+          .returning();
 
         if (!inserted[0]) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
@@ -140,7 +145,9 @@ export const coinRouter = createORPCRouter({
         });
 
         if (!transaction) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retrieve created transaction" });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to retrieve created transaction",
+          });
         }
 
         await createRankChangeActivities({

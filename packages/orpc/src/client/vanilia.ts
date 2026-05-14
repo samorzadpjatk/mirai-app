@@ -10,10 +10,7 @@ const createWsConnection = (wsUrl: string, authorizationToken?: string) => {
     authorizationToken ? "YES" : "NO",
   );
   if (authorizationToken) {
-    console.log(
-      "[WS Client] Token preview:",
-      authorizationToken.substring(0, 20) + "...",
-    );
+    console.log("[WS Client] Token preview:", authorizationToken.substring(0, 20) + "...");
   }
 
   const wsUrlWithAuth = authorizationToken
@@ -35,11 +32,7 @@ const isRetryableError = (error: unknown): boolean => {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const getORPCClient = (
-  httpUrl: string,
-  wsUrl: string,
-  authorizationToken?: string,
-) => {
+const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: string) => {
   const ws = createWsConnection(wsUrl, authorizationToken);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const wsLink = new WSLink({ websocket: ws });

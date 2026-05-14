@@ -13,15 +13,11 @@ export function main() {
 
   if (!TRPC_HOST) throw new Error("Missing env: TRPC_HOST");
   if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
-  if (!SUPABASE_SERVICE_ROLE_KEY)
-    throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
 
-  const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    undefined,
-    { realtime: { params: { eventsPerSecond: 2 } } },
-  );
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, undefined, {
+    realtime: { params: { eventsPerSecond: 2 } },
+  });
 
   const { client, cleanup } = getORPCClient(
     `http://${TRPC_HOST}/api/trpc`,
@@ -38,10 +34,9 @@ export function main() {
         notificationId: id,
       });
 
-      const mobile =
-        await client.notificationSender.sendMobileNotifications({
-          notificationId: id,
-        });
+      const mobile = await client.notificationSender.sendMobileNotifications({
+        notificationId: id,
+      });
       console.log("Delivery summary:", { mobile });
 
       await client.notificationSender.trackDeliveryComplete({

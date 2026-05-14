@@ -20,8 +20,7 @@ import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
 import { createDb, type DB, userAgents } from "@mirai-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization =
-    headers.get("authorization") ?? headers.get("Authorization");
+  const authorization = headers.get("authorization") ?? headers.get("Authorization");
   if (!authorization) {
     return null;
   }
@@ -48,10 +47,7 @@ const getAccessToken = (
   console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
 
   // Try connectionParams (sent as first WebSocket message)
-  if (
-   connectionParams &&    
-    "authorization" in connectionParams
-  ) {
+  if (connectionParams && "authorization" in connectionParams) {
     const token = connectionParams.authorization;
     console.log("[Auth] authorization in connectionParams:", token ? "EXISTS" : "MISSING");
 
@@ -68,15 +64,20 @@ const getAccessToken = (
     try {
       // Handle both absolute URLs and relative URLs (WebSocket connections)
       let url: URL;
-      if (urlString.startsWith('http://') || urlString.startsWith('https://') || urlString.startsWith('ws://') || urlString.startsWith('wss://')) {
+      if (
+        urlString.startsWith("http://") ||
+        urlString.startsWith("https://") ||
+        urlString.startsWith("ws://") ||
+        urlString.startsWith("wss://")
+      ) {
         // Absolute URL
         url = new URL(urlString);
       } else {
         // Relative URL - construct absolute URL for parsing
         // Use a dummy base URL since we only care about parsing query params
-        url = new URL(urlString, 'http://localhost');
+        url = new URL(urlString, "http://localhost");
       }
-      
+
       const authParam = url.searchParams.get("authorization");
       if (authParam) {
         const [scheme, token] = authParam.split(" ");
@@ -96,13 +97,13 @@ const getAccessToken = (
 
 const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
   if (!userAgent) return null;
-  
+
   // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
   const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
-  
+
   // Android User Agent pattern: okhttp/4.12.0
   const androidPattern = /^okhttp\/[\d.]+$/;
-  
+
   if (iosPattern.test(userAgent)) return "ios";
   if (androidPattern.test(userAgent)) return "android";
   return null;
@@ -139,12 +140,9 @@ export const createORPCContext = (opts: {
   connectionParams?: Record<string, string>;
 }): TRPCContext => {
   if (!supabase) {
-    supabase = createSupabaseClient(
-      opts.supabaseUrl,
-      opts.supabaseKey,
-      undefined,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
+    supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey, undefined, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
     console.log("[Supabase] Created server singleton client using SERVICE_ROLE key");
   } else {
     console.log("[Supabase] Reusing server singleton Supabase client");
@@ -157,10 +155,7 @@ export const createORPCContext = (opts: {
   }
 
   const accessToken = getAccessToken(headers, opts.connectionParams);
-  console.log(
-    "Creating oRPC context with access token:",
-    accessToken ? "YES" : "NO",
-  );
+  console.log("Creating oRPC context with access token:", accessToken ? "YES" : "NO");
 
   const db = createDb(opts.databaseUrl);
 
@@ -204,7 +199,8 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
 
     if (userAgent && platform) {
       // Log to database asynchronously (fire and forget)
-      void context.db.insert(userAgents)
+      void context.db
+        .insert(userAgents)
         .values({
           userAgent,
           platform,
@@ -254,13 +250,13 @@ export const protectedProcedure = baseProcedure.use(async ({ context, next }) =>
   try {
     console.log("[Auth] Protected procedure called, checking auth...");
     console.log("[Auth] Access token present:", context.accessToken ? "YES" : "NO");
-    
+
     const { user, dbUser } = await requireAuth(
       context.db,
       context.supabase,
       context.accessToken ?? undefined,
     );
-    
+
     console.log("[Auth] Auth successful for user:", user?.id || "unknown");
     return next({
       context: {

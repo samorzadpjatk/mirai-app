@@ -95,9 +95,7 @@ export type AuthStore = AuthState & AuthActions;
  * Internal state not exposed in the store type but used within actions.
  */
 let _supabaseClient: SupabaseClient | null = null;
-let _onUserFetch:
-  | ((authUserId: string) => Promise<AuthUser | null>)
-  | undefined;
+let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined;
 
 /**
  * Reset internal state for testing purposes.
@@ -108,10 +106,7 @@ export function _resetAuthStoreForTests(): void {
   _onUserFetch = undefined;
 }
 
-const fetchAndSetUser = async (
-  authUserId: string,
-  set: (partial: Partial<AuthState>) => void,
-) => {
+const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthState>) => void) => {
   if (!_onUserFetch) {
     set({ isLoading: false });
     return;

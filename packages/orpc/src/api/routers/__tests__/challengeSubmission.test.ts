@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { challengeSubmissionRouter } from "../challengeSubmission";
 import { createRouterClient } from "@orpc/server";
@@ -49,7 +46,8 @@ import {
 import { resolveRecurringChallengeIdForTrip } from "~/utils/recurringChallenges";
 import { ensureTripNotEnded } from "~/utils/tripGuards";
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(challengeSubmissionRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(challengeSubmissionRouter, { context: ctx });
 
 function syncFindFirstWithFindUnique(model: Record<string, unknown>) {
   if (!model || typeof model !== "object") return;
@@ -310,7 +308,9 @@ describe("challengeSubmissionRouter", () => {
 
     addDrizzleApi(mockDb);
     addDrizzleApi(mockTx);
-    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
+    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) =>
+      callback(mockTx),
+    );
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -334,7 +334,10 @@ describe("challengeSubmissionRouter", () => {
 
   describe("getByChallengeForAdmin", () => {
     it("should return submissions for admin/moderator", async () => {
-      const mockSubmissions = [createMockSubmission(), createMockSubmission({ id: "submission-2" })];
+      const mockSubmissions = [
+        createMockSubmission(),
+        createMockSubmission({ id: "submission-2" }),
+      ];
       mockDb.challengeSubmission.findMany.mockResolvedValue(mockSubmissions);
       mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge());
       mockDb.challenge.updateMany.mockResolvedValue({ count: 0 });
@@ -348,7 +351,10 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockModeratorUser() });
-      const result = await caller.getByChallengeForAdmin({ challengeId: "challenge-1", tripId: "trip-1" });
+      const result = await caller.getByChallengeForAdmin({
+        challengeId: "challenge-1",
+        tripId: "trip-1",
+      });
 
       expect(result).toHaveLength(2);
     });
@@ -368,7 +374,10 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockModeratorUser() });
-      const result = await caller.getByChallengeForAdmin({ challengeId: "challenge-1", tripId: "trip-1" });
+      const result = await caller.getByChallengeForAdmin({
+        challengeId: "challenge-1",
+        tripId: "trip-1",
+      });
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
@@ -388,7 +397,7 @@ describe("challengeSubmissionRouter", () => {
 
       const caller = createCaller({ ...ctx, dbUser: createMockModeratorUser() });
       await expect(
-        caller.getByChallengeForAdmin({ challengeId: "nonexistent", tripId: "trip-1" })
+        caller.getByChallengeForAdmin({ challengeId: "nonexistent", tripId: "trip-1" }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -476,7 +485,7 @@ describe("challengeSubmissionRouter", () => {
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
-        caller.getByChallenge({ challengeId: "challenge-1", tripId: "trip-1" })
+        caller.getByChallenge({ challengeId: "challenge-1", tripId: "trip-1" }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -513,7 +522,9 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(ORPCError);
+      await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
@@ -532,7 +543,10 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      const result = await caller.getMyForChallenge({ challengeId: "challenge-1", tripId: "trip-1" });
+      const result = await caller.getMyForChallenge({
+        challengeId: "challenge-1",
+        tripId: "trip-1",
+      });
 
       expect(result?.id).toBe("submission-1");
     });
@@ -550,13 +564,18 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      const result = await caller.getMyForChallenge({ challengeId: "challenge-1", tripId: "trip-1" });
+      const result = await caller.getMyForChallenge({
+        challengeId: "challenge-1",
+        tripId: "trip-1",
+      });
 
       expect(result).toBeNull();
     });
 
     it("should return null when user has no group", async () => {
-      mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant({ groupId: null }));
+      mockDb.tripParticipant.findUnique.mockResolvedValue(
+        createMockTripParticipant({ groupId: null }),
+      );
       mockDb.challengeSubmission.findUnique.mockResolvedValue(null);
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
 
@@ -568,7 +587,10 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      const result = await caller.getMyForChallenge({ challengeId: "challenge-1", tripId: "trip-1" });
+      const result = await caller.getMyForChallenge({
+        challengeId: "challenge-1",
+        tripId: "trip-1",
+      });
 
       expect(result).toBeNull();
     });
@@ -600,13 +622,13 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1", "image-2"],
-        })
+        }),
       ).resolves.toBeDefined();
     });
 
@@ -617,11 +639,19 @@ describe("challengeSubmissionRouter", () => {
       });
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }));
-      mockDb.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }),
+      );
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }));
+      mockTx.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }),
+      );
       mockTx.group.update.mockResolvedValue({ id: "group-1" });
       mockTx.coinTransaction.create.mockResolvedValue({ id: "coin-tx-1" });
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
@@ -635,13 +665,13 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           textContent: "SECRET123",
-        })
+        }),
       ).resolves.toBeDefined();
     });
 
@@ -665,7 +695,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           textContent: "WRONGCODE",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -676,11 +706,27 @@ describe("challengeSubmissionRouter", () => {
       });
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 }));
-      mockDb.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({
+          submissionType: "LOCATION",
+          targetLatitude: 52.2297,
+          targetLongitude: 21.0122,
+        }),
+      );
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 }));
+      mockTx.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({
+          submissionType: "LOCATION",
+          targetLatitude: 52.2297,
+          targetLongitude: 21.0122,
+        }),
+      );
       mockTx.group.update.mockResolvedValue({ id: "group-1" });
       mockTx.coinTransaction.create.mockResolvedValue({ id: "coin-tx-1" });
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
@@ -695,14 +741,14 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           latitude: 52.23,
           longitude: 21.01,
-        })
+        }),
       ).resolves.toBeDefined();
     });
 
@@ -728,7 +774,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           latitude: 52.25,
           longitude: 21.05,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -753,7 +799,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -777,7 +823,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -801,7 +847,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -822,7 +868,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -846,7 +892,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: [], // Empty array should fail
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -870,7 +916,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"], // Only 1 image should fail
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -894,7 +940,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           // No videoId provided
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -918,7 +964,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           // No textContent provided
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -943,7 +989,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           imageIds: ["image-1"],
           // No location provided
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -967,7 +1013,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           // No location provided
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -991,7 +1037,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           // No text or image provided
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1002,11 +1048,19 @@ describe("challengeSubmissionRouter", () => {
       });
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER123" }));
-      mockDb.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER123" }),
+      );
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER123" }));
+      mockTx.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER123" }),
+      );
       mockTx.group.update.mockResolvedValue({ id: "group-1" });
       mockTx.coinTransaction.create.mockResolvedValue({ id: "coin-tx-1" });
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
@@ -1020,13 +1074,13 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           textContent: "ANSWER123",
-        })
+        }),
       ).resolves.toBeDefined();
     });
 
@@ -1050,7 +1104,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           textContent: "WRONGANSWER",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1062,8 +1116,12 @@ describe("challengeSubmissionRouter", () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
       mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ autoApprove: true }));
-      mockDb.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
       mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ autoApprove: true }));
       mockTx.group.update.mockResolvedValue({ id: "group-1" });
@@ -1079,13 +1137,13 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).resolves.toBeDefined();
     });
 
@@ -1096,11 +1154,31 @@ describe("challengeSubmissionRouter", () => {
       });
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ autoApprove: true, basePoints: 10, firstPlacePoints: 30, secondPlacePoints: 20, thirdPlacePoints: 15 }));
-      mockDb.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(mockSubmission);
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({
+          autoApprove: true,
+          basePoints: 10,
+          firstPlacePoints: 30,
+          secondPlacePoints: 20,
+          thirdPlacePoints: 15,
+        }),
+      );
+      mockDb.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(mockSubmission);
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
-      mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ autoApprove: true, basePoints: 10, firstPlacePoints: 30, secondPlacePoints: 20, thirdPlacePoints: 15 }));
+      mockTx.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({
+          autoApprove: true,
+          basePoints: 10,
+          firstPlacePoints: 30,
+          secondPlacePoints: 20,
+          thirdPlacePoints: 15,
+        }),
+      );
       mockTx.group.update.mockResolvedValue({ id: "group-1" });
       mockTx.coinTransaction.create.mockResolvedValue({ id: "coin-tx-1" });
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
@@ -1114,13 +1192,13 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      
+
       await expect(
         caller.create({
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).resolves.toBeDefined();
     });
   });
@@ -1158,7 +1236,7 @@ describe("challengeSubmissionRouter", () => {
       });
 
       expect(result.id).toBe("submission-1");
-       
+
       expect(mockTx.challengeSubmission.update).toHaveBeenCalled();
     });
 
@@ -1180,7 +1258,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           tripId: "trip-1",
           imageIds: ["new-image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1202,7 +1280,7 @@ describe("challengeSubmissionRouter", () => {
           id: "nonexistent",
           tripId: "trip-1",
           imageIds: ["new-image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1224,7 +1302,9 @@ describe("challengeSubmissionRouter", () => {
       mockDb.challengeSubmission.findFirst
         .mockResolvedValueOnce(mockSubmission)
         .mockResolvedValueOnce(updatedSubmission);
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }));
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET123" }),
+      );
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
       mockTx.challengeSubmission.update.mockResolvedValue(updatedSubmission);
 
@@ -1260,7 +1340,12 @@ describe("challengeSubmissionRouter", () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
       mockDb.challengeSubmission.findFirst.mockResolvedValue(mockSubmission);
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ status: "VISIBLE", startTime: new Date(Date.now() - 1000 * 60 * 60) }));
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({
+          status: "VISIBLE",
+          startTime: new Date(Date.now() - 1000 * 60 * 60),
+        }),
+      );
       mockTx.challenge.updateMany.mockResolvedValue({ count: 1 });
       mockTx.challengeSubmission.update.mockResolvedValue(updatedSubmission);
 
@@ -1297,8 +1382,12 @@ describe("challengeSubmissionRouter", () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
       mockDb.challengeSubmission.findFirst.mockResolvedValue(mockSubmission);
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ status: "VOTING_PHASE", scoringCategory: "PEER_VOTING" }));
-      mockTx.challenge.findFirst.mockResolvedValue(createMockChallenge({ status: "VOTING_PHASE", scoringCategory: "PEER_VOTING" }));
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ status: "VOTING_PHASE", scoringCategory: "PEER_VOTING" }),
+      );
+      mockTx.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ status: "VOTING_PHASE", scoringCategory: "PEER_VOTING" }),
+      );
       mockTx.challenge.updateMany.mockResolvedValue({ count: 0 });
       mockTx.challengeSubmission.update.mockResolvedValue(updatedSubmission);
 
@@ -1315,7 +1404,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           tripId: "trip-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1346,7 +1435,7 @@ describe("challengeSubmissionRouter", () => {
           id: "submission-1",
           tripId: "trip-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1355,7 +1444,9 @@ describe("challengeSubmissionRouter", () => {
     it("should delete user's submission", async () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
       mockDb.trip.findUnique.mockResolvedValue({ id: "trip-1", endedAt: null });
-      mockDb.challengeSubmission.findMany.mockResolvedValue([createMockSubmission({ status: "PENDING" })]);
+      mockDb.challengeSubmission.findMany.mockResolvedValue([
+        createMockSubmission({ status: "PENDING" }),
+      ]);
       mockDb.challengeSubmission.delete.mockResolvedValue(createMockSubmission());
 
       const ctx: TRPCContext = {
@@ -1385,9 +1476,9 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      await expect(
-        caller.deleteMine({ id: "submission-1", tripId: "trip-1" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.deleteMine({ id: "submission-1", tripId: "trip-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should throw NOT_FOUND when submission not found", async () => {
@@ -1403,9 +1494,9 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      await expect(
-        caller.deleteMine({ id: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.deleteMine({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should throw BAD_REQUEST when user has no group", async () => {
@@ -1420,9 +1511,9 @@ describe("challengeSubmissionRouter", () => {
       };
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
-      await expect(
-        caller.deleteMine({ id: "submission-1", tripId: "trip-1" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.deleteMine({ id: "submission-1", tripId: "trip-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
@@ -1439,7 +1530,8 @@ describe("challengeSubmissionRouter", () => {
         awardedPoints: 10,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1514,7 +1606,7 @@ describe("challengeSubmissionRouter", () => {
         caller.review({
           id: "submission-1",
           status: "REJECTED",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1533,15 +1625,17 @@ describe("challengeSubmissionRouter", () => {
         caller.review({
           id: "nonexistent",
           status: "APPROVED",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for JUDGED_STAFF challenges", async () => {
-      mockDb.challengeSubmission.findUnique.mockResolvedValue(createMockSubmission({
-        status: "PENDING",
-        challenge: createMockChallenge({ scoringCategory: "JUDGED_STAFF" }),
-      }));
+      mockDb.challengeSubmission.findUnique.mockResolvedValue(
+        createMockSubmission({
+          status: "PENDING",
+          challenge: createMockChallenge({ scoringCategory: "JUDGED_STAFF" }),
+        }),
+      );
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1555,7 +1649,7 @@ describe("challengeSubmissionRouter", () => {
         caller.review({
           id: "submission-1",
           status: "APPROVED",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1573,7 +1667,8 @@ describe("challengeSubmissionRouter", () => {
         bonusPoints: 5,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1620,7 +1715,8 @@ describe("challengeSubmissionRouter", () => {
         status: "APPROVED",
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1661,7 +1757,8 @@ describe("challengeSubmissionRouter", () => {
         ranking: 1,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1702,7 +1799,8 @@ describe("challengeSubmissionRouter", () => {
         status: "APPROVED",
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1746,7 +1844,8 @@ describe("challengeSubmissionRouter", () => {
         status: "APPROVED",
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -1878,7 +1977,7 @@ describe("challengeSubmissionRouter", () => {
 
       const caller = createCaller({ ...ctx, dbUser: createMockDbUser() });
       await expect(
-        caller.getByChallenge({ challengeId: "challenge-1", tripId: "trip-1" })
+        caller.getByChallenge({ challengeId: "challenge-1", tripId: "trip-1" }),
       ).rejects.toThrow();
     });
 
@@ -1903,7 +2002,7 @@ describe("challengeSubmissionRouter", () => {
           challengeId: "challenge-1",
           latitude: 52.23,
           longitude: 21.01,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1927,7 +2026,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           textContent: "SOMECODE",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1954,7 +2053,7 @@ describe("challengeSubmissionRouter", () => {
           tripId: "trip-1",
           challengeId: "challenge-1",
           imageIds: ["image-1"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1979,7 +2078,7 @@ describe("challengeSubmissionRouter", () => {
         caller.review({
           id: "submission-1",
           status: "APPROVED",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -2014,7 +2113,7 @@ describe("challengeSubmissionRouter", () => {
         caller.review({
           id: "submission-1",
           status: "APPROVED",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -2034,7 +2133,8 @@ describe("challengeSubmissionRouter", () => {
         awardedPoints: 50,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -2081,7 +2181,8 @@ describe("challengeSubmissionRouter", () => {
         ranking: 2,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -2124,7 +2225,8 @@ describe("challengeSubmissionRouter", () => {
         awardedPoints: 10,
       });
       mockDb.challengeSubmission.findUnique.mockResolvedValue(mockSubmission);
-      mockTx.challengeSubmission.findFirst.mockResolvedValueOnce(approvedSubmission)
+      mockTx.challengeSubmission.findFirst
+        .mockResolvedValueOnce(approvedSubmission)
         .mockResolvedValueOnce({
           ...approvedSubmission,
           challenge: { id: "challenge-1", tripId: "trip-1", name: "Test Challenge" },
@@ -2216,7 +2318,9 @@ describe("challengeSubmissionRouter", () => {
       const mockSubmissions = [createMockSubmission()];
       mockDb.challengeSubmission.findMany.mockResolvedValue(mockSubmissions);
       mockDb.tripParticipant.findUnique.mockResolvedValue(createMockTripParticipant());
-      mockDb.challenge.findFirst.mockResolvedValue(createMockChallenge({ status: "ACTIVE", endTime: new Date(Date.now() - 1000 * 60 * 60) }));
+      mockDb.challenge.findFirst.mockResolvedValue(
+        createMockChallenge({ status: "ACTIVE", endTime: new Date(Date.now() - 1000 * 60 * 60) }),
+      );
       mockDb.challenge.updateMany.mockResolvedValue({ count: 1 });
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
 

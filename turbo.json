@@ -41,9 +41,11 @@
       "persistent": true
     },
     "format:check": {
+      "dependsOn": [],
       "outputs": []
     },
     "format:write": {
+      "dependsOn": [],
       "outputs": []
     }
   }

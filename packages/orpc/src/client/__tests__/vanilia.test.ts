@@ -36,7 +36,7 @@ vi.stubGlobal(
     const instance = { close: vi.fn().mockResolvedValue(undefined) };
     mockWebSocketInstances.push(instance);
     return instance;
-  })
+  }),
 );
 
 // Import mocked modules for assertions
@@ -79,7 +79,7 @@ describe("getORPCClient", () => {
     expect(result.client).toBeDefined();
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
-      "NO"
+      "NO",
     );
   });
 
@@ -93,11 +93,11 @@ describe("getORPCClient", () => {
     expect(result.client).toBeDefined();
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
-      "YES"
+      "YES",
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Token preview:",
-      expect.stringContaining("...")
+      expect.stringContaining("..."),
     );
   });
 
@@ -110,7 +110,7 @@ describe("getORPCClient", () => {
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Token preview:",
-      "test-auth-token-1234..."
+      "test-auth-token-1234...",
     );
   });
 
@@ -148,10 +148,7 @@ describe("getORPCClient", () => {
     const result = getORPCClient(httpUrl, wsUrl, longToken);
 
     expect(result.client).toBeDefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Token preview:",
-      "a".repeat(20) + "..."
-    );
+    expect(consoleSpy).toHaveBeenCalledWith("[WS Client] Token preview:", "a".repeat(20) + "...");
   });
 
   it("should handle empty authorization token", () => {
@@ -164,7 +161,7 @@ describe("getORPCClient", () => {
     expect(result.client).toBeDefined();
     expect(consoleSpy).toHaveBeenCalledWith(
       "[WS Client] Creating WebSocket client with token:",
-      "NO"
+      "NO",
     );
   });
 
@@ -285,7 +282,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
     const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
@@ -311,7 +311,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const fetchError = new Error("Fetch error");
     fetchError.name = "FetchError";
@@ -337,7 +340,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
     const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
@@ -355,7 +361,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const clientError = new Error("Client error");
 

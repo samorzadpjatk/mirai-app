@@ -4,8 +4,21 @@ import { notificationRouter } from "../../routers/notifications";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, PushSubscription, Notification, NotificationPush, Group, TripParticipant } from "@mirai-app/db";
-import { notifications, notificationPushes, pushSubscriptions, tripParticipants } from "@mirai-app/db";
+import type {
+  DB,
+  User,
+  PushSubscription,
+  Notification,
+  NotificationPush,
+  Group,
+  TripParticipant,
+} from "@mirai-app/db";
+import {
+  notifications,
+  notificationPushes,
+  pushSubscriptions,
+  tripParticipants,
+} from "@mirai-app/db";
 
 // Mock the notification utilities
 vi.mock("../../../utils/notifications", () => ({
@@ -120,7 +133,9 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 // Helper to create mock push subscription
-const createMockPushSubscription = (overrides: Partial<PushSubscription> = {}): PushSubscription => ({
+const createMockPushSubscription = (
+  overrides: Partial<PushSubscription> = {},
+): PushSubscription => ({
   id: "sub-123",
   userId: "user-123",
   token: "expo-push-token-123",
@@ -143,7 +158,9 @@ const createMockNotification = (overrides: Partial<Notification> = {}): Notifica
 });
 
 // Helper to create mock notification push
-const createMockNotificationPush = (overrides: Partial<NotificationPush> = {}): NotificationPush => ({
+const createMockNotificationPush = (
+  overrides: Partial<NotificationPush> = {},
+): NotificationPush => ({
   id: "push-123",
   notificationId: "notification-123",
   targetUserId: "user-123",
@@ -220,7 +237,11 @@ describe("notificationRouter", () => {
     vi.clearAllMocks();
 
     mockUser = createMockUser({ id: "user-123", authUserId: "auth-123", role: "USER" });
-    mockModeratorUser = createMockUser({ id: "moderator-123", authUserId: "auth-123", role: "MODERATOR" });
+    mockModeratorUser = createMockUser({
+      id: "moderator-123",
+      authUserId: "auth-123",
+      role: "MODERATOR",
+    });
     mockAdminUser = createMockUser({ id: "admin-123", authUserId: "auth-123", role: "ADMIN" });
 
     mockSupabase = {
@@ -292,7 +313,9 @@ describe("notificationRouter", () => {
       expect(result.success).toBe(true);
       expect(result.id).toBe("new-sub-123");
       expect(mockDb.insert).toHaveBeenCalledWith(pushSubscriptions);
-      expect(chain.values).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-123", token: "new-token" }));
+      expect(chain.values).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user-123", token: "new-token" }),
+      );
       expect(chain.onConflictDoUpdate).toHaveBeenCalled();
       expect(chain.returning).toHaveBeenCalled();
     });
@@ -386,7 +409,9 @@ describe("notificationRouter", () => {
         createMockPushSubscription({ id: "sub-2", token: "token-2" }),
       ];
 
-      (mockDb.query.pushSubscriptions.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(subscriptions);
+      (mockDb.query.pushSubscriptions.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        subscriptions,
+      );
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -421,7 +446,9 @@ describe("notificationRouter", () => {
       const pushRows = notificationsList.map((n) => ({ notificationId: n.id }));
       const selectChain = createSelectChain(pushRows);
       (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(selectChain);
-      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        notificationsList,
+      );
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -433,7 +460,9 @@ describe("notificationRouter", () => {
       expect(result.pagination.page).toBe(1);
       expect(result.pagination.pageSize).toBe(10);
       expect(result.pagination.totalPages).toBe(1);
-      expect(mockDb.select).toHaveBeenCalledWith({ notificationId: notificationPushes.notificationId });
+      expect(mockDb.select).toHaveBeenCalledWith({
+        notificationId: notificationPushes.notificationId,
+      });
       expect(selectChain.from).toHaveBeenCalledWith(notificationPushes);
       expect(mockDb.query.notifications.findMany).toHaveBeenCalled();
     });
@@ -453,11 +482,23 @@ describe("notificationRouter", () => {
   describe("getAll", () => {
     it("should get all notifications with pagination for admin", async () => {
       const notificationsList = [
-        createMockNotification({ id: "notif-1", pushes: [{ targetUserId: "user-1", sentAt: new Date(), status: "sent", failureReason: null }] }),
-        createMockNotification({ id: "notif-2", pushes: [{ targetUserId: "user-2", sentAt: new Date(), status: "sent", failureReason: null }] }),
+        createMockNotification({
+          id: "notif-1",
+          pushes: [
+            { targetUserId: "user-1", sentAt: new Date(), status: "sent", failureReason: null },
+          ],
+        }),
+        createMockNotification({
+          id: "notif-2",
+          pushes: [
+            { targetUserId: "user-2", sentAt: new Date(), status: "sent", failureReason: null },
+          ],
+        }),
       ];
 
-      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        notificationsList,
+      );
       const countChain = createSelectChain([{ count: 2 }]);
       (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(countChain);
 
@@ -473,14 +514,18 @@ describe("notificationRouter", () => {
       expect(result.pagination.total).toBe(2);
       expect(result.pagination.hasMore).toBe(false);
       expect(mockDb.query.notifications.findMany).toHaveBeenCalled();
-      expect(mockDb.select).toHaveBeenCalledWith(expect.objectContaining({ count: expect.anything() }));
+      expect(mockDb.select).toHaveBeenCalledWith(
+        expect.objectContaining({ count: expect.anything() }),
+      );
       expect(countChain.from).toHaveBeenCalledWith(notifications);
     });
 
     it("should filter notifications by tripId", async () => {
       const notificationsList = [createMockNotification({ id: "notif-1", tripId: "trip-123" })];
 
-      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(notificationsList);
+      (mockDb.query.notifications.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        notificationsList,
+      );
       const countChain = createSelectChain([{ count: 1 }]);
       (mockDb.select as ReturnType<typeof vi.fn>).mockReturnValue(countChain);
 
@@ -493,7 +538,7 @@ describe("notificationRouter", () => {
       expect(mockDb.query.notifications.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.anything(),
-        })
+        }),
       );
     });
   });
@@ -543,7 +588,7 @@ describe("notificationRouter", () => {
           title: "Test",
           body: "Test",
           url: "/test",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -562,7 +607,7 @@ describe("notificationRouter", () => {
           title: "Test",
           body: "Test",
           url: "/test",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -600,7 +645,7 @@ describe("notificationRouter", () => {
             url: "/all",
             tripId: "trip-123",
           }),
-        })
+        }),
       );
       expect(sendMobileNotifications).toHaveBeenCalled();
     });
@@ -647,7 +692,11 @@ describe("notificationRouter", () => {
         reason: "Bonus",
       });
 
-      expect(NotificationService.createCoinsAddedNotification).toHaveBeenCalledWith("Test Group", 50, "Bonus");
+      expect(NotificationService.createCoinsAddedNotification).toHaveBeenCalledWith(
+        "Test Group",
+        50,
+        "Bonus",
+      );
       expect(sendNotification).toHaveBeenCalled();
     });
 
@@ -664,7 +713,7 @@ describe("notificationRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
           coins: 50,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -691,7 +740,11 @@ describe("notificationRouter", () => {
         reason: "Penalty",
       });
 
-      expect(NotificationService.createCoinsRemovedNotification).toHaveBeenCalledWith("Test Group", 20, "Penalty");
+      expect(NotificationService.createCoinsRemovedNotification).toHaveBeenCalledWith(
+        "Test Group",
+        20,
+        "Penalty",
+      );
       expect(sendNotification).toHaveBeenCalled();
     });
   });
@@ -719,7 +772,10 @@ describe("notificationRouter", () => {
         userId: "new-user-123",
       });
 
-      expect(NotificationService.createNewMemberNotification).toHaveBeenCalledWith("Test Group", "John Doe");
+      expect(NotificationService.createNewMemberNotification).toHaveBeenCalledWith(
+        "Test Group",
+        "John Doe",
+      );
       expect(sendNotification).toHaveBeenCalled();
     });
 
@@ -737,7 +793,7 @@ describe("notificationRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
           userId: "non-existent",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -771,7 +827,7 @@ describe("notificationRouter", () => {
             body: "Custom Body",
             url: "/custom",
           }),
-        })
+        }),
       );
     });
   });
@@ -786,8 +842,12 @@ describe("notificationRouter", () => {
         createMockNotificationPush({ status: "failed", targetUserId: "user-2" }),
       ];
 
-      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
-      (mockDb.query.notificationPushes.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(failedPushes);
+      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        notification,
+      );
+      (mockDb.query.notificationPushes.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        failedPushes,
+      );
 
       const updateChain = createUpdateChain({ count: 2 });
       (mockDb.update as ReturnType<typeof vi.fn>).mockReturnValue(updateChain);
@@ -803,7 +863,9 @@ describe("notificationRouter", () => {
       expect(result.notificationId).toBe("notification-123");
       expect(result.retriedCount).toBe(2);
       expect(mockDb.update).toHaveBeenCalledWith(notificationPushes);
-      expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ status: "pending", sentAt: null, failureReason: null }));
+      expect(updateChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "pending", sentAt: null, failureReason: null }),
+      );
       expect(updateChain.where).toHaveBeenCalled();
       expect(sendMobileNotifications).toHaveBeenCalled();
     });
@@ -817,14 +879,16 @@ describe("notificationRouter", () => {
       await expect(
         caller.retryNotification({
           notificationId: "non-existent",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when no failed pushes to retry", async () => {
       const notification = createMockNotification({ id: "notification-123" });
 
-      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(notification);
+      (mockDb.query.notifications.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
+        notification,
+      );
       (mockDb.query.notificationPushes.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -833,7 +897,7 @@ describe("notificationRouter", () => {
       await expect(
         caller.retryNotification({
           notificationId: "notification-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });

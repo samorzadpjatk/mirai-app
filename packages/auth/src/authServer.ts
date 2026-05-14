@@ -5,23 +5,19 @@ import { eq } from "drizzle-orm";
 import type { AuthUser } from "@mirai-app/shared";
 
 interface MinimalBuffer {
-  from(
-    input: string,
-    encoding: "base64",
-  ): { toString(encoding: "utf-8"): string };
+  from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
 }
 
 type AdminUserWithBan = SupabaseUser & { banned_until?: string | null };
 
-const getGlobalBuffer = () =>
-  (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
+const getGlobalBuffer = () => (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
 
 const getGlobalAtob = () =>
   (globalThis as typeof globalThis & { atob?: (data: string) => string }).atob;
 
-function decodeJwtPayload<
-  T extends Record<string, unknown> = Record<string, unknown>,
->(token: string): T | null {
+function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unknown>>(
+  token: string,
+): T | null {
   const [, payload] = token.split(".");
   if (!payload) {
     return null;
@@ -33,9 +29,7 @@ function decodeJwtPayload<
 
   try {
     if (buffer) {
-      const decoded = buffer
-        .from(normalizedPayload, "base64")
-        .toString("utf-8");
+      const decoded = buffer.from(normalizedPayload, "base64").toString("utf-8");
       return JSON.parse(decoded) as T;
     }
 
@@ -113,10 +107,7 @@ export async function getAuthServerUser(
   return user;
 }
 
-export async function getAuthServerSession(
-  supabase: SupabaseClient,
-  accessToken?: string,
-) {
+export async function getAuthServerSession(supabase: SupabaseClient, accessToken?: string) {
   if (accessToken) {
     const {
       data: { user },
@@ -209,10 +200,7 @@ export function parseRolesFromToken(token: string | undefined): string[] {
   return payload.groups;
 }
 
-export function hasRequiredRole(
-  groups: string[],
-  requiredRole: string,
-): boolean {
+export function hasRequiredRole(groups: string[], requiredRole: string): boolean {
   return groups.includes(requiredRole);
 }
 
@@ -268,9 +256,7 @@ export async function requireAuth(
     throw new AuthenticationError("Unauthorized");
   }
 
-  const adminLookup = await supabase.auth.admin.getUserById(
-    session.authUserId!,
-  );
+  const adminLookup = await supabase.auth.admin.getUserById(session.authUserId!);
 
   if (adminLookup.error) {
     console.warn(

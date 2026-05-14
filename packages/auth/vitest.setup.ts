@@ -87,7 +87,10 @@ vi.mock("@mirai-app/db", () => {
       },
     },
     insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue([mockUser]) })),
-    update: vi.fn(() => ({ set: vi.fn().mockResolvedValue([mockUser]), where: vi.fn().mockResolvedValue([mockUser]) })),
+    update: vi.fn(() => ({
+      set: vi.fn().mockResolvedValue([mockUser]),
+      where: vi.fn().mockResolvedValue([mockUser]),
+    })),
     delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([mockUser]) })),
   };
 

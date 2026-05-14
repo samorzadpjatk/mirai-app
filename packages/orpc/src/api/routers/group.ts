@@ -10,10 +10,7 @@ import {
 } from "../../api/trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
-import {
-  captureTripRankingSnapshot,
-  createRankChangeActivities,
-} from "../../utils/activityFeed";
+import { captureTripRankingSnapshot, createRankChangeActivities } from "../../utils/activityFeed";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../utils/tripGuards";
 import { eq, and, inArray, count } from "drizzle-orm";
 import { groups, groupJoinRequests, tripParticipants, coinTransactions } from "@mirai-app/db";
@@ -55,8 +52,7 @@ const batchEmailLookup = async (
   return await buildAuthEmailLookup(supabase, Array.from(allAuthUserIds));
 };
 
-const generateFourDigitCode = () =>
-  String(Math.floor(1000 + Math.random() * 9000));
+const generateFourDigitCode = () => String(Math.floor(1000 + Math.random() * 9000));
 
 const GROUP_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
 const joinRequestDecisionSchema = z.enum(["ACCEPT", "REJECT"]);
@@ -88,10 +84,7 @@ const normalizeGroupImageInput = (value: string | undefined) => {
   return value;
 };
 
-const resolveGroupImage = async (
-  supabase: SupabaseClient,
-  image: string | null | undefined,
-) => {
+const resolveGroupImage = async (supabase: SupabaseClient, image: string | null | undefined) => {
   if (!image) return null;
   const parsed = normalizeSupabaseStoragePath(image);
   if (!parsed) {
@@ -123,10 +116,8 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
       const participant = await context.db.query.tripParticipants.findFirst({
-        where: (tp, { and, eq }) => and(
-          eq(tp.userId, context.dbUser.id),
-          eq(tp.tripId, input.tripId),
-        ),
+        where: (tp, { and, eq }) =>
+          and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
         columns: { groupId: true },
       });
       if (!participant?.groupId) return null;
@@ -295,14 +286,17 @@ export const groupRouter = createORPCRouter({
       });
 
       const groupIds = groupsResult.map((g) => g.id);
-      const participantCounts = groupIds.length > 0
-        ? await context.db.select({
-            groupId: tripParticipants.groupId,
-            count: count(tripParticipants.id),
-          }).from(tripParticipants)
-            .where(inArray(tripParticipants.groupId, groupIds))
-            .groupBy(tripParticipants.groupId)
-        : [];
+      const participantCounts =
+        groupIds.length > 0
+          ? await context.db
+              .select({
+                groupId: tripParticipants.groupId,
+                count: count(tripParticipants.id),
+              })
+              .from(tripParticipants)
+              .where(inArray(tripParticipants.groupId, groupIds))
+              .groupBy(tripParticipants.groupId)
+          : [];
 
       const countMap = new Map(participantCounts.map((c) => [c.groupId, c.count]));
       const groupsWithCount = groupsResult.map((g) => ({
@@ -376,7 +370,8 @@ export const groupRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
-      const executionCountResult = await context.db.select({ count: count() })
+      const executionCountResult = await context.db
+        .select({ count: count() })
         .from(tripParticipants)
         .where(eq(tripParticipants.groupId, input.id));
 
@@ -427,7 +422,8 @@ export const groupRouter = createORPCRouter({
 
       if (!group) return null;
 
-      const countResult = await context.db.select({ count: count() })
+      const countResult = await context.db
+        .select({ count: count() })
         .from(tripParticipants)
         .where(eq(tripParticipants.groupId, input.groupId));
 
@@ -453,7 +449,8 @@ export const groupRouter = createORPCRouter({
         for (let attempt = 0; attempt < 30; attempt += 1) {
           const code = generateFourDigitCode();
           try {
-            const [groupRow] = await context.db.insert(groups)
+            const [groupRow] = await context.db
+              .insert(groups)
               .values({
                 name: input.name,
                 description: input.description,
@@ -483,7 +480,9 @@ export const groupRouter = createORPCRouter({
             });
 
             if (!groupWithOrganizer) {
-              throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch created group" });
+              throw new ORPCError("INTERNAL_SERVER_ERROR", {
+                message: "Failed to fetch created group",
+              });
             }
 
             return groupWithOrganizer;
@@ -499,12 +498,15 @@ export const groupRouter = createORPCRouter({
           }
         }
 
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to generate a unique group code" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to generate a unique group code",
+        });
       })();
 
       // Add creator as a member of the group and clean up join requests atomically
       await context.db.transaction(async (tx) => {
-        await tx.insert(tripParticipants)
+        await tx
+          .insert(tripParticipants)
           .values({
             userId: context.dbUser.id,
             tripId: input.tripId,
@@ -515,11 +517,14 @@ export const groupRouter = createORPCRouter({
             set: { groupId: group.id },
           });
 
-        await tx.delete(groupJoinRequests)
-          .where(and(
-            eq(groupJoinRequests.tripId, input.tripId),
-            eq(groupJoinRequests.userId, context.dbUser.id),
-          ));
+        await tx
+          .delete(groupJoinRequests)
+          .where(
+            and(
+              eq(groupJoinRequests.tripId, input.tripId),
+              eq(groupJoinRequests.userId, context.dbUser.id),
+            ),
+          );
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
@@ -559,18 +564,17 @@ export const groupRouter = createORPCRouter({
       const isOrganizer = group.organizerId === context.dbUser.id;
 
       if (!isAdmin && !isOrganizer) {
-        throw new ORPCError("FORBIDDEN", { message: "Only group organizer or admin can update this group" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Only group organizer or admin can update this group",
+        });
       }
 
-      if (
-        !isAdmin &&
-        updateData.organizerId &&
-        updateData.organizerId !== group.organizerId
-      ) {
+      if (!isAdmin && updateData.organizerId && updateData.organizerId !== group.organizerId) {
         throw new ORPCError("FORBIDDEN", { message: "Only admin can change group organizer" });
       }
 
-      await context.db.update(groups)
+      await context.db
+        .update(groups)
         .set({
           ...updateData,
           organizerId: isAdmin ? updateData.organizerId : undefined,
@@ -606,38 +610,34 @@ export const groupRouter = createORPCRouter({
     }),
 
   // Delete a group
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(async ({ context, input }) => {
-      const group = await context.db.query.groups.findFirst({
-        where: (g, { eq }) => eq(g.id, input.id),
-        columns: { id: true, isDeleted: true },
-      });
+  delete: adminProcedure.input(z.object({ id: z.string() })).handler(async ({ context, input }) => {
+    const group = await context.db.query.groups.findFirst({
+      where: (g, { eq }) => eq(g.id, input.id),
+      columns: { id: true, isDeleted: true },
+    });
 
-      if (!group || group.isDeleted) {
-        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
-      }
+    if (!group || group.isDeleted) {
+      throw new ORPCError("NOT_FOUND", { message: "Group not found" });
+    }
 
-      await context.db.transaction(async (tx) => {
-        await tx.update(tripParticipants)
-          .set({ groupId: null })
-          .where(eq(tripParticipants.groupId, input.id));
+    await context.db.transaction(async (tx) => {
+      await tx
+        .update(tripParticipants)
+        .set({ groupId: null })
+        .where(eq(tripParticipants.groupId, input.id));
 
-        await tx.delete(groupJoinRequests)
-          .where(eq(groupJoinRequests.groupId, input.id));
+      await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, input.id));
 
-        await tx.update(groups)
-          .set({ isDeleted: true })
-          .where(eq(groups.id, input.id));
-      });
+      await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, input.id));
+    });
 
-      return { success: true };
-    }),
+    return { success: true };
+  }),
   deleteMyGroup: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .handler(async ({ context, input }) => {
       await ensureTripNotEndedByGroupId(context.db, input.groupId);
-      
+
       const group = await context.db.query.groups.findFirst({
         where: (g, { eq }) => eq(g.id, input.groupId),
         columns: { id: true, organizerId: true, isDeleted: true, tripId: true },
@@ -652,16 +652,14 @@ export const groupRouter = createORPCRouter({
       }
 
       await context.db.transaction(async (tx) => {
-        await tx.update(tripParticipants)
+        await tx
+          .update(tripParticipants)
           .set({ groupId: null })
           .where(eq(tripParticipants.groupId, input.groupId));
 
-        await tx.delete(groupJoinRequests)
-          .where(eq(groupJoinRequests.groupId, input.groupId));
+        await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, input.groupId));
 
-        await tx.update(groups)
-          .set({ isDeleted: true })
-          .where(eq(groups.id, input.groupId));
+        await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, input.groupId));
       });
 
       return { success: true };
@@ -677,8 +675,7 @@ export const groupRouter = createORPCRouter({
           },
         },
       });
-      if (!group)
-        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
+      if (!group) throw new ORPCError("NOT_FOUND", { message: "Group not found" });
 
       if (group.tripId !== input.tripId || group.isDeleted) {
         throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
@@ -694,7 +691,8 @@ export const groupRouter = createORPCRouter({
       }
 
       const [participant] = await context.db.transaction(async (tx) => {
-        const [upsertedParticipant] = await tx.insert(tripParticipants)
+        const [upsertedParticipant] = await tx
+          .insert(tripParticipants)
           .values({
             userId: context.dbUser.id,
             tripId: input.tripId,
@@ -706,11 +704,14 @@ export const groupRouter = createORPCRouter({
           })
           .returning();
 
-        await tx.delete(groupJoinRequests)
-          .where(and(
-            eq(groupJoinRequests.tripId, input.tripId),
-            eq(groupJoinRequests.userId, context.dbUser.id),
-          ));
+        await tx
+          .delete(groupJoinRequests)
+          .where(
+            and(
+              eq(groupJoinRequests.tripId, input.tripId),
+              eq(groupJoinRequests.userId, context.dbUser.id),
+            ),
+          );
 
         return [upsertedParticipant];
       });
@@ -721,7 +722,7 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ groupId: z.string() }))
     .handler(async ({ context, input }) => {
       await ensureTripNotEndedByGroupId(context.db, input.groupId);
-      
+
       const group = await context.db.query.groups.findFirst({
         where: (g, { eq }) => eq(g.id, input.groupId),
         columns: { id: true, tripId: true, organizerId: true, isDeleted: true },
@@ -732,15 +733,15 @@ export const groupRouter = createORPCRouter({
       }
 
       const participant = await context.db.query.tripParticipants.findFirst({
-        where: (tp, { and, eq }) => and(
-          eq(tp.userId, context.dbUser.id),
-          eq(tp.tripId, group.tripId),
-        ),
+        where: (tp, { and, eq }) =>
+          and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, group.tripId)),
         columns: { groupId: true },
       });
 
       if (!participant) {
-        throw new ORPCError("FORBIDDEN", { message: "Only trip participants can request joining a group" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Only trip participants can request joining a group",
+        });
       }
 
       if (participant.groupId) {
@@ -748,21 +749,24 @@ export const groupRouter = createORPCRouter({
       }
 
       const existingRequest = await context.db.query.groupJoinRequests.findFirst({
-        where: (gjr, { and, eq }) => and(
-          eq(gjr.tripId, group.tripId),
-          eq(gjr.userId, context.dbUser.id),
-        ),
+        where: (gjr, { and, eq }) =>
+          and(eq(gjr.tripId, group.tripId), eq(gjr.userId, context.dbUser.id)),
       });
 
       if (existingRequest) {
         if (existingRequest.groupId === group.id) {
-          throw new ORPCError("CONFLICT", { message: "Join request for this group is already pending" });
+          throw new ORPCError("CONFLICT", {
+            message: "Join request for this group is already pending",
+          });
         }
 
-        throw new ORPCError("CONFLICT", { message: "You already have a pending request for another group" });
+        throw new ORPCError("CONFLICT", {
+          message: "You already have a pending request for another group",
+        });
       }
 
-      const [request] = await context.db.insert(groupJoinRequests)
+      const [request] = await context.db
+        .insert(groupJoinRequests)
         .values({
           groupId: group.id,
           tripId: group.tripId,
@@ -785,11 +789,12 @@ export const groupRouter = createORPCRouter({
       }
 
       return await context.db.query.groupJoinRequests.findFirst({
-        where: (gjr, { and, eq }) => and(
-          eq(gjr.groupId, group.id),
-          eq(gjr.tripId, group.tripId),
-          eq(gjr.userId, context.dbUser.id),
-        ),
+        where: (gjr, { and, eq }) =>
+          and(
+            eq(gjr.groupId, group.id),
+            eq(gjr.tripId, group.tripId),
+            eq(gjr.userId, context.dbUser.id),
+          ),
         orderBy: (gjr, { desc }) => [desc(gjr.createdAt)],
       });
     }),
@@ -797,7 +802,7 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ groupId: z.string() }))
     .handler(async ({ context, input }) => {
       await ensureTripNotEndedByGroupId(context.db, input.groupId);
-      
+
       const group = await context.db.query.groups.findFirst({
         where: (g, { eq }) => eq(g.id, input.groupId),
         columns: { id: true, tripId: true, isDeleted: true },
@@ -808,11 +813,12 @@ export const groupRouter = createORPCRouter({
       }
 
       const existingRequest = await context.db.query.groupJoinRequests.findFirst({
-        where: (gjr, { and, eq }) => and(
-          eq(gjr.groupId, group.id),
-          eq(gjr.tripId, group.tripId),
-          eq(gjr.userId, context.dbUser.id),
-        ),
+        where: (gjr, { and, eq }) =>
+          and(
+            eq(gjr.groupId, group.id),
+            eq(gjr.tripId, group.tripId),
+            eq(gjr.userId, context.dbUser.id),
+          ),
         columns: { id: true },
       });
 
@@ -820,7 +826,8 @@ export const groupRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
       }
 
-      await context.db.delete(groupJoinRequests)
+      await context.db
+        .delete(groupJoinRequests)
         .where(eq(groupJoinRequests.id, existingRequest.id));
 
       return { success: true };
@@ -838,7 +845,9 @@ export const groupRouter = createORPCRouter({
       }
 
       if (group.organizerId !== context.dbUser.id) {
-        throw new ORPCError("FORBIDDEN", { message: "Only group organizer can view join requests" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Only group organizer can view join requests",
+        });
       }
 
       const requests = await context.db.query.groupJoinRequests.findMany({
@@ -896,7 +905,9 @@ export const groupRouter = createORPCRouter({
         await ensureTripNotEnded(context.db, request.tripId);
 
         if (request.group.organizerId !== context.dbUser.id) {
-          throw new ORPCError("FORBIDDEN", { message: "Only group organizer can respond to join requests" });
+          throw new ORPCError("FORBIDDEN", {
+            message: "Only group organizer can respond to join requests",
+          });
         }
 
         if (request.group.isDeleted) {
@@ -904,16 +915,13 @@ export const groupRouter = createORPCRouter({
         }
 
         if (input.decision === "REJECT") {
-          await tx.delete(groupJoinRequests)
-            .where(eq(groupJoinRequests.id, request.id));
+          await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.id, request.id));
           return { status: "REJECTED" as const };
         }
 
         const participant = await tx.query.tripParticipants.findFirst({
-          where: (tp, { and, eq }) => and(
-            eq(tp.userId, request.userId),
-            eq(tp.tripId, request.tripId),
-          ),
+          where: (tp, { and, eq }) =>
+            and(eq(tp.userId, request.userId), eq(tp.tripId, request.tripId)),
           columns: { id: true, groupId: true },
         });
 
@@ -925,15 +933,19 @@ export const groupRouter = createORPCRouter({
           throw new ORPCError("BAD_REQUEST", { message: "User is already in another group" });
         }
 
-        await tx.update(tripParticipants)
+        await tx
+          .update(tripParticipants)
           .set({ groupId: request.groupId })
           .where(eq(tripParticipants.id, participant.id));
 
-        await tx.delete(groupJoinRequests)
-          .where(and(
-            eq(groupJoinRequests.tripId, request.tripId),
-            eq(groupJoinRequests.userId, request.userId),
-          ));
+        await tx
+          .delete(groupJoinRequests)
+          .where(
+            and(
+              eq(groupJoinRequests.tripId, request.tripId),
+              eq(groupJoinRequests.userId, request.userId),
+            ),
+          );
 
         return { status: "ACCEPTED" as const };
       });
@@ -954,8 +966,7 @@ export const groupRouter = createORPCRouter({
           participants: true,
         },
       });
-      if (!group)
-        throw new ORPCError("NOT_FOUND", { message: "Group not found" });
+      if (!group) throw new ORPCError("NOT_FOUND", { message: "Group not found" });
 
       if (group.tripId !== input.tripId || group.isDeleted) {
         throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
@@ -971,7 +982,8 @@ export const groupRouter = createORPCRouter({
       }
 
       const [participant] = await context.db.transaction(async (tx) => {
-        const [upsertedParticipant] = await tx.insert(tripParticipants)
+        const [upsertedParticipant] = await tx
+          .insert(tripParticipants)
           .values({
             userId: input.userId,
             tripId: input.tripId,
@@ -983,11 +995,14 @@ export const groupRouter = createORPCRouter({
           })
           .returning();
 
-        await tx.delete(groupJoinRequests)
-          .where(and(
-            eq(groupJoinRequests.tripId, input.tripId),
-            eq(groupJoinRequests.userId, input.userId),
-          ));
+        await tx
+          .delete(groupJoinRequests)
+          .where(
+            and(
+              eq(groupJoinRequests.tripId, input.tripId),
+              eq(groupJoinRequests.userId, input.userId),
+            ),
+          );
 
         return [upsertedParticipant];
       });
@@ -1015,7 +1030,9 @@ export const groupRouter = createORPCRouter({
       }
 
       if (group?.organizerId !== context.dbUser.id) {
-        throw new ORPCError("FORBIDDEN", { message: "Only the organizer can assign users to this group" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Only the organizer can assign users to this group",
+        });
       }
 
       const uniqueUserIds = Array.from(new Set(input.userIds));
@@ -1023,7 +1040,8 @@ export const groupRouter = createORPCRouter({
       await context.db.transaction(async (tx) => {
         await Promise.all(
           uniqueUserIds.map((userId) =>
-            tx.insert(tripParticipants)
+            tx
+              .insert(tripParticipants)
               .values({
                 userId,
                 tripId: input.tripId,
@@ -1035,18 +1053,19 @@ export const groupRouter = createORPCRouter({
               }),
           ),
         );
-        await tx.delete(groupJoinRequests)
-          .where(and(
-            eq(groupJoinRequests.tripId, input.tripId),
-            inArray(groupJoinRequests.userId, uniqueUserIds),
-          ));
+        await tx
+          .delete(groupJoinRequests)
+          .where(
+            and(
+              eq(groupJoinRequests.tripId, input.tripId),
+              inArray(groupJoinRequests.userId, uniqueUserIds),
+            ),
+          );
       });
 
       const participants = await context.db.query.tripParticipants.findMany({
-        where: (tp, { and, eq, inArray }) => and(
-          eq(tp.tripId, input.tripId),
-          inArray(tp.userId, uniqueUserIds),
-        ),
+        where: (tp, { and, eq, inArray }) =>
+          and(eq(tp.tripId, input.tripId), inArray(tp.userId, uniqueUserIds)),
         with: {
           user: {
             columns: {
@@ -1085,10 +1104,7 @@ export const groupRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       return await context.db.transaction(async (tx) => {
         const participant = await tx.query.tripParticipants.findFirst({
-          where: (tp, { and, eq }) => and(
-            eq(tp.userId, input.userId),
-            eq(tp.tripId, input.tripId),
-          ),
+          where: (tp, { and, eq }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
           columns: { id: true, groupId: true, userId: true },
         });
 
@@ -1098,7 +1114,7 @@ export const groupRouter = createORPCRouter({
 
         const group = participant.groupId
           ? await tx.query.groups.findFirst({
-        where: (g, { eq }) => eq(g.id, participant.groupId!),
+              where: (g, { eq }) => eq(g.id, participant.groupId!),
               columns: {
                 id: true,
                 tripId: true,
@@ -1116,50 +1132,57 @@ export const groupRouter = createORPCRouter({
         }
 
         const isAdmin = context.dbUser.role === "ADMIN";
-        const isOrganizer = Boolean(
-          group?.organizerId && group.organizerId === context.dbUser.id,
-        );
+        const isOrganizer = Boolean(group?.organizerId && group.organizerId === context.dbUser.id);
 
         if (!isAdmin && !isOrganizer) {
-          throw new ORPCError("FORBIDDEN", { message: "Only group organizer or admin can remove members" });
+          throw new ORPCError("FORBIDDEN", {
+            message: "Only group organizer or admin can remove members",
+          });
         }
 
         if (!isAdmin && participant.userId === group?.organizerId) {
-          throw new ORPCError("FORBIDDEN", { message: "Group leader cannot be removed by organizer" });
+          throw new ORPCError("FORBIDDEN", {
+            message: "Group leader cannot be removed by organizer",
+          });
         }
 
-        const [updated] = await tx.update(tripParticipants)
+        const [updated] = await tx
+          .update(tripParticipants)
           .set({ groupId: null })
           .where(eq(tripParticipants.id, participant.id))
           .returning();
 
         if (participant.groupId) {
-          const membersLeftResult = await tx.select({ count: count() })
+          const membersLeftResult = await tx
+            .select({ count: count() })
             .from(tripParticipants)
-            .where(and(
-              eq(tripParticipants.tripId, input.tripId),
-              eq(tripParticipants.groupId, participant.groupId),
-            ));
+            .where(
+              and(
+                eq(tripParticipants.tripId, input.tripId),
+                eq(tripParticipants.groupId, participant.groupId),
+              ),
+            );
           const membersLeft = membersLeftResult[0]?.count ?? 0;
 
           if (membersLeft === 0) {
-            await tx.delete(groupJoinRequests)
+            await tx
+              .delete(groupJoinRequests)
               .where(eq(groupJoinRequests.groupId, participant.groupId));
-            await tx.update(groups)
+            await tx
+              .update(groups)
               .set({ isDeleted: true })
               .where(eq(groups.id, participant.groupId));
           } else if (group?.organizerId && participant.userId === group.organizerId) {
             const nextOrganizer = await tx.query.tripParticipants.findFirst({
-              where: (tp, { and, eq }) => and(
-                eq(tp.tripId, input.tripId),
-                eq(tp.groupId, participant.groupId!),
-              ),
+              where: (tp, { and, eq }) =>
+                and(eq(tp.tripId, input.tripId), eq(tp.groupId, participant.groupId!)),
               orderBy: (tp, { asc }) => [asc(tp.createdAt)],
               columns: { userId: true },
             });
 
             if (nextOrganizer) {
-              await tx.update(groups)
+              await tx
+                .update(groups)
                 .set({ organizerId: nextOrganizer.userId })
                 .where(eq(groups.id, participant.groupId));
             }
@@ -1177,7 +1200,7 @@ export const groupRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       await ensureTripNotEndedByGroupId(context.db, input.groupId);
-      
+
       const group = await context.db.query.groups.findFirst({
         where: (g, { eq }) => eq(g.id, input.groupId),
         columns: { id: true, tripId: true, organizerId: true, isDeleted: true },
@@ -1188,10 +1211,8 @@ export const groupRouter = createORPCRouter({
       }
 
       const membership = await context.db.query.tripParticipants.findFirst({
-        where: (tp, { and, eq }) => and(
-          eq(tp.userId, context.dbUser.id),
-          eq(tp.tripId, group.tripId),
-        ),
+        where: (tp, { and, eq }) =>
+          and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, group.tripId)),
         columns: { groupId: true },
       });
 
@@ -1203,27 +1224,30 @@ export const groupRouter = createORPCRouter({
 
       if (!isOrganizer) {
         return await context.db.transaction(async (tx) => {
-          await tx.update(tripParticipants)
+          await tx
+            .update(tripParticipants)
             .set({ groupId: null })
-            .where(and(
-              eq(tripParticipants.userId, context.dbUser.id),
-              eq(tripParticipants.tripId, group.tripId),
-            ));
+            .where(
+              and(
+                eq(tripParticipants.userId, context.dbUser.id),
+                eq(tripParticipants.tripId, group.tripId),
+              ),
+            );
 
-          const membersLeftResult = await tx.select({ count: count() })
+          const membersLeftResult = await tx
+            .select({ count: count() })
             .from(tripParticipants)
-            .where(and(
-              eq(tripParticipants.tripId, group.tripId),
-              eq(tripParticipants.groupId, group.id),
-            ));
+            .where(
+              and(
+                eq(tripParticipants.tripId, group.tripId),
+                eq(tripParticipants.groupId, group.id),
+              ),
+            );
           const membersLeft = membersLeftResult[0]?.count ?? 0;
 
           if (membersLeft === 0) {
-            await tx.delete(groupJoinRequests)
-              .where(eq(groupJoinRequests.groupId, group.id));
-            await tx.update(groups)
-              .set({ isDeleted: true })
-              .where(eq(groups.id, group.id));
+            await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
+            await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));
             return {
               left: true,
               reassignedOrganizerId: null,
@@ -1240,11 +1264,12 @@ export const groupRouter = createORPCRouter({
       }
 
       const remainingParticipants = await context.db.query.tripParticipants.findMany({
-        where: (tp, { and, eq, ne }) => and(
-          eq(tp.tripId, group.tripId),
-          eq(tp.groupId, group.id),
-          ne(tp.userId, context.dbUser.id),
-        ),
+        where: (tp, { and, eq, ne }) =>
+          and(
+            eq(tp.tripId, group.tripId),
+            eq(tp.groupId, group.id),
+            ne(tp.userId, context.dbUser.id),
+          ),
         orderBy: (tp, { asc }) => [asc(tp.createdAt)],
         columns: { userId: true },
       });
@@ -1253,23 +1278,24 @@ export const groupRouter = createORPCRouter({
 
       await context.db.transaction(async (tx) => {
         if (nextOrganizerId) {
-          await tx.update(groups)
+          await tx
+            .update(groups)
             .set({ organizerId: nextOrganizerId })
             .where(eq(groups.id, group.id));
         } else {
-          await tx.delete(groupJoinRequests)
-            .where(eq(groupJoinRequests.groupId, group.id));
-          await tx.update(groups)
-            .set({ isDeleted: true })
-            .where(eq(groups.id, group.id));
+          await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
+          await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));
         }
 
-        await tx.update(tripParticipants)
+        await tx
+          .update(tripParticipants)
           .set({ groupId: null })
-          .where(and(
-            eq(tripParticipants.userId, context.dbUser.id),
-            eq(tripParticipants.tripId, group.tripId),
-          ));
+          .where(
+            and(
+              eq(tripParticipants.userId, context.dbUser.id),
+              eq(tripParticipants.tripId, group.tripId),
+            ),
+          );
       });
 
       return {
@@ -1279,15 +1305,10 @@ export const groupRouter = createORPCRouter({
       };
     }),
   addCoins: moderatorProcedure
-    .input(
-      z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }),
-    )
+    .input(z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
       return await context.db.transaction(async (tx) => {
-        const previousRankingSnapshot = await captureTripRankingSnapshot(
-          tx,
-          input.tripId,
-        );
+        const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
         const group = await tx.query.groups.findFirst({
           where: (g, { eq }) => eq(g.id, input.groupId),
@@ -1297,12 +1318,14 @@ export const groupRouter = createORPCRouter({
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
         // Update group coins
-        await tx.update(groups)
+        await tx
+          .update(groups)
           .set({ coins: (group.coins ?? 0) + input.amount })
           .where(eq(groups.id, input.groupId));
 
         // Create transaction record
-        const [transaction] = await tx.insert(coinTransactions)
+        const [transaction] = await tx
+          .insert(coinTransactions)
           .values({
             groupId: input.groupId,
             amount: input.amount,

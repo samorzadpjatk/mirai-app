@@ -92,12 +92,10 @@ export interface RecurringTemplate {
   isRecurring: boolean;
 }
 
-const toInstanceName = (templateName: string, dayIndex: number) =>
-  `${templateName} #${dayIndex}`;
+const toInstanceName = (templateName: string, dayIndex: number) => `${templateName} #${dayIndex}`;
 
 const shouldGenerateFromTemplate = (template: RecurringTemplate) =>
-  template.isRecurring &&
-  (template.status === "VISIBLE" || template.status === "ACTIVE");
+  template.isRecurring && (template.status === "VISIBLE" || template.status === "ACTIVE");
 
 export const ensureRecurringInstanceForTemplate = async (params: {
   tx: DB | TransactionDB;
@@ -136,43 +134,47 @@ export const ensureRecurringInstanceForTemplate = async (params: {
   const instanceName = toInstanceName(template.name, dayIndex);
 
   const existing = await params.tx.query.challenges.findFirst({
-    where: (c, { eq, and }) => and(
-      eq(c.tripId, template.tripId),
-      eq(c.isRecurring, false),
-      eq(c.name, instanceName),
-      eq(c.startTime, dailyBounds.start),
-      eq(c.endTime, dailyBounds.end),
-    ),
+    where: (c, { eq, and }) =>
+      and(
+        eq(c.tripId, template.tripId),
+        eq(c.isRecurring, false),
+        eq(c.name, instanceName),
+        eq(c.startTime, dailyBounds.start),
+        eq(c.endTime, dailyBounds.end),
+      ),
   });
 
   if (existing) {
     return { id: existing.id, status: existing.status, created: false };
   }
 
-  const created = await params.tx.insert(challenges).values({
-    tripId: template.tripId,
-    name: instanceName,
-    description: template.description,
-    image: template.image,
-    submissionType: template.submissionType,
-    scoringCategory: template.scoringCategory,
-    isRecurring: false,
-    dailyStartTime: null,
-    dailyEndTime: null,
-    basePoints: template.basePoints,
-    firstPlacePoints: template.firstPlacePoints,
-    secondPlacePoints: template.secondPlacePoints,
-    thirdPlacePoints: template.thirdPlacePoints,
-    status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
-    startTime: dailyBounds.start,
-    endTime: dailyBounds.end,
-    votingStartTime: null,
-    votingEndTime: null,
-    targetLatitude: template.targetLatitude,
-    targetLongitude: template.targetLongitude,
-    expectedValue: template.expectedValue,
-    autoApprove: template.autoApprove,
-  }).returning({ id: challenges.id, status: challenges.status });
+  const created = await params.tx
+    .insert(challenges)
+    .values({
+      tripId: template.tripId,
+      name: instanceName,
+      description: template.description,
+      image: template.image,
+      submissionType: template.submissionType,
+      scoringCategory: template.scoringCategory,
+      isRecurring: false,
+      dailyStartTime: null,
+      dailyEndTime: null,
+      basePoints: template.basePoints,
+      firstPlacePoints: template.firstPlacePoints,
+      secondPlacePoints: template.secondPlacePoints,
+      thirdPlacePoints: template.thirdPlacePoints,
+      status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
+      startTime: dailyBounds.start,
+      endTime: dailyBounds.end,
+      votingStartTime: null,
+      votingEndTime: null,
+      targetLatitude: template.targetLatitude,
+      targetLongitude: template.targetLongitude,
+      expectedValue: template.expectedValue,
+      autoApprove: template.autoApprove,
+    })
+    .returning({ id: challenges.id, status: challenges.status });
 
   if (!created[0]) {
     return null;
@@ -197,8 +199,7 @@ export const precreateRecurringInstancesForTemplate = async (params: {
     return [];
   }
 
-  const daysCount =
-    Math.floor((endDay.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
+  const daysCount = Math.floor((endDay.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
   const now = params.now ?? new Date();
   const results: { id: string; status: string; created: boolean }[] = [];
 
@@ -216,13 +217,14 @@ export const precreateRecurringInstancesForTemplate = async (params: {
     }
 
     const existing = await params.tx.query.challenges.findFirst({
-      where: (c, { eq, and }) => and(
-        eq(c.tripId, template.tripId),
-        eq(c.isRecurring, false),
-        eq(c.name, instanceName),
-        eq(c.startTime, dailyBounds.start),
-        eq(c.endTime, dailyBounds.end),
-      ),
+      where: (c, { eq, and }) =>
+        and(
+          eq(c.tripId, template.tripId),
+          eq(c.isRecurring, false),
+          eq(c.name, instanceName),
+          eq(c.startTime, dailyBounds.start),
+          eq(c.endTime, dailyBounds.end),
+        ),
     });
 
     if (existing) {
@@ -230,30 +232,33 @@ export const precreateRecurringInstancesForTemplate = async (params: {
       continue;
     }
 
-    const created = await params.tx.insert(challenges).values({
-      tripId: template.tripId,
-      name: instanceName,
-      description: template.description,
-      image: template.image,
-      submissionType: template.submissionType,
-      scoringCategory: template.scoringCategory,
-      isRecurring: false,
-      dailyStartTime: null,
-      dailyEndTime: null,
-      basePoints: template.basePoints,
-      firstPlacePoints: template.firstPlacePoints,
-      secondPlacePoints: template.secondPlacePoints,
-      thirdPlacePoints: template.thirdPlacePoints,
-      status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
-      startTime: dailyBounds.start,
-      endTime: dailyBounds.end,
-      votingStartTime: null,
-      votingEndTime: null,
-      targetLatitude: template.targetLatitude,
-      targetLongitude: template.targetLongitude,
-      expectedValue: template.expectedValue,
-      autoApprove: template.autoApprove,
-    }).returning({ id: challenges.id, status: challenges.status });
+    const created = await params.tx
+      .insert(challenges)
+      .values({
+        tripId: template.tripId,
+        name: instanceName,
+        description: template.description,
+        image: template.image,
+        submissionType: template.submissionType,
+        scoringCategory: template.scoringCategory,
+        isRecurring: false,
+        dailyStartTime: null,
+        dailyEndTime: null,
+        basePoints: template.basePoints,
+        firstPlacePoints: template.firstPlacePoints,
+        secondPlacePoints: template.secondPlacePoints,
+        thirdPlacePoints: template.thirdPlacePoints,
+        status: resolveInstanceStatus(now, dailyBounds.start, dailyBounds.end),
+        startTime: dailyBounds.start,
+        endTime: dailyBounds.end,
+        votingStartTime: null,
+        votingEndTime: null,
+        targetLatitude: template.targetLatitude,
+        targetLongitude: template.targetLongitude,
+        expectedValue: template.expectedValue,
+        autoApprove: template.autoApprove,
+      })
+      .returning({ id: challenges.id, status: challenges.status });
 
     if (created[0]) {
       results.push({ id: created[0].id, status: created[0].status, created: true });

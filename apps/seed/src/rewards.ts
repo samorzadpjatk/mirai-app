@@ -6,43 +6,46 @@ import type { RewardConfig, AuthUserByEmail } from "./types";
 import { rewards } from "@mirai-app/db";
 
 function isRewardConfig(value: unknown): value is RewardConfig {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== "object" || value === null) return false;
   const reward = value as Record<string, unknown>;
   return (
-    typeof reward.name === 'string' &&
-    typeof reward.description === 'string' &&
-    typeof reward.availableQuantity === 'number' &&
-    typeof reward.coinCost === 'number'
+    typeof reward.name === "string" &&
+    typeof reward.description === "string" &&
+    typeof reward.availableQuantity === "number" &&
+    typeof reward.coinCost === "number"
   );
 }
 
-export const loadRewardConfigs = async (envRoot: string, rewardsPath: string): Promise<RewardConfig[]> => {
+export const loadRewardConfigs = async (
+  envRoot: string,
+  rewardsPath: string,
+): Promise<RewardConfig[]> => {
   const fullPath = joinPath(envRoot, rewardsPath);
   const content = await readTextFile(fullPath);
   const parsed: unknown = yaml.parse(content);
-  
+
   if (!Array.isArray(parsed)) {
     throw new Error(`Rewards config must be an array: ${fullPath}`);
   }
-  
+
   return parsed.filter(isRewardConfig);
 };
 
 export const seedRewards = async (
   rewardConfigs: RewardConfig[],
   tripId: string,
-  authUsers: AuthUserByEmail
+  authUsers: AuthUserByEmail,
 ) => {
   let dbUser = null;
-  
+
   for (const [, authUser] of authUsers.entries()) {
     try {
       const user = await db.query.users.findFirst({
         where: (u, { eq }) => eq(u.authUserId, authUser.id),
       });
-      
+
       if (user) {
-        if (user.role === 'ADMIN' || user.role === 'MODERATOR') {
+        if (user.role === "ADMIN" || user.role === "MODERATOR") {
           dbUser = user;
           break;
         }
@@ -52,7 +55,7 @@ export const seedRewards = async (
       continue;
     }
   }
-  
+
   if (!dbUser) {
     console.warn("No valid database user found to create rewards");
     return;
@@ -63,8 +66,8 @@ export const seedRewards = async (
   for (const rewardConfig of rewardConfigs) {
     try {
       let imagePath = rewardConfig.image;
-      if (imagePath && !imagePath.startsWith('rewards/')) {
-        imagePath = `rewards/${imagePath.split('/').pop()}`;
+      if (imagePath && !imagePath.startsWith("rewards/")) {
+        imagePath = `rewards/${imagePath.split("/").pop()}`;
       }
 
       await db.insert(rewards).values({

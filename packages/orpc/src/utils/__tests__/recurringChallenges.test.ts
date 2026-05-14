@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   ensureRecurringInstanceForTemplate,
@@ -32,16 +29,16 @@ describe("recurringChallenges", () => {
         values: vi.fn((data) => ({
           returning: vi.fn(() => {
             const result = challengeMock.create({ data });
-            return result instanceof Promise ? result.then((r: unknown) => [r]) : Promise.resolve([result]);
+            return result instanceof Promise
+              ? result.then((r: unknown) => [r])
+              : Promise.resolve([result]);
           }),
         })),
       })),
     } as unknown as TransactionDB;
   });
 
-  const createMockTemplate = (
-    overrides: Partial<RecurringTemplate> = {}
-  ): RecurringTemplate => ({
+  const createMockTemplate = (overrides: Partial<RecurringTemplate> = {}): RecurringTemplate => ({
     id: "template-1",
     tripId: "trip-1",
     name: "Daily Challenge",
@@ -151,7 +148,6 @@ describe("recurringChallenges", () => {
     });
 
     it("should return existing instance if found", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue({
         id: "existing-1",
         status: "ACTIVE",
@@ -166,14 +162,13 @@ describe("recurringChallenges", () => {
       });
 
       expect(result).toEqual({ id: "existing-1", status: "ACTIVE", created: false });
-       
+
       expect(mockTx.challenge.findFirst).toHaveBeenCalled();
     });
 
     it("should create new instance if not found", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -188,12 +183,11 @@ describe("recurringChallenges", () => {
       });
 
       expect(result).toEqual({ id: "new-1", status: "ACTIVE", created: true });
-       
+
       expect(mockTx.challenge.create).toHaveBeenCalled();
     });
 
     it("should use createdAt as fallback when startTime is null", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue({
         id: "existing-1",
         status: "ACTIVE",
@@ -210,14 +204,12 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T12:00:00"),
       });
 
-       
       expect(mockTx.challenge.findFirst).toHaveBeenCalled();
     });
 
     it("should create instance with correct day index", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -233,21 +225,18 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-03T12:00:00"),
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           data: expect.objectContaining({
             name: "Daily Challenge #3",
           }),
-        })
+        }),
       );
     });
 
     it("should set VISIBLE status when now is before daily start", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "VISIBLE",
@@ -261,21 +250,18 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T08:00:00"),
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           data: expect.objectContaining({
             status: "VISIBLE",
           }),
-        })
+        }),
       );
     });
 
     it("should set ACTIVE status when now is within daily bounds", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -289,21 +275,18 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T12:00:00"),
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           data: expect.objectContaining({
             status: "ACTIVE",
           }),
-        })
+        }),
       );
     });
 
     it("should set COMPLETED status when now is after daily end", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "COMPLETED",
@@ -317,21 +300,18 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T20:00:00"),
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalledWith(
         expect.objectContaining({
-           
           data: expect.objectContaining({
             status: "COMPLETED",
           }),
-        })
+        }),
       );
     });
 
     it("should handle daily end time on next day", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -348,7 +328,6 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T22:00:00"),
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalled();
     });
   });
@@ -391,9 +370,8 @@ describe("recurringChallenges", () => {
     });
 
     it("should create instances for all days in range", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -411,18 +389,16 @@ describe("recurringChallenges", () => {
       });
 
       expect(result).toHaveLength(3);
-       
+
       expect(mockTx.challenge.create).toHaveBeenCalledTimes(3);
     });
 
     it("should skip existing instances", async () => {
-       
       mockTx.challenge.findFirst
         .mockResolvedValueOnce({ id: "existing-1", status: "ACTIVE" })
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: "existing-2", status: "ACTIVE" });
 
-       
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -440,7 +416,7 @@ describe("recurringChallenges", () => {
       });
 
       expect(result).toHaveLength(3);
-       
+
       expect(mockTx.challenge.create).toHaveBeenCalledTimes(1);
       expect(result[0]!.created).toBe(false);
       expect(result[1]!.created).toBe(true);
@@ -448,7 +424,6 @@ describe("recurringChallenges", () => {
     });
 
     it("should skip days with invalid daily bounds", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
 
       const template = createMockTemplate({
@@ -467,9 +442,8 @@ describe("recurringChallenges", () => {
     });
 
     it("should use startTime as fallback for endTime", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -485,7 +459,6 @@ describe("recurringChallenges", () => {
         template,
       });
 
-       
       expect(mockTx.challenge.create).toHaveBeenCalled();
     });
   });
@@ -497,13 +470,10 @@ describe("recurringChallenges", () => {
         createMockTemplate({ id: "template-2" }),
       ];
 
-       
-      mockTx.challenge.findMany.mockResolvedValue(
-        mockTemplates
-      );
-       
+      mockTx.challenge.findMany.mockResolvedValue(mockTemplates);
+
       mockTx.challenge.findFirst.mockResolvedValue(null);
-       
+
       mockTx.challenge.create.mockResolvedValue({
         id: "new-1",
         status: "ACTIVE",
@@ -515,13 +485,11 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T12:00:00"),
       });
 
-       
       expect(mockTx.challenge.findMany).toHaveBeenCalled();
       expect(result.length).toBeGreaterThan(0);
     });
 
     it("should return empty array when no recurring templates exist", async () => {
-       
       mockTx.challenge.findMany.mockResolvedValue([]);
 
       const result = await ensureRecurringInstancesForTrip({
@@ -535,7 +503,6 @@ describe("recurringChallenges", () => {
 
   describe("resolveRecurringChallengeIdForTrip", () => {
     it("should return null when challenge not found", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue(null);
 
       const result = await resolveRecurringChallengeIdForTrip({
@@ -548,7 +515,6 @@ describe("recurringChallenges", () => {
     });
 
     it("should return challenge ID when not recurring", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue({
         id: "challenge-1",
         isRecurring: false,
@@ -564,7 +530,6 @@ describe("recurringChallenges", () => {
     });
 
     it("should return instance ID when challenge is recurring", async () => {
-       
       mockTx.challenge.findFirst.mockResolvedValue({
         id: "template-1",
         tripId: "trip-1",
@@ -590,7 +555,6 @@ describe("recurringChallenges", () => {
         isRecurring: true,
       });
 
-       
       mockTx.challenge.findFirst
         .mockResolvedValueOnce({
           id: "template-1",
@@ -632,7 +596,6 @@ describe("recurringChallenges", () => {
     });
 
     it("should return template ID when instance creation fails", async () => {
-       
       mockTx.challenge.findFirst
         .mockResolvedValueOnce({
           id: "template-1",
@@ -661,7 +624,7 @@ describe("recurringChallenges", () => {
         .mockResolvedValueOnce(null);
 
       // Mock create to return null to simulate instance creation failure
-       
+
       mockTx.challenge.create.mockResolvedValue(null);
 
       const result = await resolveRecurringChallengeIdForTrip({

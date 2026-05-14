@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  normalizeFsPath,
-  normalizePath,
-  joinPath,
-  dirname,
-  basename,
-  relativePath,
-} from "../path";
+import { normalizeFsPath, normalizePath, joinPath, dirname, basename, relativePath } from "../path";
 
 describe("Path Utilities", () => {
   describe("normalizeFsPath", () => {
@@ -159,7 +152,9 @@ describe("Path Utilities", () => {
     });
 
     it("should handle file to file", () => {
-      expect(relativePath("/root/dir1/file1.txt", "/root/dir2/file2.txt")).toBe("../../dir2/file2.txt");
+      expect(relativePath("/root/dir1/file1.txt", "/root/dir2/file2.txt")).toBe(
+        "../../dir2/file2.txt",
+      );
     });
 
     it("should handle parent directory", () => {
@@ -178,7 +173,9 @@ describe("Path Utilities", () => {
   describe("Edge cases", () => {
     it("should handle paths with spaces", () => {
       expect(normalizeFsPath("C:\\Program Files\\My App")).toBe("C:/Program Files/My App");
-      expect(joinPath("/path with spaces", "subdir", "file.txt")).toBe("/path with spaces/subdir/file.txt");
+      expect(joinPath("/path with spaces", "subdir", "file.txt")).toBe(
+        "/path with spaces/subdir/file.txt",
+      );
     });
 
     it("should handle paths with special characters", () => {

@@ -1,12 +1,5 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  buildAuthEmailLookup,
-  buildAuthUserSummaryLookup,
-  resolveAuthEmail,
-} from "../authEmails";
+import { buildAuthEmailLookup, buildAuthUserSummaryLookup, resolveAuthEmail } from "../authEmails";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { noop } from "@mirai-app/shared/test-utils";
 
@@ -34,16 +27,11 @@ describe("authEmails", () => {
     });
 
     it("should return empty map for array with only null/undefined values", async () => {
-      const result = await buildAuthEmailLookup(mockSupabase, [
-        null,
-        undefined,
-        null,
-      ]);
+      const result = await buildAuthEmailLookup(mockSupabase, [null, undefined, null]);
       expect(result.size).toBe(0);
     });
 
     it("should fetch email for single user ID", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -57,14 +45,11 @@ describe("authEmails", () => {
       const result = await buildAuthEmailLookup(mockSupabase, ["user-1"]);
 
       expect(result.get("user-1")).toBe("user1@example.com");
-       
-      expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledWith(
-        "user-1"
-      );
+
+      expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledWith("user-1");
     });
 
     it("should fetch emails for multiple user IDs", async () => {
-       
       mockSupabase.auth.admin.getUserById
         .mockResolvedValueOnce({
           data: { user: { id: "user-1", email: "user1@example.com" } },
@@ -75,34 +60,24 @@ describe("authEmails", () => {
           error: null,
         });
 
-      const result = await buildAuthEmailLookup(mockSupabase, [
-        "user-1",
-        "user-2",
-      ]);
+      const result = await buildAuthEmailLookup(mockSupabase, ["user-1", "user-2"]);
 
       expect(result.get("user-1")).toBe("user1@example.com");
       expect(result.get("user-2")).toBe("user2@example.com");
     });
 
     it("should deduplicate user IDs", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
       });
 
-      await buildAuthEmailLookup(mockSupabase, [
-        "user-1",
-        "user-1",
-        "user-1",
-      ]);
+      await buildAuthEmailLookup(mockSupabase, ["user-1", "user-1", "user-1"]);
 
-       
       expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledTimes(1);
     });
 
     it("should handle null email in response", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: null } },
         error: null,
@@ -114,7 +89,6 @@ describe("authEmails", () => {
     });
 
     it("should handle user not found", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
@@ -126,7 +100,6 @@ describe("authEmails", () => {
     });
 
     it("should handle API error and log warning", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "User not found" },
@@ -136,22 +109,17 @@ describe("authEmails", () => {
 
       expect(result.get("user-1")).toBeNull();
       expect(console.warn).toHaveBeenCalledWith(
-        "[Auth] Failed to fetch auth user user-1: User not found"
+        "[Auth] Failed to fetch auth user user-1: User not found",
       );
     });
 
     it("should filter out null/undefined IDs and process valid ones", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: { id: "user-1", email: "user1@example.com" } },
         error: null,
       });
 
-      const result = await buildAuthEmailLookup(mockSupabase, [
-        null,
-        "user-1",
-        undefined,
-      ]);
+      const result = await buildAuthEmailLookup(mockSupabase, [null, "user-1", undefined]);
 
       expect(result.size).toBe(1);
       expect(result.get("user-1")).toBe("user1@example.com");
@@ -165,19 +133,13 @@ describe("authEmails", () => {
     });
 
     it("should return empty map for array with only null/undefined values", async () => {
-      const result = await buildAuthUserSummaryLookup(mockSupabase, [
-        null,
-        undefined,
-      ]);
+      const result = await buildAuthUserSummaryLookup(mockSupabase, [null, undefined]);
       expect(result.size).toBe(0);
     });
 
     it("should build summary for active user", async () => {
-      const futureBanDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+      const futureBanDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -202,7 +164,6 @@ describe("authEmails", () => {
     });
 
     it("should build summary for non-banned user", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -227,11 +188,8 @@ describe("authEmails", () => {
     });
 
     it("should build summary for user with expired ban", async () => {
-      const pastBanDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+      const pastBanDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -252,7 +210,6 @@ describe("authEmails", () => {
     });
 
     it("should handle user with empty banned_until string", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -273,7 +230,6 @@ describe("authEmails", () => {
     });
 
     it("should handle user with invalid ban date", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -293,7 +249,6 @@ describe("authEmails", () => {
     });
 
     it("should handle API error with default summary", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: { message: "API Error" },
@@ -309,12 +264,11 @@ describe("authEmails", () => {
         isBanned: false,
       });
       expect(console.warn).toHaveBeenCalledWith(
-        "[Auth] Failed to fetch auth user user-1: API Error"
+        "[Auth] Failed to fetch auth user user-1: API Error",
       );
     });
 
     it("should deduplicate user IDs", async () => {
-       
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {
           user: {
@@ -329,16 +283,12 @@ describe("authEmails", () => {
 
       await buildAuthUserSummaryLookup(mockSupabase, ["user-1", "user-1"]);
 
-       
       expect(mockSupabase.auth.admin.getUserById).toHaveBeenCalledTimes(1);
     });
 
     it("should handle multiple users with mixed ban statuses", async () => {
-      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-       
       mockSupabase.auth.admin.getUserById
         .mockResolvedValueOnce({
           data: {
@@ -363,10 +313,7 @@ describe("authEmails", () => {
           error: null,
         });
 
-      const result = await buildAuthUserSummaryLookup(mockSupabase, [
-        "user-1",
-        "user-2",
-      ]);
+      const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1", "user-2"]);
 
       expect(result.get("user-1")?.isBanned).toBe(false);
       expect(result.get("user-2")?.isBanned).toBe(true);

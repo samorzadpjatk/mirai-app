@@ -42,8 +42,10 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
       from: (bucket: string) => ({
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
-        getPublicUrl: (path: string) => mockGetPublicUrl(bucket, path) as { data: { publicUrl: string } },
+        upload: (path: string, file: unknown, options: object) =>
+          mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        getPublicUrl: (path: string) =>
+          mockGetPublicUrl(bucket, path) as { data: { publicUrl: string } },
       }),
     },
   },
@@ -91,7 +93,10 @@ vi.mock("../config/db", () => ({
             }
             return Promise.resolve([]);
           },
-          then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) => {
+          then: (
+            onFulfilled: (value: unknown) => unknown,
+            onRejected?: (reason: unknown) => unknown,
+          ) => {
             if (table?.__table === "tripResources") {
               mockTripResourceCreate(data);
             } else if (table?.__table === "tripInsuranceSteps") {
@@ -120,21 +125,23 @@ describe("tripInfo", () => {
 
   describe("loadTripInfoConfig", () => {
     it("should load trip info config from YAML file", async () => {
-      mockReadTextFile.mockResolvedValue(JSON.stringify({
-        resources: [
-          { type: "hero_image", label: "Hero Image", sortOrder: 0 },
-          { type: "map", label: "Map", url: "https://example.com/map", sortOrder: 1 },
-        ],
-        insurance: {
-          label: "Insurance",
-          phoneNumber: "+123",
-          phoneDisplay: "+1 23",
-          policyNumber: "POL123",
-          contractNumber: "CTR456",
-          providerName: "Provider",
-          steps: [],
-        },
-      }));
+      mockReadTextFile.mockResolvedValue(
+        JSON.stringify({
+          resources: [
+            { type: "hero_image", label: "Hero Image", sortOrder: 0 },
+            { type: "map", label: "Map", url: "https://example.com/map", sortOrder: 1 },
+          ],
+          insurance: {
+            label: "Insurance",
+            phoneNumber: "+123",
+            phoneDisplay: "+1 23",
+            policyNumber: "POL123",
+            contractNumber: "CTR456",
+            providerName: "Provider",
+            steps: [],
+          },
+        }),
+      );
 
       const result = await loadTripInfoConfig("/test/assets/dev", "info/trip.yaml");
 
@@ -276,12 +283,9 @@ describe("tripInfo", () => {
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
       expect(mockReadFile).toHaveBeenCalledWith("/test/assets/dev/public/maps/map.pdf");
-      expect(mockUpload).toHaveBeenCalledWith(
-        "files-public",
-        "maps/map.pdf",
-        mockFile,
-        { upsert: true }
-      );
+      expect(mockUpload).toHaveBeenCalledWith("files-public", "maps/map.pdf", mockFile, {
+        upsert: true,
+      });
 
       consoleSpy.mockRestore();
     });
@@ -306,12 +310,7 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockUpload).toHaveBeenCalledWith(
-        "image",
-        "hero.jpg",
-        mockFile,
-        { upsert: true }
-      );
+      expect(mockUpload).toHaveBeenCalledWith("image", "hero.jpg", mockFile, { upsert: true });
 
       consoleSpy.mockRestore();
     });
@@ -362,9 +361,7 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to upload file")
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to upload file"));
 
       consoleSpy.mockRestore();
       warnSpy.mockRestore();
@@ -393,7 +390,7 @@ describe("tripInfo", () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("Failed to process file"),
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleSpy.mockRestore();
@@ -421,9 +418,7 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        "✗ Unknown storage path format: unknown/path/file.txt"
-      );
+      expect(warnSpy).toHaveBeenCalledWith("✗ Unknown storage path format: unknown/path/file.txt");
 
       consoleSpy.mockRestore();
       warnSpy.mockRestore();

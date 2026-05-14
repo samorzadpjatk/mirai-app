@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { ORPCError } from "@orpc/server";
-import {
-  createORPCRouter,
-  adminProcedure,
-  publicProcedure,
-} from "../../api/trpc";
+import { createORPCRouter, adminProcedure, publicProcedure } from "../../api/trpc";
 import { sponsors, tripSponsors } from "@mirai-app/db";
 import { eq, and } from "drizzle-orm";
 
@@ -84,16 +80,21 @@ export const sponsorRouter = createORPCRouter({
       if (!sponsor) {
         throw new ORPCError("NOT_FOUND", { message: "Sponsor not found" });
       }
-      const [updated] = await context.db.update(sponsors).set(data).where(eq(sponsors.id, id)).returning();
+      const [updated] = await context.db
+        .update(sponsors)
+        .set(data)
+        .where(eq(sponsors.id, id))
+        .returning();
       return updated;
     }),
 
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(async ({ context, input }) => {
-      const [sponsor] = await context.db.delete(sponsors).where(eq(sponsors.id, input.id)).returning();
-      return sponsor;
-    }),
+  delete: adminProcedure.input(z.object({ id: z.string() })).handler(async ({ context, input }) => {
+    const [sponsor] = await context.db
+      .delete(sponsors)
+      .where(eq(sponsors.id, input.id))
+      .returning();
+    return sponsor;
+  }),
 
   addToTrip: adminProcedure
     .input(
@@ -118,17 +119,23 @@ export const sponsorRouter = createORPCRouter({
       }
 
       const existing = await context.db.query.tripSponsors.findFirst({
-        where: (ts, { eq, and }) => and(eq(ts.tripId, input.tripId), eq(ts.sponsorId, input.sponsorId)),
+        where: (ts, { eq, and }) =>
+          and(eq(ts.tripId, input.tripId), eq(ts.sponsorId, input.sponsorId)),
       });
 
       if (existing) {
-        throw new ORPCError("CONFLICT", { message: "Sponsor is already associated with this trip" });
+        throw new ORPCError("CONFLICT", {
+          message: "Sponsor is already associated with this trip",
+        });
       }
 
-      const [tripSponsor] = await context.db.insert(tripSponsors).values({
-        tripId: input.tripId,
-        sponsorId: input.sponsorId,
-      }).returning();
+      const [tripSponsor] = await context.db
+        .insert(tripSponsors)
+        .values({
+          tripId: input.tripId,
+          sponsorId: input.sponsorId,
+        })
+        .returning();
       return tripSponsor;
     }),
 
@@ -140,9 +147,12 @@ export const sponsorRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const [tripSponsor] = await context.db.delete(tripSponsors).where(
-        and(eq(tripSponsors.tripId, input.tripId), eq(tripSponsors.sponsorId, input.sponsorId))
-      ).returning();
+      const [tripSponsor] = await context.db
+        .delete(tripSponsors)
+        .where(
+          and(eq(tripSponsors.tripId, input.tripId), eq(tripSponsors.sponsorId, input.sponsorId)),
+        )
+        .returning();
       return tripSponsor;
     }),
 });

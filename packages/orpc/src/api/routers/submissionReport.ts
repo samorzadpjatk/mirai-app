@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { ORPCError } from "@orpc/server";
-import {
-  createORPCRouter,
-  protectedProcedure,
-  moderatorProcedure,
-} from "../../api/trpc";
+import { createORPCRouter, protectedProcedure, moderatorProcedure } from "../../api/trpc";
 import { type DB, challengeSubmissions, challenges, submissionReports } from "@mirai-app/db";
 import { eq, and } from "drizzle-orm";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
@@ -37,25 +33,28 @@ export const submissionReportRouter = createORPCRouter({
       await ensureTripNotEnded(context.db, input.tripId);
       const participant = await ensureTripParticipant(context, input.tripId);
 
-      const submission = await context.db.select({ id: challengeSubmissions.id })
+      const submission = await context.db
+        .select({ id: challengeSubmissions.id })
         .from(challengeSubmissions)
         .innerJoin(challenges, eq(challengeSubmissions.challengeId, challenges.id))
-        .where(and(
-          eq(challengeSubmissions.id, input.submissionId),
-          eq(challenges.tripId, input.tripId)
-        ))
-        .then(rows => rows[0] ?? null);
+        .where(
+          and(eq(challengeSubmissions.id, input.submissionId), eq(challenges.tripId, input.tripId)),
+        )
+        .then((rows) => rows[0] ?? null);
 
       if (!submission) {
         throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
       }
 
-      const [inserted] = await context.db.insert(submissionReports).values({
-        submissionId: input.submissionId,
-        reporterId: participant.id,
-        reason: input.reason,
-        details: input.details,
-      }).returning();
+      const [inserted] = await context.db
+        .insert(submissionReports)
+        .values({
+          submissionId: input.submissionId,
+          reporterId: participant.id,
+          reason: input.reason,
+          details: input.details,
+        })
+        .returning();
 
       if (!inserted) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create report" });
@@ -73,7 +72,9 @@ export const submissionReportRouter = createORPCRouter({
       });
 
       if (!report?.reporter?.user) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to load report relations" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to load report relations",
+        });
       }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [

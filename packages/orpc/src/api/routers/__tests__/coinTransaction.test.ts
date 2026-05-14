@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { coinTransactionRouter } from "../../routers/coinTransaction";
@@ -9,7 +6,8 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, CoinTransaction, Group } from "@mirai-app/db";
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(coinTransactionRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(coinTransactionRouter, { context: ctx });
 
 // Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -102,7 +100,9 @@ describe("coinTransactionRouter", () => {
       coinTransaction: {
         count: vi.fn().mockResolvedValue(10),
         aggregate: vi.fn().mockResolvedValue({ _sum: { amount: 500 }, _count: { id: 10 } }),
-        groupBy: vi.fn().mockResolvedValue([{ adminId: "user-123", _sum: { amount: 500 }, _count: { id: 5 } }]),
+        groupBy: vi
+          .fn()
+          .mockResolvedValue([{ adminId: "user-123", _sum: { amount: 500 }, _count: { id: 5 } }]),
         findMany: vi.fn().mockResolvedValue([createMockCoinTransaction()]),
       },
       group: {
@@ -153,7 +153,10 @@ describe("coinTransactionRouter", () => {
           hasGroupBy = true;
           return chainable;
         };
-        chainable.then = (resolve?: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+        chainable.then = (
+          resolve?: (value: unknown) => unknown,
+          reject?: (reason: unknown) => unknown,
+        ) => {
           let promise: Promise<unknown>;
           if (currentTable === "coin_transactions") {
             if (hasGroupBy && (mockDb.coinTransaction as any).groupBy) {
@@ -174,14 +177,20 @@ describe("coinTransactionRouter", () => {
                 return results;
               });
             } else if (hasCount && !hasTotalAmount && (mockDb.coinTransaction as any).count) {
-              promise = (mockDb.coinTransaction as any).count().then((count: number) => [{ count }]);
+              promise = (mockDb.coinTransaction as any)
+                .count()
+                .then((count: number) => [{ count }]);
             } else if (hasTotalAmount && hasCount && (mockDb.coinTransaction as any).aggregate) {
-              promise = (mockDb.coinTransaction as any).aggregate().then((agg: any) => [{
-                totalAmount: agg?._sum?.amount ?? 0,
-                count: agg?._count?.id ?? 0,
-              }]);
+              promise = (mockDb.coinTransaction as any).aggregate().then((agg: any) => [
+                {
+                  totalAmount: agg?._sum?.amount ?? 0,
+                  count: agg?._count?.id ?? 0,
+                },
+              ]);
             } else if (hasTotalAmount && (mockDb.coinTransaction as any).aggregate) {
-              promise = (mockDb.coinTransaction as any).aggregate().then((agg: any) => [{ totalAmount: agg?._sum?.amount ?? 0 }]);
+              promise = (mockDb.coinTransaction as any)
+                .aggregate()
+                .then((agg: any) => [{ totalAmount: agg?._sum?.amount ?? 0 }]);
             } else if ((mockDb.coinTransaction as any).findMany) {
               promise = (mockDb.coinTransaction as any).findMany();
             } else {
@@ -199,7 +208,9 @@ describe("coinTransactionRouter", () => {
             if (typeof table === "string") {
               currentTable = table;
             } else if (table && typeof table === "object") {
-              const sym = Object.getOwnPropertySymbols(table).find((s) => s.description === "drizzle:Name");
+              const sym = Object.getOwnPropertySymbols(table).find(
+                (s) => s.description === "drizzle:Name",
+              );
               if (sym) {
                 currentTable = (table as Record<symbol, string>)[sym];
               }
@@ -224,9 +235,18 @@ describe("coinTransactionRouter", () => {
     };
 
     (mockDb as any).query = {
-      coinTransactions: { ...mockDb.coinTransaction, findFirst: (mockDb.coinTransaction as any).findFirst ?? vi.fn() },
-      groups: { ...mockDb.group, findFirst: (mockDb.group as any).findFirst ?? vi.fn(() => Promise.resolve(mockGroup)) },
-      tripParticipants: { ...mockDb.tripParticipant, findFirst: (mockDb.tripParticipant as any).findFirst ?? vi.fn() },
+      coinTransactions: {
+        ...mockDb.coinTransaction,
+        findFirst: (mockDb.coinTransaction as any).findFirst ?? vi.fn(),
+      },
+      groups: {
+        ...mockDb.group,
+        findFirst: (mockDb.group as any).findFirst ?? vi.fn(() => Promise.resolve(mockGroup)),
+      },
+      tripParticipants: {
+        ...mockDb.tripParticipant,
+        findFirst: (mockDb.tripParticipant as any).findFirst ?? vi.fn(),
+      },
       users: { ...mockDb.user, findFirst: (mockDb.user as any).findFirst ?? vi.fn() },
     };
 
@@ -250,7 +270,9 @@ describe("coinTransactionRouter", () => {
       })),
     }));
 
-    (mockDb as any).transaction = vi.fn((cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb));
+    (mockDb as any).transaction = vi.fn((cb: (tx: typeof mockDb) => Promise<unknown>) =>
+      cb(mockDb),
+    );
   });
 
   // Helper to create authenticated context
@@ -305,7 +327,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getStatistics({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.count).toHaveBeenCalled();
     });
   });
@@ -344,7 +365,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getMostActiveAdminStats({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.groupBy).toHaveBeenCalled();
     });
   });
@@ -355,7 +375,9 @@ describe("coinTransactionRouter", () => {
         createMockCoinTransaction({ id: "tx-1", amount: 50 }),
         createMockCoinTransaction({ id: "tx-2", amount: -30 }),
       ];
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockTransactions);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTransactions,
+      );
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -370,7 +392,9 @@ describe("coinTransactionRouter", () => {
 
     it("should respect pagination parameters", async () => {
       const mockTransactions = [createMockCoinTransaction({ id: "tx-1" })];
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(mockTransactions);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockTransactions,
+      );
       (mockDb.coinTransaction.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -395,7 +419,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
 
@@ -408,7 +431,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAll({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
   });
@@ -422,7 +444,9 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { groupId: "group-123", _sum: { amount: 500 } },
       ]);
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({ name: "Richest Group" });
+      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        name: "Richest Group",
+      });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -474,7 +498,9 @@ describe("coinTransactionRouter", () => {
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { groupId: "group-123", _sum: { amount: 500 } },
       ]);
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({ name: "Test Group" });
+      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        name: "Test Group",
+      });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -491,11 +517,16 @@ describe("coinTransactionRouter", () => {
         createMockCoinTransaction({ id: "tx-1", amount: 50 }),
         createMockCoinTransaction({ id: "tx-2", amount: -20 }),
       ];
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(recentTransactions);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        recentTransactions,
+      );
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 10 } },
       ]);
-      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ firstName: "Test", lastName: "Admin" });
+      (mockDb.user.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+        firstName: "Test",
+        lastName: "Admin",
+      });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -520,7 +551,9 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should return null when no most active admin", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -532,7 +565,9 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should return null when most active admin not found", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 10 } },
       ]);
@@ -555,7 +590,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getAdditionalInsights({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
   });
@@ -568,7 +602,9 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -576,7 +612,7 @@ describe("coinTransactionRouter", () => {
       const result = await caller.getCoinTransactions({ tripId: "trip-123" });
 
       expect(result).toHaveLength(1);
-       
+
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
 
@@ -588,14 +624,15 @@ describe("coinTransactionRouter", () => {
         groupId: "group-123",
       });
       (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" });
 
-       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
 
@@ -605,9 +642,7 @@ describe("coinTransactionRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.getCoinTransactions({ tripId: "trip-123" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.getCoinTransactions({ tripId: "trip-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when group not found", async () => {
@@ -623,7 +658,7 @@ describe("coinTransactionRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -634,15 +669,15 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb as any).query.groups.findFirst = vi.fn().mockResolvedValue(
-        createMockGroup({ id: "group-123", tripId: "different-trip" })
-      );
+      (mockDb as any).query.groups.findFirst = vi
+        .fn()
+        .mockResolvedValue(createMockGroup({ id: "group-123", tripId: "different-trip" }));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -654,14 +689,14 @@ describe("coinTransactionRouter", () => {
         groupId: "group-123",
       });
       ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockGroup({ id: "group-123", isDeleted: true })
+        createMockGroup({ id: "group-123", isDeleted: true }),
       );
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -678,7 +713,7 @@ describe("coinTransactionRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "non-existent" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -690,14 +725,14 @@ describe("coinTransactionRouter", () => {
         groupId: "group-123",
       });
       ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockGroup({ id: "group-123", tripId: "different-trip" })
+        createMockGroup({ id: "group-123", tripId: "different-trip" }),
       );
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -709,14 +744,14 @@ describe("coinTransactionRouter", () => {
         groupId: "group-123",
       });
       ((mockDb as any).query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockGroup({ id: "group-123", isDeleted: true })
+        createMockGroup({ id: "group-123", isDeleted: true }),
       );
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
       await expect(
-        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" })
+        caller.getCoinTransactions({ tripId: "trip-123", groupId: "group-123" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -734,7 +769,6 @@ describe("coinTransactionRouter", () => {
 
       await caller.getCoinTransactions({ tripId: "trip-123" });
 
-       
       expect(mockDb.coinTransaction.findMany).toHaveBeenCalled();
     });
 
@@ -749,7 +783,9 @@ describe("coinTransactionRouter", () => {
         tripId: "trip-123",
         groupId: "group-123",
       });
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([transaction]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        transaction,
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -768,7 +804,7 @@ describe("coinTransactionRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing missing required field
-        caller.getStatistics({})
+        caller.getStatistics({}),
       ).rejects.toThrow();
     });
 
@@ -780,7 +816,7 @@ describe("coinTransactionRouter", () => {
         caller.getAll({
           tripId: "trip-123",
           pagination: { limit: 101, offset: 0 },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -792,7 +828,7 @@ describe("coinTransactionRouter", () => {
         caller.getAll({
           tripId: "trip-123",
           pagination: { limit: 10, offset: -1 },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -804,14 +840,16 @@ describe("coinTransactionRouter", () => {
         caller.getCoinTransactions({
           tripId: "trip-123",
           limit: 101,
-        })
+        }),
       ).rejects.toThrow();
     });
   });
 
   describe("formatUserFullName helper", () => {
     it("should format full name correctly", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
@@ -835,7 +873,9 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should handle only first name", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
@@ -859,7 +899,9 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should handle only last name", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);
@@ -883,7 +925,9 @@ describe("coinTransactionRouter", () => {
     });
 
     it("should return Unknown user when no name", async () => {
-      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([createMockCoinTransaction()]);
+      (mockDb.coinTransaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockCoinTransaction(),
+      ]);
       (mockDb.coinTransaction.groupBy as ReturnType<typeof vi.fn>).mockResolvedValue([
         { adminId: "admin-1", _count: { id: 5 } },
       ]);

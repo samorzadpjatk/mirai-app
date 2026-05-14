@@ -42,7 +42,7 @@ describe("SupabaseProvider", () => {
     const { getByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <TestChild />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("test-child")).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("SupabaseProvider", () => {
         <div>Child 1</div>
         <div>Child 2</div>
         <div>Child 3</div>
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(container.textContent).toContain("Child 1");
@@ -73,7 +73,7 @@ describe("SupabaseProvider", () => {
     const { getByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <NestedComponent />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("nested")).toBeInTheDocument();
@@ -84,16 +84,14 @@ describe("SupabaseProvider", () => {
     const { container } = render(
       <SupabaseProvider client={mockClient}>
         <div>Test</div>
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(container).toBeDefined();
   });
 
   it("should handle null children gracefully", () => {
-    const { container } = render(
-      <SupabaseProvider client={mockClient}>{null}</SupabaseProvider>
-    );
+    const { container } = render(<SupabaseProvider client={mockClient}>{null}</SupabaseProvider>);
 
     expect(container).toBeDefined();
   });
@@ -105,7 +103,7 @@ describe("SupabaseProvider", () => {
           <div>Fragment Child 1</div>
           <div>Fragment Child 2</div>
         </>
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(container.textContent).toContain("Fragment Child 1");
@@ -197,11 +195,7 @@ describe("useSupabaseClient", () => {
 
     const InnerComponent = () => {
       const client = useSupabaseClient();
-      return (
-        <div data-testid="inner-client">
-          {client === mockClient2 ? "client2" : "client1"}
-        </div>
-      );
+      return <div data-testid="inner-client">{client === mockClient2 ? "client2" : "client1"}</div>;
     };
 
     const OuterComponent = () => {
@@ -219,7 +213,7 @@ describe("useSupabaseClient", () => {
     const { getByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <OuterComponent />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("outer-client").textContent).toContain("client1");
@@ -230,9 +224,7 @@ describe("useSupabaseClient", () => {
     const DeepChild = () => {
       const client = useSupabaseClient();
       return (
-        <div data-testid="deep-child">
-          {client === mockClient ? "has-client" : "no-client"}
-        </div>
+        <div data-testid="deep-child">{client === mockClient ? "has-client" : "no-client"}</div>
       );
     };
 
@@ -247,7 +239,7 @@ describe("useSupabaseClient", () => {
         <div data-testid="outer">
           <MiddleComponent />
         </div>
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("deep-child").textContent).toBe("has-client");
@@ -263,7 +255,7 @@ describe("useSupabaseClient", () => {
     const { getByTestId, rerender, queryByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <ConditionalComponent show={false} />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(queryByTestId("conditional")).toBeNull();
@@ -271,7 +263,7 @@ describe("useSupabaseClient", () => {
     rerender(
       <SupabaseProvider client={mockClient}>
         <ConditionalComponent show={true} />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("conditional").textContent).toBe("has-client");
@@ -286,7 +278,7 @@ describe("useSupabaseClient", () => {
     const { getByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <MemoizedComponent />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("memoized").textContent).toBe("has-client");
@@ -309,7 +301,7 @@ describe("useSupabaseClient", () => {
     const { getByTestId } = render(
       <SupabaseProvider client={mockClient}>
         <EffectComponent />
-      </SupabaseProvider>
+      </SupabaseProvider>,
     );
 
     expect(getByTestId("effect-result").textContent).toBe("effect-called");

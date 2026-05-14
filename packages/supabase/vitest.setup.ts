@@ -7,11 +7,8 @@ const originalConsoleInfo = console.info;
 const originalConsoleDebug = console.debug;
 
 const shouldSuppress = (message: string): boolean => {
-  const suppressedPatterns = [
-    /\[Supabase\]/,
-    /Creating client with URL/,
-  ];
-  return suppressedPatterns.some(pattern => pattern.test(message));
+  const suppressedPatterns = [/\[Supabase\]/, /Creating client with URL/];
+  return suppressedPatterns.some((pattern) => pattern.test(message));
 };
 
 console.log = (...args: any[]) => {

@@ -33,7 +33,9 @@ export const createAuthUserByEmail = async (
     app_metadata: { role },
   });
   if (error || !data.user) {
-    console.warn(`Failed to create Supabase Auth user for ${email}: ${error?.message ?? "unknown error"}`);
+    console.warn(
+      `Failed to create Supabase Auth user for ${email}: ${error?.message ?? "unknown error"}`,
+    );
     return null;
   }
   console.log(`Created Supabase Auth user for ${email}`);
@@ -46,7 +48,9 @@ export const ensureGhostAuthUser = async (authUsers: AuthUserByEmail) => {
   const user = authUsers.get(email.toLowerCase()) ?? null;
   if (user) return user;
   if (!env.seedGhostPassword) {
-    console.warn(`Ghost user ${email} missing and SEED_GHOST_PASSWORD not set; skipping ghost auth creation.`);
+    console.warn(
+      `Ghost user ${email} missing and SEED_GHOST_PASSWORD not set; skipping ghost auth creation.`,
+    );
     return null;
   }
   const { data, error } = await supabase.auth.admin.createUser({

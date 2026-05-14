@@ -7,17 +7,20 @@ import { joinPath } from "./utils/path";
 import { sponsors, tripSponsors } from "@mirai-app/db";
 
 function isSponsorConfig(value: unknown): value is SponsorConfig {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== "object" || value === null) return false;
   const sponsor = value as Record<string, unknown>;
   return (
-    typeof sponsor.id === 'string' &&
-    typeof sponsor.name === 'string' &&
-    typeof sponsor.description === 'string' &&
-    typeof sponsor.logoPath === 'string'
+    typeof sponsor.id === "string" &&
+    typeof sponsor.name === "string" &&
+    typeof sponsor.description === "string" &&
+    typeof sponsor.logoPath === "string"
   );
 }
 
-export const loadSponsorConfigs = async (envRoot: string, sponsorsPath: string): Promise<SponsorConfig[]> => {
+export const loadSponsorConfigs = async (
+  envRoot: string,
+  sponsorsPath: string,
+): Promise<SponsorConfig[]> => {
   const sponsorConfigPath = joinPath(envRoot, sponsorsPath);
   const content = await readTextFile(sponsorConfigPath);
   const parsed: unknown = yaml.parse(content);
@@ -29,7 +32,7 @@ export const seedSponsors = async (
   databaseUrl: string,
   tripId: string,
   seedEnv: SeedEnv,
-  sponsorConfigs: SponsorConfig[]
+  sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
   console.log("Seeding sponsors...");
 
@@ -50,13 +53,16 @@ export const seedSponsors = async (
         isActive: true,
       };
 
-      await db.insert(sponsors).values({
-        id: sponsorConfig.id,
-        ...sponsor,
-      }).onConflictDoUpdate({
-        target: sponsors.id,
-        set: sponsor,
-      });
+      await db
+        .insert(sponsors)
+        .values({
+          id: sponsorConfig.id,
+          ...sponsor,
+        })
+        .onConflictDoUpdate({
+          target: sponsors.id,
+          set: sponsor,
+        });
 
       console.log(`✓ Seeded sponsor: ${sponsorConfig.name}`);
     }
@@ -67,10 +73,13 @@ export const seedSponsors = async (
         sponsorId: sponsorConfig.id,
       };
 
-      await db.insert(tripSponsors).values(tripSponsorData).onConflictDoUpdate({
-        target: [tripSponsors.tripId, tripSponsors.sponsorId],
-        set: tripSponsorData,
-      });
+      await db
+        .insert(tripSponsors)
+        .values(tripSponsorData)
+        .onConflictDoUpdate({
+          target: [tripSponsors.tripId, tripSponsors.sponsorId],
+          set: tripSponsorData,
+        });
 
       console.log(`✓ Associated sponsor ${sponsorConfig.name} with trip`);
     }

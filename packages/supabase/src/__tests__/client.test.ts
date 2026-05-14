@@ -21,18 +21,16 @@ describe("createSupabaseClient", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createBaseSupabaseClient).mockReturnValue(mockSupabaseClient as unknown as ReturnType<typeof createBaseSupabaseClient>);
+    vi.mocked(createBaseSupabaseClient).mockReturnValue(
+      mockSupabaseClient as unknown as ReturnType<typeof createBaseSupabaseClient>,
+    );
   });
 
   describe("basic client creation", () => {
     it("should create a Supabase client with URL and key", () => {
       createSupabaseClient(mockUrl, mockKey);
 
-      expect(createBaseSupabaseClient).toHaveBeenCalledWith(
-        mockUrl,
-        mockKey,
-        expect.any(Object)
-      );
+      expect(createBaseSupabaseClient).toHaveBeenCalledWith(mockUrl, mockKey, expect.any(Object));
     });
 
     it("should return the created Supabase client", () => {
@@ -60,13 +58,14 @@ describe("createSupabaseClient", () => {
           auth: expect.objectContaining({
             storage: mockStorage,
           }),
-        })
+        }),
       );
     });
 
     it("should use in-memory storage when no storage provided and no global localStorage", () => {
       // Ensure globalThis.localStorage is undefined
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
+        .localStorage;
       (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
@@ -80,7 +79,8 @@ describe("createSupabaseClient", () => {
       expect(options.auth?.storage?.removeItem).toBeDefined();
 
       // Restore original localStorage
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
+      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
+        originalLocalStorage;
     });
 
     it("should use global localStorage when available and no storage provided", () => {
@@ -103,7 +103,7 @@ describe("createSupabaseClient", () => {
           auth: expect.objectContaining({
             storage: mockLocalStorage,
           }),
-        })
+        }),
       );
 
       // Clean up
@@ -135,7 +135,7 @@ describe("createSupabaseClient", () => {
           auth: expect.objectContaining({
             storage: mockCustomStorage,
           }),
-        })
+        }),
       );
 
       delete (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
@@ -145,7 +145,8 @@ describe("createSupabaseClient", () => {
   describe("in-memory storage implementation", () => {
     it("should store and retrieve values with in-memory storage", () => {
       // Ensure no global localStorage
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
+        .localStorage;
       (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
@@ -161,11 +162,13 @@ describe("createSupabaseClient", () => {
       expect(value).toBe("test-value");
 
       // Restore
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
+      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
+        originalLocalStorage;
     });
 
     it("should return null for non-existent keys in in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
+        .localStorage;
       (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
@@ -178,11 +181,13 @@ describe("createSupabaseClient", () => {
 
       expect(value).toBeNull();
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
+      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
+        originalLocalStorage;
     });
 
     it("should remove items from in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
+        .localStorage;
       (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
@@ -197,11 +202,13 @@ describe("createSupabaseClient", () => {
 
       expect(value).toBeNull();
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
+      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
+        originalLocalStorage;
     });
 
     it("should handle multiple keys in in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
+        .localStorage;
       (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
@@ -216,7 +223,8 @@ describe("createSupabaseClient", () => {
       expect(storage?.getItem("key1")).toBe("value1");
       expect(storage?.getItem("key2")).toBe("value2");
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
+      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
+        originalLocalStorage;
     });
   });
 
@@ -241,7 +249,7 @@ describe("createSupabaseClient", () => {
             persistSession: false,
             detectSessionInUrl: true,
           }),
-        })
+        }),
       );
     });
 
@@ -271,7 +279,7 @@ describe("createSupabaseClient", () => {
             persistSession: true,
             detectSessionInUrl: true,
           }),
-        })
+        }),
       );
     });
 
@@ -297,7 +305,7 @@ describe("createSupabaseClient", () => {
               eventsPerSecond: 5,
             },
           },
-        })
+        }),
       );
     });
 
@@ -314,7 +322,7 @@ describe("createSupabaseClient", () => {
             persistSession: true,
             detectSessionInUrl: true,
           }),
-        })
+        }),
       );
     });
 
@@ -331,7 +339,7 @@ describe("createSupabaseClient", () => {
             persistSession: true,
             detectSessionInUrl: true,
           }),
-        })
+        }),
       );
     });
 
@@ -373,7 +381,7 @@ describe("createSupabaseClient", () => {
           auth: expect.objectContaining({
             storage: asyncStorage,
           }),
-        })
+        }),
       );
     });
 
@@ -394,7 +402,7 @@ describe("createSupabaseClient", () => {
           auth: expect.objectContaining({
             storage: syncStorage,
           }),
-        })
+        }),
       );
     });
 

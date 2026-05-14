@@ -22,9 +22,7 @@ export class Scheduler {
     }
 
     this.isRunning = true;
-    console.log(
-      `Scheduler started. Running task every ${this.intervalMinutes} minutes.`,
-    );
+    console.log(`Scheduler started. Running task every ${this.intervalMinutes} minutes.`);
 
     // Run immediately (wrap in setTimeout to avoid sync call during start)
     setTimeout(() => {

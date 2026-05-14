@@ -39,10 +39,7 @@ export const RANKING_TEMPLATE_PLACEHOLDERS = {
 
 const PLACEHOLDER_ALIASES: Record<keyof RankingTemplateValues, string[]> = {
   groupName: [RANKING_TEMPLATE_PLACEHOLDERS.groupName, "<nazwa_grupy>"],
-  rankingPosition: [
-    RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition,
-    "<miejsce_w_rankingu>",
-  ],
+  rankingPosition: [RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition, "<miejsce_w_rankingu>"],
   activeChallengesCount: [
     RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount,
     "<liczba-aktywnych-wyzwań>",
@@ -50,10 +47,7 @@ const PLACEHOLDER_ALIASES: Record<keyof RankingTemplateValues, string[]> = {
     "<liczba_aktywnych_wyzwań>",
   ],
   tripName: [RANKING_TEMPLATE_PLACEHOLDERS.tripName, "<nazwa_wycieczki>"],
-  totalGroupsCount: [
-    RANKING_TEMPLATE_PLACEHOLDERS.totalGroupsCount,
-    "<liczba_grup>",
-  ],
+  totalGroupsCount: [RANKING_TEMPLATE_PLACEHOLDERS.totalGroupsCount, "<liczba_grup>"],
   groupMembersCount: [
     RANKING_TEMPLATE_PLACEHOLDERS.groupMembersCount,
     "<liczba-członków-grupy>",
@@ -98,9 +92,7 @@ export const DAILY_RANKING_SCHEDULE_TEMPLATES: ScheduledNotificationTemplate[] =
 export function getDailyRankingScheduleTemplate(
   key: ScheduledNotificationTemplate["key"],
 ): ScheduledNotificationTemplate {
-  const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find(
-    (item) => item.key === key,
-  );
+  const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find((item) => item.key === key);
 
   if (!template) {
     throw new Error(`Unknown scheduled notification template: ${key}`);
@@ -113,20 +105,15 @@ function replaceAll(input: string, searchValue: string, replaceValue: string): s
   return input.split(searchValue).join(replaceValue);
 }
 
-export function applyRankingTemplate(
-  input: string,
-  values: RankingTemplateValues,
-): string {
+export function applyRankingTemplate(input: string, values: RankingTemplateValues): string {
   let output = input;
 
-  (Object.keys(PLACEHOLDER_ALIASES) as (keyof RankingTemplateValues)[]).forEach(
-    (field) => {
-      const value = values[field];
-      PLACEHOLDER_ALIASES[field].forEach((placeholder) => {
-        output = replaceAll(output, placeholder, value);
-      });
-    },
-  );
+  (Object.keys(PLACEHOLDER_ALIASES) as (keyof RankingTemplateValues)[]).forEach((field) => {
+    const value = values[field];
+    PLACEHOLDER_ALIASES[field].forEach((placeholder) => {
+      output = replaceAll(output, placeholder, value);
+    });
+  });
 
   return output;
 }

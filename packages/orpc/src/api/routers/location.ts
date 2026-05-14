@@ -17,15 +17,17 @@ import { tracked } from "../../api/trpc";
 import { ORPCError } from "@orpc/server";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 import { eq, and, ne, inArray } from "drizzle-orm";
-import { locations, locationShares, locationSharingRequests, tripParticipants } from "@mirai-app/db";
+import {
+  locations,
+  locationShares,
+  locationSharingRequests,
+  tripParticipants,
+} from "@mirai-app/db";
 
 /**
  * Check if user is in any active trips (not ended)
  */
-async function ensureUserInActiveTrip(
-  db: DB,
-  userId: string,
-): Promise<void> {
+async function ensureUserInActiveTrip(db: DB, userId: string): Promise<void> {
   const memberships = await db.query.tripParticipants.findMany({
     where: (tp, { eq }) => eq(tp.userId, userId),
     with: {
@@ -107,8 +109,7 @@ export interface SharingSettings {
 const AVATAR_FILE_EXTENSION = "jpg";
 const AVATAR_SIGNED_URL_SECONDS = 60 * 60 * 24;
 
-const getUserAvatarPath = (userId: string): string =>
-  `avatar/${userId}.${AVATAR_FILE_EXTENSION}`;
+const getUserAvatarPath = (userId: string): string => `avatar/${userId}.${AVATAR_FILE_EXTENSION}`;
 
 const getUserAvatarUrl = async (
   supabase: SupabaseClient,
@@ -226,12 +227,15 @@ async function getShareableUserIdsForCurrentUser({
     return new Set();
   }
 
-  const participants = await db.select({ userId: tripParticipants.userId })
+  const participants = await db
+    .select({ userId: tripParticipants.userId })
     .from(tripParticipants)
-    .where(and(
-      inArray(tripParticipants.tripId, scopedTripIds),
-      ne(tripParticipants.userId, currentUserId),
-    ))
+    .where(
+      and(
+        inArray(tripParticipants.tripId, scopedTripIds),
+        ne(tripParticipants.userId, currentUserId),
+      ),
+    )
     .groupBy(tripParticipants.userId);
 
   return new Set(participants.map((participant) => participant.userId));
@@ -254,7 +258,9 @@ async function assertShareableTargets({
   if (uniqueTargetUserIds.length === 0) return;
 
   if (uniqueTargetUserIds.some((targetId) => targetId === currentUserId)) {
-    throw new ORPCError("BAD_REQUEST", { message: "You cannot share location settings with yourself" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "You cannot share location settings with yourself",
+    });
   }
 
   const allowedIds = await getShareableUserIdsForCurrentUser({
@@ -278,12 +284,12 @@ async function assertShareableTargets({
     }
   }
 
-  const invalidTargetIds = uniqueTargetUserIds.filter(
-    (targetId) => !allowedIds.has(targetId),
-  );
+  const invalidTargetIds = uniqueTargetUserIds.filter((targetId) => !allowedIds.has(targetId));
 
   if (invalidTargetIds.length > 0) {
-    throw new ORPCError("BAD_REQUEST", { message: "One or more selected users are outside your allowed sharing scope" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "One or more selected users are outside your allowed sharing scope",
+    });
   }
 }
 
@@ -292,13 +298,28 @@ export const locationRouter = createORPCRouter({
    * WebSocket subscription for updating current user's location
    * Client sends location updates through this subscription
    */
-  updateLocationStream: protectedProcedure
-    .input(locationDataSchema)
-    .handler(async function* ({ context, input }) {
-      // Update location in database
-      const [location] = await context.db.insert(locations)
-        .values({
-          userId: context.dbUser.id,
+  updateLocationStream: protectedProcedure.input(locationDataSchema).handler(async function* ({
+    context,
+    input,
+  }) {
+    // Update location in database
+    const [location] = await context.db
+      .insert(locations)
+      .values({
+        userId: context.dbUser.id,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        accuracy: input.accuracy,
+        altitude: input.altitude,
+        altitudeAccuracy: input.altitudeAccuracy,
+        heading: input.heading,
+        speed: input.speed,
+        timestamp: new Date(),
+        isSharingLocation: true,
+      })
+      .onConflictDoUpdate({
+        target: locations.userId,
+        set: {
           latitude: input.latitude,
           longitude: input.longitude,
           accuracy: input.accuracy,
@@ -308,29 +329,16 @@ export const locationRouter = createORPCRouter({
           speed: input.speed,
           timestamp: new Date(),
           isSharingLocation: true,
-        })
-        .onConflictDoUpdate({
-          target: locations.userId,
-          set: {
-            latitude: input.latitude,
-            longitude: input.longitude,
-            accuracy: input.accuracy,
-            altitude: input.altitude,
-            altitudeAccuracy: input.altitudeAccuracy,
-            heading: input.heading,
-            speed: input.speed,
-            timestamp: new Date(),
-            isSharingLocation: true,
-          },
-        })
-        .returning();
+        },
+      })
+      .returning();
 
-      if (!location) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update location" });
-      }
+    if (!location) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update location" });
+    }
 
-      yield toExpoLocation(location);
-    }),
+    yield toExpoLocation(location);
+  }),
 
   /**
    * Update location sharing settings
@@ -363,7 +371,8 @@ export const locationRouter = createORPCRouter({
       }
 
       // Upsert location for user
-      const [locationRow] = await context.db.insert(locations)
+      const [locationRow] = await context.db
+        .insert(locations)
         .values({
           userId: context.dbUser.id,
           isSharingLocation,
@@ -384,29 +393,37 @@ export const locationRouter = createORPCRouter({
 
       // Update shares if userIdsToShareWith provided
       if ((userIdsToShareWith?.length ?? 0) > 0) {
-        await context.db.delete(locationShares)
+        await context.db
+          .delete(locationShares)
           .where(eq(locationShares.locationId, locationRow.id));
 
-        await context.db.insert(locationShares)
+        await context.db
+          .insert(locationShares)
           .values(userIdsToShareWith!.map((id) => ({ locationId: locationRow.id, userId: id })));
       }
 
       // Query users to share with
-      const shareUserIds = await context.db.select({ userId: locationShares.userId })
+      const shareUserIds = await context.db
+        .select({ userId: locationShares.userId })
         .from(locationShares)
         .where(eq(locationShares.locationId, locationRow.id));
 
-      const usersToShareWith = shareUserIds.length > 0
-        ? await context.db.query.users.findMany({
-            where: (u, { inArray }) => inArray(u.id, shareUserIds.map((s) => s.userId)),
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              hasAvatar: true,
-            },
-          })
-        : [];
+      const usersToShareWith =
+        shareUserIds.length > 0
+          ? await context.db.query.users.findMany({
+              where: (u, { inArray }) =>
+                inArray(
+                  u.id,
+                  shareUserIds.map((s) => s.userId),
+                ),
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                hasAvatar: true,
+              },
+            })
+          : [];
 
       return {
         isSharingLocation: Boolean(locationRow.isSharingLocation),
@@ -435,37 +452,36 @@ export const locationRouter = createORPCRouter({
       const connectionId = input.connectionId ?? crypto.randomUUID();
 
       const { radiusKm, latitude, longitude } = input;
-      if (
-        radiusKm !== undefined &&
-        (latitude === undefined || longitude === undefined)
-      ) {
-        throw new ORPCError("BAD_REQUEST", { message: "When providing radiusKm, both latitude and longitude are required" });
+      if (radiusKm !== undefined && (latitude === undefined || longitude === undefined)) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "When providing radiusKm, both latitude and longitude are required",
+        });
       }
 
       // Emituj początkowe lokalizacje znajomych (filtrowane jeśli radius podany)
-      const shareEntries = await context.db.select({ locationId: locationShares.locationId })
+      const shareEntries = await context.db
+        .select({ locationId: locationShares.locationId })
         .from(locationShares)
         .where(eq(locationShares.userId, context.dbUser.id));
 
       const locationIds = shareEntries.map((s) => s.locationId);
 
-      const dbLocations = locationIds.length > 0
-        ? await context.db.query.locations.findMany({
-            where: (l, { and, eq, inArray }) => and(
-              eq(l.isSharingLocation, true),
-              inArray(l.id, locationIds),
-            ),
-            with: {
-              user: {
-                columns: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
+      const dbLocations =
+        locationIds.length > 0
+          ? await context.db.query.locations.findMany({
+              where: (l, { and, eq, inArray }) =>
+                and(eq(l.isSharingLocation, true), inArray(l.id, locationIds)),
+              with: {
+                user: {
+                  columns: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                  },
                 },
               },
-            },
-          })
-        : [];
+            })
+          : [];
 
       // Track which friends are currently within the radius (when radius filtering is used)
       const inRadius = new Set<string>();
@@ -535,27 +551,25 @@ export const locationRouter = createORPCRouter({
                   const newLocation = payload.new;
 
                   const userIdFromEvent = newLocation.userId;
-                  if (
-                    !userIdFromEvent ||
-                    !allowedFriendIds.has(userIdFromEvent)
-                  ) {
+                  if (!userIdFromEvent || !allowedFriendIds.has(userIdFromEvent)) {
                     return;
                   }
 
                   if (!newLocation.userId || !newLocation.timestamp) {
-                    void context.db.query.locations.findFirst({
-                      where: (l, { eq }) => eq(l.userId, userIdFromEvent),
-                      with: {
-                        user: {
-                          columns: {
-                            id: true,
-                            firstName: true,
-                            lastName: true,
-                            hasAvatar: true,
+                    void context.db.query.locations
+                      .findFirst({
+                        where: (l, { eq }) => eq(l.userId, userIdFromEvent),
+                        with: {
+                          user: {
+                            columns: {
+                              id: true,
+                              firstName: true,
+                              lastName: true,
+                              hasAvatar: true,
+                            },
                           },
                         },
-                      },
-                    })
+                      })
                       .then(async (dbLocation) => {
                         if (!dbLocation) {
                           return;
@@ -576,8 +590,7 @@ export const locationRouter = createORPCRouter({
                             longitude: dbLocation.longitude ?? 0,
                             altitude: dbLocation.altitude ?? null,
                             accuracy: dbLocation.accuracy ?? null,
-                            altitudeAccuracy:
-                              dbLocation.altitudeAccuracy ?? null,
+                            altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,
                             heading: dbLocation.heading ?? null,
                             speed: dbLocation.speed ?? null,
                           },
@@ -697,8 +710,7 @@ export const locationRouter = createORPCRouter({
 
       try {
         while (
-          (channel?.state &&
-            channel?.state === REALTIME_CHANNEL_STATES.joined) ||
+          (channel?.state && channel?.state === REALTIME_CHANNEL_STATES.joined) ||
           queue.length > 0
         ) {
           if (queue.length === 0) {
@@ -722,7 +734,8 @@ export const locationRouter = createORPCRouter({
   updateLocation: protectedProcedure
     .input(locationDataSchema)
     .handler(async ({ context, input }) => {
-      const [location] = await context.db.insert(locations)
+      const [location] = await context.db
+        .insert(locations)
         .values({
           userId: context.dbUser.id,
           latitude: input.latitude,
@@ -767,25 +780,25 @@ export const locationRouter = createORPCRouter({
    * Query to get friends' last known locations (non-stream)
    */
   getFriendsLocations: protectedProcedure.handler(async ({ context }) => {
-    const shareEntries = await context.db.select({ locationId: locationShares.locationId })
+    const shareEntries = await context.db
+      .select({ locationId: locationShares.locationId })
       .from(locationShares)
       .where(eq(locationShares.userId, context.dbUser.id));
 
     const locationIds = shareEntries.map((s) => s.locationId);
 
-    const dbLocations = locationIds.length > 0
-      ? await context.db.query.locations.findMany({
-          where: (l, { and, eq, inArray }) => and(
-            eq(l.isSharingLocation, true),
-            inArray(l.id, locationIds),
-          ),
-          with: {
-            user: {
-              columns: { id: true, firstName: true, lastName: true, hasAvatar: true },
+    const dbLocations =
+      locationIds.length > 0
+        ? await context.db.query.locations.findMany({
+            where: (l, { and, eq, inArray }) =>
+              and(eq(l.isSharingLocation, true), inArray(l.id, locationIds)),
+            with: {
+              user: {
+                columns: { id: true, firstName: true, lastName: true, hasAvatar: true },
+              },
             },
-          },
-        })
-      : [];
+          })
+        : [];
 
     const mapped = await Promise.all(
       dbLocations.map(async (location) => ({
@@ -897,7 +910,8 @@ export const locationRouter = createORPCRouter({
         targetUserIds: [input.userId],
       });
 
-      const [locationRow] = await context.db.insert(locations)
+      const [locationRow] = await context.db
+        .insert(locations)
         .values({
           userId: context.dbUser.id,
           timestamp: new Date(),
@@ -916,25 +930,32 @@ export const locationRouter = createORPCRouter({
         throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to upsert location" });
       }
 
-      await context.db.insert(locationShares)
+      await context.db
+        .insert(locationShares)
         .values({ locationId: locationRow.id, userId: input.userId })
         .onConflictDoNothing();
 
-      const shareUserIds = await context.db.select({ userId: locationShares.userId })
+      const shareUserIds = await context.db
+        .select({ userId: locationShares.userId })
         .from(locationShares)
         .where(eq(locationShares.locationId, locationRow.id));
 
-      const usersToShareWith = shareUserIds.length > 0
-        ? await context.db.query.users.findMany({
-            where: (u, { inArray }) => inArray(u.id, shareUserIds.map((s) => s.userId)),
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              hasAvatar: true,
-            },
-          })
-        : [];
+      const usersToShareWith =
+        shareUserIds.length > 0
+          ? await context.db.query.users.findMany({
+              where: (u, { inArray }) =>
+                inArray(
+                  u.id,
+                  shareUserIds.map((s) => s.userId),
+                ),
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                hasAvatar: true,
+              },
+            })
+          : [];
 
       const usersWithAvatars = await Promise.all(
         usersToShareWith.map((user) => mapUserWithAvatar(context.supabase, user)),
@@ -966,27 +987,33 @@ export const locationRouter = createORPCRouter({
         };
       }
 
-      await context.db.delete(locationShares)
-        .where(and(
-          eq(locationShares.locationId, location.id),
-          eq(locationShares.userId, input.userId),
-        ));
+      await context.db
+        .delete(locationShares)
+        .where(
+          and(eq(locationShares.locationId, location.id), eq(locationShares.userId, input.userId)),
+        );
 
-      const shareUserIds = await context.db.select({ userId: locationShares.userId })
+      const shareUserIds = await context.db
+        .select({ userId: locationShares.userId })
         .from(locationShares)
         .where(eq(locationShares.locationId, location.id));
 
-      const usersToShareWith = shareUserIds.length > 0
-        ? await context.db.query.users.findMany({
-            where: (u, { inArray }) => inArray(u.id, shareUserIds.map((s) => s.userId)),
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              hasAvatar: true,
-            },
-          })
-        : [];
+      const usersToShareWith =
+        shareUserIds.length > 0
+          ? await context.db.query.users.findMany({
+              where: (u, { inArray }) =>
+                inArray(
+                  u.id,
+                  shareUserIds.map((s) => s.userId),
+                ),
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                hasAvatar: true,
+              },
+            })
+          : [];
 
       const usersWithAvatars = await Promise.all(
         usersToShareWith.map((user) => mapUserWithAvatar(context.supabase, user)),
@@ -1016,10 +1043,8 @@ export const locationRouter = createORPCRouter({
       });
 
       const existingRequest = await context.db.query.locationSharingRequests.findFirst({
-        where: (lsr, { and, eq }) => and(
-          eq(lsr.senderId, context.dbUser.id),
-          eq(lsr.receiverId, input.receiverId),
-        ),
+        where: (lsr, { and, eq }) =>
+          and(eq(lsr.senderId, context.dbUser.id), eq(lsr.receiverId, input.receiverId)),
         orderBy: (lsr, { desc }) => [desc(lsr.createdAt)],
       });
 
@@ -1031,7 +1056,8 @@ export const locationRouter = createORPCRouter({
           throw new ORPCError("BAD_REQUEST", { message: "Location sharing already enabled" });
         }
 
-        const [updated] = await context.db.update(locationSharingRequests)
+        const [updated] = await context.db
+          .update(locationSharingRequests)
           .set({ status: "PENDING", updatedAt: new Date() })
           .where(eq(locationSharingRequests.id, existingRequest.id))
           .returning();
@@ -1039,7 +1065,8 @@ export const locationRouter = createORPCRouter({
         return { success: true, request: updated };
       }
 
-      const [request] = await context.db.insert(locationSharingRequests)
+      const [request] = await context.db
+        .insert(locationSharingRequests)
         .values({
           senderId: context.dbUser.id,
           receiverId: input.receiverId,
@@ -1076,13 +1103,15 @@ export const locationRouter = createORPCRouter({
       // Wrap all operations in a transaction for atomicity
       const result = await context.db.transaction(async (tx) => {
         // Update request status
-        const [updatedRequest] = await tx.update(locationSharingRequests)
+        const [updatedRequest] = await tx
+          .update(locationSharingRequests)
           .set({ status: "ACCEPTED" })
           .where(eq(locationSharingRequests.id, input.requestId))
           .returning();
 
         // Upsert sender location
-        const [senderLocation] = await tx.insert(locations)
+        const [senderLocation] = await tx
+          .insert(locations)
           .values({
             userId: request.senderId,
             timestamp: new Date(),
@@ -1095,16 +1124,20 @@ export const locationRouter = createORPCRouter({
           .returning();
 
         if (!senderLocation) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to upsert sender location" });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to upsert sender location",
+          });
         }
 
         // Add sender -> receiver share
-        await tx.insert(locationShares)
+        await tx
+          .insert(locationShares)
           .values({ locationId: senderLocation.id, userId: request.receiverId })
           .onConflictDoNothing();
 
         // Upsert receiver location
-        const [receiverLocation] = await tx.insert(locations)
+        const [receiverLocation] = await tx
+          .insert(locations)
           .values({
             userId: request.receiverId,
             timestamp: new Date(),
@@ -1117,11 +1150,14 @@ export const locationRouter = createORPCRouter({
           .returning();
 
         if (!receiverLocation) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to upsert receiver location" });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to upsert receiver location",
+          });
         }
 
         // Add receiver -> sender share
-        await tx.insert(locationShares)
+        await tx
+          .insert(locationShares)
           .values({ locationId: receiverLocation.id, userId: request.senderId })
           .onConflictDoNothing();
 
@@ -1150,7 +1186,8 @@ export const locationRouter = createORPCRouter({
         throw new ORPCError("FORBIDDEN", { message: "You can only reject requests sent to you" });
       }
 
-      const [updatedRequest] = await context.db.update(locationSharingRequests)
+      const [updatedRequest] = await context.db
+        .update(locationSharingRequests)
         .set({ status: "REJECTED" })
         .where(eq(locationSharingRequests.id, input.requestId))
         .returning();
@@ -1161,34 +1198,30 @@ export const locationRouter = createORPCRouter({
   /**
    * Get pending location sharing requests
    */
-  getPendingLocationSharingRequests: protectedProcedure.handler(
-    async ({ context }) => {
-      const requests = await context.db.query.locationSharingRequests.findMany({
-        where: (lsr, { and, eq }) => and(
-          eq(lsr.receiverId, context.dbUser.id),
-          eq(lsr.status, "PENDING"),
-        ),
-        with: {
-          sender: {
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              hasAvatar: true,
-            },
+  getPendingLocationSharingRequests: protectedProcedure.handler(async ({ context }) => {
+    const requests = await context.db.query.locationSharingRequests.findMany({
+      where: (lsr, { and, eq }) =>
+        and(eq(lsr.receiverId, context.dbUser.id), eq(lsr.status, "PENDING")),
+      with: {
+        sender: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            hasAvatar: true,
           },
         },
-        orderBy: (lsr, { desc }) => [desc(lsr.createdAt)],
-      });
+      },
+      orderBy: (lsr, { desc }) => [desc(lsr.createdAt)],
+    });
 
-      return await Promise.all(
-        requests.map(async (request) => ({
-          ...request,
-          sender: await mapUserWithAvatar(context.supabase, request.sender),
-        })),
-      );
-    },
-  ),
+    return await Promise.all(
+      requests.map(async (request) => ({
+        ...request,
+        sender: await mapUserWithAvatar(context.supabase, request.sender),
+      })),
+    );
+  }),
 
   /**
    * Get all location sharing requests (sent and received)

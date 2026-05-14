@@ -19,11 +19,15 @@ const log = {
   success: (msg: string) => console.log(`${pc.green("✓")} ${msg}`),
   warn: (msg: string) => console.log(`${pc.yellow("⚠")} ${msg}`),
   error: (msg: string) => console.log(`${pc.red("✗")} ${msg}`),
-  step: (n: number, total: number, msg: string) => console.log(`\n${pc.bold(`Step ${n}/${total}: ${msg}`)}`),
+  step: (n: number, total: number, msg: string) =>
+    console.log(`\n${pc.bold(`Step ${n}/${total}: ${msg}`)}`),
 };
 
-
-function run(cmd: string, args: string[], opts?: { cwd?: string; env?: NodeJS.ProcessEnv }): Promise<number> {
+function run(
+  cmd: string,
+  args: string[],
+  opts?: { cwd?: string; env?: NodeJS.ProcessEnv },
+): Promise<number> {
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, {
       stdio: "inherit",
@@ -37,14 +41,20 @@ function run(cmd: string, args: string[], opts?: { cwd?: string; env?: NodeJS.Pr
   });
 }
 
-function runSilent(cmd: string, args: string[], opts?: { cwd?: string }): Promise<{ stdout: string; code: number }> {
+function runSilent(
+  cmd: string,
+  args: string[],
+  opts?: { cwd?: string },
+): Promise<{ stdout: string; code: number }> {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
       stdio: ["ignore", "pipe", "pipe"],
       cwd: opts?.cwd,
     });
     let stdout = "";
-    child.stdout?.on("data", (d) => { stdout += d.toString(); });
+    child.stdout?.on("data", (d) => {
+      stdout += d.toString();
+    });
     child.on("close", (code) => resolve({ stdout, code: code ?? 1 }));
   });
 }
@@ -68,9 +78,14 @@ async function waitForPostgres(): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     const { code } = await runSilent("docker", [
       "compose",
-      "-f", COMPOSE_FILE,
-      "exec", "-T", "db",
-      "pg_isready", "-U", "postgres",
+      "-f",
+      COMPOSE_FILE,
+      "exec",
+      "-T",
+      "db",
+      "pg_isready",
+      "-U",
+      "postgres",
     ]);
     if (code === 0) {
       log.success("PostgreSQL is ready");
@@ -83,7 +98,6 @@ async function waitForPostgres(): Promise<boolean> {
   log.error("PostgreSQL failed to become ready after 60 seconds");
   return false;
 }
-
 
 async function main() {
   console.log(`${pc.bold("MIRAI Dev Environment Setup")}\n`);
@@ -105,7 +119,6 @@ async function main() {
   }
   log.success("Environment file found");
 
-
   log.step(2, 5, "Start Docker environment");
   try {
     await run("docker", ["compose", "-f", COMPOSE_FILE, "up", "-d"], { cwd: ENV_DIR });
@@ -115,7 +128,6 @@ async function main() {
     process.exit(1);
   }
 
-
   log.step(3, 5, "Wait for database");
   const pgReady = await waitForPostgres();
   if (!pgReady) {
@@ -123,7 +135,6 @@ async function main() {
     console.log(`  docker compose -f ${COMPOSE_FILE} logs db`);
     process.exit(1);
   }
-
 
   log.step(4, 5, "Push Drizzle schema");
   try {
@@ -133,7 +144,6 @@ async function main() {
     log.error("Failed to push Drizzle schema");
     process.exit(1);
   }
-
 
   log.step(5, 5, "Seed database");
   try {

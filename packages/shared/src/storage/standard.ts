@@ -5,12 +5,12 @@
 
 // Standard bucket names - these should match environment variables
 export const STANDARD_BUCKETS = {
-  IMAGES: 'images',
-  VIDEOS: 'videos', 
-  PUBLIC: 'files-public'
+  IMAGES: "images",
+  VIDEOS: "videos",
+  PUBLIC: "files-public",
 } as const;
 
-export type StandardBucket = typeof STANDARD_BUCKETS[keyof typeof STANDARD_BUCKETS];
+export type StandardBucket = (typeof STANDARD_BUCKETS)[keyof typeof STANDARD_BUCKETS];
 
 /**
  * Normalizes a storage path according to the established standard
@@ -21,13 +21,13 @@ export type StandardBucket = typeof STANDARD_BUCKETS[keyof typeof STANDARD_BUCKE
  */
 export const normalizeStoragePath = (rawPath: string): string => {
   return rawPath
-    .replace(/\\/g, '/') // Convert Windows paths
-    .replace(/^\/+/, '') // Remove leading slashes
-    .replace(/\/+$/, '') // Remove trailing slashes
-    .split('/')
+    .replace(/\\/g, "/") // Convert Windows paths
+    .replace(/^\/+/, "") // Remove leading slashes
+    .replace(/\/+$/, "") // Remove trailing slashes
+    .split("/")
     .filter(Boolean) // Remove empty segments
-    .map(segment => decodeURIComponent(segment)) // Decode URI components
-    .join('/');
+    .map((segment) => decodeURIComponent(segment)) // Decode URI components
+    .join("/");
 };
 
 /**
@@ -36,22 +36,22 @@ export const normalizeStoragePath = (rawPath: string): string => {
  */
 export const normalizeBucketName = (bucket: string | null | undefined): StandardBucket | null => {
   if (!bucket) return null;
-  
+
   const normalized = bucket.toLowerCase();
-  
+
   // Check if it's already a standard bucket name
   if (Object.values(STANDARD_BUCKETS).includes(normalized as StandardBucket)) {
     return normalized as StandardBucket;
   }
-  
+
   // Handle common aliases
   const aliases: Record<string, StandardBucket> = {
-    'image': STANDARD_BUCKETS.IMAGES,
-    'video': STANDARD_BUCKETS.VIDEOS,
-    'public': STANDARD_BUCKETS.PUBLIC,
-    'file-public': STANDARD_BUCKETS.PUBLIC
+    image: STANDARD_BUCKETS.IMAGES,
+    video: STANDARD_BUCKETS.VIDEOS,
+    public: STANDARD_BUCKETS.PUBLIC,
+    "file-public": STANDARD_BUCKETS.PUBLIC,
   };
-  
+
   return aliases[normalized] ?? null;
 };
 
@@ -66,17 +66,19 @@ export const createStoragePath = (bucket: StandardBucket, objectPath: string): s
 /**
  * Parses a storage path into bucket and object path components
  */
-export const parseStoragePath = (fullPath: string): { bucket: StandardBucket; path: string } | null => {
+export const parseStoragePath = (
+  fullPath: string,
+): { bucket: StandardBucket; path: string } | null => {
   const normalized = normalizeStoragePath(fullPath);
   if (!normalized) return null;
-  
-  const segments = normalized.split('/');
+
+  const segments = normalized.split("/");
   if (segments.length < 2) return null;
-  
+
   const bucketSegment = segments[0];
   const bucket = normalizeBucketName(bucketSegment);
   if (!bucket) return null;
-  
-  const path = segments.slice(1).join('/');
+
+  const path = segments.slice(1).join("/");
   return { bucket, path };
 };

@@ -1,22 +1,8 @@
 import { z } from "zod";
 import { ORPCError } from "@orpc/server";
-import {
-  createORPCRouter,
-  adminProcedure,
-  protectedProcedure,
-} from "../../api/trpc";
-import {
-  eq,
-  and,
-  count,
-  inArray,
-  notInArray,
-  lte,
-} from "drizzle-orm";
-import {
-  challenges,
-  challengeSubmissions,
-} from "@mirai-app/db";
+import { createORPCRouter, adminProcedure, protectedProcedure } from "../../api/trpc";
+import { eq, and, count, inArray, notInArray, lte } from "drizzle-orm";
+import { challenges, challengeSubmissions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import {
@@ -95,9 +81,7 @@ const normalizeChallengeImageInput = (value: string | undefined) => {
 
 // expectedValue holds the QR code value or the required text phrase.
 // It is stored directly in the dedicated DB column — no encoding needed.
-const toClientChallenge = <
-  T extends { description: string | null; expectedValue: string | null },
->(
+const toClientChallenge = <T extends { description: string | null; expectedValue: string | null }>(
   challenge: T,
 ) => ({
   ...challenge,
@@ -125,13 +109,17 @@ const validatePeerVotingTimeline = (input: {
     input.submissionType !== "IMAGE" &&
     input.submissionType !== "VIDEO"
   ) {
-    throw new ORPCError("BAD_REQUEST", { message: "Peer voting is supported only for IMAGE or VIDEO challenges" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Peer voting is supported only for IMAGE or VIDEO challenges",
+    });
   }
 
   if (input.scoringCategory !== "PEER_VOTING") return;
 
   if (!input.endTime) {
-    throw new ORPCError("BAD_REQUEST", { message: "Peer voting challenge requires submission end time" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Peer voting challenge requires submission end time",
+    });
   }
 
   const hasDuration =
@@ -141,7 +129,9 @@ const validatePeerVotingTimeline = (input: {
   const hasWindow = Boolean(input.votingStartTime) && Boolean(input.votingEndTime);
 
   if (!hasDuration && !hasWindow) {
-    throw new ORPCError("BAD_REQUEST", { message: "Peer voting challenge requires voting duration in hours or days" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Peer voting challenge requires voting duration in hours or days",
+    });
   }
 
   if (
@@ -150,7 +140,9 @@ const validatePeerVotingTimeline = (input: {
       input.votingDurationHours < 1 ||
       input.votingDurationHours > MAX_PEER_VOTING_DURATION_HOURS)
   ) {
-    throw new ORPCError("BAD_REQUEST", { message: `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    });
   }
 
   if (
@@ -158,7 +150,9 @@ const validatePeerVotingTimeline = (input: {
     input.votingEndTime &&
     input.votingStartTime >= input.votingEndTime
   ) {
-    throw new ORPCError("BAD_REQUEST", { message: "Voting start time must be before voting end time" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Voting start time must be before voting end time",
+    });
   }
 };
 
@@ -193,9 +187,7 @@ const resolvePeerVotingTemplateWindow = (params: {
   votingDurationHours: number;
 }) => {
   const votingStartTime = new Date(params.submissionEndTime);
-  const votingEndTime = new Date(
-    votingStartTime.getTime() + params.votingDurationHours * HOUR_MS,
-  );
+  const votingEndTime = new Date(votingStartTime.getTime() + params.votingDurationHours * HOUR_MS);
 
   return {
     votingStartTime,
@@ -213,7 +205,9 @@ const validateRecurringTimeline = (input: {
   if (!input.isRecurring) return;
 
   if (!input.dailyStartTime || !input.dailyEndTime) {
-    throw new ORPCError("BAD_REQUEST", { message: "Recurring challenge requires daily start and end time" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Recurring challenge requires daily start and end time",
+    });
   }
 
   if (!input.recurringDays || input.recurringDays < 1) {
@@ -221,7 +215,9 @@ const validateRecurringTimeline = (input: {
   }
 
   if (input.scoringCategory === "PEER_VOTING") {
-    throw new ORPCError("BAD_REQUEST", { message: "Recurring peer voting challenges are not supported" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Recurring peer voting challenges are not supported",
+    });
   }
 };
 
@@ -243,10 +239,7 @@ const addDays = (date: Date, days: number) => {
   return value;
 };
 
-const inferRecurringDaysFromWindow = (
-  startTime?: Date | null,
-  endTime?: Date | null,
-) => {
+const inferRecurringDaysFromWindow = (startTime?: Date | null, endTime?: Date | null) => {
   if (!startTime || !endTime) return null;
   const start = startOfDay(startTime);
   const end = startOfDay(endTime);
@@ -265,15 +258,14 @@ const resolveRecurringDays = (params: {
     throw new ORPCError("BAD_REQUEST", { message: "Recurring challenge requires number of days" });
   }
   if (!Number.isInteger(value) || value > MAX_RECURRING_DAYS) {
-    throw new ORPCError("BAD_REQUEST", { message: `Recurring days must be an integer between 1 and ${MAX_RECURRING_DAYS}` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Recurring days must be an integer between 1 and ${MAX_RECURRING_DAYS}`,
+    });
   }
   return value;
 };
 
-const resolveRecurringTemplateWindow = (params: {
-  anchorDate: Date;
-  recurringDays: number;
-}) => {
+const resolveRecurringTemplateWindow = (params: { anchorDate: Date; recurringDays: number }) => {
   const anchorDay = startOfDay(params.anchorDate);
   const endDay = addDays(anchorDay, params.recurringDays - 1);
   return {
@@ -339,10 +331,7 @@ const resolveChallengeImages = async <T extends { image: string | null }>(
     })),
   );
 
-const activateVisibleChallenges = async (
-  db: DB,
-  where?: { id?: string; tripId?: string },
-) => {
+const activateVisibleChallenges = async (db: DB, where?: { id?: string; tripId?: string }) => {
   const now = new Date();
 
   const visibleConditions = [
@@ -428,8 +417,7 @@ export const challengeRouter = createORPCRouter({
 
       const [challengeRows, totalResult] = await Promise.all([
         context.db.query.challenges.findMany({
-          where: (c, { eq, and }) =>
-            and(eq(c.tripId, input.tripId), eq(c.isRecurring, false)),
+          where: (c, { eq, and }) => and(eq(c.tripId, input.tripId), eq(c.isRecurring, false)),
           columns: challengeColumns,
           orderBy: (c, { desc }) => [desc(c.createdAt)],
           limit,
@@ -438,12 +426,7 @@ export const challengeRouter = createORPCRouter({
         context.db
           .select({ count: count() })
           .from(challenges)
-          .where(
-            and(
-              eq(challenges.tripId, input.tripId),
-              eq(challenges.isRecurring, false),
-            ),
-          ),
+          .where(and(eq(challenges.tripId, input.tripId), eq(challenges.isRecurring, false))),
       ]);
 
       const total = totalResult[0]?.count ?? 0;
@@ -495,10 +478,7 @@ export const challengeRouter = createORPCRouter({
       const myGroupSubmissions = participant?.groupId
         ? await context.db.query.challengeSubmissions.findMany({
             where: (cs, { eq, and, inArray }) =>
-              and(
-                inArray(cs.challengeId, challengeIds),
-                eq(cs.groupId, participant.groupId!),
-              ),
+              and(inArray(cs.challengeId, challengeIds), eq(cs.groupId, participant.groupId!)),
             columns: {
               challengeId: true,
               status: true,
@@ -507,34 +487,23 @@ export const challengeRouter = createORPCRouter({
         : [];
 
       const countByChallengeId = new Map(
-        groupedSubmissionCounts.map((item) => [
-          item.challengeId,
-          item.count,
-        ]),
+        groupedSubmissionCounts.map((item) => [item.challengeId, item.count]),
       );
       const pendingCountByChallengeId = new Map(
-        groupedPendingSubmissionCounts.map((item) => [
-          item.challengeId,
-          item.count,
-        ]),
+        groupedPendingSubmissionCounts.map((item) => [item.challengeId, item.count]),
       );
       const mySubmissionStatusByChallengeId = new Map(
         myGroupSubmissions.map((item) => [item.challengeId, item.status]),
       );
 
-      const withResolvedImages = await resolveChallengeImages(
-        context.supabase,
-        challengeRows,
-      );
+      const withResolvedImages = await resolveChallengeImages(context.supabase, challengeRows);
 
       return {
         challenges: withResolvedImages.map((challenge) => ({
           ...toClientChallenge(challenge),
           participantGroupsCount: countByChallengeId.get(challenge.id) ?? 0,
-          pendingSubmissionsCount:
-            pendingCountByChallengeId.get(challenge.id) ?? 0,
-          myGroupSubmissionStatus:
-            mySubmissionStatusByChallengeId.get(challenge.id) ?? null,
+          pendingSubmissionsCount: pendingCountByChallengeId.get(challenge.id) ?? 0,
+          myGroupSubmissionStatus: mySubmissionStatusByChallengeId.get(challenge.id) ?? null,
         })),
         pagination: {
           total,
@@ -569,8 +538,7 @@ export const challengeRouter = createORPCRouter({
       });
 
       const challenge = await context.db.query.challenges.findFirst({
-        where: (c, { eq, and }) =>
-          and(eq(c.id, resolvedChallengeId), eq(c.tripId, input.tripId)),
+        where: (c, { eq, and }) => and(eq(c.id, resolvedChallengeId), eq(c.tripId, input.tripId)),
         columns: challengeColumns,
       });
 
@@ -593,20 +561,8 @@ export const challengeRouter = createORPCRouter({
         qrCodeValue: z.string().trim().min(1).optional(),
         textExpectedPhrase: z.string().trim().min(1).optional(),
         image: challengeImageSchema,
-        submissionType: z.enum([
-          "IMAGE",
-          "VIDEO",
-          "TEXT",
-          "IMAGE_LOCATION",
-          "LOCATION",
-          "QR_CODE",
-        ]),
-        scoringCategory: z.enum([
-          "SPEED",
-          "UNLIMITED",
-          "JUDGED_STAFF",
-          "PEER_VOTING",
-        ]),
+        submissionType: z.enum(["IMAGE", "VIDEO", "TEXT", "IMAGE_LOCATION", "LOCATION", "QR_CODE"]),
+        scoringCategory: z.enum(["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"]),
         isRecurring: z.boolean().optional(),
         recurringDays: z.number().int().min(1).max(MAX_RECURRING_DAYS).optional(),
         dailyStartTime: z.string().optional(),
@@ -618,12 +574,7 @@ export const challengeRouter = createORPCRouter({
         status: z.enum(["HIDDEN", "VISIBLE"]).optional(),
         startTime: z.coerce.date().optional(),
         endTime: z.coerce.date().optional(),
-        votingDurationHours: z
-          .number()
-          .int()
-          .min(1)
-          .max(MAX_PEER_VOTING_DURATION_HOURS)
-          .optional(),
+        votingDurationHours: z.number().int().min(1).max(MAX_PEER_VOTING_DURATION_HOURS).optional(),
         votingStartTime: z.coerce.date().optional(),
         votingEndTime: z.coerce.date().optional(),
         targetLatitude: z.number().optional(),
@@ -677,11 +628,10 @@ export const challengeRouter = createORPCRouter({
         scoringCategory: input.scoringCategory,
       });
 
-      if (
-        input.submissionType === "IMAGE_LOCATION" &&
-        input.autoApprove
-      ) {
-        throw new ORPCError("BAD_REQUEST", { message: "Image + Location challenges cannot use auto-approve" });
+      if (input.submissionType === "IMAGE_LOCATION" && input.autoApprove) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Image + Location challenges cannot use auto-approve",
+        });
       }
 
       if (
@@ -689,7 +639,9 @@ export const challengeRouter = createORPCRouter({
         input.autoApprove &&
         !input.textExpectedPhrase?.trim()
       ) {
-        throw new ORPCError("BAD_REQUEST", { message: "Text auto-approve requires an expected phrase, or disable auto-approve" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Text auto-approve requires an expected phrase, or disable auto-approve",
+        });
       }
 
       const requestedStatus = input.status ?? "HIDDEN";
@@ -699,52 +651,52 @@ export const challengeRouter = createORPCRouter({
         Boolean(input.startTime) &&
         input.startTime! <= now &&
         (!input.endTime || input.endTime > now);
-      const initialStatus = shouldActivateImmediately
-        ? "ACTIVE"
-        : requestedStatus;
+      const initialStatus = shouldActivateImmediately ? "ACTIVE" : requestedStatus;
 
       const challenge = await context.db.transaction(async (tx) => {
-        const [createdChallenge] = await tx.insert(challenges).values({
-          tripId: input.tripId,
-          name: input.name,
-          description: input.description ?? null,
-          image: normalizeChallengeImageInput(input.image),
-          submissionType: input.submissionType,
-          scoringCategory: input.scoringCategory,
-          isRecurring: input.isRecurring,
-          dailyStartTime: input.dailyStartTime,
-          dailyEndTime: input.dailyEndTime,
-          basePoints: input.basePoints,
-          firstPlacePoints: input.firstPlacePoints,
-          secondPlacePoints: input.secondPlacePoints,
-          thirdPlacePoints: input.thirdPlacePoints,
-          status: initialStatus,
-          startTime: recurringWindow?.startTime ?? input.startTime,
-          endTime: recurringWindow?.endTime ?? input.endTime,
-          votingStartTime:
-            input.scoringCategory === "PEER_VOTING"
-              ? (peerVotingTemplateWindow?.votingStartTime ?? null)
-              : null,
-          votingEndTime:
-            input.scoringCategory === "PEER_VOTING"
-              ? (peerVotingTemplateWindow?.votingEndTime ?? null)
-              : null,
-          targetLatitude: input.targetLatitude,
-          targetLongitude: input.targetLongitude,
-          expectedValue:
-            input.submissionType === "QR_CODE"
-              ? (input.qrCodeValue ?? null)
-              : input.submissionType === "TEXT"
-                ? (input.textExpectedPhrase ?? null)
+        const [createdChallenge] = await tx
+          .insert(challenges)
+          .values({
+            tripId: input.tripId,
+            name: input.name,
+            description: input.description ?? null,
+            image: normalizeChallengeImageInput(input.image),
+            submissionType: input.submissionType,
+            scoringCategory: input.scoringCategory,
+            isRecurring: input.isRecurring,
+            dailyStartTime: input.dailyStartTime,
+            dailyEndTime: input.dailyEndTime,
+            basePoints: input.basePoints,
+            firstPlacePoints: input.firstPlacePoints,
+            secondPlacePoints: input.secondPlacePoints,
+            thirdPlacePoints: input.thirdPlacePoints,
+            status: initialStatus,
+            startTime: recurringWindow?.startTime ?? input.startTime,
+            endTime: recurringWindow?.endTime ?? input.endTime,
+            votingStartTime:
+              input.scoringCategory === "PEER_VOTING"
+                ? (peerVotingTemplateWindow?.votingStartTime ?? null)
                 : null,
-          autoApprove:
-            input.submissionType === "QR_CODE" ||
-            input.submissionType === "LOCATION"
-              ? true
-              : input.submissionType === "IMAGE_LOCATION"
-                ? false
-                : input.autoApprove,
-        }).returning();
+            votingEndTime:
+              input.scoringCategory === "PEER_VOTING"
+                ? (peerVotingTemplateWindow?.votingEndTime ?? null)
+                : null,
+            targetLatitude: input.targetLatitude,
+            targetLongitude: input.targetLongitude,
+            expectedValue:
+              input.submissionType === "QR_CODE"
+                ? (input.qrCodeValue ?? null)
+                : input.submissionType === "TEXT"
+                  ? (input.textExpectedPhrase ?? null)
+                  : null,
+            autoApprove:
+              input.submissionType === "QR_CODE" || input.submissionType === "LOCATION"
+                ? true
+                : input.submissionType === "IMAGE_LOCATION"
+                  ? false
+                  : input.autoApprove,
+          })
+          .returning();
 
         if (!createdChallenge) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -788,18 +740,9 @@ export const challengeRouter = createORPCRouter({
         textExpectedPhrase: z.string().trim().min(1).optional(),
         image: challengeImageSchema,
         submissionType: z
-          .enum([
-            "IMAGE",
-            "VIDEO",
-            "TEXT",
-            "IMAGE_LOCATION",
-            "LOCATION",
-            "QR_CODE",
-          ])
+          .enum(["IMAGE", "VIDEO", "TEXT", "IMAGE_LOCATION", "LOCATION", "QR_CODE"])
           .optional(),
-        scoringCategory: z
-          .enum(["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"])
-          .optional(),
+        scoringCategory: z.enum(["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"]).optional(),
         isRecurring: z.boolean().optional(),
         recurringDays: z.number().int().min(1).max(MAX_RECURRING_DAYS).optional(),
         dailyStartTime: z.string().optional(),
@@ -809,23 +752,11 @@ export const challengeRouter = createORPCRouter({
         secondPlacePoints: z.number().int().min(0).optional(),
         thirdPlacePoints: z.number().int().min(0).optional(),
         status: z
-          .enum([
-            "HIDDEN",
-            "VISIBLE",
-            "ACTIVE",
-            "VOTING_PHASE",
-            "COMPLETED",
-            "CANCELLED",
-          ])
+          .enum(["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE", "COMPLETED", "CANCELLED"])
           .optional(),
         startTime: z.coerce.date().optional(),
         endTime: z.coerce.date().optional(),
-        votingDurationHours: z
-          .number()
-          .int()
-          .min(1)
-          .max(MAX_PEER_VOTING_DURATION_HOURS)
-          .optional(),
+        votingDurationHours: z.number().int().min(1).max(MAX_PEER_VOTING_DURATION_HOURS).optional(),
         votingStartTime: z.coerce.date().optional(),
         votingEndTime: z.coerce.date().optional(),
         targetLatitude: z.number().optional(),
@@ -835,8 +766,7 @@ export const challengeRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       const existing = await context.db.query.challenges.findFirst({
-        where: (c, { eq, and }) =>
-          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        where: (c, { eq, and }) => and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
         columns: {
           id: true,
           status: true,
@@ -900,8 +830,7 @@ export const challengeRouter = createORPCRouter({
             })
           : null;
 
-      const nextScoringCategory =
-        input.scoringCategory ?? existing.scoringCategory;
+      const nextScoringCategory = input.scoringCategory ?? existing.scoringCategory;
       const nextStatus = input.status ?? existing.status;
 
       const peerVotingTemplateWindow =
@@ -909,8 +838,7 @@ export const challengeRouter = createORPCRouter({
         (recurringWindow?.endTime ?? input.endTime ?? existing.endTime) &&
         peerVotingDurationHours
           ? resolvePeerVotingTemplateWindow({
-              submissionEndTime:
-                recurringWindow?.endTime ?? input.endTime ?? existing.endTime!,
+              submissionEndTime: recurringWindow?.endTime ?? input.endTime ?? existing.endTime!,
               votingDurationHours: peerVotingDurationHours,
             })
           : null;
@@ -918,10 +846,7 @@ export const challengeRouter = createORPCRouter({
       const isTransitioningToVotingPhase =
         existing.status !== "VOTING_PHASE" && nextStatus === "VOTING_PHASE";
 
-      if (
-        nextScoringCategory === "PEER_VOTING" &&
-        isTransitioningToVotingPhase
-      ) {
+      if (nextScoringCategory === "PEER_VOTING" && isTransitioningToVotingPhase) {
         const [totalSubmissionsResult, pendingSubmissionsResult] = await Promise.all([
           context.db
             .select({ count: count() })
@@ -942,28 +867,30 @@ export const challengeRouter = createORPCRouter({
         const pendingSubmissions = pendingSubmissionsResult[0]?.count ?? 0;
 
         if (totalSubmissions === 0 || pendingSubmissions > 0) {
-          throw new ORPCError("BAD_REQUEST", { message: "Peer voting can start only after staff reviews all submitted photos" });
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Peer voting can start only after staff reviews all submitted photos",
+          });
         }
       }
 
-      const effectiveSubmissionType =
-        input.submissionType ?? existing.submissionType;
+      const effectiveSubmissionType = input.submissionType ?? existing.submissionType;
       const effectiveExpectedValue =
         effectiveSubmissionType === "QR_CODE"
-          ? input.qrCodeValue ?? existing.expectedValue ?? null
+          ? (input.qrCodeValue ?? existing.expectedValue ?? null)
           : effectiveSubmissionType === "TEXT"
-            ? input.textExpectedPhrase ?? existing.expectedValue ?? null
+            ? (input.textExpectedPhrase ?? existing.expectedValue ?? null)
             : null;
       const effectiveAutoApprove =
-        effectiveSubmissionType === "QR_CODE" ||
-        effectiveSubmissionType === "LOCATION"
+        effectiveSubmissionType === "QR_CODE" || effectiveSubmissionType === "LOCATION"
           ? true
           : effectiveSubmissionType === "IMAGE_LOCATION"
             ? false
-          : input.autoApprove ?? existing.autoApprove;
+            : (input.autoApprove ?? existing.autoApprove);
 
       if (effectiveSubmissionType === "IMAGE_LOCATION" && input.autoApprove) {
-        throw new ORPCError("BAD_REQUEST", { message: "Image + Location challenges cannot use auto-approve" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Image + Location challenges cannot use auto-approve",
+        });
       }
 
       if (
@@ -971,7 +898,9 @@ export const challengeRouter = createORPCRouter({
         effectiveAutoApprove &&
         !effectiveExpectedValue?.trim()
       ) {
-        throw new ORPCError("BAD_REQUEST", { message: "Text auto-approve requires an expected phrase, or disable auto-approve" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Text auto-approve requires an expected phrase, or disable auto-approve",
+        });
       }
 
       const challenge = await context.db.transaction(async (tx) => {
@@ -979,10 +908,7 @@ export const challengeRouter = createORPCRouter({
           .update(challenges)
           .set({
             name: input.name,
-            description:
-              input.description !== undefined
-                ? (input.description ?? null)
-                : undefined,
+            description: input.description !== undefined ? (input.description ?? null) : undefined,
             image: normalizeChallengeImageInput(input.image),
             submissionType: input.submissionType,
             scoringCategory: input.scoringCategory,
@@ -1012,8 +938,7 @@ export const challengeRouter = createORPCRouter({
             targetLongitude: input.targetLongitude,
             expectedValue: effectiveExpectedValue,
             autoApprove:
-              effectiveSubmissionType === "QR_CODE" ||
-              effectiveSubmissionType === "LOCATION"
+              effectiveSubmissionType === "QR_CODE" || effectiveSubmissionType === "LOCATION"
                 ? true
                 : effectiveSubmissionType === "IMAGE_LOCATION"
                   ? false
@@ -1056,8 +981,7 @@ export const challengeRouter = createORPCRouter({
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
       const existing = await context.db.query.challenges.findFirst({
-        where: (c, { eq, and }) =>
-          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        where: (c, { eq, and }) => and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
         columns: { id: true },
       });
 
@@ -1074,8 +998,7 @@ export const challengeRouter = createORPCRouter({
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
       const existing = await context.db.query.challenges.findFirst({
-        where: (c, { eq, and }) =>
-          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        where: (c, { eq, and }) => and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
         columns: {
           id: true,
           status: true,
@@ -1088,7 +1011,9 @@ export const challengeRouter = createORPCRouter({
       }
 
       if (existing.scoringCategory !== "PEER_VOTING") {
-        throw new ORPCError("BAD_REQUEST", { message: "Force close voting is only available for peer voting challenges" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Force close voting is only available for peer voting challenges",
+        });
       }
 
       if (existing.status !== "VOTING_PHASE") {

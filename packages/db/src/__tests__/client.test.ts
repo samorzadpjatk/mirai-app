@@ -38,7 +38,7 @@ describe("Database Client", () => {
       expect(postgres).toHaveBeenCalledWith(databaseUrl);
       expect(drizzle).toHaveBeenCalledWith(
         mockPostgresInstance,
-        expect.objectContaining({ schema: expect.any(Object) })
+        expect.objectContaining({ schema: expect.any(Object) }),
       );
     });
 

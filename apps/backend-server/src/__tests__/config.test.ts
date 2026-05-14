@@ -18,7 +18,7 @@ describe("Server Configuration", () => {
       process.env.TRPC_SERVER_HOST = "127.0.0.1";
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable."
+        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
       );
     });
 
@@ -27,7 +27,7 @@ describe("Server Configuration", () => {
       delete process.env.TRPC_SERVER_HOST;
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable."
+        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
       );
     });
 
@@ -36,7 +36,7 @@ describe("Server Configuration", () => {
       delete process.env.TRPC_SERVER_HOST;
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable."
+        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
       );
     });
   });

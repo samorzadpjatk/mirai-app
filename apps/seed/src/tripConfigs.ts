@@ -4,14 +4,14 @@ import { joinPath } from "./utils/path";
 import type { TripConfig } from "./types";
 
 function isTripConfig(value: unknown): value is TripConfig {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== "object" || value === null) return false;
   const trip = value as Record<string, unknown>;
   return (
-    typeof trip.key === 'string' &&
-    typeof trip.name === 'string' &&
-    typeof trip.startDate === 'string' &&
-    typeof trip.endDate === 'string' &&
-    typeof trip.users === 'string'
+    typeof trip.key === "string" &&
+    typeof trip.name === "string" &&
+    typeof trip.startDate === "string" &&
+    typeof trip.endDate === "string" &&
+    typeof trip.users === "string"
   );
 }
 

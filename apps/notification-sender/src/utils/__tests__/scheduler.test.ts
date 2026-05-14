@@ -90,7 +90,9 @@ describe("Scheduler", () => {
     });
 
     it("should handle task errors gracefully", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
       const error = new Error("Task failed");
       const task = vi.fn().mockRejectedValue(error);
       const scheduler = new Scheduler(task, 5);
@@ -107,8 +109,11 @@ describe("Scheduler", () => {
     });
 
     it("should continue running after task errors", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
-      const task = vi.fn()
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
+      const task = vi
+        .fn()
         .mockRejectedValueOnce(new Error("First failure"))
         .mockResolvedValueOnce(undefined)
         .mockResolvedValueOnce(undefined);
@@ -146,7 +151,7 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      
+
       // Resolve the task
       resolveTask!();
       await vi.advanceTimersByTimeAsync(0);
@@ -182,7 +187,9 @@ describe("Scheduler", () => {
 
   describe("edge cases", () => {
     it("should not start if already running", () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+        /* noop */
+      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
@@ -210,7 +217,7 @@ describe("Scheduler", () => {
 
       scheduler.start();
       scheduler.stop();
-      
+
       // Should not throw when stopped again
       expect(() => scheduler.stop()).not.toThrow();
       expect(scheduler.isActive()).toBe(false);
@@ -257,7 +264,9 @@ describe("Scheduler", () => {
     });
 
     it("should handle task that throws synchronously", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
       const error = new Error("Sync error");
       const task = vi.fn().mockImplementation(() => {
         throw error;
@@ -274,7 +283,9 @@ describe("Scheduler", () => {
     });
 
     it("should handle task returning non-promise value", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+        /* noop */
+      });
       const task = vi.fn().mockReturnValue("not a promise");
       const scheduler = new Scheduler(task, 5);
 
@@ -291,21 +302,23 @@ describe("Scheduler", () => {
 
   describe("logging", () => {
     it("should log when started", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Scheduler started. Running task every 5 minutes."
-      );
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started. Running task every 5 minutes.");
 
       consoleSpy.mockRestore();
     });
 
     it("should log when stopped", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
@@ -318,15 +331,15 @@ describe("Scheduler", () => {
     });
 
     it("should log with correct interval", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 15);
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Scheduler started. Running task every 15 minutes."
-      );
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started. Running task every 15 minutes.");
 
       consoleSpy.mockRestore();
     });
@@ -358,7 +371,9 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should run inactivity check and log results", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
     const checkFunction = vi.fn().mockResolvedValue({ inactiveUsers: 5 });
     const scheduler = createInactivityScheduler(checkFunction, 5);
 
@@ -375,7 +390,9 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should handle check function errors", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
     const error = new Error("Check failed");
     const checkFunction = vi.fn().mockRejectedValue(error);
     const scheduler = createInactivityScheduler(checkFunction, 5);
@@ -409,8 +426,10 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should handle check function returning different types", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-    
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
+
     // Test with array
     const checkFunction1 = vi.fn().mockResolvedValue([1, 2, 3]);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
@@ -439,8 +458,10 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should handle check function returning primitive values", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-    
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
+
     // Test with number
     const checkFunction1 = vi.fn().mockResolvedValue(42);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);

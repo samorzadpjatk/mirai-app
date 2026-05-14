@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
@@ -18,7 +15,11 @@ vi.mock("../../../utils/storage", () => ({
       return { bucket: "images", path: value.replace("images/", ""), storagePath: value };
     }
     if (value.startsWith("files-public/")) {
-      return { bucket: "files-public", path: value.replace("files-public/", ""), storagePath: value };
+      return {
+        bucket: "files-public",
+        path: value.replace("files-public/", ""),
+        storagePath: value,
+      };
     }
     return { bucket: "images", path: value, storagePath: `images/${value}` };
   }),
@@ -41,10 +42,10 @@ vi.mock("@mirai-app/auth", () => ({
       role: "USER",
       hasAvatar: false,
       lastSeenOn: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    }),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  }),
 }));
 
 const createCaller = (ctx: TRPCContext) => createRouterClient(storageRouter, { context: ctx });
@@ -73,7 +74,11 @@ describe("storageRouter", () => {
     vi.clearAllMocks();
 
     // Reset environment variables
-    process.env = { ...originalEnv, SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLIC_URL: undefined };
+    process.env = {
+      ...originalEnv,
+      SUPABASE_URL: "https://test.supabase.co",
+      SUPABASE_PUBLIC_URL: undefined,
+    };
 
     mockUser = createMockUser({ id: "user-123" });
 
@@ -160,7 +165,7 @@ describe("storageRouter", () => {
       });
 
       expect(result.token).toBe("upload-token-123");
-       
+
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
@@ -174,7 +179,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createUploadUrl({
           storagePath: "invalid-path",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -198,7 +203,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createUploadUrl({
           storagePath: "images/test-image.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -211,7 +216,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createUploadUrl({
           storagePath: "images/test-image.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -262,7 +267,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createDownloadUrl({
           storagePath: "images/non-existent.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -286,7 +291,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createDownloadUrl({
           storagePath: "images/test-image.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -300,7 +305,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createDownloadUrl({
           storagePath: "invalid-path",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -327,7 +332,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createPublicUrl({
           storagePath: "images/private-image.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -341,7 +346,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createPublicUrl({
           storagePath: "invalid-path",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -355,7 +360,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createPublicUrl({
           storagePath: "files-public/document.pdf",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -394,7 +399,7 @@ describe("storageRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing missing required field
-        caller.createUploadUrl({})
+        caller.createUploadUrl({}),
       ).rejects.toThrow();
     });
 
@@ -404,7 +409,7 @@ describe("storageRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing missing required field
-        caller.createDownloadUrl({})
+        caller.createDownloadUrl({}),
       ).rejects.toThrow();
     });
 
@@ -414,7 +419,7 @@ describe("storageRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing missing required field
-        caller.createPublicUrl({})
+        caller.createPublicUrl({}),
       ).rejects.toThrow();
     });
 
@@ -426,7 +431,7 @@ describe("storageRouter", () => {
         caller.createDownloadUrl({
           storagePath: "images/test.jpg",
           expiresInSeconds: 30, // Below minimum of 60
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -438,7 +443,7 @@ describe("storageRouter", () => {
         caller.createDownloadUrl({
           storagePath: "images/test.jpg",
           expiresInSeconds: 7200, // Above maximum of 3600
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -477,7 +482,7 @@ describe("storageRouter", () => {
       await expect(
         caller.createUploadUrl({
           storagePath: "https://example.com/image.jpg",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });

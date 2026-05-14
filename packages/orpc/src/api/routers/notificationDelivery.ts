@@ -11,9 +11,7 @@ export const notificationDeliveryRouter = createORPCRouter({
       z
         .object({
           tripId: z.string(),
-          status: z
-            .enum(["pending", "success", "partial_failure", "failure"])
-            .optional(),
+          status: z.enum(["pending", "success", "partial_failure", "failure"]).optional(),
           scheduleId: z.string().optional(),
           startDate: z.date().optional(),
           endDate: z.date().optional(),
@@ -79,7 +77,10 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching notification deliveries:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch notification deliveries: ${err.message}`, cause: err });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to fetch notification deliveries: ${err.message}`,
+          cause: err,
+        });
       }
     }),
 
@@ -148,7 +149,10 @@ export const notificationDeliveryRouter = createORPCRouter({
         }
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching notification delivery:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch notification delivery: ${err.message}`, cause: err });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to fetch notification delivery: ${err.message}`,
+          cause: err,
+        });
       }
     }),
 
@@ -186,18 +190,23 @@ export const notificationDeliveryRouter = createORPCRouter({
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
         const [statsResult, statusBreakdown] = await Promise.all([
-          context.db.select({
-            count: count(notificationDeliveries.id),
-            totalRecipients: sum(notificationDeliveries.totalRecipients),
-            successCount: sum(notificationDeliveries.successCount),
-            failureCount: sum(notificationDeliveries.failureCount),
-            avgSuccess: avg(notificationDeliveries.successCount),
-            avgFailure: avg(notificationDeliveries.failureCount),
-          }).from(notificationDeliveries).where(whereClause),
-          context.db.select({
-            status: notificationDeliveries.status,
-            count: count(notificationDeliveries.id),
-          }).from(notificationDeliveries)
+          context.db
+            .select({
+              count: count(notificationDeliveries.id),
+              totalRecipients: sum(notificationDeliveries.totalRecipients),
+              successCount: sum(notificationDeliveries.successCount),
+              failureCount: sum(notificationDeliveries.failureCount),
+              avgSuccess: avg(notificationDeliveries.successCount),
+              avgFailure: avg(notificationDeliveries.failureCount),
+            })
+            .from(notificationDeliveries)
+            .where(whereClause),
+          context.db
+            .select({
+              status: notificationDeliveries.status,
+              count: count(notificationDeliveries.id),
+            })
+            .from(notificationDeliveries)
             .where(whereClause)
             .groupBy(notificationDeliveries.status),
         ]);
@@ -205,7 +214,7 @@ export const notificationDeliveryRouter = createORPCRouter({
         const stats = statsResult[0];
         const successRate =
           stats?.totalRecipients && Number(stats.totalRecipients) > 0
-            ? ((Number(stats.successCount ?? 0) / Number(stats.totalRecipients)) * 100)
+            ? (Number(stats.successCount ?? 0) / Number(stats.totalRecipients)) * 100
             : 0;
 
         return {
@@ -227,7 +236,10 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching delivery stats:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch delivery stats: ${err.message}`, cause: err });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to fetch delivery stats: ${err.message}`,
+          cause: err,
+        });
       }
     }),
 
@@ -291,7 +303,10 @@ export const notificationDeliveryRouter = createORPCRouter({
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error fetching failed deliveries:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to fetch failed deliveries: ${err.message}`, cause: err });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to fetch failed deliveries: ${err.message}`,
+          cause: err,
+        });
       }
     }),
 });

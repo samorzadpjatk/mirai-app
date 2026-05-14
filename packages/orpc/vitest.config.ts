@@ -10,13 +10,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      exclude: [
-        "node_modules/",
-        "dist/",
-        "**/*.d.ts",
-        "**/*.config.*",
-        "**/vitest.setup.ts",
-      ],
+      exclude: ["node_modules/", "dist/", "**/*.d.ts", "**/*.config.*", "**/vitest.setup.ts"],
       thresholds: {
         branches: 75,
         functions: 75,
@@ -27,7 +21,10 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: "@mirai-app/shared/test-utils", replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts") },
+      {
+        find: "@mirai-app/shared/test-utils",
+        replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts"),
+      },
       { find: "@mirai-app/shared", replacement: path.resolve(__dirname, "../shared/index.ts") },
       { find: "@mirai-app/auth", replacement: path.resolve(__dirname, "../auth/src") },
       { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },

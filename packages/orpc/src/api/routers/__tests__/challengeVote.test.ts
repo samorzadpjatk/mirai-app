@@ -1,13 +1,17 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { challengeVoteRouter } from "../../routers/challengeVote";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
+import type {
+  DB,
+  User,
+  Challenge,
+  ChallengeSubmission,
+  ChallengeVote,
+  TripParticipant,
+} from "@mirai-app/db";
 import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
@@ -29,43 +33,43 @@ vi.mock("@mirai-app/auth", () => ({
       lastName: "User",
       role: "USER",
       hasAvatar: false,
-        lastSeenOn: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    }),
-    requireModerator: vi.fn().mockResolvedValue({
-      user: { id: "moderator-123", email: "moderator@example.com" },
-      dbUser: {
-        id: "moderator-123",
-        authUserId: "moderator-123",
-        firstName: "Test",
-        lastName: "Moderator",
-        role: "MODERATOR",
-        hasAvatar: false,
-        lastSeenOn: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    }),
-    requireAdmin: vi.fn().mockResolvedValue({
-      user: { id: "admin-123", email: "admin@example.com" },
-      dbUser: {
-        id: "admin-123",
-        authUserId: "admin-123",
-        firstName: "Test",
-        lastName: "Admin",
-        role: "ADMIN",
-        hasAvatar: false,
-        lastSeenOn: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    }),
-  })
-);
+      lastSeenOn: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  }),
+  requireModerator: vi.fn().mockResolvedValue({
+    user: { id: "moderator-123", email: "moderator@example.com" },
+    dbUser: {
+      id: "moderator-123",
+      authUserId: "moderator-123",
+      firstName: "Test",
+      lastName: "Moderator",
+      role: "MODERATOR",
+      hasAvatar: false,
+      lastSeenOn: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  }),
+  requireAdmin: vi.fn().mockResolvedValue({
+    user: { id: "admin-123", email: "admin@example.com" },
+    dbUser: {
+      id: "admin-123",
+      authUserId: "admin-123",
+      firstName: "Test",
+      lastName: "Admin",
+      role: "ADMIN",
+      hasAvatar: false,
+      lastSeenOn: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  }),
+}));
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(challengeVoteRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(challengeVoteRouter, { context: ctx });
 
 // Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -102,7 +106,9 @@ const createMockChallenge = (overrides: Partial<Challenge> = {}): Challenge => (
 });
 
 // Helper to create mock submission
-const createMockSubmission = (overrides: Partial<ChallengeSubmission> = {}): ChallengeSubmission => ({
+const createMockSubmission = (
+  overrides: Partial<ChallengeSubmission> = {},
+): ChallengeSubmission => ({
   id: "submission-123",
   challengeId: "challenge-123",
   groupId: "group-123",
@@ -161,7 +167,11 @@ describe("challengeVoteRouter", () => {
     mockChallenge = createMockChallenge({ id: "challenge-123", tripId: "trip-123" });
     mockSubmission = createMockSubmission({ id: "submission-123", challengeId: "challenge-123" });
     mockVote = createMockVote({ id: "vote-123", challengeId: "challenge-123" });
-    mockParticipant = createMockParticipant({ id: "participant-123", userId: "user-123", tripId: "trip-123" });
+    mockParticipant = createMockParticipant({
+      id: "participant-123",
+      userId: "user-123",
+      tripId: "trip-123",
+    });
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -289,7 +299,9 @@ describe("challengeVoteRouter", () => {
     mockDb = baseMockDb as DB;
     mockTx = baseMockTx as DB;
 
-    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
+    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) =>
+      callback(mockTx),
+    );
 
     const passthroughReturning = (data: unknown) => ({
       returning: () => Promise.resolve([data]),
@@ -354,7 +366,7 @@ describe("challengeVoteRouter", () => {
         caller.getMyByChallenge({
           challengeId: "challenge-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -462,7 +474,7 @@ describe("challengeVoteRouter", () => {
         caller.getJudgedStaffProgress({
           challengeId: "challenge-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -513,7 +525,7 @@ describe("challengeVoteRouter", () => {
         caller.forceEndJudgedStaffVoting({
           challengeId: "challenge-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -533,7 +545,7 @@ describe("challengeVoteRouter", () => {
         caller.forceEndJudgedStaffVoting({
           challengeId: "challenge-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -546,9 +558,24 @@ describe("challengeVoteRouter", () => {
         status: "VOTING_PHASE",
       });
       const createdVotes = [
-        createMockVote({ id: "vote-1", submissionId: "submission-1", votePosition: 1, votePoints: 3 }),
-        createMockVote({ id: "vote-2", submissionId: "submission-2", votePosition: 2, votePoints: 2 }),
-        createMockVote({ id: "vote-3", submissionId: "submission-3", votePosition: 3, votePoints: 1 }),
+        createMockVote({
+          id: "vote-1",
+          submissionId: "submission-1",
+          votePosition: 1,
+          votePoints: 3,
+        }),
+        createMockVote({
+          id: "vote-2",
+          submissionId: "submission-2",
+          votePosition: 2,
+          votePoints: 2,
+        }),
+        createMockVote({
+          id: "vote-3",
+          submissionId: "submission-3",
+          votePosition: 3,
+          votePoints: 1,
+        }),
       ];
       mockDb.challenge.findFirst.mockResolvedValue(peerVotingChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue({
@@ -599,7 +626,7 @@ describe("challengeVoteRouter", () => {
             { submissionId: "submission-1", votePosition: 1, votePoints: 3 },
             { submissionId: "submission-1", votePosition: 2, votePoints: 2 }, // Duplicate submission
           ],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -623,7 +650,7 @@ describe("challengeVoteRouter", () => {
             { submissionId: "submission-1", votePosition: 1, votePoints: 3 },
             { submissionId: "submission-2", votePosition: 1, votePoints: 2 }, // Duplicate position
           ],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -650,7 +677,7 @@ describe("challengeVoteRouter", () => {
           tripId: "trip-123",
           challengeId: "challenge-123",
           votes: [{ submissionId: "submission-1", votePosition: 1, votePoints: 3 }],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -677,7 +704,7 @@ describe("challengeVoteRouter", () => {
           tripId: "trip-123",
           challengeId: "challenge-123",
           votes: [{ submissionId: "submission-1", votePosition: 1, votePoints: 3 }],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -695,7 +722,7 @@ describe("challengeVoteRouter", () => {
         groupId: "different-group-123",
       });
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123", groupId: "group-1" })
+        createMockSubmission({ id: "submission-123", groupId: "group-1" }),
       );
       mockDb.challengeVote.findMany.mockResolvedValue([]);
 
@@ -727,7 +754,7 @@ describe("challengeVoteRouter", () => {
         groupId: "admin-group-123",
       });
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123", groupId: "different-group-456" })
+        createMockSubmission({ id: "submission-123", groupId: "different-group-456" }),
       );
       mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.challengeSubmission.count.mockResolvedValue(5);
@@ -772,7 +799,7 @@ describe("challengeVoteRouter", () => {
           submissionId: "submission-123",
           votePosition: 1,
           votePoints: 3,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -786,7 +813,7 @@ describe("challengeVoteRouter", () => {
       mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123" })
+        createMockSubmission({ id: "submission-123" }),
       );
       mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.challengeSubmission.count.mockResolvedValue(2); // Only 2 submissions, so positions 1-2 allowed
@@ -801,7 +828,7 @@ describe("challengeVoteRouter", () => {
           submissionId: "submission-123",
           votePosition: 3, // Position 3 not allowed with only 2 submissions
           votePoints: 3,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -815,10 +842,14 @@ describe("challengeVoteRouter", () => {
       mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
       mockDb.tripParticipant.findUnique.mockResolvedValue(mockParticipant);
       mockDb.challengeSubmission.findFirst.mockResolvedValue(
-        createMockSubmission({ id: "submission-123" })
+        createMockSubmission({ id: "submission-123" }),
       );
       mockDb.challengeVote.findMany.mockResolvedValue([
-        createMockVote({ voterId: "participant-123", votePosition: 1, submissionId: "submission-other" }),
+        createMockVote({
+          voterId: "participant-123",
+          votePosition: 1,
+          submissionId: "submission-other",
+        }),
       ]);
       mockDb.challengeSubmission.count.mockResolvedValue(5);
 
@@ -832,7 +863,7 @@ describe("challengeVoteRouter", () => {
           submissionId: "submission-123",
           votePosition: 1, // Position already voted
           votePoints: 3,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });

@@ -8,7 +8,13 @@ import type { roleEnum } from "./schema/enums";
 export type User = typeof users.$inferSelect;
 export type Role = (typeof roleEnum.enumValues)[number];
 
-import type { trips, tripResources, tripInsurances, tripInsuranceSteps, tripParticipants } from "./schema/trips";
+import type {
+  trips,
+  tripResources,
+  tripInsurances,
+  tripInsuranceSteps,
+  tripParticipants,
+} from "./schema/trips";
 export type Trip = typeof trips.$inferSelect;
 export type TripResource = typeof tripResources.$inferSelect;
 export type TripInsurance = typeof tripInsurances.$inferSelect;
@@ -23,13 +29,25 @@ import type { groups, groupJoinRequests } from "./schema/groups";
 export type Group = typeof groups.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequests.$inferSelect;
 
-import type { challenges, challengeSubmissions, challengeVotes, submissionReports } from "./schema/challenges";
+import type {
+  challenges,
+  challengeSubmissions,
+  challengeVotes,
+  submissionReports,
+} from "./schema/challenges";
 export type Challenge = typeof challenges.$inferSelect;
 export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect;
 export type ChallengeVote = typeof challengeVotes.$inferSelect;
 export type SubmissionReport = typeof submissionReports.$inferSelect;
 
-import type { activityFeeds, activityReactions, submissionActivities, challengeActivities, rankChangeActivities, userPosts } from "./schema/activities";
+import type {
+  activityFeeds,
+  activityReactions,
+  submissionActivities,
+  challengeActivities,
+  rankChangeActivities,
+  userPosts,
+} from "./schema/activities";
 export type ActivityFeed = typeof activityFeeds.$inferSelect;
 export type ActivityReaction = typeof activityReactions.$inferSelect;
 export type SubmissionActivity = typeof submissionActivities.$inferSelect;
@@ -37,7 +55,14 @@ export type ChallengeActivity = typeof challengeActivities.$inferSelect;
 export type RankChangeActivity = typeof rankChangeActivities.$inferSelect;
 export type UserPost = typeof userPosts.$inferSelect;
 
-import type { notificationSchedules, notifications, notificationScheduleExecutions, notificationPushes, notificationDeliveries, pushSubscriptions } from "./schema/notifications";
+import type {
+  notificationSchedules,
+  notifications,
+  notificationScheduleExecutions,
+  notificationPushes,
+  notificationDeliveries,
+  pushSubscriptions,
+} from "./schema/notifications";
 export type NotificationSchedule = typeof notificationSchedules.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type NotificationScheduleExecution = typeof notificationScheduleExecutions.$inferSelect;

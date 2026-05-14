@@ -1,0 +1,55 @@
+# Build artifacts & generated files
+node_modules/
+dist/
+build/
+.expo/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+*.lock
+*.generated.ts
+*.generated.tsx
+*.min.js
+*.min.css
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Documentation & metadata (original Prettier didn't check these)
+*.md
+*.yaml
+*.yml
+*.json
+*.html
+*.css
+
+# Project-specific directories
+.agents/
+.specs/
+.claude/
+.codex/
+.cursor/
+.opencode/
+openspec/
+.github/
+docs/
+environment/
+
+# Generated / vendored
+drizzle/
+*.d.ts
+*.d.ts.map
+
+# OS files
+.DS_Store
+Thumbs.db
+.pnpm-debug.log*
+
+# Native-specific
+apps/native/jest.setup.js
+apps/native/coverage/
+apps/native/.expo/
+apps/native/dist/

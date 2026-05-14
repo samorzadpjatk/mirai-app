@@ -17,11 +17,18 @@ const mockUpload = vi.fn();
 vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
-      listBuckets: () => mockListBuckets() as Promise<{ data: { name: string }[] | null; error: { message: string } | null }>,
-      createBucket: (name: string, options: object) => mockCreateBucket(name, options) as Promise<{ error: { message: string } | null }>,
+      listBuckets: () =>
+        mockListBuckets() as Promise<{
+          data: { name: string }[] | null;
+          error: { message: string } | null;
+        }>,
+      createBucket: (name: string, options: object) =>
+        mockCreateBucket(name, options) as Promise<{ error: { message: string } | null }>,
       from: (bucket: string) => ({
-        list: (path: string, options: object) => mockList(path, options) as Promise<{ data: unknown[]; error: null }>,
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        list: (path: string, options: object) =>
+          mockList(path, options) as Promise<{ data: unknown[]; error: null }>,
+        upload: (path: string, file: unknown, options: object) =>
+          mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
       }),
     },
   },
@@ -35,7 +42,8 @@ const mockRelativePath = vi.fn((from: string, to: string) => to.replace(from + "
 
 vi.mock("../utils/fs", () => ({
   listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args) as Promise<string[]>,
-  readFile: (path: string) => mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
+  readFile: (path: string) =>
+    mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
 }));
 
 vi.mock("../utils/path", () => ({
@@ -95,11 +103,7 @@ describe("ensureBuckets", () => {
 
   it("should not create existing buckets", async () => {
     mockListBuckets.mockResolvedValue({
-      data: [
-        { name: "files-public" },
-        { name: "image" },
-        { name: "video" },
-      ],
+      data: [{ name: "files-public" }, { name: "image" }, { name: "video" }],
       error: null,
     });
 
@@ -126,7 +130,9 @@ describe("ensureBuckets", () => {
       error: { message: "Permission denied" },
     });
 
-    await expect(ensureBuckets()).rejects.toThrow("createBucket files-public failed: Permission denied");
+    await expect(ensureBuckets()).rejects.toThrow(
+      "createBucket files-public failed: Permission denied",
+    );
   });
 
   it("should make public bucket public", async () => {
@@ -149,8 +155,12 @@ describe("ensurePlaceholderImage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
   });
 
   it("should skip if placeholder already exists", async () => {
@@ -174,7 +184,9 @@ describe("ensurePlaceholderImage", () => {
 
     await ensurePlaceholderImage("dev");
 
-    expect(mockReadFile).toHaveBeenCalledWith("/test/assets/dev/images/placeholder/trip-background.png");
+    expect(mockReadFile).toHaveBeenCalledWith(
+      "/test/assets/dev/images/placeholder/trip-background.png",
+    );
     expect(mockUpload).toHaveBeenCalledWith(
       "image",
       "image/placeholder/trip-background.png",
@@ -182,9 +194,11 @@ describe("ensurePlaceholderImage", () => {
       expect.objectContaining({
         upsert: true,
         contentType: "image/png",
-      })
+      }),
     );
-    expect(consoleLogSpy).toHaveBeenCalledWith("✓ Uploaded placeholder image: image/placeholder/trip-background.png");
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "✓ Uploaded placeholder image: image/placeholder/trip-background.png",
+    );
   });
 
   it("should handle upload errors gracefully", async () => {
@@ -196,7 +210,7 @@ describe("ensurePlaceholderImage", () => {
     await ensurePlaceholderImage("dev");
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to upload placeholder image")
+      expect.stringContaining("Failed to upload placeholder image"),
     );
   });
 
@@ -209,7 +223,7 @@ describe("ensurePlaceholderImage", () => {
     await ensurePlaceholderImage("prod");
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Placeholder image file not found at")
+      expect.stringContaining("Placeholder image file not found at"),
     );
   });
 });
@@ -219,8 +233,12 @@ describe("uploadAssets", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
   });
 
   it("should upload files to correct buckets", async () => {
@@ -267,15 +285,15 @@ describe("uploadAssets", () => {
       stream: () => ({}),
       stat: () => Promise.resolve({ size: 1024 }),
     };
-    mockListFilesRecursive.mockResolvedValue([
-      "/test/assets/dev/rewards/pizza.jpg",
-    ]);
+    mockListFilesRecursive.mockResolvedValue(["/test/assets/dev/rewards/pizza.jpg"]);
     mockReadFile.mockReturnValue(mockFile);
     mockUpload.mockResolvedValue({ error: null });
 
     await uploadAssets("dev");
 
-    expect(mockUpload).toHaveBeenCalledWith("image", "rewards/pizza.jpg", mockFile, { upsert: true });
+    expect(mockUpload).toHaveBeenCalledWith("image", "rewards/pizza.jpg", mockFile, {
+      upsert: true,
+    });
   });
 
   it("should skip empty files", async () => {
@@ -283,9 +301,7 @@ describe("uploadAssets", () => {
       stream: () => ({}),
       stat: () => Promise.resolve({ size: 0 }),
     };
-    mockListFilesRecursive.mockResolvedValue([
-      "/test/assets/dev/images/empty.jpg",
-    ]);
+    mockListFilesRecursive.mockResolvedValue(["/test/assets/dev/images/empty.jpg"]);
     mockReadFile.mockReturnValue(mockFile);
 
     await uploadAssets("dev");
@@ -298,17 +314,13 @@ describe("uploadAssets", () => {
       stream: () => ({}),
       stat: () => Promise.resolve({ size: 1024 }),
     };
-    mockListFilesRecursive.mockResolvedValue([
-      "/test/assets/dev/images/test.jpg",
-    ]);
+    mockListFilesRecursive.mockResolvedValue(["/test/assets/dev/images/test.jpg"]);
     mockReadFile.mockReturnValue(mockFile);
     mockUpload.mockResolvedValue({ error: { message: "Quota exceeded" } });
 
     await uploadAssets("dev");
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("✗ Upload failed")
-    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("✗ Upload failed"));
   });
 
   it("should skip files not matching bucket prefixes", async () => {
@@ -316,9 +328,7 @@ describe("uploadAssets", () => {
       stream: () => ({}),
       stat: () => Promise.resolve({ size: 1024 }),
     };
-    mockListFilesRecursive.mockResolvedValue([
-      "/test/assets/dev/random/file.txt",
-    ]);
+    mockListFilesRecursive.mockResolvedValue(["/test/assets/dev/random/file.txt"]);
     mockReadFile.mockReturnValue(mockFile);
 
     await uploadAssets("dev");

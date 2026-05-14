@@ -49,9 +49,7 @@ export class TestDataBuilder<T extends Record<string, unknown>> {
 /**
  * Creates a test data builder with the given defaults.
  */
-export function createBuilder<T extends Record<string, unknown>>(
-  defaults: T
-): TestDataBuilder<T> {
+export function createBuilder<T extends Record<string, unknown>>(defaults: T): TestDataBuilder<T> {
   return new TestDataBuilder(defaults);
 }
 

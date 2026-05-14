@@ -1,12 +1,8 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { TransactionDB } from "@mirai-app/db";
 
- 
 const noop = (): void => {};
 
 type RetryFunction<T> = () => Promise<T>;
@@ -49,7 +45,13 @@ describe("notifications", () => {
 
     function singularize(name: string): string {
       if (name.endsWith("ies")) return name.slice(0, -3) + "y";
-      if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("zes")) return name.slice(0, -2);
+      if (
+        name.endsWith("ches") ||
+        name.endsWith("shes") ||
+        name.endsWith("xes") ||
+        name.endsWith("zes")
+      )
+        return name.slice(0, -2);
       if (name.endsWith("s")) return name.slice(0, -1);
       return name;
     }
@@ -61,9 +63,7 @@ describe("notifications", () => {
         if (obj.name && typeof obj.name === "string") {
           return obj.name;
         }
-        const sym = Object.getOwnPropertySymbols(obj).find(
-          (s) => s.description === "drizzle:Name"
-        );
+        const sym = Object.getOwnPropertySymbols(obj).find((s) => s.description === "drizzle:Name");
         if (sym && typeof obj[sym] === "string") {
           return obj[sym];
         }
@@ -83,7 +83,9 @@ describe("notifications", () => {
           returning: async () => {
             const model = (baseMockDb as Record<string, unknown>)[modelName];
             if (model && typeof model === "object" && "create" in model) {
-              const result = await (model as { create: (args: unknown) => Promise<unknown> }).create({ data });
+              const result = await (
+                model as { create: (args: unknown) => Promise<unknown> }
+              ).create({ data });
               return [result];
             }
             return [{}];
@@ -92,7 +94,10 @@ describe("notifications", () => {
             const model = (baseMockDb as Record<string, unknown>)[modelName];
             if (model && typeof model === "object" && "createMany" in model) {
               const arr = Array.isArray(data) ? data : [data];
-              await (model as { createMany: (args: unknown) => Promise<unknown> }).createMany({ data: arr, skipDuplicates: true });
+              await (model as { createMany: (args: unknown) => Promise<unknown> }).createMany({
+                data: arr,
+                skipDuplicates: true,
+              });
               return { count: arr.length };
             }
             return { count: 0 };
@@ -117,13 +122,16 @@ describe("notifications", () => {
               const results = await (model as { findMany: () => Promise<unknown[]> }).findMany();
               if (fields && typeof fields === "object") {
                 const fieldNames = Object.keys(fields);
-                return resolve(results.map((r) => {
-                  const mapped: Record<string, unknown> = {};
-                  for (const f of fieldNames) {
-                    if (f in (r as Record<string, unknown>)) mapped[f] = (r as Record<string, unknown>)[f];
-                  }
-                  return mapped;
-                }));
+                return resolve(
+                  results.map((r) => {
+                    const mapped: Record<string, unknown> = {};
+                    for (const f of fieldNames) {
+                      if (f in (r as Record<string, unknown>))
+                        mapped[f] = (r as Record<string, unknown>)[f];
+                    }
+                    return mapped;
+                  }),
+                );
               }
               return resolve(results);
             }
@@ -164,7 +172,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationId).toBe("notif-1");
-       
+
       expect(mockDb.notification.create).toHaveBeenCalledWith({
         data: {
           title: "Test Title",
@@ -193,17 +201,16 @@ describe("notifications", () => {
         },
       });
 
-       
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
-              data: [
-                {
-                  notificationId: "notif-1",
-                  targetUserId: "user-2",
-                  status: "pending",
-                },
-              ],
-              skipDuplicates: true,
-            });
+        data: [
+          {
+            notificationId: "notif-1",
+            targetUserId: "user-2",
+            status: "pending",
+          },
+        ],
+        skipDuplicates: true,
+      });
     });
 
     it("should create notification pushes for all users", async () => {
@@ -223,7 +230,6 @@ describe("notifications", () => {
         },
       });
 
-       
       expect(mockDb.notificationPush.createMany).toHaveBeenCalledWith({
         data: [
           {
@@ -265,7 +271,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When userIds is empty, createMany is not called (implementation skips it)
-       
+
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 
@@ -286,9 +292,7 @@ describe("notifications", () => {
         },
       });
 
-       
       expect(mockDb.notification.create).toHaveBeenCalledWith({
-         
         data: expect.objectContaining({
           tripId: null,
         }),
@@ -296,9 +300,7 @@ describe("notifications", () => {
     });
 
     it("should throw ORPCError when notification creation fails", async () => {
-      mockDb.notification.create.mockRejectedValue(
-        new Error("Database error")
-      );
+      mockDb.notification.create.mockRejectedValue(new Error("Database error"));
 
       await expect(
         sendNotification({
@@ -311,7 +313,7 @@ describe("notifications", () => {
             userIds: ["user-2"],
             tripId: "trip-1",
           },
-        })
+        }),
       ).rejects.toThrow(ORPCError);
 
       await expect(
@@ -325,7 +327,7 @@ describe("notifications", () => {
             userIds: ["user-2"],
             tripId: "trip-1",
           },
-        })
+        }),
       ).rejects.toThrow("Failed to create notification");
     }, 30000); // Increase timeout for retry logic
 
@@ -347,7 +349,7 @@ describe("notifications", () => {
       });
 
       expect(result.success).toBe(true);
-       
+
       expect(mockDb.notification.create).toHaveBeenCalledTimes(2);
     });
   });
@@ -361,10 +363,7 @@ describe("notifications", () => {
       ] as never);
 
       mockDb.tripParticipant.findMany
-        .mockResolvedValueOnce([
-          { userId: "user-1" },
-          { userId: "user-2" },
-        ] as never)
+        .mockResolvedValueOnce([{ userId: "user-1" }, { userId: "user-2" }] as never)
         .mockResolvedValueOnce([{ userId: "user-3" }] as never)
         .mockResolvedValueOnce([{ userId: "user-4" }, { userId: "user-5" }] as never);
 
@@ -381,7 +380,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       expect(result.notificationIds).toHaveLength(3);
-       
+
       expect(mockDb.group.findMany).toHaveBeenCalled();
     });
 
@@ -445,7 +444,6 @@ describe("notifications", () => {
         tripId: "trip-1",
       });
 
-       
       expect(mockDb.tripParticipant.findMany).toHaveBeenCalled();
     });
 
@@ -468,7 +466,7 @@ describe("notifications", () => {
 
       expect(result.success).toBe(true);
       // When there are no participants, createMany is not called (implementation skips it)
-       
+
       expect(mockDb.notificationPush.createMany).not.toHaveBeenCalled();
     });
 

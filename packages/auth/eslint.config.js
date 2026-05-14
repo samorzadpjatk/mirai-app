@@ -4,7 +4,16 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   ...baseConfig,
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "**/*.d.ts", "**/*.d.ts.map", "**/*.js", "vitest.*.ts", "**/__tests__/**/*"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      "**/*.d.ts",
+      "**/*.d.ts.map",
+      "**/*.js",
+      "vitest.*.ts",
+      "**/__tests__/**/*",
+    ],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],

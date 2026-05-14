@@ -249,17 +249,23 @@ describe("Auth Store", () => {
         role: "USER",
       };
 
-      let authStateCallback: ((event: AuthChangeEvent, session: SupabaseSession | null) => void) | null = null;
+      let authStateCallback:
+        | ((event: AuthChangeEvent, session: SupabaseSession | null) => void)
+        | null = null;
 
       const mockClient = {
         auth: {
           getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockImplementation((callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
-            authStateCallback = callback;
-            return {
-              data: { subscription: { unsubscribe: vi.fn() } },
-            };
-          }),
+          onAuthStateChange: vi
+            .fn()
+            .mockImplementation(
+              (callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
+                authStateCallback = callback;
+                return {
+                  data: { subscription: { unsubscribe: vi.fn() } },
+                };
+              },
+            ),
         },
       } as unknown as SupabaseClient;
 
@@ -281,7 +287,7 @@ describe("Auth Store", () => {
       if (authStateCallback) {
         (authStateCallback as (event: AuthChangeEvent, session: SupabaseSession | null) => void)(
           "SIGNED_IN",
-          newSession
+          newSession,
         );
       }
 
@@ -292,17 +298,23 @@ describe("Auth Store", () => {
     });
 
     it("should handle auth state change with null session", async () => {
-      let authStateCallback: ((event: AuthChangeEvent, session: SupabaseSession | null) => void) | null = null;
+      let authStateCallback:
+        | ((event: AuthChangeEvent, session: SupabaseSession | null) => void)
+        | null = null;
 
       const mockClient = {
         auth: {
           getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockImplementation((callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
-            authStateCallback = callback;
-            return {
-              data: { subscription: { unsubscribe: vi.fn() } },
-            };
-          }),
+          onAuthStateChange: vi
+            .fn()
+            .mockImplementation(
+              (callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
+                authStateCallback = callback;
+                return {
+                  data: { subscription: { unsubscribe: vi.fn() } },
+                };
+              },
+            ),
         },
       } as unknown as SupabaseClient;
 
@@ -316,7 +328,7 @@ describe("Auth Store", () => {
       if (authStateCallback) {
         (authStateCallback as (event: AuthChangeEvent, session: SupabaseSession | null) => void)(
           "SIGNED_OUT",
-          null
+          null,
         );
       }
 
@@ -357,9 +369,9 @@ describe("Auth Store", () => {
 
   describe("signInWithOtp", () => {
     it("should throw error when not initialized", async () => {
-      await expect(
-        authStore.getState().signInWithOtp("test@example.com")
-      ).rejects.toThrow("[AuthStore] Not initialized. Call initialize() first.");
+      await expect(authStore.getState().signInWithOtp("test@example.com")).rejects.toThrow(
+        "[AuthStore] Not initialized. Call initialize() first.",
+      );
     });
 
     it("should sign in with OTP successfully", async () => {
@@ -400,16 +412,16 @@ describe("Auth Store", () => {
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
 
-      await expect(
-        authStore.getState().signInWithOtp("test@example.com")
-      ).rejects.toThrow(mockError);
+      await expect(authStore.getState().signInWithOtp("test@example.com")).rejects.toThrow(
+        mockError,
+      );
     });
   });
 
   describe("signInWithPassword", () => {
     it("should throw error when not initialized", async () => {
       await expect(
-        authStore.getState().signInWithPassword("test@example.com", "password")
+        authStore.getState().signInWithPassword("test@example.com", "password"),
       ).rejects.toThrow("[AuthStore] Not initialized. Call initialize() first.");
     });
 
@@ -478,7 +490,7 @@ describe("Auth Store", () => {
       await flushPromises();
 
       await expect(
-        authStore.getState().signInWithPassword("test@example.com", "password")
+        authStore.getState().signInWithPassword("test@example.com", "password"),
       ).rejects.toThrow(mockError);
     });
 
@@ -507,9 +519,9 @@ describe("Auth Store", () => {
 
   describe("verifyOtp", () => {
     it("should throw error when not initialized", async () => {
-      await expect(
-        authStore.getState().verifyOtp("test@example.com", "123456")
-      ).rejects.toThrow("[AuthStore] Not initialized. Call initialize() first.");
+      await expect(authStore.getState().verifyOtp("test@example.com", "123456")).rejects.toThrow(
+        "[AuthStore] Not initialized. Call initialize() first.",
+      );
     });
 
     it("should verify OTP and fetch user", async () => {
@@ -570,16 +582,16 @@ describe("Auth Store", () => {
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
 
-      await expect(
-        authStore.getState().verifyOtp("test@example.com", "123456")
-      ).rejects.toThrow(mockError);
+      await expect(authStore.getState().verifyOtp("test@example.com", "123456")).rejects.toThrow(
+        mockError,
+      );
     });
   });
 
   describe("signOut", () => {
     it("should throw error when not initialized", async () => {
       await expect(authStore.getState().signOut()).rejects.toThrow(
-        "[AuthStore] Not initialized. Call initialize() first."
+        "[AuthStore] Not initialized. Call initialize() first.",
       );
     });
 
@@ -650,7 +662,7 @@ describe("Auth Store", () => {
   describe("refreshSession", () => {
     it("should throw error when not initialized", async () => {
       await expect(authStore.getState().refreshSession()).rejects.toThrow(
-        "[AuthStore] Not initialized. Call initialize() first."
+        "[AuthStore] Not initialized. Call initialize() first.",
       );
     });
 

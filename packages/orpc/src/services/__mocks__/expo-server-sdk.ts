@@ -17,9 +17,7 @@ export class Expo {
     return chunks;
   }
 
-  async sendPushNotificationsAsync(
-    messages: ExpoPushMessage[]
-  ): Promise<ExpoPushTicket[]> {
+  async sendPushNotificationsAsync(messages: ExpoPushMessage[]): Promise<ExpoPushTicket[]> {
     await Promise.resolve();
     return messages.map((message) => ({
       status: "ok",
@@ -28,7 +26,7 @@ export class Expo {
   }
 
   async getPushNotificationReceiptsAsync(
-    _ticketIds: string[]
+    _ticketIds: string[],
   ): Promise<Record<string, ExpoPushReceipt>> {
     await Promise.resolve();
     return {};

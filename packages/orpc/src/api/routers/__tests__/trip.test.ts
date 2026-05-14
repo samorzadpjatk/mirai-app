@@ -1,14 +1,27 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { tripRouter } from "../trip";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, Trip, TripParticipant, TripGroup, TripResource, TripInsurance, TripInsuranceStep, TripSponsor, Sponsor } from "@mirai-app/db";
-import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } from "@mirai-app/auth";
+import type {
+  DB,
+  User,
+  Trip,
+  TripParticipant,
+  TripGroup,
+  TripResource,
+  TripInsurance,
+  TripInsuranceStep,
+  TripSponsor,
+  Sponsor,
+} from "@mirai-app/db";
+import {
+  requireAuth,
+  requireAdmin,
+  AuthenticationError,
+  AuthorizationError,
+} from "@mirai-app/auth";
 import { addDrizzleApi } from "../../../../vitest.setup";
 
 vi.mock("@mirai-app/auth", () => {
@@ -62,7 +75,7 @@ vi.mock("@mirai-app/auth", () => {
  */
 
 // Type for mock DB client - uses vi.MockedFn for all methods
- 
+
 type MockFn = ReturnType<typeof vi.fn> & ((...args: unknown[]) => unknown);
 
 interface MockDbClient {
@@ -243,7 +256,6 @@ describe("tripRouter", () => {
         },
       ];
 
-       
       mockDb.tripParticipant.findMany.mockResolvedValue([
         { tripId: "trip-1" },
         { tripId: "trip-2" },
@@ -271,11 +283,10 @@ describe("tripRouter", () => {
     });
 
     it("should use default pagination when not provided", async () => {
-       
       mockDb.trip.findMany.mockResolvedValue([]);
-       
+
       mockDb.trip.count.mockResolvedValue(0);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -293,7 +304,6 @@ describe("tripRouter", () => {
     });
 
     it("should return hasMore=true when there are more trips", async () => {
-       
       mockDb.tripParticipant.findMany.mockResolvedValue([{ tripId: "trip-1" }]);
       mockDb.trip.findMany.mockResolvedValue([]);
       mockDb.trip.count.mockResolvedValue(100);
@@ -344,7 +354,6 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findMany.mockResolvedValue([{ tripId: "trip-1" }]);
       mockDb.trip.findMany.mockResolvedValue([mockTrip]);
       mockDb.trip.count.mockResolvedValue(1);
@@ -393,19 +402,20 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue([]);
 
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
 
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -423,9 +433,8 @@ describe("tripRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not a participant", async () => {
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -438,15 +447,16 @@ describe("tripRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(caller.getById({ id: "trip-1" })).rejects.toThrow(ORPCError);
-      await expect(caller.getById({ id: "trip-1" })).rejects.toThrow("You are not a participant of this trip");
+      await expect(caller.getById({ id: "trip-1" })).rejects.toThrow(
+        "You are not a participant of this trip",
+      );
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -492,7 +502,7 @@ describe("tripRouter", () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             user: mockDbUser,
-             
+
             group: {
               id: "group-1",
               name: "Group A",
@@ -508,15 +518,17 @@ describe("tripRouter", () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
 
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -529,7 +541,7 @@ describe("tripRouter", () => {
       const result = await caller.getById({ id: "trip-1" });
 
       expect(result.groups[0]?.image).toBe("https://signed-url.example.com/image.jpg");
-       
+
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
@@ -554,7 +566,7 @@ describe("tripRouter", () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             user: mockDbUser,
-             
+
             group: {
               id: "group-1",
               name: "Group A",
@@ -570,15 +582,17 @@ describe("tripRouter", () => {
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
 
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue([]);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -619,19 +633,20 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue([]);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "resolved@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "resolved@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -663,9 +678,8 @@ describe("tripRouter", () => {
         participants: [] as TripParticipant[],
       };
 
-       
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -679,14 +693,13 @@ describe("tripRouter", () => {
       const result = await caller.getByIdAdmin({ id: "trip-1" });
 
       expect(result.id).toBe("trip-1");
-       
+
       expect(mockDb.tripParticipant.findUnique).not.toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
-       
       mockDb.trip.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -703,7 +716,6 @@ describe("tripRouter", () => {
     });
 
     it("should throw FORBIDDEN for non-admin users", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -732,9 +744,8 @@ describe("tripRouter", () => {
         updatedAt: new Date(),
       };
 
-       
       mockDb.trip.create.mockResolvedValue(newTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -755,14 +766,14 @@ describe("tripRouter", () => {
 
       expect(result.name).toBe("New Trip");
       expect(result.description).toBe("New Description");
-       
+
       expect(mockDb.trip.create).toHaveBeenCalledWith({
         data: {
           name: "New Trip",
           description: "New Description",
-           
+
           startDate: expect.any(Date),
-           
+
           endDate: expect.any(Date),
           backgroundImagePath: "images/trips/new-trip.jpg",
         },
@@ -781,9 +792,8 @@ describe("tripRouter", () => {
         updatedAt: new Date(),
       };
 
-       
       mockDb.trip.create.mockResolvedValue(newTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -805,7 +815,6 @@ describe("tripRouter", () => {
     });
 
     it("should throw error for invalid input (empty name)", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -817,16 +826,18 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.create({
-        name: "",
-        startDate: new Date(),
-        endDate: new Date(),
-      })).rejects.toThrow();
+      await expect(
+        caller.create({
+          name: "",
+          startDate: new Date(),
+          endDate: new Date(),
+        }),
+      ).rejects.toThrow();
     });
 
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Mock requireAdmin to throw AuthorizationError for non-admin users
-       
+
       requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
@@ -838,11 +849,13 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.create({
-        name: "New Trip",
-        startDate: new Date(),
-        endDate: new Date(),
-      })).rejects.toThrow();
+      await expect(
+        caller.create({
+          name: "New Trip",
+          startDate: new Date(),
+          endDate: new Date(),
+        }),
+      ).rejects.toThrow();
     });
   });
 
@@ -865,11 +878,10 @@ describe("tripRouter", () => {
         description: "Updated Description",
       };
 
-       
       mockDb.trip.findUnique.mockResolvedValue(existingTrip);
-       
+
       mockDb.trip.update.mockResolvedValue(updatedTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -909,11 +921,10 @@ describe("tripRouter", () => {
         endDate: new Date("2025-07-10"),
       };
 
-       
       mockDb.trip.findUnique.mockResolvedValue(existingTrip);
-       
+
       mockDb.trip.update.mockResolvedValue(updatedTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -935,9 +946,8 @@ describe("tripRouter", () => {
     });
 
     it("should throw NOT_FOUND when trip does not exist", async () => {
-       
       mockDb.trip.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -949,18 +959,21 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.update({
-        id: "non-existent",
-        name: "Updated Name",
-      })).rejects.toThrow(ORPCError);
-      await expect(caller.update({
-        id: "non-existent",
-        name: "Updated Name",
-      })).rejects.toThrow("Trip not found");
+      await expect(
+        caller.update({
+          id: "non-existent",
+          name: "Updated Name",
+        }),
+      ).rejects.toThrow(ORPCError);
+      await expect(
+        caller.update({
+          id: "non-existent",
+          name: "Updated Name",
+        }),
+      ).rejects.toThrow("Trip not found");
     });
 
     it("should throw FORBIDDEN for non-admin users", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -972,10 +985,12 @@ describe("tripRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.update({
-        id: "trip-1",
-        name: "Updated Name",
-      })).rejects.toThrow();
+      await expect(
+        caller.update({
+          id: "trip-1",
+          name: "Updated Name",
+        }),
+      ).rejects.toThrow();
     });
   });
 
@@ -1033,13 +1048,12 @@ describe("tripRouter", () => {
         },
       ];
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.tripResource.findMany.mockResolvedValue(mockResources);
-       
+
       mockDb.tripInsurance.findUnique.mockResolvedValue({ ...mockInsurance, steps: mockSteps });
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1061,13 +1075,12 @@ describe("tripRouter", () => {
     });
 
     it("should return empty resources when none exist", async () => {
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.tripResource.findMany.mockResolvedValue([]);
-       
+
       mockDb.tripInsurance.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1085,9 +1098,8 @@ describe("tripRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not a participant", async () => {
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1100,7 +1112,9 @@ describe("tripRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow(ORPCError);
-      await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow("You are not a participant of this trip");
+      await expect(caller.getResources({ tripId: "trip-1" })).rejects.toThrow(
+        "You are not a participant of this trip",
+      );
     });
 
     it("should sort resources by sortOrder", async () => {
@@ -1134,13 +1148,12 @@ describe("tripRouter", () => {
         },
       ];
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.tripResource.findMany.mockResolvedValue(mockResources);
-       
+
       mockDb.tripInsurance.findUnique.mockResolvedValue(null);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1154,7 +1167,6 @@ describe("tripRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _result = await caller.getResources({ tripId: "trip-1" });
 
-       
       expect(mockDb.tripResource.findMany).toHaveBeenCalled();
     });
   });
@@ -1172,9 +1184,8 @@ describe("tripRouter", () => {
         updatedAt: new Date(),
       };
 
-       
       mockDb.trip.delete.mockResolvedValue(deletedTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -1193,7 +1204,7 @@ describe("tripRouter", () => {
 
     it("should throw FORBIDDEN for non-admin users", async () => {
       // Simulate non-admin user by making requireAdmin throw AuthorizationError
-       
+
       requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
@@ -1245,19 +1256,20 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -1307,19 +1319,20 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb as unknown as DB,
@@ -1370,22 +1383,23 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue(mockTrip.groups);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
-      mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
+
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "test@example.com" } },
+        error: null,
+      });
 
       // Mock failed signed URL creation
-       
+
       mockSupabase.storage.from = vi.fn().mockReturnValue({
         createSignedUrl: vi.fn().mockResolvedValue({
           data: null,
@@ -1434,18 +1448,16 @@ describe("tripRouter", () => {
         ],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue([]);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
-       
-       
+
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
 
       const ctx: TRPCContext = {
@@ -1476,15 +1488,14 @@ describe("tripRouter", () => {
         participants: [],
       };
 
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue({ userId: mockDbUser.id });
-       
+
       mockDb.trip.findUnique.mockResolvedValue(mockTrip);
-       
+
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockDb.tripGroup.findMany.mockResolvedValue([]);
-       
+
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
@@ -1504,7 +1515,7 @@ describe("tripRouter", () => {
   describe("Authentication error handling", () => {
     it("should throw UNAUTHORIZED when no token provided for protected procedure", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
-       
+
       requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
@@ -1522,7 +1533,7 @@ describe("tripRouter", () => {
 
     it("should throw UNAUTHORIZED when token is invalid", async () => {
       // Force requireAuth to always throw AuthenticationError for this test
-       
+
       requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
@@ -1541,7 +1552,6 @@ describe("tripRouter", () => {
 
   describe("Input validation", () => {
     it("should validate trip id format in getById", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1558,7 +1568,6 @@ describe("tripRouter", () => {
     });
 
     it("should validate pagination limits", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
@@ -1578,7 +1587,6 @@ describe("tripRouter", () => {
     });
 
     it("should validate required fields in create", async () => {
-       
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
@@ -1592,10 +1600,12 @@ describe("tripRouter", () => {
 
       // Missing name should fail
       // @ts-expect-error - Testing invalid input
-      await expect(caller.create({
-        startDate: new Date(),
-        endDate: new Date(),
-      })).rejects.toThrow();
+      await expect(
+        caller.create({
+          startDate: new Date(),
+          endDate: new Date(),
+        }),
+      ).rejects.toThrow();
     });
   });
 });

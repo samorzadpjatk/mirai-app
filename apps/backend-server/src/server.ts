@@ -32,71 +32,66 @@ export function createServer(opts: ServerOptions) {
     ],
   });
 
-  app.use(
-    prefix + "/*",
-    async (c, next) => {
-      const request =
-        c.req.method === "GET" || c.req.method === "HEAD"
-          ? c.req.raw
-          : new Proxy(c.req.raw, {
-              get(target, prop) {
-                switch (prop) {
-                  case "arrayBuffer":
-                    return () => c.req.arrayBuffer();
-                  case "blob":
-                    return () => c.req.blob();
-                  case "formData":
-                    return () => c.req.formData();
-                  case "json":
-                    return () => c.req.json();
-                  case "text":
-                    return () => c.req.text();
-                  default:
-                    return Reflect.get(target, prop, target) as unknown;
-                }
-              },
-            });
+  app.use(prefix + "/*", async (c, next) => {
+    const request =
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? c.req.raw
+        : new Proxy(c.req.raw, {
+            get(target, prop) {
+              switch (prop) {
+                case "arrayBuffer":
+                  return () => c.req.arrayBuffer();
+                case "blob":
+                  return () => c.req.blob();
+                case "formData":
+                  return () => c.req.formData();
+                case "json":
+                  return () => c.req.json();
+                case "text":
+                  return () => c.req.text();
+                default:
+                  return Reflect.get(target, prop, target) as unknown;
+              }
+            },
+          });
 
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const databaseUrl = process.env.DATABASE_URL;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const databaseUrl = process.env.DATABASE_URL;
 
-      if (!supabaseUrl || !supabaseKey) {
-        throw new Error(
-          "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-        );
-      }
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error(
+        "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+      );
+    }
 
-      if (!databaseUrl) {
-        throw new Error(
-          "Missing database credentials. Set DATABASE_URL.",
-        );
-      }
+    if (!databaseUrl) {
+      throw new Error("Missing database credentials. Set DATABASE_URL.");
+    }
 
-      const headers = new Headers(c.req.raw.headers);
-      if (c.req.url) {
-        headers.set("x-original-url", c.req.url);
-      }
+    const headers = new Headers(c.req.raw.headers);
+    if (c.req.url) {
+      headers.set("x-original-url", c.req.url);
+    }
 
-      const context = createORPCContext({
-        headers,
-        databaseUrl,
-        supabaseUrl,
-        supabaseKey,
-      });
+    const context = createORPCContext({
+      headers,
+      databaseUrl,
+      supabaseUrl,
+      supabaseKey,
+    });
 
-      const { matched, response } = await rpcHandler.handle(request, {
-        prefix: prefix as `/${string}`,
-        context,
-      });
+    const { matched, response } = await rpcHandler.handle(request, {
+      prefix: prefix as `/${string}`,
+      context,
+    });
 
-      if (matched) {
-        return response;
-      }
+    if (matched) {
+      return response;
+    }
 
-      await next();
-    },
-  );
+    await next();
+  });
 
   app.get("/health", (c) => c.text("OK"));
 
@@ -159,9 +154,7 @@ export function createServer(opts: ServerOptions) {
             }
 
             if (!databaseUrl) {
-              throw new Error(
-                "Missing database credentials. Set DATABASE_URL.",
-              );
+              throw new Error("Missing database credentials. Set DATABASE_URL.");
             }
 
             const context = createORPCContext({

@@ -8,7 +8,7 @@ export default defineWorkspace([
   resolve(__dirname, "packages/shared/vitest.config.ts"),
   resolve(__dirname, "packages/supabase/vitest.config.ts"),
   resolve(__dirname, "packages/orpc/vitest.config.ts"),
-  
+
   // Apps (backend only - native uses Jest)
   resolve(__dirname, "apps/backend-server/vitest.config.ts"),
   resolve(__dirname, "apps/notification-sender/vitest.config.ts"),

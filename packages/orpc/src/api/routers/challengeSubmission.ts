@@ -86,8 +86,7 @@ const ensureTripParticipant = async (
   tripId: string,
 ) => {
   const participant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { eq, and }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
   });
   if (!participant) {
     throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
@@ -141,8 +140,7 @@ const ensureChallengeInTrip = async (
     );
 
   const challenge = await context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) =>
-      and(eq(c.id, challengeId), eq(c.tripId, tripId)),
+    where: (c, { eq, and }) => and(eq(c.id, challengeId), eq(c.tripId, tripId)),
     columns: {
       id: true,
       name: true,
@@ -185,7 +183,9 @@ const assertSubmissionWithinTargetLocation = (params: {
     typeof params.challenge.targetLatitude !== "number" ||
     typeof params.challenge.targetLongitude !== "number"
   ) {
-    throw new ORPCError("BAD_REQUEST", { message: "Location challenge is missing required coordinates" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Location challenge is missing required coordinates",
+    });
   }
 
   const distanceKm = calculateDistance(
@@ -216,7 +216,9 @@ const shouldAutoApproveSubmission = (params: {
     const expected = params.challenge.expectedValue?.trim();
     const submitted = params.textContent?.trim();
     if (!expected) {
-      throw new ORPCError("BAD_REQUEST", { message: "QR challenge is not configured with expected code" });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "QR challenge is not configured with expected code",
+      });
     }
     if (!submitted || submitted !== expected) {
       throw new ORPCError("BAD_REQUEST", { message: "Invalid QR code" });
@@ -262,12 +264,9 @@ const validateSubmissionPayload = (input: {
   longitude?: number | null;
 }) => {
   const imageCount = input.imageIds?.length ?? 0;
-  const hasText = Boolean(
-    input.textContent && input.textContent.trim().length > 0,
-  );
+  const hasText = Boolean(input.textContent && input.textContent.trim().length > 0);
   const hasVideo = Boolean(input.videoId && input.videoId.trim().length > 0);
-  const hasLocation =
-    typeof input.latitude === "number" && typeof input.longitude === "number";
+  const hasLocation = typeof input.latitude === "number" && typeof input.longitude === "number";
 
   switch (input.submissionType) {
     case "IMAGE":
@@ -371,8 +370,7 @@ const rebalanceSpeedRankings = async (params: {
       ranking: nextRanking,
     });
 
-    const previousTotal =
-      (submission.awardedPoints ?? 0) + (submission.bonusPoints ?? 0);
+    const previousTotal = (submission.awardedPoints ?? 0) + (submission.bonusPoints ?? 0);
     const nextTotal = nextAwardedPoints + (submission.bonusPoints ?? 0);
     const delta = nextTotal - previousTotal;
 
@@ -433,10 +431,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return submissions.map((submission) => ({
         ...submission,
-        reviewedBy: attachReviewerEmail(
-          submission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
       }));
     }),
 
@@ -480,10 +475,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return sanitizedSubmissions.map((submission) => ({
         ...submission,
-        reviewedBy: attachReviewerEmail(
-          submission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
       }));
     }),
 
@@ -518,10 +510,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return {
         ...submission,
-        reviewedBy: attachReviewerEmail(
-          submission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
       };
     }),
 
@@ -556,10 +545,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return {
         ...submission,
-        reviewedBy: attachReviewerEmail(
-          submission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
       };
     }),
 
@@ -589,14 +575,12 @@ export const challengeSubmissionRouter = createORPCRouter({
           tripId: input.tripId,
         })) ?? input.challengeId;
 
-      const challenge = await ensureChallengeInTrip(
-        context,
-        resolvedChallengeId,
-        input.tripId,
-      );
+      const challenge = await ensureChallengeInTrip(context, resolvedChallengeId, input.tripId);
 
       if (challenge.status !== "ACTIVE") {
-        throw new ORPCError("FORBIDDEN", { message: "Submission is allowed only for active challenges" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Submission is allowed only for active challenges",
+        });
       }
 
       if (challenge.endTime && challenge.endTime <= new Date()) {
@@ -605,10 +589,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       const existing = await context.db.query.challengeSubmissions.findFirst({
         where: (cs, { eq, and }) =>
-          and(
-            eq(cs.challengeId, resolvedChallengeId),
-            eq(cs.groupId, participantGroupId),
-          ),
+          and(eq(cs.challengeId, resolvedChallengeId), eq(cs.groupId, participantGroupId)),
         columns: { id: true },
       });
 
@@ -634,9 +615,7 @@ export const challengeSubmissionRouter = createORPCRouter({
       });
       const now = new Date();
 
-      const awardPoints = autoApproved
-        ? resolveAwardedPoints(challenge, {})
-        : 0;
+      const awardPoints = autoApproved ? resolveAwardedPoints(challenge, {}) : 0;
       const shouldAwardCoins = autoApproved && awardPoints > 0;
 
       const createdSubmissionId = await context.db.transaction(async (tx) => {
@@ -705,10 +684,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return {
         ...submission,
-        reviewedBy: attachReviewerEmail(
-          submission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
       };
     }),
 
@@ -733,8 +709,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       const participantGroupId = participant.groupId;
       const submission = await context.db.query.challengeSubmissions.findFirst({
-        where: (cs, { eq, and }) =>
-          and(eq(cs.id, input.id), eq(cs.groupId, participantGroupId)),
+        where: (cs, { eq, and }) => and(eq(cs.id, input.id), eq(cs.groupId, participantGroupId)),
         columns: {
           id: true,
           status: true,
@@ -770,146 +745,146 @@ export const challengeSubmissionRouter = createORPCRouter({
       }
 
       if (submission.status === "APPROVED") {
-        throw new ORPCError("FORBIDDEN", { message: "Nie można edytować zatwierdzonego zgłoszenia" });
+        throw new ORPCError("FORBIDDEN", {
+          message: "Nie można edytować zatwierdzonego zgłoszenia",
+        });
       }
 
       const currentTime = new Date();
 
-      const updatedSubmissionId = await context.db.transaction(async (tx): Promise<ChallengeSubmission> => {
-        if (
-          submission.challenge.status === "VISIBLE" &&
-          submission.challenge.startTime &&
-          submission.challenge.startTime <= currentTime
-        ) {
-          const activation = await tx
-            .update(challenges)
-            .set({ status: "ACTIVE" })
-            .where(
-              and(
-                eq(challenges.id, submission.challenge.id),
-                eq(challenges.status, "VISIBLE"),
-              ),
-            )
-            .returning({ id: challenges.id });
+      const updatedSubmissionId = await context.db.transaction(
+        async (tx): Promise<ChallengeSubmission> => {
+          if (
+            submission.challenge.status === "VISIBLE" &&
+            submission.challenge.startTime &&
+            submission.challenge.startTime <= currentTime
+          ) {
+            const activation = await tx
+              .update(challenges)
+              .set({ status: "ACTIVE" })
+              .where(
+                and(eq(challenges.id, submission.challenge.id), eq(challenges.status, "VISIBLE")),
+              )
+              .returning({ id: challenges.id });
 
-          if (activation.length > 0) {
-            await createChallengeStatusActivityById({
-              tx,
-              challengeId: submission.challenge.id,
-              eventType: "challenge_started",
-              createdByAdmin: null,
+            if (activation.length > 0) {
+              await createChallengeStatusActivityById({
+                tx,
+                challengeId: submission.challenge.id,
+                eventType: "challenge_started",
+                createdByAdmin: null,
+              });
+            }
+            submission.challenge.status = "ACTIVE";
+          }
+
+          if (
+            submission.challenge.status === "ACTIVE" &&
+            submission.challenge.scoringCategory === "PEER_VOTING" &&
+            submission.challenge.votingStartTime &&
+            submission.challenge.votingStartTime <= currentTime
+          ) {
+            const movedToVoting = await tx
+              .update(challenges)
+              .set({ status: "VOTING_PHASE" })
+              .where(
+                and(
+                  eq(challenges.id, submission.challenge.id),
+                  eq(challenges.status, "ACTIVE"),
+                  eq(challenges.scoringCategory, "PEER_VOTING"),
+                  lte(challenges.votingStartTime, currentTime),
+                ),
+              )
+              .returning({ id: challenges.id });
+
+            if (movedToVoting.length > 0) {
+              await createChallengeStatusActivityById({
+                tx,
+                challengeId: submission.challenge.id,
+                eventType: "voting_started",
+                createdByAdmin: null,
+              });
+            }
+            submission.challenge.status = "VOTING_PHASE";
+          } else if (
+            (submission.challenge.status === "VISIBLE" ||
+              submission.challenge.status === "ACTIVE") &&
+            submission.challenge.scoringCategory !== "PEER_VOTING" &&
+            submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
+            submission.challenge.endTime &&
+            submission.challenge.endTime <= currentTime
+          ) {
+            await tx
+              .update(challenges)
+              .set({ status: "COMPLETED" })
+              .where(eq(challenges.id, submission.challenge.id));
+            submission.challenge.status = "COMPLETED";
+          }
+
+          if (submission.challenge.status !== "ACTIVE") {
+            throw new ORPCError("FORBIDDEN", {
+              message: "Submission is allowed only for active challenges",
             });
           }
-          submission.challenge.status = "ACTIVE";
-        }
 
-        if (
-          submission.challenge.status === "ACTIVE" &&
-          submission.challenge.scoringCategory === "PEER_VOTING" &&
-          submission.challenge.votingStartTime &&
-          submission.challenge.votingStartTime <= currentTime
-        ) {
-          const movedToVoting = await tx
-            .update(challenges)
-            .set({ status: "VOTING_PHASE" })
-            .where(
-              and(
-                eq(challenges.id, submission.challenge.id),
-                eq(challenges.status, "ACTIVE"),
-                eq(challenges.scoringCategory, "PEER_VOTING"),
-                lte(challenges.votingStartTime, currentTime),
-              ),
-            )
-            .returning({ id: challenges.id });
+          if (submission.challenge.endTime && submission.challenge.endTime <= currentTime) {
+            throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
+          }
 
-          if (movedToVoting.length > 0) {
-            await createChallengeStatusActivityById({
-              tx,
-              challengeId: submission.challenge.id,
-              eventType: "voting_started",
-              createdByAdmin: null,
+          const nextImageIds = input.imageIds ?? submission.imageIds;
+          const nextVideoId = input.videoId ?? submission.videoId;
+          const nextTextContent = input.textContent ?? submission.textContent;
+          const nextLatitude = input.latitude ?? submission.latitude;
+          const nextLongitude = input.longitude ?? submission.longitude;
+
+          validateSubmissionPayload({
+            submissionType: submission.challenge.submissionType,
+            imageIds: nextImageIds,
+            videoId: nextVideoId,
+            textContent: nextTextContent,
+            latitude: nextLatitude ?? undefined,
+            longitude: nextLongitude ?? undefined,
+          });
+
+          const autoApproved = shouldAutoApproveSubmission({
+            challenge: submission.challenge,
+            textContent: nextTextContent,
+            latitude: nextLatitude,
+            longitude: nextLongitude,
+          });
+          const now = new Date();
+
+          const updated = await tx
+            .update(challengeSubmissions)
+            .set({
+              imageIds: input.imageIds,
+              videoId: input.videoId,
+              textContent: input.textContent,
+              latitude: input.latitude,
+              longitude: input.longitude,
+              status: autoApproved ? "APPROVED" : "PENDING",
+              reviewedAt: autoApproved ? now : null,
+              reviewedById: null,
+              rejectionReason: null,
+            })
+            .where(eq(challengeSubmissions.id, input.id))
+            .returning();
+
+          const updatedRow = Array.isArray(updated) ? updated[0] : updated;
+          if (!updatedRow) {
+            throw new ORPCError("INTERNAL_SERVER_ERROR", {
+              message: "Failed to update submission",
             });
           }
-          submission.challenge.status = "VOTING_PHASE";
-        } else if (
-          (submission.challenge.status === "VISIBLE" ||
-            submission.challenge.status === "ACTIVE") &&
-          submission.challenge.scoringCategory !== "PEER_VOTING" &&
-          submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
-          submission.challenge.endTime &&
-          submission.challenge.endTime <= currentTime
-        ) {
-          await tx
-            .update(challenges)
-            .set({ status: "COMPLETED" })
-            .where(eq(challenges.id, submission.challenge.id));
-          submission.challenge.status = "COMPLETED";
-        }
-
-        if (submission.challenge.status !== "ACTIVE") {
-          throw new ORPCError("FORBIDDEN", { message: "Submission is allowed only for active challenges" });
-        }
-
-        if (
-          submission.challenge.endTime &&
-          submission.challenge.endTime <= currentTime
-        ) {
-          throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
-        }
-
-        const nextImageIds = input.imageIds ?? submission.imageIds;
-        const nextVideoId = input.videoId ?? submission.videoId;
-        const nextTextContent = input.textContent ?? submission.textContent;
-        const nextLatitude = input.latitude ?? submission.latitude;
-        const nextLongitude = input.longitude ?? submission.longitude;
-
-        validateSubmissionPayload({
-          submissionType: submission.challenge.submissionType,
-          imageIds: nextImageIds,
-          videoId: nextVideoId,
-          textContent: nextTextContent,
-          latitude: nextLatitude ?? undefined,
-          longitude: nextLongitude ?? undefined,
-        });
-
-        const autoApproved = shouldAutoApproveSubmission({
-          challenge: submission.challenge,
-          textContent: nextTextContent,
-          latitude: nextLatitude,
-          longitude: nextLongitude,
-        });
-        const now = new Date();
-
-        const updated = await tx
-          .update(challengeSubmissions)
-          .set({
-            imageIds: input.imageIds,
-            videoId: input.videoId,
-            textContent: input.textContent,
-            latitude: input.latitude,
-            longitude: input.longitude,
-            status: autoApproved ? "APPROVED" : "PENDING",
-            reviewedAt: autoApproved ? now : null,
-            reviewedById: null,
-            rejectionReason: null,
-          })
-          .where(eq(challengeSubmissions.id, input.id))
-          .returning();
-
-        const updatedRow = Array.isArray(updated) ? updated[0] : updated;
-        if (!updatedRow) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update submission" });
-        }
-        return updatedRow;
-      });
-
-      const enrichedSubmission = await context.db.query.challengeSubmissions.findFirst(
-        {
-          where: (cs, { eq }) => eq(cs.id, updatedSubmissionId.id),
-          columns: submissionBaseColumns,
-          with: submissionWithRelations,
+          return updatedRow;
         },
       );
+
+      const enrichedSubmission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq }) => eq(cs.id, updatedSubmissionId.id),
+        columns: submissionBaseColumns,
+        with: submissionWithRelations,
+      });
 
       if (!enrichedSubmission) {
         throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
@@ -921,10 +896,7 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return {
         ...enrichedSubmission,
-        reviewedBy: attachReviewerEmail(
-          enrichedSubmission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(enrichedSubmission.reviewedBy, emailByAuthUserId),
       };
     }),
 
@@ -962,9 +934,7 @@ export const challengeSubmissionRouter = createORPCRouter({
         throw new ORPCError("FORBIDDEN", { message: "Nie można usunąć zatwierdzonego zgłoszenia" });
       }
 
-      await context.db
-        .delete(challengeSubmissions)
-        .where(eq(challengeSubmissions.id, input.id));
+      await context.db.delete(challengeSubmissions).where(eq(challengeSubmissions.id, input.id));
       return { success: true };
     }),
 
@@ -1016,7 +986,10 @@ export const challengeSubmissionRouter = createORPCRouter({
       }
 
       if (submission.challenge.scoringCategory === "JUDGED_STAFF") {
-        throw new ORPCError("BAD_REQUEST", { message: "For judged staff challenges use staff voting flow instead of manual approve/reject" });
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "For judged staff challenges use staff voting flow instead of manual approve/reject",
+        });
       }
 
       const isSpeed = submission.challenge.scoringCategory === "SPEED";
@@ -1045,8 +1018,7 @@ export const challengeSubmissionRouter = createORPCRouter({
           .update(challengeSubmissions)
           .set({
             status: input.status,
-            rejectionReason:
-              input.status === "REJECTED" ? input.rejectionReason : null,
+            rejectionReason: input.status === "REJECTED" ? input.rejectionReason : null,
             reviewedById: context.dbUser.id,
             reviewedAt: new Date(),
             awardedPoints: isSpeed ? undefined : input.awardedPoints,
@@ -1084,68 +1056,68 @@ export const challengeSubmissionRouter = createORPCRouter({
           });
         }
 
-        const refreshedForResponse = await tx.query.challengeSubmissions.findFirst(
-          {
-            where: (cs, { eq }) => eq(cs.id, input.id),
-            columns: submissionBaseColumns,
-            with: submissionWithRelations,
-          },
-        );
+        const refreshedForResponse = await tx.query.challengeSubmissions.findFirst({
+          where: (cs, { eq }) => eq(cs.id, input.id),
+          columns: submissionBaseColumns,
+          with: submissionWithRelations,
+        });
 
         if (!refreshedForResponse) {
           throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
         }
 
         if (shouldCreateApprovalActivity) {
-          const existingSubmissionActivity =
-            await tx.query.submissionActivities.findFirst({
-              where: (sa, { eq }) => eq(sa.submissionId, input.id),
-              columns: { activityId: true },
-            });
+          const existingSubmissionActivity = await tx.query.submissionActivities.findFirst({
+            where: (sa, { eq }) => eq(sa.submissionId, input.id),
+            columns: { activityId: true },
+          });
 
           if (!existingSubmissionActivity) {
-            const refreshedForActivity =
-              await tx.query.challengeSubmissions.findFirst({
-                where: (cs, { eq }) => eq(cs.id, input.id),
-                columns: {
-                  id: true,
-                  challengeId: true,
-                  groupId: true,
-                  imageIds: true,
-                  videoId: true,
-                  awardedPoints: true,
-                  bonusPoints: true,
-                  ranking: true,
+            const refreshedForActivity = await tx.query.challengeSubmissions.findFirst({
+              where: (cs, { eq }) => eq(cs.id, input.id),
+              columns: {
+                id: true,
+                challengeId: true,
+                groupId: true,
+                imageIds: true,
+                videoId: true,
+                awardedPoints: true,
+                bonusPoints: true,
+                ranking: true,
+              },
+              with: {
+                challenge: {
+                  columns: { id: true, tripId: true, name: true },
                 },
-                with: {
-                  challenge: {
-                    columns: { id: true, tripId: true, name: true },
-                  },
-                  group: {
-                    columns: { id: true, name: true },
-                  },
+                group: {
+                  columns: { id: true, name: true },
                 },
-              });
+              },
+            });
 
             if (!refreshedForActivity) {
               throw new ORPCError("NOT_FOUND", { message: "Zgłoszenie nie zostało znalezione" });
             }
 
             const totalPoints =
-              (refreshedForActivity.awardedPoints ?? 0) +
-              (refreshedForActivity.bonusPoints ?? 0);
+              (refreshedForActivity.awardedPoints ?? 0) + (refreshedForActivity.bonusPoints ?? 0);
 
-            const [feed] = await tx.insert(activityFeeds).values({
-              tripId: refreshedForActivity.challenge.tripId,
-              activityType: "submission",
-              title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
-              description: "Nie czekaj, ty też podejmij wyzwanie!",
-              imageUrl: refreshedForActivity.imageIds[0],
-              createdByAdmin: context.dbUser.id,
-            }).returning();
+            const [feed] = await tx
+              .insert(activityFeeds)
+              .values({
+                tripId: refreshedForActivity.challenge.tripId,
+                activityType: "submission",
+                title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
+                description: "Nie czekaj, ty też podejmij wyzwanie!",
+                imageUrl: refreshedForActivity.imageIds[0],
+                createdByAdmin: context.dbUser.id,
+              })
+              .returning();
 
             if (!feed) {
-              throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create activity feed" });
+              throw new ORPCError("INTERNAL_SERVER_ERROR", {
+                message: "Failed to create activity feed",
+              });
             }
 
             await tx.insert(submissionActivities).values({
@@ -1179,19 +1151,14 @@ export const challengeSubmissionRouter = createORPCRouter({
 
       return {
         ...updatedSubmission,
-        reviewedBy: attachReviewerEmail(
-          updatedSubmission.reviewedBy,
-          emailByAuthUserId,
-        ),
+        reviewedBy: attachReviewerEmail(updatedSubmission.reviewedBy, emailByAuthUserId),
       };
     }),
 
   adminDelete: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      await context.db
-        .delete(challengeSubmissions)
-        .where(eq(challengeSubmissions.id, input.id));
+      await context.db.delete(challengeSubmissions).where(eq(challengeSubmissions.id, input.id));
       return { success: true };
     }),
 });

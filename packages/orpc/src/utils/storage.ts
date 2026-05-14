@@ -1,4 +1,4 @@
-import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName } from '@mirai-app/shared';
+import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName } from "@mirai-app/shared";
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 
@@ -7,14 +7,7 @@ const IMAGE_BUCKET = STANDARD_BUCKETS.IMAGES;
 const VIDEO_BUCKET = STANDARD_BUCKETS.VIDEOS;
 const PUBLIC_BUCKET = STANDARD_BUCKETS.PUBLIC;
 
-const VIDEO_EXTENSIONS = new Set([
-  "mp4",
-  "mov",
-  "m4v",
-  "webm",
-  "avi",
-  "mkv",
-]);
+const VIDEO_EXTENSIONS = new Set(["mp4", "mov", "m4v", "webm", "avi", "mkv"]);
 
 const KNOWN_BUCKETS = new Set<string>(Object.values(STANDARD_BUCKETS));
 
@@ -42,9 +35,7 @@ const inferBucketFromPath = (rawPath: string): { bucket: string; path: string } 
 
   if (normalized.startsWith("challenge/")) {
     const extension = getFileExtension(normalized);
-    const bucket = extension && VIDEO_EXTENSIONS.has(extension)
-      ? VIDEO_BUCKET
-      : IMAGE_BUCKET;
+    const bucket = extension && VIDEO_EXTENSIONS.has(extension) ? VIDEO_BUCKET : IMAGE_BUCKET;
     return { bucket, path: normalized };
   }
 
@@ -87,9 +78,7 @@ export const parseSupabaseStorageObject = (
   const objectPrefix = "/storage/v1/object/";
   const objectIndex = normalizedPath.indexOf(objectPrefix);
   let objectPath =
-    objectIndex >= 0
-      ? normalizedPath.slice(objectIndex + objectPrefix.length)
-      : normalizedPath;
+    objectIndex >= 0 ? normalizedPath.slice(objectIndex + objectPrefix.length) : normalizedPath;
 
   objectPath = objectPath.replace(/^\/+/, "");
   if (!objectPath) return null;
@@ -134,8 +123,12 @@ export const parseSupabaseStoragePath = (
       return { bucket, path };
     }
 
-    if (!SUPABASE_OBJECT_PREFIXES.has(firstSegment) &&
-      !["challenge", "group", "avatar", "files-public", "trips", "rewards", "activity"].includes(firstSegment)) {
+    if (
+      !SUPABASE_OBJECT_PREFIXES.has(firstSegment) &&
+      !["challenge", "group", "avatar", "files-public", "trips", "rewards", "activity"].includes(
+        firstSegment,
+      )
+    ) {
       const bucket = normalizeBucketName(segments.shift());
       if (!bucket) return null;
 

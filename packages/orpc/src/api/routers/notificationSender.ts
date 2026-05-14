@@ -29,28 +29,27 @@ export const notificationSenderRouter = createORPCRouter({
     )
     .handler(async ({ input, context }) => {
       try {
-        const scheduleExecution =
-          await context.db.query.notificationScheduleExecutions.findFirst({
-            where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
-            with: { schedule: true },
-          });
+        const scheduleExecution = await context.db.query.notificationScheduleExecutions.findFirst({
+          where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
+          with: { schedule: true },
+        });
 
-        await context.db.insert(notificationDeliveries).values({
-          tripId: scheduleExecution?.schedule?.tripId,
-          notificationId: input.notificationId,
-          scheduleId: scheduleExecution?.schedule?.id,
-          deliveryStartedAt: new Date(),
-          status: "pending",
-        }).returning();
+        await context.db
+          .insert(notificationDeliveries)
+          .values({
+            tripId: scheduleExecution?.schedule?.tripId,
+            notificationId: input.notificationId,
+            scheduleId: scheduleExecution?.schedule?.id,
+            deliveryStartedAt: new Date(),
+            status: "pending",
+          })
+          .returning();
 
         console.log(
           `[Delivery Tracker] Started tracking delivery for notification ${input.notificationId}`,
         );
       } catch (error) {
-        console.error(
-          "[Delivery Tracker] Failed to track delivery start:",
-          error,
-        );
+        console.error("[Delivery Tracker] Failed to track delivery start:", error);
       }
     }),
   trackDeliveryComplete: publicProcedure
@@ -72,23 +71,24 @@ export const notificationSenderRouter = createORPCRouter({
               ? "failure"
               : "partial_failure";
 
-        await context.db.update(notificationDeliveries).set({
-          deliveryCompletedAt: new Date(),
-          totalRecipients: input.totalRecipients,
-          successCount: input.successCount,
-          failureCount: input.failureCount,
-          errors: input.errors,
-          status,
-        }).where(eq(notificationDeliveries.notificationId, input.notificationId)).returning();
+        await context.db
+          .update(notificationDeliveries)
+          .set({
+            deliveryCompletedAt: new Date(),
+            totalRecipients: input.totalRecipients,
+            successCount: input.successCount,
+            failureCount: input.failureCount,
+            errors: input.errors,
+            status,
+          })
+          .where(eq(notificationDeliveries.notificationId, input.notificationId))
+          .returning();
 
         console.log(
           `[Delivery Tracker] Completed tracking for notification ${input.notificationId}: ${input.successCount}/${input.totalRecipients} successful`,
         );
       } catch (error) {
-        console.error(
-          "[Delivery Tracker] Failed to track delivery completion:",
-          error,
-        );
+        console.error("[Delivery Tracker] Failed to track delivery completion:", error);
       }
     }),
   trackDeliveryFailure: publicProcedure
@@ -101,26 +101,28 @@ export const notificationSenderRouter = createORPCRouter({
     .handler(async ({ input, context }) => {
       try {
         const errorMessage =
-          input.error instanceof Error
-            ? input.error.message
-            : String(input.error);
+          input.error instanceof Error ? input.error.message : String(input.error);
 
         const existing = await context.db.query.notificationDeliveries.findFirst({
           where: (nd, { eq }) => eq(nd.notificationId, input.notificationId),
         });
 
         if (existing) {
-          await context.db.update(notificationDeliveries).set({
-            deliveryCompletedAt: new Date(),
-            errors: errorMessage,
-            status: "failure",
-          }).where(eq(notificationDeliveries.notificationId, input.notificationId));
+          await context.db
+            .update(notificationDeliveries)
+            .set({
+              deliveryCompletedAt: new Date(),
+              errors: errorMessage,
+              status: "failure",
+            })
+            .where(eq(notificationDeliveries.notificationId, input.notificationId));
         } else {
-          const scheduleExecution =
-            await context.db.query.notificationScheduleExecutions.findFirst({
+          const scheduleExecution = await context.db.query.notificationScheduleExecutions.findFirst(
+            {
               where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
               with: { schedule: true },
-            });
+            },
+          );
 
           await context.db.insert(notificationDeliveries).values({
             notificationId: input.notificationId,
@@ -133,14 +135,9 @@ export const notificationSenderRouter = createORPCRouter({
           });
         }
 
-        console.log(
-          `[Delivery Tracker] Tracked failure for notification ${input.notificationId}`,
-        );
+        console.log(`[Delivery Tracker] Tracked failure for notification ${input.notificationId}`);
       } catch (err) {
-        console.error(
-          "[Delivery Tracker] Failed to track delivery failure:",
-          err,
-        );
+        console.error("[Delivery Tracker] Failed to track delivery failure:", err);
       }
     }),
   checkInactiveUsers: publicProcedure.handler(() => {
