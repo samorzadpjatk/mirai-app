@@ -21,6 +21,7 @@ export default tseslint.config(
         {
           enforceBuildableLibDependency: false,
           allow: [],
+          checkDynamicDependenciesExceptions: ["@mirai-app/auth"],
           depConstraints: [
             {
               sourceTag: "type:app",
