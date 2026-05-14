@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { RPCHandler } from "@orpc/server/fetch";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
-import { onError } from "@orpc/server";
+import { ORPCError, onError } from "@orpc/server";
 import { appRouter, createORPCContext } from "@mirai-app/orpc";
 
 export interface ServerOptions {
@@ -10,6 +10,64 @@ export interface ServerOptions {
   port?: number;
   prefix?: string;
   host?: string;
+}
+
+const TEN_MB = 10 * 1024 * 1024;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const GLOBAL_RATE_LIMIT = 100;
+const AUTH_RATE_LIMIT = 10;
+
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
+}
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+function getClientIp(c: { req: { header: (name: string) => string | undefined } }): string {
+  const forwarded = c.req.header("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() ?? "unknown";
+  }
+  return c.req.header("x-real-ip") ?? "unknown";
+}
+
+function checkRateLimit(ip: string, path: string, isAuthEndpoint: boolean): { allowed: boolean; retryAfter: number } {
+  const now = Date.now();
+  const windowMs = RATE_LIMIT_WINDOW_MS;
+
+  const globalKey = `${ip}:global`;
+  const globalEntry = rateLimitStore.get(globalKey);
+  let globalAllowed = true;
+  let globalRetryAfter = 0;
+
+  if (!globalEntry || now > globalEntry.resetTime) {
+    rateLimitStore.set(globalKey, { count: 1, resetTime: now + windowMs });
+  } else if (globalEntry.count >= GLOBAL_RATE_LIMIT) {
+    globalAllowed = false;
+    globalRetryAfter = Math.ceil((globalEntry.resetTime - now) / 1000);
+  } else {
+    globalEntry.count++;
+  }
+
+  if (!globalAllowed) {
+    return { allowed: false, retryAfter: globalRetryAfter };
+  }
+
+  if (isAuthEndpoint) {
+    const authKey = `${ip}:auth`;
+    const authEntry = rateLimitStore.get(authKey);
+
+    if (!authEntry || now > authEntry.resetTime) {
+      rateLimitStore.set(authKey, { count: 1, resetTime: now + windowMs });
+    } else if (authEntry.count >= AUTH_RATE_LIMIT) {
+      return { allowed: false, retryAfter: Math.ceil((authEntry.resetTime - now) / 1000) };
+    } else {
+      authEntry.count++;
+    }
+  }
+
+  return { allowed: true, retryAfter: 0 };
 }
 
 export function createServer(opts: ServerOptions) {
@@ -20,14 +78,56 @@ export function createServer(opts: ServerOptions) {
 
   const app = new Hono();
 
+  app.use("*", async (c, next) => {
+    const contentLength = c.req.header("content-length");
+    if (contentLength && parseInt(contentLength, 10) > TEN_MB) {
+      return c.text("Payload Too Large", 413);
+    }
+    await next();
+  });
+
+  app.use("*", async (c, next) => {
+    const ip = getClientIp(c);
+    const path = new URL(c.req.url).pathname;
+    const isAuthEndpoint = path.startsWith(prefix);
+    const { allowed, retryAfter } = checkRateLimit(ip, path, isAuthEndpoint);
+
+    if (!allowed) {
+      c.header("Retry-After", String(retryAfter));
+      return c.text("Too Many Requests", 429);
+    }
+
+    await next();
+  });
+
+  app.use("*", async (c, next) => {
+    await next();
+    c.header("X-Frame-Options", "DENY");
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    c.header("Content-Security-Policy", "default-src 'self'");
+  });
+
   if (dev) {
-    app.use("*", cors({ origin: (origin) => origin, credentials: true }));
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:8081"];
+    app.use("*", cors({
+      origin: (origin) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          return origin;
+        }
+        return null;
+      },
+      credentials: true,
+    }));
   }
 
   const rpcHandler = new RPCHandler(appRouter, {
     interceptors: [
-      onError((error) => {
+      onError((error): void => {
         console.error(error);
+        if (!dev && !(error instanceof ORPCError)) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
+        }
       }),
     ],
   });
@@ -99,8 +199,11 @@ export function createServer(opts: ServerOptions) {
 
   const wsRpcHandler = new BunWsRPCHandler(appRouter, {
     interceptors: [
-      onError((error) => {
+      onError((error): void => {
         console.error(error);
+        if (!dev && !(error instanceof ORPCError)) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
+        }
       }),
     ],
   });
@@ -112,14 +215,10 @@ export function createServer(opts: ServerOptions) {
         hostname: host,
         fetch(req, server) {
           const url = new URL(req.url, "http://localhost");
-          const connectionParams: Record<string, string> = {};
-          for (const [key, value] of url.searchParams.entries()) {
-            connectionParams[key] = value;
-          }
 
           if (
             url.pathname.startsWith(prefix) &&
-            server.upgrade(req, { data: { connectionParams, url: req.url } })
+            server.upgrade(req, { data: { url: req.url } })
           ) {
             return;
           }
@@ -131,16 +230,47 @@ export function createServer(opts: ServerOptions) {
             const data = ws.data as {
               connectionParams?: Record<string, string>;
               url?: string;
+              authProcessed?: boolean;
             };
 
-            const headers = new Headers();
-            if (data.url) {
-              headers.set("x-original-url", data.url);
+            const msgString =
+              typeof message === "string"
+                ? message
+                : new TextDecoder().decode(message);
+
+            if (!data.authProcessed) {
+              try {
+                const msg = JSON.parse(msgString) as {
+                  type?: string;
+                  payload?: { authorization?: string };
+                };
+                if (
+                  msg.type === "connection_init" &&
+                  msg.payload?.authorization
+                ) {
+                  data.connectionParams = {
+                    authorization: msg.payload.authorization,
+                  };
+                  data.authProcessed = true;
+                  ws.send(JSON.stringify({ type: "connection_ack" }));
+                  return;
+                }
+              } catch {
+                data.authProcessed = true;
+              }
+              data.authProcessed = true;
             }
+
+            const headers = new Headers();
             if (data.connectionParams) {
-              for (const [key, value] of Object.entries(data.connectionParams)) {
+              for (const [key, value] of Object.entries(
+                data.connectionParams,
+              )) {
                 headers.set(key, value);
               }
+            }
+            if (data.url) {
+              headers.set("x-original-url", data.url);
             }
 
             const supabaseUrl = process.env.SUPABASE_URL;

@@ -5,19 +5,23 @@ import { eq } from "drizzle-orm";
 import type { AuthUser } from "@mirai-app/shared";
 
 interface MinimalBuffer {
-  from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
+  from(
+    input: string,
+    encoding: "base64",
+  ): { toString(encoding: "utf-8"): string };
 }
 
 type AdminUserWithBan = SupabaseUser & { banned_until?: string | null };
 
-const getGlobalBuffer = () => (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
+const getGlobalBuffer = () =>
+  (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
 
 const getGlobalAtob = () =>
   (globalThis as typeof globalThis & { atob?: (data: string) => string }).atob;
 
-function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unknown>>(
-  token: string,
-): T | null {
+function decodeJwtPayload<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(token: string): T | null {
   const [, payload] = token.split(".");
   if (!payload) {
     return null;
@@ -29,7 +33,9 @@ function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unk
 
   try {
     if (buffer) {
-      const decoded = buffer.from(normalizedPayload, "base64").toString("utf-8");
+      const decoded = buffer
+        .from(normalizedPayload, "base64")
+        .toString("utf-8");
       return JSON.parse(decoded) as T;
     }
 
@@ -107,44 +113,37 @@ export async function getAuthServerUser(
   return user;
 }
 
-export async function getAuthServerSession(supabase: SupabaseClient, accessToken?: string) {
-  if (accessToken) {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(accessToken);
-
-    if (error || !user) {
-      if (error) {
-        console.error("Error occurred while fetching user from token:", error);
-      }
-      return null;
-    }
-
-    const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
-
-    return {
-      user,
-      authUserId: user.id,
-      access_token: accessToken,
-      refresh_token: null,
-      token_type: "bearer",
-      expires_in: expiresIn,
-      expires_at: expiresAt ?? null,
-    } as const;
-  }
-
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    console.error("Error occurred while fetching session:", error);
+export async function getAuthServerSession(
+  supabase: SupabaseClient,
+  accessToken?: string,
+) {
+  if (!accessToken) {
     return null;
   }
 
-  return session;
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(accessToken);
+
+  if (error || !user) {
+    if (error) {
+      console.error("Error occurred while fetching user from token:", error);
+    }
+    return null;
+  }
+
+  const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
+
+  return {
+    user,
+    authUserId: user.id,
+    access_token: accessToken,
+    refresh_token: null,
+    token_type: "bearer",
+    expires_in: expiresIn,
+    expires_at: expiresAt ?? null,
+  } as const;
 }
 
 const toDisplayName = (
@@ -200,7 +199,10 @@ export function parseRolesFromToken(token: string | undefined): string[] {
   return payload.groups;
 }
 
-export function hasRequiredRole(groups: string[], requiredRole: string): boolean {
+export function hasRequiredRole(
+  groups: string[],
+  requiredRole: string,
+): boolean {
   return groups.includes(requiredRole);
 }
 
@@ -256,7 +258,9 @@ export async function requireAuth(
     throw new AuthenticationError("Unauthorized");
   }
 
-  const adminLookup = await supabase.auth.admin.getUserById(session.authUserId!);
+  const adminLookup = await supabase.auth.admin.getUserById(
+    session.authUserId!,
+  );
 
   if (adminLookup.error) {
     console.warn(

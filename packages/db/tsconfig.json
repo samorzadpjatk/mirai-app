@@ -4,8 +4,15 @@
     "baseUrl": ".",
     "types": ["vitest"],
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "composite": true,
+    "noEmit": false
   },
+  "references": [
+    { "path": "../supabase" }
+  ],
   "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", "src/**/__tests__/**/*", "src/**/*.test.*"]
 }
