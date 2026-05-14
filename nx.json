@@ -1,6 +1,55 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "plugins": ["@nx/expo"],
+  "plugins": [
+    "@nx/expo",
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.build.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "targetName": "test",
+        "ciTargetName": "test:ci",
+        "configName": "vitest.config.ts"
+      }
+    },
+    {
+      "plugin": "@nx/jest",
+      "options": {
+        "targetName": "test",
+        "ciTargetName": "test:ci"
+      }
+    },
+    {
+      "plugin": "@nx-tools/nx-container",
+      "options": {
+        "targetName": "container"
+      }
+    },
+    {
+      "plugin": "@berenddeboer/nx-knip",
+      "options": {
+        "targetName": "knip"
+      }
+    },
+  ],
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
@@ -10,6 +59,10 @@
     "clean": {
       "cache": true
     },
+    "container": {
+      "dependsOn": ["build"],
+      "cache": true
+    },
     "db:generate": {
       "outputs": ["{projectRoot}/drizzle/**"],
       "cache": true
@@ -17,6 +70,9 @@
     "dev": {
       "dependsOn": ["db:generate"],
       "cache": false
+    },
+    "knip": {
+      "cache": true
     },
     "lint": {
       "dependsOn": ["^lint"],
