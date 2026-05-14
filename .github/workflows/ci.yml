@@ -50,6 +50,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Fetch base branch for turbo --affected
         if: github.event_name == 'pull_request'
@@ -71,9 +72,9 @@ jobs:
             */*/node_modules
             apps/*/node_modules
             packages/*/node_modules
-          key: ${{ runner.os }}-bun-v2-${{ hashFiles('bun.lock') }}
+          key: ${{ runner.os }}-bun-v2-${{ github.event_name }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
-            ${{ runner.os }}-bun-v2-
+            ${{ runner.os }}-bun-v2-${{ github.event_name }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -82,9 +83,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          key: ${{ runner.os }}-turbo-${{ github.event_name }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-turbo-
+            ${{ runner.os }}-turbo-${{ github.event_name }}-
 
       - name: Setup reviewdog
         uses: reviewdog/action-setup@v1
