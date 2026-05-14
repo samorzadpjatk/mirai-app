@@ -26,6 +26,7 @@ import {
 } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import { isValidHttpUrl } from "../../utils/url-validation";
 
 const REACTION_TYPES = ["heart", "fire", "clap", "star"] as const;
 
@@ -52,13 +53,8 @@ const imageReferenceSchema = z
       return true;
     }
 
-    try {
-      new URL(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }, "Image must be a valid URL or storage path");
+    return isValidHttpUrl(value);
+  }, "Image must be a valid HTTP/HTTPS URL or storage path");
 
 const optionalImageReferenceSchema = imageReferenceSchema.optional();
 
