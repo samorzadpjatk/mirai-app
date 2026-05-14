@@ -269,6 +269,7 @@
         "@supabase/supabase-js": "^2.89.0",
       },
       "devDependencies": {
+        "@testing-library/dom": "^10.4.0",
         "@testing-library/react": "^16.3.0",
         "@types/react": "~19.1.17",
         "@vitest/coverage-v8": "^3.0.0",
