@@ -8,29 +8,24 @@
 ARG PACKAGE
 ARG PORT
 # ---------- PRUNE (keeps only necessary files for the package) ----------
-FROM oven/bun:1.3.14-slim AS pruner
+FROM oven/bun:slim AS pruner
 ARG PACKAGE
 WORKDIR /repo
 ENV CI=true
 COPY . .
-# bun.lock was generated on macOS and skips Linux optional deps.
-# Delete it so bun resolves all platform binaries for Linux.
+# bun.lock was generated on macOS and only contains darwin platform entries.
+# Remove it so bun resolves Linux binaries (turbo, esbuild) correctly.
 RUN rm -f bun.lock && bun install
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
-FROM oven/bun:1.3.14-slim AS bundler
+FROM oven/bun:slim AS bundler
 ARG PACKAGE
 WORKDIR /app
-# copy pruned package json (for accurate deps) and package sources
 COPY --from=pruner /repo/out/full ./
-# turbo prune strips root-level files; tsconfig.base.json is required
-# by every workspace package ("extends": "../../tsconfig.base.json")
 COPY --from=pruner /repo/tsconfig.base.json ./tsconfig.base.json
-# install dependencies inside bundler (use bun cache)
 RUN --mount=type=cache,id=bun-cache,target=/root/.bun \
     bun install --frozen-lockfile
-# fixed entry and use bun exec to build single executable under ./out/app
 ENV ENTRY=src/index.ts
 RUN bun build --compile --minify --splitting "apps/${PACKAGE}/${ENTRY}" --outfile ./out/app
 RUN chmod +x ./out/app
@@ -38,7 +33,6 @@ RUN chmod +x ./out/app
 # ---------- DISTROLESS RUNTIME (single, tiny image) ----------
 FROM gcr.io/distroless/base-debian13:nonroot AS runtime
 ENV NODE_ENV=production
-# Copy the single executable from bundler and ensure correct mode
 COPY --from=bundler --chown=nonroot:nonroot /app/out/app ./app
 EXPOSE ${PORT}
 CMD ["./app"]
