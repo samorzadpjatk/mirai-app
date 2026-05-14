@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "plugins": ["@nx/expo"],
+  "plugins": ["@nx/expo", "nx-oxlint"],
   "targetDefaults": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
