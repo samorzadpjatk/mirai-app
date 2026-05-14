@@ -68,7 +68,7 @@ vi.mock("../config/db", () => ({
       }),
     }),
     insert: (table: { __table?: string }) => ({
-      values: (data: unknown) => ({
+      values: (data: Record<string, unknown>) => ({
         returning: () => {
           if (table?.__table === "trips") {
             mockTripCreate(data);
@@ -80,7 +80,7 @@ vi.mock("../config/db", () => ({
           }
           return Promise.resolve([]);
         },
-        onConflictDoUpdate: (opts: unknown) => {
+        onConflictDoUpdate: (opts: Record<string, unknown>) => {
           if (table?.__table === "tripParticipants") {
             mockTripParticipantUpsert({ values: data, ...opts });
           }
@@ -715,7 +715,7 @@ describe("trips", () => {
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       const call = mockUserFindFirst.mock.calls[0];
-      expect(call[0]).toMatchObject({ where: expect.any(Function) });
+      expect(call?.[0]).toMatchObject({ where: expect.any(Function) });
     });
   });
 });

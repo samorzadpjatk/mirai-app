@@ -82,7 +82,7 @@ vi.mock("../config/db", () => ({
       },
     }),
     insert: (table: { __table?: string }) => ({
-      values: (data: unknown) => {
+      values: (data: Record<string, unknown>) => {
         const thenable = {
           returning: () => {
             if (table?.__table === "tripInsurances") {
@@ -91,7 +91,7 @@ vi.mock("../config/db", () => ({
             }
             return Promise.resolve([]);
           },
-          then: (onFulfilled: unknown, onRejected: unknown) => {
+          then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) => {
             if (table?.__table === "tripResources") {
               mockTripResourceCreate(data);
             } else if (table?.__table === "tripInsuranceSteps") {

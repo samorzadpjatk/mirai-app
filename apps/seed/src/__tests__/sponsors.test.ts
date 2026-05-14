@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import type { SponsorConfig } from "../types";
 
 // Stub Bun global for test environment
-if (typeof globalThis.Bun === "undefined") {
+if (typeof (globalThis as { Bun?: unknown }).Bun === "undefined") {
   Object.assign(globalThis, {
     Bun: {
       file: () => ({ text: () => Promise.resolve("") }),
@@ -44,7 +44,7 @@ const mockDbInsert = vi.fn((table: unknown) => {
 });
 
 describe("sponsors", () => {
-  let bunFileSpy: ReturnType<typeof vi.spyOn>;
+  let bunFileSpy: MockInstance<typeof Bun.file>;
 
   beforeEach(() => {
     bunFileSpy = vi.spyOn(Bun, "file").mockImplementation(
