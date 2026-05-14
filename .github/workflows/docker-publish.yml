@@ -11,7 +11,7 @@ on:
       - 'packages/db/**'
       - 'packages/auth/**'
       - 'packages/shared/**'
-      - 'packages/trpc/**'
+      - 'packages/orpc/**'
       - 'packages/supabase/**'
       - 'Dockerfile'
       - 'bun.lock'
