@@ -70,7 +70,7 @@ export const storageRouter = createORPCRouter({
           .min(1)
           .max(500)
           .regex(
-            /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.\/-]+$/,
+            /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]+$/,
             "Must be in bucket/path format",
           ),
         upsert: z.boolean().optional(),
