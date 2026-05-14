@@ -8,16 +8,18 @@
 ARG PACKAGE
 ARG PORT
 # ---------- PRUNE (keeps only necessary files for the package) ----------
-FROM oven/bun:slim AS pruner
+FROM oven/bun:1.3.14-slim AS pruner
 ARG PACKAGE
 WORKDIR /repo
 ENV CI=true
 COPY . .
-RUN bun install --frozen-lockfile
+# Install optional dependencies for ALL platforms so turbo's platform-specific
+# binaries are available regardless of which platform generated the lockfile.
+RUN bun install --frozen-lockfile --os '*' --cpu '*'
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
-FROM oven/bun:slim AS bundler
+FROM oven/bun:1.3.14-slim AS bundler
 ARG PACKAGE
 WORKDIR /app
 # copy pruned package json (for accurate deps) and package sources
