@@ -158,7 +158,6 @@ describe("rewards", () => {
 
       expect(mockInsertValues).toHaveBeenCalledTimes(2);
       expect(mockInsertValues).toHaveBeenNthCalledWith(1,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         expect.objectContaining({
           name: "Reward 1",
           description: "Desc 1",
@@ -196,7 +195,6 @@ describe("rewards", () => {
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockInsertValues).toHaveBeenCalledWith(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         expect.objectContaining({
           createdById: "admin-1",
         }),
@@ -221,7 +219,6 @@ describe("rewards", () => {
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockInsertValues).toHaveBeenCalledWith(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         expect.objectContaining({
           createdById: "mod-1",
         }),
@@ -279,14 +276,12 @@ describe("rewards", () => {
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(mockInsertValues).toHaveBeenNthCalledWith(1,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         expect.objectContaining({
           image: "rewards/image.jpg",
         }),
       );
 
       expect(mockInsertValues).toHaveBeenNthCalledWith(2,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         expect.objectContaining({
           image: "rewards/image.jpg",
         }),

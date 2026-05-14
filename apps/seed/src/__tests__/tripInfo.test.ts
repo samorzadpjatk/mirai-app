@@ -162,7 +162,7 @@ describe("tripInfo", () => {
 
   describe("seedTripInfo", () => {
     it("should skip if no resources configured", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", { resources: [] });
 
@@ -177,7 +177,7 @@ describe("tripInfo", () => {
         resources: [{ type: "hero_image", label: "Hero", sortOrder: 0 }],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -203,7 +203,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -234,7 +234,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -271,7 +271,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -302,7 +302,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -332,7 +332,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -357,8 +357,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -386,8 +386,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -416,8 +416,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -457,7 +457,7 @@ describe("tripInfo", () => {
 
       mockSelectFromWhere.mockResolvedValue([{ id: "ins-1" }]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -504,7 +504,7 @@ describe("tripInfo", () => {
         },
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -526,7 +526,7 @@ describe("tripInfo", () => {
 
       mockTripResourceDeleteMany.mockRejectedValue(new Error("DB Error"));
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
       await expect(seedTripInfo("db-url", "trip-1", "dev", infoConfig)).rejects.toThrow("DB Error");
       expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed trip info:", expect.any(Error));
