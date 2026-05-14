@@ -13,7 +13,6 @@ on:
       - 'packages/shared/**'
       - 'packages/orpc/**'
       - 'packages/supabase/**'
-      - 'Dockerfile'
       - 'apps/*/Dockerfile'
       - 'packages/*/Dockerfile'
       - 'bun.lock'
