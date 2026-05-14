@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun --enable-source-maps src/index.ts",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
