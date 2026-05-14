@@ -117,43 +117,33 @@ export async function getAuthServerSession(
   supabase: SupabaseClient,
   accessToken?: string,
 ) {
-  if (accessToken) {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(accessToken);
-
-    if (error || !user) {
-      if (error) {
-        console.error("Error occurred while fetching user from token:", error);
-      }
-      return null;
-    }
-
-    const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
-
-    return {
-      user,
-      authUserId: user.id,
-      access_token: accessToken,
-      refresh_token: null,
-      token_type: "bearer",
-      expires_in: expiresIn,
-      expires_at: expiresAt ?? null,
-    } as const;
-  }
-
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    console.error("Error occurred while fetching session:", error);
+  if (!accessToken) {
     return null;
   }
 
-  return session;
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(accessToken);
+
+  if (error || !user) {
+    if (error) {
+      console.error("Error occurred while fetching user from token:", error);
+    }
+    return null;
+  }
+
+  const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
+
+  return {
+    user,
+    authUserId: user.id,
+    access_token: accessToken,
+    refresh_token: null,
+    token_type: "bearer",
+    expires_in: expiresIn,
+    expires_at: expiresAt ?? null,
+  } as const;
 }
 
 const toDisplayName = (
