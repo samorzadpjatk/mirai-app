@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { SponsorConfig } from "../types";
 
+// Stub Bun global for test environment
+if (typeof globalThis.Bun === "undefined") {
+  Object.assign(globalThis, {
+    Bun: {
+      file: () => ({ text: () => Promise.resolve("") }),
+    },
+  });
+}
+
 const mockBunFileText = vi.fn();
 
 vi.mock("yaml", () => ({
