@@ -1,0 +1,43 @@
+{
+  "$schema": "https://oxlint.rs/schema.json",
+  "plugins": ["typescript", "react", "unicorn", "import", "promise"],
+  "categories": {
+    "correctness": "warn",
+    "suspicious": "warn",
+    "pedantic": "warn"
+  },
+  "rules": {
+    "typescript/consistent-type-imports": ["warn", { "prefer": "type-imports", "fixStyle": "inline-type-imports" }],
+    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "typescript/no-misused-promises": ["error", { "checksVoidReturn": { "attributes": false } }]
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    ".expo/",
+    "coverage/",
+    "*.generated.ts",
+    "*.generated.tsx",
+    ".agents/",
+    ".specs/",
+    "drizzle/"
+  ],
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+      "rules": {
+        "typescript/no-explicit-any": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-function-type": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/unbound-method": "off",
+        "typescript/require-await": "off",
+        "typescript/no-empty-function": "off",
+        "typescript/no-redundant-type-constituents": "off"
+      }
+    }
+  ]
+}

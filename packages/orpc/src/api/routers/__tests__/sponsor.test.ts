@@ -5,7 +5,6 @@ import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, Sponsor, TripSponsor, Trip, User } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import * as auth from "@mirai-app/auth";
 
 const createCaller = (ctx: TRPCContext) => createRouterClient(sponsorRouter, { context: ctx });

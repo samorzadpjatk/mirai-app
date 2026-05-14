@@ -96,6 +96,14 @@ jobs:
         with:
           reviewdog_version: latest
 
+      - name: Run Oxlint
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx oxlint
+          else
+            bun run lint:ox
+          fi
+
       - name: Run ESLint
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then

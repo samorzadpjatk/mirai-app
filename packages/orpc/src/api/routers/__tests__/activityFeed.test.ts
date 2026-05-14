@@ -1,6 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 import { appRouter } from "../../root";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";

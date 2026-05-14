@@ -5,7 +5,6 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Challenge } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
 
 // Mock utility modules
 vi.mock("../../../utils/storage", () => ({
