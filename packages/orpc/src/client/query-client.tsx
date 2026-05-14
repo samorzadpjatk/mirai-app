@@ -132,7 +132,6 @@ export function QueryProvider({
     );
 
     if (cleanupRef.current) {
-      console.log("[QueryProvider] Cleaning up previous WebSocket connection");
       cleanupRef
         .current()
         .then(() => {
@@ -147,7 +146,6 @@ export function QueryProvider({
     }
 
     if (cleanup) {
-      console.log("[QueryProvider] Storing new cleanup function");
       cleanupRef.current = cleanup;
     }
 
@@ -155,7 +153,6 @@ export function QueryProvider({
       unsubscribeQuery();
       unsubscribeMutation();
       if (cleanupRef.current) {
-        console.log("[QueryProvider] Cleaning up WebSocket connection");
         cleanupRef
           .current()
           .then(() => {

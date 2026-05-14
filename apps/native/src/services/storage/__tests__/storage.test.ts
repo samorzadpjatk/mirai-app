@@ -1,13 +1,16 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
 const mockGetItemAsync = jest.fn<(key: string) => Promise<string | null>>();
-const mockSetItemAsync = jest.fn<(key: string, value: string) => Promise<void>>();
+const mockSetItemAsync = jest.fn<
+  (key: string, value: string, options?: object) => Promise<void>
+>();
 const mockDeleteItemAsync = jest.fn<(key: string) => Promise<void>>();
 
 jest.mock("expo-secure-store", () => ({
   getItemAsync: (...args: [string]) => mockGetItemAsync(...args),
-  setItemAsync: (...args: [string, string]) => mockSetItemAsync(...args),
+  setItemAsync: (...args: [string, string, object?]) => mockSetItemAsync(...args),
   deleteItemAsync: (...args: [string]) => mockDeleteItemAsync(...args),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: "WHEN_UNLOCKED_THIS_DEVICE_ONLY",
 }));
 
 import { authStorage } from "~/services/storage/storage";
@@ -47,13 +50,21 @@ describe("Auth Storage", () => {
     it("should store item in secure storage", async () => {
       await authStorage.setItem("test-key", "test-value");
 
-      expect(mockSetItemAsync).toHaveBeenCalledWith("test-key", "test-value");
+      expect(mockSetItemAsync).toHaveBeenCalledWith(
+        "test-key",
+        "test-value",
+        { keychainAccessible: "WHEN_UNLOCKED_THIS_DEVICE_ONLY" }
+      );
     });
 
     it("should handle empty string values", async () => {
       await authStorage.setItem("test-key", "");
 
-      expect(mockSetItemAsync).toHaveBeenCalledWith("test-key", "");
+      expect(mockSetItemAsync).toHaveBeenCalledWith(
+        "test-key",
+        "",
+        { keychainAccessible: "WHEN_UNLOCKED_THIS_DEVICE_ONLY" }
+      );
     });
 
     it("should propagate errors from secure store", async () => {

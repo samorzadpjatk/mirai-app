@@ -10,6 +10,7 @@ import {
 } from "../../api/trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import { isValidHttpUrl } from "../../utils/url-validation";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
@@ -55,8 +56,11 @@ const batchEmailLookup = async (
   return await buildAuthEmailLookup(supabase, Array.from(allAuthUserIds));
 };
 
-const generateFourDigitCode = () =>
-  String(Math.floor(1000 + Math.random() * 9000));
+const generateFourDigitCode = () => {
+  const array = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(array);
+  return String(1000 + (array[0]! % 9000));
+};
 
 const GROUP_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
 const joinRequestDecisionSchema = z.enum(["ACCEPT", "REJECT"]);
@@ -70,13 +74,8 @@ const groupImageSchema = z
       return true;
     }
 
-    try {
-      new URL(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }, "Image must be a valid URL or storage path")
+    return isValidHttpUrl(value);
+  }, "Image must be a valid HTTP/HTTPS URL or storage path")
   .optional();
 
 const normalizeGroupImageInput = (value: string | undefined) => {

@@ -5,22 +5,49 @@ import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
 
 const createWsConnection = (wsUrl: string, authorizationToken?: string) => {
-  console.log(
-    "[WS Client] Creating WebSocket client with token:",
-    authorizationToken ? "YES" : "NO",
-  );
-  if (authorizationToken) {
-    console.log(
-      "[WS Client] Token preview:",
-      authorizationToken.substring(0, 20) + "...",
-    );
+  const ws = new WebSocket(wsUrl) as WebSocket & {
+    addEventListener?: typeof WebSocket.prototype.addEventListener;
+    send?: typeof WebSocket.prototype.send;
+  };
+
+  if (typeof ws.addEventListener === "function" && typeof ws.send === "function") {
+    let authAcknowledged = !authorizationToken;
+    const messageQueue: (string | ArrayBufferLike | Blob | ArrayBufferView)[] = [];
+
+    ws.addEventListener("open", () => {
+      if (authorizationToken) {
+        ws.send(
+          JSON.stringify({
+            type: "connection_init",
+            payload: { authorization: `Bearer ${authorizationToken}` },
+          }),
+        );
+      }
+    });
+
+    ws.addEventListener("message", (event: MessageEvent) => {
+      const data = typeof event.data === "string" ? event.data : "";
+      if (!data.startsWith("{")) return;
+      const msg = JSON.parse(data) as { type?: string } | undefined;
+      if (msg?.type === "connection_ack") {
+        authAcknowledged = true;
+        for (const queued of messageQueue) {
+          ws.send(queued);
+        }
+        messageQueue.length = 0;
+      }
+    });
+
+    const originalSend = ws.send.bind(ws);
+    ws.send = function (data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+      if (authAcknowledged) {
+        return originalSend(data);
+      }
+      messageQueue.push(data);
+    };
   }
 
-  const wsUrlWithAuth = authorizationToken
-    ? `${wsUrl}?authorization=${encodeURIComponent(`Bearer ${authorizationToken}`)}`
-    : wsUrl;
-
-  return new WebSocket(wsUrlWithAuth);
+  return ws;
 };
 
 const isRetryableError = (error: unknown): boolean => {
@@ -41,8 +68,7 @@ const getORPCClient = (
   authorizationToken?: string,
 ) => {
   const ws = createWsConnection(wsUrl, authorizationToken);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const wsLink = new WSLink({ websocket: ws });
+  new WSLink({ websocket: ws });
 
   const httpLink = new RPCLink({
     url: httpUrl,

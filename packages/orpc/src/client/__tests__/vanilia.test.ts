@@ -77,10 +77,7 @@ describe("getORPCClient", () => {
     const result = getORPCClient(httpUrl, wsUrl);
 
     expect(result.client).toBeDefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Creating WebSocket client with token:",
-      "NO"
-    );
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
   });
 
   it("should create a client with authorization token", () => {
@@ -91,27 +88,7 @@ describe("getORPCClient", () => {
     const result = getORPCClient(httpUrl, wsUrl, token);
 
     expect(result.client).toBeDefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Creating WebSocket client with token:",
-      "YES"
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Token preview:",
-      expect.stringContaining("...")
-    );
-  });
-
-  it("should include token preview in logs", () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-    const token = "test-auth-token-12345";
-
-    getORPCClient(httpUrl, wsUrl, token);
-
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Token preview:",
-      "test-auth-token-1234..."
-    );
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
   });
 
   it("should provide a cleanup function that closes WebSocket", async () => {
@@ -148,10 +125,7 @@ describe("getORPCClient", () => {
     const result = getORPCClient(httpUrl, wsUrl, longToken);
 
     expect(result.client).toBeDefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Token preview:",
-      "a".repeat(20) + "..."
-    );
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
   });
 
   it("should handle empty authorization token", () => {
@@ -162,10 +136,7 @@ describe("getORPCClient", () => {
     const result = getORPCClient(httpUrl, wsUrl, emptyToken);
 
     expect(result.client).toBeDefined();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "[WS Client] Creating WebSocket client with token:",
-      "NO"
-    );
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
   });
 
   it("should handle special characters in URLs", () => {
@@ -190,17 +161,16 @@ describe("WebSocket Client Creation", () => {
     consoleSpy.mockClear();
   });
 
-  it("should encode authorization token in WebSocket URL", () => {
+  it("should create WebSocket without auth in URL", () => {
     const httpUrl = "http://localhost:3000";
     const wsUrl = "ws://localhost:3000";
     const token = "Bearer token123";
 
     getORPCClient(httpUrl, wsUrl, token);
 
-    expect(WebSocket).toHaveBeenCalled();
+    expect(WebSocket).toHaveBeenCalledWith(wsUrl);
     const wsUrlArg = (WebSocket as any).mock.calls[0]?.[0] as string;
-    expect(wsUrlArg).toContain("authorization=");
-    expect(wsUrlArg).toContain(encodeURIComponent("Bearer token123"));
+    expect(wsUrlArg).not.toContain("authorization=");
   });
 
   it("should create WebSocket without auth when no token", () => {

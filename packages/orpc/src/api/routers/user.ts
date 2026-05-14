@@ -23,7 +23,7 @@ const nameSchema = z
   .max(100, "Must be at most 100 characters")
   .refine((value) => !/\d/.test(value), "Cannot contain digits");
 
-interface PublicUser {
+export interface PublicUser {
   id: string;
   firstName: string | null;
   lastName: string | null;

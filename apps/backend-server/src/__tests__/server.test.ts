@@ -114,11 +114,27 @@ describe("Backend Server (Hono)", () => {
       });
 
       const res = await app.request("/health", {
+        headers: { Origin: "http://localhost:8081" },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8081");
+    });
+
+    it("should reject disallowed origins in dev mode", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3002,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/health", {
         headers: { Origin: "http://localhost:3000" },
       });
 
       expect(res.status).toBe(200);
-      expect(res.headers.get("access-control-allow-origin")).toBeTruthy();
+      expect(res.headers.get("access-control-allow-origin")).toBeNull();
     });
 
     it("should handle OPTIONS preflight in dev mode", async () => {
@@ -132,7 +148,7 @@ describe("Backend Server (Hono)", () => {
       const res = await app.request("/api/trpc", {
         method: "OPTIONS",
         headers: {
-          Origin: "http://localhost:3000",
+          Origin: "http://localhost:8081",
           "Access-Control-Request-Method": "GET",
         },
       });
@@ -471,6 +487,123 @@ describe("Backend Server (Hono)", () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get("access-control-allow-origin")).toBeNull();
+    });
+  });
+
+  describe("Security Headers", () => {
+    it("should include security headers on all responses", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3030,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/health");
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(res.headers.get("strict-transport-security")).toBe(
+        "max-age=63072000; includeSubDomains; preload",
+      );
+      expect(res.headers.get("content-security-policy")).toBe("default-src 'self'");
+    });
+
+    it("should include security headers in production", async () => {
+      const { app } = createServer({
+        dev: false,
+        port: 3031,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/health");
+
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    });
+  });
+
+  describe("Request Body Size Limits", () => {
+    it("should reject requests with body exceeding 10MB", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3032,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/api/trpc", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": String(11 * 1024 * 1024),
+        },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(413);
+      expect(await res.text()).toBe("Payload Too Large");
+    });
+
+    it("should allow requests with body under 10MB", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3033,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/api/trpc", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": String(100),
+        },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).not.toBe(413);
+    });
+  });
+
+  describe("Rate Limiting", () => {
+    it("should allow requests under the rate limit", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3034,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const res = await app.request("/health");
+      expect(res.status).toBe(200);
+    });
+
+    it("should include Retry-After header on rate-limited responses", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3035,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const ip = "192.168.1.100";
+
+      for (let i = 0; i < 101; i++) {
+        await app.request("/health", {
+          headers: { "x-forwarded-for": ip },
+        });
+      }
+
+      const res = await app.request("/health", {
+        headers: { "x-forwarded-for": ip },
+      });
+
+      expect(res.status).toBe(429);
+      expect(res.headers.get("retry-after")).toBeTruthy();
+      expect(await res.text()).toBe("Too Many Requests");
     });
   });
 });

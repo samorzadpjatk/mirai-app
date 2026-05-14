@@ -2,11 +2,17 @@ import { z } from "zod";
 import { ORPCError } from "@orpc/server";
 import { createORPCRouter, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import { STANDARD_BUCKETS } from "@mirai-app/shared";
+
+const KNOWN_BUCKETS = new Set<string>(Object.values(STANDARD_BUCKETS));
 
 const resolveStoragePath = (value: string) => {
   const info = normalizeSupabaseStoragePath(value);
   if (!info) {
     throw new ORPCError("BAD_REQUEST", { message: "Unsupported storage reference" });
+  }
+  if (!KNOWN_BUCKETS.has(info.bucket)) {
+    throw new ORPCError("BAD_REQUEST", { message: "Invalid storage bucket" });
   }
   return info;
 };
@@ -58,8 +64,23 @@ export const storageRouter = createORPCRouter({
   createUploadUrl: protectedProcedure
     .input(
       z.object({
-        storagePath: z.string().min(1),
+        storagePath: z
+          .string()
+          .min(1)
+          .max(500)
+          .regex(
+            /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.\/-]+$/,
+            "Must be in bucket/path format",
+          ),
         upsert: z.boolean().optional(),
+        fileSize: z.number().int().max(10 * 1024 * 1024).optional(),
+        contentType: z
+          .string()
+          .regex(
+            /^image\/(jpeg|png|webp|gif)|application\/pdf|video\/(mp4|mov|webm)$/,
+            "Unsupported content type",
+          )
+          .optional(),
       }),
     )
     .handler(async ({ context, input }) => {
