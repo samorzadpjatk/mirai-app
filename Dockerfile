@@ -16,7 +16,8 @@ ENV CI=true
 # optional dependencies are missing from the lockfile.
 RUN apt-get update && apt-get install -y npm && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN bun install --frozen-lockfile
+# Re-resolve platform-specific optional deps (esbuild, turbo) for Linux
+RUN bun install
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
