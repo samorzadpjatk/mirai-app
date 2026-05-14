@@ -12,11 +12,7 @@ describe("ChallengeActionButton", () => {
 
   it("should render with custom label", () => {
     renderWithProviders(
-      <ChallengeActionButton
-        isLoading={false}
-        onPress={jest.fn()}
-        label="Submit Challenge"
-      />
+      <ChallengeActionButton isLoading={false} onPress={jest.fn()} label="Submit Challenge" />,
     );
 
     expect(screen.getByText("Submit Challenge")).toBeOnTheScreen();
@@ -46,11 +42,7 @@ describe("ChallengeActionButton", () => {
 
   it("should render disabled state correctly", () => {
     renderWithProviders(
-      <ChallengeActionButton
-        isLoading={false}
-        onPress={jest.fn()}
-        disabled={true}
-      />
+      <ChallengeActionButton isLoading={false} onPress={jest.fn()} disabled={true} />,
     );
 
     expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
@@ -58,11 +50,7 @@ describe("ChallengeActionButton", () => {
 
   it("should render with custom icon name", () => {
     renderWithProviders(
-      <ChallengeActionButton
-        isLoading={false}
-        onPress={jest.fn()}
-        iconName="camera-outline"
-      />
+      <ChallengeActionButton isLoading={false} onPress={jest.fn()} iconName="camera-outline" />,
     );
 
     expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();
@@ -76,11 +64,7 @@ describe("ChallengeActionButton", () => {
 
   it("should apply disabled styles when disabled prop is true", () => {
     renderWithProviders(
-      <ChallengeActionButton
-        isLoading={false}
-        onPress={jest.fn()}
-        disabled={true}
-      />
+      <ChallengeActionButton isLoading={false} onPress={jest.fn()} disabled={true} />,
     );
 
     expect(screen.getByText("Take Challenge Photo")).toBeOnTheScreen();

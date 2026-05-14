@@ -1,17 +1,7 @@
-import { vi, mocked as vitestMocked, type Mocked } from "vitest";
+import { vi, type Mocked } from "vitest";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { PrismaClient, User } from "@mirai-app/db";
+import type { DB, User } from "@mirai-app/db";
 import type { TRPCContext } from "./src/api/trpc";
-
-declare global {
-  var mocked: typeof vitestMocked;
-}
-// @ts-expect-error - adding to globalThis for test compatibility
-globalThis.mocked = vitestMocked;
-if (typeof global !== 'undefined') {
-  // @ts-expect-error - adding to global for test compatibility
-  global.mocked = vitestMocked;
-}
 
 type MockedFunction<T extends (...args: never[]) => unknown> = Mocked<T>;
 
@@ -78,7 +68,7 @@ export interface MockSupabaseClient {
   from: MockedFunction<(table: string) => MockSupabaseQueryBuilder>;
 }
 
-interface MockPrismaModelMethods<T = unknown> {
+interface MockDbModelMethods<T = unknown> {
   findFirst: MockedFunction<() => Promise<T | null>>;
   findUnique: MockedFunction<() => Promise<T | null>>;
   findMany: MockedFunction<() => Promise<T[]>>;
@@ -89,15 +79,15 @@ interface MockPrismaModelMethods<T = unknown> {
   count: MockedFunction<() => Promise<number>>;
 }
 
-export interface MockPrismaClient {
-  user: MockPrismaModelMethods<User>;
-  tripParticipant: MockPrismaModelMethods<unknown>;
-  trip: MockPrismaModelMethods<unknown>;
-  group: MockPrismaModelMethods<unknown>;
+export interface MockDbClient {
+  user: MockDbModelMethods<User>;
+  tripParticipant: MockDbModelMethods<unknown>;
+  trip: MockDbModelMethods<unknown>;
+  group: MockDbModelMethods<unknown>;
   userAgent: { create: MockedFunction<() => Promise<unknown>> };
   $connect: MockedFunction<() => Promise<void>>;
   $disconnect: MockedFunction<() => Promise<void>>;
-  $transaction: MockedFunction<<T>(callback: (prisma: MockPrismaClient) => Promise<T>) => Promise<T>>;
+  $transaction: MockedFunction<<T>(callback: (db: MockDbClient) => Promise<T>) => Promise<T>>;
 }
 
 function createMockQueryBuilder(): MockSupabaseQueryBuilder {
@@ -170,10 +160,337 @@ export function createMockSupabase(): MockSupabaseClient {
   };
 }
 
-export function createMockPrisma(): MockPrismaClient {
+function singularize(name: string): string {
+  if (name.endsWith("ies")) return name.slice(0, -3) + "y";
+  if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("zes")) return name.slice(0, -2);
+  if (name.endsWith("s")) return name.slice(0, -1);
+  return name;
+}
+
+function toCamelCase(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function toSnakeCase(str: string): string {
+  return str.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+
+function getTableNameFromModel(modelName: string): string {
+  if (modelName === "tripParticipant") return "trip_participants";
+  if (modelName === "user") return "users";
+  if (modelName === "group") return "groups";
+  if (modelName === "challenge") return "challenges";
+  if (modelName === "challengeSubmission") return "challenge_submissions";
+  if (modelName === "challengeVote") return "challenge_votes";
+  if (modelName === "reward") return "rewards";
+  if (modelName === "rewardPurchase") return "reward_purchases";
+  if (modelName === "trip") return "trips";
+  if (modelName === "tripGroup") return "trip_groups";
+  if (modelName === "tripResource") return "trip_resources";
+  if (modelName === "tripInsurance") return "trip_insurances";
+  if (modelName === "tripSponsor") return "trip_sponsors";
+  if (modelName === "notification") return "notifications";
+  if (modelName === "notificationSchedule") return "notification_schedules";
+  if (modelName === "notificationPush") return "notification_pushes";
+  if (modelName === "coinTransaction") return "coin_transactions";
+  if (modelName === "location") return "locations";
+  if (modelName === "sponsor") return "sponsors";
+  if (modelName === "submissionReport") return "submission_reports";
+  if (modelName === "activityFeed") return "activity_feeds";
+  if (modelName === "storage") return "storages";
+  return toSnakeCase(modelName) + "s";
+}
+
+function getTableName(table: unknown): string | undefined {
+  if (typeof table === "string") return table;
+  if (table && typeof table === "object") {
+    const obj = table as Record<string | symbol, unknown>;
+    if (obj.name && typeof obj.name === "string") {
+      return obj.name;
+    }
+    const sym = Object.getOwnPropertySymbols(obj).find(
+      (s) => s.description === "drizzle:Name"
+    );
+    if (sym && typeof obj[sym] === "string") {
+      return obj[sym] as string;
+    }
+  }
+  return undefined;
+}
+
+function getModelName(table: unknown): string {
+  const name = getTableName(table);
+  return toCamelCase(singularize(name ?? "unknown"));
+}
+
+function syncFindFirstWithFindUnique(model: Record<string, unknown>): void {
+  if (!model || typeof model !== "object") return;
+
+  const findFirst = model.findFirst;
+  const findUnique = model.findUnique;
+
+  if (typeof findFirst === "function" && !findUnique) {
+    const findFirstFn = findFirst as (...args: unknown[]) => Promise<unknown>;
+    model.findUnique = vi.fn().mockImplementation((...args: unknown[]) => findFirstFn(...args));
+  } else if (typeof findUnique === "function" && !findFirst) {
+    const findUniqueFn = findUnique as (...args: unknown[]) => Promise<unknown>;
+    model.findFirst = vi.fn().mockImplementation((...args: unknown[]) => findUniqueFn(...args));
+  }
+}
+
+export function addDrizzleApi(mockDb: Record<string, unknown>): void {
+  for (const key of Object.keys(mockDb)) {
+    const value = mockDb[key];
+    if (value && typeof value === "object" && ("findFirst" in value || "findUnique" in value || "findMany" in value)) {
+      syncFindFirstWithFindUnique(value as Record<string, unknown>);
+    }
+  }
+
+  if (!mockDb.query) {
+    mockDb.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const singular = toCamelCase(singularize(String(tableName)));
+          const model = mockDb[singular];
+          const defaults: Record<string, (...args: unknown[]) => Promise<unknown>> = {
+            findFirst: () => Promise.resolve(null),
+            findUnique: () => Promise.resolve(null),
+            findMany: () => Promise.resolve([]),
+            count: () => Promise.resolve(0),
+          };
+          if (model && typeof model === "object") {
+            const modelObj = model as Record<string, unknown>;
+            return new Proxy(model as object, {
+              get(target, prop) {
+                const val = (target as Record<string | symbol, unknown>)[prop];
+                if (typeof val === "function") {
+                  return async (...args: unknown[]) => {
+                    const result = await (val as (...args: unknown[]) => unknown)(...args);
+                    if (String(prop) === "findFirst" && (result === null || result === undefined)) {
+                      const findUniqueVal = modelObj.findUnique;
+                      if (typeof findUniqueVal === "function") {
+                        return await (findUniqueVal as (...args: unknown[]) => unknown)(...args);
+                      }
+                    }
+                    return result;
+                  };
+                }
+                if (typeof val === "undefined" && typeof prop === "string" && prop in defaults) {
+                  const fallbackProp = prop === "findFirst" && "findUnique" in modelObj ? "findUnique" : prop;
+                  const fallbackVal = modelObj[fallbackProp];
+                  if (typeof fallbackVal === "function") {
+                    return (...args: unknown[]) => (fallbackVal as (...args: unknown[]) => unknown)(...args);
+                  }
+                  return (...args: unknown[]) => defaults[prop](...args);
+                }
+                return val;
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+            count: vi.fn(() => Promise.resolve(0)),
+          };
+        },
+      }
+    );
+  }
+
+  if (!mockDb.insert) {
+    mockDb.insert = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        values: vi.fn((data: unknown) => {
+          const model = mockDb[modelName];
+          const returningChainable = (value: unknown) => ({
+            returning: vi.fn(() => Promise.resolve([value])),
+          });
+          if (model && typeof model === "object" && "create" in model) {
+            const createFn = (model as Record<string, unknown>).create as (...args: unknown[]) => Promise<unknown>;
+            const resultPromise = Promise.resolve(createFn({ data }));
+            return {
+              returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              onConflictDoNothing: vi.fn(() => ({
+                returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              })),
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              })),
+            };
+          }
+          return {
+            returning: vi.fn(() => Promise.resolve([data])),
+            onConflictDoNothing: vi.fn(() => returningChainable(data)),
+            onConflictDoUpdate: vi.fn(() => returningChainable(data)),
+          };
+        }),
+      };
+    });
+  }
+
+  if (!mockDb.update) {
+    mockDb.update = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        set: vi.fn((data: unknown) => ({
+          where: vi.fn(() => {
+            const model = mockDb[modelName];
+            if (model && typeof model === "object" && "update" in model) {
+              const updateFn = (model as Record<string, unknown>).update as (...args: unknown[]) => Promise<unknown>;
+              const result = updateFn({ data });
+              const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
+              return {
+                returning: vi.fn(async () => Promise.resolve([await resolvedResult])),
+              };
+            }
+            return {
+              returning: vi.fn(() => Promise.resolve([data])),
+            };
+          }),
+        })),
+      };
+    });
+  }
+
+  if (!mockDb.delete) {
+    mockDb.delete = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        where: vi.fn(() => {
+          const model = mockDb[modelName];
+          if (model && typeof model === "object" && "delete" in model) {
+            const deleteFn = (model as Record<string, unknown>).delete as (...args: unknown[]) => Promise<unknown>;
+            const result = deleteFn();
+            const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
+            return {
+              returning: vi.fn(async () => Promise.resolve([await resolvedResult])),
+            };
+          }
+          return {
+            returning: vi.fn(() => Promise.resolve([{}])),
+          };
+        }),
+      };
+    });
+  }
+
+  if (!mockDb.select) {
+    const createSelectChainable = (fields?: unknown) => {
+      let primaryTable: string | undefined;
+      let hasGroupBy = false;
+      const joins: { table: string; alias: string; isLeft: boolean }[] = [];
+
+      const addJoin = (table: unknown, isLeft: boolean) => {
+        const name = getTableName(table);
+        if (name) {
+          const alias = toCamelCase(singularize(name));
+          joins.push({ table: name, alias, isLeft });
+        }
+        return builder;
+      };
+
+      const builder: Record<string, unknown> = {
+        from: vi.fn((table: unknown) => {
+          const name = getTableName(table);
+          if (name) {
+            primaryTable = toCamelCase(singularize(name));
+          }
+          return builder;
+        }),
+        innerJoin: vi.fn((table: unknown) => addJoin(table, false)),
+        leftJoin: vi.fn((table: unknown) => addJoin(table, true)),
+        where: vi.fn(() => builder),
+        orderBy: vi.fn(() => builder),
+        limit: vi.fn(() => builder),
+        offset: vi.fn(() => builder),
+        groupBy: vi.fn(() => {
+          hasGroupBy = true;
+          return builder;
+        }),
+        having: vi.fn(() => builder),
+        then: vi.fn((resolve: (value: unknown) => unknown) => {
+          if (primaryTable) {
+            const model = mockDb[primaryTable];
+            if (model && typeof model === "object") {
+              const fieldNames = fields && typeof fields === "object" ? Object.keys(fields as Record<string, unknown>) : [];
+              const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+              if (hasCountOnly && "count" in model) {
+                return (model as { count: () => Promise<number> }).count().then((count: number) => resolve([{ count }]));
+              }
+              if (hasGroupBy && "groupBy" in model) {
+                return (model as { groupBy: () => Promise<Record<string, unknown>[]> }).groupBy().then((groups) => {
+                  const mapped = groups.map((row) => {
+                    const item: Record<string, unknown> = {};
+                    for (const field of fieldNames) {
+                      if (field in row) item[field] = row[field];
+                      else if (field === "count" && row._count) {
+                        item.count = (row._count as Record<string, unknown>).id ?? (row._count as Record<string, unknown>).all ?? 0;
+                      }
+                    }
+                    return item;
+                  });
+                  return resolve(mapped);
+                });
+              }
+              if ("findMany" in model) {
+                return (model as { findMany: () => Promise<unknown[]> }).findMany().then((rows: unknown[]) => {
+                  if (!joins.length) return resolve(rows);
+
+                  const primaryAlias = getTableNameFromModel(primaryTable!);
+                  const mapped = rows.map((row) => {
+                    const mappedRow: Record<string, unknown> = {};
+                    mappedRow[primaryAlias] = row;
+
+                    for (const join of joins) {
+                      const joinModel = mockDb[join.alias];
+                      let joinData: unknown = null;
+                      if (join.alias === "user" && row && typeof row === "object") {
+                        joinData = (row as Record<string, unknown>).user ?? null;
+                      } else if (join.alias === "group" && row && typeof row === "object") {
+                        joinData = (row as Record<string, unknown>).group ?? null;
+                      }
+                      mappedRow[join.table] = joinData;
+                    }
+
+                    if (row && typeof row === "object") {
+                      for (const field of fieldNames) {
+                        if (field in (row as Record<string, unknown>)) {
+                          mappedRow[field] = (row as Record<string, unknown>)[field];
+                        }
+                      }
+                    }
+                    return mappedRow;
+                  });
+                  return resolve(mapped);
+                });
+              }
+            }
+          }
+          return Promise.resolve([]).then(resolve);
+        }),
+      };
+      return builder;
+    };
+
+    mockDb.select = vi.fn((fields?: unknown) => createSelectChainable(fields));
+  }
+
+  if (typeof mockDb.transaction !== "function") {
+    mockDb.transaction = vi.fn((callback: (tx: Record<string, unknown>) => Promise<unknown>) => {
+      const tx = { ...mockDb };
+      addDrizzleApi(tx);
+      return callback(tx);
+    });
+  }
+}
+
+export function createMockDb(): MockDbClient & Record<string, unknown> {
   const mockUser = createMockDbUser();
 
-  const mockDb: MockPrismaClient = {
+  const mockDb: MockDbClient & Record<string, unknown> = {
     user: {
       findFirst: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
       findUnique: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
@@ -215,21 +532,22 @@ export function createMockPrisma(): MockPrismaClient {
     },
     $connect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
     $disconnect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
-    $transaction: vi.fn<<T>(callback: (prisma: MockPrismaClient) => Promise<T>) => Promise<T>>((callback) =>
+    $transaction: vi.fn<<T>(callback: (db: MockDbClient) => Promise<T>) => Promise<T>>((callback) =>
       callback(mockDb)
     ),
   };
 
+  addDrizzleApi(mockDb);
   return mockDb;
 }
 
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
   const mockSupabase = createMockSupabase();
-  const mockDb = createMockPrisma();
+  const mockDb = createMockDb();
 
   return {
-    db: mockDb as unknown as PrismaClient,
-    supabase: mockSupabase as unknown as SupabaseClient,
+    db: mockDb as DB,
+    supabase: mockSupabase,
     headers: new Headers(),
     accessToken: null,
     ...overrides,
@@ -251,13 +569,13 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-vi.mock("@mirai-app/db", () => {
-  const mockPrismaClient = createMockPrisma();
+vi.mock("@mirai-app/db", async () => {
+  const actual = await vi.importActual<typeof import("@mirai-app/db")>("@mirai-app/db");
+  const mockDbClient = createMockDb();
 
   return {
-    createDb: vi.fn(() => mockPrismaClient),
-    prisma: mockPrismaClient,
-    PrismaClient: vi.fn(() => mockPrismaClient),
+    ...actual,
+    createDb: vi.fn(() => mockDbClient),
   };
 });
 

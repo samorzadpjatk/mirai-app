@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  screen,
-  userEvent,
-} from "@testing-library/react-native";
+import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { PrimaryLoadingButton } from "../../common/buttons/PrimaryLoadingButton";
 
@@ -12,9 +9,11 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Click Me"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         testID="button"
-      />
+      />,
     );
 
     expect(screen.getByText("Click Me")).toBeOnTheScreen();
@@ -25,12 +24,7 @@ describe("PrimaryLoadingButton", () => {
     const user = userEvent.setup();
 
     renderWithProviders(
-      <PrimaryLoadingButton
-        label="Click"
-        isLoading={false}
-        onPress={onPress}
-        testID="button"
-      />
+      <PrimaryLoadingButton label="Click" isLoading={false} onPress={onPress} testID="button" />,
     );
 
     await user.press(screen.getByText("Click"));
@@ -42,9 +36,11 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Loading"
         isLoading={true}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         testID="button"
-      />
+      />,
     );
 
     expect(screen.queryByText("Loading")).toBeNull();
@@ -56,9 +52,11 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Loading"
         isLoading={true}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         testID="button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("button");
@@ -70,10 +68,12 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Disabled"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         disabled={true}
         testID="button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("button");
@@ -85,10 +85,12 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Enabled"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         disabled={false}
         testID="button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("button");
@@ -101,10 +103,12 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Styled"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         style={customStyle}
         testID="button"
-      />
+      />,
     );
 
     const button = screen.getByTestId("button");
@@ -117,15 +121,17 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Styled Text"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         textStyle={customTextStyle}
         testID="button"
-      />
+      />,
     );
 
     const text = screen.getByText("Styled Text");
     expect(text.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customTextStyle)])
+      expect.arrayContaining([expect.objectContaining(customTextStyle)]),
     );
   });
 
@@ -134,10 +140,12 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Opacity"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         activeOpacity={0.5}
         testID="button"
-      />
+      />,
     );
 
     // activeOpacity is a React Native internal prop that doesn't get passed to host elements
@@ -150,9 +158,11 @@ describe("PrimaryLoadingButton", () => {
       <PrimaryLoadingButton
         label="Default Opacity"
         isLoading={false}
-        onPress={() => { /* noop */ }}
+        onPress={() => {
+          /* noop */
+        }}
         testID="button"
-      />
+      />,
     );
 
     // activeOpacity is a React Native internal prop that doesn't get passed to host elements

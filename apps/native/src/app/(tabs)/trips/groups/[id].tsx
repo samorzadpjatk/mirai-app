@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  Text,
-} from "react-native";
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,31 +30,26 @@ export default function GroupDetailsScreen() {
   });
   const { isTripPast } = useTripDetails(group?.trip?.id);
   const isCurrentUserMemberInViewedGroup = Boolean(
-    group?.participants.some(
-      (participant) => participant.user.id === currentUser?.id,
-    ),
+    group?.participants.some((participant) => participant.user.id === currentUser?.id),
   );
   const isCurrentUserOrganizerOfViewedGroup = Boolean(
     currentUser?.id && group?.organizer?.id === currentUser.id,
   );
 
-  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
-    useQuery({
-      ...orpc.user.getMyWithGroup.queryOptions({
-        input: { tripId: group?.trip?.id ?? "" },
-      }),
-      enabled: !!group?.trip?.id,
-    });
-  const currentUserGroupId =
-    currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
+  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
+    ...orpc.user.getMyWithGroup.queryOptions({
+      input: { tripId: group?.trip?.id ?? "" },
+    }),
+    enabled: !!group?.trip?.id,
+  });
+  const currentUserGroupId = currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
   const hasGroupInCurrentTrip = Boolean(currentUserGroupId);
 
   const { data: myJoinRequest } = useQuery({
     ...orpc.group.getMyJoinRequestForGroup.queryOptions({
       input: { groupId: groupId ?? "" },
     }),
-    enabled:
-      !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
+    enabled: !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
   });
 
   const { data: pendingJoinRequests } = useQuery({
@@ -89,8 +77,7 @@ export default function GroupDetailsScreen() {
     orpc.group.leaveMyGroup.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } })
-            .queryKey,
+          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } }).queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.getAll.queryOptions({
@@ -146,8 +133,7 @@ export default function GroupDetailsScreen() {
     orpc.group.respondToJoinRequest.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } })
-            .queryKey,
+          queryKey: orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } }).queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.getPendingJoinRequests.queryOptions({
@@ -191,8 +177,7 @@ export default function GroupDetailsScreen() {
   );
   const isOrganizer = currentUser?.id === organizerId;
   const canManageGroup = isGroupMember && isOrganizer;
-  const canRequestToJoin =
-    !isLoadingCurrentUserGroup && !isGroupMember && !hasGroupInCurrentTrip;
+  const canRequestToJoin = !isLoadingCurrentUserGroup && !isGroupMember && !hasGroupInCurrentTrip;
   const hasPendingRequestToThisGroup = Boolean(myJoinRequest);
   const sortedParticipants = [...group.participants].sort((a, b) => {
     const aIsLeader = a.user.id === organizerId;
@@ -212,9 +197,7 @@ export default function GroupDetailsScreen() {
     avatarStoragePath: p.user.hasAvatar ? `avatar/${p.user.id}.jpg` : null,
   }));
   const rankingPosition = (() => {
-    const index = rankingData?.data.findIndex(
-      (rankingGroup) => rankingGroup.id === group.id,
-    );
+    const index = rankingData?.data.findIndex((rankingGroup) => rankingGroup.id === group.id);
     return typeof index === "number" && index >= 0 ? index + 1 : null;
   })();
 
@@ -245,27 +228,18 @@ export default function GroupDetailsScreen() {
         await requestToJoinMutation.mutateAsync({ groupId });
         Alert.alert("Success", "Join request sent");
       } catch (error: unknown) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to send join request";
+        const message = error instanceof Error ? error.message : "Failed to send join request";
         Alert.alert("Error", message);
       }
     })();
   };
 
-  const handleRespondToJoinRequest = (
-    requestId: string,
-    decision: "ACCEPT" | "REJECT",
-  ) => {
+  const handleRespondToJoinRequest = (requestId: string, decision: "ACCEPT" | "REJECT") => {
     void (async () => {
       try {
         await respondToJoinRequestMutation.mutateAsync({ requestId, decision });
       } catch (error: unknown) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to update join request";
+        const message = error instanceof Error ? error.message : "Failed to update join request";
         Alert.alert("Error", message);
       }
     })();
@@ -278,10 +252,7 @@ export default function GroupDetailsScreen() {
         await cancelJoinRequestMutation.mutateAsync({ groupId });
         Alert.alert("Success", "Join request canceled");
       } catch (error: unknown) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to cancel join request";
+        const message = error instanceof Error ? error.message : "Failed to cancel join request";
         Alert.alert("Error", message);
       }
     })();
@@ -301,9 +272,7 @@ export default function GroupDetailsScreen() {
     <View style={styles.container}>
       {canManageGroup && !isTripPast && (
         <View style={styles.editButtonContainer}>
-          <EditGroupButton
-            onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
-          />
+          <EditGroupButton onPress={() => router.push(`/trips/groups/edit/${groupId}`)} />
         </View>
       )}
 
@@ -339,9 +308,7 @@ export default function GroupDetailsScreen() {
           <View style={styles.pendingRequestContainer}>
             <View style={styles.pendingRequestBadge}>
               <Ionicons name="time-outline" size={16} color={colors.primary} />
-              <Text style={styles.pendingRequestText}>
-                Join request pending approval
-              </Text>
+              <Text style={styles.pendingRequestText}>Join request pending approval</Text>
             </View>
             <TouchableOpacity
               style={styles.cancelRequestButton}
@@ -349,29 +316,17 @@ export default function GroupDetailsScreen() {
               onPress={handleCancelJoinRequest}
               disabled={cancelJoinRequestMutation.isPending}
             >
-              <Ionicons
-                name="close-circle-outline"
-                size={16}
-                color={colors.white}
-              />
+              <Ionicons name="close-circle-outline" size={16} color={colors.white} />
               <Text style={styles.cancelRequestButtonText}>
-                {cancelJoinRequestMutation.isPending
-                  ? "Canceling..."
-                  : "Cancel request"}
+                {cancelJoinRequestMutation.isPending ? "Canceling..." : "Cancel request"}
               </Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
-        {!isLoadingCurrentUserGroup &&
-        !isGroupMember &&
-        hasGroupInCurrentTrip ? (
+        {!isLoadingCurrentUserGroup && !isGroupMember && hasGroupInCurrentTrip ? (
           <View style={styles.groupLockedBadge}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={16}
-              color={colors.textMuted}
-            />
+            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
             <Text style={styles.groupLockedText}>
               Leave your current group first to join this one
             </Text>
@@ -413,43 +368,26 @@ export default function GroupDetailsScreen() {
                   </View>
                   <View style={styles.joinRequestUser}>
                     <Text style={styles.joinRequestName}>
-                      {[request.user.firstName, request.user.lastName]
-                        .filter(Boolean)
-                        .join(" ") || "Unknown user"}
+                      {[request.user.firstName, request.user.lastName].filter(Boolean).join(" ") ||
+                        "Unknown user"}
                     </Text>
-                    <Text style={styles.joinRequestEmail}>
-                      {request.user.email ?? "No email"}
-                    </Text>
+                    <Text style={styles.joinRequestEmail}>{request.user.email ?? "No email"}</Text>
                   </View>
                   <View style={styles.joinRequestActions}>
                     <TouchableOpacity
-                      style={[
-                        styles.joinRequestButton,
-                        styles.joinRequestRejectButton,
-                      ]}
-                      onPress={() =>
-                        handleRespondToJoinRequest(request.id, "REJECT")
-                      }
+                      style={[styles.joinRequestButton, styles.joinRequestRejectButton]}
+                      onPress={() => handleRespondToJoinRequest(request.id, "REJECT")}
                       disabled={respondToJoinRequestMutation.isPending}
                     >
                       <Ionicons name="close" size={14} color={colors.white} />
                       <Text style={styles.joinRequestButtonText}>Reject</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[
-                        styles.joinRequestButton,
-                        styles.joinRequestAcceptButton,
-                      ]}
-                      onPress={() =>
-                        handleRespondToJoinRequest(request.id, "ACCEPT")
-                      }
+                      style={[styles.joinRequestButton, styles.joinRequestAcceptButton]}
+                      onPress={() => handleRespondToJoinRequest(request.id, "ACCEPT")}
                       disabled={respondToJoinRequestMutation.isPending}
                     >
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={colors.white}
-                      />
+                      <Ionicons name="checkmark" size={14} color={colors.white} />
                       <Text style={styles.joinRequestButtonText}>Accept</Text>
                     </TouchableOpacity>
                   </View>
@@ -474,9 +412,7 @@ export default function GroupDetailsScreen() {
           <TransactionHistory transactions={transactions ?? []} />
         </View>
 
-        <GroupApprovedChallenges
-          submissions={group.approvedSubmissions ?? []}
-        />
+        <GroupApprovedChallenges submissions={group.approvedSubmissions ?? []} />
       </ScrollView>
     </View>
   );

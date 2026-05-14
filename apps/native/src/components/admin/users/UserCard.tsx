@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import type { User } from '~/hooks/admin/useAdminUsers';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { User } from "~/hooks/admin/useAdminUsers";
 
 interface UserCardProps {
   user: User;
@@ -10,12 +10,11 @@ interface UserCardProps {
 }
 
 export function UserCard({ user, onEdit }: UserCardProps) {
-  const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') ?? user.email ?? 'Unknown User';
-  const groupName = user.group?.name ?? 'Not selected';
-  const isAdmin = user.role === 'ADMIN';
-  const bannedUntilLabel = user.bannedUntil
-    ? new Date(user.bannedUntil).toLocaleString()
-    : null;
+  const userName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ?? user.email ?? "Unknown User";
+  const groupName = user.group?.name ?? "Not selected";
+  const isAdmin = user.role === "ADMIN";
+  const bannedUntilLabel = user.bannedUntil ? new Date(user.bannedUntil).toLocaleString() : null;
 
   return (
     <View style={styles.userCard}>
@@ -42,11 +41,11 @@ export function UserCard({ user, onEdit }: UserCardProps) {
         <View style={styles.numberSummary}>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>Wrist #</Text>
-            <Text style={styles.numberValue}>{user.wristNumber ?? '—'}</Text>
+            <Text style={styles.numberValue}>{user.wristNumber ?? "—"}</Text>
           </View>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>House #</Text>
-            <Text style={styles.numberValue}>{user.houseNumber ?? '—'}</Text>
+            <Text style={styles.numberValue}>{user.houseNumber ?? "—"}</Text>
           </View>
         </View>
 
@@ -74,9 +73,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
   },
   userHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: spacing.md,
   },
   userInfo: {
@@ -105,11 +104,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   userBadges: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -127,7 +126,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   numberSummary: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   numberItem: {
@@ -144,14 +143,14 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,

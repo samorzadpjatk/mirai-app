@@ -46,9 +46,7 @@ const statusColors: Record<string, string> = {
   COMPLETED: "#10b981",
 };
 
-const getSubmissionTypeMeta = (
-  submissionType: ChallengeItem["submissionType"],
-) => {
+const getSubmissionTypeMeta = (submissionType: ChallengeItem["submissionType"]) => {
   switch (submissionType) {
     case "MULTI_IMAGE":
       return { label: "Multi", icon: "images-outline" as const };
@@ -210,13 +208,11 @@ export function AdminChallengeListCard({
   tripId,
 }: AdminChallengeListCardProps) {
   const router = useRouter();
-  
+
   const statusColor = statusColors[challenge.status] ?? colors.gray400;
   const hasPendingSubmissions = challenge.pendingSubmissionsCount > 0;
   const pendingColor = hasPendingSubmissions ? "#ef4444" : "#64748b";
-  const submissionEndTimestamp = challenge.endTime
-    ? new Date(challenge.endTime).getTime()
-    : null;
+  const submissionEndTimestamp = challenge.endTime ? new Date(challenge.endTime).getTime() : null;
   const isStaffVotingAvailable =
     challenge.scoringCategory !== "JUDGED_STAFF" ||
     (submissionEndTimestamp !== null &&
@@ -274,12 +270,8 @@ export function AdminChallengeListCard({
 
   const pendingSubmissionsStyle = {
     ...styles.statusIndicator,
-    borderColor: hasPendingSubmissions
-      ? "rgba(239,68,68,0.45)"
-      : "rgba(100,116,139,0.45)",
-    backgroundColor: hasPendingSubmissions
-      ? "rgba(239,68,68,0.18)"
-      : "rgba(100,116,139,0.14)",
+    borderColor: hasPendingSubmissions ? "rgba(239,68,68,0.45)" : "rgba(100,116,139,0.45)",
+    backgroundColor: hasPendingSubmissions ? "rgba(239,68,68,0.18)" : "rgba(100,116,139,0.14)",
   };
 
   const handleEdit = () => {
@@ -329,23 +321,13 @@ export function AdminChallengeListCard({
         <Text style={styles.title}>{challenge.title}</Text>
         <View style={styles.pointsRow}>
           <Text style={pointsTextStyle}>{challenge.basePoints} PTS</Text>
-          <Text style={statusTextStyle}>
-            {challenge.status.replace(/_/g, " ")}
-          </Text>
+          <Text style={statusTextStyle}>{challenge.status.replace(/_/g, " ")}</Text>
         </View>
         <View style={styles.tagsContainer}>
           <View style={submissionTypeTagStyle}>
-            <Ionicons
-              name={submissionTypeMeta.icon}
-              size={12}
-              color="#cbd5e1"
-            />
+            <Ionicons name={submissionTypeMeta.icon} size={12} color="#cbd5e1" />
             {submissionTypeMeta.secondaryIcon ? (
-              <Ionicons
-                name={submissionTypeMeta.secondaryIcon}
-                size={12}
-                color="#cbd5e1"
-              />
+              <Ionicons name={submissionTypeMeta.secondaryIcon} size={12} color="#cbd5e1" />
             ) : null}
             <Text
               style={{
@@ -387,11 +369,7 @@ export function AdminChallengeListCard({
         <View style={styles.statusIndicators}>
           {challenge.scoringCategory === "JUDGED_STAFF" ? (
             <View style={staffProgressStyle}>
-              <Ionicons
-                name="shield-checkmark-outline"
-                size={12}
-                color="#38bdf8"
-              />
+              <Ionicons name="shield-checkmark-outline" size={12} color="#38bdf8" />
               <Text
                 style={{
                   ...styles.statusIndicatorText,
@@ -428,9 +406,7 @@ export function AdminChallengeListCard({
               <Ionicons
                 name="git-compare"
                 size={20}
-                color={
-                  isStaffVotingAvailable ? colors.primary : colors.gray400
-                }
+                color={isStaffVotingAvailable ? colors.primary : colors.gray400}
               />
             </TouchableOpacity>
           ) : (

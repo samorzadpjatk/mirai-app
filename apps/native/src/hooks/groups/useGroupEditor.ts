@@ -5,16 +5,30 @@ import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 export function useGroupEditor(groupId?: string | null) {
   const queryClient = useQueryClient();
 
-  const groupQuery = useQuery(orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }));
-  const updateMutation = useMutation(orpc.group.update.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
-  }));
-  const assignMutation = useMutation(orpc.group.assignUserToGroup.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
-  }));
-  const removeMutation = useMutation(orpc.group.removeUserFromGroup.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
-  }));
+  const groupQuery = useQuery(
+    orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }),
+  );
+  const updateMutation = useMutation(
+    orpc.group.update.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient);
+      },
+    }),
+  );
+  const assignMutation = useMutation(
+    orpc.group.assignUserToGroup.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient);
+      },
+    }),
+  );
+  const removeMutation = useMutation(
+    orpc.group.removeUserFromGroup.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient);
+      },
+    }),
+  );
 
   const updateGroup = async (data: {
     id: string;

@@ -21,23 +21,16 @@ function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
     return (
       <View style={styles.podiumColumn}>
         <View style={styles.emptyAvatar} />
-        <View
-          style={[styles.emptyPodium, position === 1 && styles.emptyPodiumTall]}
-        />
+        <View style={[styles.emptyPodium, position === 1 && styles.emptyPodiumTall]} />
       </View>
     );
   }
 
   const medalColor =
-    position === 1
-      ? MEDAL_COLORS.gold
-      : position === 2
-        ? MEDAL_COLORS.silver
-        : MEDAL_COLORS.bronze;
+    position === 1 ? MEDAL_COLORS.gold : position === 2 ? MEDAL_COLORS.silver : MEDAL_COLORS.bronze;
   const avatarSize = position === 1 ? 80 : position === 2 ? 64 : 56;
   const podiumHeight = position === 1 ? 176 : position === 2 ? 128 : 96;
-  const borderColor =
-    position === 1 ? "rgba(255, 204, 0, 0.3)" : "rgba(255, 255, 255, 0.1)";
+  const borderColor = position === 1 ? "rgba(255, 204, 0, 0.3)" : "rgba(255, 255, 255, 0.1)";
 
   return (
     <TouchableOpacity
@@ -59,15 +52,9 @@ function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
           ]}
         >
           {group.image ? (
-            <Image
-              source={{ uri: group.image }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
+            <Image source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
           ) : (
-            <Text style={[styles.avatarText, { color: medalColor }]}>
-              {group.name.charAt(0)}
-            </Text>
+            <Text style={[styles.avatarText, { color: medalColor }]}>{group.name.charAt(0)}</Text>
           )}
         </View>
 
@@ -126,30 +113,15 @@ interface LeaderboardPodiumProps {
   onPressGroup?: (group: RankedGroup) => void;
 }
 
-export function LeaderboardPodium({
-  topThree,
-  onPressGroup,
-}: LeaderboardPodiumProps) {
+export function LeaderboardPodium({ topThree, onPressGroup }: LeaderboardPodiumProps) {
   return (
     <View style={styles.container}>
       <View style={styles.podiumRow}>
-        <PodiumPlace
-          group={topThree[1]}
-          position={2}
-          onPressGroup={onPressGroup}
-        />
+        <PodiumPlace group={topThree[1]} position={2} onPressGroup={onPressGroup} />
         <View style={styles.firstPlaceOffset}>
-          <PodiumPlace
-            group={topThree[0]}
-            position={1}
-            onPressGroup={onPressGroup}
-          />
+          <PodiumPlace group={topThree[0]} position={1} onPressGroup={onPressGroup} />
         </View>
-        <PodiumPlace
-          group={topThree[2]}
-          position={3}
-          onPressGroup={onPressGroup}
-        />
+        <PodiumPlace group={topThree[2]} position={3} onPressGroup={onPressGroup} />
       </View>
     </View>
   );

@@ -30,25 +30,33 @@ interface PurchaseRewardResult {
   isPending: boolean;
 }
 
-const mockUseRewards = jest.fn((): RewardsResult => ({
-  data: [],
-  isLoading: false,
-  error: null,
-  refetch: mockRefetch,
-}));
+const mockUseRewards = jest.fn(
+  (): RewardsResult => ({
+    data: [],
+    isLoading: false,
+    error: null,
+    refetch: mockRefetch,
+  }),
+);
 
-const mockUseMyGroup = jest.fn((): MyGroupResult => ({
-  group: null,
-}));
+const mockUseMyGroup = jest.fn(
+  (): MyGroupResult => ({
+    group: null,
+  }),
+);
 
-const mockUseTripDetails = jest.fn((): TripDetailsResult => ({
-  isTripPast: false,
-}));
+const mockUseTripDetails = jest.fn(
+  (): TripDetailsResult => ({
+    isTripPast: false,
+  }),
+);
 
-const mockUsePurchaseReward = jest.fn((): PurchaseRewardResult => ({
-  mutateAsync: mockMutateAsync,
-  isPending: false,
-}));
+const mockUsePurchaseReward = jest.fn(
+  (): PurchaseRewardResult => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  }),
+);
 
 const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
   id: "reward-1",
@@ -141,7 +149,15 @@ jest.mock("~/hooks/trips", () => ({
 jest.mock("@expo/vector-icons", () => {
   const { View } = jest.requireActual("react-native");
   return {
-    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+    Ionicons: function MockIonicons({
+      name,
+      size,
+      color,
+    }: {
+      name: string;
+      size: number;
+      color: string;
+    }) {
       return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
     },
   };
@@ -151,7 +167,12 @@ describe("RewardsView", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Alert, "alert").mockImplementation(() => {});
-    mockUseRewards.mockReturnValue({ data: [], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
     mockUseMyGroup.mockReturnValue({ group: null });
     mockUseTripDetails.mockReturnValue({ isTripPast: false });
     mockUsePurchaseReward.mockReturnValue({ mutateAsync: mockMutateAsync, isPending: false });
@@ -160,7 +181,12 @@ describe("RewardsView", () => {
   const defaultProps = { tripId: "trip-1" };
 
   it("renders loading state", () => {
-    mockUseRewards.mockReturnValue({ data: [], isLoading: true, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [],
+      isLoading: true,
+      error: null,
+      refetch: mockRefetch,
+    });
 
     const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
@@ -169,7 +195,12 @@ describe("RewardsView", () => {
   });
 
   it("renders error state", () => {
-    mockUseRewards.mockReturnValue({ data: [], isLoading: false, error: new Error("Failed to load"), refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: new Error("Failed to load"),
+      refetch: mockRefetch,
+    });
 
     const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
@@ -185,7 +216,12 @@ describe("RewardsView", () => {
   });
 
   it("renders reward cards and actions", () => {
-    mockUseRewards.mockReturnValue({ data: [baseReward({ originalCoinCost: 25 })], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [baseReward({ originalCoinCost: 25 })],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
     mockUseMyGroup.mockReturnValue({ group: { id: "group-1", name: "Team A", coins: 500 } });
 
     const { getByText, getAllByText } = renderWithProviders(<RewardsView {...defaultProps} />);
@@ -203,17 +239,30 @@ describe("RewardsView", () => {
   });
 
   it("navigates to history when history button is pressed", () => {
-    mockUseRewards.mockReturnValue({ data: [baseReward()], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [baseReward()],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
 
     const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     fireEvent.press(getByText("History"));
 
-    expect(mockPush).toHaveBeenCalledWith({ pathname: "/trips/rewards/history", params: { tripId: "trip-1" } });
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/trips/rewards/history",
+      params: { tripId: "trip-1" },
+    });
   });
 
   it("opens purchase modal when claim button is pressed", () => {
-    mockUseRewards.mockReturnValue({ data: [baseReward()], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [baseReward()],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
     mockUseMyGroup.mockReturnValue({ group: { id: "group-1", name: "Team A", coins: 500 } });
 
     const { getAllByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
@@ -260,7 +309,12 @@ describe("RewardsView", () => {
   });
 
   it("renders refresh control and image placeholder icon", () => {
-    mockUseRewards.mockReturnValue({ data: [baseReward({ image: null, images: [] })], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [baseReward({ image: null, images: [] })],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
 
     const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
@@ -269,7 +323,12 @@ describe("RewardsView", () => {
   });
 
   it("renders original coin cost percentage when available", () => {
-    mockUseRewards.mockReturnValue({ data: [baseReward({ originalCoinCost: 25 })], isLoading: false, error: null, refetch: mockRefetch });
+    mockUseRewards.mockReturnValue({
+      data: [baseReward({ originalCoinCost: 25 })],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    });
 
     const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 

@@ -65,7 +65,15 @@ jest.mock("~/hooks/rewards", () => ({
 }));
 
 jest.mock("@expo/vector-icons", () => ({
-  Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+  Ionicons: function MockIonicons({
+    name,
+    size,
+    color,
+  }: {
+    name: string;
+    size: number;
+    color: string;
+  }) {
     const { View } = jest.requireActual("react-native");
     return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
   },
@@ -85,38 +93,76 @@ describe("RewardsHistoryView", () => {
       isRefetching: false,
       refetch: mockRefetch,
     });
-    mockUseUpdateMyRewardPurchaseStatus.mockReturnValue({ mutateAsync: mockMutateAsync, isPending: false });
+    mockUseUpdateMyRewardPurchaseStatus.mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    });
   });
 
   const defaultProps = { tripId: "trip-1" };
 
   it("renders loading state", () => {
-    mockUseRewardPurchaseHistory.mockReturnValue({ data: [], isLoading: true, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
+    mockUseRewardPurchaseHistory.mockReturnValue({
+      data: [],
+      isLoading: true,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: mockFetchNextPage,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
 
-    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(
+      <RewardsHistoryView {...defaultProps} />,
+    );
 
     expect(getByText("Loading claim history...")).toBeTruthy();
     expect(getByTestId("loading-indicator")).toBeTruthy();
   });
 
   it("renders error state", () => {
-    mockUseRewardPurchaseHistory.mockReturnValue({ data: [], isLoading: false, error: new Error("Failed to load"), hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
+    mockUseRewardPurchaseHistory.mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: new Error("Failed to load"),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: mockFetchNextPage,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
 
-    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(
+      <RewardsHistoryView {...defaultProps} />,
+    );
 
     expect(getByText("Failed to load claim history")).toBeTruthy();
     expect(getByTestId("icon-warning-outline")).toBeTruthy();
   });
 
   it("renders empty state", () => {
-    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(
+      <RewardsHistoryView {...defaultProps} />,
+    );
 
     expect(getByText("No reward claims yet")).toBeTruthy();
     expect(getByTestId("icon-time-outline")).toBeTruthy();
   });
 
   it("renders purchase list and labels", () => {
-    mockUseRewardPurchaseHistory.mockReturnValue({ data: [basePurchase({ status: "BOUGHT", purchasedBy: { firstName: "John", lastName: "Doe" } })], isLoading: false, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
+    mockUseRewardPurchaseHistory.mockReturnValue({
+      data: [
+        basePurchase({ status: "BOUGHT", purchasedBy: { firstName: "John", lastName: "Doe" } }),
+      ],
+      isLoading: false,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: mockFetchNextPage,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
 
     const { getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
@@ -148,17 +194,38 @@ describe("RewardsHistoryView", () => {
   });
 
   it("handles pickup action", () => {
-    mockUseRewardPurchaseHistory.mockReturnValue({ data: [basePurchase({ status: "ACCEPTED" })], isLoading: false, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
+    mockUseRewardPurchaseHistory.mockReturnValue({
+      data: [basePurchase({ status: "ACCEPTED" })],
+      isLoading: false,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: mockFetchNextPage,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
 
     const { getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
 
     fireEvent.press(getByText("I want to pick up"));
 
-    expect(mockMutateAsync).toHaveBeenCalledWith({ purchaseId: "purchase-1", status: "IN_DELIVERY" });
+    expect(mockMutateAsync).toHaveBeenCalledWith({
+      purchaseId: "purchase-1",
+      status: "IN_DELIVERY",
+    });
   });
 
   it("handles cancel action", () => {
-    mockUseRewardPurchaseHistory.mockReturnValue({ data: [basePurchase({ status: "BOUGHT" })], isLoading: false, error: null, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: mockFetchNextPage, isRefetching: false, refetch: mockRefetch });
+    mockUseRewardPurchaseHistory.mockReturnValue({
+      data: [basePurchase({ status: "BOUGHT" })],
+      isLoading: false,
+      error: null,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: mockFetchNextPage,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
 
     jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
       const destructiveButton = buttons?.find((b: { style?: string }) => b.style === "destructive");
@@ -186,7 +253,9 @@ describe("RewardsHistoryView", () => {
       refetch: mockRefetch,
     });
 
-    const { getByText, getByTestId } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByText, getByTestId } = renderWithProviders(
+      <RewardsHistoryView {...defaultProps} />,
+    );
 
     expect(getByText("Pickup details")).toBeTruthy();
     expect(getByText("Pickup at reception")).toBeTruthy();
@@ -197,11 +266,31 @@ describe("RewardsHistoryView", () => {
   it("renders refresh control and all status labels", () => {
     mockUseRewardPurchaseHistory.mockReturnValue({
       data: [
-        basePurchase({ id: "bought", status: "BOUGHT", reward: { ...baseReward(), name: "Reward BOUGHT" } }),
-        basePurchase({ id: "accepted", status: "ACCEPTED", reward: { ...baseReward(), name: "Reward ACCEPTED" } }),
-        basePurchase({ id: "delivery", status: "IN_DELIVERY", reward: { ...baseReward(), name: "Reward IN_DELIVERY" } }),
-        basePurchase({ id: "cancelled", status: "CANCELLED", reward: { ...baseReward(), name: "Reward CANCELLED" } }),
-        basePurchase({ id: "delivered", status: "DELIVERED", reward: { ...baseReward(), name: "Reward DELIVERED" } }),
+        basePurchase({
+          id: "bought",
+          status: "BOUGHT",
+          reward: { ...baseReward(), name: "Reward BOUGHT" },
+        }),
+        basePurchase({
+          id: "accepted",
+          status: "ACCEPTED",
+          reward: { ...baseReward(), name: "Reward ACCEPTED" },
+        }),
+        basePurchase({
+          id: "delivery",
+          status: "IN_DELIVERY",
+          reward: { ...baseReward(), name: "Reward IN_DELIVERY" },
+        }),
+        basePurchase({
+          id: "cancelled",
+          status: "CANCELLED",
+          reward: { ...baseReward(), name: "Reward CANCELLED" },
+        }),
+        basePurchase({
+          id: "delivered",
+          status: "DELIVERED",
+          reward: { ...baseReward(), name: "Reward DELIVERED" },
+        }),
       ],
       isLoading: false,
       error: null,
@@ -212,7 +301,9 @@ describe("RewardsHistoryView", () => {
       refetch: mockRefetch,
     });
 
-    const { getByTestId, getByText } = renderWithProviders(<RewardsHistoryView {...defaultProps} />);
+    const { getByTestId, getByText } = renderWithProviders(
+      <RewardsHistoryView {...defaultProps} />,
+    );
 
     expect(getByTestId("rewards-scroll-view").props.refreshControl).toBeTruthy();
     expect(getByText("Bought")).toBeTruthy();

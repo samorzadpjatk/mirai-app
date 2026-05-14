@@ -12,27 +12,29 @@ export function useChallenges(tripId?: string | null) {
     enabled: Boolean(tripId),
   });
 
-  const challengesQuery = useInfiniteQuery(orpc.challenge.getAllByTrip.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = pageParam || 0;
-      return {
-        tripId: tripId ?? "",
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
-        },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+  const challengesQuery = useInfiniteQuery(
+    orpc.challenge.getAllByTrip.infiniteOptions({
+      input: (pageParam: number) => {
+        const offset = pageParam || 0;
+        return {
+          tripId: tripId ?? "",
+          pagination: {
+            limit: PAGE_SIZE,
+            offset,
+          },
+        };
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.pagination.hasMore) {
+          return undefined;
+        }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-    enabled: Boolean(tripId),
-  }));
+        return lastPage.pagination.offset + lastPage.pagination.limit;
+      },
+      enabled: Boolean(tripId),
+    }),
+  );
 
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
@@ -46,18 +48,14 @@ export function useChallenges(tripId?: string | null) {
 
   const userGroup = useMemo(() => {
     if (!currentUser || !trip?.participants) return null;
-    const participant = trip.participants.find(
-      (p) => p.user.id === currentUser.id,
-    );
+    const participant = trip.participants.find((p) => p.user.id === currentUser.id);
     return participant?.group ?? null;
   }, [currentUser, trip]);
 
   const leaderboardInfo = useMemo(() => {
     if (!userGroup || !trip?.groups) return null;
 
-    const sortedGroups = [...trip.groups].sort(
-      (a, b) => (b.coins ?? 0) - (a.coins ?? 0),
-    );
+    const sortedGroups = [...trip.groups].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
     const position = sortedGroups.findIndex((g) => g.id === userGroup.id) + 1;
 
     let pointsDifference = 0;
@@ -98,22 +96,10 @@ export function useChallenges(tripId?: string | null) {
       | null;
     basePoints?: number | null;
     firstPlacePoints?: number | null;
-    scoringCategory?:
-      | "SPEED"
-      | "UNLIMITED"
-      | "JUDGED_STAFF"
-      | "PEER_VOTING"
-      | null;
+    scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING" | null;
     description?: string | null;
     image?: string | null;
-    status?:
-      | "HIDDEN"
-      | "VISIBLE"
-      | "ACTIVE"
-      | "VOTING_PHASE"
-      | "COMPLETED"
-      | "CANCELLED"
-      | null;
+    status?: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED" | null;
     participantGroupsCount?: number | null;
     myGroupSubmissionStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   }
@@ -140,7 +126,7 @@ export function useChallenges(tripId?: string | null) {
                     ? "completed"
                     : rawStatus === "VISIBLE"
                       ? "visible"
-                    : "to_solve";
+                      : "to_solve";
 
       const basePoints = dbChallenge.basePoints ?? 0;
       const maxPoints =
@@ -168,8 +154,7 @@ export function useChallenges(tripId?: string | null) {
   const completedChallengesCount = useMemo(
     () =>
       challenges.filter(
-        (challenge) =>
-          challenge.status === "solved" || challenge.status === "submitted",
+        (challenge) => challenge.status === "solved" || challenge.status === "submitted",
       ).length,
     [challenges],
   );

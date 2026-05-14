@@ -163,14 +163,10 @@ fastify.addHook('onRequest', async (request) => {
 ### Connection Pooling
 
 ```typescript
-// Use pgBouncer in production
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+// Use connection pooling in production
+import { createDb } from '@mirai-app/db';
+
+const db = createDb(process.env.DATABASE_URL);
 ```
 
 ### Response Caching

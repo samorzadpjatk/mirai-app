@@ -5,15 +5,20 @@ import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard"
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 
 const mockUseQuery = jest.fn();
-const mockCreateDownloadUrlQueryOptions = jest.fn((options: { input: { storagePath: string }; enabled?: boolean }) => ({
-  queryKey: ["storage", "createDownloadUrl", options.input.storagePath],
-  enabled: options.enabled,
-}));
+const mockCreateDownloadUrlQueryOptions = jest.fn(
+  (options: { input: { storagePath: string }; enabled?: boolean }) => ({
+    queryKey: ["storage", "createDownloadUrl", options.input.storagePath],
+    enabled: options.enabled,
+  }),
+);
 
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     storage: {
-      createDownloadUrl: { queryOptions: (options: { input: { storagePath: string }; enabled?: boolean }) => mockCreateDownloadUrlQueryOptions(options) },
+      createDownloadUrl: {
+        queryOptions: (options: { input: { storagePath: string }; enabled?: boolean }) =>
+          mockCreateDownloadUrlQueryOptions(options),
+      },
     },
   },
 }));
@@ -46,7 +51,7 @@ describe("SubmissionImageCard", () => {
     });
 
     const { getByText } = renderWithProviders(
-      <SubmissionImageCard submission={mockSubmission} title="Submission" />
+      <SubmissionImageCard submission={mockSubmission} title="Submission" />,
     );
 
     expect(getByText("Submission")).toBeTruthy();
@@ -61,11 +66,7 @@ describe("SubmissionImageCard", () => {
     const onPress = jest.fn();
 
     const { getByText } = renderWithProviders(
-      <SubmissionImageCard
-        submission={mockSubmission}
-        title="Submission"
-        onPress={onPress}
-      />
+      <SubmissionImageCard submission={mockSubmission} title="Submission" onPress={onPress} />,
     );
 
     fireEvent.press(getByText("Submission"));
@@ -79,7 +80,7 @@ describe("SubmissionImageCard", () => {
     });
 
     const { getByText } = renderWithProviders(
-      <SubmissionImageCard submission={mockSubmission} title="Submission" />
+      <SubmissionImageCard submission={mockSubmission} title="Submission" />,
     );
 
     expect(getByText("G")).toBeTruthy();

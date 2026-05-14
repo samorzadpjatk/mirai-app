@@ -57,6 +57,9 @@ describe("Notification Sender - Environment Validation", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
+    mockRemoveChannel.mockResolvedValue(undefined);
+    mockCleanup.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -99,6 +102,9 @@ describe("Notification Sender - Main Error Handling", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
+    mockRemoveChannel.mockResolvedValue(undefined);
+    mockCleanup.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -140,6 +146,9 @@ describe("Notification Sender - Client Initialization", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
+    mockRemoveChannel.mockResolvedValue(undefined);
+    mockCleanup.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -200,6 +209,9 @@ describe("Notification Sender - Subscribe Callback", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
+    mockRemoveChannel.mockResolvedValue(undefined);
+    mockCleanup.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -264,6 +276,9 @@ describe("Notification Sender - SIGINT Handling", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env = { ...originalEnv };
+    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
+    mockRemoveChannel.mockResolvedValue(undefined);
+    mockCleanup.mockResolvedValue(undefined);
   });
 
   afterEach(() => {

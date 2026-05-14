@@ -25,7 +25,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
     },
     group: {
       getById: {
-        queryOptions: (options: { input: { id: string }; enabled: boolean }) => mockGetByIdQueryOptions(options),
+        queryOptions: (options: { input: { id: string }; enabled: boolean }) =>
+          mockGetByIdQueryOptions(options),
       },
     },
   },
@@ -54,7 +55,10 @@ describe("useGroupDetails", () => {
 
       renderHook(() => useGroupDetails("group-123"));
 
-      expect(mockGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "group-123" }, enabled: true });
+      expect(mockGetByIdQueryOptions).toHaveBeenCalledWith({
+        input: { id: "group-123" },
+        enabled: true,
+      });
     });
 
     it("should disable group query when groupId is null", () => {

@@ -2,7 +2,11 @@ import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { Pressable, Text, type TextInput, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
-import { CreateScheduleModal, EditScheduleModal, DeleteScheduleModal } from "../../admin/schedules/ScheduleModals";
+import {
+  CreateScheduleModal,
+  EditScheduleModal,
+  DeleteScheduleModal,
+} from "../../admin/schedules/ScheduleModals";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 
 interface AdminModalProps {
@@ -85,7 +89,14 @@ const createSchedule = (overrides: Partial<NotificationSchedule> = {}): Notifica
 describe("Schedule modals", () => {
   it("creates a schedule", () => {
     const onCreateSchedule = jest.fn();
-    const { getByPlaceholderText, getByText } = renderWithProviders(<CreateScheduleModal visible={true} onClose={jest.fn()} onCreateSchedule={onCreateSchedule} isCreating={false} />);
+    const { getByPlaceholderText, getByText } = renderWithProviders(
+      <CreateScheduleModal
+        visible={true}
+        onClose={jest.fn()}
+        onCreateSchedule={onCreateSchedule}
+        isCreating={false}
+      />,
+    );
     fireEvent.changeText(getByPlaceholderText("Enter schedule name..."), "Morning push");
     fireEvent.changeText(getByPlaceholderText("Enter notification message..."), "Hello");
     fireEvent.changeText(getByPlaceholderText("e.g., 09:00, 14:30"), "09:00");
@@ -96,18 +107,39 @@ describe("Schedule modals", () => {
   it("updates a schedule", () => {
     const onUpdateSchedule = jest.fn();
     const schedule = createSchedule();
-    const { getByPlaceholderText, getByText } = renderWithProviders(<EditScheduleModal visible={true} onClose={jest.fn()} schedule={schedule} onUpdateSchedule={onUpdateSchedule} isUpdating={false} />);
+    const { getByPlaceholderText, getByText } = renderWithProviders(
+      <EditScheduleModal
+        visible={true}
+        onClose={jest.fn()}
+        schedule={schedule}
+        onUpdateSchedule={onUpdateSchedule}
+        isUpdating={false}
+      />,
+    );
     fireEvent.changeText(getByPlaceholderText("Enter schedule name..."), "Updated name");
     fireEvent.changeText(getByPlaceholderText("Enter notification message..."), "Updated message");
     fireEvent.changeText(getByPlaceholderText("e.g., 09:00, 14:30"), "10:30");
     fireEvent.press(getByText("Update"));
-    expect(onUpdateSchedule).toHaveBeenCalledWith("schedule-1", "Updated name", "Updated message", "10:30");
+    expect(onUpdateSchedule).toHaveBeenCalledWith(
+      "schedule-1",
+      "Updated name",
+      "Updated message",
+      "10:30",
+    );
   });
 
   it("deletes a schedule", () => {
     const onDeleteSchedule = jest.fn();
     const schedule = createSchedule({ name: "Schedule to Delete" });
-    const { getByText } = renderWithProviders(<DeleteScheduleModal visible={true} onClose={jest.fn()} schedule={schedule} onDeleteSchedule={onDeleteSchedule} isDeleting={false} />);
+    const { getByText } = renderWithProviders(
+      <DeleteScheduleModal
+        visible={true}
+        onClose={jest.fn()}
+        schedule={schedule}
+        onDeleteSchedule={onDeleteSchedule}
+        isDeleting={false}
+      />,
+    );
     fireEvent.press(getByText("Delete"));
     expect(onDeleteSchedule).toHaveBeenCalledWith("schedule-1");
   });

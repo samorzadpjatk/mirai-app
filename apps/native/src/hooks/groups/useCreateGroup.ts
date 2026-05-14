@@ -4,14 +4,15 @@ import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 
 export function useCreateGroup(tripId?: string | null) {
   const queryClient = useQueryClient();
-  const createGroupMutation = useMutation(orpc.group.create.mutationOptions({
-    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
-  }));
+  const createGroupMutation = useMutation(
+    orpc.group.create.mutationOptions({
+      onSuccess: async () => {
+        await invalidateGroupQueries(queryClient);
+      },
+    }),
+  );
 
-  const createGroup = async (args: {
-    name: string;
-    image?: string;
-  }) => {
+  const createGroup = async (args: { name: string; image?: string }) => {
     const { name, image } = args;
     return await createGroupMutation.mutateAsync({
       tripId: tripId ?? "",

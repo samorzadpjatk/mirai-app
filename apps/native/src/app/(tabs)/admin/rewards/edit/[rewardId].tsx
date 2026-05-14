@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -28,30 +20,37 @@ export default function AdminEditRewardScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ rewardId: string; tripId?: string }>();
   const rewardId = params.rewardId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { data: reward, isLoading } = useQuery(
-    orpc.reward.getById.queryOptions({ input: { id: rewardId }, enabled: !!rewardId })
+    orpc.reward.getById.queryOptions({ input: { id: rewardId }, enabled: !!rewardId }),
   );
 
   const { data: totalPointsData } = useQuery(
-    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId })
+    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId }),
   );
 
   const [name, setName] = useState(reward?.name ?? "");
   const [description, setDescription] = useState(reward?.description ?? "");
-  const [coinCost, setCoinCost] = useState(reward?.originalCoinCost?.toString() ?? reward?.coinCost.toString() ?? "");
-  const [availableQuantity, setAvailableQuantity] = useState(reward?.availableQuantity.toString() ?? "");
+  const [coinCost, setCoinCost] = useState(
+    reward?.originalCoinCost?.toString() ?? reward?.coinCost.toString() ?? "",
+  );
+  const [availableQuantity, setAvailableQuantity] = useState(
+    reward?.availableQuantity.toString() ?? "",
+  );
   const [isHidden, setIsHidden] = useState(reward?.isHidden ?? false);
   const [imagePath, setImagePath] = useState(reward?.image ?? "");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(reward?.signedImageUrl ?? null);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(
+    reward?.signedImageUrl ?? null,
+  );
 
   const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
-  const calculatedCost = coinCost && totalAvailablePoints > 0
-    ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
-    : 0;
+  const calculatedCost =
+    coinCost && totalAvailablePoints > 0
+      ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
+      : 0;
 
   const updateRewardMutation = useMutation(
     orpc.reward.update.mutationOptions({
@@ -207,7 +206,7 @@ export default function AdminEditRewardScreen() {
             void deleteRewardMutation.mutateAsync({ id: rewardId });
           },
         },
-      ]
+      ],
     );
   };
 
@@ -238,10 +237,7 @@ export default function AdminEditRewardScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Edit Reward"
-        subtitle="Update reward information"
-      />
+      <AdminHeader title="Edit Reward" subtitle="Update reward information" />
 
       <ScrollView
         style={styles.scroll}
@@ -259,11 +255,7 @@ export default function AdminEditRewardScreen() {
         </View>
 
         <FormField label="Reward Name" required>
-          <ThemedTextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter reward name..."
-          />
+          <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter reward name..." />
         </FormField>
 
         <FormField label="Description">
@@ -357,7 +349,12 @@ export default function AdminEditRewardScreen() {
                 size={16}
                 color={!isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, !isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  !isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Visible
               </Text>
             </TouchableOpacity>
@@ -371,14 +368,14 @@ export default function AdminEditRewardScreen() {
                 size={16}
                 color={isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}
+              >
                 Hidden
               </Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.helperText}>
-            Hidden rewards won't appear in the shop for users.
-          </Text>
+          <Text style={styles.helperText}>Hidden rewards won't appear in the shop for users.</Text>
         </View>
 
         <PrimaryLoadingButton

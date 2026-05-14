@@ -9,9 +9,7 @@ interface NotificationScheduleCardProps {
   schedule: NotificationScheduleItem;
 }
 
-export function NotificationScheduleCard({
-  schedule,
-}: NotificationScheduleCardProps) {
+export function NotificationScheduleCard({ schedule }: NotificationScheduleCardProps) {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation(
@@ -96,9 +94,7 @@ export function NotificationScheduleCard({
 
       <View style={styles.tagRow}>
         <View style={[styles.tag, schedule.isActive && styles.tagActive]}>
-          <Text
-            style={[styles.tagText, schedule.isActive && styles.tagTextActive]}
-          >
+          <Text style={[styles.tagText, schedule.isActive && styles.tagTextActive]}>
             {schedule.isActive ? "Active" : "Inactive"}
           </Text>
         </View>
@@ -112,21 +108,17 @@ export function NotificationScheduleCard({
         )}
         <View style={styles.tag}>
           <Text style={styles.tagText}>
-            {String(schedule.hour).padStart(2, "0")}:
-            {String(schedule.minute).padStart(2, "0")}
+            {String(schedule.hour).padStart(2, "0")}:{String(schedule.minute).padStart(2, "0")}
           </Text>
         </View>
       </View>
 
       <View style={styles.scheduleDetails}>
         <Text style={styles.detailText}>
-          Period: {formatDate(schedule.startDate)} -{" "}
-          {formatDate(schedule.endDate)}
+          Period: {formatDate(schedule.startDate)} - {formatDate(schedule.endDate)}
         </Text>
         {schedule.lastRun && (
-          <Text style={styles.detailText}>
-            Last run: {formatRelativeTime(schedule.lastRun)}
-          </Text>
+          <Text style={styles.detailText}>Last run: {formatRelativeTime(schedule.lastRun)}</Text>
         )}
       </View>
     </View>

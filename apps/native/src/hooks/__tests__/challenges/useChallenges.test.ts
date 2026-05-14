@@ -7,17 +7,21 @@ const mockTripGetByIdQueryOptions = jest.fn((params: { input: { id: string } }) 
   queryKey: ["trip", "getById", params.input.id],
 }));
 
-const mockChallengeGetAllByTripInfiniteOptions = jest.fn((params: {
-  input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } };
-  initialPageParam: number;
-  getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
-  enabled?: boolean;
-}) => ({
-  queryKey: ["challenge", "getAllByTrip"],
-  initialPageParam: params.initialPageParam,
-  getNextPageParam: params.getNextPageParam,
-  enabled: params.enabled,
-}));
+const mockChallengeGetAllByTripInfiniteOptions = jest.fn(
+  (params: {
+    input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } };
+    initialPageParam: number;
+    getNextPageParam: (lastPage: {
+      pagination: { hasMore: boolean; offset: number; limit: number };
+    }) => number | undefined;
+    enabled?: boolean;
+  }) => ({
+    queryKey: ["challenge", "getAllByTrip"],
+    initialPageParam: params.initialPageParam,
+    getNextPageParam: params.getNextPageParam,
+    enabled: params.enabled,
+  }),
+);
 
 const mockUserGetMyQueryOptions = jest.fn((params: { input: Record<string, never> }) => ({
   queryKey: ["user", "getMy"],
@@ -34,16 +38,22 @@ jest.mock("@mirai-app/orpc/client", () => ({
     challenge: {
       getAllByTrip: {
         infiniteOptions: (params: {
-          input: (pageParam: number) => { tripId: string; pagination: { limit: number; offset: number } };
+          input: (pageParam: number) => {
+            tripId: string;
+            pagination: { limit: number; offset: number };
+          };
           initialPageParam: number;
-          getNextPageParam: (lastPage: { pagination: { hasMore: boolean; offset: number; limit: number } }) => number | undefined;
+          getNextPageParam: (lastPage: {
+            pagination: { hasMore: boolean; offset: number; limit: number };
+          }) => number | undefined;
           enabled?: boolean;
         }) => mockChallengeGetAllByTripInfiniteOptions(params),
       },
     },
     user: {
       getMy: {
-        queryOptions: (params: { input: Record<string, never> }) => mockUserGetMyQueryOptions(params),
+        queryOptions: (params: { input: Record<string, never> }) =>
+          mockUserGetMyQueryOptions(params),
       },
     },
   },
@@ -97,7 +107,9 @@ describe("useChallenges", () => {
     const mockTrip = {
       id: "trip-123",
       name: "Test Trip",
-      participants: [{ user: { id: "user-1" }, group: { id: "group-1", name: "Team A", coins: 100 } }],
+      participants: [
+        { user: { id: "user-1" }, group: { id: "group-1", name: "Team A", coins: 100 } },
+      ],
       groups: [
         { id: "group-1", name: "Team A", coins: 100 },
         { id: "group-2", name: "Team B", coins: 150 },
@@ -199,7 +211,9 @@ describe("useChallenges", () => {
     const mockTrip = {
       id: "trip-123",
       name: "Test Trip",
-      participants: [{ user: { id: "user-1" }, group: { id: "group-1", name: "Team A", coins: 200 } }],
+      participants: [
+        { user: { id: "user-1" }, group: { id: "group-1", name: "Team A", coins: 200 } },
+      ],
       groups: [
         { id: "group-1", name: "Team A", coins: 200 },
         { id: "group-2", name: "Team B", coins: 150 },
@@ -250,7 +264,9 @@ describe("useChallenges", () => {
     const mockTrip = {
       id: "trip-123",
       name: "Test Trip",
-      participants: [{ user: { id: "user-1" }, group: { id: "group-2", name: "Team B", coins: 150 } }],
+      participants: [
+        { user: { id: "user-1" }, group: { id: "group-2", name: "Team B", coins: 150 } },
+      ],
       groups: [
         { id: "group-1", name: "Team A", coins: 200 },
         { id: "group-2", name: "Team B", coins: 150 },
@@ -316,7 +332,15 @@ describe("useChallenges", () => {
       data: {
         pages: [
           {
-            challenges: [{ id: "challenge-1", name: "Challenge 1", submissionType: "IMAGE", basePoints: 10, status: "VISIBLE" }],
+            challenges: [
+              {
+                id: "challenge-1",
+                name: "Challenge 1",
+                submissionType: "IMAGE",
+                basePoints: 10,
+                status: "VISIBLE",
+              },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 30 },
           },
         ],
@@ -428,15 +452,78 @@ describe("useChallenges", () => {
 
   it("should map challenge statuses correctly", async () => {
     const mockChallenges = [
-      { id: "c1", name: "Hidden", status: "HIDDEN", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
-      { id: "c2", name: "Cancelled", status: "CANCELLED", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
-      { id: "c3", name: "Approved", status: "ACTIVE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: "APPROVED" },
-      { id: "c4", name: "Pending", status: "ACTIVE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: "PENDING" },
-      { id: "c5", name: "Rejected", status: "ACTIVE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: "REJECTED" },
-      { id: "c6", name: "Voting", status: "VOTING_PHASE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
-      { id: "c7", name: "Completed", status: "COMPLETED", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
-      { id: "c8", name: "Visible", status: "VISIBLE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
-      { id: "c9", name: "Active", status: "ACTIVE", submissionType: "IMAGE", basePoints: 10, myGroupSubmissionStatus: null },
+      {
+        id: "c1",
+        name: "Hidden",
+        status: "HIDDEN",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
+      {
+        id: "c2",
+        name: "Cancelled",
+        status: "CANCELLED",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
+      {
+        id: "c3",
+        name: "Approved",
+        status: "ACTIVE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: "APPROVED",
+      },
+      {
+        id: "c4",
+        name: "Pending",
+        status: "ACTIVE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: "PENDING",
+      },
+      {
+        id: "c5",
+        name: "Rejected",
+        status: "ACTIVE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: "REJECTED",
+      },
+      {
+        id: "c6",
+        name: "Voting",
+        status: "VOTING_PHASE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
+      {
+        id: "c7",
+        name: "Completed",
+        status: "COMPLETED",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
+      {
+        id: "c8",
+        name: "Visible",
+        status: "VISIBLE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
+      {
+        id: "c9",
+        name: "Active",
+        status: "ACTIVE",
+        submissionType: "IMAGE",
+        basePoints: 10,
+        myGroupSubmissionStatus: null,
+      },
     ];
 
     mockUseQuery
@@ -453,7 +540,9 @@ describe("useChallenges", () => {
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
-        pages: [{ challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } }],
+        pages: [
+          { challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } },
+        ],
       },
       isLoading: false,
       isRefetching: false,
@@ -506,7 +595,9 @@ describe("useChallenges", () => {
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
-        pages: [{ challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } }],
+        pages: [
+          { challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } },
+        ],
       },
       isLoading: false,
       isRefetching: false,
@@ -550,7 +641,9 @@ describe("useChallenges", () => {
 
     mockUseInfiniteQuery.mockReturnValue({
       data: {
-        pages: [{ challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } }],
+        pages: [
+          { challenges: mockChallenges, pagination: { hasMore: false, offset: 0, limit: 30 } },
+        ],
       },
       isLoading: false,
       isRefetching: false,
@@ -583,11 +676,27 @@ describe("useChallenges", () => {
       data: {
         pages: [
           {
-            challenges: [{ id: "c1", name: "Challenge 1", submissionType: "IMAGE", basePoints: 10, status: "VISIBLE" }],
+            challenges: [
+              {
+                id: "c1",
+                name: "Challenge 1",
+                submissionType: "IMAGE",
+                basePoints: 10,
+                status: "VISIBLE",
+              },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 30 },
           },
           {
-            challenges: [{ id: "c2", name: "Challenge 2", submissionType: "IMAGE", basePoints: 10, status: "VISIBLE" }],
+            challenges: [
+              {
+                id: "c2",
+                name: "Challenge 2",
+                submissionType: "IMAGE",
+                basePoints: 10,
+                status: "VISIBLE",
+              },
+            ],
             pagination: { hasMore: false, offset: 30, limit: 30 },
           },
         ],

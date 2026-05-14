@@ -5,7 +5,15 @@ import { LeaderboardListItem } from "../../../trips/leaderboard/LeaderboardListI
 import type { RankedGroup } from "../../../trips/leaderboard/types";
 
 describe("LeaderboardListItem", () => {
-  const mockGroup: RankedGroup = { id: "1", name: "Test Group", image: null, coins: 1000, memberCount: 5, rank: 3, isCurrentUserGroup: false };
+  const mockGroup: RankedGroup = {
+    id: "1",
+    name: "Test Group",
+    image: null,
+    coins: 1000,
+    memberCount: 5,
+    rank: 3,
+    isCurrentUserGroup: false,
+  };
   const mockOnPress = jest.fn();
 
   beforeEach(() => jest.clearAllMocks());

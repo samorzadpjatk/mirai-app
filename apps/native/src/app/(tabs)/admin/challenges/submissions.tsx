@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,8 +14,18 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FilterChip, FilterChipRow, EmptyState, AppModalShell, AppModalFooter, ThemedTextInput } from "~/components/common/ui";
-import { SubmissionReviewCard, type SubmissionItem } from "~/components/admin/challenges/SubmissionReviewCard";
+import {
+  FilterChip,
+  FilterChipRow,
+  EmptyState,
+  AppModalShell,
+  AppModalFooter,
+  ThemedTextInput,
+} from "~/components/common/ui";
+import {
+  SubmissionReviewCard,
+  type SubmissionItem,
+} from "~/components/admin/challenges/SubmissionReviewCard";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
@@ -33,27 +39,19 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "Rejected", value: "REJECTED" },
 ];
 
-
 export default function ChallengeSubmissionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const tripId =
-    typeof params.tripId === "string"
-      ? params.tripId
-      : (params.tripId?.[0] ?? "");
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const challengeId =
-    typeof params.challengeId === "string"
-      ? params.challengeId
-      : (params.challengeId?.[0] ?? "");
+    typeof params.challengeId === "string" ? params.challengeId : (params.challengeId?.[0] ?? "");
 
-  const [selectedStatusFilter, setSelectedStatusFilter] =
-    useState<StatusFilter>("ALL");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>("ALL");
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [selectedSubmission, setSelectedSubmission] =
-    useState<SubmissionItem | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionItem | null>(null);
 
   const challengeQueryOptions = orpc.challenge.getById.queryOptions({
     input: {
@@ -104,9 +102,7 @@ export default function ChallengeSubmissionsScreen() {
     const byStatus =
       selectedStatusFilter === "ALL"
         ? submissions
-        : submissions.filter(
-            (submission) => submission.status === selectedStatusFilter,
-          );
+        : submissions.filter((submission) => submission.status === selectedStatusFilter);
 
     return [...byStatus].sort((a, b) => {
       const aTime = new Date(a.createdAt).getTime();
@@ -115,8 +111,7 @@ export default function ChallengeSubmissionsScreen() {
     });
   }, [selectedStatusFilter, submissions]);
 
-  const isRefreshing =
-    submissionsQuery.isRefetching || challengeQuery.isRefetching;
+  const isRefreshing = submissionsQuery.isRefetching || challengeQuery.isRefetching;
   const handleRefresh = useCallback(() => {
     void Promise.all([submissionsQuery.refetch(), challengeQuery.refetch()]);
   }, [challengeQuery, submissionsQuery]);
@@ -131,19 +126,15 @@ export default function ChallengeSubmissionsScreen() {
         });
       };
 
-      Alert.alert(
-        "Set approved",
-        `Approve submission from ${submission.group.name}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Approve",
-            onPress: () => {
-              approveWithRanking();
-            },
+      Alert.alert("Set approved", `Approve submission from ${submission.group.name}?`, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Approve",
+          onPress: () => {
+            approveWithRanking();
           },
-        ],
-      );
+        },
+      ]);
     },
     [reviewMutation],
   );
@@ -216,11 +207,7 @@ export default function ChallengeSubmissionsScreen() {
               })
             }
           >
-            <Ionicons
-              name="git-compare-outline"
-              size={16}
-              color={colors.backgroundDark}
-            />
+            <Ionicons name="git-compare-outline" size={16} color={colors.backgroundDark} />
             <Text style={styles.approveButtonText}>Open staff voting</Text>
           </TouchableOpacity>
         </View>
@@ -244,10 +231,7 @@ export default function ChallengeSubmissionsScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + spacing.xxxl },
-        ]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -270,11 +254,7 @@ export default function ChallengeSubmissionsScreen() {
         </FilterChipRow>
 
         {filteredSubmissions.length === 0 ? (
-          <EmptyState
-            icon="images-outline"
-            iconSize={24}
-            title="No submissions in this filter."
-          />
+          <EmptyState icon="images-outline" iconSize={24} title="No submissions in this filter." />
         ) : (
           filteredSubmissions.map((submission) => (
             <SubmissionReviewCard
@@ -288,14 +268,8 @@ export default function ChallengeSubmissionsScreen() {
         )}
       </ScrollView>
 
-      <AppModalShell
-        visible={isRejectModalVisible}
-        title="Set rejected"
-        onClose={closeRejectModal}
-      >
-        <Text style={styles.modalSubtitle}>
-          Provide reason for changing the decision.
-        </Text>
+      <AppModalShell visible={isRejectModalVisible} title="Set rejected" onClose={closeRejectModal}>
+        <Text style={styles.modalSubtitle}>Provide reason for changing the decision.</Text>
         <ThemedTextInput
           style={styles.modalInput}
           value={rejectionReason}

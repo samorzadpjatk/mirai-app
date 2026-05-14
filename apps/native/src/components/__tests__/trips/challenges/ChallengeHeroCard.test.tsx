@@ -48,7 +48,7 @@ describe("ChallengeHeroCard", () => {
 
   it("renders selected and explicit status labels", () => {
     const { getByText, rerender } = renderWithProviders(
-      <ChallengeHeroCard {...baseProps} isSelected={true} />
+      <ChallengeHeroCard {...baseProps} isSelected={true} />,
     );
 
     expect(getByText("Active")).toBeTruthy();
@@ -63,7 +63,7 @@ describe("ChallengeHeroCard", () => {
         {...baseProps}
         submissionType="MULTI_IMAGE"
         scoringCategory="JUDGED_STAFF"
-      />
+      />,
     );
 
     expect(getByText("Multi Photo")).toBeTruthy();
@@ -77,7 +77,7 @@ describe("ChallengeHeroCard", () => {
         firstPlacePoints={150}
         secondPlacePoints={100}
         thirdPlacePoints={50}
-      />
+      />,
     );
 
     expect(getByText("1st")).toBeTruthy();

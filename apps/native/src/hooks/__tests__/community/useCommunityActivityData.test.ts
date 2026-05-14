@@ -32,7 +32,7 @@ interface QueryOptions {
 const mockUseQuery = jest.fn<(options: QueryOptions) => { data: unknown; isLoading: boolean }>();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args as [QueryOptions]),
+  useQuery: (...args: unknown[]) => mockUseQuery(...(args as [QueryOptions])),
 }));
 
 describe("useCommunityActivityData", () => {
@@ -46,9 +46,7 @@ describe("useCommunityActivityData", () => {
       isLoading: false,
     });
 
-    const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: [] })
-    );
+    const { result } = renderHook(() => useCommunityActivityData({ activities: [] }));
 
     expect(result.current.rankingData).toEqual({});
     expect(result.current.avatarUrls).toEqual({});
@@ -79,10 +77,24 @@ describe("useCommunityActivityData", () => {
         return {
           data: {
             "trip-1": [
-              { id: "group-1", name: "Group 1", coins: 100, memberCount: 5, rank: 1, isCurrentUserGroup: false },
+              {
+                id: "group-1",
+                name: "Group 1",
+                coins: 100,
+                memberCount: 5,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
             ],
             "trip-2": [
-              { id: "group-2", name: "Group 2", coins: 80, memberCount: 4, rank: 1, isCurrentUserGroup: false },
+              {
+                id: "group-2",
+                name: "Group 2",
+                coins: 80,
+                memberCount: 4,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
             ],
           },
           isLoading: false,
@@ -92,7 +104,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     await waitFor(() => {
@@ -143,7 +155,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     await waitFor(() => {
@@ -177,7 +189,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     await waitFor(() => {
@@ -205,7 +217,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -237,7 +249,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -266,7 +278,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
   });
 
   it("should not fetch avatars when no user activities", () => {
@@ -286,7 +300,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
   });
 
   it("should handle duplicate user IDs gracefully", async () => {
@@ -328,7 +344,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     await waitFor(() => {
@@ -355,7 +371,14 @@ describe("useCommunityActivityData", () => {
         return {
           data: {
             "trip-1": [
-              { id: "group-1", name: "Group 1", coins: 100, memberCount: 5, rank: 1, isCurrentUserGroup: false },
+              {
+                id: "group-1",
+                name: "Group 1",
+                coins: 100,
+                memberCount: 5,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
             ],
           },
           isLoading: false,
@@ -365,7 +388,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     await waitFor(() => {
@@ -395,7 +418,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     expect(result.current.avatarUrls).toEqual({});
@@ -416,7 +439,7 @@ describe("useCommunityActivityData", () => {
     });
 
     const { result } = renderHook(() =>
-      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] })
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
     );
 
     expect(result.current.avatarUrls).toEqual({});
@@ -448,8 +471,22 @@ describe("useCommunityActivityData", () => {
         return {
           data: {
             "trip-1": [
-              { id: "group-1", name: "Group 1", coins: 100, memberCount: 1, rank: 1, isCurrentUserGroup: false },
-              { id: "group-2", name: "Group 2", coins: 80, memberCount: 1, rank: 2, isCurrentUserGroup: false },
+              {
+                id: "group-1",
+                name: "Group 1",
+                coins: 100,
+                memberCount: 1,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
+              {
+                id: "group-2",
+                name: "Group 2",
+                coins: 80,
+                memberCount: 1,
+                rank: 2,
+                isCurrentUserGroup: false,
+              },
             ],
           },
           isLoading: false,
@@ -458,7 +495,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // Execute the captured query function
     if (capturedQueryFn) {
@@ -494,7 +533,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // Execute the captured query function - should not throw even when API fails
     if (capturedQueryFn) {
@@ -535,14 +576,18 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // Execute the captured query function
     if (capturedQueryFn) {
       const result = await capturedQueryFn();
       expect(result).toBeDefined();
       expect(result).toHaveProperty("user-1");
-      expect((result as Record<string, string | null>)["user-1"]).toBe("https://example.com/avatar.jpg");
+      expect((result as Record<string, string | null>)["user-1"]).toBe(
+        "https://example.com/avatar.jpg",
+      );
     }
 
     expect(mockCreateDownloadUrlQuery).toHaveBeenCalled();
@@ -578,7 +623,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // Execute the captured query function - should not throw even when API fails
     if (capturedQueryFn) {
@@ -614,7 +661,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // When no rank_change activities, query should return empty object
     if (capturedQueryFn) {
@@ -642,7 +691,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     // When no user_post activities, query should return empty object
     if (capturedQueryFn) {
@@ -661,9 +712,7 @@ describe("useCommunityActivityData", () => {
     ];
 
     const rankingData = {
-      data: [
-        { id: "group-1", name: "Group 1", coins: 100, participants: [{ id: "p1" }] },
-      ],
+      data: [{ id: "group-1", name: "Group 1", coins: 100, participants: [{ id: "p1" }] }],
     };
 
     mockRankingQuery.mockResolvedValue(rankingData);
@@ -676,7 +725,15 @@ describe("useCommunityActivityData", () => {
         return {
           data: {
             "trip-1": [
-              { id: "group-1", name: "Group 1", image: null, coins: 100, memberCount: 1, rank: 1, isCurrentUserGroup: false },
+              {
+                id: "group-1",
+                name: "Group 1",
+                image: null,
+                coins: 100,
+                memberCount: 1,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
             ],
           },
           isLoading: false,
@@ -685,7 +742,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     if (capturedQueryFn) {
       const result = await capturedQueryFn();
@@ -724,8 +783,26 @@ describe("useCommunityActivityData", () => {
         capturedQueryFn = queryFn;
         return {
           data: {
-            "trip-1": [{ id: "group-1", name: "Group 1", coins: 100, memberCount: 1, rank: 1, isCurrentUserGroup: false }],
-            "trip-2": [{ id: "group-2", name: "Group 2", coins: 80, memberCount: 1, rank: 1, isCurrentUserGroup: false }],
+            "trip-1": [
+              {
+                id: "group-1",
+                name: "Group 1",
+                coins: 100,
+                memberCount: 1,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
+            ],
+            "trip-2": [
+              {
+                id: "group-2",
+                name: "Group 2",
+                coins: 80,
+                memberCount: 1,
+                rank: 1,
+                isCurrentUserGroup: false,
+              },
+            ],
           },
           isLoading: false,
         };
@@ -733,7 +810,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     if (capturedQueryFn) {
       const result = await capturedQueryFn();
@@ -779,7 +858,9 @@ describe("useCommunityActivityData", () => {
       return { data: {}, isLoading: false };
     });
 
-    renderHook(() => useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }));
+    renderHook(() =>
+      useCommunityActivityData({ activities: activities as unknown as CommunityFeedActivity[] }),
+    );
 
     if (capturedQueryFn) {
       const result = await capturedQueryFn();

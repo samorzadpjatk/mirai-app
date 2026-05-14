@@ -5,9 +5,7 @@ import { CreateGroupButton } from "../../../../trips/groups/create/CreateGroupBu
 
 describe("CreateGroupButton", () => {
   it("should render with 'Create Group' label", () => {
-    renderWithProviders(
-      <CreateGroupButton isSubmitting={false} onPress={jest.fn()} />
-    );
+    renderWithProviders(<CreateGroupButton isSubmitting={false} onPress={jest.fn()} />);
 
     expect(screen.getByText("Create Group")).toBeOnTheScreen();
   });
@@ -16,27 +14,21 @@ describe("CreateGroupButton", () => {
     const onPress = jest.fn();
     const user = userEvent.setup();
 
-    renderWithProviders(
-      <CreateGroupButton isSubmitting={false} onPress={onPress} />
-    );
+    renderWithProviders(<CreateGroupButton isSubmitting={false} onPress={onPress} />);
 
     await user.press(screen.getByText("Create Group"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should show loading indicator when isSubmitting is true", () => {
-    renderWithProviders(
-      <CreateGroupButton isSubmitting={true} onPress={jest.fn()} />
-    );
+    renderWithProviders(<CreateGroupButton isSubmitting={true} onPress={jest.fn()} />);
 
     expect(screen.queryByText("Create Group")).toBeNull();
     expect(screen.getByTestId("create-group-button-loading-indicator")).toBeTruthy();
   });
 
   it("should be disabled when isSubmitting is true", () => {
-    renderWithProviders(
-      <CreateGroupButton isSubmitting={true} onPress={jest.fn()} />
-    );
+    renderWithProviders(<CreateGroupButton isSubmitting={true} onPress={jest.fn()} />);
 
     const button = screen.getByTestId("create-group-button");
     expect(button).toBeDisabled();
@@ -45,9 +37,7 @@ describe("CreateGroupButton", () => {
   it("should have disabled prop when isSubmitting is true", () => {
     const onPress = jest.fn();
 
-    renderWithProviders(
-      <CreateGroupButton isSubmitting={true} onPress={onPress} />
-    );
+    renderWithProviders(<CreateGroupButton isSubmitting={true} onPress={onPress} />);
 
     const button = screen.getByTestId("create-group-button");
     expect(button).toBeDisabled();
@@ -57,7 +47,7 @@ describe("CreateGroupButton", () => {
     const onPress = jest.fn();
     const user = userEvent.setup();
     const { rerender } = renderWithProviders(
-      <CreateGroupButton isSubmitting={true} onPress={onPress} />
+      <CreateGroupButton isSubmitting={true} onPress={onPress} />,
     );
 
     const button = screen.getByTestId("create-group-button");

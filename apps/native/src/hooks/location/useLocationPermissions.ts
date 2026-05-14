@@ -29,17 +29,26 @@ export interface UseLocationPermissionsReturn {
 
 export function useLocationPermissions(): UseLocationPermissionsReturn {
   const queryClient = useQueryClient();
-  const updateSharingMutation = useMutation(orpc.location.updateSharingSettings.mutationOptions({
-    onSuccess: async () => { await invalidateLocationQueries(queryClient); },
-    onError: (error) => { console.error("Failed to update location sharing settings:", error); },
-  }));
+  const updateSharingMutation = useMutation(
+    orpc.location.updateSharingSettings.mutationOptions({
+      onSuccess: async () => {
+        await invalidateLocationQueries(queryClient);
+      },
+      onError: (error) => {
+        console.error("Failed to update location sharing settings:", error);
+      },
+    }),
+  );
 
-  const sharingSettingsQuery = useQuery(orpc.location.getMySharingSettings.queryOptions({ input: {} }));
+  const sharingSettingsQuery = useQuery(
+    orpc.location.getMySharingSettings.queryOptions({ input: {} }),
+  );
   const sharingSettings = sharingSettingsQuery.data;
   const isSettingsLoading = sharingSettingsQuery.isLoading;
 
   const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
-  const [permissionStatus, setPermissionStatus] = useState<LocationPermissionStatus>("undetermined");
+  const [permissionStatus, setPermissionStatus] =
+    useState<LocationPermissionStatus>("undetermined");
   const [isLoading, setIsLoading] = useState(true);
 
   // Load saved location sharing preference and sync with server
@@ -48,7 +57,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
       try {
         const saved = await AsyncStorage.getItem(LOCATION_SETTINGS_KEY);
         const localEnabled = saved === "true";
-        
+
         // Use server state if available, otherwise use local state
         if (sharingSettings) {
           setIsLocationSharingEnabled(sharingSettings.isSharingLocation);
@@ -80,54 +89,60 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       setPermissionStatus(status);
-      
+
       if (status !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
           "Location Permission Required",
-          "Please enable location permissions in your device settings to use location features."
+          "Please enable location permissions in your device settings to use location features.",
         );
       }
-      
+
       return status;
     } catch (error) {
       console.error("Failed to request location permissions:", error);
       setPermissionStatus("denied");
       Alert.alert(
         "Location Permission Required",
-        "Please enable location permissions in your device settings to use location features."
+        "Please enable location permissions in your device settings to use location features.",
       );
       return "denied";
     }
   }, []);
 
-  const toggleLocationSharing = useCallback(async (enabled: boolean) => {
-    try {
-      // Don't update local state immediately - wait for server confirmation
-      // This prevents UI from showing enabled state if auth fails
-      
-      // Update server state first
-      await updateSharingMutation.mutateAsync({
-        isSharingLocation: enabled,
-        userIdsToShareWith: [], // Start with empty list, can be expanded later
-      });
-      
-      // Only update local state after server succeeds (query will be invalidated automatically)
-      setIsLocationSharingEnabled(enabled);
-      await AsyncStorage.setItem(LOCATION_SETTINGS_KEY, enabled.toString());
-      
-      if (enabled && permissionStatus === "undetermined") {
-        await requestLocationPermissions();
+  const toggleLocationSharing = useCallback(
+    async (enabled: boolean) => {
+      try {
+        // Don't update local state immediately - wait for server confirmation
+        // This prevents UI from showing enabled state if auth fails
+
+        // Update server state first
+        await updateSharingMutation.mutateAsync({
+          isSharingLocation: enabled,
+          userIdsToShareWith: [], // Start with empty list, can be expanded later
+        });
+
+        // Only update local state after server succeeds (query will be invalidated automatically)
+        setIsLocationSharingEnabled(enabled);
+        await AsyncStorage.setItem(LOCATION_SETTINGS_KEY, enabled.toString());
+
+        if (enabled && permissionStatus === "undetermined") {
+          await requestLocationPermissions();
+        }
+      } catch (error) {
+        console.error("Failed to toggle location sharing:", error);
+        // Don't revert state since we didn't change it yet
+        if (error instanceof Error) {
+          Alert.alert(
+            "Authentication Error",
+            "Failed to update location settings. Please check your connection and try again.",
+          );
+        } else {
+          Alert.alert("Error", "Failed to update location settings");
+        }
       }
-    } catch (error) {
-      console.error("Failed to toggle location sharing:", error);
-      // Don't revert state since we didn't change it yet
-      if (error instanceof Error) {
-        Alert.alert("Authentication Error", "Failed to update location settings. Please check your connection and try again.");
-      } else {
-        Alert.alert("Error", "Failed to update location settings");
-      }
-    }
-  }, [permissionStatus, requestLocationPermissions, updateSharingMutation]);
+    },
+    [permissionStatus, requestLocationPermissions, updateSharingMutation],
+  );
 
   const canViewOthersLocations = isLocationSharingEnabled && permissionStatus === "granted";
   const canShareOwnLocation = isLocationSharingEnabled && permissionStatus === "granted";

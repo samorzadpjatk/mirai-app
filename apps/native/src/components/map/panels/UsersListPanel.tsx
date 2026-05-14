@@ -29,11 +29,7 @@ export function UsersListPanel() {
               onManagePress();
             }}
           >
-            <Ionicons
-              name="settings-outline"
-              size={16}
-              color="#00ced1"
-            />
+            <Ionicons name="settings-outline" size={16} color="#00ced1" />
           </Pressable>
           <Pressable
             style={styles.addButton}
@@ -59,32 +55,17 @@ export function UsersListPanel() {
                   onSelectUser(user);
                 }}
               >
-                <View
-                  style={[
-                    styles.avatarWrapperSmall,
-                    isMe && styles.avatarWrapperMe,
-                  ]}
-                >
-                  <UserAvatar
-                    imageUrl={user.avatarUrl}
-                    name={user.name}
-                    size={48}
-                  />
+                <View style={[styles.avatarWrapperSmall, isMe && styles.avatarWrapperMe]}>
+                  <UserAvatar imageUrl={user.avatarUrl} name={user.name} size={48} />
                 </View>
                 <View style={styles.userListDetails}>
                   <View style={styles.userListRow}>
-                    <Text style={styles.userListName}>
-                      {isMe ? "Me" : user.name}
-                    </Text>
+                    <Text style={styles.userListName}>{isMe ? "Me" : user.name}</Text>
                     <Text style={styles.userListTime}>
-                      {isMe
-                        ? "My Location"
-                        : formatRelativeTime(new Date(user.lastActiveAt))}
+                      {isMe ? "My Location" : formatRelativeTime(new Date(user.lastActiveAt))}
                     </Text>
                   </View>
-                  <Text style={styles.userListAddress}>
-                    {user.address ?? "-"}
-                  </Text>
+                  <Text style={styles.userListAddress}>{user.address ?? "-"}</Text>
                 </View>
               </Pressable>
             );

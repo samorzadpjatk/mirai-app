@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,26 +7,26 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminSchedules } from '~/hooks/admin/useAdminSchedules';
-import { AdminHeader } from '~/components/admin/AdminHeader';
-import { ScheduleCard } from '~/components/admin/schedules/ScheduleCard';
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import { colors, spacing, borderRadius, typography } from "../../../../styles";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
+import { AdminHeader } from "~/components/admin/AdminHeader";
+import { ScheduleCard } from "~/components/admin/schedules/ScheduleCard";
 import {
   CreateScheduleModal,
   EditScheduleModal,
   DeleteScheduleModal,
-} from '~/components/admin/schedules/ScheduleModals';
-import type { NotificationSchedule } from '~/hooks/admin/useAdminSchedules';
+} from "~/components/admin/schedules/ScheduleModals";
+import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
-  const [hoursRaw, minutesRaw] = triggerTime.split(':');
-  const hour = parseInt(hoursRaw ?? '', 10);
-  const minute = parseInt(minutesRaw ?? '', 10);
+  const [hoursRaw, minutesRaw] = triggerTime.split(":");
+  const hour = parseInt(hoursRaw ?? "", 10);
+  const minute = parseInt(minutesRaw ?? "", 10);
 
   if (
     Number.isNaN(hour) ||
@@ -36,7 +36,7 @@ function parseTriggerTime(triggerTime: string): { hour: number; minute: number }
     minute < 0 ||
     minute > 59
   ) {
-    throw new Error('Invalid trigger time format');
+    throw new Error("Invalid trigger time format");
   }
 
   return { hour, minute };
@@ -61,8 +61,7 @@ function getScheduleWindow(hour: number, minute: number): { startDate: Date; end
 export default function AdminSchedulesScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
-  const tripId =
-    typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   // Use the custom hook for all schedule operations
   const {
@@ -88,48 +87,53 @@ export default function AdminSchedulesScreen() {
   const handleCreateSchedule = async (name: string, message: string, triggerTime: string) => {
     try {
       if (!tripId) {
-        Alert.alert('Error', 'Trip context is required to create schedules');
+        Alert.alert("Error", "Trip context is required to create schedules");
         return;
       }
       const { hour, minute } = parseTriggerTime(triggerTime);
       const { startDate, endDate } = getScheduleWindow(hour, minute);
 
-      await createSchedule({ 
-        name, 
+      await createSchedule({
+        name,
         tripId,
         notificationTitle: name,
         notificationBody: message,
-        notificationUrl: '/ranking',
+        notificationUrl: "/ranking",
         hour,
         minute,
-        notificationType: 'custom' as const,
+        notificationType: "custom" as const,
         startDate,
         endDate,
       });
       setShowCreateModal(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create schedule';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : "Failed to create schedule";
+      Alert.alert("Error", message);
     }
   };
 
-  const handleUpdateSchedule = async (id: string, name: string, message: string, triggerTime: string) => {
+  const handleUpdateSchedule = async (
+    id: string,
+    name: string,
+    message: string,
+    triggerTime: string,
+  ) => {
     try {
       const { hour, minute } = parseTriggerTime(triggerTime);
-      await updateSchedule({ 
+      await updateSchedule({
         id,
         name,
         notificationTitle: name,
         notificationBody: message,
-        notificationUrl: '/ranking',
+        notificationUrl: "/ranking",
         hour,
         minute,
       });
       setShowEditModal(false);
       setSelectedSchedule(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update schedule';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : "Failed to update schedule";
+      Alert.alert("Error", message);
     }
   };
 
@@ -139,8 +143,8 @@ export default function AdminSchedulesScreen() {
       setShowDeleteModal(false);
       setSelectedSchedule(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete schedule';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : "Failed to delete schedule";
+      Alert.alert("Error", message);
     }
   };
 
@@ -148,27 +152,23 @@ export default function AdminSchedulesScreen() {
     try {
       await toggleSchedule(schedule.id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to toggle schedule';
-      Alert.alert('Error', message);
+      const message = error instanceof Error ? error.message : "Failed to toggle schedule";
+      Alert.alert("Error", message);
     }
   };
 
   const handleTriggerSchedule = (schedule: NotificationSchedule) => {
-    Alert.alert(
-      'Trigger Schedule',
-      `Are you sure you want to trigger "${schedule.name}" now?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Trigger',
-          style: 'default',
-          onPress: () => {
-            // For now, we'll show a placeholder since the manual trigger needs API verification
-            Alert.alert('Info', 'Manual trigger functionality will be available soon');
-          },
+    Alert.alert("Trigger Schedule", `Are you sure you want to trigger "${schedule.name}" now?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Trigger",
+        style: "default",
+        onPress: () => {
+          // For now, we'll show a placeholder since the manual trigger needs API verification
+          Alert.alert("Info", "Manual trigger functionality will be available soon");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const openEditModal = (schedule: NotificationSchedule) => {
@@ -196,10 +196,7 @@ export default function AdminSchedulesScreen() {
     <View style={styles.emptyContainer}>
       <Ionicons name="time" size={48} color={colors.textSecondary} />
       <Text style={styles.emptyText}>No schedules found</Text>
-      <TouchableOpacity
-        style={styles.emptyCreateButton}
-        onPress={() => setShowCreateModal(true)}
-      >
+      <TouchableOpacity style={styles.emptyCreateButton} onPress={() => setShowCreateModal(true)}>
         <Text style={styles.emptyCreateButtonText}>Create your first schedule</Text>
       </TouchableOpacity>
     </View>
@@ -213,10 +210,7 @@ export default function AdminSchedulesScreen() {
         title="Notification Schedules"
         subtitle="Manage automated notifications"
         rightComponent={
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => setShowCreateModal(true)}
-          >
+          <TouchableOpacity style={styles.createButton} onPress={() => setShowCreateModal(true)}>
             <Ionicons name="add" size={20} color={colors.white} />
           </TouchableOpacity>
         }
@@ -274,13 +268,13 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   loadingText: {
     marginTop: spacing.md,
@@ -292,14 +286,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   emptyContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingVertical: spacing.xxl,
   },
   emptyText: {
     marginTop: spacing.md,
     fontSize: typography.base,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
     marginBottom: spacing.lg,
   },
   emptyCreateButton: {

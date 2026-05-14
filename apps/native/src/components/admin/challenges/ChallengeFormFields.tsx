@@ -54,14 +54,9 @@ export function ChallengeFormFields({
 
   return (
     <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        { paddingBottom: spacing.xxxl + spacing.xl },
-      ]}
+      contentContainerStyle={[styles.content, { paddingBottom: spacing.xxxl + spacing.xl }]}
     >
-      <Text style={styles.pageTitle}>
-        {isNewChallenge ? "New Challenge" : "Edit Challenge"}
-      </Text>
+      <Text style={styles.pageTitle}>{isNewChallenge ? "New Challenge" : "Edit Challenge"}</Text>
 
       {/* Basics Section */}
       <View style={styles.section}>
@@ -87,10 +82,7 @@ export function ChallengeFormFields({
 
         <FormField label="Challenge Image">
           {imagePreviewUri ? (
-            <Image
-              source={{ uri: imagePreviewUri }}
-              style={styles.coverPreview}
-            />
+            <Image source={{ uri: imagePreviewUri }} style={styles.coverPreview} />
           ) : (
             <View style={styles.coverPlaceholder}>
               <Text style={styles.coverPlaceholderText}>No image selected</Text>
@@ -146,10 +138,7 @@ export function ChallengeFormFields({
               autoCorrect={false}
             />
             <View style={styles.rowButtons}>
-              <TouchableOpacity
-                onPress={formState.openQrScanner}
-                style={styles.secondaryButton}
-              >
+              <TouchableOpacity onPress={formState.openQrScanner} style={styles.secondaryButton}>
                 <Text style={styles.secondaryButtonText}>Scan QR</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -172,8 +161,7 @@ export function ChallengeFormFields({
               autoCorrect={false}
             />
             <Text style={styles.hint}>
-              If set, submission will be auto-approved only when the user types
-              this exact phrase.
+              If set, submission will be auto-approved only when the user types this exact phrase.
             </Text>
           </FormField>
         )}
@@ -191,9 +179,7 @@ export function ChallengeFormFields({
                       ? `Selected: ${form.targetLocation.latitude.toFixed(5)}, ${form.targetLocation.longitude.toFixed(5)}`
                       : "Tap to select location on map"}
                   </Text>
-                  <Text style={styles.hint}>
-                    Tap to open map and select the exact location
-                  </Text>
+                  <Text style={styles.hint}>Tap to open map and select the exact location</Text>
                 </View>
                 <View style={styles.locationIcon}>
                   <Ionicons
@@ -282,9 +268,7 @@ export function ChallengeFormFields({
               false: colors.borderDark,
               true: colors.primaryOpacity80,
             }}
-            thumbColor={
-              form.isRecurring ? colors.primary : colors.textSecondary
-            }
+            thumbColor={form.isRecurring ? colors.primary : colors.textSecondary}
           />
         </View>
 
@@ -297,9 +281,7 @@ export function ChallengeFormFields({
                   style={styles.dateButton}
                 >
                   <Text style={styles.dateText}>
-                    {form.dailyStartTime
-                      ? formatTime(form.dailyStartTime)
-                      : "Start"}
+                    {form.dailyStartTime ? formatTime(form.dailyStartTime) : "Start"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -333,10 +315,7 @@ export function ChallengeFormFields({
                   {form.startTime ? form.startTime.toLocaleString() : "Start"}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => openDatePicker("endTime")}
-                style={styles.dateButton}
-              >
+              <TouchableOpacity onPress={() => openDatePicker("endTime")} style={styles.dateButton}>
                 <Text style={styles.dateText}>
                   {form.endTime ? form.endTime.toLocaleString() : "End"}
                 </Text>
@@ -352,17 +331,14 @@ export function ChallengeFormFields({
                 style={styles.inlineInput}
                 placeholder="e.g. 24"
                 value={form.votingDurationValue}
-                onChangeText={(value) =>
-                  updateForm("votingDurationValue", value)
-                }
+                onChangeText={(value) => updateForm("votingDurationValue", value)}
                 keyboardType="numeric"
               />
               <TouchableOpacity
                 onPress={() => updateForm("votingDurationUnit", "HOURS")}
                 style={[
                   styles.dateButton,
-                  form.votingDurationUnit === "HOURS" &&
-                    styles.selectOptionActive,
+                  form.votingDurationUnit === "HOURS" && styles.selectOptionActive,
                 ]}
               >
                 <Text style={styles.dateText}>Hours</Text>
@@ -371,8 +347,7 @@ export function ChallengeFormFields({
                 onPress={() => updateForm("votingDurationUnit", "DAYS")}
                 style={[
                   styles.dateButton,
-                  form.votingDurationUnit === "DAYS" &&
-                    styles.selectOptionActive,
+                  form.votingDurationUnit === "DAYS" && styles.selectOptionActive,
                 ]}
               >
                 <Text style={styles.dateText}>Days</Text>
@@ -390,10 +365,7 @@ export function ChallengeFormFields({
         <Text style={styles.sectionTitle}>Advanced</Text>
 
         <FormField label="Status">
-          <TouchableOpacity
-            onPress={() => setActiveSelect("status")}
-            style={styles.selectButton}
-          >
+          <TouchableOpacity onPress={() => setActiveSelect("status")} style={styles.selectButton}>
             <Text style={styles.selectButtonText}>{statusLabel}</Text>
             <Text style={styles.selectButtonChevron}>▾</Text>
           </TouchableOpacity>
@@ -403,13 +375,7 @@ export function ChallengeFormFields({
         <View style={styles.switchRow}>
           <Text style={styles.labelInline}>Auto-approve submissions</Text>
           <Switch
-            value={
-              isAutoApproveForced
-                ? true
-                : isAutoApproveDisabled
-                  ? false
-                  : form.autoApprove
-            }
+            value={isAutoApproveForced ? true : isAutoApproveDisabled ? false : form.autoApprove}
             onValueChange={(value) => updateForm("autoApprove", value)}
             disabled={isAutoApproveForced || isAutoApproveDisabled}
             trackColor={{
@@ -417,8 +383,7 @@ export function ChallengeFormFields({
               true: colors.primaryOpacity80,
             }}
             thumbColor={
-              (isAutoApproveForced || form.autoApprove) &&
-              !isAutoApproveDisabled
+              (isAutoApproveForced || form.autoApprove) && !isAutoApproveDisabled
                 ? colors.primary
                 : colors.textSecondary
             }
@@ -430,8 +395,7 @@ export function ChallengeFormFields({
           </Text>
         ) : isAutoApproveDisabled ? (
           <Text style={styles.hint}>
-            Auto-approve is not available for Image, Video and Image +
-            Location challenges.
+            Auto-approve is not available for Image, Video and Image + Location challenges.
           </Text>
         ) : null}
       </View>

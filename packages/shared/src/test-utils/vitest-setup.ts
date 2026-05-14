@@ -52,33 +52,33 @@ export function setupSupabaseMocks(): void {
 }
 
 /**
- * Standard Vitest mock setup for Prisma.
+ * Standard Vitest mock setup for Drizzle DB.
  * Import and call this in your vitest.setup.ts file.
  */
-export function setupPrismaMocks(): void {
+export function setupDbMocks(): void {
   vi.mock("@mirai-app/db", () => {
-    const mockPrismaClient = {
+    const mockDbClient = {
       $connect: vi.fn().mockResolvedValue(undefined),
       $disconnect: vi.fn().mockResolvedValue(undefined),
-      user: createMockPrismaModel(),
-      trip: createMockPrismaModel(),
-      event: createMockPrismaModel(),
-      $transaction: vi.fn((cb: (client: typeof mockPrismaClient) => Promise<unknown[]>) =>
-        cb(mockPrismaClient)
+      user: createMockDbModel(),
+      trip: createMockDbModel(),
+      event: createMockDbModel(),
+      $transaction: vi.fn((cb: (client: typeof mockDbClient) => Promise<unknown[]>) =>
+        cb(mockDbClient)
       ),
     };
 
     return {
-      prisma: mockPrismaClient,
-      PrismaClient: vi.fn(() => mockPrismaClient),
+      db: mockDbClient,
+      DB: vi.fn(() => mockDbClient),
     };
   });
 }
 
 /**
- * Creates a mock Prisma model with standard CRUD operations.
+ * Creates a mock Drizzle model with standard CRUD operations.
  */
-function createMockPrismaModel() {
+function createMockDbModel() {
   return {
     findUnique: vi.fn().mockResolvedValue(null),
     findFirst: vi.fn().mockResolvedValue(null),
@@ -157,11 +157,11 @@ export function setupReactNativeMocks(): void {
 
 /**
  * Complete Vitest setup for Node.js packages.
- * Includes Supabase and Prisma mocks.
+ * Includes Supabase and Drizzle DB mocks.
  */
 export function setupNodeMocks(): void {
   setupSupabaseMocks();
-  setupPrismaMocks();
+  setupDbMocks();
 }
 
 /**

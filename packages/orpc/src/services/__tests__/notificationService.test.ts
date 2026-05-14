@@ -7,7 +7,7 @@ import {
   sendMobileNotifications,
   type NotificationData,
 } from "../notificationService";
-import type { PrismaClient, Notification, PushSubscription, NotificationPush } from "@mirai-app/db";
+import { type DB, type Notification, type PushSubscription, type NotificationPush, notificationPushes, tripParticipants, challenges } from "@mirai-app/db";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Expo } from "expo-server-sdk";
 import { executeWithRetry } from "../../utils/resilience";
@@ -33,7 +33,7 @@ vi.mock("expo-server-sdk", () => ({
       return chunks;
     }
 
-    // eslint-disable-next-line @typescript-eslint/require-await
+     
     async sendPushNotificationsAsync(messages: unknown[]): Promise<unknown[]> {
       return (messages as { to?: string }[]).map((message) => ({
         status: "ok",
@@ -221,7 +221,7 @@ describe("NotificationService", () => {
 });
 
 describe("sendMobileNotifications", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockNotification: Notification;
   let mockPushSubscription: PushSubscription;
   let mockNotificationPush: NotificationPush;
@@ -229,7 +229,7 @@ describe("sendMobileNotifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(executeWithRetry).mockImplementation(async (fn) => fn());
+    executeWithRetry.mockImplementation(async (fn) => fn());
 
     mockNotification = {
       id: "notification-1",
@@ -270,6 +270,9 @@ describe("sendMobileNotifications", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue(mockNotificationPush),
         createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        upsert: vi.fn().mockImplementation((args: any) => {
+          return mockDb.notificationPush.createMany(args);
+        }),
       },
       pushSubscription: {
         findMany: vi.fn().mockResolvedValue([mockPushSubscription]),
@@ -290,17 +293,113 @@ describe("sendMobileNotifications", () => {
       trip: {
         findUnique: vi.fn().mockResolvedValue({ id: "trip-1", name: "Test Trip" }),
       },
-       
+
       $transaction: vi.fn((cb: (client: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
-    } as unknown as PrismaClient;
+
+      query: {
+        notifications: {
+          findFirst: vi.fn(async ({ where }: any) => {
+            const n = await mockDb.notification.findUnique();
+            if (!n) return null;
+            if (where) {
+              return where(n, { eq: (a: unknown, b: unknown) => a === b }) ? n : null;
+            }
+            return n;
+          }),
+        },
+        notificationPushes: {
+          findMany: vi.fn(async ({ where }: any) => {
+            const rows = await mockDb.notificationPush.findMany();
+            if (where) {
+              return rows.filter((row: NotificationPush) => where(row, { eq: (a: unknown, b: unknown) => a === b }));
+            }
+            return rows;
+          }),
+        },
+        pushSubscriptions: {
+          findMany: vi.fn(async () => mockDb.pushSubscription.findMany()),
+        },
+        tripParticipants: {
+          findMany: vi.fn(async () => mockDb.tripParticipant.findMany()),
+        },
+        groups: {
+          findMany: vi.fn(async ({ where, orderBy }: any) => {
+            const rows = await mockDb.group.findMany();
+            if (where) {
+              return rows.filter((row: any) => where(row, { eq: (a: unknown, b: unknown) => a === b, and: (...conds: boolean[]) => conds.every(Boolean) }));
+            }
+            return rows;
+          }),
+        },
+        challenges: {
+          findMany: vi.fn(async () => []),
+        },
+        trips: {
+          findFirst: vi.fn(async ({ where }: any) => {
+            const t = await mockDb.trip.findUnique();
+            if (!t) return null;
+            if (where) {
+              return where(t, { eq: (a: unknown, b: unknown) => a === b }) ? t : null;
+            }
+            return t;
+          }),
+        },
+      },
+
+      select: vi.fn((fields?: unknown) => ({
+        from: vi.fn((table: unknown) => ({
+          where: vi.fn(async (condition: unknown) => {
+            if (table === tripParticipants) {
+              const rows = await mockDb.tripParticipant.findMany();
+              return rows.map((r: any) => (fields ? { userId: r.userId, groupId: r.groupId } : r));
+            }
+            if (table === challenges) {
+              const c = await mockDb.challenge.count();
+              return [{ count: c }];
+            }
+            return [];
+          }),
+        })),
+      })),
+
+      update: vi.fn((table: unknown) => ({
+        set: vi.fn((values: unknown) => ({
+          where: vi.fn(async (condition: unknown) => {
+            if (table === notificationPushes) {
+              await mockDb.notificationPush.update();
+            }
+            return { count: 1 };
+          }),
+        })),
+      })),
+
+      insert: vi.fn((table: unknown) => ({
+        values: vi.fn((rows: unknown[]) => ({
+          onConflictDoNothing: vi.fn(async () => {
+            if (table === notificationPushes) {
+              await mockDb.notificationPush.createMany();
+            }
+            return { count: rows.length };
+          }),
+        })),
+      })),
+
+      delete: vi.fn((table: unknown) => ({
+        where: vi.fn(async (condition: unknown) => {
+          return { count: 1 };
+        }),
+      })),
+    };
+
+    mockDb = mockDb;
 
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;
   });
 
   it("should return failure when notification not found", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(null);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(null);
 
     const result = await sendMobileNotifications(mockDb, "nonexistent-notification");
 
@@ -311,34 +410,34 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should send notifications to all subscriptions when no explicit audience", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
     expect(result.success).toBe(true);
     expect(result.sent).toBe(1);
     expect(result.total).toBe(1);
-// eslint-disable-next-line @typescript-eslint/unbound-method
+ 
     expect(mockDb.notificationPush.createMany).toHaveBeenCalled();
   });
 
   it("should send notifications to pending explicit audience", async () => {
     const pendingPush = { ...mockNotificationPush, status: "pending" };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
     expect(result.success).toBe(true);
-// eslint-disable-next-line @typescript-eslint/unbound-method
+ 
     expect(mockDb.notificationPush.update).toHaveBeenCalled();
   });
 
   it("should skip when all explicit audience already processed", async () => {
     const sentPush = { ...mockNotificationPush, status: "sent" };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([sentPush]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([sentPush]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -348,8 +447,8 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should return early when no push subscriptions exist", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -359,15 +458,15 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should filter subscriptions by trip participants when tripId exists", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
       { ...mockPushSubscription, id: "sub-3", userId: "user-3", token: "ExponentPushToken[test-token-3]" },
@@ -379,10 +478,10 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should filter by group when audienceMode is group", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany)
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany
       .mockResolvedValueOnce([
         { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
         { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
@@ -390,8 +489,8 @@ describe("sendMobileNotifications", () => {
       .mockResolvedValueOnce([
         { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
@@ -400,8 +499,8 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       url: "/test?__audience=group&__groupId=group-1",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithGroupAudience);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithGroupAudience);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -411,18 +510,18 @@ describe("sendMobileNotifications", () => {
   it("should apply ranking templates when notification contains placeholders", async () => {
     const { applyRankingTemplate } = await import("../../utils/notificationTemplates");
 
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithTemplate = {
       ...mockNotification,
       title: "Ranking: <nazwa-grupy>",
       body: "Position: <miejsce-w-rankingu>",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithTemplate);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithTemplate);
 
     await sendMobileNotifications(mockDb, "notification-1");
 
@@ -430,10 +529,10 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle invalid push tokens gracefully", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, token: "invalid-token" },
     ]);
 
@@ -444,9 +543,9 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle Expo API errors gracefully", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-    vi.mocked(executeWithRetry).mockRejectedValue(new Error("Expo API error"));
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+    executeWithRetry.mockRejectedValue(new Error("Expo API error"));
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -456,27 +555,27 @@ describe("sendMobileNotifications", () => {
 
   it("should use EXPO_ACCESS_TOKEN when available", async () => {
     process.env.EXPO_ACCESS_TOKEN = "test-access-token";
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     await sendMobileNotifications(mockDb, "notification-1");
 
     // The Expo constructor should be called with the access token
     // This is verified by the mock being created successfully
-// eslint-disable-next-line @typescript-eslint/unbound-method
+ 
     expect(mockDb.notificationPush.createMany).toHaveBeenCalled();
   });
 
   it("should handle audience mode 'all'", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: null, role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
@@ -485,8 +584,8 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       url: "/test?__audience=all",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithAllAudience);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithAllAudience);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -495,10 +594,10 @@ describe("sendMobileNotifications", () => {
 
   it("should return early when no push subscriptions exist", async () => {
     const pendingPush = { ...mockNotificationPush, status: "pending" };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -512,12 +611,12 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       tripId: null,
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithoutTrip);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithoutTrip);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -525,8 +624,8 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle chunking large numbers of notifications", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
 
     const manySubscriptions = Array.from({ length: 250 }, (_, i) => ({
       ...mockPushSubscription,
@@ -534,10 +633,10 @@ describe("sendMobileNotifications", () => {
       userId: `user-${i}`,
       token: `ExponentPushToken[test-token-${i}]`,
     }));
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue(manySubscriptions);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue(
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue(manySubscriptions);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue(
       Array.from({ length: 250 }, (_, i) => ({ id: `tp-${i}`, userId: `user-${i}`, tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null }))
     );
 
@@ -547,20 +646,20 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle mixed success and failure from Expo", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
       { id: "tp-2", userId: "user-2", tripId: "trip-1", groupId: "group-2", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
       { ...mockPushSubscription, id: "sub-2", userId: "user-2", token: "ExponentPushToken[test-token-2]" },
     ]);
 
-    vi.mocked(executeWithRetry).mockResolvedValue([
+    executeWithRetry.mockResolvedValue([
       { status: "ok", id: "ticket-1" },
       { status: "error", message: "Invalid token", details: { error: "InvalidToken" } },
     ]);
@@ -573,9 +672,9 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle retry logic for Expo failures", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-    vi.mocked(executeWithRetry).mockImplementation(async (fn) => {
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+    executeWithRetry.mockImplementation(async (fn) => {
       // First call fails, second succeeds
       try {
         return await fn();
@@ -594,12 +693,12 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       url: "not-a-valid-url",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithBadUrl);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithBadUrl);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -607,21 +706,21 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle empty audience groupId parameter", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: "group-1", role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithEmptyGroup = {
       ...mockNotification,
       url: "/test?__audience=group&__groupId=",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithEmptyGroup);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithEmptyGroup);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -629,14 +728,14 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle participants without groupId", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.tripParticipant.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.tripParticipant.findMany.mockResolvedValue([
       { id: "tp-1", userId: "user-1", tripId: "trip-1", groupId: null, role: "MEMBER", createdAt: new Date(), updatedAt: new Date(), wristNumber: null, houseNumber: null },
     ]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -644,19 +743,19 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle missing trip data gracefully", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.trip.findUnique).mockResolvedValue(null);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.trip.findUnique.mockResolvedValue(null);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const notificationWithTemplate = {
       ...mockNotification,
       title: "Ranking: <nazwa-wycieczki>",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithTemplate);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithTemplate);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -664,10 +763,10 @@ describe("sendMobileNotifications", () => {
   });
 
   it("should handle database errors during status updates", async () => {
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.createMany).mockRejectedValue(new Error("Database error"));
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.notificationPush.createMany.mockRejectedValue(new Error("Database error"));
 
     await expect(sendMobileNotifications(mockDb, "notification-1")).rejects.toThrow();
   });
@@ -675,17 +774,17 @@ describe("sendMobileNotifications", () => {
   it("should handle unattempted users in explicit audience", async () => {
     const pendingPush1 = { ...mockNotificationPush, status: "pending", targetUserId: "user-1" };
     const pendingPush2 = { ...mockNotificationPush, status: "pending", targetUserId: "user-2", id: "push-2" };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([pendingPush1, pendingPush2]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([pendingPush1, pendingPush2]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([
       { ...mockPushSubscription, userId: "user-1" },
     ]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
     expect(result.total).toBe(2);
-// eslint-disable-next-line @typescript-eslint/unbound-method
+ 
     expect(mockDb.notificationPush.update).toHaveBeenCalledTimes(2);
   });
 
@@ -694,12 +793,12 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       url: "https://example.com/test?__audience=all",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithAbsoluteUrl);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithAbsoluteUrl);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 
@@ -711,12 +810,12 @@ describe("sendMobileNotifications", () => {
       ...mockNotification,
       url: "/test?__audience=all#section",
     };
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notification.findUnique).mockResolvedValue(notificationWithHash);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.notificationPush.findMany).mockResolvedValue([]);
-// eslint-disable-next-line @typescript-eslint/unbound-method
-    vi.mocked(mockDb.pushSubscription.findMany).mockResolvedValue([mockPushSubscription]);
+ 
+    mockDb.notification.findUnique.mockResolvedValue(notificationWithHash);
+ 
+    mockDb.notificationPush.findMany.mockResolvedValue([]);
+ 
+    mockDb.pushSubscription.findMany.mockResolvedValue([mockPushSubscription]);
 
     const result = await sendMobileNotifications(mockDb, "notification-1");
 

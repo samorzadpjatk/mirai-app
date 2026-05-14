@@ -11,12 +11,7 @@ export function GroupsSearchBar({ value, onChangeText }: GroupsSearchBarProps) {
   return (
     <View testID="groups-search-bar-container" style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>
-        <Ionicons
-          name="search"
-          size={20}
-          color={colors.primary}
-          style={{ opacity: 0.6 }}
-        />
+        <Ionicons name="search" size={20} color={colors.primary} style={{ opacity: 0.6 }} />
       </View>
       <TextInput
         style={styles.searchInput}

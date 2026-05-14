@@ -64,58 +64,44 @@ describe("GroupMemberList", () => {
   ];
 
   it("should render section title", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     expect(screen.getByText("Member Directory")).toBeOnTheScreen();
   });
 
   it("should render all member names", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
     expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
     expect(screen.getByText("Bob Wilson")).toBeOnTheScreen();
   });
 
   it("should render member initials", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     expect(screen.getByText("JD")).toBeOnTheScreen();
     expect(screen.getByText("JS")).toBeOnTheScreen();
     expect(screen.getByText("BW")).toBeOnTheScreen();
   });
 
   it("should render member roles in uppercase", () => {
-    const { getAllByText } = renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    const { getAllByText } = renderWithProviders(<GroupMemberList members={mockMembers} />);
     const memberRoles = getAllByText("MEMBER");
     expect(memberRoles.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("ORGANIZER")).toBeOnTheScreen();
   });
 
   it("should show 'View All' button when more than 3 members", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     expect(screen.getByText("View All")).toBeOnTheScreen();
   });
 
   it("should not show 'View All' button when 3 or fewer members", () => {
     const fewMembers = mockMembers.slice(0, 3);
-    renderWithProviders(
-      <GroupMemberList members={fewMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={fewMembers} />);
     expect(screen.queryByText("View All")).toBeNull();
   });
 
   it("should expand to show all members when 'View All' is pressed", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     const viewAllButton = screen.getByText("View All");
     fireEvent.press(viewAllButton);
     expect(screen.getByText("Alice Brown")).toBeOnTheScreen();
@@ -123,9 +109,7 @@ describe("GroupMemberList", () => {
   });
 
   it("should collapse when 'Show Less' is pressed", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     const viewAllButton = screen.getByText("View All");
     fireEvent.press(viewAllButton);
     const showLessButton = screen.getByText("Show Less");
@@ -135,41 +119,31 @@ describe("GroupMemberList", () => {
   });
 
   it("should apply leader styling to leader members", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     const leaderAvatars = screen.getAllByTestId("leader-avatar");
     expect(leaderAvatars.length).toBeGreaterThan(0);
   });
 
   it("should render with leader role in primary color", () => {
-    renderWithProviders(
-      <GroupMemberList members={mockMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={mockMembers} />);
     expect(screen.getByText("ORGANIZER")).toBeOnTheScreen();
   });
 
   it("should handle empty members array", () => {
-    renderWithProviders(
-      <GroupMemberList members={[]} />
-    );
+    renderWithProviders(<GroupMemberList members={[]} />);
     expect(screen.getByText("Member Directory")).toBeOnTheScreen();
   });
 
   it("should handle single member", () => {
     const singleMember = [mockMembers[0]!];
-    renderWithProviders(
-      <GroupMemberList members={singleMember} />
-    );
+    renderWithProviders(<GroupMemberList members={singleMember} />);
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
     expect(screen.queryByText("View All")).toBeNull();
   });
 
   it("should handle exactly 3 members without View All button", () => {
     const threeMembers = mockMembers.slice(0, 3);
-    renderWithProviders(
-      <GroupMemberList members={threeMembers} />
-    );
+    renderWithProviders(<GroupMemberList members={threeMembers} />);
     expect(screen.getByText("John Doe")).toBeOnTheScreen();
     expect(screen.getByText("Jane Smith")).toBeOnTheScreen();
     expect(screen.getByText("Bob Wilson")).toBeOnTheScreen();

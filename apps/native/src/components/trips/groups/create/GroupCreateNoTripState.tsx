@@ -5,9 +5,7 @@ interface GroupCreateNoTripStateProps {
   onGoBack: () => void;
 }
 
-export function GroupCreateNoTripState({
-  onGoBack,
-}: GroupCreateNoTripStateProps) {
+export function GroupCreateNoTripState({ onGoBack }: GroupCreateNoTripStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.errorText}>No trip selected</Text>

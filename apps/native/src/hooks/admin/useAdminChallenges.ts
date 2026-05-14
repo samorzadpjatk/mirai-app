@@ -10,7 +10,14 @@ export interface AdminChallengeUI {
   category: "standard" | "wintegral" | "special";
   icon: string;
   status: string;
-  submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
+  submissionType:
+    | "IMAGE"
+    | "MULTI_IMAGE"
+    | "VIDEO"
+    | "TEXT"
+    | "IMAGE_LOCATION"
+    | "LOCATION"
+    | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   tripId?: string;
   targetLatitude?: number | null;
@@ -85,19 +92,16 @@ export function useAdminChallenges() {
     }));
   }, [challengesData]);
 
-  const createChallenge = async (
-    payload: { tripId: string } & Partial<AdminChallengeUI>,
-  ) => {
-    const submissionType = payload.submissionType === 'MULTI_IMAGE'
-      ? 'IMAGE'
-      : (payload.submissionType ?? 'IMAGE');
+  const createChallenge = async (payload: { tripId: string } & Partial<AdminChallengeUI>) => {
+    const submissionType =
+      payload.submissionType === "MULTI_IMAGE" ? "IMAGE" : (payload.submissionType ?? "IMAGE");
 
     return createMutation.mutateAsync({
       tripId: payload.tripId,
-      name: payload.title ?? '',
-      description: payload.description ?? '',
+      name: payload.title ?? "",
+      description: payload.description ?? "",
       submissionType,
-      scoringCategory: payload.scoringCategory ?? 'JUDGED_STAFF',
+      scoringCategory: payload.scoringCategory ?? "JUDGED_STAFF",
       targetLatitude: payload.targetLatitude ?? undefined,
       targetLongitude: payload.targetLongitude ?? undefined,
     } as const);
@@ -110,8 +114,8 @@ export function useAdminChallenges() {
     return updateMutation.mutateAsync({
       id,
       tripId: payload.tripId,
-      name: payload.title ?? '',
-      description: payload.description ?? '',
+      name: payload.title ?? "",
+      description: payload.description ?? "",
     });
   };
 
@@ -122,8 +126,7 @@ export function useAdminChallenges() {
   const stats = useMemo(
     () => ({
       activeChallenges: challenges.filter((c) => c.status === "active").length,
-      wintegralChallenges: challenges.filter((c) => c.category === "wintegral")
-        .length,
+      wintegralChallenges: challenges.filter((c) => c.category === "wintegral").length,
     }),
     [challenges],
   );

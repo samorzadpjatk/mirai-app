@@ -63,9 +63,7 @@ describe("AssignedGroupsCard", () => {
   });
 
   it("should not render leader info when organizer is null", () => {
-    const { queryByText } = renderWithProviders(
-      <AssignedGroupsCard groups={[mockGroups[1]!]} />
-    );
+    const { queryByText } = renderWithProviders(<AssignedGroupsCard groups={[mockGroups[1]!]} />);
     expect(queryByText(/Leader:/)).toBeNull();
   });
 

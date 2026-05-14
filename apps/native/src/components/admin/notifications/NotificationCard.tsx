@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import type { Notification } from '~/hooks/admin/useAdminNotifications';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { Notification } from "~/hooks/admin/useAdminNotifications";
 
 interface NotificationCardProps {
   notification: Notification;
@@ -19,18 +19,18 @@ const getDisplayName = (user: { firstName?: string; lastName?: string; name?: st
   }
   if (user.firstName) return user.firstName;
   if (user.lastName) return user.lastName;
-  if ('name' in user && user.name) return user.name;
-  return 'Unknown User';
+  if ("name" in user && user.name) return user.name;
+  return "Unknown User";
 };
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'sent':
-      return { color: colors.success, text: 'Sent' };
-    case 'failed':
-      return { color: colors.danger, text: 'Failed' };
-    case 'pending':
-      return { color: colors.primary, text: 'Pending' };
+    case "sent":
+      return { color: colors.success, text: "Sent" };
+    case "failed":
+      return { color: colors.danger, text: "Failed" };
+    case "pending":
+      return { color: colors.primary, text: "Pending" };
     default:
       return { color: colors.textSecondary, text: status };
   }
@@ -43,35 +43,31 @@ export function NotificationCard({
   isRetrying = false,
   isDeleting = false,
 }: NotificationCardProps) {
-  const sentCount = notification.pushes.filter((push) => push.status === 'sent').length;
-  const failedCount = notification.pushes.filter((push) => push.status === 'failed').length;
-  const pendingCount = notification.pushes.filter((push) => push.status === 'pending').length;
+  const sentCount = notification.pushes.filter((push) => push.status === "sent").length;
+  const failedCount = notification.pushes.filter((push) => push.status === "failed").length;
+  const pendingCount = notification.pushes.filter((push) => push.status === "pending").length;
 
   const statusBadge =
     failedCount > 0
-      ? getStatusBadge('failed')
+      ? getStatusBadge("failed")
       : pendingCount > 0
-        ? getStatusBadge('pending')
-        : getStatusBadge('sent');
+        ? getStatusBadge("pending")
+        : getStatusBadge("sent");
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleSection}>
           <Text style={styles.title}>{notification.title}</Text>
-          <Text style={styles.creator}>
-            By {getDisplayName(notification.createdBy)}
-          </Text>
+          <Text style={styles.creator}>By {getDisplayName(notification.createdBy)}</Text>
         </View>
         <View style={styles.statusBadge}>
-          <Text style={[styles.statusText, { color: statusBadge.color }]}>
-            {statusBadge.text}
-          </Text>
+          <Text style={[styles.statusText, { color: statusBadge.color }]}>{statusBadge.text}</Text>
         </View>
       </View>
 
       <Text style={styles.body}>{notification.body}</Text>
-      
+
       <View style={styles.pushSummary}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Sent</Text>
@@ -102,9 +98,7 @@ export function NotificationCard({
           disabled={isRetrying || failedCount === 0}
         >
           <Ionicons name="refresh" size={16} color={colors.white} />
-          <Text style={styles.actionButtonText}>
-            {isRetrying ? 'Retrying...' : 'Retry'}
-          </Text>
+          <Text style={styles.actionButtonText}>{isRetrying ? "Retrying..." : "Retry"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -113,9 +107,7 @@ export function NotificationCard({
           disabled={isDeleting}
         >
           <Ionicons name="trash" size={16} color={colors.white} />
-          <Text style={styles.actionButtonText}>
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </Text>
+          <Text style={styles.actionButtonText}>{isDeleting ? "Deleting..." : "Delete"}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -132,9 +124,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
   },
   header: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'flex-start' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
     marginBottom: spacing.md,
   },
   titleSection: {
@@ -169,8 +161,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   pushSummary: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
     gap: spacing.xs,
     marginBottom: spacing.md,
   },
@@ -180,7 +172,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     backgroundColor: colors.backgroundDark,
   },
   summaryLabel: {
@@ -203,14 +195,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   actions: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,

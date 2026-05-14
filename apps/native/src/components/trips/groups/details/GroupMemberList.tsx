@@ -57,13 +57,8 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
       <View style={styles.memberHeader}>
         <Text style={styles.memberHeaderTitle}>Member Directory</Text>
         {hasMoreThanPreview ? (
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setIsExpanded((prev) => !prev)}
-          >
-            <Text style={styles.viewAllButton}>
-              {isExpanded ? "Show Less" : "View All"}
-            </Text>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => setIsExpanded((prev) => !prev)}>
+            <Text style={styles.viewAllButton}>{isExpanded ? "Show Less" : "View All"}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -80,12 +75,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
               </View>
               <View style={styles.memberDetails}>
                 <Text style={styles.memberName}>{member.name}</Text>
-                <Text
-                  style={[
-                    styles.memberRole,
-                    member.isLeader && styles.memberRoleLeader,
-                  ]}
-                >
+                <Text style={[styles.memberRole, member.isLeader && styles.memberRoleLeader]}>
                   {member.role.toUpperCase()}
                 </Text>
               </View>

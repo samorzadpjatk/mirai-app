@@ -1,27 +1,12 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
 
-type ActivityType =
-  | "submission"
-  | "challenge_event"
-  | "rank_change"
-  | "custom"
-  | "user_post";
+type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
 
 type ActivityFilter = ActivityType | "all";
 
@@ -119,7 +104,6 @@ interface CommunityActivityCardProps {
   avatarUri?: string | null;
 }
 
-
 const getActivityTypeLabel = (type: ActivityType) => {
   if (type === "challenge_event") return "challenge";
   if (type === "submission") return "submission";
@@ -193,7 +177,7 @@ const parseRankChangeDetails = (description?: string | null) => {
     match = movementRegex.exec(text);
   }
 
-  const podiumChunk = (/Podium:\s*([^|]+)/.exec(text))?.[1] ?? "";
+  const podiumChunk = /Podium:\s*([^|]+)/.exec(text)?.[1] ?? "";
   const podium = podiumChunk
     .split("•")
     .map((part) => part.replace(/[🥇🥈🥉]/g, "").trim())
@@ -204,9 +188,7 @@ const parseRankChangeDetails = (description?: string | null) => {
 
 const resolveCardImage = (activity: CommunityFeedActivity) => {
   if (activity.imageUrl) return activity.imageUrl;
-  const extra = activity.userPost?.additionalImages?.find((img) =>
-    Boolean(img),
-  );
+  const extra = activity.userPost?.additionalImages?.find((img) => Boolean(img));
   return extra ?? null;
 };
 
@@ -224,16 +206,14 @@ const resolveOwnerMeta = (activity: CommunityFeedActivity): OwnerMeta => {
 
   if (activity.activityType === "submission") {
     const group = activity.submissionActivity?.group;
-    const isApprovedSubmission =
-      activity.submissionActivity?.isWinner === false;
+    const isApprovedSubmission = activity.submissionActivity?.isWinner === false;
     const currentGroupRank = activity.submissionActivity?.currentGroupRank;
 
     const subtitle = isApprovedSubmission
       ? typeof currentGroupRank === "number"
         ? `Miejsce w rankingu: #${currentGroupRank}`
         : "Miejsce w rankingu: -"
-      : (activity.submissionActivity?.challenge?.name ??
-        "Challenge submission");
+      : (activity.submissionActivity?.challenge?.name ?? "Challenge submission");
 
     return {
       name: group?.name ?? "Group",
@@ -288,13 +268,9 @@ const buildRankChangeMessage = (
 
   for (const m of movements) {
     if (m.direction === "up") {
-      parts.push(
-        `Drużyna ${m.team} objęła ${m.newRank}. miejsce (awans z #${m.previousRank}).`,
-      );
+      parts.push(`Drużyna ${m.team} objęła ${m.newRank}. miejsce (awans z #${m.previousRank}).`);
     } else {
-      parts.push(
-        `Drużyna ${m.team} spadła z pozycji #${m.previousRank} na #${m.newRank}.`,
-      );
+      parts.push(`Drużyna ${m.team} spadła z pozycji #${m.previousRank} na #${m.newRank}.`);
     }
   }
 
@@ -322,9 +298,7 @@ export const CommunityActivityCard = React.memo(
     avatarUri,
   }: CommunityActivityCardProps) {
     const lastMediaTapAtRef = useRef(0);
-    const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null,
-    );
+    const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const owner = useMemo(() => resolveOwnerMeta(activity), [activity]);
     const cardImage = useMemo(() => resolveCardImage(activity), [activity]);
@@ -345,17 +319,14 @@ export const CommunityActivityCard = React.memo(
 
       return [1, 2, 3].map((rank) => {
         const parsedName = rankChangeDetails.podium[rank - 1];
-        const name =
-          parsedName ?? (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
+        const name = parsedName ?? (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
 
         const isAnchor = name === anchorGroupName || anchorRank === rank;
 
         return {
           id: `rank-change-${activity.id}-${rank}`,
           name,
-          image: isAnchor
-            ? (activity.rankChangeActivity?.group?.image ?? null)
-            : null,
+          image: isAnchor ? (activity.rankChangeActivity?.group?.image ?? null) : null,
           coins: isAnchor ? (activity.rankChangeActivity?.totalCoins ?? 0) : 0,
           memberCount: 0,
           rank,
@@ -378,12 +349,9 @@ export const CommunityActivityCard = React.memo(
       activity.activityType === "rank_change"
         ? rankChangeMessage
         : activity.activityType === "challenge_event"
-          ? activity.challengeActivity?.challenge?.description?.trim() ??
-            activity.description
+          ? (activity.challengeActivity?.challenge?.description?.trim() ?? activity.description)
           : activity.description;
-    const isHeartActive = Boolean(
-      activity.reactionsSummary?.myReactions?.includes("heart"),
-    );
+    const isHeartActive = Boolean(activity.reactionsSummary?.myReactions?.includes("heart"));
     const handleMediaPress = useCallback(
       (event: { stopPropagation: () => void }) => {
         event.stopPropagation();
@@ -438,16 +406,10 @@ export const CommunityActivityCard = React.memo(
           >
             <View style={styles.avatarFrame}>
               {avatarUri ? (
-                <Image
-                  source={{ uri: avatarUri }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                />
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
               ) : (
                 <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarFallbackText}>
-                    {getInitials(owner.name)}
-                  </Text>
+                  <Text style={styles.avatarFallbackText}>{getInitials(owner.name)}</Text>
                 </View>
               )}
             </View>
@@ -462,9 +424,7 @@ export const CommunityActivityCard = React.memo(
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.cardTime}>
-            {formatRelativeTime(activity.createdAt)}
-          </Text>
+          <Text style={styles.cardTime}>{formatRelativeTime(activity.createdAt)}</Text>
         </View>
 
         {activity.activityType === "rank_change" ? (
@@ -482,11 +442,7 @@ export const CommunityActivityCard = React.memo(
           </View>
         ) : cardImage ? (
           <TouchableOpacity style={styles.mediaWrap} onPress={handleMediaPress}>
-            <Image
-              source={{ uri: cardImage }}
-              style={styles.mediaImage}
-              contentFit="cover"
-            />
+            <Image source={{ uri: cardImage }} style={styles.mediaImage} contentFit="cover" />
           </TouchableOpacity>
         ) : null}
 
@@ -516,9 +472,7 @@ export const CommunityActivityCard = React.memo(
                 size={16}
                 color={isHeartActive ? "#ff5a6c" : colors.textSecondary}
               />
-              <Text style={styles.reactionCount}>
-                {activity.reactionsSummary?.total ?? 0}
-              </Text>
+              <Text style={styles.reactionCount}>{activity.reactionsSummary?.total ?? 0}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -526,8 +480,7 @@ export const CommunityActivityCard = React.memo(
     );
   },
   (prevProps, nextProps) =>
-    prevProps.activity === nextProps.activity &&
-    prevProps.isFocused === nextProps.isFocused,
+    prevProps.activity === nextProps.activity && prevProps.isFocused === nextProps.isFocused,
 );
 
 export type { CommunityFeedActivity, ActivityType, ActivityFilter };

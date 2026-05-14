@@ -104,7 +104,12 @@ describe("useMapUsers", () => {
         "user-2": { latitude: 52.23, longitude: 21.01, updatedAt: Date.now() },
       },
       usersData: {
-        "user-2": { name: "Jane Doe", email: "jane@example.com", image: "https://example.com/jane.jpg", houseNumber: "42" },
+        "user-2": {
+          name: "Jane Doe",
+          email: "jane@example.com",
+          image: "https://example.com/jane.jpg",
+          houseNumber: "42",
+        },
       },
     };
 
@@ -304,7 +309,9 @@ describe("useMapUsers", () => {
       },
     };
 
-    const { result } = renderHook(() => useMapUsers(args as unknown as Parameters<typeof useMapUsers>[0]));
+    const { result } = renderHook(() =>
+      useMapUsers(args as unknown as Parameters<typeof useMapUsers>[0]),
+    );
 
     expect(result.current[0]!.avatarUrl).toBeNull();
   });

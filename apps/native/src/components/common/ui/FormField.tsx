@@ -23,11 +23,24 @@ export function FormField({
     <View testID="form-field-container" style={[styles.container, style]}>
       <Text testID="form-field-label" style={styles.label}>
         {label}
-        {required && <Text testID="form-field-required" style={styles.required}> *</Text>}
+        {required && (
+          <Text testID="form-field-required" style={styles.required}>
+            {" "}
+            *
+          </Text>
+        )}
       </Text>
       {children}
-      {hint && <Text testID="form-field-hint" style={styles.hint}>{hint}</Text>}
-      {error && <Text testID="form-field-error" style={styles.error}>{error}</Text>}
+      {hint && (
+        <Text testID="form-field-hint" style={styles.hint}>
+          {hint}
+        </Text>
+      )}
+      {error && (
+        <Text testID="form-field-error" style={styles.error}>
+          {error}
+        </Text>
+      )}
     </View>
   );
 }

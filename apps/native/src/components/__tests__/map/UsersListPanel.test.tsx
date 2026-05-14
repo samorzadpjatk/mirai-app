@@ -189,7 +189,7 @@ describe("UsersListPanel", () => {
 
     fireEvent.press(otherUserRow);
     expect(mockOnSelectUser).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "user-2", name: "Jane Smith" })
+      expect.objectContaining({ id: "user-2", name: "Jane Smith" }),
     );
 
     const currentUserRow = getByText("Me").parent?.parent?.parent;

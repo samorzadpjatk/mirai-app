@@ -29,7 +29,8 @@ describe("LoadingScreen", () => {
   });
 
   it("renders with long message", () => {
-    const longMessage = "This is a very long loading message that describes what is happening in detail";
+    const longMessage =
+      "This is a very long loading message that describes what is happening in detail";
     renderWithProviders(<LoadingScreen message={longMessage} />);
 
     expect(screen.getByText(longMessage)).toBeTruthy();

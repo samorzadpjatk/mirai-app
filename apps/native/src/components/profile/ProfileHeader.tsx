@@ -91,9 +91,7 @@ export function ProfileHeader() {
     async (skipCache = false) => {
       if (!avatarStoragePath) return;
       resetAvatar();
-      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(
-        () => undefined,
-      );
+      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(() => undefined);
     },
     [avatarStoragePath, downloadAvatar, resetAvatar],
   );
@@ -138,9 +136,7 @@ export function ProfileHeader() {
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarLargeText}>{initials}</Text>
-            {isDownloading ? (
-              <Text style={styles.avatarLoadingText}>Loading...</Text>
-            ) : null}
+            {isDownloading ? <Text style={styles.avatarLoadingText}>Loading...</Text> : null}
           </View>
         )}
       </View>
@@ -151,10 +147,7 @@ export function ProfileHeader() {
 
       <View style={[styles.roleBadge, roleBadgeStyle]}>
         <Ionicons name="shield" size={14} color={roleColor} />
-        <Text style={[styles.roleText, { color: roleColor }]}>
-          {" "}
-          {getRoleLabel(roleValue)}
-        </Text>
+        <Text style={[styles.roleText, { color: roleColor }]}> {getRoleLabel(roleValue)}</Text>
       </View>
     </View>
   );

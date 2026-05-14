@@ -44,7 +44,7 @@ It contains:
 - **Seed CLI** (Database & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
 - **Shared packages** → [`packages`](packages/)
   - [`@mirai-app/auth`](packages/auth/) - Authentication logic
-  - [`@mirai-app/db`](packages/db/) - Prisma database client
+  - [`@mirai-app/db`](packages/db/) - Drizzle database client
   - [`@mirai-app/orpc`](packages/orpc/) - oRPC routers and client
   - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
@@ -88,14 +88,14 @@ Check its [documentation](environment/dev/README.md)
 ### 4. Prepare the database schema
 
 ```bash
-# Generate Prisma client
-cd packages/seed && bun run db:generate
+# Generate Drizzle migrations
+cd packages/db && bun run db:generate
 
 # Push the schema to the database
-cd packages/seed && bun run db:push
+cd packages/db && bun run db:push
 
-# Optional: Open Prisma Studio to view the database
-cd packages/seed && bun run db:studio
+# Optional: Open Drizzle Studio to view the database
+cd packages/db && bun run db:studio
 ```
 
 > 📖 **More information about database commands**: See [packages/seed/README.md](packages/seed/README.md)

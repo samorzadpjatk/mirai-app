@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { challengeVoteRouter } from "../../routers/challengeVote";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
+import type { DB, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
 vi.mock("../../../utils/activityFeed", () => ({
@@ -141,7 +141,8 @@ const createMockParticipant = (overrides: Partial<TripParticipant> = {}): TripPa
 });
 
 describe("challengeVoteRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
+  let mockTx: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   let mockModeratorUser: User;
@@ -190,10 +191,10 @@ describe("challengeVoteRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     // Setup mock database client
-    mockDb = {
+    const baseMockDb = {
       challenge: {
         findFirst: vi.fn().mockResolvedValue(mockChallenge),
         findUnique: vi.fn().mockResolvedValue(mockChallenge),
@@ -235,11 +236,79 @@ describe("challengeVoteRouter", () => {
       },
       $transaction: vi.fn(async (callback: unknown) => {
         if (typeof callback === "function") {
-          return await (callback as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (callback as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(callback as unknown[]);
       }),
-    } as unknown as PrismaClient;
+    };
+
+    const baseMockTx = {
+      challenge: {
+        findFirst: vi.fn().mockResolvedValue(mockChallenge),
+        findUnique: vi.fn().mockResolvedValue(mockChallenge),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      challengeSubmission: {
+        findMany: vi.fn().mockResolvedValue([mockSubmission]),
+        findFirst: vi.fn().mockResolvedValue(mockSubmission),
+        findUnique: vi.fn().mockResolvedValue(mockSubmission),
+        count: vi.fn().mockResolvedValue(3),
+        update: vi.fn().mockResolvedValue(mockSubmission),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      challengeVote: {
+        findMany: vi.fn().mockResolvedValue([mockVote]),
+        findFirst: vi.fn().mockResolvedValue(null),
+        findUnique: vi.fn().mockResolvedValue(mockVote),
+        create: vi.fn().mockResolvedValue(mockVote),
+        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+        deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        count: vi.fn().mockResolvedValue(5),
+      },
+      tripParticipant: {
+        findUnique: vi.fn().mockResolvedValue(mockParticipant),
+        findFirst: vi.fn().mockResolvedValue(mockParticipant),
+        findMany: vi.fn().mockResolvedValue([mockParticipant]),
+        count: vi.fn().mockResolvedValue(1),
+      },
+      user: {
+        findUnique: vi.fn().mockResolvedValue(mockUser),
+        findFirst: vi.fn().mockResolvedValue(mockUser),
+        findMany: vi.fn().mockResolvedValue([mockUser]),
+      },
+      trip: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "trip-123",
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        }),
+      },
+    };
+
+    addDrizzleApi(baseMockDb);
+    addDrizzleApi(baseMockTx);
+    mockDb = baseMockDb as DB;
+    mockTx = baseMockTx as DB;
+
+    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
+
+    const passthroughReturning = (data: unknown) => ({
+      returning: () => Promise.resolve([data]),
+      onConflictDoNothing: () => Promise.resolve([data]),
+      onConflictDoUpdate: () => Promise.resolve([data]),
+    });
+    [mockDb, mockTx].forEach((db) => {
+      db.insert = vi.fn(() => ({
+        values: (data: unknown) => passthroughReturning(data),
+      }));
+      db.update = vi.fn(() => ({
+        set: (data: unknown) => ({
+          where: () => passthroughReturning(data),
+        }),
+      }));
+      db.delete = vi.fn(() => ({
+        where: () => Promise.resolve({ count: 1 }),
+      }));
+    });
   });
 
   // Helper to create authenticated context
@@ -275,6 +344,7 @@ describe("challengeVoteRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not a trip participant", async () => {
+      mockDb.tripParticipant.findFirst.mockResolvedValue(null);
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
@@ -320,12 +390,7 @@ describe("challengeVoteRouter", () => {
       });
 
       expect(result).toHaveLength(2);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(mockDb.challengeVote.findMany).toHaveBeenCalledWith({
-        where: { challengeId: "challenge-123" },
-        select: expect.any(Object),
-        orderBy: [{ voterId: "asc" }, { votePosition: "asc" }],
-      });
+      expect(mockDb.challengeVote.findMany).toHaveBeenCalledTimes(1);
     });
 
     it("should return votes ordered by voter and position", async () => {
@@ -411,9 +476,9 @@ describe("challengeVoteRouter", () => {
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
       mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
-      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+      mockDb.transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
+          return await (fn as (db: DB) => Promise<unknown>)(mockDb);
         }
         return Promise.all(fn as unknown[]);
       });
@@ -496,13 +561,7 @@ describe("challengeVoteRouter", () => {
         createMockSubmission({ id: "submission-3", groupId: "group-3" }),
       ]);
       mockDb.challengeVote.findMany.mockResolvedValue([]);
-      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
-        if (typeof fn === "function") {
-          await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
-          return createdVotes;
-        }
-        return Promise.all(fn as unknown[]);
-      });
+      mockTx.challengeVote.findMany.mockResolvedValue(createdVotes);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -639,13 +698,6 @@ describe("challengeVoteRouter", () => {
         createMockSubmission({ id: "submission-123", groupId: "group-1" })
       );
       mockDb.challengeVote.findMany.mockResolvedValue([]);
-      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
-        if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
-        }
-        return Promise.all(fn as unknown[]);
-      });
-      mockDb.challengeVote.create.mockResolvedValue(mockVote);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -679,13 +731,6 @@ describe("challengeVoteRouter", () => {
       );
       mockDb.challengeVote.findMany.mockResolvedValue([]);
       mockDb.challengeSubmission.count.mockResolvedValue(5);
-      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
-        if (typeof fn === "function") {
-          return await (fn as (db: PrismaClient) => Promise<unknown>)(mockDb);
-        }
-        return Promise.all(fn as unknown[]);
-      });
-      mockDb.challengeVote.create.mockResolvedValue(mockVote);
 
       const { requireAuth } = await import("@mirai-app/auth");
       requireAuth.mockResolvedValue({

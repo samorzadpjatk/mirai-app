@@ -14,7 +14,10 @@ interface TopBarProps {
 export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress }: TopBarProps) {
   const getInitials = (name?: string | null) => {
     if (!name) return "";
-    return name.split(" ").map(n => n[0]).join("");
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("");
   };
 
   return (
@@ -37,23 +40,14 @@ export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress
               />
             ) : (
               <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center">
-                <Text className="text-white text-sm font-semibold">
-                  {getInitials(user.name)}
-                </Text>
+                <Text className="text-white text-sm font-semibold">{getInitials(user.name)}</Text>
               </View>
             )}
-            <Text className="text-white text-base font-bold">
-              {user.name}
-            </Text>
+            <Text className="text-white text-base font-bold">{user.name}</Text>
           </View>
         )}
-        <TouchableOpacity
-          onPress={onSignPress}
-          className="px-4 py-2 bg-surface-dark rounded-lg"
-        >
-          <Text className="text-white font-medium">
-            {isAuthenticated ? "Sign Out" : "Sign In"}
-          </Text>
+        <TouchableOpacity onPress={onSignPress} className="px-4 py-2 bg-surface-dark rounded-lg">
+          <Text className="text-white font-medium">{isAuthenticated ? "Sign Out" : "Sign In"}</Text>
         </TouchableOpacity>
       </View>
     </View>

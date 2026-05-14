@@ -8,17 +8,13 @@ interface LoadingScreenProps {
   message?: string;
 }
 
-export default function LoadingScreen({
-  message = "Loading...",
-}: LoadingScreenProps) {
+export default function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
   const insets = useSafeAreaInsets();
   return (
     <>
       <StatusBar style="auto" />
       <View style={styles.container}>
-        <View
-          style={[styles.mainContent, { paddingTop: insets.top + spacing.lg }]}
-        >
+        <View style={[styles.mainContent, { paddingTop: insets.top + spacing.lg }]}>
           <ActivityIndicator size="large" color="#00ced1" accessibilityLabel="Loading indicator" />
           <Text style={styles.message}>{message}</Text>
         </View>

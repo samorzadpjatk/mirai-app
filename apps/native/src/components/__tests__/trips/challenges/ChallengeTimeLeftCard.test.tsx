@@ -9,7 +9,7 @@ describe("ChallengeTimeLeftCard", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2024-01-15T12:00:00Z"));
-    setIntervalSpy = jest.spyOn(global, "setInterval");
+    setIntervalSpy = jest.spyOn(globalThis, "setInterval");
   });
 
   afterEach(() => {
@@ -25,9 +25,7 @@ describe("ChallengeTimeLeftCard", () => {
   });
 
   it("renders schedule view when status is VISIBLE", () => {
-    renderWithProviders(
-      <ChallengeTimeLeftCard phaseLabel="Submission" status="VISIBLE" />
-    );
+    renderWithProviders(<ChallengeTimeLeftCard phaseLabel="Submission" status="VISIBLE" />);
 
     expect(screen.getByText("Schedule")).toBeOnTheScreen();
     expect(screen.getByText("Not active yet")).toBeOnTheScreen();
@@ -42,7 +40,7 @@ describe("ChallengeTimeLeftCard", () => {
         dailyEndTime="17:00"
         startTime={new Date("2024-01-15T10:00:00Z")}
         endTime={new Date("2024-01-20T14:00:00Z")}
-      />
+      />,
     );
 
     expect(screen.getByText("Time left")).toBeOnTheScreen();
@@ -56,7 +54,7 @@ describe("ChallengeTimeLeftCard", () => {
         phaseLabel="Voting"
         startTime={new Date("2024-01-15T10:00:00Z")}
         endTime={new Date("2024-01-15T14:00:00Z")}
-      />
+      />,
     );
 
     expect(screen.getByText("Voting")).toBeOnTheScreen();
@@ -69,7 +67,7 @@ describe("ChallengeTimeLeftCard", () => {
         phaseLabel="Submission"
         startTime={new Date("2024-01-15T10:00:00Z")}
         endTime={new Date("2024-01-15T14:00:00Z")}
-      />
+      />,
     );
 
     expect(setIntervalSpy).toHaveBeenCalled();

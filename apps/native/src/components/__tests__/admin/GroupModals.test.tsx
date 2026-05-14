@@ -1,7 +1,12 @@
 import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
-import { CreateGroupModal, EditGroupModal, DeleteGroupModal, AssignOrganizerModal } from "../../admin/groups/GroupModals";
+import {
+  CreateGroupModal,
+  EditGroupModal,
+  DeleteGroupModal,
+  AssignOrganizerModal,
+} from "../../admin/groups/GroupModals";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
 
 interface AdminModalProps {
@@ -108,7 +113,14 @@ describe("Group modals", () => {
   it("creates a group", async () => {
     const onCreateGroup = jest.fn();
     const user = userEvent.setup();
-    renderWithProviders(<CreateGroupModal visible={true} onClose={jest.fn()} onCreateGroup={onCreateGroup} isCreating={false} />);
+    renderWithProviders(
+      <CreateGroupModal
+        visible={true}
+        onClose={jest.fn()}
+        onCreateGroup={onCreateGroup}
+        isCreating={false}
+      />,
+    );
 
     await user.type(screen.getByPlaceholderText("Enter group name..."), "New Group");
     await user.press(screen.getByText("Create"));
@@ -119,7 +131,15 @@ describe("Group modals", () => {
   it("updates a group", async () => {
     const onUpdateGroup = jest.fn();
     const user = userEvent.setup();
-    renderWithProviders(<EditGroupModal visible={true} onClose={jest.fn()} group={group} onUpdateGroup={onUpdateGroup} isUpdating={false} />);
+    renderWithProviders(
+      <EditGroupModal
+        visible={true}
+        onClose={jest.fn()}
+        group={group}
+        onUpdateGroup={onUpdateGroup}
+        isUpdating={false}
+      />,
+    );
 
     const input = screen.getByPlaceholderText("Enter group name...");
     await user.clear(input);
@@ -132,7 +152,15 @@ describe("Group modals", () => {
   it("deletes a group", async () => {
     const onDeleteGroup = jest.fn();
     const user = userEvent.setup();
-    renderWithProviders(<DeleteGroupModal visible={true} onClose={jest.fn()} group={group} onDeleteGroup={onDeleteGroup} isDeleting={false} />);
+    renderWithProviders(
+      <DeleteGroupModal
+        visible={true}
+        onClose={jest.fn()}
+        group={group}
+        onDeleteGroup={onDeleteGroup}
+        isDeleting={false}
+      />,
+    );
 
     await user.press(screen.getByText("Delete"));
 
@@ -142,7 +170,16 @@ describe("Group modals", () => {
   it("assigns an organizer", async () => {
     const onAssignOrganizer = jest.fn();
     const user = userEvent.setup();
-    renderWithProviders(<AssignOrganizerModal visible={true} onClose={jest.fn()} group={group} users={users} onAssignOrganizer={onAssignOrganizer} isAssigning={false} />);
+    renderWithProviders(
+      <AssignOrganizerModal
+        visible={true}
+        onClose={jest.fn()}
+        group={group}
+        users={users}
+        onAssignOrganizer={onAssignOrganizer}
+        isAssigning={false}
+      />,
+    );
 
     await user.press(screen.getByText("Jane Doe"));
     await user.press(screen.getByText("Assign"));

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import * as Updates from 'expo-updates';
+import { useState, useEffect, useCallback, useRef } from "react";
+import * as Updates from "expo-updates";
 
 interface UseExpoUpdatesReturn {
   isUpdateAvailable: boolean;
@@ -37,14 +37,14 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       setError(null);
 
       const update = await Updates.checkForUpdateAsync();
-      
+
       if (update.isAvailable) {
         setIsUpdateAvailable(true);
         setShowUpdatePopup(true);
       }
     } catch (err) {
-      console.error('Error checking for updates:', err);
-      setError('Failed to check for updates');
+      console.error("Error checking for updates:", err);
+      setError("Failed to check for updates");
     } finally {
       setIsChecking(false);
       if (isAutoCheck) {
@@ -64,8 +64,8 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
       // Restart the app to apply the update
       await Updates.reloadAsync();
     } catch (err) {
-      console.error('Error downloading update:', err);
-      setError('Failed to download update');
+      console.error("Error downloading update:", err);
+      setError("Failed to download update");
       setIsDownloading(false);
     }
   }, []);

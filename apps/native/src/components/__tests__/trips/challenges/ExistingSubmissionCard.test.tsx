@@ -35,7 +35,11 @@ describe("ExistingSubmissionCard", () => {
 
   it("renders submission details and withdraw action", () => {
     renderWithProviders(
-      <ExistingSubmissionCard submission={mockSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
+      <ExistingSubmissionCard
+        submission={mockSubmission}
+        isWithdrawing={false}
+        onWithdraw={mockOnWithdraw}
+      />,
     );
 
     expect(screen.getByText("Submission sent")).toBeOnTheScreen();
@@ -47,7 +51,11 @@ describe("ExistingSubmissionCard", () => {
   it("shows the approved state instead of withdraw action", () => {
     const approvedSubmission = { ...mockSubmission, status: "APPROVED" as const };
     renderWithProviders(
-      <ExistingSubmissionCard submission={approvedSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
+      <ExistingSubmissionCard
+        submission={approvedSubmission}
+        isWithdrawing={false}
+        onWithdraw={mockOnWithdraw}
+      />,
     );
 
     expect(screen.getByText("Approved")).toBeOnTheScreen();
@@ -62,7 +70,11 @@ describe("ExistingSubmissionCard", () => {
       rejectionReason: "Image quality too low",
     };
     renderWithProviders(
-      <ExistingSubmissionCard submission={rejectedSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
+      <ExistingSubmissionCard
+        submission={rejectedSubmission}
+        isWithdrawing={false}
+        onWithdraw={mockOnWithdraw}
+      />,
     );
 
     expect(screen.getByText("Rejected")).toBeOnTheScreen();
@@ -77,7 +89,7 @@ describe("ExistingSubmissionCard", () => {
         isWithdrawing={false}
         onWithdraw={mockOnWithdraw}
         localPreviewUri="local-preview-uri"
-      />
+      />,
     );
 
     const image = screen.getByLabelText("Submission preview");
@@ -87,7 +99,11 @@ describe("ExistingSubmissionCard", () => {
 
   it("asks for confirmation before withdrawing", () => {
     renderWithProviders(
-      <ExistingSubmissionCard submission={mockSubmission} isWithdrawing={false} onWithdraw={mockOnWithdraw} />
+      <ExistingSubmissionCard
+        submission={mockSubmission}
+        isWithdrawing={false}
+        onWithdraw={mockOnWithdraw}
+      />,
     );
 
     fireEvent.press(screen.getByText("Withdraw submission"));

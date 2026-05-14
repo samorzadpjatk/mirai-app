@@ -4,34 +4,36 @@
 
 ## Purpose
 
-Database layer for the MIRAI application. Contains Prisma schema, database client, and migration utilities. All database access goes through this package.
+Database layer for the MIRAI application. Contains Drizzle schema, database client, and migration utilities. All database access goes through this package.
 
 ## Exports
 
 | Export | Path | Description |
 |--------|------|-------------|
-| `main` | `./src/index.ts` | Prisma client and database utilities |
-| `prisma` | `./prisma/schema.prisma` | Database schema |
+| `main` | `./src/index.ts` | Drizzle client, schema, and inferred model types |
 
 ## Tech Stack
 
-- **ORM**: Prisma 7.3.0
+- **ORM**: Drizzle ORM 0.45.2
 - **Database**: PostgreSQL
-- **Adapter**: @prisma/adapter-pg
+- **Driver**: postgres-js 3.4.9
 - **Dependencies**: `@mirai-app/supabase`
 
 ## Key Files
 
 ```
 packages/db/
-├── prisma/
-│   ├── schema.prisma     # Database schema
-│   └── config.ts         # Prisma configuration
+├── drizzle/
+│   └── meta/           # Drizzle migration metadata
 ├── src/
-│   ├── index.ts          # Client exports
-│   └── client.ts         # Prisma client instance
+│   ├── schema/         # Drizzle schema definitions
+│   ├── utils/
+│   │   └── uuid.ts     # Cross-platform UUID helper
+│   ├── index.ts        # Schema and type exports
+│   └── client.ts       # Drizzle client factory
+├── drizzle.config.ts   # Drizzle Kit configuration
 ├── package.json
-└── AGENTS.md             # This file
+└── AGENTS.md           # This file
 ```
 
 ## Development Commands
@@ -56,31 +58,32 @@ bun run db:migrate:dev
 
 ### External
 
-- `@prisma/client` - Prisma client
-- `@prisma/adapter-pg` - PostgreSQL adapter
-- `prisma` - Prisma CLI (dev)
+- `drizzle-orm` - TypeScript ORM
+- `postgres` - PostgreSQL driver
+- `drizzle-kit` - Schema management CLI (dev)
 
 ## Schema Location
 
-The Prisma schema is at `packages/db/prisma/schema.prisma`.
+The Drizzle schema is at `packages/db/src/schema/`.
 
 ## Usage in Apps
 
 ```typescript
-import { prisma } from '@mirai-app/db';
+import { createDb, users, eq } from "@mirai-app/db";
+import { drizzle } from "drizzle-orm/postgres-js";
+
+// Create client
+const db = createDb(databaseUrl);
 
 // Query example
-const users = await prisma.user.findMany();
+const allUsers = await db.query.users.findMany();
 
-// Create example
-const user = await prisma.user.create({
-  data: { email: 'user@example.com' }
-});
+// Insert example
+const newUser = await db.insert(users).values({ email: "user@example.com" }).returning();
 ```
 
 ## Links
 
-- [Prisma setup](../../docs/packages/db/prisma.md)
-- [Migrations guide](../../docs/packages/db/migrations.md)
-- [Schema conventions](../../docs/packages/db/schema.md)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/)
+- [Drizzle Kit Documentation](https://orm.drizzle.team/kit-docs/overview)
 - [Root AGENTS.md](../../AGENTS.md)

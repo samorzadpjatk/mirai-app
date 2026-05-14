@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Text,
-} from "react-native";
+import { View, ScrollView, StyleSheet, Alert, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,8 +52,7 @@ const calculateDistanceMeters = (
       Math.cos(toRadians(latitudeB)) *
       Math.sin(deltaLongitude / 2) *
       Math.sin(deltaLongitude / 2);
-  const centralAngle =
-    2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue));
+  const centralAngle = 2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue));
 
   return earthRadiusKm * centralAngle * 1000;
 };
@@ -73,10 +66,8 @@ export default function ChallengeDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
-  const challengeId =
-    typeof params.id === "string" ? params.id : params.id?.[0];
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
 
   const {
@@ -104,29 +95,25 @@ export default function ChallengeDetailScreen() {
   });
   const isUploading = uploadStatus === "uploading";
   const uploadPercent =
-    uploadProgress.percent != null
-      ? Math.round(uploadProgress.percent * 100)
-      : null;
+    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
   const uploadLabel = isUploading
     ? uploadPercent != null
       ? `Uploading ${uploadPercent}%`
       : "Uploading..."
     : undefined;
 
-  const submissionQuery =
-    orpc.challengeSubmission.getMyForChallenge.queryOptions({
-      input: {
-        challengeId: challengeId ?? "",
-        tripId: tripId ?? "",
-      },
-    });
-  const challengeSubmissionsQuery =
-    orpc.challengeSubmission.getByChallenge.queryOptions({
-      input: {
-        challengeId: challengeId ?? "",
-        tripId: tripId ?? "",
-      },
-    });
+  const submissionQuery = orpc.challengeSubmission.getMyForChallenge.queryOptions({
+    input: {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
+  });
+  const challengeSubmissionsQuery = orpc.challengeSubmission.getByChallenge.queryOptions({
+    input: {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
+  });
 
   const { data: mySubmission } = useQuery({
     ...submissionQuery,
@@ -150,9 +137,7 @@ export default function ChallengeDetailScreen() {
   } | null>(null);
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
   const [textInputValue, setTextInputValue] = useState("");
-  const [currentDeviceCoords, setCurrentDeviceCoords] = useState<
-    [number, number] | null
-  >(null);
+  const [currentDeviceCoords, setCurrentDeviceCoords] = useState<[number, number] | null>(null);
 
   const withdrawMutation = useMutation(
     orpc.challengeSubmission.deleteMine.mutationOptions({
@@ -213,10 +198,7 @@ export default function ChallengeDetailScreen() {
       setCapturedImage(null);
       Alert.alert("Submission withdrawn", "You can submit again now.");
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to withdraw submission";
+      const message = error instanceof Error ? error.message : "Failed to withdraw submission";
       Alert.alert("Error", message);
     }
   };
@@ -234,19 +216,16 @@ export default function ChallengeDetailScreen() {
   }
 
   const isPeerVotingChallengeInVotingPhase =
-    challenge.scoringCategory === "PEER_VOTING" &&
-    challenge.status === "VOTING_PHASE";
+    challenge.scoringCategory === "PEER_VOTING" && challenge.status === "VOTING_PHASE";
 
   const isQrChallenge = challenge.submissionType === "QR_CODE";
   const isVideoChallenge = challenge.submissionType === "VIDEO";
   const isLocationChallenge = challenge.submissionType === "LOCATION";
   const isTextChallenge = challenge.submissionType === "TEXT";
   const hasTargetLocation =
-    typeof challenge.targetLatitude === "number" &&
-    typeof challenge.targetLongitude === "number";
+    typeof challenge.targetLatitude === "number" && typeof challenge.targetLongitude === "number";
   const shouldShowTargetLocationCard =
-    (challenge.submissionType === "LOCATION" ||
-      challenge.submissionType === "IMAGE_LOCATION") &&
+    (challenge.submissionType === "LOCATION" || challenge.submissionType === "IMAGE_LOCATION") &&
     hasTargetLocation;
   const shouldShowSolvedCounterOnly =
     challenge.submissionType === "QR_CODE" ||
@@ -257,20 +236,15 @@ export default function ChallengeDetailScreen() {
     challenge.submissionType === "MULTI_IMAGE" ||
     challenge.submissionType === "IMAGE_LOCATION";
   const approvedGroupsCount =
-    challengeSubmissions?.filter(
-      (submission) => submission.status === "APPROVED",
-    ).length ?? 0;
+    challengeSubmissions?.filter((submission) => submission.status === "APPROVED").length ?? 0;
   const submittedGroupsCount = challengeSubmissions?.length ?? 0;
   const pendingReviewGroupsCount =
-    challengeSubmissions?.filter((submission) => submission.status === "PENDING")
-      .length ?? 0;
+    challengeSubmissions?.filter((submission) => submission.status === "PENDING").length ?? 0;
   const isAwaitingStaffReview = pendingReviewGroupsCount > 0;
   const shouldHideStaffSubmissionsGallery =
-    challenge.scoringCategory === "JUDGED_STAFF" &&
-    challenge.status !== "COMPLETED";
+    challenge.scoringCategory === "JUDGED_STAFF" && challenge.status !== "COMPLETED";
   const shouldShowPendingReviewCounter =
-    isAwaitingStaffReview &&
-    (isImageBasedChallenge || shouldShowSolvedCounterOnly);
+    isAwaitingStaffReview && (isImageBasedChallenge || shouldShowSolvedCounterOnly);
   const totalGroupsCount = trip?.groups?.length ?? 0;
 
   const validateImageLocationSubmission = () => {
@@ -279,10 +253,7 @@ export default function ChallengeDetailScreen() {
     }
 
     if (!hasTargetLocation) {
-      Alert.alert(
-        "Location unavailable",
-        "Target location for this challenge is not configured.",
-      );
+      Alert.alert("Location unavailable", "Target location for this challenge is not configured.");
       return undefined;
     }
 
@@ -336,8 +307,7 @@ export default function ChallengeDetailScreen() {
           : "Location submission sent.",
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to send location";
+      const message = error instanceof Error ? error.message : "Failed to send location";
       Alert.alert("Location failed", message);
     }
   };
@@ -359,13 +329,10 @@ export default function ChallengeDetailScreen() {
       setTextInputValue("");
       Alert.alert(
         "Submitted",
-        submission.status === "APPROVED"
-          ? "Correct! Points granted."
-          : "Answer submitted.",
+        submission.status === "APPROVED" ? "Correct! Points granted." : "Answer submitted.",
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to submit";
+      const message = error instanceof Error ? error.message : "Failed to submit";
       Alert.alert("Incorrect", message);
     }
   };
@@ -395,46 +362,35 @@ export default function ChallengeDetailScreen() {
     const challengeName = challenge.name;
     const challengePoints = challenge.basePoints ?? 0;
 
-    Alert.alert(
-      `${challengeName}`,
-      `Complete this challenge to earn ${challengePoints} points!`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert(`${challengeName}`, `Complete this challenge to earn ${challengePoints} points!`, [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: () => {
+          const validatedLocation = validateImageLocationSubmission();
+          if (validatedLocation === undefined) {
+            return;
+          }
+          void pickImageFromGallery((asset) =>
+            submitAsset(asset, challengeName, challengePoints, validatedLocation ?? undefined),
+          );
         },
-        {
-          text: "Choose from Gallery",
-          onPress: () => {
-            const validatedLocation = validateImageLocationSubmission();
-            if (validatedLocation === undefined) {
-              return;
-            }
-            void pickImageFromGallery((asset) =>
-              submitAsset(
-                asset,
-                challengeName,
-                challengePoints,
-                validatedLocation ?? undefined,
-              ),
-            );
-          },
-        },
-        {
-          text: "Take Photo",
-          onPress: handleOpenChallengeCamera,
-        },
-      ],
-    );
+      },
+      {
+        text: "Take Photo",
+        onPress: handleOpenChallengeCamera,
+      },
+    ]);
   };
 
   const handleVideoChallengeAction = () => {
     const challengeName = challenge.name;
     const challengePoints = challenge.basePoints ?? 0;
 
-    void pickVideoFromGallery((asset) =>
-      submitVideoAsset(asset, challengeName, challengePoints),
-    );
+    void pickVideoFromGallery((asset) => submitVideoAsset(asset, challengeName, challengePoints));
   };
 
   const handleUseChallengePhoto = async (photo: {
@@ -457,19 +413,14 @@ export default function ChallengeDetailScreen() {
   };
 
   const isVotingPhase = challenge.status === "VOTING_PHASE";
-  const isWithinVotingWindow =
-    challenge.scoringCategory === "PEER_VOTING" && isVotingPhase;
+  const isWithinVotingWindow = challenge.scoringCategory === "PEER_VOTING" && isVotingPhase;
   const shouldShowVotingTime =
-    challenge.scoringCategory === "PEER_VOTING" &&
-    (isVotingPhase || isWithinVotingWindow);
+    challenge.scoringCategory === "PEER_VOTING" && (isVotingPhase || isWithinVotingWindow);
   const shouldShowSubmissionTime = !shouldShowVotingTime;
-  const isSubmissionWindowOpen =
-    !challenge.endTime || isOnOrBeforeNow(challenge.endTime);
+  const isSubmissionWindowOpen = !challenge.endTime || isOnOrBeforeNow(challenge.endTime);
   const canSubmitNow = challenge.status === "ACTIVE" && isSubmissionWindowOpen;
   const heroStatus =
-    challenge.status !== "CANCELLED" && isWithinVotingWindow
-      ? "VOTING_PHASE"
-      : challenge.status;
+    challenge.status !== "CANCELLED" && isWithinVotingWindow ? "VOTING_PHASE" : challenge.status;
 
   return (
     <View style={styles.container}>
@@ -501,11 +452,7 @@ export default function ChallengeDetailScreen() {
             isLoading={false}
             label="Vote"
             iconName="checkmark-circle"
-            onPress={() =>
-              router.push(
-                `/trips/challenges/vote/${challenge.id}?tripId=${tripId}`,
-              )
-            }
+            onPress={() => router.push(`/trips/challenges/vote/${challenge.id}?tripId=${tripId}`)}
           />
         )}
 
@@ -603,10 +550,7 @@ export default function ChallengeDetailScreen() {
               <MapView mapStyle={MAP_STYLE} style={styles.targetLocationMap}>
                 <Camera
                   defaultSettings={{
-                    centerCoordinate: [
-                      challenge.targetLongitude!,
-                      challenge.targetLatitude!,
-                    ],
+                    centerCoordinate: [challenge.targetLongitude!, challenge.targetLatitude!],
                     zoomLevel: 15,
                   }}
                 />
@@ -626,10 +570,7 @@ export default function ChallengeDetailScreen() {
                 </RasterSource>
                 <PointAnnotation
                   id="challenge-target"
-                  coordinate={[
-                    challenge.targetLongitude!,
-                    challenge.targetLatitude!,
-                  ]}
+                  coordinate={[challenge.targetLongitude!, challenge.targetLatitude!]}
                 >
                   <View style={styles.targetLocationMarker} />
                 </PointAnnotation>
@@ -639,10 +580,7 @@ export default function ChallengeDetailScreen() {
                   onUpdate={(location) => {
                     const longitude = location.coords?.longitude;
                     const latitude = location.coords?.latitude;
-                    if (
-                      typeof longitude !== "number" ||
-                      typeof latitude !== "number"
-                    ) {
+                    if (typeof longitude !== "number" || typeof latitude !== "number") {
                       return;
                     }
                     setCurrentDeviceCoords([longitude, latitude]);
@@ -697,9 +635,7 @@ export default function ChallengeDetailScreen() {
           />
         )}
 
-        {isUploading && (
-          <ChallengeUploadProgressCard progress={uploadProgress.percent} />
-        )}
+        {isUploading && <ChallengeUploadProgressCard progress={uploadProgress.percent} />}
 
         {mySubmission && !isTripPast && (
           <ExistingSubmissionCard
@@ -764,7 +700,7 @@ export default function ChallengeDetailScreen() {
         instructionText="Point camera at QR code to verify challenge."
         onScan={async (data) => {
           if (!tripId || !challengeId) return;
-          
+
           try {
             const submission = await qrSubmitMutation.mutateAsync({
               tripId,
@@ -778,10 +714,7 @@ export default function ChallengeDetailScreen() {
                 : "Submission sent.",
             );
           } catch (error) {
-            const message =
-              error instanceof Error
-                ? error.message
-                : "Invalid QR code";
+            const message = error instanceof Error ? error.message : "Invalid QR code";
             throw new Error(message);
           }
         }}

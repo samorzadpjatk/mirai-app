@@ -27,10 +27,7 @@ import {
 } from "~/components/admin/schedules/ScheduleModals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAdminNotifications, type Notification } from "~/hooks/admin/useAdminNotifications";
-import {
-  useAdminSchedules,
-  type NotificationSchedule,
-} from "~/hooks/admin/useAdminSchedules";
+import { useAdminSchedules, type NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { EmptyState } from "~/components/common/ui";
 
@@ -64,16 +61,11 @@ function parseNotificationAudience(url: string): {
   groupId: string | null;
 } {
   try {
-    const parsed = url.startsWith("/")
-      ? new URL(url, "https://integral.local")
-      : new URL(url);
+    const parsed = url.startsWith("/") ? new URL(url, "https://integral.local") : new URL(url);
     const audienceMode = parsed.searchParams.get(AUDIENCE_MODE_PARAM);
     const groupId = parsed.searchParams.get(AUDIENCE_GROUP_PARAM);
     return {
-      audienceMode:
-        audienceMode === "group" || audienceMode === "all"
-          ? audienceMode
-          : null,
+      audienceMode: audienceMode === "group" || audienceMode === "all" ? audienceMode : null,
       groupId: groupId?.trim() ? groupId : null,
     };
   } catch {
@@ -85,8 +77,7 @@ export default function AdminNotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [plannedSearchTerm, setPlannedSearchTerm] = useState("");
@@ -153,9 +144,7 @@ export default function AdminNotificationsScreen() {
     if (selectedGroupFilterId !== "all") {
       filtered = filtered.filter((notification) => {
         const audience = parseNotificationAudience(notification.url);
-        return (
-          audience.audienceMode === "group" && audience.groupId === selectedGroupFilterId
-        );
+        return audience.audienceMode === "group" && audience.groupId === selectedGroupFilterId;
       });
     }
 
@@ -290,9 +279,7 @@ export default function AdminNotificationsScreen() {
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Notifications"
-      />
+      <AdminHeader title="Notifications" />
 
       <View style={styles.tabsRow}>
         <TouchableOpacity
@@ -357,10 +344,7 @@ export default function AdminNotificationsScreen() {
                 ) : null
               }
               ListEmptyComponent={
-                <EmptyState
-                  icon="notifications-off"
-                  title="No sent notifications found."
-                />
+                <EmptyState icon="notifications-off" title="No sent notifications found." />
               }
             />
           )}
@@ -420,9 +404,7 @@ export default function AdminNotificationsScreen() {
                 </View>
               ) : recurringSchedules.length === 0 ? (
                 <View style={styles.inlineEmptyContainer}>
-                  <Text style={styles.inlineEmptyText}>
-                    No recurring schedules matching title.
-                  </Text>
+                  <Text style={styles.inlineEmptyText}>No recurring schedules matching title.</Text>
                 </View>
               ) : (
                 recurringSchedules.map((schedule) => (

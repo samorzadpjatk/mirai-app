@@ -115,20 +115,30 @@ describe("mapOverlayStore", () => {
       it("should set users array", () => {
         const { setUsers } = mapOverlayStore.getState();
         const mockUsers = [
-          { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], name: "John", lastActiveAt: Date.now() },
-          { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], name: "Jane", lastActiveAt: Date.now() },
+          {
+            id: "user-1",
+            coordinate: [52.2297, 21.0122] as [number, number],
+            name: "John",
+            lastActiveAt: Date.now(),
+          },
+          {
+            id: "user-2",
+            coordinate: [51.5074, -0.1278] as [number, number],
+            name: "Jane",
+            lastActiveAt: Date.now(),
+          },
         ];
-        
+
         setUsers(mockUsers);
-        
+
         expect(mapOverlayStore.getState().users).toEqual(mockUsers);
       });
 
       it("should set empty users array", () => {
         const { setUsers } = mapOverlayStore.getState();
-        
+
         setUsers([]);
-        
+
         expect(mapOverlayStore.getState().users).toEqual([]);
       });
     });
@@ -136,18 +146,18 @@ describe("mapOverlayStore", () => {
     describe("setCurrentUserId", () => {
       it("should set current user id", () => {
         const { setCurrentUserId } = mapOverlayStore.getState();
-        
+
         setCurrentUserId("user-123");
-        
+
         expect(mapOverlayStore.getState().currentUserId).toBe("user-123");
       });
 
       it("should set current user id to undefined", () => {
         const { setCurrentUserId } = mapOverlayStore.getState();
-        
+
         setCurrentUserId("user-123");
         setCurrentUserId(undefined);
-        
+
         expect(mapOverlayStore.getState().currentUserId).toBeUndefined();
       });
     });
@@ -155,15 +165,15 @@ describe("mapOverlayStore", () => {
     describe("selectUser", () => {
       it("should select user and update related state", () => {
         const { selectUser } = mapOverlayStore.getState();
-        const mockUser = { 
-          id: "user-1", 
+        const mockUser = {
+          id: "user-1",
           coordinate: [52.2297, 21.0122] as [number, number],
           name: "John",
-          lastActiveAt: Date.now()
+          lastActiveAt: Date.now(),
         };
-        
+
         selectUser(mockUser);
-        
+
         const state = mapOverlayStore.getState();
         expect(state.showUsersList).toBe(false);
         expect(state.isListExpanded).toBe(false);
@@ -175,16 +185,16 @@ describe("mapOverlayStore", () => {
     describe("deselectUser", () => {
       it("should deselect user by clearing followMode", () => {
         const { selectUser, deselectUser } = mapOverlayStore.getState();
-        const mockUser = { 
-          id: "user-1", 
+        const mockUser = {
+          id: "user-1",
           coordinate: [52.2297, 21.0122] as [number, number],
           name: "John",
-          lastActiveAt: Date.now()
+          lastActiveAt: Date.now(),
         };
-        
+
         selectUser(mockUser);
         expect(mapOverlayStore.getState().followMode).toBe("user");
-        
+
         deselectUser();
         expect(mapOverlayStore.getState().followMode).toBeNull();
       });
@@ -193,16 +203,16 @@ describe("mapOverlayStore", () => {
     describe("backToList", () => {
       it("should return to list view", () => {
         const { selectUser, backToList } = mapOverlayStore.getState();
-        const mockUser = { 
-          id: "user-1", 
+        const mockUser = {
+          id: "user-1",
           coordinate: [52.2297, 21.0122] as [number, number],
           name: "John",
-          lastActiveAt: Date.now()
+          lastActiveAt: Date.now(),
         };
-        
+
         selectUser(mockUser);
         backToList();
-        
+
         const state = mapOverlayStore.getState();
         expect(state.showUsersList).toBe(true);
         expect(state.followMode).toBeNull();
@@ -214,17 +224,17 @@ describe("mapOverlayStore", () => {
     describe("setSharingUserIds", () => {
       it("should set sharing user ids", () => {
         const { setSharingUserIds } = mapOverlayStore.getState();
-        
+
         setSharingUserIds(["user-1", "user-2", "user-3"]);
-        
+
         expect(mapOverlayStore.getState().sharingUserIds).toEqual(["user-1", "user-2", "user-3"]);
       });
 
       it("should set empty sharing user ids", () => {
         const { setSharingUserIds } = mapOverlayStore.getState();
-        
+
         setSharingUserIds([]);
-        
+
         expect(mapOverlayStore.getState().sharingUserIds).toEqual([]);
       });
     });
@@ -236,17 +246,17 @@ describe("mapOverlayStore", () => {
           { id: "user-1", firstName: "John", lastName: "Doe" },
           { id: "user-2", firstName: "Jane", lastName: "Smith" },
         ];
-        
+
         setAllAvailableUsers(mockUsers);
-        
+
         expect(mapOverlayStore.getState().allAvailableUsers).toEqual(mockUsers);
       });
 
       it("should set undefined available users", () => {
         const { setAllAvailableUsers } = mapOverlayStore.getState();
-        
+
         setAllAvailableUsers(undefined);
-        
+
         expect(mapOverlayStore.getState().allAvailableUsers).toBeUndefined();
       });
     });
@@ -260,17 +270,17 @@ describe("mapOverlayStore", () => {
             { id: "user-2", firstName: "Jane" },
           ],
         };
-        
+
         setSharingSettings(mockSettings);
-        
+
         expect(mapOverlayStore.getState().sharingSettings).toEqual(mockSettings);
       });
 
       it("should set null sharing settings", () => {
         const { setSharingSettings } = mapOverlayStore.getState();
-        
+
         setSharingSettings(null);
-        
+
         expect(mapOverlayStore.getState().sharingSettings).toBeNull();
       });
     });
@@ -278,16 +288,17 @@ describe("mapOverlayStore", () => {
     describe("handleRemoveUser", () => {
       it("should remove user from sharingUserIds", () => {
         const { setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
-        
+
         setSharingUserIds(["user-1", "user-2", "user-3"]);
         handleRemoveUser("user-2");
-        
+
         expect(mapOverlayStore.getState().sharingUserIds).toEqual(["user-1", "user-3"]);
       });
 
       it("should remove user from sharingSettings.usersToShareWith", () => {
-        const { setSharingSettings, setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
-        
+        const { setSharingSettings, setSharingUserIds, handleRemoveUser } =
+          mapOverlayStore.getState();
+
         setSharingUserIds(["user-1", "user-2"]);
         setSharingSettings({
           usersToShareWith: [
@@ -295,9 +306,9 @@ describe("mapOverlayStore", () => {
             { id: "user-2", firstName: "Jane" },
           ],
         });
-        
+
         handleRemoveUser("user-1");
-        
+
         const state = mapOverlayStore.getState();
         expect(state.sharingUserIds).toEqual(["user-2"]);
         expect(state.sharingSettings?.usersToShareWith).toEqual([
@@ -307,19 +318,19 @@ describe("mapOverlayStore", () => {
 
       it("should handle removing non-existent user", () => {
         const { setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
-        
+
         setSharingUserIds(["user-1", "user-2"]);
         handleRemoveUser("user-999");
-        
+
         expect(mapOverlayStore.getState().sharingUserIds).toEqual(["user-1", "user-2"]);
       });
 
       it("should set isRemovingUser during removal", () => {
         const { setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
-        
+
         setSharingUserIds(["user-1"]);
         handleRemoveUser("user-1");
-        
+
         expect(mapOverlayStore.getState().isRemovingUser).toBe(false);
       });
     });
@@ -327,18 +338,18 @@ describe("mapOverlayStore", () => {
     describe("setIsRemovingUser", () => {
       it("should set isRemovingUser to true", () => {
         const { setIsRemovingUser } = mapOverlayStore.getState();
-        
+
         setIsRemovingUser(true);
-        
+
         expect(mapOverlayStore.getState().isRemovingUser).toBe(true);
       });
 
       it("should set isRemovingUser to false", () => {
         const { setIsRemovingUser } = mapOverlayStore.getState();
-        
+
         setIsRemovingUser(true);
         setIsRemovingUser(false);
-        
+
         expect(mapOverlayStore.getState().isRemovingUser).toBe(false);
       });
     });
@@ -348,12 +359,12 @@ describe("mapOverlayStore", () => {
     describe("toggleListExpansion", () => {
       it("should toggle list expansion", () => {
         const { toggleListExpansion } = mapOverlayStore.getState();
-        
+
         expect(mapOverlayStore.getState().isListExpanded).toBe(false);
-        
+
         toggleListExpansion();
         expect(mapOverlayStore.getState().isListExpanded).toBe(true);
-        
+
         toggleListExpansion();
         expect(mapOverlayStore.getState().isListExpanded).toBe(false);
       });
@@ -362,10 +373,10 @@ describe("mapOverlayStore", () => {
     describe("collapseList", () => {
       it("should collapse list", () => {
         const { toggleListExpansion, collapseList } = mapOverlayStore.getState();
-        
+
         toggleListExpansion();
         expect(mapOverlayStore.getState().isListExpanded).toBe(true);
-        
+
         collapseList();
         expect(mapOverlayStore.getState().isListExpanded).toBe(false);
       });
@@ -374,18 +385,18 @@ describe("mapOverlayStore", () => {
     describe("setShowManageModal", () => {
       it("should open manage modal", () => {
         const { setShowManageModal } = mapOverlayStore.getState();
-        
+
         setShowManageModal(true);
-        
+
         expect(mapOverlayStore.getState().showManageModal).toBe(true);
       });
 
       it("should close manage modal", () => {
         const { setShowManageModal } = mapOverlayStore.getState();
-        
+
         setShowManageModal(true);
         setShowManageModal(false);
-        
+
         expect(mapOverlayStore.getState().showManageModal).toBe(false);
       });
     });
@@ -393,20 +404,20 @@ describe("mapOverlayStore", () => {
     describe("toggleTheme", () => {
       it("should toggle theme from dark to light", () => {
         const { toggleTheme } = mapOverlayStore.getState();
-        
+
         expect(mapOverlayStore.getState().mapTheme).toBe("dark");
-        
+
         toggleTheme();
-        
+
         expect(mapOverlayStore.getState().mapTheme).toBe("light");
       });
 
       it("should toggle theme from light to dark", () => {
         const { toggleTheme } = mapOverlayStore.getState();
-        
+
         toggleTheme();
         toggleTheme();
-        
+
         expect(mapOverlayStore.getState().mapTheme).toBe("dark");
       });
     });
@@ -416,18 +427,18 @@ describe("mapOverlayStore", () => {
     describe("setFollowMode", () => {
       it("should set follow mode to user", () => {
         const { setFollowMode } = mapOverlayStore.getState();
-        
+
         setFollowMode("user");
-        
+
         expect(mapOverlayStore.getState().followMode).toBe("user");
       });
 
       it("should set follow mode to null", () => {
         const { setFollowMode } = mapOverlayStore.getState();
-        
+
         setFollowMode("user");
         setFollowMode(null);
-        
+
         expect(mapOverlayStore.getState().followMode).toBeNull();
       });
     });
@@ -435,18 +446,18 @@ describe("mapOverlayStore", () => {
     describe("setFocusedCoordinate", () => {
       it("should set focused coordinate", () => {
         const { setFocusedCoordinate } = mapOverlayStore.getState();
-        
+
         setFocusedCoordinate([52.2297, 21.0122]);
-        
+
         expect(mapOverlayStore.getState().focusedCoordinate).toEqual([52.2297, 21.0122]);
       });
 
       it("should clear focused coordinate", () => {
         const { setFocusedCoordinate } = mapOverlayStore.getState();
-        
+
         setFocusedCoordinate([52.2297, 21.0122]);
         setFocusedCoordinate(null);
-        
+
         expect(mapOverlayStore.getState().focusedCoordinate).toBeNull();
       });
     });
@@ -454,9 +465,9 @@ describe("mapOverlayStore", () => {
     describe("recenter", () => {
       it("should recenter map", () => {
         const { recenter } = mapOverlayStore.getState();
-        
+
         recenter([52.2297, 21.0122]);
-        
+
         const state = mapOverlayStore.getState();
         expect(state.followMode).toBeNull();
         expect(state.focusedCoordinate).toEqual([52.2297, 21.0122]);
@@ -464,10 +475,10 @@ describe("mapOverlayStore", () => {
 
       it("should not recenter if coordinate is null", () => {
         const { setFollowMode, recenter } = mapOverlayStore.getState();
-        
+
         setFollowMode("user");
         recenter(null);
-        
+
         expect(mapOverlayStore.getState().followMode).toBe("user");
       });
     });
@@ -475,15 +486,15 @@ describe("mapOverlayStore", () => {
     describe("handleMapUserPress", () => {
       it("should handle map user press", () => {
         const { handleMapUserPress } = mapOverlayStore.getState();
-        const mockUser = { 
-          id: "user-1", 
+        const mockUser = {
+          id: "user-1",
           coordinate: [52.2297, 21.0122] as [number, number],
           name: "John",
-          lastActiveAt: Date.now()
+          lastActiveAt: Date.now(),
         };
-        
+
         handleMapUserPress(mockUser);
-        
+
         const state = mapOverlayStore.getState();
         expect(state.followMode).toBe("user");
         expect(state.focusedCoordinate).toEqual([52.2297, 21.0122]);
@@ -493,19 +504,19 @@ describe("mapOverlayStore", () => {
     describe("handleMapPress", () => {
       it("should collapse list when expanded", () => {
         const { toggleListExpansion, handleMapPress } = mapOverlayStore.getState();
-        
+
         toggleListExpansion();
         expect(mapOverlayStore.getState().isListExpanded).toBe(true);
-        
+
         handleMapPress();
         expect(mapOverlayStore.getState().isListExpanded).toBe(false);
       });
 
       it("should not change state when list is not expanded", () => {
         const { handleMapPress } = mapOverlayStore.getState();
-        
+
         handleMapPress();
-        
+
         expect(mapOverlayStore.getState().isListExpanded).toBe(false);
       });
     });
@@ -516,8 +527,18 @@ describe("mapOverlayStore", () => {
       const state = mapOverlayStore.getState();
 
       const mockUsers = [
-        { id: "user-1", coordinate: [52.2297, 21.0122] as [number, number], name: "John", lastActiveAt: Date.now() },
-        { id: "user-2", coordinate: [51.5074, -0.1278] as [number, number], name: "Jane", lastActiveAt: Date.now() },
+        {
+          id: "user-1",
+          coordinate: [52.2297, 21.0122] as [number, number],
+          name: "John",
+          lastActiveAt: Date.now(),
+        },
+        {
+          id: "user-2",
+          coordinate: [51.5074, -0.1278] as [number, number],
+          name: "Jane",
+          lastActiveAt: Date.now(),
+        },
       ];
       state.setUsers(mockUsers);
       expect(mapOverlayStore.getState().users).toEqual(mockUsers);
@@ -532,14 +553,14 @@ describe("mapOverlayStore", () => {
     it("should handle map navigation flow", () => {
       const state = mapOverlayStore.getState();
 
-      const mockUser = { 
-        id: "user-1", 
+      const mockUser = {
+        id: "user-1",
         coordinate: [52.2297, 21.0122] as [number, number],
         name: "John",
-        lastActiveAt: Date.now()
+        lastActiveAt: Date.now(),
       };
       state.selectUser(mockUser);
-      
+
       expect(mapOverlayStore.getState().showUsersList).toBe(false);
       expect(mapOverlayStore.getState().followMode).toBe("user");
 
@@ -559,7 +580,7 @@ describe("mapOverlayStore", () => {
     it("should set externals via setMapOverlayExternals", () => {
       const mockUpdateSharing = jest.fn<() => Promise<void>>();
       const mockRemoveUser = jest.fn<(userId: string) => Promise<void>>();
-      
+
       setMapOverlayExternals({
         updateSharing: mockUpdateSharing,
         removeUser: mockRemoveUser,
@@ -577,11 +598,11 @@ describe("mapOverlayStore", () => {
         currentCoordinate: [52.2297, 21.0122] as [number, number],
       };
 
-      const element = React.createElement(
-        MapOverlayProvider,
-        { value: mockValue, children: React.createElement("div", null, "test") }
-      );
-      
+      const element = React.createElement(MapOverlayProvider, {
+        value: mockValue,
+        children: React.createElement("div", null, "test"),
+      });
+
       expect(element).toBeTruthy();
     });
   });
@@ -590,7 +611,7 @@ describe("mapOverlayStore", () => {
     it("should handle errors in handleRemoveUser gracefully", () => {
       const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       const { setSharingSettings, handleRemoveUser } = mapOverlayStore.getState();
-      
+
       setSharingSettings({ usersToShareWith: undefined });
 
       expect(() => handleRemoveUser("user-1")).not.toThrow();
@@ -599,8 +620,9 @@ describe("mapOverlayStore", () => {
     });
 
     it("should handle removing user when sharingSettings is null", () => {
-      const { setSharingSettings, setSharingUserIds, handleRemoveUser } = mapOverlayStore.getState();
-      
+      const { setSharingSettings, setSharingUserIds, handleRemoveUser } =
+        mapOverlayStore.getState();
+
       setSharingUserIds(["user-1", "user-2"]);
       setSharingSettings(null);
 

@@ -4,10 +4,25 @@ import { Alert } from "react-native";
 import { useChallengeForm } from "../../admin/useChallengeForm";
 
 // Mock expo-image-picker
-const mockLaunchImageLibraryAsync = jest.fn<(options?: { mediaTypes?: string; allowsEditing?: boolean; aspect?: number[]; quality?: number }) => Promise<{ canceled: boolean; assets: { uri: string; fileName?: string; mimeType?: string }[] }>>();
+const mockLaunchImageLibraryAsync = jest.fn<
+  (options?: {
+    mediaTypes?: string;
+    allowsEditing?: boolean;
+    aspect?: number[];
+    quality?: number;
+  }) => Promise<{
+    canceled: boolean;
+    assets: { uri: string; fileName?: string; mimeType?: string }[];
+  }>
+>();
 
 jest.mock("expo-image-picker", () => ({
-  launchImageLibraryAsync: (options?: { mediaTypes?: string; allowsEditing?: boolean; aspect?: number[]; quality?: number }) => mockLaunchImageLibraryAsync(options),
+  launchImageLibraryAsync: (options?: {
+    mediaTypes?: string;
+    allowsEditing?: boolean;
+    aspect?: number[];
+    quality?: number;
+  }) => mockLaunchImageLibraryAsync(options),
   MediaTypeOptions: {
     Images: "images",
   },
@@ -82,13 +97,11 @@ describe("useChallengeForm", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, 'alert').mockImplementation(mockAlert);
+    jest.spyOn(Alert, "alert").mockImplementation(mockAlert);
   });
 
   it("should initialize with default form state", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     expect(result.current.form.title).toBe("");
     expect(result.current.form.description).toBe("");
@@ -109,7 +122,7 @@ describe("useChallengeForm", () => {
           description: "Test Description",
           submissionType: "QR_CODE",
         },
-      })
+      }),
     );
 
     expect(result.current.form.title).toBe("Test Challenge");
@@ -118,9 +131,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should update form fields", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.updateForm("title", "New Title");
@@ -136,9 +147,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should handle submission type change", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.handleSubmissionTypeChange("QR_CODE");
@@ -157,7 +166,7 @@ describe("useChallengeForm", () => {
           submissionType: "IMAGE",
           scoringCategory: "PEER_VOTING",
         },
-      })
+      }),
     );
 
     expect(result.current.form.scoringCategory).toBe("PEER_VOTING");
@@ -179,7 +188,7 @@ describe("useChallengeForm", () => {
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
         },
-      })
+      }),
     );
 
     act(() => {
@@ -197,7 +206,7 @@ describe("useChallengeForm", () => {
         initialData: {
           submissionType: "TEXT",
         },
-      })
+      }),
     );
 
     act(() => {
@@ -206,7 +215,7 @@ describe("useChallengeForm", () => {
 
     expect(mockAlert).toHaveBeenCalledWith(
       "Error",
-      "Peer voting is available only for Image or Video challenges."
+      "Peer voting is available only for Image or Video challenges.",
     );
     expect(result.current.form.scoringCategory).toBe("SPEED");
   });
@@ -221,7 +230,7 @@ describe("useChallengeForm", () => {
           secondPlacePoints: "50",
           thirdPlacePoints: "25",
         },
-      })
+      }),
     );
 
     act(() => {
@@ -234,23 +243,16 @@ describe("useChallengeForm", () => {
   });
 
   it("should validate form with missing title and description", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Please fill in title and description"
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Please fill in title and description");
   });
 
   it("should validate form with valid title and description", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.updateForm("title", "Test Title");
@@ -272,7 +274,7 @@ describe("useChallengeForm", () => {
           description: "Test",
           submissionType: "LOCATION",
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
@@ -280,7 +282,7 @@ describe("useChallengeForm", () => {
     expect(isValid).toBe(false);
     expect(mockAlert).toHaveBeenCalledWith(
       "Error",
-      "Please select a location on the map for location challenges"
+      "Please select a location on the map for location challenges",
     );
   });
 
@@ -294,16 +296,13 @@ describe("useChallengeForm", () => {
           description: "Test",
           submissionType: "QR_CODE",
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Scan or provide expected QR code value."
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Scan or provide expected QR code value.");
   });
 
   it("should validate recurring challenges require daily times", () => {
@@ -316,16 +315,13 @@ describe("useChallengeForm", () => {
           description: "Test",
           isRecurring: true,
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Provide daily start and end time"
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Provide daily start and end time");
   });
 
   it("should validate recurring days must be between 1 and 30", () => {
@@ -341,16 +337,13 @@ describe("useChallengeForm", () => {
           dailyEndTime: new Date(),
           recurringDays: "35",
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Recurring days must be between 1 and 30"
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Recurring days must be between 1 and 30");
   });
 
   it("should validate non-recurring challenges require both start and end times", () => {
@@ -365,16 +358,13 @@ describe("useChallengeForm", () => {
           startTime: new Date(),
           endTime: null,
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Provide both start and end time"
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Provide both start and end time");
   });
 
   it("should validate start time must be before end time", () => {
@@ -392,16 +382,13 @@ describe("useChallengeForm", () => {
           startTime,
           endTime,
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
 
     expect(isValid).toBe(false);
-    expect(mockAlert).toHaveBeenCalledWith(
-      "Error",
-      "Start time must be before end time"
-    );
+    expect(mockAlert).toHaveBeenCalledWith("Error", "Start time must be before end time");
   });
 
   it("should validate peer voting requires voting duration", () => {
@@ -420,7 +407,7 @@ describe("useChallengeForm", () => {
           startTime,
           endTime,
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
@@ -428,7 +415,7 @@ describe("useChallengeForm", () => {
     expect(isValid).toBe(false);
     expect(mockAlert).toHaveBeenCalledWith(
       "Error",
-      "Provide peer voting duration in hours or days (minimum 1)."
+      "Provide peer voting duration in hours or days (minimum 1).",
     );
   });
 
@@ -445,7 +432,7 @@ describe("useChallengeForm", () => {
           votingDurationValue: "24",
           endTime: null,
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
@@ -453,7 +440,7 @@ describe("useChallengeForm", () => {
     expect(isValid).toBe(false);
     expect(mockAlert).toHaveBeenCalledWith(
       "Error",
-      "Peer voting challenge requires submission end time"
+      "Peer voting challenge requires submission end time",
     );
   });
 
@@ -469,7 +456,7 @@ describe("useChallengeForm", () => {
           autoApprove: true,
           textExpectedPhrase: "",
         },
-      })
+      }),
     );
 
     const isValid = result.current.validateForm();
@@ -477,7 +464,7 @@ describe("useChallengeForm", () => {
     expect(isValid).toBe(false);
     expect(mockAlert).toHaveBeenCalledWith(
       "Error",
-      "For text auto-approve, provide an expected phrase or disable auto-approve."
+      "For text auto-approve, provide an expected phrase or disable auto-approve.",
     );
   });
 
@@ -490,7 +477,7 @@ describe("useChallengeForm", () => {
           submissionType: "IMAGE",
           scoringCategory: "PEER_VOTING",
         },
-      })
+      }),
     );
 
     expect(result.current.isPeerVoting).toBe(true);
@@ -506,7 +493,7 @@ describe("useChallengeForm", () => {
         initialData: {
           scoringCategory: "UNLIMITED",
         },
-      })
+      }),
     );
 
     expect(result.current.showPodiumPoints).toBe(false);
@@ -520,7 +507,7 @@ describe("useChallengeForm", () => {
         initialData: {
           submissionType: "QR_CODE",
         },
-      })
+      }),
     );
 
     expect(result.current.isAutoApproveForced).toBe(true);
@@ -535,7 +522,7 @@ describe("useChallengeForm", () => {
         initialData: {
           submissionType: "LOCATION",
         },
-      })
+      }),
     );
 
     expect(result.current.isAutoApproveForced).toBe(true);
@@ -550,7 +537,7 @@ describe("useChallengeForm", () => {
         initialData: {
           submissionType: "IMAGE",
         },
-      })
+      }),
     );
 
     expect(result.current.isAutoApproveDisabled).toBe(true);
@@ -567,7 +554,7 @@ describe("useChallengeForm", () => {
           scoringCategory: "SPEED",
           status: "HIDDEN",
         },
-      })
+      }),
     );
 
     expect(result.current.submissionTypeLabel).toBe("Image");
@@ -576,9 +563,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should handle date picker open", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.openDatePicker("startTime");
@@ -594,9 +579,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should handle select open", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.setActiveSelect("submissionType");
@@ -614,7 +597,7 @@ describe("useChallengeForm", () => {
         initialData: {
           submissionType: "TEXT",
         },
-      })
+      }),
     );
 
     act(() => {
@@ -622,13 +605,15 @@ describe("useChallengeForm", () => {
     });
 
     // Should filter out PEER_VOTING
-    expect(result.current.activeSelectOptions.some((opt: { value: string }) => opt.value === "PEER_VOTING")).toBe(false);
+    expect(
+      result.current.activeSelectOptions.some(
+        (opt: { value: string }) => opt.value === "PEER_VOTING",
+      ),
+    ).toBe(false);
   });
 
   it("should handle location picker toggle", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     expect(result.current.showLocationPicker).toBe(false);
 
@@ -640,9 +625,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should handle QR scanner toggle", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     expect(result.current.isQrScannerOpen).toBe(false);
 
@@ -678,7 +661,7 @@ describe("useChallengeForm", () => {
         tripId,
         isNewChallenge: false,
         challengeId: "challenge-1",
-      })
+      }),
     );
 
     act(() => {
@@ -705,7 +688,7 @@ describe("useChallengeForm", () => {
       useChallengeForm({
         tripId,
         isNewChallenge: false,
-      })
+      }),
     );
 
     act(() => {
@@ -729,9 +712,7 @@ describe("useChallengeForm", () => {
 
     mockUpload.mockResolvedValue({ path: "challenge/trip-123/cover-1234567890.jpg" });
 
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     await act(async () => {
       await result.current.handlePickImage();
@@ -750,9 +731,7 @@ describe("useChallengeForm", () => {
       assets: [],
     });
 
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     await act(async () => {
       await result.current.handlePickImage();
@@ -775,9 +754,7 @@ describe("useChallengeForm", () => {
 
     mockUpload.mockRejectedValue(new Error("Upload failed"));
 
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     await act(async () => {
       await result.current.handlePickImage();
@@ -787,9 +764,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should not pick image without tripId", async () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId: "", isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId: "", isNewChallenge: true }));
 
     await act(async () => {
       await result.current.handlePickImage();
@@ -799,9 +774,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should provide utility functions", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     expect(typeof result.current.toOptionalInt).toBe("function");
     expect(typeof result.current.toVotingDurationHours).toBe("function");
@@ -810,9 +783,7 @@ describe("useChallengeForm", () => {
   });
 
   it("should handle setImagePreviewUri", () => {
-    const { result } = renderHook(() =>
-      useChallengeForm({ tripId, isNewChallenge: true })
-    );
+    const { result } = renderHook(() => useChallengeForm({ tripId, isNewChallenge: true }));
 
     act(() => {
       result.current.setImagePreviewUri("file:///new/image.jpg");
@@ -833,7 +804,7 @@ describe("useChallengeForm", () => {
         tripId,
         isNewChallenge: false,
         challengeId: "challenge-1",
-      })
+      }),
     );
 
     act(() => {

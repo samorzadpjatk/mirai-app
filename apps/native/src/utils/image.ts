@@ -1,4 +1,4 @@
-import type { ImagePickerAsset } from 'expo-image-picker';
+import type { ImagePickerAsset } from "expo-image-picker";
 
 /**
  * Extracts the file extension from an ImagePicker asset.

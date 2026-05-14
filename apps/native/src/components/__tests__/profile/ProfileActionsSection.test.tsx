@@ -51,8 +51,19 @@ jest.mock("~/stores/location", () => ({
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   return {
-    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
-      return React.createElement("View", { testID: `icon-${name}`, style: { width: size, height: size, color } });
+    Ionicons: function MockIonicons({
+      name,
+      size,
+      color,
+    }: {
+      name: string;
+      size: number;
+      color: string;
+    }) {
+      return React.createElement("View", {
+        testID: `icon-${name}`,
+        style: { width: size, height: size, color },
+      });
     },
   };
 });
@@ -60,7 +71,11 @@ jest.mock("@expo/vector-icons", () => {
 describe("ProfileActionsSection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseNotifications.mockReturnValue({ isSubscribed: false, isLoading: false, onTogglePress: mockOnTogglePress });
+    mockUseNotifications.mockReturnValue({
+      isSubscribed: false,
+      isLoading: false,
+      onTogglePress: mockOnTogglePress,
+    });
     mockUseLocationContext.mockReturnValue({
       isLocationSharingEnabled: false,
       isLoading: false,
@@ -88,7 +103,9 @@ describe("ProfileActionsSection", () => {
 
   it("handles edit, notification and location actions", () => {
     const mockOnEditProfile = jest.fn();
-    const { getByText } = renderWithProviders(<ProfileActionsSection onEditProfile={mockOnEditProfile} />);
+    const { getByText } = renderWithProviders(
+      <ProfileActionsSection onEditProfile={mockOnEditProfile} />,
+    );
 
     fireEvent.press(getByText("Edit Profile"));
     fireEvent.press(getByText("Enable Notifications"));
@@ -100,7 +117,11 @@ describe("ProfileActionsSection", () => {
   });
 
   it("shows enabled states and permission labels", () => {
-    mockUseNotifications.mockReturnValue({ isSubscribed: true, isLoading: false, onTogglePress: mockOnTogglePress });
+    mockUseNotifications.mockReturnValue({
+      isSubscribed: true,
+      isLoading: false,
+      onTogglePress: mockOnTogglePress,
+    });
     mockUseLocationContext.mockReturnValue({
       isLocationSharingEnabled: true,
       isLoading: false,

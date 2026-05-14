@@ -32,7 +32,7 @@ export function useMapUsers({
     }, 1000);
     return () => clearInterval(id);
   }, []);
-  
+
   return useMemo<UserLocation[]>(() => {
     const next: UserLocation[] = [];
     const currentUserId = session?.user?.id;
@@ -41,10 +41,7 @@ export function useMapUsers({
       const trimmedName = currentUserName?.trim();
       next.push({
         id: currentUserId ?? "me",
-        name:
-          trimmedName && trimmedName.length > 0
-            ? trimmedName
-            : (session?.user?.email ?? "You"),
+        name: trimmedName && trimmedName.length > 0 ? trimmedName : (session?.user?.email ?? "You"),
         email: session?.user?.email ?? undefined,
         address: "Your location",
         coordinate: currentCoordinate,
@@ -60,15 +57,11 @@ export function useMapUsers({
         id: userId,
         name: userData?.name ?? "Unknown",
         email: userData?.email,
-        address: userData?.houseNumber
-          ? `House ${userData.houseNumber}`
-          : undefined,
+        address: userData?.houseNumber ? `House ${userData.houseNumber}` : undefined,
         coordinate: [location.longitude, location.latitude],
         avatarUrl: userData?.image ?? null,
         lastActiveAt:
-          location.updatedAt instanceof Date
-            ? location.updatedAt.getTime()
-            : location.updatedAt,
+          location.updatedAt instanceof Date ? location.updatedAt.getTime() : location.updatedAt,
       });
     });
 

@@ -1,11 +1,11 @@
-import { View, ActivityIndicator } from 'react-native';
-import { colors } from '~/styles';
-import { useJudgement } from '~/stores/judgement';
-import { viewStyles } from '~/styles/judgement';
-import { JudgementHeader } from '~/components/judgement/JudgementHeader';
-import { CardStack } from '~/components/judgement/CardStack';
-import { useEffect } from 'react';
-import { judgementStore } from '~/stores/judgement/judgementStores';
+import { View, ActivityIndicator } from "react-native";
+import { colors } from "~/styles";
+import { useJudgement } from "~/stores/judgement";
+import { viewStyles } from "~/styles/judgement";
+import { JudgementHeader } from "~/components/judgement/JudgementHeader";
+import { CardStack } from "~/components/judgement/CardStack";
+import { useEffect } from "react";
+import { judgementStore } from "~/stores/judgement/judgementStores";
 
 interface JudgementContentProps {
   tripId: string;

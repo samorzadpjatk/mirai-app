@@ -147,10 +147,7 @@ describe("judgementStore", () => {
         addDismissedId("submission-3");
 
         removeDismissedId("submission-2");
-        expect(judgementStore.getState().dismissedIds).toEqual([
-          "submission-1",
-          "submission-3",
-        ]);
+        expect(judgementStore.getState().dismissedIds).toEqual(["submission-1", "submission-3"]);
 
         removeDismissedId("submission-1");
         expect(judgementStore.getState().dismissedIds).toEqual(["submission-3"]);
@@ -202,10 +199,7 @@ describe("judgementStore", () => {
 
       state.removeDismissedId("submission-2");
 
-      expect(judgementStore.getState().dismissedIds).toEqual([
-        "submission-1",
-        "submission-3",
-      ]);
+      expect(judgementStore.getState().dismissedIds).toEqual(["submission-1", "submission-3"]);
 
       state.resetDismissedIds();
 

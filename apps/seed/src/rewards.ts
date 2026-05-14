@@ -1,11 +1,9 @@
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { createDb } from "@mirai-app/db";
-import { env } from "./config/env";
+import { db } from "./config/db";
 import type { RewardConfig, AuthUserByEmail } from "./types";
-
-const db = createDb(env.databaseUrl);
+import { rewards } from "@mirai-app/db";
 
 function isRewardConfig(value: unknown): value is RewardConfig {
   if (typeof value !== 'object' || value === null) return false;
@@ -35,28 +33,22 @@ export const seedRewards = async (
   tripId: string,
   authUsers: AuthUserByEmail
 ) => {
-  // Find a valid user from the database to create rewards
-  // First try to find an admin user, then any user
   let dbUser = null;
   
   for (const [, authUser] of authUsers.entries()) {
     try {
-      const user = await db.user.findFirst({ 
-        where: { authUserId: authUser.id },
-        select: { id: true, role: true }
+      const user = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.authUserId, authUser.id),
       });
       
       if (user) {
-        // Prefer admin or moderator users
         if (user.role === 'ADMIN' || user.role === 'MODERATOR') {
           dbUser = user;
           break;
         }
-        // Use first available user if no admin found
         dbUser ??= user;
       }
     } catch {
-      // Continue trying other users
       continue;
     }
   }
@@ -70,22 +62,19 @@ export const seedRewards = async (
 
   for (const rewardConfig of rewardConfigs) {
     try {
-      // Map image path to storage path if provided
       let imagePath = rewardConfig.image;
       if (imagePath && !imagePath.startsWith('rewards/')) {
         imagePath = `rewards/${imagePath.split('/').pop()}`;
       }
 
-      await db.reward.create({
-        data: {
-          name: rewardConfig.name,
-          description: rewardConfig.description,
-          availableQuantity: rewardConfig.availableQuantity,
-          coinCost: rewardConfig.coinCost,
-          image: imagePath ?? null,
-          tripId,
-          createdById: dbUser.id,
-        },
+      await db.insert(rewards).values({
+        name: rewardConfig.name,
+        description: rewardConfig.description,
+        availableQuantity: rewardConfig.availableQuantity,
+        coinCost: rewardConfig.coinCost,
+        image: imagePath ?? null,
+        tripId,
+        createdById: dbUser.id,
       });
 
       console.log(`✓ Created reward: ${rewardConfig.name}`);

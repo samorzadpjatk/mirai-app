@@ -7,21 +7,13 @@ interface TripEndedBannerProps {
   visible?: boolean;
 }
 
-export const TripEndedBanner: React.FC<TripEndedBannerProps> = ({ 
-  visible = true 
-}) => {
+export const TripEndedBanner: React.FC<TripEndedBannerProps> = ({ visible = true }) => {
   if (!visible) return null;
 
   return (
     <View style={styles.container}>
-      <Ionicons 
-        name="information-circle-outline" 
-        size={16} 
-        color={colors.warning} 
-      />
-      <Text style={styles.text}>
-        This trip has ended — view only
-      </Text>
+      <Ionicons name="information-circle-outline" size={16} color={colors.warning} />
+      <Text style={styles.text}>This trip has ended — view only</Text>
     </View>
   );
 };

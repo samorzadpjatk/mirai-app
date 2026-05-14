@@ -6,12 +6,5 @@ interface AlertsEmptyStateProps {
 }
 
 export function AlertsEmptyState({ title, message }: AlertsEmptyStateProps) {
-  return (
-    <EmptyState
-      icon="alert-circle"
-      title={title}
-      subtitle={message}
-      iconOpacity={0.5}
-    />
-  );
+  return <EmptyState icon="alert-circle" title={title} subtitle={message} iconOpacity={0.5} />;
 }

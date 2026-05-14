@@ -1,13 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import { AdminModal, AdminModalButton } from '../AdminModal';
-import {
-  FormField,
-  ThemedTextInput,
-  DateTimePickerModal,
-} from '~/components/common/ui';
-import type { User } from '~/hooks/admin/useAdminUsers';
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import { AdminModal, AdminModalButton } from "../AdminModal";
+import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
+import type { User } from "~/hooks/admin/useAdminUsers";
 
 interface EditUserModalProps {
   visible: boolean;
@@ -18,7 +14,7 @@ interface EditUserModalProps {
     firstName: string,
     lastName: string,
     wristNumber: string,
-    houseNumber: string
+    houseNumber: string,
   ) => void;
   onDelete: (userId: string) => void;
   onBan: (userId: string, bannedUntilMs: number, reason: string) => void;
@@ -38,12 +34,12 @@ export function EditUserModal({
   isDeleting,
   isBanning,
 }: EditUserModalProps) {
-  const [firstName, setFirstName] = useState(user?.firstName ?? '');
-  const [lastName, setLastName] = useState(user?.lastName ?? '');
-  const [wristNumber, setWristNumber] = useState(user?.wristNumber?.toString() ?? '');
-  const [houseNumber, setHouseNumber] = useState(user?.houseNumber?.toString() ?? '');
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [wristNumber, setWristNumber] = useState(user?.wristNumber?.toString() ?? "");
+  const [houseNumber, setHouseNumber] = useState(user?.houseNumber?.toString() ?? "");
   const [banUntil, setBanUntil] = useState<Date | null>(null);
-  const [banReason, setBanReason] = useState('');
+  const [banReason, setBanReason] = useState("");
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
 
   const handleSave = () => {
@@ -65,13 +61,12 @@ export function EditUserModal({
   const isBanReady = banUntil != null && banUntil > new Date();
   const isNameValid = firstName.trim().length > 0 && lastName.trim().length > 0;
   const banLabel = banUntil
-    ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : 'Select date & time';
+    ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Select date & time";
 
   const openBanPicker = () => {
     setIsBanPickerOpen(true);
   };
-
 
   return (
     <AdminModal
@@ -93,10 +88,19 @@ export function EditUserModal({
       {user ? (
         <>
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={{ fontSize: typography.lg, fontWeight: typography.bold, color: colors.white, marginBottom: spacing.xs }}>
-              {[firstName, lastName].filter(Boolean).join(' ') || 'Unknown user'}
+            <Text
+              style={{
+                fontSize: typography.lg,
+                fontWeight: typography.bold,
+                color: colors.white,
+                marginBottom: spacing.xs,
+              }}
+            >
+              {[firstName, lastName].filter(Boolean).join(" ") || "Unknown user"}
             </Text>
-            <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>{user.email ?? 'No email'}</Text>
+            <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>
+              {user.email ?? "No email"}
+            </Text>
           </View>
 
           <FormField label="First name" required>
@@ -149,16 +153,16 @@ export function EditUserModal({
                 multiline
               />
             </FormField>
-      <DateTimePickerModal
-        visible={isBanPickerOpen}
-        value={banUntil ?? new Date()}
-        mode="datetime"
-        onConfirm={(date) => {
-          setBanUntil(date);
-          setIsBanPickerOpen(false);
-        }}
-        onCancel={() => setIsBanPickerOpen(false)}
-      />
+            <DateTimePickerModal
+              visible={isBanPickerOpen}
+              value={banUntil ?? new Date()}
+              mode="datetime"
+              onConfirm={(date) => {
+                setBanUntil(date);
+                setIsBanPickerOpen(false);
+              }}
+              onCancel={() => setIsBanPickerOpen(false)}
+            />
             <TouchableOpacity
               style={[
                 styles.banButton,
@@ -167,27 +171,21 @@ export function EditUserModal({
               onPress={handleBan}
               disabled={!isBanReady || isBanning}
             >
-              <Text style={styles.banButtonText}>
-                {isBanning ? 'Banning...' : 'Ban user'}
-              </Text>
+              <Text style={styles.banButtonText}>{isBanning ? "Banning..." : "Ban user"}</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.deleteButton,
-              isDeleting ? styles.dangerButtonDisabled : null,
-            ]}
+            style={[styles.deleteButton, isDeleting ? styles.dangerButtonDisabled : null]}
             onPress={handleDelete}
             disabled={isDeleting}
           >
             <Text style={styles.deleteButtonText}>
-              {isDeleting ? 'Deleting...' : 'Delete user'}
+              {isDeleting ? "Deleting..." : "Delete user"}
             </Text>
           </TouchableOpacity>
         </>
       ) : null}
-
     </AdminModal>
   );
 }
@@ -214,7 +212,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderDark,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing.sm,
   },
   banPickerButtonText: {
@@ -225,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.danger,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
   dangerButtonDisabled: {
     opacity: 0.5,
@@ -236,12 +234,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
   },
   deleteButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: colors.danger,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: spacing.lg,
   },
   deleteButtonText: {

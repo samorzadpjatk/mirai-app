@@ -10,9 +10,13 @@ const mockUseMutation = jest.fn();
 const mockInvalidateQueries = jest.fn();
 
 jest.mock("@tanstack/react-query", () => ({
-  useQuery: function(...args: unknown[]) { return mockUseQuery.apply(this, args) as unknown; },
-  useMutation: function(...args: unknown[]) { return mockUseMutation.apply(this, args) as unknown; },
-  useQueryClient: jest.fn(function() {
+  useQuery: function (...args: unknown[]) {
+    return mockUseQuery.apply(this, args) as unknown;
+  },
+  useMutation: function (...args: unknown[]) {
+    return mockUseMutation.apply(this, args) as unknown;
+  },
+  useQueryClient: jest.fn(function () {
     return {
       invalidateQueries: mockInvalidateQueries,
     };
@@ -26,7 +30,9 @@ jest.mock("@mirai-app/orpc/client", () => ({
         queryOptions: jest.fn(() => ({ queryKey: ["sharing-settings"] })),
       },
       updateSharingSettings: {
-        mutationOptions: jest.fn(function(options: unknown) { return { options }; }),
+        mutationOptions: jest.fn(function (options: unknown) {
+          return { options };
+        }),
       },
     },
   })),
@@ -36,19 +42,21 @@ jest.mock("@mirai-app/orpc/client", () => ({
         queryOptions: jest.fn(() => ({ queryKey: ["sharing-settings"] })),
       },
       updateSharingSettings: {
-        mutationOptions: jest.fn(function(options: unknown) { return { options }; }),
+        mutationOptions: jest.fn(function (options: unknown) {
+          return { options };
+        }),
       },
     },
   },
 }));
 
 jest.mock("@mirai-app/orpc/client/query", () => ({
-  invalidateLocationQueries: jest.fn(async function(queryClient: { invalidateQueries: () => Promise<void> }) {
+  invalidateLocationQueries: jest.fn(async function (queryClient: {
+    invalidateQueries: () => Promise<void>;
+  }) {
     await queryClient.invalidateQueries();
   }),
 }));
-
-
 
 describe("useLocationPermissions", () => {
   const mockMutateAsync = jest.fn<(...args: unknown[]) => Promise<unknown>>();
@@ -66,17 +74,17 @@ describe("useLocationPermissions", () => {
       mutateAsync: mockMutateAsync,
     });
 
-    mockGetForegroundPermissions.mockResolvedValue({ 
+    mockGetForegroundPermissions.mockResolvedValue({
       status: Location.PermissionStatus.GRANTED,
       granted: true,
       expires: "never",
-      canAskAgain: true
+      canAskAgain: true,
     });
-    mockRequestForeground.mockResolvedValue({ 
+    mockRequestForeground.mockResolvedValue({
       status: Location.PermissionStatus.GRANTED,
       granted: true,
       expires: "never",
-      canAskAgain: true
+      canAskAgain: true,
     });
   });
 
@@ -122,7 +130,9 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle AsyncStorage errors gracefully", async () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
     const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockRejectedValueOnce(new Error("Storage error"));
 
@@ -132,7 +142,10 @@ describe("useLocationPermissions", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith("Failed to load location settings:", expect.any(Error));
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "Failed to load location settings:",
+      expect.any(Error),
+    );
 
     consoleWarnSpy.mockRestore();
   });
@@ -146,7 +159,9 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle permission check errors", async () => {
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
     mockGetForegroundPermissions.mockRejectedValueOnce(new Error("Permission check failed"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -171,11 +186,11 @@ describe("useLocationPermissions", () => {
   });
 
   it("should show alert when permission is denied", async () => {
-    mockRequestForeground.mockResolvedValueOnce({ 
+    mockRequestForeground.mockResolvedValueOnce({
       status: Location.PermissionStatus.DENIED,
       granted: false,
       expires: "never",
-      canAskAgain: true
+      canAskAgain: true,
     });
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -184,14 +199,13 @@ describe("useLocationPermissions", () => {
       await result.current.requestLocationPermissions();
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Location Permission Required",
-      expect.any(String)
-    );
+    expect(Alert.alert).toHaveBeenCalledWith("Location Permission Required", expect.any(String));
   });
 
   it("should handle permission request errors", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
     mockRequestForeground.mockRejectedValueOnce(new Error("Request failed"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -258,11 +272,11 @@ describe("useLocationPermissions", () => {
   it("should request permissions when enabling sharing and permission is undetermined", async () => {
     mockMutateAsync.mockResolvedValueOnce(undefined);
 
-    mockGetForegroundPermissions.mockResolvedValue({ 
+    mockGetForegroundPermissions.mockResolvedValue({
       status: Location.PermissionStatus.UNDETERMINED,
       granted: false,
       expires: "never",
-      canAskAgain: true
+      canAskAgain: true,
     });
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -283,7 +297,9 @@ describe("useLocationPermissions", () => {
   });
 
   it("should handle toggle location sharing errors", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
     mockMutateAsync.mockRejectedValueOnce(new Error("Server error"));
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -296,10 +312,7 @@ describe("useLocationPermissions", () => {
       await result.current.toggleLocationSharing(true);
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Authentication Error",
-      expect.any(String)
-    );
+    expect(Alert.alert).toHaveBeenCalledWith("Authentication Error", expect.any(String));
 
     consoleErrorSpy.mockRestore();
   });
@@ -317,10 +330,7 @@ describe("useLocationPermissions", () => {
       await result.current.toggleLocationSharing(true);
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Error",
-      "Failed to update location settings"
-    );
+    expect(Alert.alert).toHaveBeenCalledWith("Error", "Failed to update location settings");
   });
 
   it("should compute canViewOthersLocations correctly", async () => {
@@ -353,11 +363,11 @@ describe("useLocationPermissions", () => {
     const mockGetItem = jest.mocked(AsyncStorage.getItem);
     mockGetItem.mockResolvedValueOnce("true");
 
-    mockGetForegroundPermissions.mockResolvedValueOnce({ 
+    mockGetForegroundPermissions.mockResolvedValueOnce({
       status: Location.PermissionStatus.DENIED,
       granted: false,
       expires: "never",
-      canAskAgain: true
+      canAskAgain: true,
     });
 
     const { result } = renderHook(() => useLocationPermissions());
@@ -394,7 +404,12 @@ describe("useLocationPermissions", () => {
   });
 
   it("should not update local state before server confirmation when toggling", async () => {
-    mockMutateAsync.mockImplementation(() => new Promise<unknown>(() => { /* never resolves */ }));
+    mockMutateAsync.mockImplementation(
+      () =>
+        new Promise<unknown>(() => {
+          /* never resolves */
+        }),
+    );
 
     const { result } = renderHook(() => useLocationPermissions());
 

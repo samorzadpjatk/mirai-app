@@ -150,7 +150,7 @@ describe("useMapActions", () => {
           latitude: 52.2297,
           longitude: 21.0122,
         });
-      })
+      }),
     ).rejects.toThrow("Network error");
   });
 

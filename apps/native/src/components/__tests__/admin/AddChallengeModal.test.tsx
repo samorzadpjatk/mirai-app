@@ -12,7 +12,12 @@ jest.mock("~/hooks/trips", () => {
     { id: "trip-2", name: "Trip Two" },
   ];
   return {
-    useTrips: () => ({ trips: mockTrips, hasNextPage: false, isFetchingNextPage: false, fetchNextPage: jest.fn() }),
+    useTrips: () => ({
+      trips: mockTrips,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: jest.fn(),
+    }),
   };
 });
 
@@ -67,20 +72,46 @@ jest.mock("~/components/common/ui", () => {
   const { View, Text, Pressable, TextInput } = require("react-native");
   return {
     AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-      !visible ? null : React.createElement(View, null,
-        React.createElement(Text, null, title),
-        React.createElement(Pressable, { onPress: onClose }, React.createElement(Text, null, "Close")),
-        children
-      ),
-    AppModalFooter: ({ primaryLabel, onPrimary, isPrimaryLoading, secondaryLabel, onSecondary }: AppModalFooterProps) =>
-      React.createElement(View, null,
-        React.createElement(Pressable, { onPress: onPrimary, disabled: isPrimaryLoading }, React.createElement(Text, null, primaryLabel)),
-        React.createElement(Pressable, { onPress: onSecondary }, React.createElement(Text, null, secondaryLabel))
+      !visible
+        ? null
+        : React.createElement(
+            View,
+            null,
+            React.createElement(Text, null, title),
+            React.createElement(
+              Pressable,
+              { onPress: onClose },
+              React.createElement(Text, null, "Close"),
+            ),
+            children,
+          ),
+    AppModalFooter: ({
+      primaryLabel,
+      onPrimary,
+      isPrimaryLoading,
+      secondaryLabel,
+      onSecondary,
+    }: AppModalFooterProps) =>
+      React.createElement(
+        View,
+        null,
+        React.createElement(
+          Pressable,
+          { onPress: onPrimary, disabled: isPrimaryLoading },
+          React.createElement(Text, null, primaryLabel),
+        ),
+        React.createElement(
+          Pressable,
+          { onPress: onSecondary },
+          React.createElement(Text, null, secondaryLabel),
+        ),
       ),
     FormField: ({ children, label, required }: FormFieldProps) =>
-      React.createElement(View, null,
+      React.createElement(
+        View,
+        null,
         React.createElement(Text, null, `${label}${required ? "*" : ""}`),
-        children
+        children,
       ),
     ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) =>
       React.createElement(TextInput, { value, onChangeText, placeholder }),
@@ -98,19 +129,30 @@ jest.mock("../../map/LocationPicker", () => {
   const { View, Pressable, Text } = require("react-native");
   return {
     LocationPicker: ({ visible, onClose, onLocationSelected }: LocationPickerProps) =>
-      !visible ? null : React.createElement(View, null,
-        React.createElement(Pressable, { onPress: () => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 }) },
-          React.createElement(Text, null, "Select Location")
-        ),
-        React.createElement(Pressable, { onPress: onClose },
-          React.createElement(Text, null, "Close Location Picker")
-        )
-      ),
+      !visible
+        ? null
+        : React.createElement(
+            View,
+            null,
+            React.createElement(
+              Pressable,
+              { onPress: () => onLocationSelected({ latitude: 52.2297, longitude: 21.0122 }) },
+              React.createElement(Text, null, "Select Location"),
+            ),
+            React.createElement(
+              Pressable,
+              { onPress: onClose },
+              React.createElement(Text, null, "Close Location Picker"),
+            ),
+          ),
   };
 });
 
 describe("AddChallengeModal", () => {
-  beforeEach(() => { jest.clearAllMocks(); mockAlert.mockClear(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockAlert.mockClear();
+  });
 
   it("renders and closes", async () => {
     const user = userEvent.setup();
@@ -124,7 +166,10 @@ describe("AddChallengeModal", () => {
     const user = userEvent.setup();
     renderWithProviders(<AddChallengeModal visible={true} onClose={jest.fn()} />);
     await user.press(screen.getByText("Save Challenge"));
-    expect(mockAlert).toHaveBeenCalledWith("Error", "Please fill in required fields (including Trip)");
+    expect(mockAlert).toHaveBeenCalledWith(
+      "Error",
+      "Please fill in required fields (including Trip)",
+    );
   });
 
   it("lets the user pick and clear a location", async () => {

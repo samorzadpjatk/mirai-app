@@ -8,7 +8,7 @@ import { storageRouter } from "../../routers/storage";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User } from "@mirai-app/db";
+import type { DB, User } from "@mirai-app/db";
 
 vi.mock("../../../utils/storage", () => ({
   normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string) => {
@@ -64,7 +64,7 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 describe("storageRouter", () => {
-  let mockDb: PrismaClient;
+  let mockDb: DB;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   const originalEnv = process.env;
@@ -109,7 +109,7 @@ describe("storageRouter", () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
-    } as unknown as SupabaseClient;
+    } satisfies SupabaseClient;
 
     // Setup mock database client
     mockDb = {
@@ -117,7 +117,7 @@ describe("storageRouter", () => {
         findUnique: vi.fn().mockResolvedValue(mockUser),
         findFirst: vi.fn().mockResolvedValue(mockUser),
       },
-    } as unknown as PrismaClient;
+    };
   });
 
   afterEach(() => {
@@ -160,13 +160,13 @@ describe("storageRouter", () => {
       });
 
       expect(result.token).toBe("upload-token-123");
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -189,7 +189,7 @@ describe("storageRouter", () => {
             }),
           }),
         },
-      } as unknown as SupabaseClient;
+      } satisfies SupabaseClient;
 
       const ctx = createAuthContext(mockUser);
       ctx.supabase = mockSupabase;
@@ -253,7 +253,7 @@ describe("storageRouter", () => {
             }),
           }),
         },
-      } as unknown as SupabaseClient;
+      } satisfies SupabaseClient;
 
       const ctx = createAuthContext(mockUser);
       ctx.supabase = mockSupabase;
@@ -277,7 +277,7 @@ describe("storageRouter", () => {
             }),
           }),
         },
-      } as unknown as SupabaseClient;
+      } satisfies SupabaseClient;
 
       const ctx = createAuthContext(mockUser);
       ctx.supabase = mockSupabase;
@@ -292,7 +292,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -333,7 +333,7 @@ describe("storageRouter", () => {
 
     it("should throw BAD_REQUEST for invalid storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -469,7 +469,7 @@ describe("storageRouter", () => {
 
     it("should handle URL-based storage paths gracefully", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      vi.mocked(normalizeSupabaseStoragePath).mockReturnValueOnce(null);
+      normalizeSupabaseStoragePath.mockReturnValueOnce(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

@@ -9,7 +9,7 @@ Database seeding CLI tool. Populates the database with initial data for developm
 ## Tech Stack
 
 - **Runtime**: Bun
-- **ORM**: Prisma
+- **ORM**: Drizzle
 - **Data Formats**: CSV, YAML, JSON
 - **Dependencies**: `@mirai-app/db`, `@mirai-app/supabase`
 
@@ -46,7 +46,7 @@ bun run db:migrate:prod
 bun run db:reset:dev
 bun run db:reset:prod
 
-# Open Prisma Studio
+# Open Drizzle Studio
 bun run db:studio:dev
 bun run db:studio:prod
 
@@ -60,18 +60,18 @@ All database operations are run from this app:
 
 | Command | Purpose |
 |---------|---------|
-| `db:generate` | Generate Prisma client |
+| `db:generate` | Generate Drizzle migrations |
 | `db:migrate:dev` | Create and apply dev migrations |
 | `db:migrate:prod` | Deploy migrations to production |
 | `db:push:dev` | Push schema directly (dev) |
 | `db:push:prod` | Push schema directly (prod) |
 | `db:reset:dev` | Reset dev database |
 | `db:reset:prod` | Reset prod database |
-| `db:studio:dev` | Open Prisma Studio (dev) |
+| `db:studio:dev` | Open Drizzle Studio (dev) |
 
 ## Dependencies
 
-- `@mirai-app/db` - Prisma client
+- `@mirai-app/db` - Drizzle client
 - `@mirai-app/supabase` - Supabase client
 - `csv-parse` - CSV parsing
 - `yaml` - YAML parsing

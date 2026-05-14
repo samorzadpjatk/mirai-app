@@ -22,6 +22,8 @@ import {
   getDailyRankingScheduleTemplate,
   type ScheduledNotificationTemplate,
 } from "../../utils/notificationTemplates";
+import { eq, and, gte, lte, ilike, count, inArray } from "drizzle-orm";
+import { notificationSchedules, notificationScheduleExecutions } from "@mirai-app/db";
 
 const toOptionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
@@ -107,57 +109,40 @@ export const notificationScheduleRouter = createORPCRouter({
       const limit = pagination?.limit ?? 50;
       const offset = pagination?.offset ?? 0;
 
-      interface WhereClause {
-        tripId?: string | null;
-        notificationType?: string;
-        isActive?: boolean;
-        startDate?: {
-          gte?: Date;
-          lte?: Date;
-        };
-        name?: {
-          contains: string;
-          mode: "insensitive";
-        };
-      }
-
-      const where: WhereClause = {};
+      const conditions = [];
 
       if (filter?.tripId !== undefined) {
-        where.tripId = filter.tripId;
+        conditions.push(eq(notificationSchedules.tripId, filter.tripId));
       }
 
       if (filter?.notificationType) {
-        where.notificationType = filter.notificationType;
+        conditions.push(eq(notificationSchedules.notificationType, filter.notificationType));
       }
 
       if (filter?.isActive !== undefined) {
-        where.isActive = filter.isActive;
+        conditions.push(eq(notificationSchedules.isActive, filter.isActive));
       }
 
-      if (filter?.startDateFrom || filter?.startDateTo) {
-        where.startDate = {};
-        if (filter.startDateFrom) {
-          where.startDate.gte = filter.startDateFrom;
-        }
-        if (filter.startDateTo) {
-          where.startDate.lte = filter.startDateTo;
-        }
+      if (filter?.startDateFrom) {
+        conditions.push(gte(notificationSchedules.startDate, filter.startDateFrom));
+      }
+
+      if (filter?.startDateTo) {
+        conditions.push(lte(notificationSchedules.startDate, filter.startDateTo));
       }
 
       if (filter?.search) {
-        where.name = {
-          contains: filter.search,
-          mode: "insensitive" as const,
-        };
+        conditions.push(ilike(notificationSchedules.name, `%${filter.search}%`));
       }
 
-      const [schedules, total] = await Promise.all([
-        context.db.notificationSchedule.findMany({
-          where,
-          include: {
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const [schedulesResult, totalResult] = await Promise.all([
+        context.db.query.notificationSchedules.findMany({
+          where: whereClause,
+          with: {
             createdBy: {
-              select: {
+              columns: {
                 id: true,
                 firstName: true,
                 lastName: true,
@@ -165,23 +150,34 @@ export const notificationScheduleRouter = createORPCRouter({
               },
             },
             trip: {
-              select: {
+              columns: {
                 id: true,
                 name: true,
               },
             },
-            _count: {
-              select: {
-                notificationExecutions: true,
-              },
-            },
           },
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          skip: offset,
+          orderBy: (ns, { desc }) => [desc(ns.createdAt)],
+          limit,
+          offset,
         }),
-        context.db.notificationSchedule.count({ where }),
+        context.db.select({ count: count() }).from(notificationSchedules).where(whereClause),
       ]);
+
+      const scheduleIds = schedulesResult.map((s) => s.id);
+      const executionCounts = scheduleIds.length > 0
+        ? await context.db.select({
+            scheduleId: notificationScheduleExecutions.scheduleId,
+            count: count(notificationScheduleExecutions.notificationId),
+          }).from(notificationScheduleExecutions)
+            .where(inArray(notificationScheduleExecutions.scheduleId, scheduleIds))
+            .groupBy(notificationScheduleExecutions.scheduleId)
+        : [];
+
+      const countMap = new Map(executionCounts.map((c) => [c.scheduleId, c.count]));
+      const schedules = schedulesResult.map((s) => ({
+        ...s,
+        _count: { notificationExecutions: countMap.get(s.id) ?? 0 },
+      }));
 
       const emailByAuthUserId = await buildAuthEmailLookup(
         context.supabase,
@@ -193,10 +189,10 @@ export const notificationScheduleRouter = createORPCRouter({
           attachCreatedByEmail(schedule, emailByAuthUserId),
         ),
         pagination: {
-          total,
+          total: totalResult[0]?.count ?? 0,
           limit,
           offset,
-          hasMore: offset + limit < total,
+          hasMore: offset + limit < (totalResult[0]?.count ?? 0),
         },
       };
     }),
@@ -204,22 +200,22 @@ export const notificationScheduleRouter = createORPCRouter({
   getActiveSchedules: moderatorProcedure.handler(async ({ context }) => {
     const now = new Date();
 
-    return await context.db.notificationSchedule.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-      },
-      include: {
+    return await context.db.query.notificationSchedules.findMany({
+      where: (ns, { and, lte, gte, eq }) => and(
+        eq(ns.isActive, true),
+        lte(ns.startDate, now),
+        gte(ns.endDate, now),
+      ),
+      with: {
         createdBy: {
-          select: {
+          columns: {
             id: true,
             firstName: true,
             lastName: true,
           },
         },
       },
-      orderBy: [{ hour: "asc" }, { minute: "asc" }],
+      orderBy: (ns, { asc }) => [asc(ns.hour), asc(ns.minute)],
     });
   }),
 
@@ -236,33 +232,33 @@ export const notificationScheduleRouter = createORPCRouter({
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + (input?.days ?? 7));
 
-      return await context.db.notificationSchedule.findMany({
-        where: {
-          isActive: true,
-          startDate: { lte: futureDate },
-          endDate: { gte: now },
-        },
-        include: {
+      return await context.db.query.notificationSchedules.findMany({
+        where: (ns, { and, lte, gte, eq }) => and(
+          eq(ns.isActive, true),
+          lte(ns.startDate, futureDate),
+          gte(ns.endDate, now),
+        ),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
             },
           },
         },
-        orderBy: { startDate: "asc" },
+        orderBy: (ns, { asc }) => [asc(ns.startDate)],
       });
     }),
 
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const schedule = await context.db.notificationSchedule.findUnique({
-        where: { id: input.id },
-        include: {
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -270,14 +266,9 @@ export const notificationScheduleRouter = createORPCRouter({
             },
           },
           trip: {
-            select: {
+            columns: {
               id: true,
               name: true,
-            },
-          },
-          _count: {
-            select: {
-              notificationExecutions: true,
             },
           },
         },
@@ -287,11 +278,20 @@ export const notificationScheduleRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
+      const executionCountResult = await context.db.select({ count: count() })
+        .from(notificationScheduleExecutions)
+        .where(eq(notificationScheduleExecutions.scheduleId, input.id));
+
+      const scheduleWithCount = {
+        ...schedule,
+        _count: { notificationExecutions: executionCountResult[0]?.count ?? 0 },
+      };
+
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
-        schedule.createdBy?.authUserId,
+        scheduleWithCount.createdBy?.authUserId,
       ]);
 
-      return attachCreatedByEmail(schedule, emailByAuthUserId);
+      return attachCreatedByEmail(scheduleWithCount, emailByAuthUserId);
     }),
 
   getExecutionHistory: moderatorProcedure
@@ -302,11 +302,11 @@ export const notificationScheduleRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      return await context.db.notificationScheduleExecution.findMany({
-        where: { scheduleId: input.scheduleId },
-        include: {
+      return await context.db.query.notificationScheduleExecutions.findMany({
+        where: (nse, { eq }) => eq(nse.scheduleId, input.scheduleId),
+        with: {
           notification: {
-            select: {
+            columns: {
               id: true,
               title: true,
               body: true,
@@ -314,8 +314,8 @@ export const notificationScheduleRouter = createORPCRouter({
             },
           },
         },
-        orderBy: { executedAt: "desc" },
-        take: input.limit,
+        orderBy: (nse, { desc }) => [desc(nse.executedAt)],
+        limit: input.limit,
       });
     }),
 
@@ -350,8 +350,8 @@ export const notificationScheduleRouter = createORPCRouter({
         normalized.minute,
       );
 
-      const schedule = await context.db.notificationSchedule.create({
-        data: {
+      const [scheduleRow] = await context.db.insert(notificationSchedules)
+        .values({
           name: input.name,
           tripId: input.tripId ?? null,
           notificationType: input.notificationType,
@@ -364,10 +364,18 @@ export const notificationScheduleRouter = createORPCRouter({
           minute: normalized.minute,
           isActive: input.isActive,
           createdById: context.dbUser.id,
-        },
-        include: {
+        })
+        .returning();
+
+      if (!scheduleRow) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create schedule" });
+      }
+
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, scheduleRow.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -375,13 +383,17 @@ export const notificationScheduleRouter = createORPCRouter({
             },
           },
           trip: {
-            select: {
+            columns: {
               id: true,
               name: true,
             },
           },
         },
       });
+
+      if (!schedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         schedule.createdBy?.authUserId,
@@ -398,9 +410,9 @@ export const notificationScheduleRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const trip = await context.db.trip.findUnique({
-        where: { id: input.tripId },
-        select: { id: true },
+      const trip = await context.db.query.trips.findFirst({
+        where: (t, { eq }) => eq(t.id, input.tripId),
+        columns: { id: true },
       });
 
       if (!trip) {
@@ -432,76 +444,94 @@ export const notificationScheduleRouter = createORPCRouter({
         normalized.minute,
       );
 
-      const existingSchedule = await context.db.notificationSchedule.findFirst({
-        where: {
-          tripId: input.tripId,
-          name: template.name,
-        },
+      const existingSchedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { and, eq }) => and(
+          eq(ns.tripId, input.tripId),
+          eq(ns.name, template.name),
+        ),
       });
 
-      const schedule = existingSchedule
-        ? await context.db.notificationSchedule.update({
-            where: { id: existingSchedule.id },
-            data: {
-              notificationType: template.notificationType,
-              notificationTitle: template.notificationTitle,
-              notificationBody: template.notificationBody,
-              notificationUrl: template.notificationUrl,
-              hour: normalized.hour,
-              minute: normalized.minute,
-              startDate: normalized.startDate,
-              endDate: normalized.endDate,
-              isActive: true,
-            },
-            include: {
-              createdBy: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  authUserId: true,
-                },
-              },
-              trip: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
+      let schedule;
+      if (existingSchedule) {
+        await context.db.update(notificationSchedules)
+          .set({
+            notificationType: template.notificationType,
+            notificationTitle: template.notificationTitle,
+            notificationBody: template.notificationBody,
+            notificationUrl: template.notificationUrl,
+            hour: normalized.hour,
+            minute: normalized.minute,
+            startDate: normalized.startDate,
+            endDate: normalized.endDate,
+            isActive: true,
           })
-        : await context.db.notificationSchedule.create({
-            data: {
-              tripId: input.tripId,
-              name: template.name,
-              notificationType: template.notificationType,
-              notificationTitle: template.notificationTitle,
-              notificationBody: template.notificationBody,
-              notificationUrl: template.notificationUrl,
-              startDate: normalized.startDate,
-              endDate: normalized.endDate,
-              hour: normalized.hour,
-              minute: normalized.minute,
-              isActive: true,
-              createdById: context.dbUser.id,
-            },
-            include: {
-              createdBy: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  authUserId: true,
-                },
-              },
-              trip: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+          .where(eq(notificationSchedules.id, existingSchedule.id));
+
+        schedule = await context.db.query.notificationSchedules.findFirst({
+          where: (ns, { eq }) => eq(ns.id, existingSchedule.id),
+          with: {
+            createdBy: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                authUserId: true,
               },
             },
-          });
+            trip: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+      } else {
+        const [scheduleRow] = await context.db.insert(notificationSchedules)
+          .values({
+            tripId: input.tripId,
+            name: template.name,
+            notificationType: template.notificationType,
+            notificationTitle: template.notificationTitle,
+            notificationBody: template.notificationBody,
+            notificationUrl: template.notificationUrl,
+            startDate: normalized.startDate,
+            endDate: normalized.endDate,
+            hour: normalized.hour,
+            minute: normalized.minute,
+            isActive: true,
+            createdById: context.dbUser.id,
+          })
+          .returning();
+
+        if (!scheduleRow) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create schedule" });
+        }
+
+        schedule = await context.db.query.notificationSchedules.findFirst({
+          where: (ns, { eq }) => eq(ns.id, scheduleRow.id),
+          with: {
+            createdBy: {
+              columns: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                authUserId: true,
+              },
+            },
+            trip: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+      }
+
+      if (!schedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         schedule.createdBy?.authUserId,
@@ -518,8 +548,8 @@ export const notificationScheduleRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       const { id, ...updateData } = input;
 
-      const existingSchedule = await context.db.notificationSchedule.findUnique({
-        where: { id },
+      const existingSchedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, id),
       });
 
       if (!existingSchedule) {
@@ -590,20 +620,23 @@ export const notificationScheduleRouter = createORPCRouter({
         );
       }
 
-      const schedule = await context.db.notificationSchedule.update({
-        where: { id },
-        data: shouldNormalize
+      await context.db.update(notificationSchedules)
+        .set(shouldNormalize
           ? {
-              ...updateData,
-              startDate: finalStartDate,
-              endDate: finalEndDate,
-              hour: finalHour,
-              minute: finalMinute,
-            }
-          : updateData,
-        include: {
+            ...updateData,
+            startDate: finalStartDate,
+            endDate: finalEndDate,
+            hour: finalHour,
+            minute: finalMinute,
+          }
+          : updateData)
+        .where(eq(notificationSchedules.id, id));
+
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -612,6 +645,10 @@ export const notificationScheduleRouter = createORPCRouter({
           },
         },
       });
+
+      if (!schedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         schedule.createdBy?.authUserId,
@@ -623,49 +660,45 @@ export const notificationScheduleRouter = createORPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const schedule = await context.db.notificationSchedule.findUnique({
-        where: { id: input.id },
-        include: {
-          _count: {
-            select: {
-              notificationExecutions: true,
-            },
-          },
-        },
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
       });
 
       if (!schedule) {
         throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
-      await context.db.notificationSchedule.delete({
-        where: { id: input.id },
-      });
+      const executionCountResult = await context.db.select({ count: count() })
+        .from(notificationScheduleExecutions)
+        .where(eq(notificationScheduleExecutions.scheduleId, input.id));
+
+      await context.db.delete(notificationSchedules)
+        .where(eq(notificationSchedules.id, input.id));
 
       return {
         success: true,
-        message: `Schedule "${schedule.name}" deleted successfully. ${schedule._count.notificationExecutions} execution records were also removed.`,
+        message: `Schedule "${schedule.name}" deleted successfully. ${executionCountResult[0]?.count ?? 0} execution records were also removed.`,
       };
     }),
 
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.string()).min(1) }))
     .handler(async ({ context, input }) => {
-      const existingSchedules = await context.db.notificationSchedule.findMany({
-        where: { id: { in: input.ids } },
-        select: { id: true },
+      const existingSchedules = await context.db.query.notificationSchedules.findMany({
+        where: (ns, { inArray }) => inArray(ns.id, input.ids),
+        columns: { id: true },
       });
 
       const existingIds = existingSchedules.map((s) => s.id);
       const notFoundIds = input.ids.filter((id) => !existingIds.includes(id));
 
-      const result = await context.db.notificationSchedule.deleteMany({
-        where: { id: { in: existingIds } },
-      });
+      const deleted = await context.db.delete(notificationSchedules)
+        .where(inArray(notificationSchedules.id, existingIds))
+        .returning();
 
       return {
         success: true,
-        deletedCount: result.count,
+        deletedCount: deleted.length,
         requestedCount: input.ids.length,
         notFoundIds: notFoundIds.length > 0 ? notFoundIds : undefined,
       };
@@ -681,8 +714,8 @@ export const notificationScheduleRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const originalSchedule = await context.db.notificationSchedule.findUnique({
-        where: { id: input.id },
+      const originalSchedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
       });
 
       if (!originalSchedule) {
@@ -713,8 +746,8 @@ export const notificationScheduleRouter = createORPCRouter({
         normalized.minute,
       );
 
-      const newSchedule = await context.db.notificationSchedule.create({
-        data: {
+      const [newScheduleRow] = await context.db.insert(notificationSchedules)
+        .values({
           name: input.name ?? `${originalSchedule.name} (Copy)`,
           tripId: originalSchedule.tripId,
           notificationType: originalSchedule.notificationType,
@@ -729,10 +762,18 @@ export const notificationScheduleRouter = createORPCRouter({
           minute: normalized.minute,
           isActive: false,
           createdById: context.dbUser.id,
-        },
-        include: {
+        })
+        .returning();
+
+      if (!newScheduleRow) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create schedule" });
+      }
+
+      const newSchedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, newScheduleRow.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -741,6 +782,10 @@ export const notificationScheduleRouter = createORPCRouter({
           },
         },
       });
+
+      if (!newSchedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         newSchedule.createdBy?.authUserId,
@@ -752,20 +797,23 @@ export const notificationScheduleRouter = createORPCRouter({
   toggleActive: adminProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const schedule = await context.db.notificationSchedule.findUnique({
-        where: { id: input.id },
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
       });
 
       if (!schedule) {
         throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
-      const updatedSchedule = await context.db.notificationSchedule.update({
-        where: { id: input.id },
-        data: { isActive: !schedule.isActive },
-        include: {
+      await context.db.update(notificationSchedules)
+        .set({ isActive: !schedule.isActive })
+        .where(eq(notificationSchedules.id, input.id));
+
+      const updatedSchedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
+        with: {
           createdBy: {
-            select: {
+            columns: {
               id: true,
               firstName: true,
               lastName: true,
@@ -774,6 +822,10 @@ export const notificationScheduleRouter = createORPCRouter({
           },
         },
       });
+
+      if (!updatedSchedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
         updatedSchedule.createdBy?.authUserId,
@@ -790,31 +842,33 @@ export const notificationScheduleRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const result = await context.db.notificationSchedule.updateMany({
-        where: { id: { in: input.ids } },
-        data: { isActive: input.isActive },
-      });
+      const updated = await context.db.update(notificationSchedules)
+        .set({ isActive: input.isActive })
+        .where(inArray(notificationSchedules.id, input.ids))
+        .returning();
 
       return {
         success: true,
-        updatedCount: result.count,
+        updatedCount: updated.length,
       };
     }),
 
   updateLastRun: adminProcedure
     .input(z.object({ id: z.string(), lastRun: z.date() }))
     .handler(async ({ context, input }) => {
-      const schedule = await context.db.notificationSchedule.findUnique({
-        where: { id: input.id },
+      const schedule = await context.db.query.notificationSchedules.findFirst({
+        where: (ns, { eq }) => eq(ns.id, input.id),
       });
 
       if (!schedule) {
         throw new ORPCError("NOT_FOUND", { message: `Notification schedule with ID ${input.id} not found` });
       }
 
-      return await context.db.notificationSchedule.update({
-        where: { id: input.id },
-        data: { lastRun: input.lastRun },
-      });
+      const [updated] = await context.db.update(notificationSchedules)
+        .set({ lastRun: input.lastRun })
+        .where(eq(notificationSchedules.id, input.id))
+        .returning();
+
+      return updated;
     }),
 });

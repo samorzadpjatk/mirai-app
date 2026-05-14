@@ -17,21 +17,19 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
       onPress={() => onPress?.(group)}
     >
       <View style={styles.rankCell}>
-        <Text
-          style={[
-            styles.rankText,
-            group.isCurrentUserGroup && styles.rankTextActive,
-          ]}
-        >
+        <Text style={[styles.rankText, group.isCurrentUserGroup && styles.rankTextActive]}>
           {group.rank}
         </Text>
       </View>
 
-      <View
-        style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}
-      >
+      <View style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}>
         {group.image ? (
-          <Image testID="group-image" source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
+          <Image
+            testID="group-image"
+            source={{ uri: group.image }}
+            style={styles.avatarImage}
+            resizeMode="cover"
+          />
         ) : (
           <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>
         )}
@@ -46,18 +44,11 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
             </View>
           )}
         </View>
-        <Text style={styles.memberCount}>
-          {group.memberCount} Members active
-        </Text>
+        <Text style={styles.memberCount}>{group.memberCount} Members active</Text>
       </View>
 
       <View style={styles.scoreCell}>
-        <Text
-          style={[
-            styles.scoreText,
-            group.isCurrentUserGroup && styles.scoreTextActive,
-          ]}
-        >
+        <Text style={[styles.scoreText, group.isCurrentUserGroup && styles.scoreTextActive]}>
           {formatNumber(group.coins)} pts
         </Text>
       </View>

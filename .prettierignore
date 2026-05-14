@@ -1,0 +1,41 @@
+# Build artifacts
+node_modules/
+dist/
+build/
+.expo/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Lock files (prettier should not format lock files)
+*.lock
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Generated files
+*.generated.ts
+*.generated.tsx
+
+# Agent skills (auto-generated)
+.agents/
+
+# Specs scratchpad
+.specs/
+
+# Jest setup with TypeScript-in-JS syntax
+apps/native/jest.setup.js
+
+# Minified assets
+*.min.js
+*.min.css
+
+# Package manager
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

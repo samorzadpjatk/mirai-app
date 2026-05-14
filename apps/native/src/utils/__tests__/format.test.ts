@@ -1,9 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  formatDate,
-  formatCurrency,
-  formatRelativeTime,
-} from "../format";
+import { formatDate, formatCurrency, formatRelativeTime } from "../format";
 
 describe("Format Utilities", () => {
   describe("formatDate", () => {

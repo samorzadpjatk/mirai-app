@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import React from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
 
 interface GroupsSearchBarProps {
   searchTerm: string;
@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   searchBar: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,

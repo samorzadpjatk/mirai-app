@@ -31,11 +31,14 @@ interface AppModalShellProps {
   onClose: () => void;
 }
 
-type UsePhotoHandler = (photo: { uri: string; mimeType: "image/jpeg" | "image/png" }) => Promise<void> | void;
+type UsePhotoHandler = (photo: {
+  uri: string;
+  mimeType: "image/jpeg" | "image/png";
+}) => Promise<void> | void;
 
-const mockTakePictureAsync: jest.MockedFunction<(
-  options: TakePictureOptions,
-) => Promise<CapturedPicture>> = jest.fn();
+const mockTakePictureAsync: jest.MockedFunction<
+  (options: TakePictureOptions) => Promise<CapturedPicture>
+> = jest.fn();
 const mockOnUsePhoto: jest.MockedFunction<UsePhotoHandler> = jest.fn();
 const mockOnClose = jest.fn<void, []>();
 
@@ -71,9 +74,11 @@ jest.mock("~/components/common/ui", () => {
     AppModalShell: ({ visible, title, children, onClose: _onClose }: AppModalShellProps) => {
       if (!visible) return null;
 
-      return React.createElement(View, { testID: "modal-shell" },
+      return React.createElement(
+        View,
+        { testID: "modal-shell" },
         React.createElement(Text, { testID: "modal-title" }, title),
-        children
+        children,
       );
     },
   };
@@ -101,32 +106,26 @@ describe("PhotoCaptureModal", () => {
 
   describe("rendering", () => {
     it("should render modal with title", () => {
-      const { getByTestId } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
       expect(getByTestId("modal-title").children[0]).toBe("Take Photo");
     });
 
     it("should not render when not visible", () => {
       const { queryByTestId } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} visible={false} />
+        <PhotoCaptureModal {...defaultProps} visible={false} />,
       );
       expect(queryByTestId("modal-shell")).toBeNull();
     });
 
     it("should render camera view when visible", () => {
-      const { getByTestId } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
-      );
+      const { getByTestId } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
       expect(getByTestId("camera-view")).toBeTruthy();
     });
   });
 
   describe("camera capture", () => {
     it("should capture photo when button is pressed", async () => {
-      const { getByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
 
       act(() => {
         fireEvent.press(getByText("camera"));
@@ -149,7 +148,7 @@ describe("PhotoCaptureModal", () => {
       });
 
       const { getByText, queryByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
+        <PhotoCaptureModal {...defaultProps} />,
       );
 
       act(() => {
@@ -170,7 +169,7 @@ describe("PhotoCaptureModal", () => {
       });
 
       const { getByText, queryByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
+        <PhotoCaptureModal {...defaultProps} />,
       );
 
       act(() => {
@@ -195,9 +194,7 @@ describe("PhotoCaptureModal", () => {
         format: "jpeg",
       });
 
-      const { getByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
 
       act(() => {
         fireEvent.press(getByText("camera"));
@@ -213,7 +210,7 @@ describe("PhotoCaptureModal", () => {
         expect(mockOnUsePhoto).toHaveBeenCalledWith(
           expect.objectContaining({
             mimeType: "image/jpeg",
-          })
+          }),
         );
       });
 
@@ -227,9 +224,7 @@ describe("PhotoCaptureModal", () => {
         format: "png",
       });
 
-      const { getByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
-      );
+      const { getByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
 
       act(() => {
         fireEvent.press(getByText("camera"));
@@ -245,14 +240,14 @@ describe("PhotoCaptureModal", () => {
         expect(mockOnUsePhoto).toHaveBeenCalledWith(
           expect.objectContaining({
             mimeType: "image/png",
-          })
+          }),
         );
       });
     });
 
     it("should handle quality prop", async () => {
       const { getByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} quality={0.5} />
+        <PhotoCaptureModal {...defaultProps} quality={0.5} />,
       );
 
       act(() => {
@@ -263,14 +258,14 @@ describe("PhotoCaptureModal", () => {
         expect(mockTakePictureAsync).toHaveBeenCalledWith(
           expect.objectContaining({
             quality: 0.5,
-          })
+          }),
         );
       });
     });
 
     it("should handle default quality when not specified", async () => {
       const { getByText } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} quality={undefined} />
+        <PhotoCaptureModal {...defaultProps} quality={undefined} />,
       );
 
       act(() => {
@@ -281,7 +276,7 @@ describe("PhotoCaptureModal", () => {
         expect(mockTakePictureAsync).toHaveBeenCalledWith(
           expect.objectContaining({
             quality: 0.85,
-          })
+          }),
         );
       });
     });
@@ -295,7 +290,7 @@ describe("PhotoCaptureModal", () => {
       });
 
       const { getByText, queryByText, rerender } = renderWithProviders(
-        <PhotoCaptureModal {...defaultProps} />
+        <PhotoCaptureModal {...defaultProps} />,
       );
 
       act(() => {

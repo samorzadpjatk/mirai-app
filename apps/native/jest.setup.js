@@ -49,12 +49,12 @@ const SUPPRESSED_PATTERNS = [
 ];
 
 // Helper to check if a message should be suppressed
-const shouldSuppress = (message: string): boolean => {
-  return SUPPRESSED_PATTERNS.some(pattern => pattern.test(message));
+const shouldSuppress = (message) => {
+  return SUPPRESSED_PATTERNS.some((pattern) => pattern.test(message));
 };
 
 // Override console.error to filter expected warnings
-console.error = (...args: any[]) => {
+console.error = (...args) => {
   const message = args[0]?.toString() || "";
   if (!shouldSuppress(message)) {
     originalError.apply(console, args);
@@ -62,7 +62,7 @@ console.error = (...args: any[]) => {
 };
 
 // Override console.warn to filter expected warnings
-console.warn = (...args: any[]) => {
+console.warn = (...args) => {
   const message = args[0]?.toString() || "";
   if (!shouldSuppress(message)) {
     originalWarn.apply(console, args);

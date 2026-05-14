@@ -50,17 +50,17 @@ describe("ChallengeCommunitySubmissionsCard", () => {
   ];
 
   it("renders the empty state when there are no submissions", () => {
-    renderWithProviders(
-      <ChallengeCommunitySubmissionsCard submissions={[]} showPodium={false} />
-    );
+    renderWithProviders(<ChallengeCommunitySubmissionsCard submissions={[]} showPodium={false} />);
 
     expect(screen.getAllByText("Groups submissions").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("No photos yet. Submit first and set the pace.").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText("No photos yet. Submit first and set the pace.").length,
+    ).toBeGreaterThan(0);
   });
 
   it("renders podium and gallery sections when enabled", () => {
     renderWithProviders(
-      <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={true} />
+      <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={true} />,
     );
 
     expect(screen.getByText("4 photos uploaded")).toBeOnTheScreen();
@@ -73,7 +73,7 @@ describe("ChallengeCommunitySubmissionsCard", () => {
 
   it("renders a gallery section when podium is disabled", () => {
     renderWithProviders(
-      <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={false} />
+      <ChallengeCommunitySubmissionsCard submissions={mockSubmissions} showPodium={false} />,
     );
 
     expect(screen.getByText("Gallery")).toBeOnTheScreen();
@@ -102,7 +102,7 @@ describe("ChallengeCommunitySubmissionsCard", () => {
     ];
 
     renderWithProviders(
-      <ChallengeCommunitySubmissionsCard submissions={mixedSubmissions} showPodium={false} />
+      <ChallengeCommunitySubmissionsCard submissions={mixedSubmissions} showPodium={false} />,
     );
 
     expect(screen.getByText("4 photos uploaded")).toBeOnTheScreen();

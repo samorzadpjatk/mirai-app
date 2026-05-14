@@ -49,10 +49,16 @@ export function useAutoPushSubscription() {
 
   // Use oRPC + React Query directly for server-state
   const queryClient = useQueryClient();
-  const subscriptionQuery = useQuery(orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} }));
-  const subscribeMutation = useMutation(orpc.notifications.subscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
+  const subscriptionQuery = useQuery(
+    orpc.notifications.getSubscriptionStatus.queryOptions({ input: {} }),
+  );
+  const subscribeMutation = useMutation(
+    orpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
 
   const { data: subscriptionStatus, isLoading: isStatusLoading } = subscriptionQuery;
 
@@ -82,8 +88,7 @@ export function useAutoPushSubscription() {
         let finalStatus = currentPermission.status;
 
         if (finalStatus === Notifications.PermissionStatus.UNDETERMINED) {
-          const requestedPermission =
-            await Notifications.requestPermissionsAsync();
+          const requestedPermission = await Notifications.requestPermissionsAsync();
           finalStatus = requestedPermission.status;
         }
 
@@ -107,11 +112,5 @@ export function useAutoPushSubscription() {
         console.warn("Failed to run automatic notification onboarding:", error);
       }
     })();
-  }, [
-    authUserId,
-    hasSession,
-    hasSubscription,
-    isStatusLoading,
-    subscribeMutation,
-  ]);
+  }, [authUserId, hasSession, hasSubscription, isStatusLoading, subscribeMutation]);
 }

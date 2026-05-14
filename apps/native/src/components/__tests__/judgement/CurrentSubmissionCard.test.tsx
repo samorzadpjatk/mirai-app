@@ -102,7 +102,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("Test Group")).toBeTruthy();
@@ -116,7 +116,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText(/Submitted/)).toBeTruthy();
@@ -130,7 +130,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("GN")).toBeTruthy();
@@ -144,7 +144,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByTestId("image")).toBeTruthy();
@@ -158,7 +158,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("This is a test submission")).toBeTruthy();
@@ -172,7 +172,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText(/52.22970/)).toBeTruthy();
@@ -187,7 +187,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(queryByText(/52.22970/)).toBeNull();
@@ -201,7 +201,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(queryByText("This is a test submission")).toBeNull();
@@ -215,7 +215,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("APPROVE")).toBeTruthy();
@@ -230,7 +230,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("REJECT")).toBeTruthy();
@@ -245,7 +245,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByTestId("asset-preview")).toBeTruthy();
@@ -259,7 +259,7 @@ describe("CurrentSubmissionCard", () => {
         cardStyle={mockCardStyle}
         approveStampStyle={mockApproveStampStyle}
         rejectStampStyle={mockRejectStampStyle}
-      />
+      />,
     );
 
     expect(getByText("location")).toBeTruthy();

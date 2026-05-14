@@ -23,8 +23,7 @@ import { GroupsNoTripState } from "~/components/trips/groups/GroupsNoTripState";
 export default function GroupsListScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
   const { isTripPast } = useTripDetails(tripId);
   const {
@@ -38,20 +37,15 @@ export default function GroupsListScreen() {
     searchQuery,
     setSearchQuery,
   } = useGroups(tripId);
-  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
-    useQuery({
-      ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
-      enabled: !!tripId,
-    });
+  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
+    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
+    enabled: !!tripId,
+  });
   const groupsLoading = isLoading;
-  const hasGroupInCurrentTrip = Boolean(
-    currentUserWithGroup?.trips?.some((trip) => trip.group),
-  );
+  const hasGroupInCurrentTrip = Boolean(currentUserWithGroup?.trips?.some((trip) => trip.group));
   const myGroupId = useMemo(() => {
     if (!currentUserWithGroup?.trips?.length) return null;
-    const match = currentUserWithGroup?.trips.find(
-      (trip) => trip.tripId === tripId,
-    );
+    const match = currentUserWithGroup?.trips.find((trip) => trip.tripId === tripId);
     return match?.group?.id ?? null;
   }, [currentUserWithGroup, tripId]);
 
@@ -61,11 +55,7 @@ export default function GroupsListScreen() {
     if (index === -1 || index <= 0) return filteredGroups;
     const mine = filteredGroups[index];
     if (!mine) return filteredGroups;
-    return [
-      mine,
-      ...filteredGroups.slice(0, index),
-      ...filteredGroups.slice(index + 1),
-    ];
+    return [mine, ...filteredGroups.slice(0, index), ...filteredGroups.slice(index + 1)];
   }, [filteredGroups, myGroupId]);
 
   if (!tripId) {
@@ -82,8 +72,7 @@ export default function GroupsListScreen() {
     if (!hasNextPage || isFetchingNextPage || isLoading) return;
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
     if (nearBottom) {
       void fetchNextPage();
@@ -111,7 +100,6 @@ export default function GroupsListScreen() {
         {/* Search Bar */}
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
-        
         {/* Header */}
         <GroupsListHeader title="Groups" count={orderedGroups.length} />
 

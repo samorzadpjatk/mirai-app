@@ -79,9 +79,7 @@ describe("EditGroupButton", () => {
 
   it("should maintain button state across re-renders", async () => {
     const onPress = jest.fn();
-    const { rerender } = renderWithProviders(
-      <EditGroupButton onPress={onPress} />
-    );
+    const { rerender } = renderWithProviders(<EditGroupButton onPress={onPress} />);
     const user = userEvent.setup();
 
     let button = screen.getByLabelText("Edit group");

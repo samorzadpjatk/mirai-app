@@ -199,7 +199,7 @@ describe("NotificationScheduleCard", () => {
       expect.arrayContaining([
         expect.objectContaining({ text: "Cancel", style: "cancel" }),
         expect.objectContaining({ text: "Delete", style: "destructive" }),
-      ])
+      ]),
     );
   });
 });

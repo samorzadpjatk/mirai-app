@@ -70,18 +70,18 @@ name,startDate,endDate,venueId
 
 ```typescript
 // src/seed.ts
-import { prisma } from '@mirai-app/db';
-import users from '../data/fixtures/users.json';
+import { createDb, users } from '@mirai-app/db';
+import userFixtures from '../data/fixtures/users.json';
+
+const db = createDb(process.env.DATABASE_URL!);
 
 export async function seed() {
   // Seed users
-  for (const user of users) {
-    await prisma.user.create({
-      data: user,
-    });
+  for (const user of userFixtures) {
+    await db.insert(users).values(user);
   }
-  
-  console.log(`Seeded ${users.length} users`);
+
+  console.log(`Seeded ${userFixtures.length} users`);
 }
 
 // Run if called directly
@@ -120,14 +120,16 @@ Seeds with:
 ### Check Before Creating
 
 ```typescript
+import { count } from 'drizzle-orm';
+
 async function seedUsers() {
-  const existing = await prisma.user.count();
-  
+  const [{ value: existing }] = await db.select({ value: count() }).from(users);
+
   if (existing > 0) {
     console.log('Users already exist, skipping...');
     return;
   }
-  
+
   // Seed users
 }
 ```
@@ -135,15 +137,16 @@ async function seedUsers() {
 ### Upsert Pattern
 
 ```typescript
-await prisma.user.upsert({
-  where: { email: 'admin@mirai.app' },
-  update: {},
-  create: {
+await db.insert(users)
+  .values({
     email: 'admin@mirai.app',
     name: 'Admin',
     role: 'admin',
-  },
-});
+  })
+  .onConflictDoUpdate({
+    target: users.email,
+    set: {},
+  });
 ```
 
 ## Testing Seeds
@@ -158,15 +161,17 @@ bun run seed --dry-run
 ### Validation
 
 ```typescript
+import { count } from 'drizzle-orm';
+
 export async function validateSeed() {
-  const userCount = await prisma.user.count();
-  const eventCount = await prisma.event.count();
-  
+  const [{ value: userCount }] = await db.select({ value: count() }).from(users);
+  const [{ value: eventCount }] = await db.select({ value: count() }).from(events);
+
   console.log({
     users: userCount,
     events: eventCount,
   });
-  
+
   if (userCount === 0) {
     throw new Error('No users seeded!');
   }
@@ -198,13 +203,14 @@ await seedAttendees();  // References events
 Use unique constraints or upsert:
 
 ```typescript
-await prisma.user.upsert({
-  where: { email: user.email },
-  update: {},
-  create: user,
-});
+await db.insert(users)
+  .values(user)
+  .onConflictDoUpdate({
+    target: users.email,
+    set: {},
+  });
 ```
 
 ## Further Reading
 
-- [Prisma Seeding](https://www.prisma.io/docs/guides/database/seed-database)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/)

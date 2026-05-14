@@ -5,10 +5,7 @@ interface SaveGroupButtonProps {
   onPress: () => void;
 }
 
-export function SaveGroupButton({
-  isSubmitting,
-  onPress,
-}: SaveGroupButtonProps) {
+export function SaveGroupButton({ isSubmitting, onPress }: SaveGroupButtonProps) {
   return (
     <PrimaryLoadingButton
       label="Save Changes"

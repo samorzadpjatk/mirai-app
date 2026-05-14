@@ -17,7 +17,7 @@ describe("AppNavbar", () => {
 
   it("renders with correct styling structure", () => {
     const { getByText } = render(<AppNavbar />);
-    
+
     const appName = getByText("PJapp");
     expect(appName).toBeTruthy();
     expect(appName.props.style).toMatchObject(
@@ -25,7 +25,7 @@ describe("AppNavbar", () => {
         fontSize: 20,
         fontWeight: "bold",
         color: "white",
-      })
+      }),
     );
   });
 });

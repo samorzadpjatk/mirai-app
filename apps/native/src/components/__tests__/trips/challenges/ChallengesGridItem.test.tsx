@@ -29,9 +29,7 @@ describe("ChallengesGridItem", () => {
   });
 
   it("renders the main labels", () => {
-    renderWithProviders(
-      <ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />
-    );
+    renderWithProviders(<ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />);
 
     expect(screen.getByText("Test Challenge")).toBeOnTheScreen();
     expect(screen.getByText("+100 MAX")).toBeOnTheScreen();
@@ -42,9 +40,7 @@ describe("ChallengesGridItem", () => {
   });
 
   it("calls onPress with the challenge", () => {
-    renderWithProviders(
-      <ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />
-    );
+    renderWithProviders(<ChallengesGridItem challenge={baseChallenge} onPress={mockOnPress} />);
 
     fireEvent.press(screen.getByTestId("challenge-card"));
     expect(mockOnPress).toHaveBeenCalledWith(baseChallenge);
@@ -52,9 +48,7 @@ describe("ChallengesGridItem", () => {
 
   it("is disabled and shows a lock icon when locked", () => {
     const lockedChallenge = { ...baseChallenge, status: "locked" as const };
-    renderWithProviders(
-      <ChallengesGridItem challenge={lockedChallenge} onPress={mockOnPress} />
-    );
+    renderWithProviders(<ChallengesGridItem challenge={lockedChallenge} onPress={mockOnPress} />);
 
     const card = screen.getByTestId("challenge-card");
     expect(card.props.accessibilityState?.disabled).toBe(true);
@@ -76,7 +70,7 @@ describe("ChallengesGridItem", () => {
         <ChallengesGridItem
           challenge={{ ...baseChallenge, submissionType }}
           onPress={mockOnPress}
-        />
+        />,
       );
       expect(screen.getByText(label)).toBeOnTheScreen();
     });
@@ -94,7 +88,7 @@ describe("ChallengesGridItem", () => {
         <ChallengesGridItem
           challenge={{ ...baseChallenge, scoringCategory }}
           onPress={mockOnPress}
-        />
+        />,
       );
       expect(screen.getByText(label)).toBeOnTheScreen();
     });

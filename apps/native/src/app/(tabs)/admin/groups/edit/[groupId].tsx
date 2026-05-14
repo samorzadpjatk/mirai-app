@@ -24,8 +24,7 @@ export default function AdminEditGroupScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ groupId: string; tripId?: string }>();
   const groupId = params.groupId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
-
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const { data: group, isLoading: groupLoading } = useQuery({
     ...orpc.group.getById.queryOptions({ input: { id: groupId } }),
@@ -86,7 +85,10 @@ export default function AdminEditGroupScreen() {
     const effectiveTripId = tripId || group.trip?.id;
 
     if (!effectiveTripId) {
-      Alert.alert("Error", "Missing trip context for this group. Please reopen the group from its trip.");
+      Alert.alert(
+        "Error",
+        "Missing trip context for this group. Please reopen the group from its trip.",
+      );
       return;
     }
 
@@ -98,10 +100,18 @@ export default function AdminEditGroupScreen() {
     try {
       await Promise.all([
         trimmedGroupName !== group.name
-          ? updateGroupMutation.mutateAsync({ id: groupId, tripId: effectiveTripId, name: trimmedGroupName })
+          ? updateGroupMutation.mutateAsync({
+              id: groupId,
+              tripId: effectiveTripId,
+              name: trimmedGroupName,
+            })
           : Promise.resolve(),
         selectedOrganizer?.id !== group.organizer?.id
-          ? updateGroupMutation.mutateAsync({ id: groupId, tripId: effectiveTripId, organizerId: selectedOrganizer?.id })
+          ? updateGroupMutation.mutateAsync({
+              id: groupId,
+              tripId: effectiveTripId,
+              organizerId: selectedOrganizer?.id,
+            })
           : Promise.resolve(),
       ]);
 
@@ -116,7 +126,10 @@ export default function AdminEditGroupScreen() {
 
     Alert.alert(
       "Delete Group",
-      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove all members from the group.${group._count.participants > 0 ? `\n\n${group._count.participants} participants will be affected.` : ""
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove all members from the group.${
+        group._count.participants > 0
+          ? `\n\n${group._count.participants} participants will be affected.`
+          : ""
       }`,
       [
         { text: "Cancel", style: "cancel" },
@@ -131,7 +144,7 @@ export default function AdminEditGroupScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 

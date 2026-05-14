@@ -43,12 +43,7 @@ interface ChallengeData {
   autoApprove?: boolean;
 }
 
-type DateField =
-  | "startTime"
-  | "endTime"
-  | "dailyStartTime"
-  | "dailyEndTime"
-  | null;
+type DateField = "startTime" | "endTime" | "dailyStartTime" | "dailyEndTime" | null;
 
 interface UseChallengeFormProps {
   tripId: string;
@@ -108,8 +103,7 @@ export function useChallengeForm({
 
   // Derived state
   const isPeerVoting = form.scoringCategory === "PEER_VOTING";
-  const canUsePeerVoting =
-    form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
+  const canUsePeerVoting = form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
   const showPodiumPoints = form.scoringCategory !== "UNLIMITED";
   const isAutoApproveForced =
     form.submissionType === "QR_CODE" || form.submissionType === "LOCATION";
@@ -118,34 +112,25 @@ export function useChallengeForm({
     form.submissionType === "VIDEO" ||
     form.submissionType === "IMAGE_LOCATION";
   const needsLocation =
-    form.submissionType === "LOCATION" ||
-    form.submissionType === "IMAGE_LOCATION";
+    form.submissionType === "LOCATION" || form.submissionType === "IMAGE_LOCATION";
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null
-      ? Math.round(uploadProgress.percent * 100)
-      : null;
+    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
 
   // Labels for selects
   const submissionTypeLabel = useMemo(
-    () =>
-      submissionTypes.find((item) => item.value === form.submissionType)
-        ?.label ?? "Select",
+    () => submissionTypes.find((item) => item.value === form.submissionType)?.label ?? "Select",
     [form.submissionType],
   );
 
   const scoringCategoryLabel = useMemo(
-    () =>
-      scoringCategories.find((item) => item.value === form.scoringCategory)
-        ?.label ?? "Select",
+    () => scoringCategories.find((item) => item.value === form.scoringCategory)?.label ?? "Select",
     [form.scoringCategory],
   );
 
   const statusLabel = useMemo(() => {
     const options = isNewChallenge ? newChallengeStatusOptions : statusOptions;
-    return (
-      options.find((item) => item.value === form.status)?.label ?? "Select"
-    );
+    return options.find((item) => item.value === form.status)?.label ?? "Select";
   }, [form.status, isNewChallenge]);
 
   const activeSelectOptions = useMemo(() => {
@@ -161,10 +146,8 @@ export function useChallengeForm({
     return [];
   }, [activeSelect, canUsePeerVoting, isNewChallenge]);
 
-  const updateForm = <K extends keyof ChallengeFormState>(
-    field: K,
-    value: ChallengeFormState[K],
-  ) => setForm((prev) => ({ ...prev, [field]: value }));
+  const updateForm = <K extends keyof ChallengeFormState>(field: K, value: ChallengeFormState[K]) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleScoringChange = (value: string) => {
     if (
@@ -172,10 +155,7 @@ export function useChallengeForm({
       form.submissionType !== "IMAGE" &&
       form.submissionType !== "VIDEO"
     ) {
-      Alert.alert(
-        "Error",
-        "Peer voting is available only for Image or Video challenges.",
-      );
+      Alert.alert("Error", "Peer voting is available only for Image or Video challenges.");
       return;
     }
 
@@ -201,9 +181,7 @@ export function useChallengeForm({
   const handleSubmissionTypeChange = (value: string) => {
     setForm((prev) => {
       const shouldResetPeerVoting =
-        prev.scoringCategory === "PEER_VOTING" &&
-        value !== "IMAGE" &&
-        value !== "VIDEO";
+        prev.scoringCategory === "PEER_VOTING" && value !== "IMAGE" && value !== "VIDEO";
 
       return {
         ...prev,
@@ -249,8 +227,7 @@ export function useChallengeForm({
       const extension = getImageExtension(asset);
       const storagePath = `challenge/${tripId}/cover-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
-      const fileName =
-        asset.fileName?.trim() ?? `challenge-cover-${Date.now()}.${extension}`;
+      const fileName = asset.fileName?.trim() ?? `challenge-cover-${Date.now()}.${extension}`;
 
       await upload({
         storagePath,
@@ -263,8 +240,7 @@ export function useChallengeForm({
       setImagePreviewUri(asset.uri);
       updateForm("image", storagePath);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to upload image";
+      const message = error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -281,10 +257,7 @@ export function useChallengeForm({
 
     if (needsLocation) {
       if (!form.targetLocation) {
-        Alert.alert(
-          "Error",
-          "Please select a location on the map for location challenges",
-        );
+        Alert.alert("Error", "Please select a location on the map for location challenges");
         return false;
       }
     }
@@ -294,11 +267,7 @@ export function useChallengeForm({
       return false;
     }
 
-    if (
-      form.submissionType === "TEXT" &&
-      form.autoApprove &&
-      !form.textExpectedPhrase.trim()
-    ) {
+    if (form.submissionType === "TEXT" && form.autoApprove && !form.textExpectedPhrase.trim()) {
       Alert.alert(
         "Error",
         "For text auto-approve, provide an expected phrase or disable auto-approve.",
@@ -317,10 +286,7 @@ export function useChallengeForm({
         return false;
       }
     } else {
-      if (
-        (form.startTime && !form.endTime) ||
-        (!form.startTime && form.endTime)
-      ) {
+      if ((form.startTime && !form.endTime) || (!form.startTime && form.endTime)) {
         Alert.alert("Error", "Provide both start and end time");
         return false;
       }
@@ -336,17 +302,11 @@ export function useChallengeForm({
         form.votingDurationUnit,
       );
       if (!votingDurationHours) {
-        Alert.alert(
-          "Error",
-          "Provide peer voting duration in hours or days (minimum 1).",
-        );
+        Alert.alert("Error", "Provide peer voting duration in hours or days (minimum 1).");
         return false;
       }
       if (!form.endTime) {
-        Alert.alert(
-          "Error",
-          "Peer voting challenge requires submission end time",
-        );
+        Alert.alert("Error", "Peer voting challenge requires submission end time");
         return false;
       }
     }
@@ -356,12 +316,9 @@ export function useChallengeForm({
 
   const initializeFormFromChallenge = (challenge: ChallengeData) => {
     const normalizedSubmissionType =
-      challenge.submissionType === "MULTI_IMAGE"
-        ? "IMAGE"
-        : challenge.submissionType;
+      challenge.submissionType === "MULTI_IMAGE" ? "IMAGE" : challenge.submissionType;
     const normalizedScoringCategory =
-      (normalizedSubmissionType === "IMAGE" ||
-        normalizedSubmissionType === "VIDEO") &&
+      (normalizedSubmissionType === "IMAGE" || normalizedSubmissionType === "VIDEO") &&
       challenge.scoringCategory === "PEER_VOTING"
         ? "PEER_VOTING"
         : challenge.scoringCategory === "PEER_VOTING"
@@ -391,20 +348,13 @@ export function useChallengeForm({
       recurringDays: challenge.isRecurring
         ? inferRecurringDaysFromWindow(challenge.startTime, challenge.endTime)
         : "",
-      basePoints:
-        challenge.basePoints != null ? String(challenge.basePoints) : "",
+      basePoints: challenge.basePoints != null ? String(challenge.basePoints) : "",
       firstPlacePoints:
-        challenge.firstPlacePoints != null
-          ? String(challenge.firstPlacePoints)
-          : "",
+        challenge.firstPlacePoints != null ? String(challenge.firstPlacePoints) : "",
       secondPlacePoints:
-        challenge.secondPlacePoints != null
-          ? String(challenge.secondPlacePoints)
-          : "",
+        challenge.secondPlacePoints != null ? String(challenge.secondPlacePoints) : "",
       thirdPlacePoints:
-        challenge.thirdPlacePoints != null
-          ? String(challenge.thirdPlacePoints)
-          : "",
+        challenge.thirdPlacePoints != null ? String(challenge.thirdPlacePoints) : "",
       status: challenge.status ?? "HIDDEN",
       startTime: challenge.startTime ? new Date(challenge.startTime) : null,
       endTime: challenge.endTime ? new Date(challenge.endTime) : null,
@@ -430,9 +380,7 @@ export function useChallengeForm({
     }
   };
 
-  const [initializedChallengeId, setInitializedChallengeId] = useState<
-    string | null
-  >(null);
+  const [initializedChallengeId, setInitializedChallengeId] = useState<string | null>(null);
 
   return {
     // Form state

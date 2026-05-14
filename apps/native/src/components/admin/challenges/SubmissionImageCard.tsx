@@ -1,20 +1,8 @@
-import React from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import {
-  borderRadius,
-  colors,
-  spacing,
-  typography,
-} from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 
 interface SubmissionImageCardProps {
@@ -61,9 +49,7 @@ export function SubmissionImageCard({
       <View style={styles.voteCardBody}>
         <Text style={styles.voteCardTitle}>{title}</Text>
         <Text style={styles.voteCardGroup}>{submission.groupName}</Text>
-        {subtitle ? (
-          <Text style={styles.voteCardSubtitle}>{subtitle}</Text>
-        ) : null}
+        {subtitle ? <Text style={styles.voteCardSubtitle}>{subtitle}</Text> : null}
       </View>
     </View>
   );
@@ -71,11 +57,7 @@ export function SubmissionImageCard({
   if (!onPress) return content;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPress}
-      disabled={disabled}
-    >
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={disabled}>
       {content}
     </TouchableOpacity>
   );

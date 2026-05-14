@@ -70,7 +70,7 @@ services:
     image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
     environment:
       DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-      PRISMA_MIGRATE_SKIP_SEED: "1"
+
     depends_on:
       - db
     command: ["bun", "run", "db:migrate"]

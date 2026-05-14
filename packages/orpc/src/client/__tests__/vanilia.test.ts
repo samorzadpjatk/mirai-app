@@ -51,8 +51,8 @@ describe("getORPCClient", () => {
     vi.clearAllMocks();
     consoleSpy.mockClear();
     mockWebSocketInstances.length = 0;
-    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
-    vi.mocked(WSLink).mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   afterEach(() => {
@@ -198,7 +198,7 @@ describe("WebSocket Client Creation", () => {
     getORPCClient(httpUrl, wsUrl, token);
 
     expect(WebSocket).toHaveBeenCalled();
-    const wsUrlArg = (WebSocket as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string;
+    const wsUrlArg = (WebSocket as any).mock.calls[0]?.[0] as string;
     expect(wsUrlArg).toContain("authorization=");
     expect(wsUrlArg).toContain(encodeURIComponent("Bearer token123"));
   });
@@ -216,8 +216,8 @@ describe("WebSocket Client Creation", () => {
 describe("HTTP Link Configuration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
-    vi.mocked(WSLink).mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   it("should configure HTTP link with correct URL", () => {
@@ -227,7 +227,7 @@ describe("HTTP Link Configuration", () => {
     getORPCClient(httpUrl, wsUrl);
 
     expect(RPCLinkFetch).toHaveBeenCalled();
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     expect(callArgs?.url).toBe(httpUrl);
   });
 
@@ -238,7 +238,7 @@ describe("HTTP Link Configuration", () => {
 
     getORPCClient(httpUrl, wsUrl, token);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const headersFn = callArgs?.headers as (() => Record<string, string>) | undefined;
 
     expect(typeof headersFn).toBe("function");
@@ -251,7 +251,7 @@ describe("HTTP Link Configuration", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const headersFn = callArgs?.headers as (() => Record<string, string>) | undefined;
 
     expect(typeof headersFn).toBe("function");
@@ -264,7 +264,7 @@ describe("HTTP Link Configuration", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     expect(callArgs).toHaveProperty("interceptors");
     expect(Array.isArray(callArgs.interceptors)).toBe(true);
     expect(callArgs.interceptors).toHaveLength(1);
@@ -274,8 +274,8 @@ describe("HTTP Link Configuration", () => {
 describe("Retry Interceptor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(RPCLinkFetch).mockReturnValue({} as never);
-    vi.mocked(WSLink).mockReturnValue({} as never);
+    RPCLinkFetch.mockReturnValue({});
+    WSLink.mockReturnValue({});
   });
 
   it("should retry on ORPCError with status >= 500", async () => {
@@ -284,7 +284,7 @@ describe("Retry Interceptor", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
@@ -310,7 +310,7 @@ describe("Retry Interceptor", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
 
     const fetchError = new Error("Fetch error");
@@ -336,7 +336,7 @@ describe("Retry Interceptor", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
@@ -354,7 +354,7 @@ describe("Retry Interceptor", () => {
 
     getORPCClient(httpUrl, wsUrl);
 
-    const callArgs = vi.mocked(RPCLinkFetch).mock.calls[0]?.[0];
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
     const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
 
     const clientError = new Error("Client error");

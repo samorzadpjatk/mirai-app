@@ -49,37 +49,67 @@ jest.mock("~/components/common/ui", () => {
   const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
 
   return {
-    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+      visible ? (
+        <View>
+          <Text>{title}</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
+          {children}
+        </View>
+      ) : null,
+    AppModalFooter: ({
+      primaryLabel,
+      onPrimary,
+      secondaryLabel,
+      onSecondary,
+      isPrimaryLoading,
+    }: AppModalFooterProps) => (
       <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
-        {children}
-      </View>
-    ) : null,
-    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
-      <View>
-        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}>
+          <Text>{primaryLabel}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onSecondary}>
+          <Text>{secondaryLabel}</Text>
+        </TouchableOpacity>
       </View>
     ),
     FormField: ({ children, label, required }: FormFieldProps) => (
       <View>
-        <Text>{label}{required ? "*" : ""}</Text>
+        <Text>
+          {label}
+          {required ? "*" : ""}
+        </Text>
         {children}
       </View>
     ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
-      <TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+      keyboardType,
+      multiline,
+    }: ThemedTextInputProps) => (
+      <TextInput
+        value={value}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        onChangeText={onChangeText}
+      />
     ),
   };
 });
 
 describe("AdminRewardsModal", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("renders the new reward form", () => {
     const { getByPlaceholderText, getByText } = renderWithProviders(
-      <AdminRewardsModal visible={true} onClose={jest.fn()} tripId="trip-1" />
+      <AdminRewardsModal visible={true} onClose={jest.fn()} tripId="trip-1" />,
     );
 
     expect(getByText("New Reward")).toBeTruthy();
@@ -89,19 +119,25 @@ describe("AdminRewardsModal", () => {
   });
 
   it("does not render when hidden", () => {
-    const { queryByText } = renderWithProviders(<AdminRewardsModal visible={false} onClose={jest.fn()} tripId="trip-1" />);
+    const { queryByText } = renderWithProviders(
+      <AdminRewardsModal visible={false} onClose={jest.fn()} tripId="trip-1" />,
+    );
     expect(queryByText("New Reward")).toBeNull();
   });
 
   it("calls onClose from the footer", () => {
     const onClose = jest.fn();
-    const { getByText } = renderWithProviders(<AdminRewardsModal visible={true} onClose={onClose} tripId="trip-1" />);
+    const { getByText } = renderWithProviders(
+      <AdminRewardsModal visible={true} onClose={onClose} tripId="trip-1" />,
+    );
     fireEvent.press(getByText("Cancel"));
     expect(onClose).toHaveBeenCalled();
   });
 
   it("allows editing reward fields", () => {
-    const { getByPlaceholderText } = renderWithProviders(<AdminRewardsModal visible={true} onClose={jest.fn()} tripId="trip-1" />);
+    const { getByPlaceholderText } = renderWithProviders(
+      <AdminRewardsModal visible={true} onClose={jest.fn()} tripId="trip-1" />,
+    );
     const nameInput = getByPlaceholderText("e.g. Branded T-shirt");
     fireEvent.changeText(nameInput, "Hoodie");
     expect(nameInput.props.value).toBe("Hoodie");

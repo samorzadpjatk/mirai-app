@@ -9,7 +9,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Email">
         <TextInput testID="email-input" />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-label")).toHaveTextContent("Email");
@@ -19,7 +19,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Name">
         <TextInput testID="name-input" placeholder="Enter name" />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("name-input")).toBeOnTheScreen();
@@ -29,7 +29,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Username" required={true}>
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-label")).toHaveTextContent("Username *");
@@ -40,7 +40,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Optional Field" required={false}>
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-label")).toHaveTextContent("Optional Field");
@@ -51,7 +51,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Default Field">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-label")).toHaveTextContent("Default Field");
@@ -62,10 +62,12 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Password" hint="Must be at least 8 characters">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
-    expect(screen.getByTestId("form-field-hint")).toHaveTextContent("Must be at least 8 characters");
+    expect(screen.getByTestId("form-field-hint")).toHaveTextContent(
+      "Must be at least 8 characters",
+    );
     expect(screen.getByText("Must be at least 8 characters")).toBeOnTheScreen();
   });
 
@@ -73,7 +75,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Field">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.queryByTestId("form-field-hint")).toBeNull();
@@ -83,7 +85,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Email" error="Invalid email format">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-error")).toHaveTextContent("Invalid email format");
@@ -94,7 +96,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Field">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.queryByTestId("form-field-error")).toBeNull();
@@ -102,13 +104,9 @@ describe("FormField", () => {
 
   it("should render both hint and error when both provided", () => {
     renderWithProviders(
-      <FormField
-        label="Field"
-        hint="This is a hint"
-        error="This is an error"
-      >
+      <FormField label="Field" hint="This is a hint" error="This is an error">
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-hint")).toHaveTextContent("This is a hint");
@@ -122,12 +120,12 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Styled" style={customStyle}>
         <TextInput />
-      </FormField>
+      </FormField>,
     );
 
     const container = screen.getByTestId("form-field-container");
     expect(container.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining(customStyle)])
+      expect.arrayContaining([expect.objectContaining(customStyle)]),
     );
   });
 
@@ -135,7 +133,7 @@ describe("FormField", () => {
     renderWithProviders(
       <FormField label="Complex Field" hint="Select an option">
         <Text testID="child-text">Child Component</Text>
-      </FormField>
+      </FormField>,
     );
 
     expect(screen.getByTestId("form-field-label")).toHaveTextContent("Complex Field");
@@ -155,7 +153,7 @@ describe("FormField", () => {
         <FormField label="Bio" hint="Optional">
           <TextInput testID="bio" />
         </FormField>
-      </>
+      </>,
     );
 
     // Get all labels by testID and verify their content

@@ -6,10 +6,18 @@ jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   const { View } = require("react-native");
   return {
-    Ionicons: function MockIonicons({ name, size, color }: { name: string; size: number; color: string }) {
+    Ionicons: function MockIonicons({
+      name,
+      size,
+      color,
+    }: {
+      name: string;
+      size: number;
+      color: string;
+    }) {
       return React.createElement(View, {
         testID: `icon-${name}`,
-        style: { width: size, height: size, color }
+        style: { width: size, height: size, color },
       });
     },
   };
@@ -25,7 +33,9 @@ describe("LocationPermissionDenied", () => {
   });
 
   it("should render compact version when compact prop is true", () => {
-    const { getByText, getByTestId } = renderWithProviders(<LocationPermissionDenied compact={true} />);
+    const { getByText, getByTestId } = renderWithProviders(
+      <LocationPermissionDenied compact={true} />,
+    );
 
     expect(getByText("Location sharing disabled")).toBeTruthy();
     expect(getByTestId("icon-locate")).toBeTruthy();

@@ -25,12 +25,7 @@ export default function ChallengeCard({
   };
 
   return (
-    <View
-      style={[
-        commonStyles.card,
-        { flexDirection: "row", alignItems: "center", gap: 16 },
-      ]}
-    >
+    <View style={[commonStyles.card, { flexDirection: "row", alignItems: "center", gap: 16 }]}>
       <View
         style={{
           width: 48,
@@ -39,9 +34,7 @@ export default function ChallengeCard({
           justifyContent: "center",
           borderRadius: 8,
           backgroundColor:
-            challenge.category === "wintegral"
-              ? "#00ced1"
-              : "rgba(0, 206, 209, 0.1)",
+            challenge.category === "wintegral" ? "#00ced1" : "rgba(0, 206, 209, 0.1)",
         }}
       >
         <Ionicons
@@ -52,9 +45,7 @@ export default function ChallengeCard({
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={[commonStyles.h4, { marginBottom: 4 }]}>
-          {challenge.title}
-        </Text>
+        <Text style={[commonStyles.h4, { marginBottom: 4 }]}>{challenge.title}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Text style={{ color: "#00ced1", fontSize: 14, fontWeight: "600" }}>
             {challenge.points} PTS
@@ -78,10 +69,7 @@ export default function ChallengeCard({
       </View>
 
       <View style={{ flexDirection: "row", gap: 4 }}>
-        <TouchableOpacity
-          style={{ padding: 8 }}
-          onPress={() => onEdit?.(challenge)}
-        >
+        <TouchableOpacity style={{ padding: 8 }} onPress={() => onEdit?.(challenge)}>
           <Ionicons name="create" size={20} color="#9ca3af" />
         </TouchableOpacity>
         <TouchableOpacity

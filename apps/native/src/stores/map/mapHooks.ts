@@ -71,6 +71,6 @@ export function useMapActions() {
       recenter,
       handleMapUserPress,
       handleMapPress,
-    ]
+    ],
   );
 }

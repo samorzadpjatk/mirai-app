@@ -82,7 +82,13 @@ jest.mock("~/components/common/ui", () => {
         {children}
       </View>
     ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, editable, ...props }: ThemedTextInputProps) => (
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+      editable,
+      ...props
+    }: ThemedTextInputProps) => (
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -126,7 +132,9 @@ describe("CoinOperationScreen", () => {
   });
 
   it("renders group summary", () => {
-    const { getByTestId, getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
+    const { getByTestId, getByDisplayValue } = renderWithProviders(
+      <CoinOperationScreen operation="add" />,
+    );
     expect(getByTestId("screen-title").props.children).toBe("Add Coins");
     expect(getByDisplayValue("Test Group")).toBeTruthy();
     expect(getByDisplayValue("100 coins")).toBeTruthy();
@@ -134,7 +142,9 @@ describe("CoinOperationScreen", () => {
 
   it("adds coins", async () => {
     mockAddCoins.mockResolvedValueOnce(undefined);
-    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(
+      <CoinOperationScreen operation="add" />,
+    );
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "50");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Bonus");
     fireEvent.press(getAllByText("Add Coins")[1]!);
@@ -143,7 +153,9 @@ describe("CoinOperationScreen", () => {
 
   it("removes coins", async () => {
     mockRemoveCoins.mockResolvedValueOnce(undefined);
-    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="remove" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(
+      <CoinOperationScreen operation="remove" />,
+    );
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "25");
     fireEvent.changeText(getByPlaceholderText("Describe why you are removing coins"), "Penalty");
     fireEvent.press(getAllByText("Remove Coins")[1]!);
@@ -152,7 +164,9 @@ describe("CoinOperationScreen", () => {
 
   it("shows missing params error", () => {
     mockParamsWrapper.current = { tripId: "", groupId: "", groupName: "", groupCoins: "0" };
-    const { getByPlaceholderText, getAllByText } = renderWithProviders(<CoinOperationScreen operation="add" />);
+    const { getByPlaceholderText, getAllByText } = renderWithProviders(
+      <CoinOperationScreen operation="add" />,
+    );
     fireEvent.changeText(getByPlaceholderText("Enter amount"), "10");
     fireEvent.changeText(getByPlaceholderText("Describe why you are adding coins"), "Reason");
     fireEvent.press(getAllByText("Add Coins")[1]!);

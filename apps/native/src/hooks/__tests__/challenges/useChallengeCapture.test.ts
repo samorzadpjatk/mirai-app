@@ -4,10 +4,22 @@ import { useChallengeCapture } from "../../challenges/useChallengeCapture";
 import { Alert } from "react-native";
 
 // Mock expo-image-picker
-const mockLaunchImageLibraryAsync = jest.fn<(options?: { mediaTypes?: string; allowsEditing?: boolean; aspect?: number[]; quality?: number; exif?: boolean }) => Promise<{ canceled: boolean; assets?: { uri: string; fileName?: string | null; mimeType?: string }[] }>>();
+const mockLaunchImageLibraryAsync = jest.fn<
+  (options?: {
+    mediaTypes?: string;
+    allowsEditing?: boolean;
+    aspect?: number[];
+    quality?: number;
+    exif?: boolean;
+  }) => Promise<{
+    canceled: boolean;
+    assets?: { uri: string; fileName?: string | null; mimeType?: string }[];
+  }>
+>();
 
 jest.mock("expo-image-picker", () => ({
-  launchImageLibraryAsync: (...args: unknown[]) => mockLaunchImageLibraryAsync(...args as [object]),
+  launchImageLibraryAsync: (...args: unknown[]) =>
+    mockLaunchImageLibraryAsync(...(args as [object])),
   MediaTypeOptions: {
     Images: "images",
     Videos: "videos",
@@ -15,7 +27,8 @@ jest.mock("expo-image-picker", () => ({
 }));
 
 // Mock expo-router
-const mockPush = jest.fn<(path: string | { pathname: string; params?: Record<string, string> }) => void>();
+const mockPush =
+  jest.fn<(path: string | { pathname: string; params?: Record<string, string> }) => void>();
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -68,7 +81,15 @@ jest.mock("@tanstack/react-query", () => ({
 }));
 
 // Mock useFileUpload hook
-const mockUpload = jest.fn<(asset: { storagePath: string; fileUri: string; fileName: string; contentType: string }) => Promise<{ success: boolean }>>();
+const mockUpload =
+  jest.fn<
+    (asset: {
+      storagePath: string;
+      fileUri: string;
+      fileName: string;
+      contentType: string;
+    }) => Promise<{ success: boolean }>
+  >();
 const mockAbort = jest.fn<() => void>();
 const mockReset = jest.fn<() => void>();
 
@@ -101,7 +122,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     expect(result.current.isLoading).toBe(false);
@@ -122,7 +143,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     expect(result.current.isLoading).toBe(true);
@@ -140,7 +161,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     act(() => {
@@ -162,7 +183,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     act(() => {
@@ -181,7 +202,17 @@ describe("useChallengeCapture", () => {
   });
 
   it("should submit captured photo successfully", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -199,7 +230,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -220,7 +251,7 @@ describe("useChallengeCapture", () => {
     expect(Alert.alert).toHaveBeenCalledWith(
       "Submission sent",
       expect.stringContaining("Zgłoszenie zostało wysłane"),
-      expect.any(Array)
+      expect.any(Array),
     );
   });
 
@@ -236,7 +267,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: undefined, challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: undefined, challengeId: "challenge-123" }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -260,7 +291,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: undefined })
+      useChallengeCapture({ tripId: "trip-123", challengeId: undefined }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -284,7 +315,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -311,7 +342,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -324,8 +355,20 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle upload failure and cleanup", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
-    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
+    const mockDeleteSubmission = jest
+      .fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
     const uploadError = new Error("Upload failed");
 
     mockUseQuery.mockReturnValue({
@@ -349,7 +392,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockRejectedValue(uploadError);
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const photo = { uri: "file://photo.jpg", mimeType: "image/jpeg" as const };
@@ -389,10 +432,17 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
-    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
+    const onSuccess =
+      jest.fn<
+        (asset: {
+          uri: string;
+          fileName?: string | null;
+          mimeType?: string | null;
+        }) => Promise<void>
+      >();
 
     await act(async () => {
       await result.current.pickImageFromGallery(onSuccess);
@@ -426,10 +476,17 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
-    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
+    const onSuccess =
+      jest.fn<
+        (asset: {
+          uri: string;
+          fileName?: string | null;
+          mimeType?: string | null;
+        }) => Promise<void>
+      >();
 
     await act(async () => {
       await result.current.pickImageFromGallery(onSuccess);
@@ -452,7 +509,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     await act(async () => {
@@ -485,10 +542,17 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
-    const onSuccess = jest.fn<(asset: { uri: string; fileName?: string | null; mimeType?: string | null }) => Promise<void>>();
+    const onSuccess =
+      jest.fn<
+        (asset: {
+          uri: string;
+          fileName?: string | null;
+          mimeType?: string | null;
+        }) => Promise<void>
+      >();
 
     await act(async () => {
       await result.current.pickVideoFromGallery(onSuccess);
@@ -517,7 +581,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     await act(async () => {
@@ -528,7 +592,18 @@ describe("useChallengeCapture", () => {
   });
 
   it("should submit video asset successfully", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; videoId?: string; imageIds?: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          videoId?: string;
+          imageIds?: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -546,7 +621,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -565,13 +640,17 @@ describe("useChallengeCapture", () => {
       videoId: expect.stringContaining("challenge/challenge-123/group-1-"),
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      contentType: "video/mp4",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "video/mp4",
+      }),
+    );
   });
 
   it("should handle retake and cleanup submission", async () => {
-    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockDeleteSubmission = jest
+      .fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -587,7 +666,7 @@ describe("useChallengeCapture", () => {
     });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     // First set a submission ID
@@ -611,7 +690,17 @@ describe("useChallengeCapture", () => {
   });
 
   it("should resolve file extension from filename", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -629,7 +718,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -642,13 +731,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      storagePath: expect.stringContaining(".png"),
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storagePath: expect.stringContaining(".png"),
+      }),
+    );
   });
 
   it("should resolve file extension from mime type", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -666,7 +767,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -679,13 +780,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      storagePath: expect.stringContaining(".webp"),
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storagePath: expect.stringContaining(".webp"),
+      }),
+    );
   });
 
   it("should resolve mime type from extension", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -703,7 +816,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -716,13 +829,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      contentType: "video/quicktime",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "video/quicktime",
+      }),
+    );
   });
 
   it("should handle heic image format", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -740,7 +865,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -753,14 +878,26 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      storagePath: expect.stringContaining(".heic"),
-      contentType: "image/heic",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storagePath: expect.stringContaining(".heic"),
+        contentType: "image/heic",
+      }),
+    );
   });
 
   it("should handle webm video format", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -778,7 +915,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -791,13 +928,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      contentType: "video/webm",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "video/webm",
+      }),
+    );
   });
 
   it("should submit with location data", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -815,7 +964,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -830,14 +979,26 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset, "Challenge", 10, location);
     });
 
-    expect(mockCreateSubmission).toHaveBeenCalledWith(expect.objectContaining({
-      latitude: 52.2297,
-      longitude: 21.0122,
-    }));
+    expect(mockCreateSubmission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        latitude: 52.2297,
+        longitude: 21.0122,
+      }),
+    );
   });
 
   it("should navigate to challenges on success alert", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -855,7 +1016,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -884,7 +1045,17 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle default filename generation", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -902,7 +1073,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -915,14 +1086,28 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      fileName: expect.stringMatching(/^challenge-\d+\.jpg$/),
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileName: expect.stringMatching(/^challenge-\d+\.jpg$/),
+      }),
+    );
   });
 
   it("should handle cleanup failure gracefully", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
-    const mockDeleteSubmission = jest.fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>().mockRejectedValue(new Error("Delete failed"));
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
+    const mockDeleteSubmission = jest
+      .fn<(args: { id: string; tripId: string }) => Promise<{ success: boolean }>>()
+      .mockRejectedValue(new Error("Delete failed"));
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -945,7 +1130,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockRejectedValue(new Error("Upload failed"));
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -963,7 +1148,17 @@ describe("useChallengeCapture", () => {
   });
 
   it("should handle m4v video format", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -981,7 +1176,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -994,13 +1189,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      contentType: "video/x-m4v",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: "video/x-m4v",
+      }),
+    );
   });
 
   it("should handle heif image format", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -1018,7 +1225,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -1031,13 +1238,25 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      storagePath: expect.stringContaining(".heif"),
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storagePath: expect.stringContaining(".heif"),
+      }),
+    );
   });
 
   it("should handle uri with extension for filename", async () => {
-    const mockCreateSubmission = jest.fn<(args: { tripId: string; challengeId: string; imageIds: string[]; latitude?: number; longitude?: number }) => Promise<{ id: string }>>().mockResolvedValue({ id: "submission-123" });
+    const mockCreateSubmission = jest
+      .fn<
+        (args: {
+          tripId: string;
+          challengeId: string;
+          imageIds: string[];
+          latitude?: number;
+          longitude?: number;
+        }) => Promise<{ id: string }>
+      >()
+      .mockResolvedValue({ id: "submission-123" });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -1055,7 +1274,7 @@ describe("useChallengeCapture", () => {
     mockUpload.mockResolvedValue({ success: true });
 
     const { result } = renderHook(() =>
-      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" })
+      useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
     );
 
     const asset = {
@@ -1068,8 +1287,10 @@ describe("useChallengeCapture", () => {
       await result.current.submitAsset(asset);
     });
 
-    expect(mockUpload).toHaveBeenCalledWith(expect.objectContaining({
-      fileName: "image.jpg",
-    }));
+    expect(mockUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileName: "image.jpg",
+      }),
+    );
   });
 });

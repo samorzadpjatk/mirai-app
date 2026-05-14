@@ -11,12 +11,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import {
-  borderRadius,
-  colors,
-  spacing,
-  typography,
-} from "../../../../../styles";
+import { borderRadius, colors, spacing, typography } from "../../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTripDetails } from "~/hooks/trips";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
@@ -40,16 +35,11 @@ const MIN_SUBMISSIONS_TO_VOTE = 2;
 const toPairKey = (leftId: string, rightId: string) =>
   leftId < rightId ? `${leftId}|${rightId}` : `${rightId}|${leftId}`;
 
-const rankByRating = (
-  submissions: VotingSubmission[],
-  ratings: Record<string, number>,
-) =>
+const rankByRating = (submissions: VotingSubmission[], ratings: Record<string, number>) =>
   [...submissions].sort((a, b) => {
-    const ratingDelta =
-      (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
+    const ratingDelta = (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
     if (Math.abs(ratingDelta) > 0.0001) return ratingDelta;
-    const createdAtDelta =
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    const createdAtDelta = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     if (createdAtDelta !== 0) return createdAtDelta;
     return a.id.localeCompare(b.id);
   });
@@ -74,8 +64,7 @@ const pickNextPair = (
       const key = toPairKey(left.id, right.id);
       if (comparedPairs.has(key)) continue;
       const diff = Math.abs(
-        (ratings[left.id] ?? ELO_BASE_RATING) -
-          (ratings[right.id] ?? ELO_BASE_RATING),
+        (ratings[left.id] ?? ELO_BASE_RATING) - (ratings[right.id] ?? ELO_BASE_RATING),
       );
       candidates.push({ pair: [left.id, right.id], diff });
     }
@@ -143,9 +132,7 @@ function SubmissionImageCard({
       <View style={styles.voteCardBody}>
         <Text style={styles.voteCardTitle}>{title}</Text>
         <Text style={styles.voteCardGroup}>{submission.groupName}</Text>
-        {subtitle ? (
-          <Text style={styles.voteCardSubtitle}>{subtitle}</Text>
-        ) : null}
+        {subtitle ? <Text style={styles.voteCardSubtitle}>{subtitle}</Text> : null}
       </View>
     </View>
   );
@@ -153,11 +140,7 @@ function SubmissionImageCard({
   if (!onPress) return content;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={onPress}
-      disabled={disabled}
-    >
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={disabled}>
       {content}
     </TouchableOpacity>
   );
@@ -169,10 +152,8 @@ export default function ChallengePeerVotingScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
 
-  const challengeId =
-    typeof params.id === "string" ? params.id : params.id?.[0];
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
   const challengeQuery = orpc.challenge.getById.queryOptions({
     input: {
@@ -224,9 +205,7 @@ export default function ChallengePeerVotingScreen() {
     }
   }, [isTripPast, challengeId, tripId, router]);
 
-  const submitVoteMutation = useMutation(
-    orpc.challengeVote.submitVote.mutationOptions(),
-  );
+  const submitVoteMutation = useMutation(orpc.challengeVote.submitVote.mutationOptions());
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -246,9 +225,7 @@ export default function ChallengePeerVotingScreen() {
     const raw = submissionsData ?? [];
     return raw
       .filter((submission) => Boolean(submission.imageIds[0]))
-      .filter((submission) =>
-        ownGroupId ? submission.groupId !== ownGroupId : true,
-      )
+      .filter((submission) => (ownGroupId ? submission.groupId !== ownGroupId : true))
       .map((submission) => ({
         id: submission.id,
         groupId: submission.groupId,
@@ -259,10 +236,7 @@ export default function ChallengePeerVotingScreen() {
   }, [submissionsData, ownGroupId]);
 
   const submissionById = useMemo(
-    () =>
-      new Map(
-        votingSubmissions.map((submission) => [submission.id, submission]),
-      ),
+    () => new Map(votingSubmissions.map((submission) => [submission.id, submission])),
     [votingSubmissions],
   );
 
@@ -276,9 +250,7 @@ export default function ChallengePeerVotingScreen() {
     if (finalTopThreeIds.length > 0) {
       return finalTopThreeIds
         .map((id) => submissionById.get(id))
-        .filter((submission): submission is VotingSubmission =>
-          Boolean(submission),
-        );
+        .filter((submission): submission is VotingSubmission => Boolean(submission));
     }
     return calculatedTopThree;
   }, [calculatedTopThree, finalTopThreeIds, submissionById]);
@@ -298,8 +270,7 @@ export default function ChallengePeerVotingScreen() {
     challengeId &&
     tripId &&
     challenge &&
-    (challenge.scoringCategory !== "PEER_VOTING" ||
-      challenge.status !== "VOTING_PHASE"),
+    (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE"),
   );
 
   const startComparing = useCallback(() => {
@@ -308,11 +279,7 @@ export default function ChallengePeerVotingScreen() {
       votingSubmissions.map((submission) => [submission.id, ELO_BASE_RATING]),
     );
     const initialCompared = new Set<string>();
-    const pair = pickNextPair(
-      votingSubmissions,
-      initialRatings,
-      initialCompared,
-    );
+    const pair = pickNextPair(votingSubmissions, initialRatings, initialCompared);
 
     setRatings(initialRatings);
     setComparedPairs(initialCompared);
@@ -330,25 +297,16 @@ export default function ChallengePeerVotingScreen() {
     navigateBackToChallenge();
   }, [navigateBackToChallenge, shouldRedirectToChallengeDetails]);
 
-   
   // Handle bootstrap logic in a microtask to avoid synchronous setState in effect
   useEffect(() => {
     if (!challengeId || !tripId) return;
-    if (
-      isLoadingChallenge ||
-      isLoadingSubmissions ||
-      isLoadingVotes ||
-      isLoadingMeWithGroup
-    ) {
+    if (isLoadingChallenge || isLoadingSubmissions || isLoadingVotes || isLoadingMeWithGroup) {
       return;
     }
 
     if (!challenge) return;
 
-    if (
-      challenge.scoringCategory !== "PEER_VOTING" ||
-      challenge.status !== "VOTING_PHASE"
-    ) {
+    if (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE") {
       return;
     }
 
@@ -401,7 +359,6 @@ export default function ChallengePeerVotingScreen() {
     tripId,
     votingSubmissions.length,
   ]);
-   
 
   const handlePickWinner = (winnerId: string) => {
     if (phase !== "comparing") return;
@@ -426,12 +383,9 @@ export default function ChallengePeerVotingScreen() {
     nextCompared.add(toPairKey(leftId, rightId));
     const nextComparisonCount = comparisonCount + 1;
     const nextRanking = rankByRating(votingSubmissions, nextRatings);
-    const nextTop3Ids = nextRanking
-      .slice(0, 3)
-      .map((submission) => submission.id);
+    const nextTop3Ids = nextRanking.slice(0, 3).map((submission) => submission.id);
     const nextTop3Key = nextTop3Ids.join("|");
-    const nextStableTop3Count =
-      previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
+    const nextStableTop3Count = previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
 
     const reachedHardCap = nextComparisonCount >= hardCap;
     const reachedStableTop3 = nextStableTop3Count >= TOP3_STABILITY_REQUIRED;
@@ -504,8 +458,7 @@ export default function ChallengePeerVotingScreen() {
       });
       navigateBackToChallenge();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to submit votes";
+      const message = error instanceof Error ? error.message : "Failed to submit votes";
       setBlockedReason(message);
       setPhase("blocked");
     }
@@ -513,12 +466,7 @@ export default function ChallengePeerVotingScreen() {
 
   const progress = Math.min(comparisonCount / hardCap, 1);
 
-  if (
-    !challengeId ||
-    !tripId ||
-    isLoadingChallenge ||
-    shouldRedirectToChallengeDetails
-  ) {
+  if (!challengeId || !tripId || isLoadingChallenge || shouldRedirectToChallengeDetails) {
     return <ChallengeLoadingState />;
   }
 
@@ -550,9 +498,7 @@ export default function ChallengePeerVotingScreen() {
           <>
             <View style={styles.progressWrap}>
               <View style={styles.progressTrack}>
-                <View
-                  style={[styles.progressFill, { width: `${progress * 100}%` }]}
-                />
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
               </View>
               <Text style={styles.progressLabel}>
                 {comparisonCount}/{hardCap} comparisons
@@ -600,13 +546,7 @@ export default function ChallengePeerVotingScreen() {
                   key={`${submission.id}-${index + 1}`}
                   submission={submission}
                   title={`#${index + 1}`}
-                  subtitle={
-                    index === 0
-                      ? "3 points"
-                      : index === 1
-                        ? "2 points"
-                        : "1 point"
-                  }
+                  subtitle={index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"}
                 />
               ))}
             </View>
@@ -617,9 +557,7 @@ export default function ChallengePeerVotingScreen() {
                 disabled={submitVoteMutation.isPending}
               >
                 <Text style={styles.actionPrimaryText}>
-                  {submitVoteMutation.isPending
-                    ? "Submitting..."
-                    : "Confirm Podium"}
+                  {submitVoteMutation.isPending ? "Submitting..." : "Confirm Podium"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -634,11 +572,7 @@ export default function ChallengePeerVotingScreen() {
                 "Voting is not available right now. It starts automatically after moderation and after the submission phase ends."}
             </Text>
             <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionPrimary,
-                styles.doneButton,
-              ]}
+              style={[styles.actionButton, styles.actionPrimary, styles.doneButton]}
               onPress={navigateBackToChallenge}
             >
               <Text style={styles.actionPrimaryText}>Back</Text>

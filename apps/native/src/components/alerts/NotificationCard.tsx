@@ -8,10 +8,7 @@ interface NotificationCardProps {
   timeLabel: string;
 }
 
-export function NotificationCard({
-  notification,
-  timeLabel,
-}: NotificationCardProps) {
+export function NotificationCard({ notification, timeLabel }: NotificationCardProps) {
   return (
     <View style={styles.notificationCard}>
       <View style={styles.notificationIcon}>
@@ -23,8 +20,7 @@ export function NotificationCard({
         <View style={styles.notificationFooter}>
           {notification.createdBy && (
             <Text style={styles.notificationAuthor}>
-              From: {notification.createdBy.firstName}{" "}
-              {notification.createdBy.lastName}
+              From: {notification.createdBy.firstName} {notification.createdBy.lastName}
             </Text>
           )}
           <Text style={styles.notificationTime}>{timeLabel}</Text>

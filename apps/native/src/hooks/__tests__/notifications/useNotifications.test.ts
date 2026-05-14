@@ -6,7 +6,8 @@ import { useNotifications } from "../../notifications/useNotifications";
 // Mock expo-notifications
 const mockGetPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
 const mockRequestPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
-const mockGetExpoPushTokenAsync = jest.fn<(opts: { projectId?: string }) => Promise<{ data: string }>>();
+const mockGetExpoPushTokenAsync =
+  jest.fn<(opts: { projectId?: string }) => Promise<{ data: string }>>();
 
 jest.mock("expo-notifications", () => ({
   getPermissionsAsync: () => mockGetPermissionsAsync(),
@@ -32,7 +33,10 @@ jest.mock("expo-constants", () => ({
 
 // Mock react-native Alert and Linking
 import type { AlertButton, AlertOptions } from "react-native";
-const mockAlert = jest.fn<(title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) => void>();
+const mockAlert =
+  jest.fn<
+    (title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) => void
+  >();
 const mockLinkingOpenSettings = jest.fn<() => Promise<void>>();
 
 jest.mock("react-native", () => ({
@@ -231,7 +235,9 @@ describe("useNotifications", () => {
   });
 
   it("should subscribe when toggling and not subscribed", async () => {
-    const mockSubscribe = jest.fn<(args: { token: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest
+      .fn<(args: { token: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: { isSubscribed: false, subscriptions: [] },
@@ -261,7 +267,9 @@ describe("useNotifications", () => {
   });
 
   it("should unsubscribe when toggling and already subscribed", async () => {
-    const mockUnsubscribe = jest.fn<(args: { token: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockUnsubscribe = jest
+      .fn<(args: { token: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
@@ -324,7 +332,7 @@ describe("useNotifications", () => {
         expect.arrayContaining([
           expect.objectContaining({ text: "Cancel", style: "cancel" }),
           expect.objectContaining({ text: "Open Settings", onPress: expect.any(Function) }),
-        ])
+        ]),
       );
     });
   });
@@ -360,11 +368,11 @@ describe("useNotifications", () => {
 
     const alertCalls = mockAlert.mock.calls;
     expect(alertCalls.length).toBeGreaterThan(0);
-    
+
     // TypeScript needs explicit check
     const firstCall = alertCalls[0]!;
     expect(firstCall).toBeDefined();
-    
+
     const alertButtons = firstCall[2] as { text: string; onPress?: () => void }[] | undefined;
     const openSettingsButton = alertButtons?.find((b) => b.text === "Open Settings");
 
@@ -399,7 +407,11 @@ describe("useNotifications", () => {
     });
 
     await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith("Error", "Failed to update notification settings", undefined);
+      expect(mockAlert).toHaveBeenCalledWith(
+        "Error",
+        "Failed to update notification settings",
+        undefined,
+      );
     });
   });
 
@@ -426,20 +438,23 @@ describe("useNotifications", () => {
     });
 
     await waitFor(() => {
-      expect(mockAlert).toHaveBeenCalledWith("Test", "This would trigger a test notification flow", undefined);
+      expect(mockAlert).toHaveBeenCalledWith(
+        "Test",
+        "This would trigger a test notification flow",
+        undefined,
+      );
     });
   });
 
   it("should handle multiple subscriptions when unsubscribing", async () => {
-    const mockUnsubscribe = jest.fn<(args: { token: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockUnsubscribe = jest
+      .fn<(args: { token: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseQuery.mockReturnValue({
       data: {
         isSubscribed: true,
-        subscriptions: [
-          { token: "token-1" },
-          { token: "token-2" },
-        ],
+        subscriptions: [{ token: "token-1" }, { token: "token-2" }],
       },
       isLoading: false,
     });
@@ -507,7 +522,7 @@ describe("useNotifications", () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to get notification permissions",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
 

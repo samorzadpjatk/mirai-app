@@ -14,7 +14,7 @@ Following OpenAI's guidance, AGENTS.md files will be layered from the repository
 - Establish cross-references between AGENTS.md files and the docs folder
 - Document Turborepo and Bun workspace configuration
 - Document the tRPC API structure and usage patterns
-- Document Prisma database schema conventions
+- Document Drizzle database schema conventions
 - Document Expo/React Native specific guidelines
 
 ## Capabilities
@@ -26,7 +26,7 @@ Following OpenAI's guidance, AGENTS.md files will be layered from the repository
 - `docs-folder`: Create centralized documentation structure in `docs/` folder
 - `monorepo-conventions`: Document Turborepo task dependencies, Bun workspace configuration, and shared build scripts
 - `trpc-api-docs`: Document tRPC router structure, procedures, and client usage patterns
-- `prisma-schema-docs`: Document database schema conventions, migration procedures, and Prisma client usage
+- `drizzle-schema-docs`: Document database schema conventions, migration procedures, and Drizzle client usage
 - `expo-native-docs`: Document Expo/React Native specific development guidelines, including EAS builds and native modules
 
 ### Modified Capabilities

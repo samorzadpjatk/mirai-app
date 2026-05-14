@@ -1,5 +1,7 @@
 import { sendMobileNotifications } from "../../services/notificationService";
 import { createORPCRouter, publicProcedure } from "../trpc";
+import { notificationDeliveries } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
 import z from "zod";
 
 export interface InactivityCheckResult {
@@ -28,20 +30,18 @@ export const notificationSenderRouter = createORPCRouter({
     .handler(async ({ input, context }) => {
       try {
         const scheduleExecution =
-          await context.db.notificationScheduleExecution.findFirst({
-            where: { notificationId: input.notificationId },
-            select: { schedule: {select: {id: true, tripId: true}} },
+          await context.db.query.notificationScheduleExecutions.findFirst({
+            where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
+            with: { schedule: true },
           });
 
-        await context.db.notificationDelivery.create({
-          data: {
-            tripId: scheduleExecution?.schedule.tripId,
-            notificationId: input.notificationId,
-            scheduleId: scheduleExecution?.schedule.id,
-            deliveryStartedAt: new Date(),
-            status: "pending",
-          },
-        });
+        await context.db.insert(notificationDeliveries).values({
+          tripId: scheduleExecution?.schedule?.tripId,
+          notificationId: input.notificationId,
+          scheduleId: scheduleExecution?.schedule?.id,
+          deliveryStartedAt: new Date(),
+          status: "pending",
+        }).returning();
 
         console.log(
           `[Delivery Tracker] Started tracking delivery for notification ${input.notificationId}`,
@@ -72,17 +72,14 @@ export const notificationSenderRouter = createORPCRouter({
               ? "failure"
               : "partial_failure";
 
-        await context.db.notificationDelivery.update({
-          where: { notificationId: input.notificationId },
-          data: {
-            deliveryCompletedAt: new Date(),
-            totalRecipients: input.totalRecipients,
-            successCount: input.successCount,
-            failureCount: input.failureCount,
-            errors: input.errors,
-            status,
-          },
-        });
+        await context.db.update(notificationDeliveries).set({
+          deliveryCompletedAt: new Date(),
+          totalRecipients: input.totalRecipients,
+          successCount: input.successCount,
+          failureCount: input.failureCount,
+          errors: input.errors,
+          status,
+        }).where(eq(notificationDeliveries.notificationId, input.notificationId)).returning();
 
         console.log(
           `[Delivery Tracker] Completed tracking for notification ${input.notificationId}: ${input.successCount}/${input.totalRecipients} successful`,
@@ -108,36 +105,31 @@ export const notificationSenderRouter = createORPCRouter({
             ? input.error.message
             : String(input.error);
 
-        const existing = await context.db.notificationDelivery.findUnique({
-          where: { notificationId: input.notificationId },
+        const existing = await context.db.query.notificationDeliveries.findFirst({
+          where: (nd, { eq }) => eq(nd.notificationId, input.notificationId),
         });
 
         if (existing) {
-          await context.db.notificationDelivery.update({
-            where: { notificationId: input.notificationId },
-            data: {
-              deliveryCompletedAt: new Date(),
-              errors: errorMessage,
-              status: "failure",
-            },
-          });
+          await context.db.update(notificationDeliveries).set({
+            deliveryCompletedAt: new Date(),
+            errors: errorMessage,
+            status: "failure",
+          }).where(eq(notificationDeliveries.notificationId, input.notificationId));
         } else {
           const scheduleExecution =
-            await context.db.notificationScheduleExecution.findFirst({
-              where: { notificationId: input.notificationId },
-              select: { schedule: {select: {id: true, tripId: true}} },
+            await context.db.query.notificationScheduleExecutions.findFirst({
+              where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
+              with: { schedule: true },
             });
 
-          await context.db.notificationDelivery.create({
-            data: {
-              notificationId: input.notificationId,
-              scheduleId: scheduleExecution?.schedule.id,
-              tripId: scheduleExecution?.schedule.tripId,
-              deliveryStartedAt: new Date(),
-              deliveryCompletedAt: new Date(),
-              errors: errorMessage,
-              status: "failure",
-            },
+          await context.db.insert(notificationDeliveries).values({
+            notificationId: input.notificationId,
+            scheduleId: scheduleExecution?.schedule?.id,
+            tripId: scheduleExecution?.schedule?.tripId,
+            deliveryStartedAt: new Date(),
+            deliveryCompletedAt: new Date(),
+            errors: errorMessage,
+            status: "failure",
           });
         }
 
@@ -152,7 +144,6 @@ export const notificationSenderRouter = createORPCRouter({
       }
     }),
   checkInactiveUsers: publicProcedure.handler(() => {
-    // Inactivity nudge notifications are disabled.
     return {
       checked: 0,
       notified: 0,

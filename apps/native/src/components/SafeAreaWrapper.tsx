@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, type ViewStyle, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from "react";
+import { View, type ViewStyle, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface SafeAreaTopProps {
   children: React.ReactNode;
@@ -22,7 +22,8 @@ export function SafeAreaTop({ children, style }: SafeAreaTopProps) {
       style={[
         style,
         {
-          paddingTop: (typeof existingPaddingTop === 'number' ? existingPaddingTop : 0) + insets.top,
+          paddingTop:
+            (typeof existingPaddingTop === "number" ? existingPaddingTop : 0) + insets.top,
         },
       ]}
     >

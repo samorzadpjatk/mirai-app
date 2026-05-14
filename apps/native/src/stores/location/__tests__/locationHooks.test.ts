@@ -128,8 +128,8 @@ describe("locationHooks", () => {
 
   describe("useLocationStore", () => {
     it("should select state slice with selector", () => {
-      const { result } = renderHook(() => 
-        useLocationStore((state) => state.isLocationSharingEnabled)
+      const { result } = renderHook(() =>
+        useLocationStore((state) => state.isLocationSharingEnabled),
       );
 
       expect(result.current).toBe(false);
@@ -140,9 +140,7 @@ describe("locationHooks", () => {
         locationStore.setState({ permissionStatus: "granted" });
       });
 
-      const { result } = renderHook(() => 
-        useLocationStore((state) => state.permissionStatus)
-      );
+      const { result } = renderHook(() => useLocationStore((state) => state.permissionStatus));
 
       expect(result.current).toBe("granted");
     });
@@ -156,10 +154,10 @@ describe("locationHooks", () => {
       });
 
       const { result: enabledResult } = renderHook(() =>
-        useLocationStore((state) => state.isBackgroundLocationEnabled)
+        useLocationStore((state) => state.isBackgroundLocationEnabled),
       );
       const { result: activeResult } = renderHook(() =>
-        useLocationStore((state) => state.isBackgroundLocationActive)
+        useLocationStore((state) => state.isBackgroundLocationActive),
       );
 
       expect(enabledResult.current).toBe(true);
@@ -176,13 +174,13 @@ describe("locationHooks", () => {
       });
 
       const { result: loadingResult } = renderHook(() =>
-        useLocationStore((state) => state.isLoading)
+        useLocationStore((state) => state.isLoading),
       );
       const { result: updatingSharingResult } = renderHook(() =>
-        useLocationStore((state) => state.isUpdatingSharing)
+        useLocationStore((state) => state.isUpdatingSharing),
       );
       const { result: updatingBackgroundResult } = renderHook(() =>
-        useLocationStore((state) => state.isUpdatingBackgroundLocation)
+        useLocationStore((state) => state.isUpdatingBackgroundLocation),
       );
 
       expect(loadingResult.current).toBe(true);
@@ -191,16 +189,14 @@ describe("locationHooks", () => {
     });
 
     it("should select actions from store", () => {
-      const { result } = renderHook(() => 
-        useLocationStore((state) => state.toggleLocationSharing)
-      );
+      const { result } = renderHook(() => useLocationStore((state) => state.toggleLocationSharing));
 
       expect(typeof result.current).toBe("function");
     });
 
     it("should react to state changes", () => {
-      const { result } = renderHook(() => 
-        useLocationStore((state) => state.isLocationSharingEnabled)
+      const { result } = renderHook(() =>
+        useLocationStore((state) => state.isLocationSharingEnabled),
       );
 
       expect(result.current).toBe(false);
@@ -214,10 +210,10 @@ describe("locationHooks", () => {
 
     it("should allow calling actions through selector", async () => {
       const { result: toggleResult } = renderHook(() =>
-        useLocationStore((state) => state.toggleLocationSharing)
+        useLocationStore((state) => state.toggleLocationSharing),
       );
       const { result: enabledResult } = renderHook(() =>
-        useLocationStore((state) => state.isLocationSharingEnabled)
+        useLocationStore((state) => state.isLocationSharingEnabled),
       );
 
       expect(enabledResult.current).toBe(false);
@@ -233,8 +229,8 @@ describe("locationHooks", () => {
   describe("hook integration", () => {
     it("should work together for complex scenarios", () => {
       const { result: contextResult } = renderHook(() => useLocationContext());
-      const { result: storeResult } = renderHook(() => 
-        useLocationStore((state) => state.permissionStatus)
+      const { result: storeResult } = renderHook(() =>
+        useLocationStore((state) => state.permissionStatus),
       );
 
       expect(contextResult.current.canViewOthersLocations).toBe(false);

@@ -58,9 +58,7 @@ export async function setCachedTrips(trips: TripListItem[]): Promise<void> {
   await writeJson(TRIPS_CACHE_KEY, trips);
 }
 
-export async function upsertCachedTripListItem(
-  trip: TripListItem,
-): Promise<void> {
+export async function upsertCachedTripListItem(trip: TripListItem): Promise<void> {
   const cachedTrips = await getCachedTrips();
   const nextTrips = [...cachedTrips];
   const existingIndex = nextTrips.findIndex((item) => item.id === trip.id);
@@ -86,10 +84,7 @@ export async function getCachedTripById<T>(tripId: string): Promise<T | null> {
   return fallbackTrip ? (fallbackTrip as T) : null;
 }
 
-export async function setCachedTripById<T>(
-  tripId: string,
-  trip: T,
-): Promise<void> {
+export async function setCachedTripById<T>(tripId: string, trip: T): Promise<void> {
   const detailsMap = await readJson<TripDetailsCacheMap>(TRIP_DETAILS_CACHE_KEY, {});
   detailsMap[tripId] = trip;
   await writeJson(TRIP_DETAILS_CACHE_KEY, detailsMap);

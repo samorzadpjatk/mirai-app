@@ -6,10 +6,7 @@ interface EditGroupFormFieldsProps {
   onChangeName: (value: string) => void;
 }
 
-export function EditGroupFormFields({
-  groupName,
-  onChangeName,
-}: EditGroupFormFieldsProps) {
+export function EditGroupFormFields({ groupName, onChangeName }: EditGroupFormFieldsProps) {
   return (
     <View style={styles.inputSection}>
       <Text style={styles.inputLabel}>Group Name</Text>

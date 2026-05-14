@@ -8,11 +8,10 @@ export default tseslint.config(
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      "src/prisma/**",
       "seed.ts",
       "vitest.config.ts",
       "vitest.setup.ts",
-      "prisma.config.ts",
+      "drizzle.config.ts",
     ],
   },
   {

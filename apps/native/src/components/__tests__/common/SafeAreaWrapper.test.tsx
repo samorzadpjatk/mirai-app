@@ -42,7 +42,7 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     expect(screen.getByText("Content")).toBeOnTheScreen();
@@ -52,14 +52,12 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ paddingTop: 44 }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ paddingTop: 44 })]),
     );
   });
 
@@ -67,14 +65,12 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop style={{ paddingTop: 10 }}>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ paddingTop: 54 }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ paddingTop: 54 })]),
     );
   });
 
@@ -89,14 +85,12 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ paddingTop: 0 }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ paddingTop: 0 })]),
     );
   });
 
@@ -111,14 +105,12 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
     expect(view.props.style).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ paddingTop: 59 }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ paddingTop: 59 })]),
     );
   });
 
@@ -127,7 +119,7 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop style={customStyle}>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
@@ -135,7 +127,7 @@ describe("SafeAreaTop", () => {
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "red" }),
         expect.objectContaining({ marginBottom: 10 }),
-      ])
+      ]),
     );
   });
 
@@ -143,7 +135,7 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop style={[{ backgroundColor: "blue" }, { marginTop: 5 }]}>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
@@ -157,7 +149,7 @@ describe("SafeAreaTop", () => {
           <Text>Header</Text>
           <Text>Subheader</Text>
         </View>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     expect(screen.getByText("Header")).toBeOnTheScreen();
@@ -168,7 +160,7 @@ describe("SafeAreaTop", () => {
     renderWithProviders(
       <SafeAreaTop style={{ backgroundColor: "blue", paddingHorizontal: 20 }}>
         <Text>Content</Text>
-      </SafeAreaTop>
+      </SafeAreaTop>,
     );
 
     const view = screen.getByTestId("safe-area-top");
@@ -177,7 +169,7 @@ describe("SafeAreaTop", () => {
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "blue" }),
         expect.objectContaining({ paddingHorizontal: 20 }),
-      ])
+      ]),
     );
   });
 });

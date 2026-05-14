@@ -89,7 +89,7 @@ describe("useStaffVoting", () => {
         ...defaultProps,
         onPhaseChange,
         votingSubmissions: mockSubmissions.slice(0, 2),
-      })
+      }),
     );
 
     act(() => {
@@ -139,7 +139,7 @@ describe("useStaffVoting", () => {
           scoringCategory: "SPEED" as const,
         },
         onPhaseChange,
-      })
+      }),
     );
 
     act(() => {
@@ -147,7 +147,9 @@ describe("useStaffVoting", () => {
     });
 
     expect(result.current.phase).toBe("blocked");
-    expect(result.current.blockedReason).toBe("This screen is available only for Judged Staff challenges.");
+    expect(result.current.blockedReason).toBe(
+      "This screen is available only for Judged Staff challenges.",
+    );
   });
 
   it("should block voting when submission phase has not ended", () => {
@@ -158,7 +160,7 @@ describe("useStaffVoting", () => {
           ...defaultProps.challenge,
           endTime: new Date(Date.now() + 86400000).toISOString(),
         },
-      })
+      }),
     );
 
     act(() => {
@@ -166,7 +168,9 @@ describe("useStaffVoting", () => {
     });
 
     expect(result.current.phase).toBe("blocked");
-    expect(result.current.blockedReason).toContain("Staff voting will be available only after submission phase ends");
+    expect(result.current.blockedReason).toContain(
+      "Staff voting will be available only after submission phase ends",
+    );
   });
 
   it("should block voting when challenge is cancelled", () => {
@@ -177,7 +181,7 @@ describe("useStaffVoting", () => {
           ...defaultProps.challenge,
           status: "CANCELLED" as const,
         },
-      })
+      }),
     );
 
     act(() => {
@@ -193,7 +197,7 @@ describe("useStaffVoting", () => {
       useStaffVoting({
         ...defaultProps,
         myVotesError: new Error("Failed to load votes"),
-      })
+      }),
     );
 
     act(() => {
@@ -209,7 +213,7 @@ describe("useStaffVoting", () => {
       useStaffVoting({
         ...defaultProps,
         judgedStaffProgressError: new Error("Progress load failed"),
-      })
+      }),
     );
 
     act(() => {
@@ -226,7 +230,7 @@ describe("useStaffVoting", () => {
       useStaffVoting({
         ...defaultProps,
         onPhaseChange,
-      })
+      }),
     );
 
     act(() => {
@@ -273,7 +277,7 @@ describe("useStaffVoting", () => {
       useStaffVoting({
         ...defaultProps,
         votingSubmissions: mockSubmissions.slice(0, 2),
-      })
+      }),
     );
 
     act(() => {
@@ -299,7 +303,7 @@ describe("useStaffVoting", () => {
       useStaffVoting({
         ...defaultProps,
         hasMyCompleteVote: true,
-      })
+      }),
     );
 
     act(() => {
@@ -321,7 +325,7 @@ describe("useStaffVoting", () => {
         ...defaultProps,
         votingSubmissions: [],
         requiredVotePositions: 0,
-      })
+      }),
     );
 
     act(() => {
@@ -339,7 +343,7 @@ describe("useStaffVoting", () => {
           ...defaultProps.challenge,
           endTime: null,
         },
-      })
+      }),
     );
 
     act(() => {

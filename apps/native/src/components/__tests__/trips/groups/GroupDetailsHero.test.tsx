@@ -11,10 +11,7 @@ describe("GroupDetailsHero", () => {
 
   it("should render image when imageUrl is provided", () => {
     renderWithProviders(
-      <GroupDetailsHero
-        name="Test Group"
-        imageUrl="https://example.com/group-image.jpg"
-      />
+      <GroupDetailsHero name="Test Group" imageUrl="https://example.com/group-image.jpg" />,
     );
     const image = screen.getByTestId("group-hero-image");
     expect(image).toBeOnTheScreen();

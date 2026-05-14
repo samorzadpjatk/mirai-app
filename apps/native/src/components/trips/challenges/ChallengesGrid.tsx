@@ -8,17 +8,12 @@ interface ChallengesGridProps {
   onSelectChallenge: (challenge: ChallengeListItem) => void;
 }
 
-export function ChallengesGrid({
-  challenges,
-  onSelectChallenge,
-}: ChallengesGridProps) {
+export function ChallengesGrid({ challenges, onSelectChallenge }: ChallengesGridProps) {
   if (challenges.length === 0) {
     return (
       <View style={styles.emptyState}>
         <Text style={styles.emptyTitle}>No challenges available yet</Text>
-        <Text style={styles.emptySubtitle}>
-          Check back later for new challenges!
-        </Text>
+        <Text style={styles.emptySubtitle}>Check back later for new challenges!</Text>
       </View>
     );
   }
@@ -27,10 +22,7 @@ export function ChallengesGrid({
     <View style={styles.grid}>
       {challenges.map((challenge) => (
         <View key={challenge.id} style={styles.gridCell}>
-          <ChallengesGridItem
-            challenge={challenge}
-            onPress={onSelectChallenge}
-          />
+          <ChallengesGridItem challenge={challenge} onPress={onSelectChallenge} />
         </View>
       ))}
     </View>

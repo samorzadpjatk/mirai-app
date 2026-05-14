@@ -5,7 +5,19 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@mirai-app/db";
+import {
+  eq,
+  and,
+  count,
+  inArray,
+  notInArray,
+  lte,
+} from "drizzle-orm";
+import {
+  challenges,
+  challengeSubmissions,
+} from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import {
   createChallengeStatusActivityById,
@@ -20,7 +32,7 @@ import {
   resolveRecurringChallengeIdForTrip,
 } from "../../utils/recurringChallenges";
 
-const challengeBaseSelect: Prisma.ChallengeSelect = {
+const challengeColumns = {
   id: true,
   tripId: true,
   name: true,
@@ -46,10 +58,6 @@ const challengeBaseSelect: Prisma.ChallengeSelect = {
   autoApprove: true,
   createdAt: true,
   updatedAt: true,
-} as const;
-
-const challengeSelect: Prisma.ChallengeSelect = {
-  ...challengeBaseSelect,
 } as const;
 
 const CHALLENGE_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
@@ -322,32 +330,33 @@ const resolveChallengeImages = async <T extends { image: string | null }>(
       };
     };
   },
-  challenges: T[],
+  challengeRows: T[],
 ) =>
   Promise.all(
-    challenges.map(async (challenge) => ({
+    challengeRows.map(async (challenge) => ({
       ...challenge,
       image: await resolveChallengeImage(supabase, challenge.image),
     })),
   );
 
 const activateVisibleChallenges = async (
-  db: Prisma.TransactionClient,
-  where?: Prisma.ChallengeWhereInput,
+  db: DB,
+  where?: { id?: string; tripId?: string },
 ) => {
   const now = new Date();
 
-  await db.challenge.updateMany({
-    where: {
-      status: "VISIBLE",
-      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
-      endTime: { lte: now },
-      ...where,
-    },
-    data: {
-      status: "COMPLETED",
-    },
-  });
+  const visibleConditions = [
+    eq(challenges.status, "VISIBLE"),
+    notInArray(challenges.scoringCategory, ["PEER_VOTING", "JUDGED_STAFF"]),
+    lte(challenges.endTime, now),
+  ];
+  if (where?.id) visibleConditions.push(eq(challenges.id, where.id));
+  if (where?.tripId) visibleConditions.push(eq(challenges.tripId, where.tripId));
+
+  await db
+    .update(challenges)
+    .set({ status: "COMPLETED" })
+    .where(and(...visibleConditions));
 
   await promoteVisibleChallengesToActiveWithFeed({
     tx: db,
@@ -361,17 +370,18 @@ const activateVisibleChallenges = async (
     createdByAdmin: null,
   });
 
-  await db.challenge.updateMany({
-    where: {
-      status: "ACTIVE",
-      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
-      endTime: { lte: now },
-      ...where,
-    },
-    data: {
-      status: "COMPLETED",
-    },
-  });
+  const activeConditions = [
+    eq(challenges.status, "ACTIVE"),
+    notInArray(challenges.scoringCategory, ["PEER_VOTING", "JUDGED_STAFF"]),
+    lte(challenges.endTime, now),
+  ];
+  if (where?.id) activeConditions.push(eq(challenges.id, where.id));
+  if (where?.tripId) activeConditions.push(eq(challenges.tripId, where.tripId));
+
+  await db
+    .update(challenges)
+    .set({ status: "COMPLETED" })
+    .where(and(...activeConditions));
 
   await finalizeVotingChallengesToCompletedWithFeed({
     tx: db,
@@ -385,13 +395,13 @@ export const challengeRouter = createORPCRouter({
   getAll: adminProcedure.handler(async ({ context }) => {
     await activateVisibleChallenges(context.db);
 
-    const challenges = await context.db.challenge.findMany({
-      where: { isRecurring: false },
-      select: challengeSelect,
-      orderBy: { createdAt: "desc" },
+    const challengeRows = await context.db.query.challenges.findMany({
+      where: (c, { eq }) => eq(c.isRecurring, false),
+      columns: challengeColumns,
+      orderBy: (c, { desc }) => [desc(c.createdAt)],
     });
 
-    const resolved = await resolveChallengeImages(context.supabase, challenges);
+    const resolved = await resolveChallengeImages(context.supabase, challengeRows);
     return resolved.map((challenge) => toClientChallenge(challenge));
   }),
   getAllByTrip: protectedProcedure
@@ -415,23 +425,30 @@ export const challengeRouter = createORPCRouter({
 
       const limit = input.pagination?.limit ?? 30;
       const offset = input.pagination?.offset ?? 0;
-      const where = {
-        tripId: input.tripId,
-        isRecurring: false,
-      } as const;
 
-      const [challenges, total] = await Promise.all([
-        context.db.challenge.findMany({
-          where,
-          select: challengeSelect,
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          skip: offset,
+      const [challengeRows, totalResult] = await Promise.all([
+        context.db.query.challenges.findMany({
+          where: (c, { eq, and }) =>
+            and(eq(c.tripId, input.tripId), eq(c.isRecurring, false)),
+          columns: challengeColumns,
+          orderBy: (c, { desc }) => [desc(c.createdAt)],
+          limit,
+          offset,
         }),
-        context.db.challenge.count({ where }),
+        context.db
+          .select({ count: count() })
+          .from(challenges)
+          .where(
+            and(
+              eq(challenges.tripId, input.tripId),
+              eq(challenges.isRecurring, false),
+            ),
+          ),
       ]);
 
-      if (challenges.length === 0) {
+      const total = totalResult[0]?.count ?? 0;
+
+      if (challengeRows.length === 0) {
         return {
           challenges: [],
           pagination: {
@@ -443,47 +460,46 @@ export const challengeRouter = createORPCRouter({
         };
       }
 
-      const challengeIds = challenges.map((challenge) => challenge.id);
-      const participant = await context.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: {
-            userId: context.dbUser.id,
-            tripId: input.tripId,
-          },
-        },
-        select: {
+      const challengeIds = challengeRows.map((challenge) => challenge.id);
+      const participant = await context.db.query.tripParticipants.findFirst({
+        where: (tp, { eq, and }) =>
+          and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+        columns: {
           groupId: true,
         },
       });
 
-      const groupedSubmissionCounts = await context.db.challengeSubmission.groupBy({
-        by: ["challengeId"],
-        where: {
-          challengeId: { in: challengeIds },
-        },
-        _count: {
-          _all: true,
-        },
-      });
-      const groupedPendingSubmissionCounts =
-        await context.db.challengeSubmission.groupBy({
-          by: ["challengeId"],
-          where: {
-            challengeId: { in: challengeIds },
-            status: "PENDING",
-          },
-          _count: {
-            _all: true,
-          },
-        });
+      const groupedSubmissionCounts = await context.db
+        .select({
+          challengeId: challengeSubmissions.challengeId,
+          count: count(),
+        })
+        .from(challengeSubmissions)
+        .where(inArray(challengeSubmissions.challengeId, challengeIds))
+        .groupBy(challengeSubmissions.challengeId);
+
+      const groupedPendingSubmissionCounts = await context.db
+        .select({
+          challengeId: challengeSubmissions.challengeId,
+          count: count(),
+        })
+        .from(challengeSubmissions)
+        .where(
+          and(
+            inArray(challengeSubmissions.challengeId, challengeIds),
+            eq(challengeSubmissions.status, "PENDING"),
+          ),
+        )
+        .groupBy(challengeSubmissions.challengeId);
 
       const myGroupSubmissions = participant?.groupId
-        ? await context.db.challengeSubmission.findMany({
-            where: {
-              challengeId: { in: challengeIds },
-              groupId: participant.groupId,
-            },
-            select: {
+        ? await context.db.query.challengeSubmissions.findMany({
+            where: (cs, { eq, and, inArray }) =>
+              and(
+                inArray(cs.challengeId, challengeIds),
+                eq(cs.groupId, participant.groupId!),
+              ),
+            columns: {
               challengeId: true,
               status: true,
             },
@@ -493,13 +509,13 @@ export const challengeRouter = createORPCRouter({
       const countByChallengeId = new Map(
         groupedSubmissionCounts.map((item) => [
           item.challengeId,
-          item._count._all,
+          item.count,
         ]),
       );
       const pendingCountByChallengeId = new Map(
         groupedPendingSubmissionCounts.map((item) => [
           item.challengeId,
-          item._count._all,
+          item.count,
         ]),
       );
       const mySubmissionStatusByChallengeId = new Map(
@@ -508,7 +524,7 @@ export const challengeRouter = createORPCRouter({
 
       const withResolvedImages = await resolveChallengeImages(
         context.supabase,
-        challenges,
+        challengeRows,
       );
 
       return {
@@ -552,11 +568,10 @@ export const challengeRouter = createORPCRouter({
         tripId: input.tripId,
       });
 
-      const challenge = await context.db.challenge.findFirst({
-        where: { id: resolvedChallengeId, tripId: input.tripId },
-        select: {
-          ...challengeBaseSelect,
-        },
+      const challenge = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, resolvedChallengeId), eq(c.tripId, input.tripId)),
+        columns: challengeColumns,
       });
 
       if (!challenge) {
@@ -688,51 +703,54 @@ export const challengeRouter = createORPCRouter({
         ? "ACTIVE"
         : requestedStatus;
 
-      const challenge = await context.db.$transaction(async (tx) => {
-        const createdChallenge = await tx.challenge.create({
-          data: {
-            tripId: input.tripId,
-            name: input.name,
-            description: input.description ?? null,
-            image: normalizeChallengeImageInput(input.image),
-            submissionType: input.submissionType,
-            scoringCategory: input.scoringCategory,
-            isRecurring: input.isRecurring,
-            dailyStartTime: input.dailyStartTime,
-            dailyEndTime: input.dailyEndTime,
-            basePoints: input.basePoints,
-            firstPlacePoints: input.firstPlacePoints,
-            secondPlacePoints: input.secondPlacePoints,
-            thirdPlacePoints: input.thirdPlacePoints,
-            status: initialStatus,
-            startTime: recurringWindow?.startTime ?? input.startTime,
-            endTime: recurringWindow?.endTime ?? input.endTime,
-            votingStartTime:
-              input.scoringCategory === "PEER_VOTING"
-                ? (peerVotingTemplateWindow?.votingStartTime ?? null)
+      const challenge = await context.db.transaction(async (tx) => {
+        const [createdChallenge] = await tx.insert(challenges).values({
+          tripId: input.tripId,
+          name: input.name,
+          description: input.description ?? null,
+          image: normalizeChallengeImageInput(input.image),
+          submissionType: input.submissionType,
+          scoringCategory: input.scoringCategory,
+          isRecurring: input.isRecurring,
+          dailyStartTime: input.dailyStartTime,
+          dailyEndTime: input.dailyEndTime,
+          basePoints: input.basePoints,
+          firstPlacePoints: input.firstPlacePoints,
+          secondPlacePoints: input.secondPlacePoints,
+          thirdPlacePoints: input.thirdPlacePoints,
+          status: initialStatus,
+          startTime: recurringWindow?.startTime ?? input.startTime,
+          endTime: recurringWindow?.endTime ?? input.endTime,
+          votingStartTime:
+            input.scoringCategory === "PEER_VOTING"
+              ? (peerVotingTemplateWindow?.votingStartTime ?? null)
+              : null,
+          votingEndTime:
+            input.scoringCategory === "PEER_VOTING"
+              ? (peerVotingTemplateWindow?.votingEndTime ?? null)
+              : null,
+          targetLatitude: input.targetLatitude,
+          targetLongitude: input.targetLongitude,
+          expectedValue:
+            input.submissionType === "QR_CODE"
+              ? (input.qrCodeValue ?? null)
+              : input.submissionType === "TEXT"
+                ? (input.textExpectedPhrase ?? null)
                 : null,
-            votingEndTime:
-              input.scoringCategory === "PEER_VOTING"
-                ? (peerVotingTemplateWindow?.votingEndTime ?? null)
-                : null,
-            targetLatitude: input.targetLatitude,
-            targetLongitude: input.targetLongitude,
-            expectedValue:
-              input.submissionType === "QR_CODE"
-                ? (input.qrCodeValue ?? null)
-                : input.submissionType === "TEXT"
-                  ? (input.textExpectedPhrase ?? null)
-                  : null,
-            autoApprove:
-              input.submissionType === "QR_CODE" ||
-              input.submissionType === "LOCATION"
-                ? true
-                : input.submissionType === "IMAGE_LOCATION"
-                  ? false
-                  : input.autoApprove,
-          },
-          select: challengeSelect,
-        });
+          autoApprove:
+            input.submissionType === "QR_CODE" ||
+            input.submissionType === "LOCATION"
+              ? true
+              : input.submissionType === "IMAGE_LOCATION"
+                ? false
+                : input.autoApprove,
+        }).returning();
+
+        if (!createdChallenge) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create challenge",
+          });
+        }
 
         if (createdChallenge.isRecurring) {
           await precreateRecurringInstancesForTemplate({
@@ -816,9 +834,10 @@ export const challengeRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const existing = await context.db.challenge.findFirst({
-        where: { id: input.id, tripId: input.tripId },
-        select: {
+      const existing = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        columns: {
           id: true,
           status: true,
           description: true,
@@ -903,17 +922,24 @@ export const challengeRouter = createORPCRouter({
         nextScoringCategory === "PEER_VOTING" &&
         isTransitioningToVotingPhase
       ) {
-        const [totalSubmissions, pendingSubmissions] = await Promise.all([
-          context.db.challengeSubmission.count({
-            where: { challengeId: existing.id },
-          }),
-          context.db.challengeSubmission.count({
-            where: {
-              challengeId: existing.id,
-              status: "PENDING",
-            },
-          }),
+        const [totalSubmissionsResult, pendingSubmissionsResult] = await Promise.all([
+          context.db
+            .select({ count: count() })
+            .from(challengeSubmissions)
+            .where(eq(challengeSubmissions.challengeId, existing.id)),
+          context.db
+            .select({ count: count() })
+            .from(challengeSubmissions)
+            .where(
+              and(
+                eq(challengeSubmissions.challengeId, existing.id),
+                eq(challengeSubmissions.status, "PENDING"),
+              ),
+            ),
         ]);
+
+        const totalSubmissions = totalSubmissionsResult[0]?.count ?? 0;
+        const pendingSubmissions = pendingSubmissionsResult[0]?.count ?? 0;
 
         if (totalSubmissions === 0 || pendingSubmissions > 0) {
           throw new ORPCError("BAD_REQUEST", { message: "Peer voting can start only after staff reviews all submitted photos" });
@@ -948,10 +974,10 @@ export const challengeRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Text auto-approve requires an expected phrase, or disable auto-approve" });
       }
 
-      const challenge = await context.db.$transaction(async (tx) => {
-        const updatedChallenge = await tx.challenge.update({
-          where: { id: input.id },
-          data: {
+      const challenge = await context.db.transaction(async (tx) => {
+        const [updatedChallenge] = await tx
+          .update(challenges)
+          .set({
             name: input.name,
             description:
               input.description !== undefined
@@ -992,9 +1018,15 @@ export const challengeRouter = createORPCRouter({
                 : effectiveSubmissionType === "IMAGE_LOCATION"
                   ? false
                   : input.autoApprove,
-          },
-          select: challengeSelect,
-        });
+          })
+          .where(eq(challenges.id, input.id))
+          .returning();
+
+        if (!updatedChallenge) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to update challenge",
+          });
+        }
 
         if (updatedChallenge.isRecurring) {
           await precreateRecurringInstancesForTemplate({
@@ -1023,16 +1055,17 @@ export const challengeRouter = createORPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const existing = await context.db.challenge.findFirst({
-        where: { id: input.id, tripId: input.tripId },
-        select: { id: true },
+      const existing = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        columns: { id: true },
       });
 
       if (!existing) {
         throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
       }
 
-      await context.db.challenge.delete({ where: { id: input.id } });
+      await context.db.delete(challenges).where(eq(challenges.id, input.id));
 
       return { success: true };
     }),
@@ -1040,9 +1073,10 @@ export const challengeRouter = createORPCRouter({
   forceCloseVoting: adminProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const existing = await context.db.challenge.findFirst({
-        where: { id: input.id, tripId: input.tripId },
-        select: {
+      const existing = await context.db.query.challenges.findFirst({
+        where: (c, { eq, and }) =>
+          and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
+        columns: {
           id: true,
           status: true,
           scoringCategory: true,
@@ -1061,15 +1095,21 @@ export const challengeRouter = createORPCRouter({
         throw new ORPCError("BAD_REQUEST", { message: "Challenge is not in voting phase" });
       }
 
-      const challenge = await context.db.$transaction(async (tx) => {
-        const updatedChallenge = await tx.challenge.update({
-          where: { id: input.id },
-          data: {
+      const challenge = await context.db.transaction(async (tx) => {
+        const [updatedChallenge] = await tx
+          .update(challenges)
+          .set({
             status: "COMPLETED",
             votingEndTime: new Date(),
-          },
-          select: challengeSelect,
-        });
+          })
+          .where(eq(challenges.id, input.id))
+          .returning();
+
+        if (!updatedChallenge) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to update challenge",
+          });
+        }
 
         await createChallengeStatusActivityFromTransition({
           tx,

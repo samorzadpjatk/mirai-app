@@ -8,35 +8,30 @@ const PAGE_SIZE = 30;
 export function useGroups(tripId?: string | null) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch,
-  } = useInfiniteQuery(orpc.group.getAll.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = pageParam || 0;
-      return {
-        tripId: tripId ?? "",
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
+  const { data, isLoading, isRefetching, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
+    useInfiniteQuery(
+      orpc.group.getAll.infiniteOptions({
+        input: (pageParam: number) => {
+          const offset = pageParam || 0;
+          return {
+            tripId: tripId ?? "",
+            pagination: {
+              limit: PAGE_SIZE,
+              offset,
+            },
+          };
         },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.pagination.hasMore) {
+            return undefined;
+          }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-    enabled: Boolean(tripId),
-  }));
+          return lastPage.pagination.offset + lastPage.pagination.limit;
+        },
+        enabled: Boolean(tripId),
+      }),
+    );
 
   const groups = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.groups ?? []),
@@ -45,9 +40,7 @@ export function useGroups(tripId?: string | null) {
 
   const filteredGroups: GroupListItem[] = useMemo(() => {
     return groups
-      .filter((group) =>
-        group.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      .filter((group) => group.name.toLowerCase().includes(searchQuery.toLowerCase()))
       .map((group) => ({
         id: group.id,
         name: group.name,

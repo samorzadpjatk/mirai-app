@@ -58,10 +58,7 @@ export function QrScannerModal({
       ? cameraPermission
       : await requestCameraPermission();
     if (!permission?.granted) {
-      Alert.alert(
-        "Permission required",
-        "Camera permission is needed to scan QR code.",
-      );
+      Alert.alert("Permission required", "Camera permission is needed to scan QR code.");
       return false;
     }
     return true;
@@ -83,10 +80,7 @@ export function QrScannerModal({
     >
       <View style={styles.container}>
         <View
-          style={[
-            styles.header,
-            { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) },
-          ]}
+          style={[styles.header, { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) }]}
         >
           <Text style={styles.title}>{title}</Text>
           <Pressable
@@ -97,7 +91,7 @@ export function QrScannerModal({
             <Text style={styles.closeText}>Close</Text>
           </Pressable>
         </View>
-        
+
         <View style={styles.cameraContainer}>
           {cameraPermission?.granted ? (
             <CameraView
@@ -105,9 +99,7 @@ export function QrScannerModal({
               facing="back"
               barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
               onBarcodeScanned={
-                scanOncePerSession && hasScannedThisSession
-                  ? undefined
-                  : handleBarcodeScanned
+                scanOncePerSession && hasScannedThisSession ? undefined : handleBarcodeScanned
               }
             />
           ) : (
@@ -121,7 +113,7 @@ export function QrScannerModal({
             </View>
           )}
         </View>
-        
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>{instructionText}</Text>
         </View>

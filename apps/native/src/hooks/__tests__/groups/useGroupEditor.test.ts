@@ -13,10 +13,12 @@ jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => mockUseQueryClient(),
 }));
 
-const mockGroupGetByIdQueryOptions = jest.fn((params: { input: { id: string }; enabled?: boolean }) => ({
-  queryKey: ["group", "getById", params.input.id],
-  enabled: params.enabled,
-}));
+const mockGroupGetByIdQueryOptions = jest.fn(
+  (params: { input: { id: string }; enabled?: boolean }) => ({
+    queryKey: ["group", "getById", params.input.id],
+    enabled: params.enabled,
+  }),
+);
 const mockGroupMutationOptions = jest.fn((options: Record<string, unknown>) => ({
   mutationKey: ["group", "mutation"],
   ...options,
@@ -26,7 +28,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     group: {
       getById: {
-        queryOptions: (params: { input: { id: string }; enabled?: boolean }) => mockGroupGetByIdQueryOptions(params),
+        queryOptions: (params: { input: { id: string }; enabled?: boolean }) =>
+          mockGroupGetByIdQueryOptions(params),
       },
       update: {
         mutationOptions: (options: Record<string, unknown>) => mockGroupMutationOptions(options),
@@ -68,7 +71,10 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor("group-123"));
 
-      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "group-123" }, enabled: true });
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({
+        input: { id: "group-123" },
+        enabled: true,
+      });
     });
 
     it("should disable query when groupId is null", () => {
@@ -83,7 +89,10 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor(null));
 
-      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({
+        input: { id: "" },
+        enabled: false,
+      });
     });
 
     it("should disable query when groupId is undefined", () => {
@@ -98,7 +107,10 @@ describe("useGroupEditor", () => {
 
       renderHook(() => useGroupEditor(undefined));
 
-      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({ input: { id: "" }, enabled: false });
+      expect(mockGroupGetByIdQueryOptions).toHaveBeenCalledWith({
+        input: { id: "" },
+        enabled: false,
+      });
     });
   });
 
@@ -207,7 +219,16 @@ describe("useGroupEditor", () => {
 
   describe("updateGroup", () => {
     it("should update group with provided data", async () => {
-      const mockMutateAsync = jest.fn<(data: { id: string; name: string; image: string; tripId: string }) => Promise<{ id: string; name: string }>>().mockResolvedValue({ id: "group-123", name: "Updated Name" });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            id: string;
+            name: string;
+            image: string;
+            tripId: string;
+          }) => Promise<{ id: string; name: string }>
+        >()
+        .mockResolvedValue({ id: "group-123", name: "Updated Name" });
       const mockGroup = {
         id: "group-123",
         name: "Original Name",
@@ -240,7 +261,9 @@ describe("useGroupEditor", () => {
     });
 
     it("should use tripId from group data when not provided", async () => {
-      const mockMutateAsync = jest.fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest
+        .fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>()
+        .mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -268,7 +291,9 @@ describe("useGroupEditor", () => {
     });
 
     it("should use provided tripId over group data tripId", async () => {
-      const mockMutateAsync = jest.fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest
+        .fn<(data: { id: string; name: string; tripId: string }) => Promise<{ id: string }>>()
+        .mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -317,8 +342,9 @@ describe("useGroupEditor", () => {
 
       const { result } = renderHook(() => useGroupEditor("group-123"));
 
-      await expect(result.current.updateGroup({ id: "group-123", name: "New Name" }))
-        .rejects.toThrow("Missing tripId for updateGroup");
+      await expect(
+        result.current.updateGroup({ id: "group-123", name: "New Name" }),
+      ).rejects.toThrow("Missing tripId for updateGroup");
     });
 
     it("should throw error when group data is not loaded", async () => {
@@ -333,14 +359,23 @@ describe("useGroupEditor", () => {
 
       const { result } = renderHook(() => useGroupEditor("group-123"));
 
-      await expect(result.current.updateGroup({ id: "group-123", name: "New Name" }))
-        .rejects.toThrow("Missing tripId for updateGroup");
+      await expect(
+        result.current.updateGroup({ id: "group-123", name: "New Name" }),
+      ).rejects.toThrow("Missing tripId for updateGroup");
     });
   });
 
   describe("assignUser", () => {
     it("should assign user to group", async () => {
-      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string; groupId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            userId: string;
+            tripId: string;
+            groupId: string;
+          }) => Promise<{ success: boolean }>
+        >()
+        .mockResolvedValue({ success: true });
 
       mockUseQuery.mockReturnValue({
         data: { id: "group-123", name: "Test Group" },
@@ -363,7 +398,15 @@ describe("useGroupEditor", () => {
     });
 
     it("should use empty string for groupId when not provided", async () => {
-      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string; groupId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest
+        .fn<
+          (data: {
+            userId: string;
+            tripId: string;
+            groupId: string;
+          }) => Promise<{ success: boolean }>
+        >()
+        .mockResolvedValue({ success: true });
 
       mockUseQuery.mockReturnValue({
         data: null,
@@ -388,7 +431,9 @@ describe("useGroupEditor", () => {
 
   describe("removeUser", () => {
     it("should remove user from group", async () => {
-      const mockMutateAsync = jest.fn<(data: { userId: string; tripId: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+      const mockMutateAsync = jest
+        .fn<(data: { userId: string; tripId: string }) => Promise<{ success: boolean }>>()
+        .mockResolvedValue({ success: true });
       const mockGroup = {
         id: "group-123",
         name: "Test Group",
@@ -432,8 +477,9 @@ describe("useGroupEditor", () => {
 
       const { result } = renderHook(() => useGroupEditor("group-123"));
 
-      await expect(result.current.removeUser("user-456"))
-        .rejects.toThrow("Missing tripId for removeUser");
+      await expect(result.current.removeUser("user-456")).rejects.toThrow(
+        "Missing tripId for removeUser",
+      );
     });
 
     it("should throw error when group data is not loaded", async () => {
@@ -448,14 +494,17 @@ describe("useGroupEditor", () => {
 
       const { result } = renderHook(() => useGroupEditor("group-123"));
 
-      await expect(result.current.removeUser("user-456"))
-        .rejects.toThrow("Missing tripId for removeUser");
+      await expect(result.current.removeUser("user-456")).rejects.toThrow(
+        "Missing tripId for removeUser",
+      );
     });
   });
 
   describe("mutation success callbacks", () => {
     it("should invalidate group queries after update success", async () => {
-      const mockMutateAsync = jest.fn<() => Promise<{ id: string }>>().mockResolvedValue({ id: "group-123" });
+      const mockMutateAsync = jest
+        .fn<() => Promise<{ id: string }>>()
+        .mockResolvedValue({ id: "group-123" });
       const mockGroup = {
         id: "group-123",
         name: "Test",
@@ -493,14 +542,16 @@ describe("useGroupEditor", () => {
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation(((options: unknown) => {
+      mockUseMutation.mockImplementation((options: unknown) => {
         const opts = options as { onSuccess?: () => Promise<void> };
         onSuccessCallback = opts?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
+          mutateAsync: jest
+            .fn<() => Promise<{ success: boolean }>>()
+            .mockResolvedValue({ success: true }),
           isPending: false,
         };
-      }));
+      });
 
       renderHook(() => useGroupEditor("group-123"));
 
@@ -519,14 +570,16 @@ describe("useGroupEditor", () => {
         isLoading: false,
       });
 
-      mockUseMutation.mockImplementation(((options: unknown) => {
+      mockUseMutation.mockImplementation((options: unknown) => {
         const opts = options as { onSuccess?: () => Promise<void> };
         onSuccessCallback = opts?.onSuccess ?? null;
         return {
-          mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
+          mutateAsync: jest
+            .fn<() => Promise<{ success: boolean }>>()
+            .mockResolvedValue({ success: true }),
           isPending: false,
         };
-      }));
+      });
 
       renderHook(() => useGroupEditor("group-123"));
 

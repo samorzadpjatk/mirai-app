@@ -17,7 +17,6 @@ export default function TripsLayout() {
         },
         headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor },
-        
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />

@@ -41,8 +41,7 @@ export default function TripsScreen() {
     if (!hasNextPage || isFetchingNextPage || tripsLoading) return;
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
     if (nearBottom) {
       void fetchNextPage();
@@ -95,16 +94,10 @@ export default function TripsScreen() {
         </Text>
         <View style={styles.list}>
           {trips.map((trip) => (
-            <TripCard
-              key={trip.id}
-              trip={trip}
-              onPress={() => setSelectedTripId(trip.id)}
-            />
+            <TripCard key={trip.id} trip={trip} onPress={() => setSelectedTripId(trip.id)} />
           ))}
         </View>
-        {trips.length === 0 && (
-          <Text style={styles.emptyText}>No trips available.</Text>
-        )}
+        {trips.length === 0 && <Text style={styles.emptyText}>No trips available.</Text>}
 
         {isFetchingNextPage ? (
           <View style={styles.listFooter}>

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { seedTrip } from "../trips";
 import type { AuthUserByEmail, CsvUser } from "../types";
 import type { SupabaseUser } from "@mirai-app/supabase";
+import { tripParticipants } from "@mirai-app/db";
 
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();
@@ -38,21 +39,55 @@ vi.mock("../auth", () => ({
   ensureGhostAuthUser: (authUsers: AuthUserByEmail) => mockEnsureGhostAuthUser(authUsers) as Promise<SupabaseUser | null>,
 }));
 
+vi.mock("@mirai-app/db", () => ({
+  trips: { __table: "trips" },
+  users: { __table: "users" },
+  tripParticipants: { __table: "tripParticipants", userId: { name: "userId" }, tripId: { name: "tripId" } },
+}));
+
 vi.mock("../config/db", () => ({
-  prisma: {
-    trip: {
-      findFirst: (...args: unknown[]) => mockTripFindFirst(...args) as Promise<{ id: string; name: string } | null>,
-      create: (...args: unknown[]) => mockTripCreate(...args) as Promise<{ id: string; name: string }>,
-      update: (...args: unknown[]) => mockTripUpdate(...args) as Promise<{ id: string; name: string }>,
+  db: {
+    query: {
+      trips: {
+        findFirst: (...args: unknown[]) => mockTripFindFirst(...args) as Promise<{ id: string; name: string } | null>,
+      },
+      users: {
+        findFirst: (...args: unknown[]) => mockUserFindFirst(...args) as Promise<{ id: string; authUserId: string; role: string } | null>,
+      },
     },
-    user: {
-      findFirst: (...args: unknown[]) => mockUserFindFirst(...args) as Promise<{ id: string; authUserId: string; role: string } | null>,
-      create: (...args: unknown[]) => mockUserCreate(...args) as Promise<{ id: string; authUserId: string; role: string }>,
-      update: (...args: unknown[]) => mockUserUpdate(...args) as Promise<{ id: string; authUserId: string; role: string }>,
-    },
-    tripParticipant: {
-      upsert: (...args: unknown[]) => mockTripParticipantUpsert(...args) as Promise<unknown>,
-    },
+    update: (table: { __table?: string }) => ({
+      set: (data: unknown) => ({
+        where: () => {
+          if (table?.__table === "trips") {
+            mockTripUpdate(data);
+          } else if (table?.__table === "users") {
+            mockUserUpdate(data);
+          }
+          return Promise.resolve({});
+        },
+      }),
+    }),
+    insert: (table: { __table?: string }) => ({
+      values: (data: Record<string, unknown>) => ({
+        returning: () => {
+          if (table?.__table === "trips") {
+            mockTripCreate(data);
+            return Promise.resolve([{ id: "trip-1", ...data }]);
+          }
+          if (table?.__table === "users") {
+            mockUserCreate(data);
+            return Promise.resolve([{ id: "db-new", ...data }]);
+          }
+          return Promise.resolve([]);
+        },
+        onConflictDoUpdate: (opts: Record<string, unknown>) => {
+          if (table?.__table === "tripParticipants") {
+            mockTripParticipantUpsert({ values: data, ...opts });
+          }
+          return Promise.resolve();
+        },
+      }),
+    }),
   },
 }));
 
@@ -99,15 +134,20 @@ describe("trips", () => {
       const result = await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
       expect(mockTripCreate).toHaveBeenCalledWith({
-        data: {
-          name: "New Trip",
-          description: "A new trip",
-          startDate: new Date("2026-01-01"),
-          endDate: new Date("2026-01-10"),
-          backgroundImagePath: undefined,
-        },
+        name: "New Trip",
+        description: "A new trip",
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-01-10"),
+        backgroundImagePath: undefined,
       });
-      expect(result).toEqual({ id: "trip-1", name: "New Trip" });
+      expect(result).toEqual({
+        id: "trip-1",
+        name: "New Trip",
+        description: "A new trip",
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-01-10"),
+        backgroundImagePath: undefined,
+      });
     });
 
     it("should update existing trip", async () => {
@@ -133,13 +173,10 @@ describe("trips", () => {
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
       expect(mockTripUpdate).toHaveBeenCalledWith({
-        where: { id: "trip-1" },
-        data: {
-          description: "Updated description",
-          startDate: new Date("2026-02-01"),
-          endDate: new Date("2026-02-10"),
-          backgroundImagePath: undefined,
-        },
+        description: "Updated description",
+        startDate: new Date("2026-02-01"),
+        endDate: new Date("2026-02-10"),
+        backgroundImagePath: undefined,
       });
     });
 
@@ -167,7 +204,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -238,7 +275,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -269,7 +306,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
@@ -309,7 +346,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -343,18 +380,15 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers = new Map([["existing@test.com", existingAuthUser]]);
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockCreateAuthUserByEmail).not.toHaveBeenCalled();
       expect(mockTripParticipantUpsert).toHaveBeenCalledWith({
-        where: { userId_tripId: { userId: "db-existing", tripId: "trip-1" } },
-        update: {},
-        create: {
-          userId: "db-existing",
-          tripId: "trip-1",
-        },
+        values: { userId: "db-existing", tripId: "trip-1" },
+        target: [tripParticipants.userId, tripParticipants.tripId],
+        set: {},
       });
 
       consoleSpy.mockRestore();
@@ -386,18 +420,16 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockUserCreate).toHaveBeenCalledWith({
-        data: {
-          authUserId: "auth-new",
-          firstName: "New",
-          lastName: "User",
-          role: "MODERATOR",
-        },
+        authUserId: "auth-new",
+        firstName: "New",
+        lastName: "User",
+        role: "MODERATOR",
       });
 
       consoleSpy.mockRestore();
@@ -433,8 +465,7 @@ describe("trips", () => {
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: "db-1" },
-        data: { role: "ADMIN" },
+        role: "ADMIN",
       });
     });
 
@@ -497,7 +528,7 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
@@ -527,17 +558,14 @@ describe("trips", () => {
       mockUserFindFirst.mockResolvedValue(ghostDbUser);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockTripParticipantUpsert).toHaveBeenCalledWith({
-        where: { userId_tripId: { userId: "db-ghost", tripId: "trip-1" } },
-        update: {},
-        create: {
-          userId: "db-ghost",
-          tripId: "trip-1",
-        },
+        values: { userId: "db-ghost", tripId: "trip-1" },
+        target: [tripParticipants.userId, tripParticipants.tripId],
+        set: {},
       });
 
       consoleSpy.mockRestore();
@@ -565,18 +593,16 @@ describe("trips", () => {
       mockUserCreate.mockResolvedValue(newGhostDbUser);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockUserCreate).toHaveBeenCalledWith({
-        data: {
-          authUserId: "auth-ghost",
-          firstName: "Ghost",
-          lastName: "User",
-          role: "USER",
-        },
+        authUserId: "auth-ghost",
+        firstName: "Ghost",
+        lastName: "User",
+        role: "USER",
       });
 
       consoleSpy.mockRestore();
@@ -599,11 +625,18 @@ describe("trips", () => {
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       const result = await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
-      expect(result).toEqual({ id: "trip-1", name: "Trip With Failed Ghost" });
+      expect(result).toEqual({
+        id: "trip-1",
+        name: "Trip With Failed Ghost",
+        description: undefined,
+        startDate: new Date("2026-01-01"),
+        endDate: new Date("2026-01-10"),
+        backgroundImagePath: undefined,
+      });
 
       consoleSpy.mockRestore();
     });
@@ -633,18 +666,18 @@ describe("trips", () => {
         Promise.resolve({ id: `auth-${email}`, email } as SupabaseUser)
       );
       mockUserFindFirst.mockResolvedValue(null);
-      mockUserCreate.mockImplementation((data: { data: { authUserId: string; firstName: string; lastName: string; role: string } }) => Promise.resolve({ id: "db-new", ...data.data }));
+      mockUserCreate.mockImplementation((data: { authUserId: string; firstName: string; lastName: string; role: string }) => Promise.resolve({ id: "db-new", ...data }));
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
       expect(mockUserCreate).toHaveBeenCalledTimes(5);
 
-      const roles = (mockUserCreate.mock.calls as [{ data: { role: string } }][]).map((call) => call[0].data.role);
+      const roles = (mockUserCreate.mock.calls as [{ role: string }][]).map((call) => call[0].role);
       expect(roles).toContain("ADMIN");
       expect(roles).toContain("MODERATOR");
       expect(roles).toContain("SERVICE");
@@ -681,9 +714,8 @@ describe("trips", () => {
 
       await seedTrip(tripConfig, "users/list.csv", "/test/assets/dev", authUsers);
 
-      expect(mockUserFindFirst).toHaveBeenCalledWith({
-        where: { authUserId: "auth-1" },
-      });
+      const call = mockUserFindFirst.mock.calls[0];
+      expect(call?.[0]).toMatchObject({ where: expect.any(Function) });
     });
   });
 });

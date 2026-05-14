@@ -63,7 +63,10 @@ const statusOptions: { value: PurchaseStatusFilter; label: string }[] = [
   { value: "CANCELLED", label: "Cancelled" },
 ];
 
-const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+const statusMeta: Record<
+  PurchaseStatus,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
   BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
   ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
   IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
@@ -74,16 +77,18 @@ const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: k
 export default function AdminRewardsPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripIdParam =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const tripIdParam = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const tripId = useMemo(() => tripIdParam ?? "all", [tripIdParam]);
   const [viewMode, setViewMode] = useState<ViewMode>("PURCHASES");
-  const [purchaseStatusFilter, setPurchaseStatusFilter] =
-    useState<PurchaseStatusFilter>("BOUGHT");
-  const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
+  const [purchaseStatusFilter, setPurchaseStatusFilter] = useState<PurchaseStatusFilter>("BOUGHT");
+  const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<
+    Record<string, string>
+  >({});
   const insets = useSafeAreaInsets();
   const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
-  const tripQueryOptions = orpc.trip.getByIdAdmin.queryOptions({ input: { id: tripIdParam ?? "" } });
+  const tripQueryOptions = orpc.trip.getByIdAdmin.queryOptions({
+    input: { id: tripIdParam ?? "" },
+  });
 
   const { data: trip, error: tripError } = useQuery({
     ...tripQueryOptions,
@@ -130,8 +135,7 @@ export default function AdminRewardsPage() {
     }
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
 
     if (nearBottom) {
       void fetchMorePurchases();
@@ -144,8 +148,7 @@ export default function AdminRewardsPage() {
     }
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
 
     if (nearBottom) {
       void fetchMoreRewards();
@@ -190,7 +193,8 @@ export default function AdminRewardsPage() {
                 });
                 Alert.alert("Saved", "Purchase has been cancelled and refunded.");
               } catch (error) {
-                const message = error instanceof Error ? error.message : "Failed to cancel purchase";
+                const message =
+                  error instanceof Error ? error.message : "Failed to cancel purchase";
                 Alert.alert("Error", message);
               }
             })();
@@ -222,13 +226,16 @@ export default function AdminRewardsPage() {
       });
       Alert.alert("Saved", "Purchase has been marked as delivered.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to mark purchase as delivered";
+      const message =
+        error instanceof Error ? error.message : "Failed to mark purchase as delivered";
       Alert.alert("Error", message);
     }
   };
 
   return (
-    <View style={[commonStyles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[commonStyles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}
+    >
       <StatusBar style="light" />
       <AdminHeader
         title="Rewards"
@@ -255,7 +262,12 @@ export default function AdminRewardsPage() {
               alignItems: "center",
             }}
           >
-            <Text style={[commonStyles.label, { color: viewMode === "PURCHASES" ? "#00ced1" : "#9ca3af", letterSpacing: 1 }]}>
+            <Text
+              style={[
+                commonStyles.label,
+                { color: viewMode === "PURCHASES" ? "#00ced1" : "#9ca3af", letterSpacing: 1 },
+              ]}
+            >
               Purchases
             </Text>
           </TouchableOpacity>
@@ -271,7 +283,12 @@ export default function AdminRewardsPage() {
               alignItems: "center",
             }}
           >
-            <Text style={[commonStyles.label, { color: viewMode === "REWARDS" ? "#00ced1" : "#9ca3af", letterSpacing: 1 }]}>
+            <Text
+              style={[
+                commonStyles.label,
+                { color: viewMode === "REWARDS" ? "#00ced1" : "#9ca3af", letterSpacing: 1 },
+              ]}
+            >
               Rewards
             </Text>
           </TouchableOpacity>
@@ -306,7 +323,12 @@ export default function AdminRewardsPage() {
               <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
                 Failed to load purchases
               </Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" },
+                ]}
+              >
                 {purchasesError instanceof Error ? purchasesError.message : "Try again"}
               </Text>
             </View>
@@ -338,7 +360,12 @@ export default function AdminRewardsPage() {
                         paddingVertical: 7,
                       }}
                     >
-                      <Text style={[commonStyles.label, { color: active ? "#00ced1" : "#9ca3af", letterSpacing: 0.8 }]}>
+                      <Text
+                        style={[
+                          commonStyles.label,
+                          { color: active ? "#00ced1" : "#9ca3af", letterSpacing: 0.8 },
+                        ]}
+                      >
                         {option.label}
                       </Text>
                     </TouchableOpacity>
@@ -365,7 +392,14 @@ export default function AdminRewardsPage() {
                         gap: 10,
                       }}
                     >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
                         <View style={{ flex: 1 }}>
                           <Text style={[commonStyles.h4, { marginBottom: 3 }]} numberOfLines={1}>
                             {purchase.reward?.name ?? "Unknown reward"}
@@ -388,18 +422,33 @@ export default function AdminRewardsPage() {
                           }}
                         >
                           <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                          <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                          <Text
+                            style={[
+                              commonStyles.label,
+                              { color: statusInfo.color, letterSpacing: 0.6 },
+                            ]}
+                          >
                             {statusInfo.label}
                           </Text>
                         </View>
                       </View>
 
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
                         <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
                           {purchase.quantity} pcs. • {purchase.totalCost} coins
                         </Text>
                         <Text style={[commonStyles.textSecondary]}>
-                          {new Date(purchase.purchasedAt).toLocaleDateString()} • {new Date(purchase.purchasedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(purchase.purchasedAt).toLocaleDateString()} •{" "}
+                          {new Date(purchase.purchasedAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </Text>
                       </View>
 
@@ -427,7 +476,9 @@ export default function AdminRewardsPage() {
                         }}
                         placeholder="Collection method (how to pick up)"
                         placeholderTextColor="#6b7280"
-                        value={collectionMethodByPurchase[purchase.id] ?? purchase.collectionMethod ?? ""}
+                        value={
+                          collectionMethodByPurchase[purchase.id] ?? purchase.collectionMethod ?? ""
+                        }
                         editable={canEditCollectionMethod}
                         onChangeText={(text: string) =>
                           setCollectionMethodByPurchase((prev) => ({
@@ -460,7 +511,9 @@ export default function AdminRewardsPage() {
                             ) : (
                               <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
                             )}
-                            <Text style={[commonStyles.label, { color: "#22c55e", letterSpacing: 0.8 }]}>
+                            <Text
+                              style={[commonStyles.label, { color: "#22c55e", letterSpacing: 0.8 }]}
+                            >
                               Accept purchase
                             </Text>
                           </TouchableOpacity>
@@ -481,7 +534,9 @@ export default function AdminRewardsPage() {
                             }}
                           >
                             <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                            <Text
+                              style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
+                            >
                               Cancel purchase
                             </Text>
                           </TouchableOpacity>
@@ -506,7 +561,9 @@ export default function AdminRewardsPage() {
                           }}
                         >
                           <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                          <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                          <Text
+                            style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
+                          >
                             Cancel purchase
                           </Text>
                         </TouchableOpacity>
@@ -530,8 +587,14 @@ export default function AdminRewardsPage() {
                               gap: 6,
                             }}
                           >
-                            <Ionicons name="checkmark-done-circle-outline" size={14} color="#10b981" />
-                            <Text style={[commonStyles.label, { color: "#10b981", letterSpacing: 0.8 }]}>
+                            <Ionicons
+                              name="checkmark-done-circle-outline"
+                              size={14}
+                              color="#10b981"
+                            />
+                            <Text
+                              style={[commonStyles.label, { color: "#10b981", letterSpacing: 0.8 }]}
+                            >
                               Reward delivered
                             </Text>
                           </TouchableOpacity>
@@ -553,7 +616,9 @@ export default function AdminRewardsPage() {
                             }}
                           >
                             <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                            <Text
+                              style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
+                            >
                               Cancel purchase
                             </Text>
                           </TouchableOpacity>
@@ -563,18 +628,26 @@ export default function AdminRewardsPage() {
                   );
                 })
               ) : (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+                <View
+                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}
+                >
                   <Ionicons name="cart-outline" size={44} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}> 
+                  <Text
+                    style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}
+                  >
                     No purchases for this filter
                   </Text>
                 </View>
               )}
 
               {isFetchingMorePurchases ? (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                <View
+                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
+                >
                   <ActivityIndicator size="small" color="#00ced1" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more purchases...</Text>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                    Loading more purchases...
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -598,8 +671,15 @@ export default function AdminRewardsPage() {
           {rewardsError ? (
             <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
               <Ionicons name="warning" size={48} color="#ef4444" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>Failed to load rewards</Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
+              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+                Failed to load rewards
+              </Text>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" },
+                ]}
+              >
                 {rewardsError instanceof Error ? rewardsError.message : "Try again"}
               </Text>
             </View>
@@ -609,7 +689,12 @@ export default function AdminRewardsPage() {
               <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
                 Trip {tripName ? `"${tripName}"` : "(selected)"} does not exist
               </Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" },
+                ]}
+              >
                 Check if the correct trip was selected in the admin panel
               </Text>
             </View>
@@ -635,19 +720,36 @@ export default function AdminRewardsPage() {
                       padding: 16,
                     }}
                   >
-                    <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 12,
+                        alignItems: "flex-start",
+                        marginBottom: 12,
+                      }}
+                    >
                       {(reward.signedImageUrl ?? reward.image) && (
                         <Image
                           source={{ uri: reward.signedImageUrl ?? reward.image ?? undefined }}
-                          style={{ width: 72, aspectRatio: 1, borderRadius: 12, backgroundColor: "#0b1a1a" }}
+                          style={{
+                            width: 72,
+                            aspectRatio: 1,
+                            borderRadius: 12,
+                            backgroundColor: "#0b1a1a",
+                          }}
                           resizeMode="cover"
                         />
                       )}
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <Text style={[commonStyles.h4]}>
-                            {reward.name}
-                          </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Text style={[commonStyles.h4]}>{reward.name}</Text>
                           {reward.isHidden ? (
                             <View
                               style={{
@@ -659,13 +761,24 @@ export default function AdminRewardsPage() {
                                 backgroundColor: "rgba(239, 68, 68, 0.12)",
                               }}
                             >
-                              <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.6 }]}>
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#ef4444", letterSpacing: 0.6 },
+                                ]}
+                              >
                                 Hidden
                               </Text>
                             </View>
                           ) : null}
                         </View>
-                        <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 8 }]} numberOfLines={2}>
+                        <Text
+                          style={[
+                            commonStyles.textSecondary,
+                            { color: "#9ca3af", marginBottom: 8 },
+                          ]}
+                          numberOfLines={2}
+                        >
                           {reward.description}
                         </Text>
                         <View
@@ -679,11 +792,21 @@ export default function AdminRewardsPage() {
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                             <Ionicons name="cash" size={16} color="#fbbf24" />
                             <View style={{ alignItems: "flex-start" }}>
-                              <Text style={[commonStyles.label, { color: "#fbbf24", fontSize: 12, lineHeight: 14 }]}>
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#fbbf24", fontSize: 12, lineHeight: 14 },
+                                ]}
+                              >
                                 {reward.coinCost} coins
                               </Text>
                               {reward.originalCoinCost && (
-                                <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 10, lineHeight: 12 }]}>
+                                <Text
+                                  style={[
+                                    commonStyles.textSecondary,
+                                    { color: "#9ca3af", fontSize: 10, lineHeight: 12 },
+                                  ]}
+                                >
                                   {reward.originalCoinCost}% of total points
                                 </Text>
                               )}
@@ -705,7 +828,14 @@ export default function AdminRewardsPage() {
                       </View>
                     </View>
 
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 8,
+                      }}
+                    >
                       <Text style={[commonStyles.label, { color: "#6b7280" }]}>
                         Created: {new Date(reward.createdAt).toLocaleDateString()}
                       </Text>
@@ -716,9 +846,13 @@ export default function AdminRewardsPage() {
                   </TouchableOpacity>
                 ))
               ) : (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
+                <View
+                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}
+                >
                   <Ionicons name="gift" size={48} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}> 
+                  <Text
+                    style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}
+                  >
                     {tripIdParam
                       ? `No rewards for trip: ${tripName ?? "(loading name)"}`
                       : "No rewards in the system"}
@@ -727,9 +861,13 @@ export default function AdminRewardsPage() {
               )}
 
               {isFetchingMoreRewards ? (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                <View
+                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
+                >
                   <ActivityIndicator size="small" color="#00ced1" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more rewards...</Text>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                    Loading more rewards...
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -738,10 +876,7 @@ export default function AdminRewardsPage() {
       )}
 
       {viewMode === "REWARDS" ? (
-        <AdminAddFab
-          onPress={handleCreateReward}
-          accessibilityLabel="Add reward"
-        />
+        <AdminAddFab onPress={handleCreateReward} accessibilityLabel="Add reward" />
       ) : null}
     </View>
   );

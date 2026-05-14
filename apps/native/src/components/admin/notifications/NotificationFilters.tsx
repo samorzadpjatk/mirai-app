@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import { FilterChip, FilterChipRow } from '~/components/common/ui';
-import type { NotificationStatus } from '~/hooks/admin/useAdminNotifications';
+import React from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import { FilterChip, FilterChipRow } from "~/components/common/ui";
+import type { NotificationStatus } from "~/hooks/admin/useAdminNotifications";
 
 interface NotificationFiltersProps {
   searchTerm: string;
@@ -16,10 +16,10 @@ interface NotificationFiltersProps {
 }
 
 const statusOptions: { key: NotificationStatus; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'sent', label: 'Sent' },
-  { key: 'failed', label: 'Failed' },
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "sent", label: "Sent" },
+  { key: "failed", label: "Failed" },
 ];
 
 export function NotificationFilters({
@@ -87,8 +87,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   searchBar: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,

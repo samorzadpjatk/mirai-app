@@ -43,8 +43,7 @@ export default function NotificationsScreen() {
     isRefetching,
   } = useQuery(orpc.notificationSchedule.getAll.queryOptions({ input: {} }));
 
-  const schedules = (schedulesData?.schedules ??
-    []) as NotificationScheduleItem[];
+  const schedules = (schedulesData?.schedules ?? []) as NotificationScheduleItem[];
 
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -79,13 +78,8 @@ export default function NotificationsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.errorTitle}>Error loading notifications</Text>
-        <Text style={styles.errorMessage}>
-          {error?.message ?? "Something went wrong"}
-        </Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => void refetch()}
-        >
+        <Text style={styles.errorMessage}>{error?.message ?? "Something went wrong"}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => void refetch()}>
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
       </View>

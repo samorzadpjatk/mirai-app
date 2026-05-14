@@ -5,9 +5,7 @@ interface TripNotFoundStateProps {
   message?: string;
 }
 
-export function TripNotFoundState({
-  message = "Trip not found",
-}: TripNotFoundStateProps) {
+export function TripNotFoundState({ message = "Trip not found" }: TripNotFoundStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{message}</Text>

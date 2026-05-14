@@ -102,18 +102,51 @@ interface PrimaryLoadingButtonProps {
 jest.mock("~/components/common/ui", () => {
   const ReactNative = require("react-native");
   return {
-    FormField: ({ children, label }: FormFieldProps) => (<ReactNative.View><ReactNative.Text>{label}</ReactNative.Text>{children}</ReactNative.View>),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (<ReactNative.TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />),
-    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (<ReactNative.TouchableOpacity onPress={onPress} disabled={(isLoading ?? false) || (disabled ?? false)}><ReactNative.Text>{label}</ReactNative.Text></ReactNative.TouchableOpacity>),
+    FormField: ({ children, label }: FormFieldProps) => (
+      <ReactNative.View>
+        <ReactNative.Text>{label}</ReactNative.Text>
+        {children}
+      </ReactNative.View>
+    ),
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+      keyboardType,
+      multiline,
+    }: ThemedTextInputProps) => (
+      <ReactNative.TextInput
+        value={value}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        onChangeText={onChangeText}
+      />
+    ),
+    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (
+      <ReactNative.TouchableOpacity
+        onPress={onPress}
+        disabled={(isLoading ?? false) || (disabled ?? false)}
+      >
+        <ReactNative.Text>{label}</ReactNative.Text>
+      </ReactNative.TouchableOpacity>
+    ),
   };
 });
 
 describe("ChallengeFormFields", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("renders the current form values", () => {
     renderWithProviders(
-      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields
+        formState={mockFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
     );
 
     expect(screen.getByText("Edit Challenge")).toBeOnTheScreen();
@@ -124,7 +157,12 @@ describe("ChallengeFormFields", () => {
 
   it("updates base points through updateForm", () => {
     renderWithProviders(
-      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields
+        formState={mockFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
     );
 
     fireEvent.changeText(screen.getByDisplayValue("50"), "120");
@@ -133,7 +171,12 @@ describe("ChallengeFormFields", () => {
 
   it("opens the submission type selector", () => {
     renderWithProviders(
-      <ChallengeFormFields formState={mockFormState} onSave={jest.fn()} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields
+        formState={mockFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
     );
 
     fireEvent.press(screen.getByText("Text"));
@@ -143,7 +186,12 @@ describe("ChallengeFormFields", () => {
   it("calls onSave from the primary button", () => {
     const onSave = jest.fn();
     renderWithProviders(
-      <ChallengeFormFields formState={mockFormState} onSave={onSave} saveButtonText="Save Changes" isSaving={false} />
+      <ChallengeFormFields
+        formState={mockFormState}
+        onSave={onSave}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
     );
 
     fireEvent.press(screen.getByText("Save Changes"));

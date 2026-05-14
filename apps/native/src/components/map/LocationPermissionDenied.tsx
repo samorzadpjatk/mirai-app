@@ -25,10 +25,12 @@ export function LocationPermissionDenied({ compact = false }: LocationPermission
       </View>
       <Text style={styles.title}>Location Sharing Disabled</Text>
       <Text style={styles.message}>
-        Location sharing has been turned off. You can still view the map, but other users' locations won't be shown.
+        Location sharing has been turned off. You can still view the map, but other users' locations
+        won't be shown.
       </Text>
       <Text style={styles.instruction}>
-        To enable location sharing, go to your Profile settings and toggle "Enable Location Sharing".
+        To enable location sharing, go to your Profile settings and toggle "Enable Location
+        Sharing".
       </Text>
     </View>
   );

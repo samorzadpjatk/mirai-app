@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import React from 'react';
-import { useSelectedTrip, useTripDetails } from '~/hooks/trips';
+import { create } from "zustand";
+import React from "react";
+import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 
 interface TripState {
   selectedTripId: string | null;
@@ -22,10 +22,10 @@ export function useTripSync() {
 
   // Update store when trip data changes
   React.useEffect(() => {
-    useTripStore.setState({ 
-      selectedTripId, 
-      isTripPast, 
-      isLoading: isLoadingTrip 
+    useTripStore.setState({
+      selectedTripId,
+      isTripPast,
+      isLoading: isLoadingTrip,
     });
   }, [selectedTripId, isTripPast, isLoadingTrip]);
 }

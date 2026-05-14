@@ -21,10 +21,6 @@ export default defineConfig({
         "**/*.config.ts",
         "**/*.config.js",
         "**/eslint.config.*",
-        // Exclude generated Prisma client code
-        "**/prisma/lib/**",
-        "**/prisma/lib/internal/**",
-        "**/prisma/lib/models/**",
       ],
     },
   },

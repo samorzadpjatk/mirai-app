@@ -176,7 +176,9 @@ describe("useTrips", () => {
       data: {
         pages: [
           {
-            trips: [{ id: "trip-1", name: "Trip 1", startDate: "2024-01-01", endDate: "2024-01-10" }],
+            trips: [
+              { id: "trip-1", name: "Trip 1", startDate: "2024-01-01", endDate: "2024-01-10" },
+            ],
             pagination: { hasMore: true, offset: 0, limit: 20 },
           },
         ],

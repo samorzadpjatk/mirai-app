@@ -2,7 +2,7 @@
 
 The MIRAI project is a monorepo using Turborepo and Bun workspaces. It contains:
 - 4 applications: native (Expo), backend-server (Fastify + tRPC), notification-sender, seed CLI
-- 5 shared packages: auth, db (Prisma), shared utilities, supabase client, trpc
+- 5 shared packages: auth, db (Drizzle), shared utilities, supabase client, orpc
 
 Currently, there are no AGENTS.md files or centralized documentation. The codebase relies on README.md files in each package/app for human-readable documentation. This creates friction for AI assistants that need to quickly understand project structure, conventions, and technical requirements.
 
@@ -16,7 +16,7 @@ Currently, there are no AGENTS.md files or centralized documentation. The codeba
 - Create a docs/ folder with detailed technical documentation
 - Define cross-referencing patterns between AGENTS.md and docs/
 - Document the monorepo tooling (Turborepo, Bun workspaces)
-- Document domain-specific patterns (tRPC, Prisma, Expo)
+- Document domain-specific patterns (oRPC, Drizzle, Expo)
 - Stay within OpenAI's default 32 KiB combined instruction limit
 
 **Non-Goals:**
@@ -103,7 +103,7 @@ docs/
 ├── packages/            # Per-package documentation
 │   ├── auth/
 │   ├── db/
-│   │   ├── prisma.md
+│   │   ├── drizzle.md
 │   │   ├── migrations.md
 │   │   └── schema.md
 │   └── ...
@@ -171,9 +171,9 @@ For tRPC patterns, see [docs/packages/trpc/router-structure.md](../../docs/packa
 - How to add new routes
 - API versioning strategy
 
-### 7. Prisma Documentation Approach
+### 7. Drizzle Documentation Approach
 
-**Decision:** Document Prisma in layers:
+**Decision:** Document Drizzle in layers:
 
 **In packages/db AGENTS.md:**
 - Schema location

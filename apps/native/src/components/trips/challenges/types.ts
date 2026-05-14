@@ -16,11 +16,7 @@ export type ChallengeSubmissionType =
   | "LOCATION"
   | "QR_CODE";
 
-export type ChallengeScoringCategory =
-  | "SPEED"
-  | "UNLIMITED"
-  | "JUDGED_STAFF"
-  | "PEER_VOTING";
+export type ChallengeScoringCategory = "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
 
 export interface ChallengeListItem {
   id: string;
@@ -34,11 +30,5 @@ export interface ChallengeListItem {
   participantGroupsCount: number;
   submissionType: ChallengeSubmissionType;
   scoringCategory?: ChallengeScoringCategory;
-  lifecycleStatus:
-    | "HIDDEN"
-    | "VISIBLE"
-    | "ACTIVE"
-    | "VOTING_PHASE"
-    | "COMPLETED"
-    | "CANCELLED";
+  lifecycleStatus: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED";
 }

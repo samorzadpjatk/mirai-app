@@ -1,10 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  isTripPast,
-  isTripOngoing,
-  isTripUpcoming,
-  getTripStatus,
-} from "../trip";
+import { isTripPast, isTripOngoing, isTripUpcoming, getTripStatus } from "../trip";
 
 describe("Trip Utilities", () => {
   describe("isTripPast", () => {

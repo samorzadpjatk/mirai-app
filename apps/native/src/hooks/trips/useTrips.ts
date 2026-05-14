@@ -20,25 +20,27 @@ export function useTrips() {
     isError,
     error,
     refetch,
-  } = useInfiniteQuery(orpc.trip.getAll.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = pageParam || 0;
-      return {
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
-        },
-      };
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+  } = useInfiniteQuery(
+    orpc.trip.getAll.infiniteOptions({
+      input: (pageParam: number) => {
+        const offset = pageParam || 0;
+        return {
+          pagination: {
+            limit: PAGE_SIZE,
+            offset,
+          },
+        };
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.pagination.hasMore) {
+          return undefined;
+        }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-  }));
+        return lastPage.pagination.offset + lastPage.pagination.limit;
+      },
+    }),
+  );
 
   const tripsData = useMemo(
     () => (data ? data.pages.flatMap((page) => page.trips ?? []) : null),

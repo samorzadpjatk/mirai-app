@@ -12,7 +12,7 @@ describe("GroupsSearchBar", () => {
 
   it("renders search input", () => {
     const { getByPlaceholderText } = renderWithProviders(
-      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />,
     );
 
     expect(getByPlaceholderText("Search groups...")).toBeTruthy();
@@ -20,7 +20,7 @@ describe("GroupsSearchBar", () => {
 
   it("displays current search term", () => {
     const { getByDisplayValue } = renderWithProviders(
-      <GroupsSearchBar searchTerm="test query" onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm="test query" onSearchChange={mockOnSearchChange} />,
     );
 
     expect(getByDisplayValue("test query")).toBeTruthy();
@@ -28,7 +28,7 @@ describe("GroupsSearchBar", () => {
 
   it("calls onSearchChange when text changes", () => {
     const { getByPlaceholderText } = renderWithProviders(
-      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />,
     );
 
     const input = getByPlaceholderText("Search groups...");
@@ -38,7 +38,7 @@ describe("GroupsSearchBar", () => {
 
   it("handles empty search term", () => {
     const { getByPlaceholderText } = renderWithProviders(
-      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm="" onSearchChange={mockOnSearchChange} />,
     );
 
     expect(getByPlaceholderText("Search groups...")).toBeTruthy();
@@ -47,7 +47,7 @@ describe("GroupsSearchBar", () => {
   it("handles long search terms", () => {
     const longSearchTerm = "a very long search term with many words";
     const { getByDisplayValue } = renderWithProviders(
-      <GroupsSearchBar searchTerm={longSearchTerm} onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm={longSearchTerm} onSearchChange={mockOnSearchChange} />,
     );
 
     expect(getByDisplayValue(longSearchTerm)).toBeTruthy();
@@ -56,7 +56,7 @@ describe("GroupsSearchBar", () => {
   it("handles special characters in search", () => {
     const specialSearch = "test@#$%^&*()";
     const { getByDisplayValue } = renderWithProviders(
-      <GroupsSearchBar searchTerm={specialSearch} onSearchChange={mockOnSearchChange} />
+      <GroupsSearchBar searchTerm={specialSearch} onSearchChange={mockOnSearchChange} />,
     );
 
     expect(getByDisplayValue(specialSearch)).toBeTruthy();

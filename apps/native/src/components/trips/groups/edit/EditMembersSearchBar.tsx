@@ -7,10 +7,7 @@ interface EditMembersSearchBarProps {
   onChangeText: (value: string) => void;
 }
 
-export function EditMembersSearchBar({
-  value,
-  onChangeText,
-}: EditMembersSearchBarProps) {
+export function EditMembersSearchBar({ value, onChangeText }: EditMembersSearchBarProps) {
   return (
     <View style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>

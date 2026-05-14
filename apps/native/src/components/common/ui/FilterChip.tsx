@@ -47,12 +47,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
       disabled={disabled}
       onPress={onPress}
       activeOpacity={0.85}
-      style={[
-        styles.chip,
-        selected && styles.chipSelected,
-        disabled && styles.chipDisabled,
-        style,
-      ]}
+      style={[styles.chip, selected && styles.chipSelected, disabled && styles.chipDisabled, style]}
     >
       <View style={styles.leftContent}>
         {icon ? (
@@ -82,13 +77,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
       </View>
 
       {hasCount ? (
-        <View
-          style={[
-            styles.countPill,
-            selected && styles.countPillSelected,
-            countPillStyle,
-          ]}
-        >
+        <View style={[styles.countPill, selected && styles.countPillSelected, countPillStyle]}>
           <Text
             style={[
               styles.countText,

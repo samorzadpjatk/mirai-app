@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
+ 
+ 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { userRouter } from "../user";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { PrismaClient, User, TripParticipant, Group } from "@mirai-app/db";
-import { ORPCError } from "@orpc/server";
+import type { DB, User, TripParticipant, Group } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the authEmails utilities
 vi.mock("../../../utils/authEmails", () => ({
@@ -23,9 +23,16 @@ vi.mock("../../../utils/authEmails", () => ({
 
 // Mock the auth module
 vi.mock("@mirai-app/auth", () => ({
-  requireAuth: vi.fn(),
-  requireAdmin: vi.fn(),
-  requireModerator: vi.fn(),
+  requireAuth: vi.fn().mockResolvedValue({
+    user: { id: "auth-1", email: "user@example.com" },
+    dbUser: { id: "user-1", authUserId: "auth-1", email: "user@example.com", firstName: "John", lastName: "Doe", role: "USER" },
+  }),
+  requireAdmin: vi.fn().mockResolvedValue({
+    id: "admin-1", authUserId: "auth-1", email: "admin@example.com", firstName: "Admin", lastName: "User", role: "ADMIN",
+  }),
+  requireModerator: vi.fn().mockResolvedValue({
+    id: "moderator-1", authUserId: "auth-1", email: "moderator@example.com", firstName: "Moderator", lastName: "User", role: "MODERATOR",
+  }),
   AuthenticationError: class AuthenticationError extends Error {},
   AuthorizationError: class AuthorizationError extends Error {},
 }));
@@ -35,19 +42,19 @@ import { requireAuth, requireAdmin, requireModerator } from "@mirai-app/auth";
 const createCaller = (ctx: TRPCContext) => createRouterClient(userRouter, { context: ctx });
 
 describe("userRouter", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockDb: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockSupabase: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockBuildAuthEmailLookup: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockBuildAuthUserSummaryLookup: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireAuth: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireAdmin: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let mockRequireModerator: any;
 
   // Test data factories
@@ -139,6 +146,9 @@ describe("userRouter", () => {
       $transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
+    addDrizzleApi(mockDb);
+    mockDb = mockDb;
+
     // Setup mock Supabase client
     mockSupabase = {
       auth: {
@@ -163,11 +173,11 @@ describe("userRouter", () => {
     };
 
     // Get mocked functions
-    mockBuildAuthEmailLookup = vi.mocked(authEmails.buildAuthEmailLookup);
-    mockBuildAuthUserSummaryLookup = vi.mocked(authEmails.buildAuthUserSummaryLookup);
-    mockRequireAuth = vi.mocked(requireAuth);
-    mockRequireAdmin = vi.mocked(requireAdmin);
-    mockRequireModerator = vi.mocked(requireModerator);
+    mockBuildAuthEmailLookup = authEmails.buildAuthEmailLookup;
+    mockBuildAuthUserSummaryLookup = authEmails.buildAuthUserSummaryLookup;
+    mockRequireAuth = requireAuth;
+    mockRequireAdmin = requireAdmin;
+    mockRequireModerator = requireModerator;
   });
 
   describe("Public Procedures", () => {
@@ -1303,19 +1313,32 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.$transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
           const tx = {
             ...mockDb,
             tripParticipant: {
               ...mockDb.tripParticipant,
               upsert: vi.fn().mockResolvedValue(participant),
+              findFirst: vi.fn().mockResolvedValue(participant),
+              findUnique: vi.fn().mockResolvedValue(participant),
             },
             user: {
               ...mockDb.user,
               upsert: vi.fn().mockResolvedValue(newUser),
+              findFirst: vi.fn().mockResolvedValue(newUser),
+              findUnique: vi.fn().mockResolvedValue(newUser),
             },
           };
-          return fn(tx);
+          tx.query = {
+            users: {
+              findFirst: vi.fn().mockResolvedValue(newUser),
+            },
+            tripParticipants: {
+              findFirst: vi.fn().mockResolvedValue(participant),
+            },
+          };
+          const result = await fn(tx as unknown);
+          return result;
         });
 
         const ctx: TRPCContext = {
@@ -1349,19 +1372,31 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.$transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
           const tx = {
             ...mockDb,
             tripParticipant: {
               ...mockDb.tripParticipant,
               upsert: vi.fn().mockResolvedValue(participant),
+              findFirst: vi.fn().mockResolvedValue(participant),
+              findUnique: vi.fn().mockResolvedValue(participant),
             },
             user: {
               ...mockDb.user,
               upsert: vi.fn().mockResolvedValue(existingUser),
+              findFirst: vi.fn().mockResolvedValue(existingUser),
+              findUnique: vi.fn().mockResolvedValue(existingUser),
             },
           };
-          return fn(tx);
+          tx.query = {
+            users: {
+              findFirst: vi.fn().mockResolvedValue(existingUser),
+            },
+            tripParticipants: {
+              findFirst: vi.fn().mockResolvedValue(participant),
+            },
+          };
+          return fn(tx as unknown);
         });
 
         const ctx: TRPCContext = {
@@ -1652,7 +1687,7 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(0);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: null });
 
@@ -1680,7 +1715,7 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(1); // User has other trips
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1722,7 +1757,7 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1745,7 +1780,7 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: { message: "Delete failed", code: "unknown", status: 500, __isAuthError: true, toJSON: () => ({}) } as never });
 
@@ -1777,7 +1812,10 @@ describe("userRouter", () => {
           wristNumber: "W123",
         });
 
-        mockDb.tripParticipant.findFirst.mockResolvedValue(null);
+        mockDb.tripParticipant.findFirst
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(null);
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
@@ -1867,6 +1905,8 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.update.mockResolvedValue(participant);
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
         const ctx: TRPCContext = {
@@ -1896,6 +1936,8 @@ describe("userRouter", () => {
           houseNumber: "H101",
         });
 
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
@@ -1955,6 +1997,8 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.update.mockResolvedValue(participant);
+        mockDb.tripParticipant.findFirst.mockResolvedValue(participant);
+        mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
         const ctx: TRPCContext = {

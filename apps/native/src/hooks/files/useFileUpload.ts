@@ -38,7 +38,7 @@ interface UploadTicket {
 export const useFileUpload = () => {
   const trpcClient = orpc;
   const supabase = useSupabaseClient();
-  
+
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>({
     bytesUploaded: 0,
@@ -98,7 +98,7 @@ export const useFileUpload = () => {
         }
 
         const contentType = input.contentType;
-    
+
         const uploadTicket = await trpcClient.storage.createUploadUrl.call({
           storagePath: input.storagePath,
           upsert: input.upsert,
@@ -108,7 +108,9 @@ export const useFileUpload = () => {
         const fileBlob = await fileResponse.blob();
         const bytesTotal = fileInfo.size ?? fileBlob.size ?? null;
 
-        const {data: {session}} = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
         if (!accessToken) {
           throw new Error("User not authenticated");
@@ -145,9 +147,7 @@ export const useFileUpload = () => {
               retryDelays: [0, 1000, 3000, 5000],
               onError: (uploadError) => {
                 const errorObject =
-                  uploadError instanceof Error
-                    ? uploadError
-                    : new Error("Upload failed");
+                  uploadError instanceof Error ? uploadError : new Error("Upload failed");
 
                 console.error("[Upload] Tus upload error", {
                   storagePath: input.storagePath,
@@ -223,10 +223,9 @@ export const useFileUpload = () => {
                       urlStorage.removeUpload(previousUpload.urlStorageKey),
                     ),
                   );
-                  console.warn(
-                    "[Upload] Cleared previous resumable uploads for signed URL",
-                    { storagePath: input.storagePath },
-                  );
+                  console.warn("[Upload] Cleared previous resumable uploads for signed URL", {
+                    storagePath: input.storagePath,
+                  });
                 }
                 tusUpload.start();
               })

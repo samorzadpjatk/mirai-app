@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,24 +6,24 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAdminGroups } from '~/hooks/admin/useAdminGroups';
-import { AdminHeader } from '~/components/admin/AdminHeader';
-import { GroupsSearchBar } from '~/components/admin/groups/GroupsSearchBar';
-import { GroupManagementCard } from '~/components/admin/groups/GroupManagementCard';
-import type { Group } from '~/hooks/admin/useAdminGroups';
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, spacing, borderRadius, typography } from "../../../../styles";
+import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
+import { AdminHeader } from "~/components/admin/AdminHeader";
+import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
+import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
+import type { Group } from "~/hooks/admin/useAdminGroups";
 
 export default function AdminGroupsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  
+
   // Use the custom hook for all group operations
   const {
     groups,
@@ -33,16 +33,21 @@ export default function AdminGroupsScreen() {
     groupsFetchingNextPage,
     fetchMoreGroups,
     refetchGroups,
-  } = useAdminGroups(tripId ?? '');
-  
-  const [searchTerm, setSearchTerm] = useState('');
+  } = useAdminGroups(tripId ?? "");
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Memoized filtered groups
   const filteredGroups = useMemo(() => {
-    return groups?.filter(group =>
-      group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${group.organizer?.firstName ?? ''} ${group.organizer?.lastName ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    return (
+      groups?.filter(
+        (group) =>
+          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          `${group.organizer?.firstName ?? ""} ${group.organizer?.lastName ?? ""}`
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
+      ) || []
+    );
   }, [groups, searchTerm]);
 
   if (!tripId) {
@@ -73,10 +78,7 @@ export default function AdminGroupsScreen() {
   };
 
   const renderGroup = ({ item }: { item: Group }) => (
-    <GroupManagementCard
-      group={item}
-      onEdit={openEditModal}
-    />
+    <GroupManagementCard group={item} onEdit={openEditModal} />
   );
 
   return (
@@ -87,10 +89,7 @@ export default function AdminGroupsScreen() {
         title="Group Management"
         subtitle="Manage teams and roles"
         rightComponent={
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={handleCreateGroup}
-          >
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateGroup}>
             <Ionicons name="add" size={20} color={colors.white} />
           </TouchableOpacity>
         }
@@ -128,13 +127,10 @@ export default function AdminGroupsScreen() {
             <View style={styles.emptyContainer}>
               <Ionicons name="people-circle" size={48} color={colors.textSecondary} />
               <Text style={styles.emptyText}>
-                {searchTerm ? 'No groups found' : 'No groups available'}
+                {searchTerm ? "No groups found" : "No groups available"}
               </Text>
               {!searchTerm && (
-                <TouchableOpacity
-                  style={styles.emptyCreateButton}
-                  onPress={handleCreateGroup}
-                >
+                <TouchableOpacity style={styles.emptyCreateButton} onPress={handleCreateGroup}>
                   <Text style={styles.emptyCreateButtonText}>Create your first group</Text>
                 </TouchableOpacity>
               )}
@@ -142,7 +138,7 @@ export default function AdminGroupsScreen() {
           }
           ListFooterComponent={
             groupsFetchingNextPage ? (
-              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+              <View style={{ alignItems: "center", paddingVertical: spacing.md }}>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
                   Loading more groups...
@@ -162,9 +158,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
   },
   header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
@@ -183,13 +179,13 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   loadingText: {
     marginTop: spacing.md,
@@ -201,14 +197,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   emptyContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingVertical: spacing.xxl,
   },
   emptyText: {
     marginTop: spacing.md,
     fontSize: typography.base,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
   emptyCreateButton: {
     marginTop: spacing.lg,

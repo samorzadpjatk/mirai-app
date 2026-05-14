@@ -1,4 +1,6 @@
-import type { Prisma } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
+import { notifications, notificationPushes, groups, tripParticipants } from "@mirai-app/db";
+import { eq, and, desc } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
@@ -21,7 +23,7 @@ export async function sendNotification({
   userId,
   input,
 }: {
-  db: Prisma.TransactionClient;
+  db: DB;
   userId: string;
   input: SendNotificationInput;
 }): Promise<SendNotificationResult> {
@@ -30,27 +32,27 @@ export async function sendNotification({
       async () => {
         const uniqueUserIds = Array.from(new Set(input.userIds));
 
-        const notification = await db.notification.create({
-          data: {
-            title: input.title,
-            body: input.body,
-            url: input.url,
-            createdById: userId,
-            tripId: input.tripId,
-          },
-        });
+        const inserted = await db.insert(notifications).values({
+          title: input.title,
+          body: input.body,
+          url: input.url,
+          createdById: userId,
+          tripId: input.tripId,
+        }).returning();
+        const notification = inserted[0];
+
+        if (!notification) {
+          throw new Error("Failed to create notification");
+        }
 
         if (uniqueUserIds.length > 0) {
-          await db.notificationPush.createMany({
-            data: uniqueUserIds.map((targetUserId) => ({
+          await db.insert(notificationPushes).values(
+            uniqueUserIds.map((targetUserId) => ({
               notificationId: notification.id,
               targetUserId,
               status: "pending",
-              sentAt: null,
-              failureReason: null,
-            })),
-            skipDuplicates: true,
-          });
+            }))
+          ).onConflictDoNothing();
         }
 
         return {
@@ -76,24 +78,22 @@ export async function sendRankingUpdate({
   userId,
   tripId,
 }: {
-  db: Prisma.TransactionClient;
+  db: DB;
   userId: string;
   tripId: string;
 }): Promise<{
   success: boolean;
   notificationIds: string[];
 }> {
-  const groups = await db.group.findMany({
-    where: { tripId, isDeleted: false },
-    orderBy: { coins: "desc" },
-  });
+  const groupRows = await db.select().from(groups)
+    .where(and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)))
+    .orderBy(desc(groups.coins));
 
   const results = await Promise.allSettled(
-    groups.map(async (group, index) => {
-      const participants = await db.tripParticipant.findMany({
-        where: { tripId, groupId: group.id },
-        select: { userId: true },
-      });
+    groupRows.map(async (group, index) => {
+      const participants = await db.select({ userId: tripParticipants.userId })
+        .from(tripParticipants)
+        .where(and(eq(tripParticipants.tripId, tripId), eq(tripParticipants.groupId, group.id)));
       const userIds = participants.map((p) => p.userId);
       const notificationData =
         NotificationService.createRankingUpdateNotification(
@@ -120,7 +120,7 @@ export async function sendRankingUpdate({
     .map((r) => r.value);
 
   return {
-    success: successfulResults.length === groups.length,
+    success: successfulResults.length === groupRows.length,
     notificationIds: successfulResults.map((r) => r.notificationId),
   };
 }

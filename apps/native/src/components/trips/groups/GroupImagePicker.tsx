@@ -54,9 +54,7 @@ export function GroupImagePicker({
           ) : (
             <>
               <Ionicons name="camera-outline" size={16} color={colors.white} />
-              <Text style={styles.badgeText}>
-                {imageUri ? "Change Photo" : "Add Photo"}
-              </Text>
+              <Text style={styles.badgeText}>{imageUri ? "Change Photo" : "Add Photo"}</Text>
             </>
           )}
         </View>

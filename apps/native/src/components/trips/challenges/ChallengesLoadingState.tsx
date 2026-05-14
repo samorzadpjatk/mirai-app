@@ -4,7 +4,11 @@ import { colors } from "~/styles";
 export function ChallengesLoadingState() {
   return (
     <View testID="challenges-loading-container" style={styles.container}>
-      <ActivityIndicator testID="challenges-loading-indicator" size="large" color={colors.primary} />
+      <ActivityIndicator
+        testID="challenges-loading-indicator"
+        size="large"
+        color={colors.primary}
+      />
     </View>
   );
 }

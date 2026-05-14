@@ -2,80 +2,78 @@
 
 ## Overview
 
-Database migrations are managed through Prisma Migrate. All migration commands are run from the `apps/seed` directory.
+Database migrations are managed through Drizzle Kit. All migration commands are run from the `apps/seed` directory or `packages/db`.
 
 ## Migration Workflow
 
 ### Development Workflow
 
 ```bash
-cd apps/seed
+cd packages/db
 
-# After modifying schema.prisma
-bun run db:migrate:dev
+# After modifying schema files in src/schema/
+bun run db:generate
 
 # Or push schema directly (for prototyping)
-bun run db:push:dev
+bun run db:push
 ```
 
 ### Production Workflow
 
 ```bash
-cd apps/seed
+cd packages/db
 
-# Deploy pending migrations
-bun run db:migrate:deploy
+# Apply pending migrations
+bun run db:migrate
 
-# Or push changes
-bun run db:push:prod
+# Or push changes (not recommended for production)
+bun run db:push
 ```
 
 ## Migration Commands
 
 | Command | Purpose | Environment |
 |---------|---------|-------------|
-| `db:migrate:dev` | Create and apply migrations | Development |
-| `db:migrate:prod` | Create and apply migrations | Production |
-| `db:migrate:deploy` | Deploy pending migrations | Any |
-| `db:push:dev` | Push schema directly | Development |
-| `db:push:prod` | Push schema directly | Production |
-| `db:reset:dev` | Reset database | Development |
-| `db:reset:prod` | Reset database | Production |
-| `db:studio:dev` | Open Prisma Studio | Development |
-| `db:studio:prod` | Open Prisma Studio | Production |
-| `db:generate` | Generate Prisma client | Any |
+| `db:generate` | Generate migration SQL from schema | Development |
+| `db:migrate` | Apply pending migrations | Production |
+| `db:push` | Push schema directly | Development |
+| `db:studio` | Open Drizzle Studio | Development |
+| `db:reset` | Reset database | Development |
 
 ## Creating a Migration
 
 1. **Modify the schema**:
-   ```prisma
-   // packages/db/prisma/schema.prisma
-   model User {
-     id    Int     @id @default(autoincrement())
-     email String  @unique
-     name  String?
-   }
+   ```typescript
+   // packages/db/src/schema/users.ts
+   import { pgTable, varchar, text } from "drizzle-orm/pg-core";
+
+   export const users = pgTable("users", {
+     id: varchar("id", { length: 36 }).primaryKey(),
+     email: text("email").unique(),
+     name: text("name"),
+   });
    ```
 
-2. **Create migration**:
+2. **Generate migration**:
    ```bash
-   cd apps/seed
-   bun run db:migrate:dev
-   # Enter migration name when prompted
+   cd packages/db
+   bun run db:generate
    ```
 
 3. **Migration file created**:
    ```
-   packages/db/prisma/migrations/
-   └── 20250101120000_add_user_profile/
-       └── migration.sql
+   packages/db/drizzle/
+   └── 0000_add_user_profile.sql
+   └── meta/
+       └── 0000_snapshot.json
+       └── _journal.json
    ```
 
 ## Migration Best Practices
 
 ### DO
 
-- **Use descriptive names**: `add_user_profile`, `create_posts_table`
+- **Use descriptive names**: Drizzle Kit generates timestamped filenames automatically
 - **Review migration files** before committing
 - **Test migrations** on a copy of production data
 - **Deploy incrementally** in production
@@ -83,23 +81,21 @@ bun run db:push:prod
 ### DON'T
 
 - **Don't edit existing migrations** that have been applied
-- **Don't delete migrations** from the migrations folder
+- **Don't delete migrations** from the drizzle folder
 - **Don't mix schema changes** with data migrations in one PR
 
 ## Migration File Structure
 
 ```sql
 -- Example migration.sql
--- CreateTable
-CREATE TABLE "User" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "email" TEXT NOT NULL,
-    "name" TEXT,
-    CONSTRAINT "User_email_key" UNIQUE("email")
+CREATE TABLE IF NOT EXISTS "users" (
+    "id" varchar(36) PRIMARY KEY NOT NULL,
+    "email" text NOT NULL,
+    "name" text,
+    CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 
--- CreateIndex
-CREATE INDEX "User_email_idx" ON "User"("email");
+CREATE INDEX IF NOT EXISTS "users_email_idx" ON "users" ("email");
 ```
 
 ## Data Migrations
@@ -108,25 +104,25 @@ For data transformations during migration:
 
 ```typescript
 // In a separate script
-import { prisma } from '@mirai-app/db';
+import { createDb, users } from '@mirai-app/db';
+import { eq } from 'drizzle-orm';
+
+const db = createDb(process.env.DATABASE_URL!);
 
 async function migrateData() {
-  const users = await prisma.user.findMany();
-  
-  for (const user of users) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { 
-        // Transform data
-      }
-    });
+  const allUsers = await db.query.users.findMany();
+
+  for (const user of allUsers) {
+    await db.update(users)
+      .set({ name: user.name?.trim() })
+      .where(eq(users.id, user.id));
   }
 }
 ```
 
 ## Rollback Strategy
 
-Prisma doesn't support automatic rollbacks. Plan carefully:
+Drizzle Kit doesn't support automatic rollbacks. Plan carefully:
 
 1. **Before migration**: Backup database
 2. **Test migrations** on staging environment
@@ -134,29 +130,29 @@ Prisma doesn't support automatic rollbacks. Plan carefully:
 
 ## Troubleshooting
 
-### "Migration already applied"
-
-```bash
-# Mark migration as rolled back
-bunx prisma migrate resolve --rolled-back migration_name
-
-# Mark migration as applied
-bunx prisma migrate resolve --applied migration_name
-```
-
 ### Migration fails in production
 
 1. Check database logs
 2. Verify migration SQL is valid
 3. Consider running fix manually
 
-## Prisma Studio
+### "Migration already applied"
+
+Check the `__drizzle_migrations__` table in your database and compare with the local drizzle meta folder.
+
+## Drizzle Studio
 
 Visual database management:
 
 ```bash
-cd apps/seed
-bun run db:studio:dev
+cd packages/db
+bun run db:studio
 ```
 
-Access at http://localhost:5555
+Access at http://localhost:4983
+
+## Further Reading
+
+- [Drizzle Kit Documentation](https://orm.drizzle.team/kit-docs/overview)
+- [Schema Conventions](./schema.md)
+- [Drizzle Setup](./drizzle.md)

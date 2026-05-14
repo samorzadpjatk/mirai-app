@@ -5,9 +5,7 @@ interface GroupEditNotFoundStateProps {
   onGoBack: () => void;
 }
 
-export function GroupEditNotFoundState({
-  onGoBack,
-}: GroupEditNotFoundStateProps) {
+export function GroupEditNotFoundState({ onGoBack }: GroupEditNotFoundStateProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.errorText}>Group not found</Text>

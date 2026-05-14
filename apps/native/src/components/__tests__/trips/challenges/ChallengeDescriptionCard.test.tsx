@@ -12,11 +12,18 @@ describe("ChallengeDescriptionCard", () => {
 
   it("renders the default description when none is provided", () => {
     renderWithProviders(<ChallengeDescriptionCard description={null} />);
-    expect(screen.getByText("Complete this challenge to earn points for your group!")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Complete this challenge to earn points for your group!"),
+    ).toBeOnTheScreen();
   });
 
   it("renders an image when imageUrl is provided", () => {
-    renderWithProviders(<ChallengeDescriptionCard description="Test description" imageUrl="https://example.com/image.jpg" />);
+    renderWithProviders(
+      <ChallengeDescriptionCard
+        description="Test description"
+        imageUrl="https://example.com/image.jpg"
+      />,
+    );
     const image = screen.getByTestId("challenge-image");
     expect(image).toBeOnTheScreen();
     expect(image.props.source.uri).toBe("https://example.com/image.jpg");

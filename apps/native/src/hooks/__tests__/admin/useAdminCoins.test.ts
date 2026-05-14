@@ -113,11 +113,19 @@ describe("useAdminCoins", () => {
   });
 
   it("should add coins to group", async () => {
-    const mockAddCoins = jest.fn<(data: { groupId: string; amount: number; tripId: string }) => Promise<{ id: string; groupId: string; amount: number }>>().mockResolvedValue({
-      id: "transaction-1",
-      groupId: "group-1",
-      amount: 100,
-    });
+    const mockAddCoins = jest
+      .fn<
+        (data: {
+          groupId: string;
+          amount: number;
+          tripId: string;
+        }) => Promise<{ id: string; groupId: string; amount: number }>
+      >()
+      .mockResolvedValue({
+        id: "transaction-1",
+        groupId: "group-1",
+        amount: 100,
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -143,11 +151,19 @@ describe("useAdminCoins", () => {
   });
 
   it("should remove coins from group", async () => {
-    const mockAddCoins = jest.fn<(data: { groupId: string; amount: number; tripId: string }) => Promise<{ id: string; groupId: string; amount: number }>>().mockResolvedValue({
-      id: "transaction-1",
-      groupId: "group-1",
-      amount: -50,
-    });
+    const mockAddCoins = jest
+      .fn<
+        (data: {
+          groupId: string;
+          amount: number;
+          tripId: string;
+        }) => Promise<{ id: string; groupId: string; amount: number }>
+      >()
+      .mockResolvedValue({
+        id: "transaction-1",
+        groupId: "group-1",
+        amount: -50,
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],
@@ -312,11 +328,19 @@ describe("useAdminCoins", () => {
   });
 
   it("should pass reason parameter (unused but in interface)", async () => {
-    const mockAddCoins = jest.fn<(data: { groupId: string; amount: number; tripId: string }) => Promise<{ id: string; groupId: string; amount: number }>>().mockResolvedValue({
-      id: "transaction-1",
-      groupId: "group-1",
-      amount: 100,
-    });
+    const mockAddCoins = jest
+      .fn<
+        (data: {
+          groupId: string;
+          amount: number;
+          tripId: string;
+        }) => Promise<{ id: string; groupId: string; amount: number }>
+      >()
+      .mockResolvedValue({
+        id: "transaction-1",
+        groupId: "group-1",
+        amount: 100,
+      });
 
     mockUseQuery.mockReturnValue({
       data: [],

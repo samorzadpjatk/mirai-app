@@ -41,7 +41,10 @@ jest.mock("~/hooks/rewards", () => ({
   useUpdateReward: () => ({ mutateAsync: mockUpdateReward, isPending: false }),
   useDeleteReward: () => ({ mutateAsync: mockDeleteReward, isPending: false }),
   useSetRewardHidden: () => ({ mutateAsync: mockSetRewardHidden, isPending: false }),
-  useUpdateRewardPurchaseStatus: () => ({ mutateAsync: mockUpdatePurchaseStatus, isPending: false }),
+  useUpdateRewardPurchaseStatus: () => ({
+    mutateAsync: mockUpdatePurchaseStatus,
+    isPending: false,
+  }),
 }));
 
 jest.mock("~/hooks/files", () => ({
@@ -81,33 +84,65 @@ jest.mock("~/components/common/ui", () => {
   const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
 
   return {
-    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) => visible ? (
+    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
+      visible ? (
+        <View>
+          <Text>{title}</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
+          {children}
+        </View>
+      ) : null,
+    AppModalFooter: ({
+      primaryLabel,
+      onPrimary,
+      secondaryLabel,
+      onSecondary,
+      isPrimaryLoading,
+    }: AppModalFooterProps) => (
       <View>
-        <Text>{title}</Text>
-        <TouchableOpacity onPress={onClose}><Text>Close</Text></TouchableOpacity>
-        {children}
-      </View>
-    ) : null,
-    AppModalFooter: ({ primaryLabel, onPrimary, secondaryLabel, onSecondary, isPrimaryLoading }: AppModalFooterProps) => (
-      <View>
-        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}><Text>{primaryLabel}</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onSecondary}><Text>{secondaryLabel}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}>
+          <Text>{primaryLabel}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onSecondary}>
+          <Text>{secondaryLabel}</Text>
+        </TouchableOpacity>
       </View>
     ),
     FormField: ({ children, label }: FormFieldProps) => (
-      <View><Text>{label}</Text>{children}</View>
+      <View>
+        <Text>{label}</Text>
+        {children}
+      </View>
     ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, keyboardType, multiline }: ThemedTextInputProps) => (
-      <TextInput value={value} placeholder={placeholder} keyboardType={keyboardType} multiline={multiline} onChangeText={onChangeText} />
+    ThemedTextInput: ({
+      value,
+      onChangeText,
+      placeholder,
+      keyboardType,
+      multiline,
+    }: ThemedTextInputProps) => (
+      <TextInput
+        value={value}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        onChangeText={onChangeText}
+      />
     ),
   };
 });
 
 describe("AdminRewardDetailModal", () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("renders the reward details view", () => {
-    const { getByDisplayValue } = renderWithProviders(<AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />);
+    const { getByDisplayValue } = renderWithProviders(
+      <AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />,
+    );
     expect(getByDisplayValue("Test Reward")).toBeTruthy();
     expect(getByDisplayValue("Test description")).toBeTruthy();
     expect(getByDisplayValue("10")).toBeTruthy();
@@ -115,13 +150,17 @@ describe("AdminRewardDetailModal", () => {
 
   it("calls onClose from the modal shell", () => {
     const onClose = jest.fn();
-    const { getByText } = renderWithProviders(<AdminRewardDetailModal rewardId="reward-1" onClose={onClose} />);
+    const { getByText } = renderWithProviders(
+      <AdminRewardDetailModal rewardId="reward-1" onClose={onClose} />,
+    );
     fireEvent.press(getByText("Close"));
     expect(onClose).toHaveBeenCalled();
   });
 
   it("allows editing the reward name", () => {
-    const { getByPlaceholderText } = renderWithProviders(<AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />);
+    const { getByPlaceholderText } = renderWithProviders(
+      <AdminRewardDetailModal rewardId="reward-1" onClose={jest.fn()} />,
+    );
     const nameInput = getByPlaceholderText("Reward name");
     fireEvent.changeText(nameInput, "Updated Reward");
     expect(nameInput.props.value).toBe("Updated Reward");

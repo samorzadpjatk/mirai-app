@@ -63,8 +63,7 @@ type TypeFilter = (typeof typeFilters)[number]["value"];
 export default function ChallengesScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
   const {
     trip,
@@ -79,16 +78,13 @@ export default function ChallengesScreen() {
     userGroup,
     leaderboardInfo,
   } = useChallenges(tripId);
-  const [selectedStatusFilter, setSelectedStatusFilter] =
-    useState<StatusFilter>("ALL");
-  const [selectedTypeFilter, setSelectedTypeFilter] =
-    useState<TypeFilter>("ALL");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>("ALL");
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<TypeFilter>("ALL");
 
   const toSolveChallenges = useMemo(
     () =>
       challenges.filter(
-        (challenge) =>
-          challenge.status === "to_solve" || challenge.status === "rejected",
+        (challenge) => challenge.status === "to_solve" || challenge.status === "rejected",
       ),
     [challenges],
   );
@@ -132,10 +128,7 @@ export default function ChallengesScreen() {
             .filter((challenge) => challenge.lifecycleStatus !== "COMPLETED")
             .sort((a, b) => {
               const getAllBucket = (challenge: ChallengeListItem) => {
-                if (
-                  challenge.status === "to_solve" &&
-                  challenge.lifecycleStatus !== "VISIBLE"
-                ) {
+                if (challenge.status === "to_solve" && challenge.lifecycleStatus !== "VISIBLE") {
                   return 0; // active
                 }
                 if (challenge.status === "submitted") {
@@ -155,22 +148,15 @@ export default function ChallengesScreen() {
 
               return getAllBucket(a) - getAllBucket(b);
             })
-        : selectedStatusFilter === "solved" ||
-            selectedStatusFilter === "to_solve"
-          ? challenges.filter(
-              (challenge) => challenge.status === selectedStatusFilter,
-            )
-          : challenges.filter(
-              (challenge) => challenge.lifecycleStatus === selectedStatusFilter,
-            );
+        : selectedStatusFilter === "solved" || selectedStatusFilter === "to_solve"
+          ? challenges.filter((challenge) => challenge.status === selectedStatusFilter)
+          : challenges.filter((challenge) => challenge.lifecycleStatus === selectedStatusFilter);
 
     if (selectedTypeFilter === "ALL") {
       return statusFiltered;
     }
 
-    return statusFiltered.filter(
-      (challenge) => challenge.submissionType === selectedTypeFilter,
-    );
+    return statusFiltered.filter((challenge) => challenge.submissionType === selectedTypeFilter);
   }, [challenges, selectedStatusFilter, selectedTypeFilter]);
 
   const handleRefresh = useCallback(() => {
@@ -187,10 +173,8 @@ export default function ChallengesScreen() {
     }) => {
       if (!hasNextPage || isFetchingNextPage || isLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
-      const nearBottom =
-        contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
 
       if (nearBottom) {
         void fetchNextPage();
@@ -247,9 +231,7 @@ export default function ChallengesScreen() {
           {typeFilters.map((filter) => {
             const selected = selectedTypeFilter === filter.value;
             const count =
-              filter.value === "ALL"
-                ? toSolveChallenges.length
-                : toSolveTypeCount[filter.value];
+              filter.value === "ALL" ? toSolveChallenges.length : toSolveTypeCount[filter.value];
 
             return (
               <TouchableOpacity
@@ -265,25 +247,15 @@ export default function ChallengesScreen() {
                   />
                   {"secondaryIcon" in filter && filter.secondaryIcon ? (
                     <Ionicons
-                      name={
-                        filter.secondaryIcon
-                      }
+                      name={filter.secondaryIcon}
                       size={14}
                       color={selected ? colors.primary : colors.textMuted}
                     />
                   ) : null}
                 </View>
-                <View
-                  style={[
-                    styles.typeChipCount,
-                    selected && styles.typeChipCountActive,
-                  ]}
-                >
+                <View style={[styles.typeChipCount, selected && styles.typeChipCountActive]}>
                   <Text
-                    style={[
-                      styles.typeChipCountText,
-                      selected && styles.typeChipCountTextActive,
-                    ]}
+                    style={[styles.typeChipCountText, selected && styles.typeChipCountTextActive]}
                   >
                     {count}
                   </Text>
@@ -300,9 +272,7 @@ export default function ChallengesScreen() {
         >
           {statusFilters.map((filter) => {
             const isAll = filter.value === "ALL";
-            const color = isAll
-              ? colors.primary
-              : (statusColors[filter.value] ?? colors.primary);
+            const color = isAll ? colors.primary : (statusColors[filter.value] ?? colors.primary);
             const selected = selectedStatusFilter === filter.value;
 
             return (
@@ -333,17 +303,12 @@ export default function ChallengesScreen() {
         </ScrollView>
 
         {/* Challenges Grid */}
-        <ChallengesGrid
-          challenges={filteredChallenges}
-          onSelectChallenge={handleChallengePress}
-        />
+        <ChallengesGrid challenges={filteredChallenges} onSelectChallenge={handleChallengePress} />
 
         {isFetchingNextPage ? (
           <View style={styles.loadingMoreWrap}>
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingMoreText}>
-              Loading more challenges...
-            </Text>
+            <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
           </View>
         ) : null}
       </ScrollView>

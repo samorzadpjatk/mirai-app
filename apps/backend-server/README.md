@@ -159,7 +159,7 @@ The server uses shared packages:
 - `@mirai-app/orpc` - oRPC Router and procedures
 - `@mirai-app/auth` - Authorization logic
 - `@mirai-app/supabase` - Supabase client
-- `@mirai-app/db` - Prisma client
+- `@mirai-app/db` - Drizzle client
 
 ## Troubleshooting
 

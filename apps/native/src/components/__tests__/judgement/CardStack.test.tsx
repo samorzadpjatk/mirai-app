@@ -103,24 +103,20 @@ describe("CardStack", () => {
   };
 
   it("should render empty state when no submissions", () => {
-    const { getByTestId } = renderWithProviders(
-      <CardStack {...defaultProps} />
-    );
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
 
     expect(getByTestId("empty-card")).toBeTruthy();
   });
 
   it("should render action bar", () => {
-    const { getByTestId } = renderWithProviders(
-      <CardStack {...defaultProps} />
-    );
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
 
     expect(getByTestId("action-bar")).toBeTruthy();
   });
 
   it("should render with provided tripId and challengeId", () => {
     const { getByTestId } = renderWithProviders(
-      <CardStack tripId="trip-2" challengeId="challenge-2" />
+      <CardStack tripId="trip-2" challengeId="challenge-2" />,
     );
 
     expect(getByTestId("empty-card")).toBeTruthy();

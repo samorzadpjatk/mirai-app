@@ -41,7 +41,11 @@ export function PrimaryLoadingButton({
       activeOpacity={activeOpacity}
     >
       {isLoading ? (
-        <ActivityIndicator testID={`${testID}-loading-indicator`} size="small" color={colors.backgroundDark} />
+        <ActivityIndicator
+          testID={`${testID}-loading-indicator`}
+          size="small"
+          color={colors.backgroundDark}
+        />
       ) : (
         <Text style={[styles.buttonText, textStyle]}>{label}</Text>
       )}

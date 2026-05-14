@@ -38,9 +38,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_URL environment variable"
-      );
+      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
     });
 
     it("should throw error when EXPO_PUBLIC_SUPABASE_URL is empty string", async () => {
@@ -49,9 +47,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_URL environment variable"
-      );
+      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
     });
 
     it("should successfully parse valid SUPABASE_URL", async () => {
@@ -73,7 +69,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_ANON_KEY environment variable"
+        "Missing SUPABASE_ANON_KEY environment variable",
       );
     });
 
@@ -84,7 +80,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_ANON_KEY environment variable"
+        "Missing SUPABASE_ANON_KEY environment variable",
       );
     });
 
@@ -107,7 +103,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing TRPC_HTTP_URL environment variable"
+        "Missing TRPC_HTTP_URL environment variable",
       );
     });
 
@@ -118,7 +114,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing TRPC_HTTP_URL environment variable"
+        "Missing TRPC_HTTP_URL environment variable",
       );
     });
 
@@ -183,7 +179,7 @@ describe("runtimeEnv", () => {
       delete process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing PRIVACY_POLICY_PUBLIC_URL environment variable"
+        "Missing PRIVACY_POLICY_PUBLIC_URL environment variable",
       );
     });
 
@@ -194,7 +190,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "";
 
       await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing PRIVACY_POLICY_PUBLIC_URL environment variable"
+        "Missing PRIVACY_POLICY_PUBLIC_URL environment variable",
       );
     });
 
@@ -217,9 +213,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_URL environment variable"
-      );
+      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
     });
 
     it("should throw error for undefined values", async () => {
@@ -228,9 +222,7 @@ describe("runtimeEnv", () => {
       process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
       process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_URL environment variable"
-      );
+      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
     });
   });
 

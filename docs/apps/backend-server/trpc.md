@@ -30,16 +30,17 @@ export default async function (fastify: FastifyInstance) {
 ```typescript
 // src/context.ts
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
-import { prisma } from '@mirai-app/db';
+import { createDb } from '@mirai-app/db';
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
   // Get user from auth header
   const user = await getUserFromHeader(req);
-  
+  const db = createDb(process.env.DATABASE_URL!);
+
   return {
     req,
     res,
-    prisma,
+    db,
     user,
   };
 }
@@ -156,7 +157,7 @@ TRPC Adapter
 Procedure Handler
      │
      ▼
-Prisma/Database
+Drizzle/Database
 ```
 
 ## Testing oRPC
@@ -183,7 +184,7 @@ test('create user', async () => {
 ## Best Practices
 
 1. **Keep routers in packages/trpc** - Share between client and server
-2. **Use context for dependencies** - Prisma, auth, etc.
+2. **Use context for dependencies** - Drizzle client, auth, etc.
 3. **Return early on errors** - Don't process invalid requests
 4. **Log errors** - But don't leak details to client
 

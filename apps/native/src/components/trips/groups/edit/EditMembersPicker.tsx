@@ -37,7 +37,11 @@ export function EditMembersPicker({
   if (isLoading) {
     return (
       <View testID="edit-members-picker-loading" style={styles.loadingContainer}>
-        <ActivityIndicator testID="edit-members-picker-indicator" size="large" color={colors.primary} />
+        <ActivityIndicator
+          testID="edit-members-picker-indicator"
+          size="large"
+          color={colors.primary}
+        />
       </View>
     );
   }

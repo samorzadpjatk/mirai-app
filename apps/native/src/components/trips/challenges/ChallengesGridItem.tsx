@@ -1,10 +1,4 @@
-import {
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { ChallengeListItem } from "./types";
@@ -14,10 +8,7 @@ interface ChallengesGridItemProps {
   onPress: (challenge: ChallengeListItem) => void;
 }
 
-export function ChallengesGridItem({
-  challenge,
-  onPress,
-}: ChallengesGridItemProps) {
+export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemProps) {
   const isLocked = challenge.status === "locked";
   const statusMeta = getStatusMeta(challenge.status);
   const submissionTypeMeta = getSubmissionTypeMeta(challenge.submissionType);
@@ -27,11 +18,11 @@ export function ChallengesGridItem({
       ? styles.cardToSolve
       : challenge.status === "visible"
         ? styles.cardVisible
-      : challenge.status === "submitted"
-        ? styles.cardSubmitted
-        : challenge.status === "solved"
-          ? styles.cardSolved
-          : undefined;
+        : challenge.status === "submitted"
+          ? styles.cardSubmitted
+          : challenge.status === "solved"
+            ? styles.cardSolved
+            : undefined;
 
   return (
     <TouchableOpacity
@@ -45,9 +36,7 @@ export function ChallengesGridItem({
         style={[
           styles.imageFill,
           !challenge.image && {
-            backgroundColor: isLocked
-              ? colors.surfaceDark
-              : `${challenge.iconColor}1f`,
+            backgroundColor: isLocked ? colors.surfaceDark : `${challenge.iconColor}1f`,
           },
         ]}
         imageStyle={styles.imageFillRadius}
@@ -67,38 +56,21 @@ export function ChallengesGridItem({
                 },
               ]}
             >
-              {isLocked && (
-                <Ionicons
-                  name="lock-closed"
-                  size={10}
-                  color={statusMeta.textColor}
-                />
-              )}
-              <Text
-                style={[
-                  styles.statusBadgeText,
-                  { color: statusMeta.textColor },
-                ]}
-              >
+              {isLocked && <Ionicons name="lock-closed" size={10} color={statusMeta.textColor} />}
+              <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
                 {statusMeta.label}
               </Text>
             </View>
 
             <View style={styles.headerRight}>
               {isLocked ? (
-                <Ionicons
-                  name="lock-closed"
-                  size={16}
-                  color={colors.textMuted}
-                />
+                <Ionicons name="lock-closed" size={16} color={colors.textMuted} />
               ) : (
                 <Text style={styles.pointsBadge}>+{challenge.points} MAX</Text>
               )}
               <View style={styles.headerJoinedRow}>
                 <Ionicons name="people" size={12} color="#22c55e" />
-                <Text style={styles.headerJoinedCount}>
-                  {challenge.participantGroupsCount}
-                </Text>
+                <Text style={styles.headerJoinedCount}>{challenge.participantGroupsCount}</Text>
               </View>
             </View>
           </View>
@@ -117,15 +89,11 @@ export function ChallengesGridItem({
             <View style={styles.metaRow}>
               <View style={styles.metaBadge}>
                 <Ionicons
-                  name={
-                    submissionTypeMeta.icon as keyof typeof Ionicons.glyphMap
-                  }
+                  name={submissionTypeMeta.icon as keyof typeof Ionicons.glyphMap}
                   size={11}
                   color="#cbd5e1"
                 />
-                <Text style={styles.metaBadgeText}>
-                  {submissionTypeMeta.label}
-                </Text>
+                <Text style={styles.metaBadgeText}>{submissionTypeMeta.label}</Text>
               </View>
               <View style={styles.metaBadge}>
                 <Ionicons
@@ -207,9 +175,7 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
   }
 };
 
-const getSubmissionTypeMeta = (
-  submissionType: ChallengeListItem["submissionType"],
-) => {
+const getSubmissionTypeMeta = (submissionType: ChallengeListItem["submissionType"]) => {
   switch (submissionType) {
     case "MULTI_IMAGE":
       return { label: "Multi", icon: "images-outline" };
@@ -229,9 +195,7 @@ const getSubmissionTypeMeta = (
   }
 };
 
-const getScoringMeta = (
-  scoringCategory: ChallengeListItem["scoringCategory"],
-) => {
+const getScoringMeta = (scoringCategory: ChallengeListItem["scoringCategory"]) => {
   switch (scoringCategory) {
     case "SPEED":
       return { label: "Speed", icon: "flash-outline" };

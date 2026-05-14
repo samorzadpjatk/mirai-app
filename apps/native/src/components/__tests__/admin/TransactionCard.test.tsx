@@ -34,11 +34,7 @@ describe("TransactionCard", () => {
   });
 
   it("renders negative amounts with a minus sign", () => {
-    renderWithProviders(
-      <TransactionCard
-        transaction={{ ...mockTransaction, amount: -25 }}
-      />
-    );
+    renderWithProviders(<TransactionCard transaction={{ ...mockTransaction, amount: -25 }} />);
 
     expect(screen.getByText("-25")).toBeOnTheScreen();
   });

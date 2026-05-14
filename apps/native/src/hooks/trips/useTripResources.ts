@@ -8,16 +8,22 @@ export function useTripResources(tripId?: string | null) {
     orpc.trip.getResources.queryOptions({
       input: { tripId: tripId ?? "" },
       enabled: !!tripId,
-    })
+    }),
   );
 
   const { data: resourcesData, isLoading, isError, error, refetch } = resourcesQuery;
-  
+
   // Helper function to get a resource by type
-  const getResource = useCallback((type: keyof typeof TRIP_RESOURCE_TYPES) => {
-    if (!resourcesData?.resources) return null;
-    return resourcesData.resources.find(resource => resource.type === TRIP_RESOURCE_TYPES[type]) ?? null;
-  }, [resourcesData]);
+  const getResource = useCallback(
+    (type: keyof typeof TRIP_RESOURCE_TYPES) => {
+      if (!resourcesData?.resources) return null;
+      return (
+        resourcesData.resources.find((resource) => resource.type === TRIP_RESOURCE_TYPES[type]) ??
+        null
+      );
+    },
+    [resourcesData],
+  );
 
   return {
     resources: resourcesData?.resources ?? [],

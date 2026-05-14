@@ -29,7 +29,7 @@ describe("AppModalFooter", () => {
         onPrimary={noop}
         secondaryLabel="Cancel"
         onSecondary={noop}
-      />
+      />,
     );
 
     expect(screen.getByText("Save")).toBeOnTheScreen();
@@ -45,7 +45,7 @@ describe("AppModalFooter", () => {
         onPrimary={noop}
         secondaryLabel="Cancel"
         onSecondary={onSecondary}
-      />
+      />,
     );
 
     await user.press(screen.getByText("Cancel"));
@@ -68,7 +68,7 @@ describe("AppModalFooter", () => {
     renderWithProviders(
       <AppModalFooter primaryLabel="Save" onPrimary={noop}>
         <Text>Additional Info</Text>
-      </AppModalFooter>
+      </AppModalFooter>,
     );
 
     expect(screen.getByText("Additional Info")).toBeOnTheScreen();

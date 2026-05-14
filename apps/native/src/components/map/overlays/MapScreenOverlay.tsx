@@ -11,26 +11,21 @@ import { useMapOverlayStore } from "~/stores/map";
 import { useLocationContext } from "~/stores/location";
 
 export function MapScreenOverlay() {
-  const { selectedUser, showUsersList, panelStyle, panGesture } =
-    useMapOverlayStore();
+  const { selectedUser, showUsersList, panelStyle, panGesture } = useMapOverlayStore();
   const { canViewOthersLocations } = useLocationContext();
 
   return (
     <>
-      {canViewOthersLocations &&
+      {canViewOthersLocations && (
         <GestureDetector gesture={panGesture}>
           <Animated.View
             pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
             style={[styles.detailCard, panelStyle]}
           >
-            {selectedUser ? (
-              <SelectedUserCard />
-            ) : showUsersList ? (
-              <UsersListPanel />
-            ) : null}
+            {selectedUser ? <SelectedUserCard /> : showUsersList ? <UsersListPanel /> : null}
           </Animated.View>
         </GestureDetector>
-      }
+      )}
       <MapActionButtons />
       <ShareLocationModal />
       <ManageSharingModal />

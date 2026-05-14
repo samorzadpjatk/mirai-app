@@ -1,5 +1,5 @@
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
-import { prisma } from "./config/db";
+import { db } from "./config/db";
 import { supabase } from "./config/supabase";
 import { env } from "./config/env";
 import type { TripConfig, AuthUserByEmail } from "./types";
@@ -7,6 +7,8 @@ import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
 import type { Role } from "@mirai-app/db";
+import { trips, users, tripParticipants } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -15,9 +17,8 @@ export const seedTrip = async (
   authUsers: AuthUserByEmail,
 ) => {
   const usersCsv = await readTextFile(joinPath(envRoot, usersCsvPath));
-  const users = parseUsersCsv(usersCsv);
+  const csvUsers = parseUsersCsv(usersCsv);
 
-  // Handle background image upload if specified
   let backgroundImagePath: string | undefined;
   if (tripConfig.background) {
     const backgroundAbsPath = joinPath(envRoot, tripConfig.background);
@@ -27,7 +28,6 @@ export const seedTrip = async (
       const size: number = fileStat.size;
       
       if (size > 0) {
-        // Generate storage path: trips/{trip-key}/background.{ext}
         const ext = tripConfig.background.split('.').pop()?.toLowerCase() ?? 'jpg';
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
         
@@ -51,30 +51,31 @@ export const seedTrip = async (
     }
   }
 
-  let trip = await prisma.trip.findFirst({ where: { name: tripConfig.name } });
+  let trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.name, tripConfig.name) });
   if (trip) {
-    trip = await prisma.trip.update({
-      where: { id: trip.id },
-      data: {
-        description: tripConfig.description,
-        startDate: new Date(tripConfig.startDate),
-        endDate: new Date(tripConfig.endDate),
-        backgroundImagePath,
-      },
-    });
+    await db.update(trips).set({
+      description: tripConfig.description,
+      startDate: new Date(tripConfig.startDate),
+      endDate: new Date(tripConfig.endDate),
+      backgroundImagePath,
+    }).where(eq(trips.id, trip.id));
+    trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.id, trip!.id) });
   } else {
-    trip = await prisma.trip.create({
-      data: {
-        name: tripConfig.name,
-        description: tripConfig.description,
-        startDate: new Date(tripConfig.startDate),
-        endDate: new Date(tripConfig.endDate),
-        backgroundImagePath,
-      },
-    });
+    const inserted = await db.insert(trips).values({
+      name: tripConfig.name,
+      description: tripConfig.description,
+      startDate: new Date(tripConfig.startDate),
+      endDate: new Date(tripConfig.endDate),
+      backgroundImagePath,
+    }).returning();
+    trip = inserted[0];
   }
 
-  for (const row of users) {
+  if (!trip) {
+    throw new Error(`Failed to create or update trip: ${tripConfig.name}`);
+  }
+
+  for (const row of csvUsers) {
     const email = row.email?.trim();
     if (!email) continue;
 
@@ -93,9 +94,8 @@ export const seedTrip = async (
       authUsers.set(email.toLowerCase(), authUser);
     }
 
-    let dbUser = await prisma.user.findFirst({ where: { authUserId: authUser.id } });
+    let dbUser = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.authUserId, authUser.id) });
     
-    // Create the DB user manually if it doesn't exist
     if (!dbUser) {
       console.warn(`✗ DB user not yet created for ${email} (auth id ${authUser.id}). Creating manually...`);
       
@@ -109,21 +109,19 @@ export const seedTrip = async (
       const dbRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       try {
-        dbUser = await prisma.user.create({
-          data: {
-            authUserId: authUser.id,
-            firstName: row.firstName ?? "",
-            lastName: row.lastName ?? "",
-            role: dbRole,
-          },
-        });
+        const inserted = await db.insert(users).values({
+          authUserId: authUser.id,
+          firstName: row.firstName ?? "",
+          lastName: row.lastName ?? "",
+          role: dbRole,
+        }).returning();
+        dbUser = inserted[0];
         console.log(`✓ Manually created DB user for ${email} with role: ${dbRole}`);
       } catch (error) {
         console.warn(`✗ Failed to create DB user manually for ${email}:`, error);
         continue;
       }
     } else {
-      // Update the role if it doesn't match what we expect from CSV
       const roleMapping: Record<string, string> = {
         'admin': 'ADMIN',
         'moderator': 'MODERATOR', 
@@ -134,37 +132,39 @@ export const seedTrip = async (
       const expectedRole = (roleMapping[row.role?.toLowerCase() ?? 'user'] ?? 'USER') as Role;
       
       if (dbUser.role !== expectedRole) {
-        dbUser = await prisma.user.update({
-          where: { id: dbUser.id },
-          data: { role: expectedRole },
-        });
+        const dbUserId = dbUser.id;
+        await db.update(users).set({ role: expectedRole }).where(eq(users.id, dbUserId));
+        dbUser = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, dbUserId) });
       }
     }
 
-    await prisma.tripParticipant.upsert({
-      where: { userId_tripId: { userId: dbUser.id, tripId: trip.id } },
-      update: {},
-      create: {
-        userId: dbUser.id,
-        tripId: trip.id,
-      },
+    if (!dbUser) {
+      console.warn(`✗ DB user missing for ${email}, skipping participant.`);
+      continue;
+    }
+
+    await db.insert(tripParticipants).values({
+      userId: dbUser.id,
+      tripId: trip.id,
+    }).onConflictDoUpdate({
+      target: [tripParticipants.userId, tripParticipants.tripId],
+      set: {},
     });
   }
 
   const ghostAuth = await ensureGhostAuthUser(authUsers);
   if (ghostAuth) {
-    let ghostUser = await prisma.user.findFirst({ where: { authUserId: ghostAuth.id } });
+    let ghostUser = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.authUserId, ghostAuth.id) });
     if (!ghostUser) {
       console.warn(`✗ Ghost DB user missing for auth id ${ghostAuth.id}. Creating manually...`);
       try {
-        ghostUser = await prisma.user.create({
-          data: {
-            authUserId: ghostAuth.id,
-            firstName: "Ghost",
-            lastName: "User",
-            role: "USER",
-          },
-        });
+        const inserted = await db.insert(users).values({
+          authUserId: ghostAuth.id,
+          firstName: "Ghost",
+          lastName: "User",
+          role: "USER",
+        }).returning();
+        ghostUser = inserted[0];
         console.log(`✓ Manually created ghost DB user`);
       } catch (error) {
         console.warn(`✗ Failed to create ghost DB user manually:`, error);
@@ -172,16 +172,17 @@ export const seedTrip = async (
       }
     }
 
-    await prisma.tripParticipant.upsert({
-      where: { userId_tripId: { userId: ghostUser.id, tripId: trip.id } },
-      update: {},
-      create: {
+    if (ghostUser) {
+      await db.insert(tripParticipants).values({
         userId: ghostUser.id,
         tripId: trip.id,
-      },
-    });
+      }).onConflictDoUpdate({
+        target: [tripParticipants.userId, tripParticipants.tripId],
+        set: {},
+      });
+    }
   }
 
-  console.log(`Trip seeded: ${trip.name} (${users.length} participants)`);
+  console.log(`Trip seeded: ${trip.name} (${csvUsers.length} participants)`);
   return trip;
 };

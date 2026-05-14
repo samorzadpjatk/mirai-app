@@ -9,7 +9,7 @@ describe("ThemedCard", () => {
     renderWithProviders(
       <ThemedCard>
         <Text>Card Content</Text>
-      </ThemedCard>
+      </ThemedCard>,
     );
 
     expect(screen.getByText("Card Content")).toBeOnTheScreen();
@@ -20,7 +20,7 @@ describe("ThemedCard", () => {
     renderWithProviders(
       <ThemedCard onPress={onPress}>
         <Text>Pressable Card</Text>
-      </ThemedCard>
+      </ThemedCard>,
     );
 
     fireEvent.press(screen.getByText("Pressable Card"));
@@ -31,7 +31,7 @@ describe("ThemedCard", () => {
     renderWithProviders(
       <ThemedCard bordered selected variant="interactive">
         <Text>Decorated Card</Text>
-      </ThemedCard>
+      </ThemedCard>,
     );
 
     expect(screen.getByText("Decorated Card")).toBeOnTheScreen();

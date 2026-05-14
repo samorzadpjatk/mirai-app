@@ -75,11 +75,9 @@ jest.mock("~/services/storage/tusUrlStorage", () => ({
   })),
 }));
 
-// Mock global fetch
-const mockFetch = jest.fn<() => Promise<{ blob: () => Promise<Blob> }>>().mockResolvedValue({
-  blob: jest.fn<() => Promise<Blob>>().mockResolvedValue(new Blob(["test content"])),
-});
-global.fetch = mockFetch as unknown as typeof global.fetch;
+import { setupMockFetch } from "../../../test-utils/mockFetch";
+
+const mockFetch = setupMockFetch();
 
 describe("useFileUpload", () => {
   beforeEach(() => {
@@ -126,7 +124,7 @@ describe("useFileUpload", () => {
         storagePath: "test/file.jpg",
         fileUri: "file:///test/file.jpg",
         contentType: "image/jpeg",
-      })
+      }),
     ).rejects.toThrow("File not found");
   });
 
@@ -142,7 +140,7 @@ describe("useFileUpload", () => {
         storagePath: "test/file.jpg",
         fileUri: "file:///test/file.jpg",
         contentType: "image/jpeg",
-      })
+      }),
     ).rejects.toThrow("User not authenticated");
   });
 
@@ -167,7 +165,9 @@ describe("useFileUpload", () => {
       expect(result.current.status).toBe("uploading");
     });
 
-    uploadPromise.catch(() => { /* noop */ });
+    uploadPromise.catch(() => {
+      /* noop */
+    });
   });
 
   it("should track upload progress", async () => {
@@ -182,11 +182,15 @@ describe("useFileUpload", () => {
     const { result } = renderHook(() => useFileUpload());
 
     act(() => {
-      result.current.upload({
-        storagePath: "test/file.jpg",
-        fileUri: "file:///test/file.jpg",
-        contentType: "image/jpeg",
-      }).catch(() => { /* noop */ });
+      result.current
+        .upload({
+          storagePath: "test/file.jpg",
+          fileUri: "file:///test/file.jpg",
+          contentType: "image/jpeg",
+        })
+        .catch(() => {
+          /* noop */
+        });
     });
 
     await waitFor(() => {
@@ -231,7 +235,9 @@ describe("useFileUpload", () => {
       });
     });
 
-    uploadPromise.catch(() => { /* noop */ });
+    uploadPromise.catch(() => {
+      /* noop */
+    });
   });
 
   it("should handle upsert option", async () => {
@@ -259,7 +265,9 @@ describe("useFileUpload", () => {
       });
     });
 
-    uploadPromise.catch(() => { /* noop */ });
+    uploadPromise.catch(() => {
+      /* noop */
+    });
   });
 
   it("should handle upload abort during retry", () => {
@@ -274,11 +282,15 @@ describe("useFileUpload", () => {
     const { result } = renderHook(() => useFileUpload());
 
     act(() => {
-      result.current.upload({
-        storagePath: "test/file.jpg",
-        fileUri: "file:///test/file.jpg",
-        contentType: "image/jpeg",
-      }).catch(() => { /* noop */ });
+      result.current
+        .upload({
+          storagePath: "test/file.jpg",
+          fileUri: "file:///test/file.jpg",
+          contentType: "image/jpeg",
+        })
+        .catch(() => {
+          /* noop */
+        });
     });
 
     act(() => {
@@ -300,11 +312,15 @@ describe("useFileUpload", () => {
     const { result } = renderHook(() => useFileUpload());
 
     act(() => {
-      result.current.upload({
-        storagePath: "test/file.jpg",
-        fileUri: "file:///test/file.jpg",
-        contentType: "image/jpeg",
-      }).catch(() => { /* noop */ });
+      result.current
+        .upload({
+          storagePath: "test/file.jpg",
+          fileUri: "file:///test/file.jpg",
+          contentType: "image/jpeg",
+        })
+        .catch(() => {
+          /* noop */
+        });
     });
 
     await waitFor(() => {

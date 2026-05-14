@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, TextInput, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import React from "react";
+import { View, TextInput, ScrollView, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
 
 interface SearchField {
   key: string;
@@ -12,7 +12,9 @@ interface AdminSearchBarProps {
   searchTerm: string;
   onSearchChange: (text: string) => void;
   selectedField: string;
-  onFieldChange: (field: 'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName') => void;
+  onFieldChange: (
+    field: "firstName" | "lastName" | "email" | "wristNumber" | "houseNumber" | "groupName",
+  ) => void;
   fields: SearchField[];
   placeholder?: string;
 }
@@ -25,7 +27,8 @@ export function AdminSearchBar({
   fields,
   placeholder,
 }: AdminSearchBarProps) {
-  const selectedFieldLabel = fields.find(f => f.key === selectedField)?.label.toLowerCase() ?? 'items';
+  const selectedFieldLabel =
+    fields.find((f) => f.key === selectedField)?.label.toLowerCase() ?? "items";
 
   return (
     <View style={styles.searchSection}>
@@ -44,16 +47,25 @@ export function AdminSearchBar({
         {fields.map((field) => (
           <TouchableOpacity
             key={field.key}
-            style={[
-              styles.fieldOption,
-              selectedField === field.key && styles.fieldOptionSelected,
-            ]}
-            onPress={() => onFieldChange(field.key as 'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName')}
+            style={[styles.fieldOption, selectedField === field.key && styles.fieldOptionSelected]}
+            onPress={() =>
+              onFieldChange(
+                field.key as
+                  | "firstName"
+                  | "lastName"
+                  | "email"
+                  | "wristNumber"
+                  | "houseNumber"
+                  | "groupName",
+              )
+            }
           >
-            <Text style={[
-              styles.fieldOptionText,
-              selectedField === field.key && styles.fieldOptionTextSelected,
-            ]}>
+            <Text
+              style={[
+                styles.fieldOptionText,
+                selectedField === field.key && styles.fieldOptionTextSelected,
+              ]}
+            >
               {field.label}
             </Text>
           </TouchableOpacity>
@@ -69,8 +81,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
@@ -86,7 +98,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   fieldSelector: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   fieldOption: {
     paddingHorizontal: spacing.md,

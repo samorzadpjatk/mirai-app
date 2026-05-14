@@ -8,12 +8,7 @@ interface AlertsPaginationProps {
   onNext: () => void;
 }
 
-export function AlertsPagination({
-  page,
-  totalPages,
-  onPrev,
-  onNext,
-}: AlertsPaginationProps) {
+export function AlertsPagination({ page, totalPages, onPrev, onNext }: AlertsPaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
@@ -21,18 +16,12 @@ export function AlertsPagination({
   return (
     <View style={styles.pagination}>
       <TouchableOpacity
-        style={[
-          styles.paginationButton,
-          page === 1 && styles.paginationButtonDisabled,
-        ]}
+        style={[styles.paginationButton, page === 1 && styles.paginationButtonDisabled]}
         onPress={onPrev}
         disabled={page === 1}
       >
         <Text
-          style={[
-            styles.paginationButtonText,
-            page === 1 && styles.paginationButtonTextDisabled,
-          ]}
+          style={[styles.paginationButtonText, page === 1 && styles.paginationButtonTextDisabled]}
         >
           Previous
         </Text>
@@ -41,10 +30,7 @@ export function AlertsPagination({
         Page {page} of {totalPages}
       </Text>
       <TouchableOpacity
-        style={[
-          styles.paginationButton,
-          page === totalPages && styles.paginationButtonDisabled,
-        ]}
+        style={[styles.paginationButton, page === totalPages && styles.paginationButtonDisabled]}
         onPress={onNext}
         disabled={page === totalPages}
       >

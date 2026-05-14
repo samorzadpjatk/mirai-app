@@ -54,8 +54,7 @@ const statusTone: Record<string, string> = {
   CANCELLED: colors.danger,
 };
 
-const getEndsLabel = (isRecurring?: boolean) =>
-  isRecurring ? "Recurring" : "One-time";
+const getEndsLabel = (isRecurring?: boolean) => (isRecurring ? "Recurring" : "One-time");
 
 export function ChallengeHeroCard({
   name,
@@ -84,9 +83,7 @@ export function ChallengeHeroCard({
     : "Speed";
   const endsText = getEndsLabel(isRecurring);
   const hasPodium =
-    firstPlacePoints != null ||
-    secondPlacePoints != null ||
-    thirdPlacePoints != null;
+    firstPlacePoints != null || secondPlacePoints != null || thirdPlacePoints != null;
   const podiumItems = [
     {
       place: "1st",
@@ -167,7 +164,9 @@ export function ChallengeHeroCard({
               <View style={[styles.iconWrapper, { backgroundColor: `${iconColor}20` }]}>
                 <Ionicons name={icon} size={22} color={iconColor} />
               </View>
-              <Text numberOfLines={2} style={styles.title}>{name}</Text>
+              <Text numberOfLines={2} style={styles.title}>
+                {name}
+              </Text>
             </View>
           </LinearGradient>
         </ImageBackground>

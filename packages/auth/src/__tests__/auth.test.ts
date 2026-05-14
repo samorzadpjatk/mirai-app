@@ -13,11 +13,11 @@ import {
   syncUserToDatabase,
 } from "../authServer";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User, PrismaClient } from "@mirai-app/db";
+import type { User, DB } from "@mirai-app/db";
 
 describe("authServer", () => {
   let mockSupabase: SupabaseClient;
-  let mockDb: PrismaClient;
+  let mockDb: DB;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,10 +32,12 @@ describe("authServer", () => {
     } as unknown as SupabaseClient;
 
     mockDb = {
-      user: {
-        findFirst: vi.fn(),
+      query: {
+        users: {
+          findFirst: vi.fn(),
+        },
       },
-    } as unknown as PrismaClient;
+    } as unknown as DB;
   });
 
   describe("AuthenticationError", () => {
@@ -119,7 +121,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
 
       const result = await getSession(mockDb, mockSupabase, "token");
 
@@ -136,7 +138,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(null as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
       const result = await getSession(mockDb, mockSupabase, "token");
 
@@ -165,7 +167,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(null as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
       await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
         "Unauthorized"
@@ -187,7 +189,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -212,7 +214,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: { banned_until: futureDate } },
         error: null,
@@ -233,7 +235,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: { message: "Admin lookup failed" },
@@ -263,7 +265,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst)
+      vi.mocked(mockDb.query.users.findFirst)
         .mockResolvedValueOnce(mockDbUser as never)
         .mockResolvedValueOnce(null as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
@@ -290,7 +292,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -313,7 +315,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -337,7 +339,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -360,7 +362,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
@@ -382,7 +384,7 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.user.findFirst).mockResolvedValue(mockDbUser as never);
+      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,

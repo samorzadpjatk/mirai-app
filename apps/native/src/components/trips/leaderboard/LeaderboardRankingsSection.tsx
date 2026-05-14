@@ -21,20 +21,14 @@ export function LeaderboardRankingsSection({
 
       <View style={styles.list}>
         {groups.map((group) => (
-          <LeaderboardListItem
-            key={group.id}
-            group={group}
-            onPress={onPressGroup}
-          />
+          <LeaderboardListItem key={group.id} group={group} onPress={onPressGroup} />
         ))}
       </View>
 
       {groups.length === 0 && (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>No groups yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Groups will appear here as they join the trip
-          </Text>
+          <Text style={styles.emptySubtitle}>Groups will appear here as they join the trip</Text>
         </View>
       )}
     </View>

@@ -4,13 +4,25 @@ import type { ImagePickerAsset } from "expo-image-picker";
 import { Alert, Platform } from "react-native";
 
 // Mock expo-image-manipulator
-interface ManipulateResult { uri: string; width: number; height: number }
-interface SaveResult { uri: string; width: number; height: number }
-interface RenderResult { saveAsync: jest.Mock<() => Promise<SaveResult>>; release: jest.Mock }
+interface ManipulateResult {
+  uri: string;
+  width: number;
+  height: number;
+}
+interface SaveResult {
+  uri: string;
+  width: number;
+  height: number;
+}
+interface RenderResult {
+  saveAsync: jest.Mock<() => Promise<SaveResult>>;
+  release: jest.Mock;
+}
 
-const mockManipulateAsync = jest.fn<
-  (uri: string, actions: unknown[], options: unknown) => Promise<ManipulateResult | Error>
->();
+const mockManipulateAsync =
+  jest.fn<
+    (uri: string, actions: unknown[], options: unknown) => Promise<ManipulateResult | Error>
+  >();
 const mockSaveAsync = jest.fn<() => Promise<SaveResult>>();
 const mockRenderAsync = jest.fn<() => Promise<RenderResult>>();
 const mockRelease = jest.fn();
@@ -106,7 +118,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ flip: "horizontal" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -123,7 +135,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 180 }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -140,7 +152,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ flip: "vertical" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -157,7 +169,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 90 }, { flip: "horizontal" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -174,7 +186,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 90 }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -191,7 +203,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 270 }, { flip: "horizontal" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -208,7 +220,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 270 }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -225,7 +237,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 90 }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -242,7 +254,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         "file://test.jpg",
         [{ rotate: 90 }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -275,7 +287,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -292,7 +304,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -309,7 +321,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -326,7 +338,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         [{ flip: "horizontal" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -345,7 +357,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -362,7 +374,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -379,7 +391,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -396,7 +408,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -413,7 +425,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -430,7 +442,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -505,7 +517,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([{ flip: "horizontal" }]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -522,7 +534,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         [{ flip: "horizontal" }],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -542,7 +554,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
-        expect.objectContaining({ format: "png" })
+        expect.objectContaining({ format: "png" }),
       );
     });
 
@@ -560,7 +572,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
-        expect.objectContaining({ format: "webp" })
+        expect.objectContaining({ format: "webp" }),
       );
     });
 
@@ -578,7 +590,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
-        expect.objectContaining({ format: "jpeg" })
+        expect.objectContaining({ format: "jpeg" }),
       );
     });
 
@@ -595,7 +607,7 @@ describe("Camera Utilities", () => {
       expect(mockManipulateAsync).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Array),
-        expect.objectContaining({ format: "jpeg" })
+        expect.objectContaining({ format: "jpeg" }),
       );
     });
   });
@@ -662,13 +674,11 @@ describe("Camera Utilities", () => {
         exif: { Orientation: 6 },
       };
 
-      mockManipulateAsync
-        .mockRejectedValueOnce(new Error("Primary failed"))
-        .mockResolvedValueOnce({
-          uri: "file://fallback-result.jpg",
-          width: 1024,
-          height: 768,
-        });
+      mockManipulateAsync.mockRejectedValueOnce(new Error("Primary failed")).mockResolvedValueOnce({
+        uri: "file://fallback-result.jpg",
+        width: 1024,
+        height: 768,
+      });
 
       const result = await normalizeCameraAsset(asset);
 
@@ -688,13 +698,11 @@ describe("Camera Utilities", () => {
         exif: { Orientation: 6 },
       };
 
-      mockManipulateAsync
-        .mockRejectedValueOnce(new Error("Primary failed"))
-        .mockResolvedValueOnce({
-          uri: "file://base64-manipulated.jpg",
-          width: 1024,
-          height: 768,
-        });
+      mockManipulateAsync.mockRejectedValueOnce(new Error("Primary failed")).mockResolvedValueOnce({
+        uri: "file://base64-manipulated.jpg",
+        width: 1024,
+        height: 768,
+      });
 
       const result = await normalizeCameraAsset(asset);
 
@@ -703,7 +711,7 @@ describe("Camera Utilities", () => {
         2,
         "data:image/jpeg;base64,base64data",
         expect.any(Array),
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result.uri).toBe("file://base64-manipulated.jpg");
     });
@@ -748,13 +756,11 @@ describe("Camera Utilities", () => {
         exif: { Orientation: 6 },
       };
 
-      mockManipulateAsync
-        .mockRejectedValueOnce(new Error("Primary failed"))
-        .mockResolvedValueOnce({
-          uri: "file://fallback-result.jpg",
-          width: 800,
-          height: 600,
-        });
+      mockManipulateAsync.mockRejectedValueOnce(new Error("Primary failed")).mockResolvedValueOnce({
+        uri: "file://fallback-result.jpg",
+        width: 800,
+        height: 600,
+      });
 
       await normalizeCameraAsset(asset);
 
@@ -769,13 +775,11 @@ describe("Camera Utilities", () => {
         exif: { Orientation: 6 },
       };
 
-      mockManipulateAsync
-        .mockRejectedValueOnce(new Error("Primary failed"))
-        .mockResolvedValueOnce({
-          uri: "file://fallback-result.jpg",
-          width: 800,
-          height: 600,
-        });
+      mockManipulateAsync.mockRejectedValueOnce(new Error("Primary failed")).mockResolvedValueOnce({
+        uri: "file://fallback-result.jpg",
+        width: 800,
+        height: 600,
+      });
 
       await normalizeCameraAsset(asset);
 
@@ -790,13 +794,11 @@ describe("Camera Utilities", () => {
         exif: { Orientation: 6 },
       };
 
-      mockManipulateAsync
-        .mockRejectedValueOnce(new Error("Primary failed"))
-        .mockResolvedValueOnce({
-          uri: "file://fallback-result.jpg",
-          width: 800,
-          height: 600,
-        });
+      mockManipulateAsync.mockRejectedValueOnce(new Error("Primary failed")).mockResolvedValueOnce({
+        uri: "file://fallback-result.jpg",
+        width: 800,
+        height: 600,
+      });
 
       await normalizeCameraAsset(asset);
 

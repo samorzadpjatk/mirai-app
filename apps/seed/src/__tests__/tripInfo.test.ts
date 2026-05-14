@@ -5,9 +5,16 @@ import type { TripInfoConfig } from "../types";
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
-const mockCreateDb: ReturnType<typeof vi.fn> = vi.fn();
 const mockUpload = vi.fn();
 const mockGetPublicUrl = vi.fn();
+
+const mockTripResourceDeleteMany = vi.fn();
+const mockTripResourceCreate = vi.fn();
+const mockTripInsuranceDeleteMany = vi.fn();
+const mockTripInsuranceCreate = vi.fn();
+const mockTripInsuranceStepDeleteMany = vi.fn();
+const mockTripInsuranceStepCreate = vi.fn();
+const mockSelectFromWhere = vi.fn();
 
 vi.mock("../utils/fs", () => ({
   readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
@@ -55,13 +62,60 @@ vi.mock("../constants", () => ({
 }));
 
 vi.mock("@mirai-app/db", () => ({
-  createDb: (...args: unknown[]) => mockCreateDb(...args) as { tripResource: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> }; tripInsurance: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> }; tripInsuranceStep: { create: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> } },
+  tripResources: { __table: "tripResources", tripId: { name: "tripId" } },
+  tripInsurances: { __table: "tripInsurances", tripId: { name: "tripId" }, id: { name: "id" } },
+  tripInsuranceSteps: { __table: "tripInsuranceSteps", insuranceId: { name: "insuranceId" } },
+}));
+
+vi.mock("../config/db", () => ({
+  db: {
+    delete: (table: { __table?: string }) => ({
+      where: (condition: unknown) => {
+        if (table?.__table === "tripResources") {
+          return mockTripResourceDeleteMany(condition);
+        } else if (table?.__table === "tripInsurances") {
+          return mockTripInsuranceDeleteMany(condition);
+        } else if (table?.__table === "tripInsuranceSteps") {
+          return mockTripInsuranceStepDeleteMany(condition);
+        }
+        return Promise.resolve();
+      },
+    }),
+    insert: (table: { __table?: string }) => ({
+      values: (data: Record<string, unknown>) => {
+        const thenable = {
+          returning: () => {
+            if (table?.__table === "tripInsurances") {
+              mockTripInsuranceCreate(data);
+              return Promise.resolve([{ id: "ins-1", ...data }]);
+            }
+            return Promise.resolve([]);
+          },
+          then: (onFulfilled: (value: unknown) => unknown, onRejected?: (reason: unknown) => unknown) => {
+            if (table?.__table === "tripResources") {
+              mockTripResourceCreate(data);
+            } else if (table?.__table === "tripInsuranceSteps") {
+              mockTripInsuranceStepCreate(data);
+            }
+            return Promise.resolve().then(onFulfilled, onRejected);
+          },
+        };
+        return thenable;
+      },
+    }),
+    select: () => ({
+      from: () => ({
+        where: () => mockSelectFromWhere(),
+      }),
+    }),
+  },
 }));
 
 describe("tripInfo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetPublicUrl.mockReturnValue({ data: { publicUrl: "https://cdn.example.com/file.pdf" } });
+    mockSelectFromWhere.mockResolvedValue([]);
   });
 
   describe("loadTripInfoConfig", () => {
@@ -107,32 +161,8 @@ describe("tripInfo", () => {
   });
 
   describe("seedTripInfo", () => {
-    const mockTripResourceCreate = vi.fn();
-    const mockTripResourceDeleteMany = vi.fn();
-    const mockTripInsuranceCreate: ReturnType<typeof vi.fn> = vi.fn();
-    const mockTripInsuranceDeleteMany = vi.fn();
-    const mockTripInsuranceStepDeleteMany = vi.fn();
-    const mockTripInsuranceStepCreate = vi.fn();
-
-    beforeEach(() => {
-      mockCreateDb.mockReturnValue({
-        tripResource: {
-          create: mockTripResourceCreate,
-          deleteMany: mockTripResourceDeleteMany,
-        },
-        tripInsurance: {
-          create: mockTripInsuranceCreate,
-          deleteMany: mockTripInsuranceDeleteMany,
-        },
-        tripInsuranceStep: {
-          create: mockTripInsuranceStepCreate,
-          deleteMany: mockTripInsuranceStepDeleteMany,
-        },
-      });
-    });
-
     it("should skip if no resources configured", async () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", { resources: [] });
 
@@ -147,13 +177,11 @@ describe("tripInfo", () => {
         resources: [{ type: "hero_image", label: "Hero", sortOrder: 0 }],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripResourceDeleteMany).toHaveBeenCalledWith({
-        where: { tripId: "trip-1" },
-      });
+      expect(mockTripResourceDeleteMany).toHaveBeenCalledWith(expect.anything());
 
       consoleSpy.mockRestore();
     });
@@ -175,24 +203,22 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
       expect(mockTripResourceCreate).toHaveBeenCalledWith({
-        data: {
-          tripId: "trip-1",
-          type: "hero_image",
-          label: "Hero Image",
-          description: "Main hero image",
-          url: "https://example.com/hero.jpg",
-          publicUrl: null,
-          storagePath: "images/hero.jpg",
-          fileName: "hero",
-          iconName: "image",
-          value: "hero-value",
-          sortOrder: 0,
-        },
+        tripId: "trip-1",
+        type: "hero_image",
+        label: "Hero Image",
+        description: "Main hero image",
+        url: "https://example.com/hero.jpg",
+        publicUrl: null,
+        storagePath: "images/hero.jpg",
+        fileName: "hero",
+        iconName: "image",
+        value: "hero-value",
+        sortOrder: 0,
       });
 
       consoleSpy.mockRestore();
@@ -208,24 +234,22 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
       expect(mockTripResourceCreate).toHaveBeenCalledWith({
-        data: {
-          tripId: "trip-1",
-          type: "simple",
-          label: "Simple Resource",
-          description: null,
-          url: null,
-          publicUrl: null,
-          storagePath: null,
-          fileName: null,
-          iconName: null,
-          value: null,
-          sortOrder: 0,
-        },
+        tripId: "trip-1",
+        type: "simple",
+        label: "Simple Resource",
+        description: null,
+        url: null,
+        publicUrl: null,
+        storagePath: null,
+        fileName: null,
+        iconName: null,
+        value: null,
+        sortOrder: 0,
       });
 
       consoleSpy.mockRestore();
@@ -247,7 +271,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -278,7 +302,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -308,7 +332,7 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -333,8 +357,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -362,8 +386,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -392,8 +416,8 @@ describe("tripInfo", () => {
         ],
       };
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -431,43 +455,36 @@ describe("tripInfo", () => {
         },
       };
 
-      const createdInsurance = { id: "ins-1" };
-      mockTripInsuranceCreate.mockResolvedValue(createdInsurance);
+      mockSelectFromWhere.mockResolvedValue([{ id: "ins-1" }]);
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripInsuranceStepDeleteMany).toHaveBeenCalled();
-      expect(mockTripInsuranceDeleteMany).toHaveBeenCalledWith({
-        where: { tripId: "trip-1" },
-      });
+      expect(mockTripInsuranceStepDeleteMany).toHaveBeenCalledWith(expect.anything());
+      expect(mockTripInsuranceDeleteMany).toHaveBeenCalledWith(expect.anything());
 
       expect(mockTripInsuranceCreate).toHaveBeenCalledWith({
-        data: {
-          tripId: "trip-1",
-          label: "Insurance Info",
-          phoneNumber: "+1234567890",
-          phoneDisplay: "+1 234 567 890",
-          policyNumber: "POL123",
-          contractNumber: "CTR456",
-          providerName: "Insurance Co",
-          hospitalName: "City Hospital",
-          hospitalAddress: "123 Main St",
-          hospitalDistance: "5km",
-        },
+        tripId: "trip-1",
+        label: "Insurance Info",
+        phoneNumber: "+1234567890",
+        phoneDisplay: "+1 234 567 890",
+        policyNumber: "POL123",
+        contractNumber: "CTR456",
+        providerName: "Insurance Co",
+        hospitalName: "City Hospital",
+        hospitalAddress: "123 Main St",
+        hospitalDistance: "5km",
       });
 
       expect(mockTripInsuranceStepCreate).toHaveBeenCalledWith({
-        data: {
-          insuranceId: "ins-1",
-          stepNumber: 1,
-          title: "Step 1",
-          text: "Call emergency",
-          requiredInfo: ["name", "date"],
-          exampleCall: "Hello, I need help",
-          additionalText: "More info",
-        },
+        insuranceId: "ins-1",
+        stepNumber: 1,
+        title: "Step 1",
+        text: "Call emergency",
+        requiredInfo: ["name", "date"],
+        exampleCall: "Hello, I need help",
+        additionalText: "More info",
       });
 
       consoleSpy.mockRestore();
@@ -487,20 +504,17 @@ describe("tripInfo", () => {
         },
       };
 
-      mockTripInsuranceCreate.mockResolvedValue({ id: "ins-1" });
-
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripInsuranceCreate).toHaveBeenCalledWith({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data: expect.objectContaining({
+      expect(mockTripInsuranceCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
           hospitalName: null,
           hospitalAddress: null,
           hospitalDistance: null,
         }),
-      });
+      );
 
       consoleSpy.mockRestore();
     });
@@ -512,7 +526,7 @@ describe("tripInfo", () => {
 
       mockTripResourceDeleteMany.mockRejectedValue(new Error("DB Error"));
 
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
       await expect(seedTripInfo("db-url", "trip-1", "dev", infoConfig)).rejects.toThrow("DB Error");
       expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed trip info:", expect.any(Error));

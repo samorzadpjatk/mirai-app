@@ -5,7 +5,8 @@ import { useAutoPushSubscription } from "../../notifications/useAutoPushSubscrip
 // Mock expo-notifications
 const mockGetPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
 const mockRequestPermissionsAsync = jest.fn<() => Promise<{ status: string }>>();
-const mockGetExpoPushTokenAsync = jest.fn<(opts?: { projectId?: string }) => Promise<{ data: string | null }>>();
+const mockGetExpoPushTokenAsync =
+  jest.fn<(opts?: { projectId?: string }) => Promise<{ data: string | null }>>();
 
 jest.mock("expo-notifications", () => ({
   getPermissionsAsync: () => mockGetPermissionsAsync(),
@@ -174,7 +175,9 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should auto-subscribe when permission is granted", async () => {
-    const mockSubscribe = jest.fn<(args: { token: string }) => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest
+      .fn<(args: { token: string }) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -211,7 +214,9 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should request permission when undetermined", async () => {
-    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest
+      .fn<() => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -360,7 +365,9 @@ describe("useAutoPushSubscription", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn<() => Promise<never>>().mockRejectedValue(new Error("Subscription failed")),
+      mutateAsync: jest
+        .fn<() => Promise<never>>()
+        .mockRejectedValue(new Error("Subscription failed")),
       isPending: false,
     });
 
@@ -372,7 +379,7 @@ describe("useAutoPushSubscription", () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to run automatic notification onboarding:",
-        expect.any(Error)
+        expect.any(Error),
       );
     });
 
@@ -380,7 +387,9 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should only attempt once per user", async () => {
-    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest
+      .fn<() => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -417,7 +426,9 @@ describe("useAutoPushSubscription", () => {
   });
 
   it("should attempt again for different user", async () => {
-    const mockSubscribe = jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });
+    const mockSubscribe = jest
+      .fn<() => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true });
 
     mockUseAuth.mockReturnValue({
       session: {
@@ -473,7 +484,9 @@ describe("useAutoPushSubscription", () => {
     });
 
     mockUseMutation.mockReturnValue({
-      mutateAsync: jest.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true }),
+      mutateAsync: jest
+        .fn<() => Promise<{ success: boolean }>>()
+        .mockResolvedValue({ success: true }),
       isPending: false,
     });
 

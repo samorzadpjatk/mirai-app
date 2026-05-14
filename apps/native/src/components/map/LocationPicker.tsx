@@ -8,12 +8,18 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { MapView, Camera, MarkerView, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
+import {
+  MapView,
+  Camera,
+  MarkerView,
+  RasterSource,
+  RasterLayer,
+} from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { Ionicons } from "@expo/vector-icons";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
 
 export interface LocationCoordinate {
   latitude: number;
@@ -26,7 +32,7 @@ interface Props {
   onLocationSelected: (location: LocationCoordinate) => void;
   onClose: () => void;
   /** Current map theme: 'dark' | 'light' */
-  mapTheme?: 'dark' | 'light';
+  mapTheme?: "dark" | "light";
 }
 
 // Map style configuration (same as UserMap)
@@ -44,7 +50,7 @@ interface MapRasterOverlay {
   layerStyle?: object;
 }
 
-const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
+const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   dark: {
     style: "https://tiles.openfreemap.org/styles/fiord",
     rasterOverlays: [
@@ -83,7 +89,7 @@ export const LocationPicker: React.FC<Props> = ({
   initialLocation,
   onLocationSelected,
   onClose,
-  mapTheme = 'dark',
+  mapTheme = "dark",
 }) => {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef>(null);
@@ -121,7 +127,7 @@ export const LocationPicker: React.FC<Props> = ({
   }, [isMapReady, initialLocation]);
 
   const handleMapPress = (feature: GeoJSON.Feature) => {
-    if (feature.geometry.type !== 'Point') return;
+    if (feature.geometry.type !== "Point") return;
     const [longitude, latitude] = feature.geometry.coordinates as [number, number];
     const loc: LocationCoordinate = { latitude, longitude };
     setMarkerCoordinate(loc);
@@ -133,7 +139,7 @@ export const LocationPicker: React.FC<Props> = ({
   };
 
   const handleMapLoadError = () => {
-    console.error('Map failed to load');
+    console.error("Map failed to load");
     setIsMapReady(true); // Still set to true to hide loading indicator
   };
 
@@ -152,9 +158,9 @@ export const LocationPicker: React.FC<Props> = ({
 
       if (status !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
-          'Permission Denied',
-          'Location permission is required to get your current location.',
-          [{ text: 'OK' }]
+          "Permission Denied",
+          "Location permission is required to get your current location.",
+          [{ text: "OK" }],
         );
         setIsLoadingLocation(false);
         return;
@@ -182,12 +188,10 @@ export const LocationPicker: React.FC<Props> = ({
         });
       }
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please try again.',
-        [{ text: 'OK' }]
-      );
+      console.error("Error getting location:", error);
+      Alert.alert("Location Error", "Unable to get your current location. Please try again.", [
+        { text: "OK" },
+      ]);
     } finally {
       setIsLoadingLocation(false);
     }
@@ -206,10 +210,7 @@ export const LocationPicker: React.FC<Props> = ({
       <View style={styles.container}>
         {/* Header */}
         <View
-          style={[
-            styles.header,
-            { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) },
-          ]}
+          style={[styles.header, { paddingTop: Math.max(insets.top + spacing.sm, spacing.xl) }]}
         >
           <TouchableOpacity
             onPress={onClose}
@@ -261,17 +262,15 @@ export const LocationPicker: React.FC<Props> = ({
               defaultSettings={
                 initialLocation
                   ? {
-                    centerCoordinate: [initialLocation.longitude, initialLocation.latitude],
-                    zoomLevel: 15,
-                  }
+                      centerCoordinate: [initialLocation.longitude, initialLocation.latitude],
+                      zoomLevel: 15,
+                    }
                   : undefined
               }
             />
 
             {/* Selected location marker – always mounted to avoid native crash */}
-            <MarkerView
-              coordinate={[markerCoordinate.longitude, markerCoordinate.latitude]}
-            >
+            <MarkerView coordinate={[markerCoordinate.longitude, markerCoordinate.latitude]}>
               <View style={{ opacity: selectedLocation ? 1 : 0 }}>
                 <View style={styles.markerContainer}>
                   <View style={styles.marker}>

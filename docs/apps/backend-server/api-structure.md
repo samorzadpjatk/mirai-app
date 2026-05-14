@@ -89,13 +89,14 @@ import { z } from 'zod';
 
 export const myResourceRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.myResource.findMany();
+    return ctx.db.query.myResources.findMany();
   }),
-  
+
   create: publicProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      return ctx.prisma.myResource.create({ data: input });
+      const [created] = await ctx.db.insert(myResources).values(input).returning();
+      return created;
     }),
 });
 ```

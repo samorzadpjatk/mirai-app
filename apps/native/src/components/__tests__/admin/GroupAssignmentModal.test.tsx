@@ -19,7 +19,12 @@ interface GroupAssignmentResult {
 jest.mock("~/components/common/ui", () => {
   const { View, Text, TouchableOpacity } = require("react-native");
   return {
-    AppModalShell: (props: { children: React.ReactNode; visible: boolean; title: string; onClose: () => void }) =>
+    AppModalShell: (props: {
+      children: React.ReactNode;
+      visible: boolean;
+      title: string;
+      onClose: () => void;
+    }) =>
       !props.visible ? null : (
         <View>
           <Text>{props.title}</Text>
@@ -68,7 +73,13 @@ describe("GroupAssignmentModal", () => {
 
   it("renders modal content", () => {
     const { getByText } = renderWithProviders(
-      <GroupAssignmentModal visible onClose={onClose} user={user} groups={groups} onAssign={onAssign} />
+      <GroupAssignmentModal
+        visible
+        onClose={onClose}
+        user={user}
+        groups={groups}
+        onAssign={onAssign}
+      />,
     );
 
     expect(getByText("Assign to Group")).toBeTruthy();
@@ -78,7 +89,13 @@ describe("GroupAssignmentModal", () => {
 
   it("assigns selected group", async () => {
     const { getByText } = renderWithProviders(
-      <GroupAssignmentModal visible onClose={onClose} user={user} groups={groups} onAssign={onAssign} />
+      <GroupAssignmentModal
+        visible
+        onClose={onClose}
+        user={user}
+        groups={groups}
+        onAssign={onAssign}
+      />,
     );
 
     fireEvent.press(getByText("Group Two"));
@@ -90,7 +107,13 @@ describe("GroupAssignmentModal", () => {
 
   it("closes when cancel is pressed", () => {
     const { getByText } = renderWithProviders(
-      <GroupAssignmentModal visible onClose={onClose} user={user} groups={groups} onAssign={onAssign} />
+      <GroupAssignmentModal
+        visible
+        onClose={onClose}
+        user={user}
+        groups={groups}
+        onAssign={onAssign}
+      />,
     );
 
     fireEvent.press(getByText("Cancel"));

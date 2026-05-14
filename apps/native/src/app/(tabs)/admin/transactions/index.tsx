@@ -1,28 +1,21 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, spacing, typography } from '../../../../styles';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminTransactions } from '~/hooks/admin/useAdminTransactions';
-import { AdminHeader } from '~/components/admin/AdminHeader';
-import { TransactionsFilters } from '~/components/admin/transactions/TransactionsFilters';
-import TransactionCard from '~/components/admin/transactions/TransactionCard';
-import type { TransactionItem } from '~/hooks/admin/useAdminTransactions';
+import React, { useMemo, useState } from "react";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useLocalSearchParams } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors, spacing, typography } from "../../../../styles";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
+import { AdminHeader } from "~/components/admin/AdminHeader";
+import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
+import TransactionCard from "~/components/admin/transactions/TransactionCard";
+import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
 
 export default function AdminTransactionsScreen() {
   const insets = useSafeAreaInsets();
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
 
   // Use the custom hook for all transaction operations
   const {
@@ -35,7 +28,7 @@ export default function AdminTransactionsScreen() {
     fetchNextPage,
     refetch,
     groupsLoading,
-  } = useAdminTransactions(tripId ?? '');
+  } = useAdminTransactions(tripId ?? "");
 
   const handleLoadMore = () => {
     if (!hasNextPage || isFetchingNextPage || isLoading) {
@@ -50,28 +43,22 @@ export default function AdminTransactionsScreen() {
     let filtered = transactions;
 
     // Filter by group
-    if (selectedGroupId !== 'all') {
-      filtered = filtered.filter(transaction => 
-        transaction.group.id === selectedGroupId
-      );
+    if (selectedGroupId !== "all") {
+      filtered = filtered.filter((transaction) => transaction.group.id === selectedGroupId);
     }
 
     // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(transaction => {
-        const groupName = transaction.group.name?.toLowerCase() ?? '';
+      filtered = filtered.filter((transaction) => {
+        const groupName = transaction.group.name?.toLowerCase() ?? "";
         const adminName = [transaction.admin.firstName, transaction.admin.lastName]
           .filter(Boolean)
-          .join(' ')
+          .join(" ")
           .toLowerCase();
         const reasonText = transaction.reason.toLowerCase();
 
-        return (
-          groupName.includes(term) ||
-          adminName.includes(term) ||
-          reasonText.includes(term)
-        );
+        return groupName.includes(term) || adminName.includes(term) || reasonText.includes(term);
       });
     }
 
@@ -105,9 +92,9 @@ export default function AdminTransactionsScreen() {
     <View style={styles.emptyContainer}>
       <Ionicons name="cash-outline" size={48} color={colors.textSecondary} />
       <Text style={styles.emptyText}>
-        {searchTerm || selectedGroupId !== 'all' 
-          ? 'No transactions found' 
-          : 'No transactions available'}
+        {searchTerm || selectedGroupId !== "all"
+          ? "No transactions found"
+          : "No transactions available"}
       </Text>
     </View>
   );
@@ -116,10 +103,7 @@ export default function AdminTransactionsScreen() {
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Transactions"
-        subtitle="View coin transaction history"
-      />
+      <AdminHeader title="Transactions" subtitle="View coin transaction history" />
 
       <TransactionsFilters
         searchTerm={searchTerm}
@@ -173,9 +157,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
   },
   header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
@@ -191,8 +175,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   loadingText: {
     marginTop: spacing.md,
@@ -204,19 +188,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   listFooter: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: spacing.sm,
     paddingVertical: spacing.md,
   },
   emptyContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingVertical: spacing.xxl,
   },
   emptyText: {
     fontSize: typography.base,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
 });

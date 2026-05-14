@@ -10,15 +10,9 @@ describe("LeaderboardEmptyState", () => {
   });
 
   it("should render different messages", () => {
-    const messages = [
-      "No groups available",
-      "Leaderboard is empty",
-      "No data to display",
-    ];
+    const messages = ["No groups available", "Leaderboard is empty", "No data to display"];
     messages.forEach((message) => {
-      const { unmount } = renderWithProviders(
-        <LeaderboardEmptyState message={message} />
-      );
+      const { unmount } = renderWithProviders(<LeaderboardEmptyState message={message} />);
       expect(screen.getByText(message)).toBeOnTheScreen();
       unmount();
     });

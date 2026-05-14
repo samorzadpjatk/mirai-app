@@ -30,12 +30,7 @@ export const newChallengeStatusOptions = [
   { label: "Visible", value: "VISIBLE" },
 ] as const;
 
-export type DateField =
-  | "startTime"
-  | "endTime"
-  | "dailyStartTime"
-  | "dailyEndTime"
-  | null;
+export type DateField = "startTime" | "endTime" | "dailyStartTime" | "dailyEndTime" | null;
 
 export type VotingDurationUnit = "HOURS" | "DAYS";
 
@@ -62,7 +57,7 @@ export interface ChallengeFormState {
   qrCodeValue: string;
   textExpectedPhrase: string;
   autoApprove: boolean;
-};
+}
 
 export const toVotingDurationHours = (value: string, unit: VotingDurationUnit) => {
   const parsed = Number.parseInt(value, 10);

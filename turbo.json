@@ -9,7 +9,7 @@
       "outputs": []
     },
     "db:generate": {
-      "outputs": ["src/prisma/lib/**"]
+      "outputs": ["drizzle/**"]
     },
     "dev": {
       "dependsOn": ["db:generate"],

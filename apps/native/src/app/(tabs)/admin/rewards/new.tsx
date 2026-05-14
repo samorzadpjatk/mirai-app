@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -27,16 +19,20 @@ export default function AdminCreateRewardScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
   const { data: totalPointsData } = useQuery(
-    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId })
+    orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId }),
   );
 
   const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
 
-  const { upload, reset: resetUpload, status: uploadStatus, progress: uploadProgress } =
-    useFileUpload();
+  const {
+    upload,
+    reset: resetUpload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -46,9 +42,10 @@ export default function AdminCreateRewardScreen() {
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
-  const calculatedCost = coinCost && totalAvailablePoints > 0 
-    ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
-    : 0;
+  const calculatedCost =
+    coinCost && totalAvailablePoints > 0
+      ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
+      : 0;
 
   const createRewardMutation = useMutation(
     orpc.reward.create.mutationOptions({
@@ -172,10 +169,7 @@ export default function AdminCreateRewardScreen() {
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Create Reward"
-        subtitle="Add new reward to the shop"
-      />
+      <AdminHeader title="Create Reward" subtitle="Add new reward to the shop" />
 
       <ScrollView
         style={styles.scroll}
@@ -183,11 +177,7 @@ export default function AdminCreateRewardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <FormField label="Reward Name" required>
-          <ThemedTextInput
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter reward name..."
-          />
+          <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter reward name..." />
         </FormField>
 
         <FormField label="Description">
@@ -276,12 +266,17 @@ export default function AdminCreateRewardScreen() {
               onPress={() => setIsHidden(false)}
               activeOpacity={0.8}
             >
-              <Ionicons 
-                name="eye-outline" 
-                size={16} 
-                color={!isHidden ? colors.primary : colors.textSecondary} 
+              <Ionicons
+                name="eye-outline"
+                size={16}
+                color={!isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, !isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  !isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Visible
               </Text>
             </TouchableOpacity>
@@ -290,19 +285,19 @@ export default function AdminCreateRewardScreen() {
               onPress={() => setIsHidden(true)}
               activeOpacity={0.8}
             >
-              <Ionicons 
-                name="eye-off-outline" 
-                size={16} 
-                color={isHidden ? colors.primary : colors.textSecondary} 
+              <Ionicons
+                name="eye-off-outline"
+                size={16}
+                color={isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}
+              >
                 Hidden
               </Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.helperText}>
-            Hidden rewards won't appear in the shop for users.
-          </Text>
+          <Text style={styles.helperText}>Hidden rewards won't appear in the shop for users.</Text>
         </View>
 
         <PrimaryLoadingButton

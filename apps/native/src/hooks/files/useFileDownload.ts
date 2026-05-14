@@ -48,10 +48,7 @@ const buildCacheFileName = async (storagePath: string, url: string): Promise<str
 
 const buildCacheFileNameFromStoragePath = async (storagePath: string): Promise<string> => {
   const ext = storagePath.split(".").pop();
-  const hash = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    storagePath,
-  );
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, storagePath);
 
   if (ext && ext.length > 0) {
     return `${hash}.${ext}`;
@@ -117,17 +114,12 @@ export const useFileDownload = () => {
           destinationDir.create();
         }
 
-        const stableCachedFileName = await buildCacheFileNameFromStoragePath(
-          input.storagePath,
-        );
+        const stableCachedFileName = await buildCacheFileNameFromStoragePath(input.storagePath);
         const stableCachedFile = new File(destinationDir, stableCachedFileName);
 
         // Try local cache first so offline users can still see previously downloaded files.
         if (stableCachedFile.exists && !input.skipCache) {
-          const cachedResult = toDownloadResult(
-            stableCachedFile,
-            stableCachedFileName,
-          );
+          const cachedResult = toDownloadResult(stableCachedFile, stableCachedFileName);
 
           if (mountedRef.current) {
             setFile(cachedResult);
@@ -143,10 +135,7 @@ export const useFileDownload = () => {
           } catch (deleteError) {
             console.warn("[Download] Failed to clear cached file", {
               storagePath: input.storagePath,
-              message:
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : "Unknown error",
+              message: deleteError instanceof Error ? deleteError.message : "Unknown error",
             });
           }
         }
@@ -184,10 +173,7 @@ export const useFileDownload = () => {
           } catch (deleteError) {
             console.warn("[Download] Failed to clear cached file", {
               storagePath: input.storagePath,
-              message:
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : "Unknown error",
+              message: deleteError instanceof Error ? deleteError.message : "Unknown error",
             });
           }
         }
@@ -247,8 +233,7 @@ export const useFileDownload = () => {
       } catch (downloadError) {
         const errorObject = downloadError as Error;
         const isAbortError =
-          abortRequestedRef.current ||
-          (errorObject as { name?: string }).name === "AbortError";
+          abortRequestedRef.current || (errorObject as { name?: string }).name === "AbortError";
 
         if (mountedRef.current) {
           setStatus(isAbortError ? "idle" : "error");

@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,8 +41,7 @@ export default function AlertsScreen() {
     return new Date(date).toLocaleDateString();
   };
 
-  const emptyMessage =
-    "You don't have any notifications yet.\nCheck back later!";
+  const emptyMessage = "You don't have any notifications yet.\nCheck back later!";
 
   return (
     <View style={styles.container}>
@@ -83,9 +76,7 @@ export default function AlertsScreen() {
         {/* Notifications List */}
         {isLoading ? (
           <View style={styles.loadingState}>
-            <Text style={styles.loadingStateText}>
-              Loading notifications...
-            </Text>
+            <Text style={styles.loadingStateText}>Loading notifications...</Text>
           </View>
         ) : notifications.length > 0 ? (
           <View style={styles.notificationsList}>

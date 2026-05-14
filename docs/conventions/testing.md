@@ -174,17 +174,14 @@ it('should show loading state', () => {
 ```typescript
 // Mock module
 vi.mock('@mirai-app/db', () => ({
-  prisma: {
-    user: {
-      findMany: vi.fn(),
+  createDb: vi.fn(() => ({
+    query: {
+      users: {
+        findMany: vi.fn(),
+      },
     },
-  },
+  })),
 }));
-
-// Mock function
-const mockFn = vi.fn();
-mockFn.mockReturnValue('mocked value');
-mockFn.mockResolvedValue({ id: 1 }); // for async
 ```
 
 ### Mocking API Calls

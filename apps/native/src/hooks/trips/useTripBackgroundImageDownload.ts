@@ -4,16 +4,10 @@ import { useFileDownload } from "~/hooks/files/useFileDownload";
 let placeholderUriCache: string | null | undefined;
 let placeholderErrorLogged = false;
 
-export function useTripBackgroundImageDownload(
-  backgroundImagePath: string | null | undefined,
-) {
+export function useTripBackgroundImageDownload(backgroundImagePath: string | null | undefined) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    download,
-    status: downloadStatus,
-    error: downloadError,
-  } = useFileDownload();
+  const { download, status: downloadStatus, error: downloadError } = useFileDownload();
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -64,10 +58,7 @@ export function useTripBackgroundImageDownload(
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn(
-                "Failed to download placeholder image:",
-                placeholderError,
-              );
+              console.warn("Failed to download placeholder image:", placeholderError);
               placeholderErrorLogged = true;
             }
           }

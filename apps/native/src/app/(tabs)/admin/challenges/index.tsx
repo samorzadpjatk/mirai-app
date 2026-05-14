@@ -12,12 +12,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  useMutation,
-  useInfiniteQuery,
-  useQueries,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useInfiniteQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -187,46 +182,36 @@ export default function AdminChallengesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
-  const tripId =
-    typeof params.tripId === "string"
-      ? params.tripId
-      : (params.tripId?.[0] ?? "");
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
-  const [selectedStatusFilter, setSelectedStatusFilter] =
-    useState<StatusFilter>("ALL");
-  const [selectedTypeFilter, setSelectedTypeFilter] =
-    useState<TypeFilter>("ALL");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>("ALL");
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<TypeFilter>("ALL");
   const [nameFilter, setNameFilter] = useState("");
 
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    refetch,
-  } = useInfiniteQuery(orpc.challenge.getAllByTrip.infiniteOptions({
-    input: (pageParam: number) => {
-      const offset = pageParam || 0;
-      return {
-        tripId,
-        pagination: {
-          limit: PAGE_SIZE,
-          offset,
+  const { data, isLoading, isRefetching, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
+    useInfiniteQuery(
+      orpc.challenge.getAllByTrip.infiniteOptions({
+        input: (pageParam: number) => {
+          const offset = pageParam || 0;
+          return {
+            tripId,
+            pagination: {
+              limit: PAGE_SIZE,
+              offset,
+            },
+          };
         },
-      };
-    },
-    enabled: !!tripId,
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
+        enabled: !!tripId,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.pagination.hasMore) {
+            return undefined;
+          }
 
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-  }));
+          return lastPage.pagination.offset + lastPage.pagination.limit;
+        },
+      }),
+    );
 
   const challengesData = useMemo(
     () => (data?.pages ?? []).flatMap((page) => page.challenges ?? []),
@@ -248,10 +233,8 @@ export default function AdminChallengesScreen() {
     }) => {
       if (!hasNextPage || isFetchingNextPage || isLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
-      const nearBottom =
-        contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
 
       if (nearBottom) {
         void fetchNextPage();
@@ -264,8 +247,7 @@ export default function AdminChallengesScreen() {
     orpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } })
-            .queryKey,
+          queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } }).queryKey,
         });
       },
       onError: (error) => {
@@ -304,20 +286,16 @@ export default function AdminChallengesScreen() {
   };
 
   const handleDeleteChallenge = (id: string) => {
-    Alert.alert(
-      "Delete Challenge",
-      "Are you sure you want to delete this challenge?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteChallengeMutation.mutate({ id, tripId });
-          },
+    Alert.alert("Delete Challenge", "Are you sure you want to delete this challenge?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteChallengeMutation.mutate({ id, tripId });
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const totalChallenges = challenges.length;
@@ -346,18 +324,11 @@ export default function AdminChallengesScreen() {
 
   const statusCounts = useMemo(
     () => ({
-      HIDDEN: challenges.filter((challenge) => challenge.status === "HIDDEN")
-        .length,
-      VISIBLE: challenges.filter((challenge) => challenge.status === "VISIBLE")
-        .length,
-      ACTIVE: challenges.filter((challenge) => challenge.status === "ACTIVE")
-        .length,
-      VOTING_PHASE: challenges.filter(
-        (challenge) => challenge.status === "VOTING_PHASE",
-      ).length,
-      COMPLETED: challenges.filter(
-        (challenge) => challenge.status === "COMPLETED",
-      ).length,
+      HIDDEN: challenges.filter((challenge) => challenge.status === "HIDDEN").length,
+      VISIBLE: challenges.filter((challenge) => challenge.status === "VISIBLE").length,
+      ACTIVE: challenges.filter((challenge) => challenge.status === "ACTIVE").length,
+      VOTING_PHASE: challenges.filter((challenge) => challenge.status === "VOTING_PHASE").length,
+      COMPLETED: challenges.filter((challenge) => challenge.status === "COMPLETED").length,
     }),
     [challenges],
   );
@@ -377,29 +348,22 @@ export default function AdminChallengesScreen() {
       ]);
       list = list.filter((challenge) => allowedStatuses.has(challenge.status));
     } else {
-      list = list.filter(
-        (challenge) => challenge.status === selectedStatusFilter,
-      );
+      list = list.filter((challenge) => challenge.status === selectedStatusFilter);
     }
 
     if (selectedTypeFilter !== "ALL") {
       if (selectedTypeFilter === "IMAGE") {
         list = list.filter(
           (challenge) =>
-            challenge.submissionType === "IMAGE" ||
-            challenge.submissionType === "MULTI_IMAGE",
+            challenge.submissionType === "IMAGE" || challenge.submissionType === "MULTI_IMAGE",
         );
       } else {
-        list = list.filter(
-          (challenge) => challenge.submissionType === selectedTypeFilter,
-        );
+        list = list.filter((challenge) => challenge.submissionType === selectedTypeFilter);
       }
     }
 
     if (normalizedQuery.length > 0) {
-      list = list.filter((challenge) =>
-        challenge.title.toLowerCase().includes(normalizedQuery),
-      );
+      list = list.filter((challenge) => challenge.title.toLowerCase().includes(normalizedQuery));
     }
 
     const statusPriority: Record<string, number> = {
@@ -415,8 +379,7 @@ export default function AdminChallengesScreen() {
       const pendingDiff = b.pendingSubmissionsCount - a.pendingSubmissionsCount;
       if (pendingDiff !== 0) return pendingDiff;
 
-      const statusDiff =
-        (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99);
+      const statusDiff = (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99);
       if (statusDiff !== 0) return statusDiff;
 
       return a.title.localeCompare(b.title);
@@ -424,10 +387,7 @@ export default function AdminChallengesScreen() {
   }, [challenges, selectedStatusFilter, selectedTypeFilter, nameFilter]);
 
   const judgedStaffChallengesForProgress = useMemo(
-    () =>
-      filteredChallenges.filter(
-        (challenge) => challenge.scoringCategory === "JUDGED_STAFF",
-      ),
+    () => filteredChallenges.filter((challenge) => challenge.scoringCategory === "JUDGED_STAFF"),
     [filteredChallenges],
   );
 
@@ -478,10 +438,7 @@ export default function AdminChallengesScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.backgroundDark}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={colors.backgroundDark} />
 
       <ScrollView
         style={styles.scrollView}
@@ -507,12 +464,8 @@ export default function AdminChallengesScreen() {
         <FilterChipRow style={styles.statusFiltersRow}>
           {statusFilters.map((filter) => {
             const isAll = filter.value === "ALL";
-            const color = isAll
-              ? colors.primary
-              : (statusColors[filter.value] ?? colors.gray400);
-            const count = isAll
-              ? totalChallenges
-              : (statusCounts[filter.value] ?? 0);
+            const color = isAll ? colors.primary : (statusColors[filter.value] ?? colors.gray400);
+            const count = isAll ? totalChallenges : (statusCounts[filter.value] ?? 0);
             const selected = selectedStatusFilter === filter.value;
 
             return (
@@ -542,10 +495,7 @@ export default function AdminChallengesScreen() {
         >
           {typeFilters.map((filter) => {
             const selected = selectedTypeFilter === filter.value;
-            const count =
-              filter.value === "ALL"
-                ? totalChallenges
-                : typeCounts[filter.value];
+            const count = filter.value === "ALL" ? totalChallenges : typeCounts[filter.value];
 
             return (
               <TouchableOpacity
@@ -554,12 +504,8 @@ export default function AdminChallengesScreen() {
                 style={[
                   styles.typeFilterChip,
                   {
-                    borderColor: selected
-                      ? colors.primary
-                      : colors.whiteOpacity15,
-                    backgroundColor: selected
-                      ? colors.primaryOpacity20
-                      : colors.whiteOpacity4,
+                    borderColor: selected ? colors.primary : colors.whiteOpacity15,
+                    backgroundColor: selected ? colors.primaryOpacity20 : colors.whiteOpacity4,
                   },
                 ]}
               >
@@ -579,9 +525,7 @@ export default function AdminChallengesScreen() {
                   style={[
                     styles.typeFilterCount,
                     {
-                      borderColor: selected
-                        ? colors.primaryOpacity30
-                        : colors.whiteOpacity20,
+                      borderColor: selected ? colors.primaryOpacity30 : colors.whiteOpacity20,
                       backgroundColor: selected
                         ? colors.primaryOpacity20
                         : colors.backgroundDarkOpacity55,
@@ -632,27 +576,20 @@ export default function AdminChallengesScreen() {
 
           {filteredChallenges.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                No challenges found yet.
-              </Text>
+              <Text style={styles.emptyStateText}>No challenges found yet.</Text>
             </View>
           ) : null}
 
           {isFetchingNextPage ? (
             <View style={styles.loadingMoreContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={styles.loadingMoreText}>
-                Loading more challenges...
-              </Text>
+              <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
             </View>
           ) : null}
         </View>
       </ScrollView>
 
-      <AdminAddFab
-        onPress={handleAddChallenge}
-        accessibilityLabel="Add challenge"
-      />
+      <AdminAddFab onPress={handleAddChallenge} accessibilityLabel="Add challenge" />
     </View>
   );
 }

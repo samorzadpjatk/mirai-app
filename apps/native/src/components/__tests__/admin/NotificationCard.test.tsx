@@ -40,7 +40,7 @@ describe("NotificationCard", () => {
         notification={mockNotification}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     expect(getByText("Test Notification")).toBeTruthy();
@@ -61,7 +61,7 @@ describe("NotificationCard", () => {
         notification={mockNotification}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     fireEvent.press(getByText("Retry"));
@@ -85,7 +85,7 @@ describe("NotificationCard", () => {
         notification={notificationWithNoFailures}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     // Check that retry button is disabled by verifying it has disabled styling
@@ -103,7 +103,7 @@ describe("NotificationCard", () => {
         onDelete={mockOnDelete}
         isRetrying
         isDeleting
-      />
+      />,
     );
 
     expect(getByText("Retrying...")).toBeTruthy();
@@ -121,7 +121,7 @@ describe("NotificationCard", () => {
         notification={notificationWithoutCreatorName}
         onRetry={mockOnRetry}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     expect(getByText("By Unknown User")).toBeTruthy();

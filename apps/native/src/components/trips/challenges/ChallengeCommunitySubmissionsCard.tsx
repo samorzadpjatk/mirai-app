@@ -60,8 +60,7 @@ export function ChallengeCommunitySubmissionsCard({
   const imageSubmissions = useMemo(
     () =>
       submissions.filter(
-        (submission) =>
-          submission.status === "APPROVED" && Boolean(submission.imageIds[0]),
+        (submission) => submission.status === "APPROVED" && Boolean(submission.imageIds[0]),
       ),
     [submissions],
   );
@@ -80,47 +79,28 @@ export function ChallengeCommunitySubmissionsCard({
   }, [imageSubmissions, showPodium]);
 
   const podiumByRank = useMemo(
-    () =>
-      new Map(
-        podiumSubmissions.map((submission) => [
-          submission.ranking!,
-          submission,
-        ]),
-      ),
+    () => new Map(podiumSubmissions.map((submission) => [submission.ranking!, submission])),
     [podiumSubmissions],
   );
 
   const regularSubmissions = useMemo(() => {
     if (!showPodium) return imageSubmissions;
-    const podiumIds = new Set(
-      podiumSubmissions.map((submission) => submission.id),
-    );
-    return imageSubmissions.filter(
-      (submission) => !podiumIds.has(submission.id),
-    );
+    const podiumIds = new Set(podiumSubmissions.map((submission) => submission.id));
+    return imageSubmissions.filter((submission) => !podiumIds.has(submission.id));
   }, [imageSubmissions, podiumSubmissions, showPodium]);
 
   const previewRegularLimit = showPodium
     ? Math.max(0, PREVIEW_LIMIT - podiumSubmissions.length)
     : PREVIEW_LIMIT;
-  const previewRegularSubmissions = regularSubmissions.slice(
-    0,
-    previewRegularLimit,
-  );
+  const previewRegularSubmissions = regularSubmissions.slice(0, previewRegularLimit);
 
   const gallerySubmissions = useMemo(
-    () =>
-      showPodium
-        ? [...podiumSubmissions, ...regularSubmissions]
-        : imageSubmissions,
+    () => (showPodium ? [...podiumSubmissions, ...regularSubmissions] : imageSubmissions),
     [imageSubmissions, podiumSubmissions, regularSubmissions, showPodium],
   );
 
   const galleryIndexBySubmissionId = useMemo(
-    () =>
-      new Map(
-        gallerySubmissions.map((submission, index) => [submission.id, index]),
-      ),
+    () => new Map(gallerySubmissions.map((submission, index) => [submission.id, index])),
     [gallerySubmissions],
   );
 
@@ -129,9 +109,7 @@ export function ChallengeCommunitySubmissionsCard({
   const openGalleryAt = useCallback(
     (submissionId?: string) => {
       if (!gallerySubmissions.length) return;
-      const nextIndex = submissionId
-        ? (galleryIndexBySubmissionId.get(submissionId) ?? 0)
-        : 0;
+      const nextIndex = submissionId ? (galleryIndexBySubmissionId.get(submissionId) ?? 0) : 0;
       setActiveGalleryIndex(nextIndex);
       setIsGalleryOpen(true);
     },
@@ -145,10 +123,7 @@ export function ChallengeCommunitySubmissionsCard({
   useEffect(() => {
     if (!isGalleryOpen || gallerySubmissions.length === 0) return;
 
-    const boundedIndex = Math.max(
-      0,
-      Math.min(activeGalleryIndex, gallerySubmissions.length - 1),
-    );
+    const boundedIndex = Math.max(0, Math.min(activeGalleryIndex, gallerySubmissions.length - 1));
     const timeoutId = setTimeout(() => {
       galleryListRef.current?.scrollToIndex({
         index: boundedIndex,
@@ -188,9 +163,7 @@ export function ChallengeCommunitySubmissionsCard({
       {!hasAnySubmissions ? (
         <View style={styles.emptyGallery}>
           <Ionicons name="images-outline" size={20} color={colors.textMuted} />
-          <Text style={styles.emptyGalleryText}>
-            No photos yet. Submit first and set the pace.
-          </Text>
+          <Text style={styles.emptyGalleryText}>No photos yet. Submit first and set the pace.</Text>
         </View>
       ) : (
         <View style={styles.content}>
@@ -201,9 +174,7 @@ export function ChallengeCommunitySubmissionsCard({
                 {[1, 2, 3].map((rank) => {
                   const submission = podiumByRank.get(rank);
                   if (!submission) {
-                    return (
-                      <PodiumPlaceholder key={`podium-${rank}`} rank={rank} />
-                    );
+                    return <PodiumPlaceholder key={`podium-${rank}`} rank={rank} />;
                   }
 
                   return (
@@ -222,9 +193,7 @@ export function ChallengeCommunitySubmissionsCard({
 
           {previewRegularSubmissions.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                {showPodium ? "More photos" : "Gallery"}
-              </Text>
+              <Text style={styles.sectionTitle}>{showPodium ? "More photos" : "Gallery"}</Text>
               <View style={styles.previewGrid}>
                 {previewRegularSubmissions.map((submission) => (
                   <SubmissionTile
@@ -238,16 +207,9 @@ export function ChallengeCommunitySubmissionsCard({
             </View>
           )}
 
-          <TouchableOpacity
-            style={styles.showAllButton}
-            onPress={() => openGalleryAt()}
-          >
+          <TouchableOpacity style={styles.showAllButton} onPress={() => openGalleryAt()}>
             <Text style={styles.showAllText}>View all ({imageSubmissions.length})</Text>
-            <Ionicons
-              name="arrow-forward-circle-outline"
-              size={16}
-              color={colors.primary}
-            />
+            <Ionicons name="arrow-forward-circle-outline" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -259,12 +221,7 @@ export function ChallengeCommunitySubmissionsCard({
         presentationStyle="fullScreen"
       >
         <View style={styles.fullscreen}>
-          <View
-            style={[
-              styles.fullscreenHeader,
-              { paddingTop: insets.top + spacing.sm },
-            ]}
-          >
+          <View style={[styles.fullscreenHeader, { paddingTop: insets.top + spacing.sm }]}>
             <Text style={styles.fullscreenTitle}>Groups submissions</Text>
             <View style={styles.fullscreenHeaderRight}>
               <Text style={styles.fullscreenCounter}>
@@ -376,11 +333,7 @@ function SubmissionTile({
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image
-            source={{ uri: file.uri }}
-            style={styles.tileImage}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: file.uri }} style={styles.tileImage} resizeMode="contain" />
         ) : (
           <View style={styles.tileFallback}>
             <Ionicons name="image-outline" size={16} color={colors.textMuted} />
@@ -411,9 +364,7 @@ function FullscreenSubmissionSlide({
   const imagePath = submission.imageIds[0] ?? "";
   const { download, status, file, reset, abort } = useFileDownload();
   const placeStyle =
-    typeof submission.ranking === "number"
-      ? placeStyleMap[submission.ranking]
-      : undefined;
+    typeof submission.ranking === "number" ? placeStyleMap[submission.ranking] : undefined;
 
   useEffect(() => {
     if (!imagePath) {
@@ -430,23 +381,14 @@ function FullscreenSubmissionSlide({
   }, [abort, download, imagePath, reset]);
 
   return (
-    <View
-      style={[
-        styles.fullscreenSlide,
-        { width, minHeight: height - (topInset + 92) },
-      ]}
-    >
+    <View style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
       <View style={styles.fullscreenImageWrap}>
         {status === "loading" ? (
           <View style={styles.fullscreenFallback}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image
-            source={{ uri: file.uri }}
-            style={styles.fullscreenImage}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: file.uri }} style={styles.fullscreenImage} resizeMode="contain" />
         ) : (
           <View style={styles.fullscreenFallback}>
             <Ionicons name="image-outline" size={28} color={colors.textMuted} />
@@ -459,9 +401,7 @@ function FullscreenSubmissionSlide({
           {submission.group.name}
         </Text>
         {placeStyle ? (
-          <Text
-            style={[styles.fullscreenRankLabel, { color: placeStyle.borderColor }]}
-          >
+          <Text style={[styles.fullscreenRankLabel, { color: placeStyle.borderColor }]}>
             {placeStyle.label}
           </Text>
         ) : null}

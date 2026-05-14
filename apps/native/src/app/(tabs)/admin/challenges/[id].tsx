@@ -8,20 +8,19 @@ import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
 import { ChallengeFormModals } from "~/components/admin/challenges/ChallengeFormModals";
-import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/admin/challenges/challengeFormConstants";
-
+import {
+  formatIso,
+  toOptionalInt,
+  toVotingDurationHours,
+} from "~/components/admin/challenges/challengeFormConstants";
 
 export default function EditChallengeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
 
-  const tripId =
-    typeof params.tripId === "string"
-      ? params.tripId
-      : (params.tripId?.[0] ?? "");
-  const challengeId =
-    typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
+  const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const challengeId = typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
   const challengeQueryOptions = orpc.challenge.getById.queryOptions({
     input: {
@@ -133,22 +132,17 @@ export default function EditChallengeScreen() {
         dailyEndTime: form.isRecurring
           ? formState.formatTime(form.dailyEndTime) || undefined
           : undefined,
-        recurringDays: form.isRecurring
-          ? toOptionalInt(form.recurringDays)
-          : undefined,
+        recurringDays: form.isRecurring ? toOptionalInt(form.recurringDays) : undefined,
         basePoints: toOptionalInt(form.basePoints),
-        firstPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.firstPlacePoints)
-            : undefined,
-        secondPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.secondPlacePoints)
-            : undefined,
-        thirdPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.thirdPlacePoints)
-            : undefined,
+        firstPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.firstPlacePoints)
+          : undefined,
+        secondPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.secondPlacePoints)
+          : undefined,
+        thirdPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.thirdPlacePoints)
+          : undefined,
         status: form.status as
           | "HIDDEN"
           | "VISIBLE"
@@ -156,34 +150,22 @@ export default function EditChallengeScreen() {
           | "VOTING_PHASE"
           | "COMPLETED"
           | "CANCELLED",
-        startTime: !form.isRecurring
-          ? formatIso(form.startTime) || undefined
-          : undefined,
-        endTime: !form.isRecurring
-          ? formatIso(form.endTime) || undefined
-          : undefined,
+        startTime: !form.isRecurring ? formatIso(form.startTime) || undefined : undefined,
+        endTime: !form.isRecurring ? formatIso(form.endTime) || undefined : undefined,
         votingDurationHours: formState.isPeerVoting
-          ? toVotingDurationHours(
-              form.votingDurationValue,
-              form.votingDurationUnit,
-            )
+          ? toVotingDurationHours(form.votingDurationValue, form.votingDurationUnit)
           : undefined,
         targetLatitude: normalizedTargetLatitude,
         targetLongitude: normalizedTargetLongitude,
         qrCodeValue:
-          form.submissionType === "QR_CODE"
-            ? form.qrCodeValue.trim() || undefined
-            : undefined,
+          form.submissionType === "QR_CODE" ? form.qrCodeValue.trim() || undefined : undefined,
         textExpectedPhrase:
-          form.submissionType === "TEXT"
-            ? form.textExpectedPhrase.trim() || undefined
-            : undefined,
-        autoApprove:
-          formState.isAutoApproveForced
-            ? true
-            : formState.isAutoApproveDisabled
-              ? false
-              : form.autoApprove,
+          form.submissionType === "TEXT" ? form.textExpectedPhrase.trim() || undefined : undefined,
+        autoApprove: formState.isAutoApproveForced
+          ? true
+          : formState.isAutoApproveDisabled
+            ? false
+            : form.autoApprove,
       });
     } catch {
       // onError already handles user-facing message; swallow to prevent unhandled rejections.
@@ -219,7 +201,7 @@ export default function EditChallengeScreen() {
       <ChallengeFormModals formState={formState} />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   screen: {

@@ -79,22 +79,16 @@ export default function TripDetailsScreen() {
           <TripBanner />
 
           {/* Partners */}
-          <PartnersSection sponsors={trip.tripSponsors?.map(ts => ts.sponsor).filter(Boolean)} />
+          <PartnersSection sponsors={trip.tripSponsors?.map((ts) => ts.sponsor).filter(Boolean)} />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid
             isTripPast={isTripPast}
             onOpenGroups={() => router.push(`/trips/groups?tripId=${trip.id}`)}
             onOpenMap={() => router.push("/trips/map")}
-            onOpenChallenges={() =>
-              router.push(`/trips/challenges?tripId=${trip.id}`)
-            }
-            onOpenRewards={() =>
-              router.push(`/trips/rewards?tripId=${trip.id}`)
-            }
-            onOpenLeaderboard={() =>
-              router.push(`/trips/leaderboard?tripId=${trip.id}`)
-            }
+            onOpenChallenges={() => router.push(`/trips/challenges?tripId=${trip.id}`)}
+            onOpenRewards={() => router.push(`/trips/rewards?tripId=${trip.id}`)}
+            onOpenLeaderboard={() => router.push(`/trips/leaderboard?tripId=${trip.id}`)}
             onOpenInfo={() => router.push(`/trips/info?tripId=${trip.id}`)}
           />
 

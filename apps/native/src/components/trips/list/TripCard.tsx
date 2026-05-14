@@ -1,10 +1,4 @@
-import {
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import miraiLogo from "../../../../assets/mirai_logo.png";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -47,11 +41,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   if (!imageUrl) {
     return (
       <TouchableOpacity
-        style={[
-          styles.tripCard, 
-          styles.tripCardNoImage,
-          isPast && styles.pastTripCard
-        ]}
+        style={[styles.tripCard, styles.tripCardNoImage, isPast && styles.pastTripCard]}
         onPress={onPress}
         activeOpacity={0.7}
       >
@@ -62,16 +52,11 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             </View>
           </View>
           <Text style={styles.tripTitle}>{trip.name}</Text>
-          {trip.description ? (
-            <Text style={styles.tripSubtitle}>{trip.description}</Text>
-          ) : null}
-          <Text style={styles.tripDate}>
-            {formatDateRange(trip.startDate, trip.endDate)}
-          </Text>
+          {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
+          <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
           {trip.groups && trip.groups.length > 0 && (
             <Text style={styles.tripGroups}>
-              {trip.groups.length}{" "}
-              {trip.groups.length === 1 ? "group" : "groups"}
+              {trip.groups.length} {trip.groups.length === 1 ? "group" : "groups"}
             </Text>
           )}
         </View>
@@ -81,10 +66,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
 
   return (
     <TouchableOpacity
-      style={[
-        styles.tripCard,
-        isPast && styles.pastTripCard
-      ]}
+      style={[styles.tripCard, isPast && styles.pastTripCard]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -95,11 +77,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       >
         <View style={styles.tripOverlay} />
         <View style={styles.tripLogoBadge}>
-          <Image
-            source={miraiLogo}
-            style={styles.tripLogo}
-            contentFit="contain"
-          />
+          <Image source={miraiLogo} style={styles.tripLogo} contentFit="contain" />
         </View>
         <View style={styles.tripContent}>
           <View style={styles.badgeRow}>
@@ -108,16 +86,11 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             </View>
           </View>
           <Text style={styles.tripTitle}>{trip.name}</Text>
-          {trip.description ? (
-            <Text style={styles.tripSubtitle}>{trip.description}</Text>
-          ) : null}
-          <Text style={styles.tripDate}>
-            {formatDateRange(trip.startDate, trip.endDate)}
-          </Text>
+          {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
+          <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
           {trip.groups && trip.groups.length > 0 && (
             <Text style={styles.tripGroups}>
-              {trip.groups.length}{" "}
-              {trip.groups.length === 1 ? "group" : "groups"}
+              {trip.groups.length} {trip.groups.length === 1 ? "group" : "groups"}
             </Text>
           )}
         </View>

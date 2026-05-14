@@ -20,7 +20,12 @@ export const mockUseFileDownload = jest.fn(() => ({
   reset: jest.fn(),
   status: "idle" as const,
   error: null as Error | null,
-  file: null as { uri: string; contentType: string | null; fileName: string | null; totalBytes: number } | null,
+  file: null as {
+    uri: string;
+    contentType: string | null;
+    fileName: string | null;
+    totalBytes: number;
+  } | null,
 }));
 
 export const mockDeleteCachedDownload = jest.fn(() => Promise.resolve());

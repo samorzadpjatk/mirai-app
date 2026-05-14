@@ -13,42 +13,32 @@ jest.mock("@expo/vector-icons", () => {
 
 describe("EmptyStateCard", () => {
   it("should render checkmark-done icon", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyStateCard maxCardHeight={500} />
-    );
+    const { getByText } = renderWithProviders(<EmptyStateCard maxCardHeight={500} />);
 
     expect(getByText("checkmark-done")).toBeTruthy();
   });
 
   it("should render title", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyStateCard maxCardHeight={500} />
-    );
+    const { getByText } = renderWithProviders(<EmptyStateCard maxCardHeight={500} />);
 
     expect(getByText("All caught up")).toBeTruthy();
   });
 
   it("should render subtitle", () => {
-    const { getByText } = renderWithProviders(
-      <EmptyStateCard maxCardHeight={500} />
-    );
+    const { getByText } = renderWithProviders(<EmptyStateCard maxCardHeight={500} />);
 
     expect(getByText("There are no pending submissions to review.")).toBeTruthy();
   });
 
   it("should apply maxCardHeight", () => {
-    const { getByTestId } = renderWithProviders(
-      <EmptyStateCard maxCardHeight={400} />
-    );
+    const { getByTestId } = renderWithProviders(<EmptyStateCard maxCardHeight={400} />);
 
     const view = getByTestId("empty-state-card");
     expect(view).toBeTruthy();
   });
 
   it("should render with different maxCardHeight values", () => {
-    const { getByText, rerender } = renderWithProviders(
-      <EmptyStateCard maxCardHeight={300} />
-    );
+    const { getByText, rerender } = renderWithProviders(<EmptyStateCard maxCardHeight={300} />);
 
     expect(getByText("All caught up")).toBeTruthy();
 

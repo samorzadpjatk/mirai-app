@@ -125,12 +125,12 @@ async function main() {
   }
 
 
-  log.step(4, 5, "Push Prisma schema");
+  log.step(4, 5, "Push Drizzle schema");
   try {
     await run("bun", ["run", "db:push:dev"], { cwd: SEED_DIR });
-    log.success("Prisma schema pushed");
+    log.success("Drizzle schema pushed");
   } catch {
-    log.error("Failed to push Prisma schema");
+    log.error("Failed to push Drizzle schema");
     process.exit(1);
   }
 
