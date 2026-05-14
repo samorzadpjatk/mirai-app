@@ -54,7 +54,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockGetItemAsync.mockResolvedValue("invalid-json");
 
       const result = await storage.findAllUploads();
@@ -76,7 +76,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage read errors", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockGetItemAsync.mockRejectedValue(new Error("Storage error"));
 
       const result = await storage.findAllUploads();
@@ -119,7 +119,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockGetItemAsync.mockResolvedValue("invalid-json");
 
       const result = await storage.findUploadsByFingerprint("fingerprint1");
@@ -202,7 +202,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage write errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockGetItemAsync.mockResolvedValue(null);
       mockSetItemAsync.mockRejectedValue(new Error("Write error"));
 
@@ -276,7 +276,7 @@ describe("TUS URL Storage", () => {
     });
 
     it("should handle storage write errors", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       const existingData = {
         fingerprint1: {
           key1: createMockUpload("key1", "url1"),

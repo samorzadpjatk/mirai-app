@@ -146,7 +146,7 @@ describe("createBaseSupabaseClient", () => {
   });
 
   it("should log client creation with URL", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 

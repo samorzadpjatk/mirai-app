@@ -593,8 +593,8 @@ describe("mapOverlayStore", () => {
     it("should create MapOverlayProvider element with proper props", () => {
       const mockValue = {
         session: { user: { id: "user-123" } },
-        updateSharing: async () => {},
-        removeUser: async () => {},
+        updateSharing: async () => undefined,
+        removeUser: async () => undefined,
         currentCoordinate: [52.2297, 21.0122] as [number, number],
       };
 
@@ -609,7 +609,7 @@ describe("mapOverlayStore", () => {
 
   describe("error handling", () => {
     it("should handle errors in handleRemoveUser gracefully", () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
       const { setSharingSettings, handleRemoveUser } = mapOverlayStore.getState();
 
       setSharingSettings({ usersToShareWith: undefined });

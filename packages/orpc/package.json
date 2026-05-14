@@ -29,8 +29,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

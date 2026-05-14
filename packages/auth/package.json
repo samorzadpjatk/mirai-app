@@ -25,12 +25,12 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check": "oxlint . && tsc --noEmit",
+    "check": "eslint . && tsc --noEmit",
     "clean": "rm -rf node_modules",
     "dev": "tsc --watch",
-    "lint": "oxlint .",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "oxlint --fix .",
+    "lint:fix": "eslint --fix .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"

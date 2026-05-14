@@ -180,7 +180,7 @@ const parseRankChangeDetails = (description?: string | null) => {
   const podiumChunk = /Podium:\s*([^|]+)/.exec(text)?.[1] ?? "";
   const podium = podiumChunk
     .split("•")
-    .map((part) => part.replace(/[🥇🥈🥉]/g, "").trim())
+    .map((part) => part.replace(/[🥇🥈🥉]/gu, "").trim())
     .filter(Boolean);
 
   return { movements, podium };

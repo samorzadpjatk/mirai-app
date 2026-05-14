@@ -146,10 +146,10 @@ const makeThenable = (target: any, value: any) => {
         return (resolve: any) => resolve(value);
       }
       if (prop === "catch") {
-        return () => {};
+        return () => undefined;
       }
       if (prop === "finally") {
-        return () => {};
+        return () => undefined;
       }
       const val = t[prop];
       return typeof val === "function" ? val.bind(t) : val;

@@ -107,7 +107,7 @@ jest.mock("~/hooks/files", () => ({
 describe("useChallengeCapture", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
   });
 
   it("should return initial state", () => {

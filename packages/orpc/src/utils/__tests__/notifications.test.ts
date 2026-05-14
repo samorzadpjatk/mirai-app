@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { TransactionDB } from "@mirai-app/db";
 
-const noop = (): void => {};
+const noop = (): void => undefined;
 
 type RetryFunction<T> = () => Promise<T>;
 

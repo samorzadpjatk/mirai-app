@@ -29,7 +29,7 @@ This document provides a validated migration path from Turborepo to NX monorepo 
 | `db:generate` | Runs drizzle-kit generate | Identical | ✅ |
 | `build` | `tsc`, `expo export` | Identical | ✅ |
 | `typecheck` | `tsc --noEmit` all 9 | Identical | ✅ |
-| `lint` | oxlint all 9 | Identical (139 warnings, 0 errors) | ✅ |
+| `lint` | eslint all 9 | Identical (0 errors, warnings only) | ✅ |
 | `test` | vitest + jest | Identical | ✅ |
 | Caching | Turborepo cache | NX local cache | ✅ (4/4 hits) |
 | Affected detection | Manual `--filter` | Automatic `nx affected` | ✅ Superior |
@@ -106,8 +106,8 @@ Edit `package.json` scripts:
     "dev:native": "nx run @mirai-app/native:dev",
     "lint": "nx run-many -t lint",
     "typecheck": "nx run-many -t typecheck",
-    "format:check": "oxfmt --check '**/*.{ts,tsx,js,jsx}'",
-    "format:write": "oxfmt '**/*.{ts,tsx,js,jsx}'",
+    "format:check": "prettier --check '**/*.{ts,tsx,js,jsx}'",
+    "format:write": "prettier --write '**/*.{ts,tsx,js,jsx}'",
     "test": "nx run-many -t test",
     "test:watch": "nx run-many -t test:watch",
     "test:coverage": "nx run-many -t test:coverage",

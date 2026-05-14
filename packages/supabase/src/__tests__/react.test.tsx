@@ -130,7 +130,7 @@ describe("useSupabaseClient", () => {
 
   it("should throw error when used outside of provider", () => {
     // Suppress console.error for this test since we expect an error
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     expect(() => {
       renderHook(() => useSupabaseClient());

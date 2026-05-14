@@ -168,7 +168,6 @@ describe("userRouter", () => {
     };
 
     addDrizzleApi(mockDb);
-    mockDb = mockDb;
 
     // Setup mock Supabase client
     mockSupabase = {

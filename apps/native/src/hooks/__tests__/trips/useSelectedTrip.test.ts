@@ -213,7 +213,7 @@ describe("useSelectedTrip", () => {
   });
 
   it("should handle mutation error gracefully", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const error = new Error("Storage error");
 
     const mutateMock = jest.fn(
@@ -455,7 +455,7 @@ describe("useSelectedTrip", () => {
   });
 
   it("should handle mutation error in setSelectedTripId", async () => {
-    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     const storageError = new Error("Storage write failed");
     mockSetSelectedTripIdInStorage.mockRejectedValue(storageError);
 

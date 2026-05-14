@@ -166,7 +166,7 @@ jest.mock("@expo/vector-icons", () => {
 describe("RewardsView", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     mockUseRewards.mockReturnValue({
       data: [],
       isLoading: false,

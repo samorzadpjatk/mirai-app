@@ -24,8 +24,8 @@
   },
   "scripts": {
     "build": "tsc -b tsconfig.build.json",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

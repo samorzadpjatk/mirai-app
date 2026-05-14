@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun --enable-source-maps src/index.ts",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix .",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

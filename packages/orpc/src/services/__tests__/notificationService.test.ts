@@ -413,8 +413,6 @@ describe("sendMobileNotifications", () => {
       })),
     };
 
-    mockDb = mockDb;
-
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;
   });

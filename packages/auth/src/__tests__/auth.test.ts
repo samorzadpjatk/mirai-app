@@ -237,7 +237,7 @@ describe("authServer", () => {
         error: { message: "Admin lookup failed" },
       } as never);
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       const result = await requireAuth(mockDb, mockSupabase, "token");
 

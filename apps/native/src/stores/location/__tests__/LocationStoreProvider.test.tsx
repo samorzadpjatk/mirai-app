@@ -52,7 +52,7 @@ jest.mock("@tanstack/react-query", () => ({
 describe("LocationStoreProvider", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     setLocationServerUpdater(null);
     locationStore.setState({
       isLocationSharingEnabled: false,

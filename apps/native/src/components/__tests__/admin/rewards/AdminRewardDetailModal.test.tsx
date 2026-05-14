@@ -287,7 +287,7 @@ jest.mock("~/components/common/ui", () => {
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     mockMutateAsync.mockResolvedValue({});
     mockDeleteMutateAsync.mockResolvedValue({});
     mockSetHiddenMutateAsync.mockResolvedValue({});

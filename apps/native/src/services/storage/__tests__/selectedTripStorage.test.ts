@@ -117,7 +117,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockAsyncGetItem.mockResolvedValue("invalid-json");
 
       const result = await getCachedTrips();
@@ -160,7 +160,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle storage errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockAsyncSetItem.mockRejectedValue(new Error("Storage error"));
 
       await setCachedTrips([createMockTrip("trip-1", "Trip 1")]);
@@ -278,7 +278,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle parse errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockAsyncGetItem.mockResolvedValue("invalid-json");
 
       const result = await getCachedTripById("trip-1");
@@ -330,7 +330,7 @@ describe("Selected Trip Storage", () => {
     });
 
     it("should handle storage errors gracefully", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       mockAsyncGetItem.mockResolvedValue("{}");
       mockAsyncSetItem.mockRejectedValue(new Error("Storage error"));
 

@@ -118,7 +118,7 @@ vi.mock("@mirai-app/shared", () => {
       refreshSession: vi.fn(),
     }),
     setState: vi.fn(),
-    subscribe: vi.fn().mockReturnValue(() => {}),
+    subscribe: vi.fn().mockReturnValue(() => undefined),
   };
 
   return {
@@ -154,7 +154,7 @@ vi.mock("zustand", () => ({
     const store = {
       getState: vi.fn(),
       setState: vi.fn(),
-      subscribe: vi.fn().mockReturnValue(() => {}),
+    subscribe: vi.fn().mockReturnValue(() => undefined),
       destroy: vi.fn(),
     };
     store.getState.mockReturnValue(initializer(store.setState, store.getState, store));
