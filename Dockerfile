@@ -8,10 +8,13 @@
 ARG PACKAGE
 ARG PORT
 # ---------- PRUNE (keeps only necessary files for the package) ----------
-FROM oven/bun:1.3.14 AS pruner
+FROM oven/bun:1.3.14-slim AS pruner
 ARG PACKAGE
 WORKDIR /repo
 ENV CI=true
+# Install npm so turbo's fallback binary installer works when cross-platform
+# optional dependencies are missing from the lockfile.
+RUN apt-get update && apt-get install -y npm && rm -rf /var/lib/apt/lists/*
 COPY . .
 RUN bun install --frozen-lockfile
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
