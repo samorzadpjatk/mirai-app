@@ -12,9 +12,6 @@ FROM oven/bun:1.3.14-slim AS pruner
 ARG PACKAGE
 WORKDIR /repo
 ENV CI=true
-# Install npm so turbo's fallback binary installer works when cross-platform
-# optional dependencies are missing from the lockfile.
-RUN apt-get update && apt-get install -y npm && rm -rf /var/lib/apt/lists/*
 COPY . .
 # bun.lock was generated on macOS and skips Linux optional deps.
 # Delete it so bun resolves all platform binaries for Linux.
