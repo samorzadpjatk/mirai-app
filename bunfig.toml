@@ -1,1 +1,1 @@
-install = { optional = false, dev = true, peer = false, production = false }
+install = { dev = true, peer = false, production = false }
