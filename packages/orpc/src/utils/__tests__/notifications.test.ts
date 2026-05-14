@@ -5,7 +5,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { sendNotification, sendRankingUpdate } from "../notifications";
 import type { TransactionDB } from "@mirai-app/db";
-import { createDrizzleProxy } from "../../../vitest.setup";
 
  
 const noop = (): void => {};
@@ -43,7 +42,99 @@ describe("notifications", () => {
         findMany: vi.fn(),
       },
     };
-    mockDb = createDrizzleProxy(baseMockDb as any);
+
+    function toCamelCase(str: string): string {
+      return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    }
+
+    function singularize(name: string): string {
+      if (name.endsWith("ies")) return name.slice(0, -3) + "y";
+      if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("zes")) return name.slice(0, -2);
+      if (name.endsWith("s")) return name.slice(0, -1);
+      return name;
+    }
+
+    function getTableName(table: unknown): string | undefined {
+      if (typeof table === "string") return table;
+      if (table && typeof table === "object") {
+        const obj = table as Record<string | symbol, unknown>;
+        if (obj.name && typeof obj.name === "string") {
+          return obj.name;
+        }
+        const sym = Object.getOwnPropertySymbols(obj).find(
+          (s) => s.description === "drizzle:Name"
+        );
+        if (sym && typeof obj[sym] === "string") {
+          return obj[sym] as string;
+        }
+      }
+      return undefined;
+    }
+
+    function getModelName(table: unknown): string {
+      const name = getTableName(table);
+      return toCamelCase(singularize(name ?? "unknown"));
+    }
+
+    (baseMockDb as Record<string, unknown>).insert = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        values: (data: unknown) => ({
+          returning: async () => {
+            const model = (baseMockDb as Record<string, unknown>)[modelName];
+            if (model && typeof model === "object" && "create" in model) {
+              const result = await (model as { create: (args: unknown) => Promise<unknown> }).create({ data });
+              return [result];
+            }
+            return [{}];
+          },
+          onConflictDoNothing: async () => {
+            const model = (baseMockDb as Record<string, unknown>)[modelName];
+            if (model && typeof model === "object" && "createMany" in model) {
+              const arr = Array.isArray(data) ? data : [data];
+              await (model as { createMany: (args: unknown) => Promise<unknown> }).createMany({ data: arr, skipDuplicates: true });
+              return { count: arr.length };
+            }
+            return { count: 0 };
+          },
+        }),
+      };
+    });
+
+    (baseMockDb as Record<string, unknown>).select = vi.fn((fields?: unknown) => ({
+      from: vi.fn((table: unknown) => {
+        const modelName = getModelName(table);
+        const chainable: Record<string, unknown> = {
+          where: vi.fn(() => chainable),
+          orderBy: vi.fn(() => chainable),
+          limit: vi.fn(() => chainable),
+          offset: vi.fn(() => chainable),
+          groupBy: vi.fn(() => chainable),
+          having: vi.fn(() => chainable),
+          then: async (resolve: (value: unknown) => unknown) => {
+            const model = (baseMockDb as Record<string, unknown>)[modelName];
+            if (model && typeof model === "object" && "findMany" in model) {
+              const results = await (model as { findMany: () => Promise<unknown[]> }).findMany();
+              if (fields && typeof fields === "object") {
+                const fieldNames = Object.keys(fields as Record<string, unknown>);
+                return resolve(results.map((r) => {
+                  const mapped: Record<string, unknown> = {};
+                  for (const f of fieldNames) {
+                    if (f in (r as Record<string, unknown>)) mapped[f] = (r as Record<string, unknown>)[f];
+                  }
+                  return mapped;
+                }));
+              }
+              return resolve(results);
+            }
+            return resolve([]);
+          },
+        };
+        return chainable;
+      }),
+    }));
+
+    mockDb = baseMockDb as unknown as TransactionDB;
 
     vi.spyOn(console, "error").mockImplementation(noop);
   });

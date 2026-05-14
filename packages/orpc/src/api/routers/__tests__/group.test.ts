@@ -9,6 +9,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Group, TripParticipant, GroupJoinRequest, CoinTransaction } from "@mirai-app/db";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
 vi.mock("../../../utils/authEmails", () => ({
@@ -213,7 +214,8 @@ describe("groupRouter", () => {
       }),
     };
 
-    mockDb = createDrizzleProxy(mockDbBase);
+    addDrizzleApi(mockDbBase);
+    mockDb = mockDbBase as DB;
   });
 
   // Helper to create authenticated context
@@ -972,7 +974,7 @@ describe("groupRouter", () => {
       const result = await caller.join({ id: "group-123", tripId: "trip-123" });
 
       expect(result).toBeDefined();
-      expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
+      expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -1320,7 +1322,7 @@ describe("groupRouter", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockDb.$transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+      mockDb.transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
               if (typeof fn === "function") {
                 return await fn(mockDb);
               }
@@ -1473,13 +1475,13 @@ describe("groupRouter", () => {
       const caller = createCaller(ctx);
 
       const result = await caller.assignUserToGroup({
-        userId: "user-456",
         tripId: "trip-123",
         groupId: "group-123",
+        userId: "user-456",
       });
 
       expect(result).toBeDefined();
-      expect(mockDb.tripParticipant.upsert).toHaveBeenCalled();
+      expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND for non-existent group", async () => {
@@ -1633,7 +1635,7 @@ describe("groupRouter", () => {
         userIds: ["user-456", "user-456", "user-789"],
       });
 
-      expect(mockDb.tripParticipant.upsert).toHaveBeenCalledTimes(2);
+      expect(mockDb.insert).toHaveBeenCalledTimes(2);
     });
 
     it("should throw NOT_FOUND for group in different trip", async () => {

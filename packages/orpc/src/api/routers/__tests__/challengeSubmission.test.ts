@@ -8,6 +8,7 @@ import type { TRPCContext } from "../../trpc";
 import { ORPCError } from "@orpc/server";
 import type { DB, User, TransactionDB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
 vi.mock("~/utils/authEmails", () => ({
@@ -51,52 +52,21 @@ import { ensureTripNotEnded } from "~/utils/tripGuards";
 const createCaller = (ctx: TRPCContext) => createRouterClient(challengeSubmissionRouter, { context: ctx });
 
 function syncFindFirstWithFindUnique(model: Record<string, unknown>) {
-  if (model && typeof model.findFirst === "function" && !model.findUnique) {
-    const findFirstFn = model.findFirst as (...args: unknown[]) => Promise<unknown>;
+  if (!model || typeof model !== "object") return;
+
+  const findFirst = model.findFirst;
+  const findUnique = model.findUnique;
+
+  if (typeof findFirst === "function" && typeof findUnique === "function") {
+    const findUniqueFn = findUnique as (...args: unknown[]) => Promise<unknown>;
+    model.findFirst = vi.fn().mockImplementation((...args: unknown[]) => findUniqueFn(...args));
+  } else if (typeof findFirst === "function" && !findUnique) {
+    const findFirstFn = findFirst as (...args: unknown[]) => Promise<unknown>;
     model.findUnique = vi.fn().mockImplementation((...args: unknown[]) => findFirstFn(...args));
-  }
-  if (model && typeof model.findUnique === "function" && !model.findFirst) {
-    const findUniqueFn = model.findUnique as (...args: unknown[]) => Promise<unknown>;
+  } else if (typeof findUnique === "function" && !findFirst) {
+    const findUniqueFn = findUnique as (...args: unknown[]) => Promise<unknown>;
     model.findFirst = vi.fn().mockImplementation((...args: unknown[]) => findUniqueFn(...args));
   }
-}
-
-function addDrizzleApi(db: Record<string, unknown>, tx: Record<string, unknown>) {
-  const returningChainable = {
-    returning: () => Promise.resolve([{}]),
-  };
-
-  db.insert = () => ({
-    values: () => returningChainable,
-    onConflictDoNothing: () => returningChainable,
-    onConflictDoUpdate: () => returningChainable,
-  });
-
-  db.update = () => ({
-    set: () => ({
-      where: () => returningChainable,
-    }),
-  });
-
-  db.delete = () => ({
-    where: () => returningChainable,
-  });
-
-  db.select = () => ({
-    from: () => ({
-      where: () => Promise.resolve([]),
-      innerJoin: () => Promise.resolve([]),
-      leftJoin: () => Promise.resolve([]),
-      orderBy: () => Promise.resolve([]),
-      limit: () => Promise.resolve([]),
-      offset: () => Promise.resolve([]),
-      groupBy: () => Promise.resolve([]),
-      having: () => Promise.resolve([]),
-      then: (resolve: (value: unknown) => unknown) => Promise.resolve([]).then(resolve),
-    }),
-  });
-
-  db.transaction = (callback: (tx: Record<string, unknown>) => Promise<unknown>) => callback(tx);
 }
 
 describe("challengeSubmissionRouter", () => {
@@ -338,8 +308,9 @@ describe("challengeSubmissionRouter", () => {
       mockTx.trip,
     ].forEach(syncFindFirstWithFindUnique);
 
-    mockDb = createDrizzleProxy(mockDb as any);
-    mockTx = createDrizzleProxy(mockTx as any);
+    addDrizzleApi(mockDb);
+    addDrizzleApi(mockTx);
+    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
 
     // Setup mock Supabase client
     mockSupabase = {

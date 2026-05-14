@@ -391,7 +391,7 @@ describe("sendMobileNotifications", () => {
       })),
     };
 
-    mockDb = createDrizzleProxy(mockDb as any);
+    mockDb = mockDb as unknown as DB;
 
     // Reset environment variables
     delete process.env.EXPO_ACCESS_TOKEN;

@@ -1,22 +1,7 @@
-import { vi, mocked as vitestMocked, type Mocked } from "vitest";
+import { vi, type Mocked } from "vitest";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 import type { DB, User } from "@mirai-app/db";
 import type { TRPCContext } from "./src/api/trpc";
-
-declare global {
-  var mocked: typeof vitestMocked;
-  var createDrizzleProxy: (mockDb: MockDbClient) => DB;
-}
-// @ts-expect-error - adding to globalThis for test compatibility
-globalThis.mocked = vitestMocked;
-// @ts-expect-error - adding to globalThis for test compatibility
-globalThis.createDrizzleProxy = createDrizzleProxy;
-if (typeof global !== 'undefined') {
-  // @ts-expect-error - adding to global for test compatibility
-  global.mocked = vitestMocked;
-  // @ts-expect-error - adding to global for test compatibility
-  global.createDrizzleProxy = createDrizzleProxy;
-}
 
 type MockedFunction<T extends (...args: never[]) => unknown> = Mocked<T>;
 
@@ -186,6 +171,36 @@ function toCamelCase(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
+function toSnakeCase(str: string): string {
+  return str.replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+
+function getTableNameFromModel(modelName: string): string {
+  if (modelName === "tripParticipant") return "trip_participants";
+  if (modelName === "user") return "users";
+  if (modelName === "group") return "groups";
+  if (modelName === "challenge") return "challenges";
+  if (modelName === "challengeSubmission") return "challenge_submissions";
+  if (modelName === "challengeVote") return "challenge_votes";
+  if (modelName === "reward") return "rewards";
+  if (modelName === "rewardPurchase") return "reward_purchases";
+  if (modelName === "trip") return "trips";
+  if (modelName === "tripGroup") return "trip_groups";
+  if (modelName === "tripResource") return "trip_resources";
+  if (modelName === "tripInsurance") return "trip_insurances";
+  if (modelName === "tripSponsor") return "trip_sponsors";
+  if (modelName === "notification") return "notifications";
+  if (modelName === "notificationSchedule") return "notification_schedules";
+  if (modelName === "notificationPush") return "notification_pushes";
+  if (modelName === "coinTransaction") return "coin_transactions";
+  if (modelName === "location") return "locations";
+  if (modelName === "sponsor") return "sponsors";
+  if (modelName === "submissionReport") return "submission_reports";
+  if (modelName === "activityFeed") return "activity_feeds";
+  if (modelName === "storage") return "storages";
+  return toSnakeCase(modelName) + "s";
+}
+
 function getTableName(table: unknown): string | undefined {
   if (typeof table === "string") return table;
   if (table && typeof table === "object") {
@@ -208,293 +223,274 @@ function getModelName(table: unknown): string {
   return toCamelCase(singularize(name ?? "unknown"));
 }
 
-export function createDrizzleProxy(mockDb: MockDbClient): DB {
-  const lastResults: Record<string, unknown> = {};
+function syncFindFirstWithFindUnique(model: Record<string, unknown>): void {
+  if (!model || typeof model !== "object") return;
 
-  function createReturningChainable(modelName: string, method: string, args?: unknown) {
-    const execute = () => {
-      console.log("[PROXY execute] modelName:", modelName, "method:", method, "args:", args);
-      const model = (mockDb as Record<string, unknown>)[modelName];
-      console.log("[PROXY execute] model found:", !!model, "method in model:", model ? method in model : false, "fn type:", model && typeof (model as Record<string, unknown>)[method] === "function" ? "function" : "not function");
-      if (model && typeof model === "object" && method in model) {
-        const fn = (model as Record<string, unknown>)[method];
-        if (typeof fn === "function") {
-          const result = args !== undefined ? (fn as (...args: unknown[]) => unknown)(args) : (fn as () => unknown)();
-          const promise = result instanceof Promise ? result : Promise.resolve(result);
-          return promise.then((result: unknown) => {
-            if (result !== null && result !== undefined) {
-              lastResults[modelName] = result;
-            }
-            if (Array.isArray(result)) return result;
-            return [result];
-          });
-        }
-      }
-      return Promise.resolve([{}]);
-    };
+  const findFirst = model.findFirst;
+  const findUnique = model.findUnique;
 
-    return {
-      returning: () => execute(),
-      then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
-    };
+  if (typeof findFirst === "function" && !findUnique) {
+    const findFirstFn = findFirst as (...args: unknown[]) => Promise<unknown>;
+    model.findUnique = vi.fn().mockImplementation((...args: unknown[]) => findFirstFn(...args));
+  } else if (typeof findUnique === "function" && !findFirst) {
+    const findUniqueFn = findUnique as (...args: unknown[]) => Promise<unknown>;
+    model.findFirst = vi.fn().mockImplementation((...args: unknown[]) => findUniqueFn(...args));
+  }
+}
+
+export function addDrizzleApi(mockDb: Record<string, unknown>): void {
+  for (const key of Object.keys(mockDb)) {
+    const value = mockDb[key];
+    if (value && typeof value === "object" && ("findFirst" in value || "findUnique" in value || "findMany" in value)) {
+      syncFindFirstWithFindUnique(value as Record<string, unknown>);
+    }
   }
 
-  function createInsertChainable(modelName: string) {
-    return {
-      values: (data: unknown) => ({
-        ...createReturningChainable(modelName, "create", { data }),
-        onConflictDoNothing: () => createReturningChainable(modelName, "createMany", { data, skipDuplicates: true }),
-        onConflictDoUpdate: (_opts: unknown) => createReturningChainable(modelName, "upsert", { data }),
-      }),
-    };
-  }
-
-  function createUpdateChainable(modelName: string) {
-    return {
-      set: (data: unknown) => ({
-        where: (_condition: unknown) => createReturningChainable(modelName, "update", { data }),
-      }),
-    };
-  }
-
-  function createDeleteChainable(modelName: string) {
-    console.log("[PROXY createDeleteChainable] modelName:", modelName);
-    return {
-      where: (_condition: unknown) => createReturningChainable(modelName, "delete"),
-    };
-  }
-
-  function createChainable(primaryTable?: string, selectFields?: unknown, joins: string[] = [], primaryTableRaw?: string, hasGroupBy = false) {
-    const chainable = {
-      from: (table: unknown) => {
-        const name = getTableName(table);
-        if (name) {
-          return createChainable(toCamelCase(singularize(name)), selectFields, [], name, hasGroupBy);
-        }
-        return createChainable(primaryTable, selectFields, joins, primaryTableRaw, hasGroupBy);
-      },
-      innerJoin: (table: unknown) => {
-        const name = getTableName(table);
-        if (name) {
-          return createChainable(primaryTable, selectFields, [...joins, name], primaryTableRaw, hasGroupBy);
-        }
-        return chainable;
-      },
-      leftJoin: (table: unknown) => {
-        const name = getTableName(table);
-        if (name) {
-          return createChainable(primaryTable, selectFields, [...joins, name], primaryTableRaw, hasGroupBy);
-        }
-        return chainable;
-      },
-      where: () => chainable,
-      orderBy: () => chainable,
-      limit: () => chainable,
-      offset: () => chainable,
-      groupBy: () => createChainable(primaryTable, selectFields, joins, primaryTableRaw, true),
-      having: () => chainable,
-      then: (resolve: (value: unknown) => unknown) => {
-        if (primaryTable) {
-          const model = (mockDb as Record<string, unknown>)[primaryTable];
+  if (!mockDb.query) {
+    mockDb.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const singular = toCamelCase(singularize(String(tableName)));
+          const model = mockDb[singular];
+          const defaults: Record<string, (...args: unknown[]) => Promise<unknown>> = {
+            findFirst: () => Promise.resolve(null),
+            findUnique: () => Promise.resolve(null),
+            findMany: () => Promise.resolve([]),
+            count: () => Promise.resolve(0),
+          };
           if (model && typeof model === "object") {
-            const fieldNames = selectFields && typeof selectFields === "object" ? Object.keys(selectFields as Record<string, unknown>) : [];
-            const hasAggregateFields = fieldNames.some((f) => ["count", "sum", "avg", "min", "max", "total", "totalAmount", "totalRecipients", "successCount", "failureCount", "avgSuccess", "avgFailure"].includes(f));
+            const modelObj = model as Record<string, unknown>;
+            return new Proxy(model as object, {
+              get(target, prop) {
+                const val = (target as Record<string | symbol, unknown>)[prop];
+                if (typeof val === "function") {
+                  return async (...args: unknown[]) => {
+                    const result = await (val as (...args: unknown[]) => unknown)(...args);
+                    if (String(prop) === "findFirst" && (result === null || result === undefined)) {
+                      const findUniqueVal = modelObj.findUnique;
+                      if (typeof findUniqueVal === "function") {
+                        return await (findUniqueVal as (...args: unknown[]) => unknown)(...args);
+                      }
+                    }
+                    return result;
+                  };
+                }
+                if (typeof val === "undefined" && typeof prop === "string" && prop in defaults) {
+                  const fallbackProp = prop === "findFirst" && "findUnique" in modelObj ? "findUnique" : prop;
+                  const fallbackVal = modelObj[fallbackProp];
+                  if (typeof fallbackVal === "function") {
+                    return (...args: unknown[]) => (fallbackVal as (...args: unknown[]) => unknown)(...args);
+                  }
+                  return (...args: unknown[]) => defaults[prop](...args);
+                }
+                return val;
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+            count: vi.fn(() => Promise.resolve(0)),
+          };
+        },
+      }
+    );
+  }
 
-            const hasCountOnly = selectFields && typeof selectFields === "object" && "count" in (selectFields as Record<string, unknown>) && fieldNames.length === 1;
-            if (hasCountOnly) {
-              if ("count" in model) {
-                const countFn = (model as { count: () => Promise<number> }).count;
-                return countFn().then((result) => {
-                  return resolve([{ count: result }]);
+  if (!mockDb.insert) {
+    mockDb.insert = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        values: vi.fn((data: unknown) => {
+          const model = mockDb[modelName];
+          const returningChainable = (value: unknown) => ({
+            returning: vi.fn(() => Promise.resolve([value])),
+          });
+          if (model && typeof model === "object" && "create" in model) {
+            const createFn = (model as Record<string, unknown>).create as (...args: unknown[]) => Promise<unknown>;
+            const resultPromise = Promise.resolve(createFn({ data }));
+            return {
+              returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              onConflictDoNothing: vi.fn(() => ({
+                returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              })),
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn(async () => Promise.resolve([await resultPromise])),
+              })),
+            };
+          }
+          return {
+            returning: vi.fn(() => Promise.resolve([data])),
+            onConflictDoNothing: vi.fn(() => returningChainable(data)),
+            onConflictDoUpdate: vi.fn(() => returningChainable(data)),
+          };
+        }),
+      };
+    });
+  }
+
+  if (!mockDb.update) {
+    mockDb.update = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        set: vi.fn((data: unknown) => ({
+          where: vi.fn(() => {
+            const model = mockDb[modelName];
+            if (model && typeof model === "object" && "update" in model) {
+              const updateFn = (model as Record<string, unknown>).update as (...args: unknown[]) => Promise<unknown>;
+              const result = updateFn({ data });
+              const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
+              return {
+                returning: vi.fn(async () => Promise.resolve([await resolvedResult])),
+              };
+            }
+            return {
+              returning: vi.fn(() => Promise.resolve([data])),
+            };
+          }),
+        })),
+      };
+    });
+  }
+
+  if (!mockDb.delete) {
+    mockDb.delete = vi.fn((table: unknown) => {
+      const modelName = getModelName(table);
+      return {
+        where: vi.fn(() => {
+          const model = mockDb[modelName];
+          if (model && typeof model === "object" && "delete" in model) {
+            const deleteFn = (model as Record<string, unknown>).delete as (...args: unknown[]) => Promise<unknown>;
+            const result = deleteFn();
+            const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
+            return {
+              returning: vi.fn(async () => Promise.resolve([await resolvedResult])),
+            };
+          }
+          return {
+            returning: vi.fn(() => Promise.resolve([{}])),
+          };
+        }),
+      };
+    });
+  }
+
+  if (!mockDb.select) {
+    const createSelectChainable = (fields?: unknown) => {
+      let primaryTable: string | undefined;
+      let hasGroupBy = false;
+      const joins: { table: string; alias: string; isLeft: boolean }[] = [];
+
+      const addJoin = (table: unknown, isLeft: boolean) => {
+        const name = getTableName(table);
+        if (name) {
+          const alias = toCamelCase(singularize(name));
+          joins.push({ table: name, alias, isLeft });
+        }
+        return builder;
+      };
+
+      const builder: Record<string, unknown> = {
+        from: vi.fn((table: unknown) => {
+          const name = getTableName(table);
+          if (name) {
+            primaryTable = toCamelCase(singularize(name));
+          }
+          return builder;
+        }),
+        innerJoin: vi.fn((table: unknown) => addJoin(table, false)),
+        leftJoin: vi.fn((table: unknown) => addJoin(table, true)),
+        where: vi.fn(() => builder),
+        orderBy: vi.fn(() => builder),
+        limit: vi.fn(() => builder),
+        offset: vi.fn(() => builder),
+        groupBy: vi.fn(() => {
+          hasGroupBy = true;
+          return builder;
+        }),
+        having: vi.fn(() => builder),
+        then: vi.fn((resolve: (value: unknown) => unknown) => {
+          if (primaryTable) {
+            const model = mockDb[primaryTable];
+            if (model && typeof model === "object") {
+              const fieldNames = fields && typeof fields === "object" ? Object.keys(fields as Record<string, unknown>) : [];
+              const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+              if (hasCountOnly && "count" in model) {
+                return (model as { count: () => Promise<number> }).count().then((count: number) => resolve([{ count }]));
+              }
+              if (hasGroupBy && "groupBy" in model) {
+                return (model as { groupBy: () => Promise<Record<string, unknown>[]> }).groupBy().then((groups) => {
+                  const mapped = groups.map((row) => {
+                    const item: Record<string, unknown> = {};
+                    for (const field of fieldNames) {
+                      if (field in row) item[field] = row[field];
+                      else if (field === "count" && row._count) {
+                        item.count = (row._count as Record<string, unknown>).id ?? (row._count as Record<string, unknown>).all ?? 0;
+                      }
+                    }
+                    return item;
+                  });
+                  return resolve(mapped);
                 });
               }
-            }
-            if (hasAggregateFields && hasGroupBy && "groupBy" in model) {
-              const groupByFn = (model as { groupBy: () => Promise<unknown[]> }).groupBy;
-              return groupByFn().then((results) => {
-                return resolve(results.map((row: unknown) => {
-                  const mapped: Record<string, unknown> = {};
-                  const r = row as Record<string, unknown>;
-                  for (const field of fieldNames) {
-                    if (field in r) mapped[field] = r[field];
-                    else if (field === "count" && (r as Record<string, Record<string, unknown>>)._count) {
-                      mapped.count = (r as Record<string, Record<string, unknown>>)._count.id ?? (r as Record<string, Record<string, unknown>>)._count._all ?? 0;
-                    }
-                  }
-                  return mapped;
-                }));
-              });
-            }
-            if (hasAggregateFields && "aggregate" in model) {
-              const aggregateFn = (model as { aggregate: () => Promise<Record<string, unknown>> }).aggregate;
-              return aggregateFn().then((aggResult) => {
-                const mapped: Record<string, unknown> = {};
-                const agg = aggResult as Record<string, Record<string, unknown>>;
-                for (const field of fieldNames) {
-                  if (field === "count" && agg._count) {
-                    mapped.count = agg._count.id ?? agg._count._all ?? 0;
-                  } else if (agg._sum && field in agg._sum) {
-                    mapped[field] = agg._sum[field];
-                  } else if (agg._avg && field in agg._avg) {
-                    mapped[field] = agg._avg[field];
-                  }
-                }
-                return resolve([mapped]);
-              });
-            }
-            if (hasGroupBy && "groupBy" in model) {
-              const groupByFn = (model as { groupBy: () => Promise<Record<string, unknown>[]> }).groupBy;
-              return groupByFn().then((groups) => {
-                const mapped = (groups as Record<string, unknown>[]).map((row) => {
-                  const item: Record<string, unknown> = {};
-                  for (const field of fieldNames) {
-                    if (field in row) {
-                      item[field] = row[field];
-                    } else if (field === "count" && (row as Record<string, Record<string, unknown>>)._count) {
-                      item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
-                    }
-                  }
-                  return item;
-                });
-                return resolve(mapped);
-              });
-            }
-            if (hasAggregateFields && "aggregate" in model) {
-              const aggregateFn = (model as { aggregate: () => Promise<Record<string, unknown>> }).aggregate;
-              return aggregateFn().then((aggResult) => {
-                const mapped: Record<string, unknown> = {};
-                const agg = aggResult as Record<string, Record<string, unknown>>;
-                for (const field of fieldNames) {
-                  if (field === "count" && agg._count) {
-                    mapped.count = agg._count.id ?? agg._count._all ?? 0;
-                  } else if (agg._sum && field in agg._sum) {
-                    mapped[field] = agg._sum[field];
-                  } else if (agg._avg && field in agg._avg) {
-                    mapped[field] = agg._avg[field];
-                  }
-                }
-                return resolve([mapped]);
-              });
-            }
-            if ("findMany" in model) {
-                return (model as { findMany: () => Promise<unknown[]> }).findMany().then((results) => {
-                  const transformed = (results as Record<string, unknown>[]).map((record) => {
-                    const item = { ...record };
-                    if (joins.length === 0) return item;
-                    const row: Record<string, unknown> = {};
-                    for (const joinTable of joins) {
-                      const joinModelName = toCamelCase(singularize(joinTable));
-                      if (joinModelName in item) {
-                        row[joinTable] = item[joinModelName];
-                        delete item[joinModelName];
+              if ("findMany" in model) {
+                return (model as { findMany: () => Promise<unknown[]> }).findMany().then((rows: unknown[]) => {
+                  if (!joins.length) return resolve(rows);
+
+                  const primaryAlias = getTableNameFromModel(primaryTable!);
+                  const mapped = rows.map((row) => {
+                    const mappedRow: Record<string, unknown> = {};
+                    mappedRow[primaryAlias] = row;
+
+                    for (const join of joins) {
+                      const joinModel = mockDb[join.alias];
+                      let joinData: unknown = null;
+                      if (join.alias === "user" && row && typeof row === "object") {
+                        joinData = (row as Record<string, unknown>).user ?? null;
+                      } else if (join.alias === "group" && row && typeof row === "object") {
+                        joinData = (row as Record<string, unknown>).group ?? null;
                       }
-                      const singularJoinModel = singularize(joinTable);
-                      if (singularJoinModel in item) {
-                        row[joinTable] = item[singularJoinModel];
-                        delete item[singularJoinModel];
-                      }
+                      mappedRow[join.table] = joinData;
                     }
-                    row[primaryTableRaw ?? primaryTable] = item;
-                    // When selectFields is provided, also flatten primary-table fields
-                    // to the top level so code like `admins.map((a) => a.id)` works.
-                    if (selectFields && typeof selectFields === "object") {
-                      for (const field of Object.keys(selectFields as Record<string, unknown>)) {
-                        if (field in item) {
-                          row[field] = item[field];
+
+                    if (row && typeof row === "object") {
+                      for (const field of fieldNames) {
+                        if (field in (row as Record<string, unknown>)) {
+                          mappedRow[field] = (row as Record<string, unknown>)[field];
                         }
                       }
                     }
-                    return row;
+                    return mappedRow;
                   });
-                  return resolve(transformed);
+                  return resolve(mapped);
                 });
               }
+            }
           }
-        }
-        return resolve([]);
-      },
+          return Promise.resolve([]).then(resolve);
+        }),
+      };
+      return builder;
     };
-    return chainable;
+
+    mockDb.select = vi.fn((fields?: unknown) => createSelectChainable(fields));
   }
 
-  const db = mockDb as DB & Record<string, unknown>;
-
-  db.query = new Proxy(
-    {},
-    {
-      get(_, tableName) {
-        const modelName = toCamelCase(singularize(String(tableName)));
-        const model = (mockDb as Record<string, unknown>)[modelName];
-        if (model && typeof model === "object") {
-          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
-          return new Proxy(modelObj, {
-            get(_, methodName) {
-              const method = String(methodName);
-              if (method === "findFirst" || method === "findUnique") {
-                return async (...args: unknown[]) => {
-                  if (modelObj[method]) {
-                    const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
-                    }
-                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
-                    if (modelObj[otherMethod]) {
-                      const fb = await modelObj[otherMethod](...args);
-                      if (fb !== null && fb !== undefined) {
-                        return fb;
-                      }
-                    }
-                    return null;
-                  }
-                  const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
-                  if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
-                  }
-                  return lastResults[modelName] ?? null;
-                };
-              }
-              return modelObj[method];
-            },
-          });
-        }
-        return {
-          findFirst: vi.fn(() => Promise.resolve(null)),
-          findUnique: vi.fn(() => Promise.resolve(null)),
-          findMany: vi.fn(() => Promise.resolve([])),
-          count: vi.fn(() => Promise.resolve(0)),
-        };
-      },
-    }
-  );
-
-  db.insert = (table: unknown) => createInsertChainable(getModelName(table));
-
-  db.update = (table: unknown) => createUpdateChainable(getModelName(table));
-
-  db.delete = (table: unknown) => createDeleteChainable(getModelName(table));
-
-  db.select = (fields?: unknown) => createChainable(undefined, fields);
-
-  db.transaction = (callback: (tx: DB) => Promise<unknown>) => {
-    if (typeof (mockDb as Record<string, unknown>).$transaction === "function") {
-      return (mockDb as Record<string, unknown>).$transaction((txDb: MockDbClient) => {
-        const txProxy = createDrizzleProxy(txDb);
-        return callback(txProxy as DB);
-      });
-    }
-    return callback(db);
-  };
-
-  return db;
+  if (typeof mockDb.transaction !== "function") {
+    mockDb.transaction = vi.fn((callback: (tx: Record<string, unknown>) => Promise<unknown>) => {
+      const tx = { ...mockDb };
+      addDrizzleApi(tx);
+      return callback(tx);
+    });
+  }
 }
 
-export function createMockDb(): MockDbClient {
+export function createMockDb(): MockDbClient & Record<string, unknown> {
   const mockUser = createMockDbUser();
 
-  const mockDb: MockDbClient = {
+  const mockDb: MockDbClient & Record<string, unknown> = {
     user: {
       findFirst: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
       findUnique: vi.fn<() => Promise<User | null>>(() => Promise.resolve(mockUser)),
@@ -541,7 +537,8 @@ export function createMockDb(): MockDbClient {
     ),
   };
 
-  return createDrizzleProxy(mockDb);
+  addDrizzleApi(mockDb);
+  return mockDb;
 }
 
 export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCContext {
@@ -549,7 +546,7 @@ export function createMockContext(overrides: Partial<TRPCContext> = {}): TRPCCon
   const mockDb = createMockDb();
 
   return {
-    db: createDrizzleProxy(mockDb),
+    db: mockDb as DB,
     supabase: mockSupabase,
     headers: new Headers(),
     accessToken: null,
@@ -572,8 +569,8 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-vi.mock("@mirai-app/db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@mirai-app/db")>();
+vi.mock("@mirai-app/db", async () => {
+  const actual = await vi.importActual<typeof import("@mirai-app/db")>("@mirai-app/db");
   const mockDbClient = createMockDb();
 
   return {

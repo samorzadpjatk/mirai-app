@@ -9,6 +9,7 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Trip, TripParticipant, TripGroup, TripResource, TripInsurance, TripInsuranceStep, TripSponsor, Sponsor } from "@mirai-app/db";
 import { requireAuth, requireAdmin, AuthenticationError, AuthorizationError } from "@mirai-app/auth";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 vi.mock("@mirai-app/auth", () => {
   const mockSupabaseUser = {
@@ -168,8 +169,10 @@ describe("tripRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn((cb: (arg: DB) => unknown) => cb(createDrizzleProxy(mockDb as MockDbClient))),
+      $transaction: vi.fn((cb: (arg: DB) => unknown) => cb(mockDb as unknown as DB)),
     };
+
+    addDrizzleApi(mockDb);
 
     // Setup mock Supabase client - need to return user that matches mockDbUser
     mockSupabase = {
@@ -250,7 +253,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -276,7 +279,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -297,7 +300,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -348,7 +351,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -405,7 +408,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -426,7 +429,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -447,7 +450,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -516,7 +519,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -578,7 +581,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -631,7 +634,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "resolved@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -666,7 +669,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -687,7 +690,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -704,7 +707,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -735,7 +738,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -784,7 +787,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -806,7 +809,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -827,7 +830,7 @@ describe("tripRouter", () => {
       requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -870,7 +873,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -914,7 +917,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -938,7 +941,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -961,7 +964,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -1040,7 +1043,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1068,7 +1071,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1088,7 +1091,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1141,7 +1144,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1175,7 +1178,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",
@@ -1194,7 +1197,7 @@ describe("tripRouter", () => {
       requireAdmin.mockRejectedValueOnce(new AuthorizationError("Admin access required"));
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer user-token" }),
         accessToken: "user-token",
@@ -1257,7 +1260,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1319,7 +1322,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1391,7 +1394,7 @@ describe("tripRouter", () => {
       });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1446,7 +1449,7 @@ describe("tripRouter", () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1485,7 +1488,7 @@ describe("tripRouter", () => {
       mockDb.tripSponsor.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1505,7 +1508,7 @@ describe("tripRouter", () => {
       requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers(),
         accessToken: null,
@@ -1523,7 +1526,7 @@ describe("tripRouter", () => {
       requireAuth.mockRejectedValue(new AuthenticationError("UNAUTHORIZED"));
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer invalid-token" }),
         accessToken: "invalid-token",
@@ -1542,7 +1545,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1559,7 +1562,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
@@ -1579,7 +1582,7 @@ describe("tripRouter", () => {
       mockDb.user.findFirst.mockResolvedValue(mockAdminUser);
 
       const ctx: TRPCContext = {
-        db: createDrizzleProxy(mockDb as MockDbClient),
+        db: mockDb as unknown as DB,
         supabase: mockSupabase,
         headers: new Headers({ Authorization: "Bearer admin-token" }),
         accessToken: "admin-token",

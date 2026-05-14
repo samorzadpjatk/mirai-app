@@ -9,6 +9,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Reward, RewardPurchase, Group, Challenge } from "@mirai-app/db";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 vi.mock("@mirai-app/auth", () => ({
   requireAuth: vi.fn(),
@@ -189,6 +190,7 @@ describe("rewardRouter", () => {
       reward: {
         findMany: vi.fn().mockResolvedValue([mockReward]),
         findUnique: vi.fn().mockResolvedValue(mockReward),
+        findFirst: vi.fn().mockResolvedValue(mockReward),
         create: vi.fn().mockResolvedValue(mockReward),
         update: vi.fn().mockResolvedValue(mockReward),
         delete: vi.fn().mockResolvedValue(mockReward),
@@ -197,6 +199,7 @@ describe("rewardRouter", () => {
       rewardPurchase: {
         findMany: vi.fn().mockResolvedValue([createMockRewardPurchase()]),
         findUnique: vi.fn().mockResolvedValue(createMockRewardPurchase()),
+        findFirst: vi.fn().mockResolvedValue(createMockRewardPurchase()),
         create: vi.fn().mockResolvedValue(createMockRewardPurchase()),
         update: vi.fn().mockResolvedValue(createMockRewardPurchase()),
         count: vi.fn().mockResolvedValue(0),
@@ -271,7 +274,8 @@ describe("rewardRouter", () => {
       ),
     };
 
-    mockDb = createDrizzleProxy(mockDb as any);
+    addDrizzleApi(mockDb);
+    mockDb = mockDb as DB;
   });
 
   // Helper to create authenticated context
@@ -464,6 +468,7 @@ describe("rewardRouter", () => {
 
     it("should throw NOT_FOUND when reward does not exist", async () => {
       mockDb.reward.findUnique.mockResolvedValue(null);
+      mockDb.reward.findFirst.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -473,6 +478,7 @@ describe("rewardRouter", () => {
 
     it("should throw NOT_FOUND for hidden reward when not staff", async () => {
       mockDb.reward.findUnique.mockResolvedValue(createMockReward({ isHidden: true }));
+      mockDb.reward.findFirst.mockResolvedValue(createMockReward({ isHidden: true }));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -593,7 +599,7 @@ describe("rewardRouter", () => {
     it("should update reward", async () => {
       const updatedReward = createMockReward({ name: "Updated Reward" });
       mockDb.reward.update.mockResolvedValue(updatedReward);
-      (mockDb.reward as any).findFirst = vi.fn().mockResolvedValue(updatedReward);
+      mockDb.reward.findFirst = vi.fn().mockResolvedValue(updatedReward);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -653,7 +659,7 @@ describe("rewardRouter", () => {
     it("should hide reward", async () => {
       const hiddenReward = createMockReward({ isHidden: true });
       mockDb.reward.update.mockResolvedValue(hiddenReward);
-      (mockDb.reward as any).findFirst = vi.fn().mockResolvedValue(hiddenReward);
+      mockDb.reward.findFirst = vi.fn().mockResolvedValue(hiddenReward);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -739,6 +745,7 @@ describe("rewardRouter", () => {
 
     it("should throw NOT_FOUND when reward does not exist", async () => {
       mockDb.reward.findUnique.mockResolvedValue(null);
+      mockDb.reward.findFirst.mockResolvedValue(null);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -753,6 +760,7 @@ describe("rewardRouter", () => {
 
     it("should throw BAD_REQUEST when reward is hidden", async () => {
       mockDb.reward.findUnique.mockResolvedValue(createMockReward({ isHidden: true }));
+      mockDb.reward.findFirst.mockResolvedValue(createMockReward({ isHidden: true }));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -767,6 +775,7 @@ describe("rewardRouter", () => {
 
     it("should throw BAD_REQUEST when not enough quantity", async () => {
       mockDb.reward.findUnique.mockResolvedValue(createMockReward({ availableQuantity: 0 }));
+      mockDb.reward.findFirst.mockResolvedValue(createMockReward({ availableQuantity: 0 }));
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

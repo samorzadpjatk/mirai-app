@@ -272,7 +272,19 @@ describe("challengeRouter", () => {
       transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
-    mockDb = createDrizzleProxy(mockDb as any);
+    // Drizzle query namespace mapping
+    mockDb.query = {
+      challenges: mockDb.challenge,
+      challengeSubmissions: mockDb.challengeSubmission,
+      tripParticipants: mockDb.tripParticipant,
+      users: mockDb.user,
+      activityFeeds: mockDb.activityFeed,
+      challengeActivities: mockDb.challengeActivity,
+      submissionActivities: mockDb.submissionActivity,
+      groups: mockDb.group,
+      coinTransactions: mockDb.coinTransaction,
+      userAgents: mockDb.userAgent,
+    };
   });
 
   describe("getAll (adminProcedure)", () => {
@@ -294,7 +306,7 @@ describe("challengeRouter", () => {
         qrCodeValue: mockChallenge.expectedValue,
       });
        
-      expect(mockDb.challenge.findMany).toHaveBeenCalled();;
+      expect(mockDb.query.challenges.findMany).toHaveBeenCalled();;
     });
 
     it("should resolve challenge images with signed URLs", async () => {
@@ -323,13 +335,33 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getAll();
 
-       
-      expect(mockDb.challenge.update).toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalled();
     });
   });
 
   describe("getAllByTrip (protectedProcedure)", () => {
     it("should return paginated challenges for trip", async () => {
+      mockDb.select
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => Promise.resolve([{ count: 1 }])),
+          })),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              groupBy: vi.fn(() => Promise.resolve([])),
+            })),
+          })),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              groupBy: vi.fn(() => Promise.resolve([])),
+            })),
+          })),
+        });
+
       const ctx: TRPCContext = {
         db: mockDb,
         supabase: mockSupabase,
@@ -353,11 +385,26 @@ describe("challengeRouter", () => {
     });
 
     it("should include participant submission counts", async () => {
-       
-       
-      mockDb.challengeSubmission.groupBy.mockResolvedValue([
-        { challengeId: "challenge-1", _count: { _all: 5 } }
-      ]);
+      mockDb.select
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => Promise.resolve([{ count: 1 }])),
+          })),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              groupBy: vi.fn(() => Promise.resolve([{ challengeId: "challenge-1", count: 5 }])),
+            })),
+          })),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              groupBy: vi.fn(() => Promise.resolve([])),
+            })),
+          })),
+        });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -375,10 +422,10 @@ describe("challengeRouter", () => {
     it("should include my group submission status", async () => {
        
        
-      mockDb.challengeSubmission.findMany.mockResolvedValue([
+      mockDb.query.challengeSubmissions.findMany.mockResolvedValue([
         { challengeId: "challenge-1", status: "PENDING" }
       ]);
-      mockDb.tripParticipant.findFirst.mockResolvedValue({
+      mockDb.query.tripParticipants.findFirst.mockResolvedValue({
         userId: "user-db-id",
         tripId: "trip-1",
         groupId: "group-1",
@@ -400,7 +447,7 @@ describe("challengeRouter", () => {
     it("should handle empty challenges list", async () => {
        
        
-      mockDb.challenge.findMany.mockResolvedValue([]);
+      mockDb.query.challenges.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -452,8 +499,8 @@ describe("challengeRouter", () => {
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
        
-      mockDb.challenge.findFirst.mockResolvedValue(null);
-            mockDb.challenge.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findFirst.mockResolvedValue(null);
+            mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -476,7 +523,7 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.user.findFirst.mockResolvedValue(null);
+      mockDb.query.users.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -497,7 +544,7 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.challenge.findFirst.mockResolvedValue(mockChallenge);
+      mockDb.query.challenges.findFirst.mockResolvedValue(mockChallenge);
        
       resolveRecurringChallengeIdForTrip.mockResolvedValue("recurring-challenge-id");
 
@@ -535,7 +582,7 @@ describe("challengeRouter", () => {
 
       expect(result.name).toBe("Test Challenge");
        
-      expect(mockDb.challenge.create).toHaveBeenCalled();
+      expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it("should create challenge with QR code value", async () => {
@@ -919,9 +966,13 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.challenge.create.mockResolvedValue({
-        ...mockChallenge,
-        isRecurring: true,
+      mockDb.insert.mockReturnValue({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([{
+            ...mockChallenge,
+            isRecurring: true,
+          }])),
+        })),
       });
 
       const ctx: TRPCContext = {
@@ -1012,14 +1063,14 @@ describe("challengeRouter", () => {
 
       expect(result.name).toBe("Test Challenge");
        
-      expect(mockDb.challenge.update).toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
        
-      mockDb.challenge.findFirst.mockResolvedValue(null);
-            mockDb.challenge.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findFirst.mockResolvedValue(null);
+            mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1063,7 +1114,7 @@ describe("challengeRouter", () => {
     it("should validate peer voting transition to voting phase", async () => {
        
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1076,8 +1127,15 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.challengeSubmission.count.mockResolvedValueOnce(1)
-        .mockResolvedValueOnce(0);
+      mockDb.select.mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve([{ count: 1 }])),
+        })),
+      }).mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve([{ count: 0 }])),
+        })),
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1099,7 +1157,7 @@ describe("challengeRouter", () => {
     it("should throw error when transitioning to voting phase with no submissions", async () => {
        
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1108,7 +1166,11 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.challengeSubmission.count.mockResolvedValue(0);
+      mockDb.select.mockReturnValue({
+        from: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve([{ count: 0 }])),
+        })),
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1131,7 +1193,7 @@ describe("challengeRouter", () => {
     it("should throw error when transitioning to voting phase with pending submissions", async () => {
        
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1140,7 +1202,7 @@ describe("challengeRouter", () => {
 
        
        
-      mockDb.challengeSubmission.count.mockResolvedValueOnce(5) // total submissions
+      mockDb.query.challengeSubmissions.count.mockResolvedValueOnce(5) // total submissions
         .mockResolvedValueOnce(2); // pending submissions
 
       const ctx: TRPCContext = {
@@ -1163,7 +1225,7 @@ describe("challengeRouter", () => {
 
     it("should update recurring challenge with inferred days", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
@@ -1227,7 +1289,7 @@ describe("challengeRouter", () => {
 
     it("should validate peer voting timeline on update", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1295,7 +1357,7 @@ describe("challengeRouter", () => {
       const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
 
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
         dailyStartTime: "09:00",
@@ -1303,7 +1365,7 @@ describe("challengeRouter", () => {
         startTime: new Date("2025-01-01"),
       });
        
-      mockDb.challenge.update.mockResolvedValue(createMockChallenge({ isRecurring: true }));
+      mockDb.update.mockReturnValue({ set: vi.fn(() => ({ where: vi.fn(() => ({ returning: vi.fn(() => Promise.resolve([createMockChallenge({ isRecurring: true })])) })) })) });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1339,13 +1401,13 @@ describe("challengeRouter", () => {
 
       expect(result.success).toBe(true);
        
-      expect(mockDb.challenge.delete).toHaveBeenCalled();;
+      expect(mockDb.delete).toHaveBeenCalled();;
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue(null);
-            mockDb.challenge.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findFirst.mockResolvedValue(null);
+            mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1365,7 +1427,7 @@ describe("challengeRouter", () => {
   describe("forceCloseVoting (adminProcedure)", () => {
     it("should force close voting for peer voting challenge", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1384,13 +1446,13 @@ describe("challengeRouter", () => {
 
       expect(result).toBeDefined();
        
-      expect(mockDb.challenge.update).toHaveBeenCalled();;
+      expect(mockDb.update).toHaveBeenCalled();;
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue(null);
-            mockDb.challenge.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findFirst.mockResolvedValue(null);
+            mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1408,7 +1470,7 @@ describe("challengeRouter", () => {
 
     it("should throw BAD_REQUEST for non-peer voting challenge", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "SPEED",
       });
@@ -1429,7 +1491,7 @@ describe("challengeRouter", () => {
 
     it("should throw BAD_REQUEST when challenge is not in voting phase", async () => {
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1454,7 +1516,7 @@ describe("challengeRouter", () => {
       const { createChallengeStatusActivityFromTransition } = await import("../../../utils/activityFeed");
 
        
-      mockDb.challenge.findFirst.mockResolvedValue({
+      mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
         submissionType: "IMAGE",
@@ -1599,7 +1661,7 @@ describe("challengeRouter", () => {
   describe("Edge cases and error handling", () => {
     it("should handle database errors gracefully", async () => {
        
-      mockDb.challenge.findMany.mockRejectedValue(new Error("Test error"));
+      mockDb.query.challenges.findMany.mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1634,7 +1696,7 @@ describe("challengeRouter", () => {
 
     it("should handle participant without group", async () => {
        
-      mockDb.tripParticipant.findUnique.mockResolvedValue(null);
+      mockDb.query.tripParticipants.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1651,7 +1713,7 @@ describe("challengeRouter", () => {
 
     it("should handle challenge with external URL image", async () => {
        
-      mockDb.challenge.findMany.mockResolvedValue([
+      mockDb.query.challenges.findMany.mockResolvedValue([
         { ...mockChallenge, id: "challenge-external", image: "https://external.com/image.jpg" }
       ]);
 
@@ -1670,7 +1732,7 @@ describe("challengeRouter", () => {
 
     it("should handle challenge without image", async () => {
        
-      mockDb.challenge.findMany.mockResolvedValue([
+      mockDb.query.challenges.findMany.mockResolvedValue([
         { ...mockChallenge, id: "challenge-no-image", image: null }
       ]);
 
@@ -1688,8 +1750,7 @@ describe("challengeRouter", () => {
     });
 
     it("should handle transaction errors", async () => {
-       
-      mockDb.$transaction.mockRejectedValue(new Error("Test error"));
+      mockDb.transaction.mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
         db: mockDb,

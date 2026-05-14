@@ -8,6 +8,7 @@ import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Challenge, ChallengeSubmission, ChallengeVote, TripParticipant } from "@mirai-app/db";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
 vi.mock("../../../utils/activityFeed", () => ({
@@ -283,10 +284,12 @@ describe("challengeVoteRouter", () => {
       },
     };
 
-    mockDb = createDrizzleProxy(baseMockDb as any);
-    mockTx = createDrizzleProxy(baseMockTx as any);
+    addDrizzleApi(baseMockDb);
+    addDrizzleApi(baseMockTx);
+    mockDb = baseMockDb as DB;
+    mockTx = baseMockTx as DB;
 
-    (mockDb as any).transaction = (callback: (tx: typeof mockTx) => unknown) => callback(mockTx);
+    mockDb.transaction = vi.fn((callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx));
 
     const passthroughReturning = (data: unknown) => ({
       returning: () => Promise.resolve([data]),
@@ -294,17 +297,17 @@ describe("challengeVoteRouter", () => {
       onConflictDoUpdate: () => Promise.resolve([data]),
     });
     [mockDb, mockTx].forEach((db) => {
-      (db as any).insert = () => ({
+      db.insert = vi.fn(() => ({
         values: (data: unknown) => passthroughReturning(data),
-      });
-      (db as any).update = () => ({
+      }));
+      db.update = vi.fn(() => ({
         set: (data: unknown) => ({
           where: () => passthroughReturning(data),
         }),
-      });
-      (db as any).delete = () => ({
+      }));
+      db.delete = vi.fn(() => ({
         where: () => Promise.resolve({ count: 1 }),
-      });
+      }));
     });
   });
 
@@ -473,7 +476,7 @@ describe("challengeVoteRouter", () => {
         endTime: new Date(Date.now() - 60 * 60 * 1000),
       });
       mockDb.challenge.findFirst.mockResolvedValue(judgedChallenge);
-      mockDb.$transaction.mockImplementation(async (fn: unknown) => {
+      mockDb.transaction.mockImplementation(async (fn: unknown) => {
         if (typeof fn === "function") {
           return await (fn as (db: DB) => Promise<unknown>)(mockDb);
         }

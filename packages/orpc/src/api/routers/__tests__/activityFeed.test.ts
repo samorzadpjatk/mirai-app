@@ -24,6 +24,17 @@ interface MockedDb {
   group: { findMany: MockedFunction; findFirst: MockedFunction; findUnique: MockedFunction };
   challengeSubmission: { findFirst: MockedFunction };
   challenge: { findFirst: MockedFunction; findMany: MockedFunction };
+  query: {
+    users: { findFirst: MockedFunction };
+    tripParticipants: { findUnique: MockedFunction; findFirst: MockedFunction; findMany: MockedFunction };
+    trips: { findUnique: MockedFunction; findMany: MockedFunction };
+    activityFeeds: { findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; update: MockedFunction; delete: MockedFunction; count: MockedFunction };
+    activityReactions: { groupBy: MockedFunction; findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; delete: MockedFunction };
+    groups: { findMany: MockedFunction; findFirst: MockedFunction; findUnique: MockedFunction };
+    challengeSubmissions: { findFirst: MockedFunction };
+    challenges: { findFirst: MockedFunction; findMany: MockedFunction };
+  };
+  insert: MockedFunction;
   $executeRaw?: MockedFunction;
 }
 
@@ -42,8 +53,10 @@ interface MockContext extends Omit<TRPCContext, "db" | "supabase"> {
   supabase: MockedSupabase;
 }
 
-const createMockDb = () =>
-  createDrizzleProxy(({
+const createMockDb = () => {
+  const lastResults: Record<string, unknown> = {};
+
+  const rawDb = {
     user: {
       findFirst: vi.fn(() => Promise.resolve(null)),
     },
@@ -54,11 +67,13 @@ const createMockDb = () =>
     },
     trip: {
       findUnique: vi.fn(() => Promise.resolve(null)),
+      findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
     activityFeed: {
       findMany: vi.fn(() => Promise.resolve([])),
       findUnique: vi.fn(() => Promise.resolve(null)),
+      findFirst: vi.fn(() => Promise.resolve(null)),
       create: vi.fn(() => Promise.resolve({})),
       update: vi.fn(() => Promise.resolve({})),
       delete: vi.fn(() => Promise.resolve({})),
@@ -68,6 +83,7 @@ const createMockDb = () =>
       groupBy: vi.fn(() => Promise.resolve([])),
       findMany: vi.fn(() => Promise.resolve([])),
       findUnique: vi.fn(() => Promise.resolve(null)),
+      findFirst: vi.fn(() => Promise.resolve(null)),
       create: vi.fn(() => Promise.resolve({})),
       delete: vi.fn(() => Promise.resolve({})),
     },
@@ -83,7 +99,195 @@ const createMockDb = () =>
       findFirst: vi.fn(() => Promise.resolve(null)),
       findMany: vi.fn(() => Promise.resolve([])),
     },
-  }) as MockDbClient);
+  };
+
+  // Wrap findFirst/findUnique with fallback to each other and lastResults
+  for (const [modelName, model] of Object.entries(rawDb)) {
+    const m = model as Record<string, unknown>;
+    const rawFindFirst = m.findFirst as (...args: unknown[]) => Promise<unknown> | undefined;
+    const rawFindUnique = m.findUnique as (...args: unknown[]) => Promise<unknown> | undefined;
+    if (rawFindFirst || rawFindUnique) {
+      m.findFirst = vi.fn(async (...args: unknown[]) => {
+        if (rawFindFirst) {
+          const r = await rawFindFirst(...args);
+          if (r != null) return r;
+        }
+        if (rawFindUnique) {
+          const r = await rawFindUnique(...args);
+          if (r != null) return r;
+        }
+        return lastResults[modelName] ?? null;
+      });
+      m.findUnique = vi.fn(async (...args: unknown[]) => {
+        if (rawFindUnique) {
+          const r = await rawFindUnique(...args);
+          if (r != null) return r;
+        }
+        if (rawFindFirst) {
+          const r = await rawFindFirst(...args);
+          if (r != null) return r;
+        }
+        return lastResults[modelName] ?? null;
+      });
+    }
+  }
+
+  const db = rawDb as Record<string, unknown>;
+
+  db.query = {
+    users: db.user,
+    tripParticipants: db.tripParticipant,
+    trips: db.trip,
+    activityFeeds: db.activityFeed,
+    activityReactions: db.activityReaction,
+    groups: db.group,
+    challengeSubmissions: db.challengeSubmission,
+    challenges: db.challenge,
+  };
+
+  function toCamelCase(str: string): string {
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  function getModelName(table: unknown): string {
+    let name: string | undefined;
+    if (typeof table === 'string') {
+      name = table;
+    } else if (table && typeof table === 'object') {
+      const obj = table as Record<string | symbol, unknown>;
+      if (typeof obj.name === 'string') {
+        name = obj.name;
+      } else {
+        const drizzleNameSym = Symbol.for('drizzle:Name');
+        if (typeof obj[drizzleNameSym] === 'string') {
+          name = obj[drizzleNameSym] as string;
+        } else {
+          const sym = Object.getOwnPropertySymbols(obj).find(
+            (s) => s.description === 'drizzle:Name'
+          );
+          if (sym && typeof obj[sym] === 'string') {
+            name = obj[sym] as string;
+          }
+        }
+      }
+    }
+    if (!name) return 'unknown';
+    const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+    return toCamelCase(singular);
+  }
+
+  db.insert = vi.fn((table: unknown) => {
+    const modelName = getModelName(table);
+    return {
+      values: vi.fn((data: unknown) => ({
+        returning: () => {
+          const model = db[modelName];
+          if (model && typeof model === 'object' && 'create' in model) {
+            return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
+              if (result != null) lastResults[modelName] = result;
+              return [result];
+            });
+          }
+          return Promise.resolve([{}]);
+        },
+      })),
+    };
+  });
+
+  db.update = vi.fn((table: unknown) => {
+    const modelName = getModelName(table);
+    return {
+      set: vi.fn((data: unknown) => ({
+        where: vi.fn(() => ({
+          returning: () => {
+            const model = db[modelName];
+            if (model && typeof model === 'object' && 'update' in model) {
+              return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
+                if (result != null) lastResults[modelName] = result;
+                return [result];
+              });
+            }
+            return Promise.resolve([{}]);
+          },
+        })),
+      })),
+    };
+  });
+
+  db.delete = vi.fn((table: unknown) => {
+    const modelName = getModelName(table);
+    return {
+      where: vi.fn(() => ({
+        returning: () => {
+          const model = db[modelName];
+          if (model && typeof model === 'object' && 'delete' in model) {
+            return (model as Record<string, unknown>).delete().then((result: unknown) => {
+              if (result != null) lastResults[modelName] = result;
+              return [result];
+            });
+          }
+          return Promise.resolve([{}]);
+        },
+      })),
+    };
+  });
+
+  db.select = vi.fn(() => {
+    let primaryTable: string | undefined;
+    const chainable: any = {
+      from: (table: unknown) => {
+        const name = typeof table === 'string' ? table : 'unknown';
+        primaryTable = name.replace(/ies$/, 'y').replace(/s$/, '');
+        return chainable;
+      },
+      innerJoin: () => chainable,
+      leftJoin: () => chainable,
+      where: () => chainable,
+      orderBy: () => chainable,
+      limit: () => chainable,
+      offset: () => chainable,
+      groupBy: () => chainable,
+      having: () => chainable,
+      then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+        if (primaryTable) {
+          const model = db[primaryTable];
+          if (model && typeof model === 'object') {
+            if ('findMany' in model) {
+              return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+            }
+            if ('count' in model) {
+              return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+            }
+            if ('aggregate' in model) {
+              return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+            }
+            if ('groupBy' in model) {
+              return (model as Record<string, unknown>).groupBy().then((groups: unknown) => resolve(groups), reject);
+            }
+          }
+        }
+        return resolve([]);
+      },
+    };
+    return chainable;
+  });
+
+  db.transaction = vi.fn(async (callback: unknown) => {
+    if (typeof callback === "function") {
+      return await (callback as (db: typeof db) => unknown)(db);
+    }
+    return Promise.all(callback as unknown[]);
+  });
+
+  db.$transaction = vi.fn(async (callback: unknown) => {
+    if (typeof callback === "function") {
+      return await (callback as (db: typeof db) => unknown)(db);
+    }
+    return Promise.all(callback as unknown[]);
+  });
+
+  return db;
+};
 
 const createMockSupabase = () => {
   const getUserMock = vi.fn(() =>
@@ -129,14 +333,14 @@ describe("activityFeed router", () => {
       data: { user: { id: `auth-${userId}`, banned_until: null } },
       error: null,
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
       firstName: "John",
       lastName: "Doe",
       role: role,
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
       firstName: "John",
@@ -158,14 +362,14 @@ describe("activityFeed router", () => {
       data: { user: { id: "auth-mod-1", banned_until: null } },
       error: null,
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: "mod-1",
       authUserId: "auth-mod-1",
       firstName: "Moderator",
       lastName: "User",
       role: "MODERATOR",
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: "mod-1",
       authUserId: "auth-mod-1",
       firstName: "Moderator",
@@ -187,14 +391,14 @@ describe("activityFeed router", () => {
       data: { user: { id: "auth-admin-1", banned_until: null } },
       error: null,
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: "admin-1",
       authUserId: "auth-admin-1",
       firstName: "Admin",
       lastName: "User",
       role: "ADMIN",
     });
-    mockCtx.db.user.findFirst.mockResolvedValueOnce({
+    mockCtx.db.query.users.findFirst.mockResolvedValueOnce({
       id: "admin-1",
       authUserId: "auth-admin-1",
       firstName: "Admin",
@@ -222,12 +426,12 @@ describe("activityFeed router", () => {
   describe("getByTrip", () => {
     test("returns activities for trip", async () => {
       setupUserMocks();
-      mockCtx.db.tripParticipant.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce({
         userId: "user-1",
         tripId: "trip-1",
       });
-      mockCtx.db.activityFeed.count.mockResolvedValueOnce(1);
-      mockCtx.db.activityFeed.findMany.mockResolvedValueOnce([
+      mockCtx.db.query.activityFeeds.count.mockResolvedValueOnce(1);
+      mockCtx.db.query.activityFeeds.findMany.mockResolvedValueOnce([
         {
           id: "activity-1",
           title: "Test Activity",
@@ -237,8 +441,8 @@ describe("activityFeed router", () => {
           _count: { reactions: 5 },
         },
       ]);
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       mockCtx.db.$executeRaw = vi.fn();
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.getByTrip({
@@ -251,7 +455,7 @@ describe("activityFeed router", () => {
 
     test("throws FORBIDDEN when user is not participant", async () => {
       setupUserMocks();
-      mockCtx.db.tripParticipant.findUnique.mockResolvedValueOnce(null);
+      mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.getByTrip({ tripId: "trip-1" }),
@@ -262,17 +466,17 @@ describe("activityFeed router", () => {
   describe("getByTripModeration", () => {
     test("moderator can get activities including hidden", async () => {
       setupModeratorMocks();
-      mockCtx.db.trip.findUnique.mockResolvedValueOnce({ id: "trip-1" });
-      mockCtx.db.activityFeed.count.mockResolvedValueOnce(1);
-      mockCtx.db.activityFeed.findMany.mockResolvedValueOnce([
+      mockCtx.db.query.trips.findFirst.mockResolvedValueOnce({ id: "trip-1" });
+      mockCtx.db.query.activityFeeds.count.mockResolvedValueOnce(1);
+      mockCtx.db.query.activityFeeds.findMany.mockResolvedValueOnce([
         {
           id: "activity-1",
           isHidden: true,
           _count: { reactions: 0 },
         },
       ]);
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.getByTripModeration({
         tripId: "trip-1",
@@ -286,13 +490,13 @@ describe("activityFeed router", () => {
   describe("getById", () => {
     test("returns activity by id", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce({
         id: "activity-1",
         title: "Test Activity",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.getById({ id: "activity-1" });
       expect(result.id).toBe("activity-1");
@@ -300,7 +504,7 @@ describe("activityFeed router", () => {
 
     test("throws NOT_FOUND when activity does not exist", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce(null);
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.getById({ id: "nonexistent" }),
@@ -311,15 +515,15 @@ describe("activityFeed router", () => {
   describe("createCustom", () => {
     test("moderator can create custom activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.trip.findUnique.mockResolvedValueOnce({ id: "trip-1" });
-      mockCtx.db.activityFeed.create.mockResolvedValueOnce({
+      mockCtx.db.query.trips.findFirst.mockResolvedValueOnce({ id: "trip-1" });
+      mockCtx.db.query.activityFeeds.create.mockResolvedValueOnce({
         id: "activity-new",
         title: "Custom Activity",
         activityType: "custom",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.createCustom({
         tripId: "trip-1",
@@ -333,19 +537,19 @@ describe("activityFeed router", () => {
   describe("createUserPost", () => {
     test("user can create post activity", async () => {
       setupUserMocks();
-      mockCtx.db.tripParticipant.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce({
         id: "part-1",
         userId: "user-1",
         tripId: "trip-1",
       });
-      mockCtx.db.activityFeed.create.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.create.mockResolvedValueOnce({
         id: "activity-new",
         title: "User Post",
         activityType: "user_post",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.createUserPost({
         tripId: "trip-1",
@@ -358,20 +562,20 @@ describe("activityFeed router", () => {
   describe("createSubmissionActivity", () => {
     test("moderator can create submission activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.challengeSubmission.findFirst.mockResolvedValueOnce({
+      mockCtx.db.query.challengeSubmissions.findFirst.mockResolvedValueOnce({
         id: "sub-1",
         videoId: null,
         imageIds: ["img-1"],
         challenge: { tripId: "trip-1" },
       });
-      mockCtx.db.activityFeed.create.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.create.mockResolvedValueOnce({
         id: "activity-new",
         title: "Submission",
         activityType: "submission",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.createSubmissionActivity({
         tripId: "trip-1",
@@ -385,7 +589,7 @@ describe("activityFeed router", () => {
 
     test("throws NOT_FOUND when submission not found", async () => {
       setupModeratorMocks();
-      mockCtx.db.challengeSubmission.findFirst.mockResolvedValueOnce(null);
+      mockCtx.db.query.challengeSubmissions.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.createSubmissionActivity({
@@ -402,7 +606,7 @@ describe("activityFeed router", () => {
   describe("createChallengeActivity", () => {
     test("moderator can create challenge activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.challenge.findFirst.mockResolvedValueOnce({
+      mockCtx.db.query.challenges.findFirst.mockResolvedValueOnce({
         id: "challenge-1",
         description: "Challenge description",
         image: null,
@@ -410,14 +614,14 @@ describe("activityFeed router", () => {
         submissionType: "IMAGE",
         basePoints: 100,
       });
-      mockCtx.db.activityFeed.create.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.create.mockResolvedValueOnce({
         id: "activity-new",
         title: "Challenge Event",
         activityType: "challenge_event",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.createChallengeActivity({
         tripId: "trip-1",
@@ -430,7 +634,7 @@ describe("activityFeed router", () => {
 
     test("throws NOT_FOUND when challenge not found", async () => {
       setupModeratorMocks();
-      mockCtx.db.challenge.findFirst.mockResolvedValueOnce(null);
+      mockCtx.db.query.challenges.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.createChallengeActivity({
@@ -446,18 +650,18 @@ describe("activityFeed router", () => {
   describe("createRankChangeActivity", () => {
     test("moderator can create rank change activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.group.findFirst.mockResolvedValueOnce({
+      mockCtx.db.query.groups.findFirst.mockResolvedValueOnce({
         id: "group-1",
         image: null,
       });
-      mockCtx.db.activityFeed.create.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.create.mockResolvedValueOnce({
         id: "activity-new",
         title: "Rank Change",
         activityType: "rank_change",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.createRankChangeActivity({
         tripId: "trip-1",
@@ -472,7 +676,7 @@ describe("activityFeed router", () => {
 
     test("throws NOT_FOUND when group not found", async () => {
       setupModeratorMocks();
-      mockCtx.db.group.findFirst.mockResolvedValueOnce(null);
+      mockCtx.db.query.groups.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.createRankChangeActivity({
@@ -490,13 +694,13 @@ describe("activityFeed router", () => {
   describe("update", () => {
     test("moderator can update activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.update.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.update.mockResolvedValueOnce({
         id: "activity-1",
         title: "Updated Title",
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.update({
         activityId: "activity-1",
@@ -517,13 +721,13 @@ describe("activityFeed router", () => {
   describe("setPinned", () => {
     test("moderator can pin activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.update.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.update.mockResolvedValueOnce({
         id: "activity-1",
         isPinned: true,
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.setPinned({
         activityId: "activity-1",
@@ -536,13 +740,13 @@ describe("activityFeed router", () => {
   describe("hide", () => {
     test("moderator can hide activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.update.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.update.mockResolvedValueOnce({
         id: "activity-1",
         isHidden: true,
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.hide({
         activityId: "activity-1",
@@ -555,13 +759,13 @@ describe("activityFeed router", () => {
   describe("unhide", () => {
     test("moderator can unhide activity", async () => {
       setupModeratorMocks();
-      mockCtx.db.activityFeed.update.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.update.mockResolvedValueOnce({
         id: "activity-1",
         isHidden: false,
         _count: { reactions: 0 },
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.unhide({
         activityId: "activity-1",
@@ -573,23 +777,23 @@ describe("activityFeed router", () => {
   describe("toggleReaction", () => {
     test("user can add reaction", async () => {
       setupUserMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce({
         id: "activity-1",
         tripId: "trip-1",
         isHidden: false,
       });
-      mockCtx.db.tripParticipant.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce({
         userId: "user-1",
         tripId: "trip-1",
       });
-      mockCtx.db.activityReaction.findUnique.mockResolvedValueOnce(null);
-      mockCtx.db.activityReaction.create.mockResolvedValueOnce({
+      mockCtx.db.query.activityReactions.findFirst.mockResolvedValueOnce(null);
+      mockCtx.db.query.activityReactions.create.mockResolvedValueOnce({
         id: "reaction-1",
       });
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([
         { reactionType: "heart", _count: { _all: 1 } },
       ]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([
         { reactionType: "heart" },
       ]);
       const caller = createCaller(mockCtx);
@@ -603,21 +807,21 @@ describe("activityFeed router", () => {
 
     test("user can remove existing reaction", async () => {
       setupUserMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce({
         id: "activity-1",
         tripId: "trip-1",
         isHidden: false,
       });
-      mockCtx.db.tripParticipant.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce({
         userId: "user-1",
         tripId: "trip-1",
       });
-      mockCtx.db.activityReaction.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.activityReactions.findFirst.mockResolvedValueOnce({
         id: "reaction-1",
       });
-      mockCtx.db.activityReaction.delete.mockResolvedValueOnce({});
-      mockCtx.db.activityReaction.groupBy.mockResolvedValueOnce([]);
-      mockCtx.db.activityReaction.findMany.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.delete.mockResolvedValueOnce({});
+      mockCtx.db.query.activityReactions.groupBy.mockResolvedValueOnce([]);
+      mockCtx.db.query.activityReactions.findMany.mockResolvedValueOnce([]);
       const caller = createCaller(mockCtx);
       const result = await caller.activityFeed.toggleReaction({
         activityId: "activity-1",
@@ -628,7 +832,7 @@ describe("activityFeed router", () => {
 
     test("throws NOT_FOUND when activity does not exist", async () => {
       setupUserMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce(null);
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
       await expect(
         caller.activityFeed.toggleReaction({
@@ -640,7 +844,7 @@ describe("activityFeed router", () => {
 
     test("throws FORBIDDEN when activity is hidden", async () => {
       setupUserMocks();
-      mockCtx.db.activityFeed.findUnique.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce({
         id: "activity-1",
         tripId: "trip-1",
         isHidden: true,
@@ -658,7 +862,7 @@ describe("activityFeed router", () => {
   describe("delete", () => {
     test("admin can delete activity", async () => {
       setupAdminMocks();
-      mockCtx.db.activityFeed.delete.mockResolvedValueOnce({
+      mockCtx.db.query.activityFeeds.delete.mockResolvedValueOnce({
         id: "activity-1",
       });
       const caller = createCaller(mockCtx);

@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, TripParticipant, Group } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
+import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the authEmails utilities
 vi.mock("../../../utils/authEmails", () => ({
@@ -145,7 +146,8 @@ describe("userRouter", () => {
       $transaction: vi.fn((cb: (db: typeof mockDb) => Promise<unknown>) => cb(mockDb)),
     };
 
-    mockDb = createDrizzleProxy(mockDb as any);
+    addDrizzleApi(mockDb);
+    mockDb = mockDb as unknown as DB;
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -1311,7 +1313,7 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.$transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
           const tx = {
             ...mockDb,
             tripParticipant: {
@@ -1327,7 +1329,16 @@ describe("userRouter", () => {
               findUnique: vi.fn().mockResolvedValue(newUser),
             },
           };
-          return fn(createDrizzleProxy(tx as any));
+          tx.query = {
+            users: {
+              findFirst: vi.fn().mockResolvedValue(newUser),
+            },
+            tripParticipants: {
+              findFirst: vi.fn().mockResolvedValue(participant),
+            },
+          } as unknown as typeof tx.query;
+          const result = await fn(tx as unknown as DB);
+          return result;
         });
 
         const ctx: TRPCContext = {
@@ -1361,7 +1372,7 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.$transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
           const tx = {
             ...mockDb,
             tripParticipant: {
@@ -1377,7 +1388,15 @@ describe("userRouter", () => {
               findUnique: vi.fn().mockResolvedValue(existingUser),
             },
           };
-          return fn(createDrizzleProxy(tx as any));
+          tx.query = {
+            users: {
+              findFirst: vi.fn().mockResolvedValue(existingUser),
+            },
+            tripParticipants: {
+              findFirst: vi.fn().mockResolvedValue(participant),
+            },
+          } as unknown as typeof tx.query;
+          return fn(tx as unknown as DB);
         });
 
         const ctx: TRPCContext = {
@@ -1668,7 +1687,7 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(0);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: null });
 
@@ -1696,7 +1715,7 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(1); // User has other trips
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1738,7 +1757,7 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1761,7 +1780,7 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.$transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: { message: "Delete failed", code: "unknown", status: 500, __isAuthError: true, toJSON: () => ({}) } as never });
 

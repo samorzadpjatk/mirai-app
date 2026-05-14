@@ -128,11 +128,31 @@ describe("coinRouter", () => {
       },
       group: {
         findUnique: vi.fn().mockResolvedValue(mockGroup),
+        findFirst: vi.fn().mockResolvedValue(mockGroup),
         update: vi.fn().mockResolvedValue(mockGroup),
       },
       coinTransaction: {
+        findFirst: vi.fn().mockResolvedValue(createMockCoinTransaction()),
+        findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockResolvedValue(createMockCoinTransaction()),
       },
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([createMockCoinTransaction()])),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      })),
+      transaction: vi.fn(async (callback: unknown): Promise<unknown> => {
+        if (typeof callback === "function") {
+          return await (callback as (db: typeof mockDb) => unknown)(mockDb);
+        }
+        return Promise.all(callback as unknown[]);
+      }),
       $transaction: vi.fn(async (callback: unknown): Promise<unknown> => {
         if (typeof callback === "function") {
           return await (callback as (db: typeof mockDb) => unknown)(mockDb);
@@ -141,7 +161,11 @@ describe("coinRouter", () => {
       }),
     };
 
-    mockDb = createDrizzleProxy(mockDb as any);
+    mockDb.query = {
+      users: mockDb.user,
+      groups: mockDb.group,
+      coinTransactions: mockDb.coinTransaction,
+    };
   });
 
   // Helper to create authenticated context
@@ -176,11 +200,15 @@ describe("coinRouter", () => {
       });
 
        
-      mockDb.group.findUnique.mockResolvedValue(mockGroup);
+      mockDb.query.groups.findFirst.mockResolvedValue(mockGroup);
        
-      mockDb.group.update.mockResolvedValue(updatedGroup);
+      mockDb.insert.mockReturnValue({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([transaction])),
+        })),
+      });
        
-      mockDb.coinTransaction.create.mockResolvedValue(transaction);
+      mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -195,12 +223,12 @@ describe("coinRouter", () => {
       expect(result.amount).toBe(50);
       expect(result.group.coins).toBe(150);
        
-      expect(mockDb.group.update).toHaveBeenCalled();
-      expect(mockDb.coinTransaction.create).toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when group does not exist", async () => {
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -216,7 +244,7 @@ describe("coinRouter", () => {
 
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
       const differentTripGroup = createMockGroup({ id: "group-123", tripId: "different-trip" });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -232,7 +260,7 @@ describe("coinRouter", () => {
 
     it("should throw NOT_FOUND when group is deleted", async () => {
       const deletedGroup = createMockGroup({ id: "group-123", isDeleted: true });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(deletedGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(deletedGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -249,8 +277,12 @@ describe("coinRouter", () => {
     it("should create rank change activities after adding coins", async () => {
       const { createRankChangeActivities } = await import("../../../utils/activityFeed");
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.group.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -277,9 +309,19 @@ describe("coinRouter", () => {
         reason: null,
       });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.group.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.coinTransaction.create as ReturnType<typeof vi.fn>).mockResolvedValue(transaction);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      });
+      mockDb.insert.mockReturnValue({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([transaction])),
+        })),
+      });
+       
+      mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -317,9 +359,19 @@ describe("coinRouter", () => {
         },
       });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
-      (mockDb.group.update as ReturnType<typeof vi.fn>).mockResolvedValue(updatedGroup);
-      (mockDb.coinTransaction.create as ReturnType<typeof vi.fn>).mockResolvedValue(transaction);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      });
+      mockDb.insert.mockReturnValue({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([transaction])),
+        })),
+      });
+       
+      mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -334,12 +386,12 @@ describe("coinRouter", () => {
       expect(result.amount).toBe(-50);
       expect(result.group.coins).toBe(50);
        
-      expect(mockDb.group.update).toHaveBeenCalled();
+      expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should throw BAD_REQUEST when group does not have enough coins", async () => {
       const groupWithLowCoins = createMockGroup({ id: "group-123", coins: 30, tripId: "trip-123" });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithLowCoins);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithLowCoins);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -355,7 +407,7 @@ describe("coinRouter", () => {
 
     it("should throw BAD_REQUEST when group has zero coins", async () => {
       const groupWithZeroCoins = createMockGroup({ id: "group-123", coins: 0, tripId: "trip-123" });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithZeroCoins);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithZeroCoins);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -370,7 +422,7 @@ describe("coinRouter", () => {
     });
 
     it("should throw NOT_FOUND when group does not exist", async () => {
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -386,7 +438,7 @@ describe("coinRouter", () => {
 
     it("should throw BAD_REQUEST when group belongs to different trip", async () => {
       const differentTripGroup = createMockGroup({ id: "group-123", tripId: "different-trip", coins: 100 });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -402,7 +454,7 @@ describe("coinRouter", () => {
 
     it("should throw BAD_REQUEST when group is deleted", async () => {
       const deletedGroup = createMockGroup({ id: "group-123", isDeleted: true, tripId: "trip-123", coins: 100 });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(deletedGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(deletedGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -420,8 +472,12 @@ describe("coinRouter", () => {
       const { createRankChangeActivities } = await import("../../../utils/activityFeed");
 
       const groupWithEnoughCoins = createMockGroup({ id: "group-123", coins: 100, tripId: "trip-123" });
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
-      (mockDb.group.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      });
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -449,9 +505,19 @@ describe("coinRouter", () => {
         reason: null,
       });
 
-      (mockDb.group.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
-      (mockDb.group.update as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      (mockDb.coinTransaction.create as ReturnType<typeof vi.fn>).mockResolvedValue(transaction);
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve()),
+        })),
+      });
+      mockDb.insert.mockReturnValue({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([transaction])),
+        })),
+      });
+       
+      mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -523,7 +589,7 @@ describe("coinRouter", () => {
 
   describe("Edge cases and error handling", () => {
     it("should handle database errors during addCoins", async () => {
-      (mockDb.$transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
+      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -538,7 +604,7 @@ describe("coinRouter", () => {
     });
 
     it("should handle database errors during removeCoins", async () => {
-      (mockDb.$transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
+      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
