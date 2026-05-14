@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 export function randomUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -6,7 +8,6 @@ export function randomUUID(): string {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     crypto.getRandomValues(bytes);
   } else {
-    const { randomBytes } = require("node:crypto");
     const buf = randomBytes(16);
     for (let i = 0; i < 16; i++) {
       bytes[i] = buf[i]!;
