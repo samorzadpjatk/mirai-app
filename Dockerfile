@@ -16,8 +16,9 @@ ENV CI=true
 # optional dependencies are missing from the lockfile.
 RUN apt-get update && apt-get install -y npm && rm -rf /var/lib/apt/lists/*
 COPY . .
-# Re-resolve platform-specific optional deps (esbuild, turbo) for Linux
-RUN bun install
+# bun.lock was generated on macOS and skips Linux optional deps.
+# Delete it so bun resolves all platform binaries for Linux.
+RUN rm -f bun.lock && bun install
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
