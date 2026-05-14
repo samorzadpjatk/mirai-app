@@ -190,7 +190,7 @@
         "vitest": "^3.0.0",
       },
       "peerDependencies": {
-        "react": "^19.1.0",
+        "react": "^19.2.0",
       },
     },
     "packages/db": {
@@ -237,8 +237,8 @@
         "vitest": "^3.0.0",
       },
       "peerDependencies": {
-        "react": "^19.1.0",
-        "react-dom": "^19.1.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
       },
     },
     "packages/shared": {
@@ -279,7 +279,7 @@
         "vitest": "^3.0.0",
       },
       "peerDependencies": {
-        "react": "^19.1.0",
+        "react": "^19.2.0",
       },
     },
   },
