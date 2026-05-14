@@ -131,16 +131,16 @@ const arr = [
 
 ```bash
 # Check formatting
-turbo run format:check
+nx run-many -t format:check
 
 # Fix formatting
-turbo run format:write
+nx run-many -t format:write
 
 # Lint
-turbo run lint
+nx run-many -t lint
 
 # Fix lint issues
-turbo run lint:fix
+nx run-many -t lint:fix
 ```
 
 ## Git Hooks

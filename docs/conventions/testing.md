@@ -260,7 +260,7 @@ bun run test --coverage
 
 ```bash
 # All tests
-turbo run test
+nx run-many -t test
 
 # Watch mode
 bun run test:watch

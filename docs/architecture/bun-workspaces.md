@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bun workspaces enable code sharing across multiple packages and apps in the monorepo. This document explains how Bun workspaces are configured and how to work with them.
+Bun workspaces enable code sharing across multiple packages and apps in the monorepo. Bun handles package management and workspace linking, while **Nx** orchestrates tasks (build, test, lint) with caching and parallelization. This document explains how Bun workspaces are configured and how to work with them.
 
 ## Configuration
 
@@ -77,9 +77,9 @@ node_modules/
 ├── react/          # Hoisted (shared)
 ├── typescript/     # Hoisted (dev dependency)
 └── packages/
-    └── trpc/
+    └── orpc/
         └── node_modules/
-            └── @trpc/server/  # Package-specific
+            └── @orpc/server/  # Package-specific
 ```
 
 ## Cross-Package Development
@@ -89,9 +89,9 @@ node_modules/
 When you change a package, dependent packages need to be rebuilt:
 
 ```bash
-# Change in packages/trpc
+# Change in packages/orpc
 # Automatically rebuilds apps that depend on it
-turbo run build --filter=@mirai-app/orpc...
+nx run-many -t build --projects='packages/orpc'
 ```
 
 ### Local Linking
@@ -101,7 +101,7 @@ Bun automatically links workspace packages:
 ```typescript
 // In apps/native/some-file.ts
 import { trpc } from '@mirai-app/orpc';
-// Resolves to packages/trpc/src/index.ts
+// Resolves to packages/orpc/src/index.ts
 ```
 
 ## Scripts in Workspaces
@@ -110,10 +110,10 @@ import { trpc } from '@mirai-app/orpc';
 
 ```bash
 # Run script in all workspaces
-turbo run lint
+nx run-many -t lint
 
 # Run script in specific workspace
-bun run --filter=@mirai-app/native lint
+nx run @mirai-app/native:lint
 
 # Run script from root
 bun run --cwd apps/native lint
@@ -170,4 +170,5 @@ bun install
 ## Further Reading
 
 - [Bun Workspaces Documentation](https://bun.sh/docs/install/workspaces)
-- [Turborepo Documentation](./turborepo.md)
+- [Monorepo Architecture](./monorepo.md)
+- [Nx Configuration](./nx.md)

@@ -87,7 +87,7 @@ bun run db:seed:dev
 ### Start All Apps
 
 ```bash
-turbo run dev
+nx run-many -t dev
 ```
 
 This starts all development servers in parallel.
@@ -96,10 +96,10 @@ This starts all development servers in parallel.
 
 ```bash
 # Backend server only
-turbo run dev --filter=@mirai-app/backend-server
+nx run @mirai-app/backend-server:dev
 
 # Native app only
-turbo run dev --filter=@mirai-app/native
+nx run @mirai-app/native:dev
 
 ```
 
@@ -109,6 +109,22 @@ turbo run dev --filter=@mirai-app/native
 |-----|-----|
 | Backend Server | http://localhost:3000 |
 | Native App | Use Expo Go app on device |
+
+## Nx Graph and Project Inspection
+
+```bash
+# Show dependency graph
+nx graph
+
+# Show project details
+nx show project @mirai-app/native
+
+# Show all projects
+nx show projects
+
+# Run on changed projects (CI)
+nx affected -t build
+```
 
 ## IDE Setup
 
@@ -150,14 +166,24 @@ bun pm cache rm
 bun install
 ```
 
+### Nx Cache Issues
+
+```bash
+# Clear Nx cache
+nx reset
+
+# Run without cache
+nx run-many -t build --skip-nx-cache
+```
+
 ### Type Errors
 
 ```bash
 # Run typecheck on all packages
-turbo run typecheck
+nx run-many -t typecheck
 
 # Check specific package
-turbo run typecheck --filter=@mirai-app/orpc
+nx run @mirai-app/orpc:typecheck
 ```
 
 ## Next Steps

@@ -32,7 +32,7 @@ Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
 ## Project Structure
 
-The repository currently functions as a monorepo implemented using **NX** for code build orchestration and **Bun workspaces** (Bun as package manager) for package management.
+The repository currently functions as a monorepo implemented using **Nx** for task orchestration and **Bun workspaces** (Bun as package manager) for package management.
 
 Check their configuration details inside [`nx.json`](nx.json) and [`bun.lock`](bun.lock)
 
@@ -51,9 +51,9 @@ It contains:
 
 📖 **Testing**: See [TESTING.md](TESTING.md) for comprehensive testing documentation. We use Vitest for most packages and Jest for the native app.
 
-All scripts can be called from the project root using `bun run <script>`. (You can also go to a specific package and run `bun run <script>`).
+All scripts can be called from the project root using `bun run <script>`. These are thin wrappers around Nx — you can also run `nx` commands directly (for example, `nx run @mirai-app/native:dev` or `nx run-many -t build`).
 
-To run a script assigned to a specific component, use `bun run` (or `cd <package> && bun run <script>`):
+To run a script in a specific package, use `bun run` (or `cd <package> && bun run <script>`):
 ```bash
 cd apps/native && bun run dev
 ```

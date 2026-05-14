@@ -35,9 +35,9 @@ Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
 
 ## Struktura projektu
 
-Obecnie repozytorium pełni funkcję monorepo zaimplementowanego z użyciem **Turborepo** dla orchiestracji budowy kodu oraz **Bun workspaces** (Bun jako menedżer pakietów) dla zarządzania pakietami.
+Obecnie repozytorium pełni funkcję monorepo zaimplementowanego z użyciem **Nx** dla orchiestracji budowy kodu oraz **Bun workspaces** (Bun jako menedżer pakietów) dla zarządzania pakietami.
 
-Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.json) oraz [`bun.lock`](bun.lock)
+Sprawdź szczegóły ich konfiguracji wewnątrz plików [`nx.json`](nx.json) oraz [`bun.lock`](bun.lock)
 
 Znajduje się w nim:
 
