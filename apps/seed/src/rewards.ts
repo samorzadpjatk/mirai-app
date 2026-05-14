@@ -3,8 +3,7 @@ import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
 import { db } from "./config/db";
 import type { RewardConfig, AuthUserByEmail } from "./types";
-import { users, rewards } from "@mirai-app/db";
-import { eq } from "drizzle-orm";
+import { rewards } from "@mirai-app/db";
 
 function isRewardConfig(value: unknown): value is RewardConfig {
   if (typeof value !== 'object' || value === null) return false;

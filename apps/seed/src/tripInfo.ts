@@ -1,6 +1,6 @@
 import { db } from "./config/db";
 import type { TripResource, TripInsurance, TripInsuranceStep } from "@mirai-app/db";
-import type { SeedEnv, TripInfoConfig } from "./types";
+import type { SeedEnv, TripInfoConfig, TripResourceConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
@@ -11,32 +11,10 @@ import { assetsRoot } from "./constants";
 import { tripResources, tripInsurances, tripInsuranceSteps } from "@mirai-app/db";
 import { eq, inArray } from "drizzle-orm";
 
-function isTripResourceConfig(value: unknown): value is import("./types").TripResourceConfig {
+function isTripResourceConfig(value: unknown): value is TripResourceConfig {
   if (typeof value !== 'object' || value === null) return false;
   const resource = value as Record<string, unknown>;
   return typeof resource.type === 'string' && typeof resource.label === 'string';
-}
-
-function isTripInsuranceStepConfig(value: unknown): value is import("./types").TripInsuranceStepConfig {
-  if (typeof value !== 'object' || value === null) return false;
-  const step = value as Record<string, unknown>;
-  return (
-    typeof step.stepNumber === 'number' &&
-    typeof step.title === 'string' &&
-    typeof step.text === 'string'
-  );
-}
-
-function isTripInsuranceConfig(value: unknown): value is import("./types").TripInsuranceConfig {
-  if (typeof value !== 'object' || value === null) return false;
-  const insurance = value as Record<string, unknown>;
-  return (
-    typeof insurance.label === 'string' &&
-    typeof insurance.phoneNumber === 'string' &&
-    typeof insurance.policyNumber === 'string' &&
-    Array.isArray(insurance.steps) &&
-    insurance.steps.every(isTripInsuranceStepConfig)
-  );
 }
 
 function isTripInfoConfig(value: unknown): value is TripInfoConfig {
