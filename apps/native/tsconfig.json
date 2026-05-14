@@ -14,5 +14,11 @@
     "allowJs": true
   },
   "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
-  "exclude": ["**/node_modules/**", "dist/**", ".expo/**", "coverage/**"]
+  "exclude": ["**/node_modules/**", "dist/**", ".expo/**", "coverage/**"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/supabase" },
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/orpc" }
+  ]
 }

@@ -9,5 +9,8 @@
     "types": ["node", "vitest", "bun"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
+  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"],
+  "references": [
+    { "path": "../../packages/orpc" }
+  ]
 }

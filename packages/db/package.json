@@ -11,6 +11,7 @@
   },
   "scripts": {
     "clean": "rm -rf node_modules",
+    "build": "tsc -b",
     "db:migrate": "drizzle-kit migrate",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",

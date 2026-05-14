@@ -28,5 +28,9 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": ["vitest", "bun"]
   },
-  "include": ["src/**/*", "*.ts", "src/types/**/*.d.ts"]
+  "include": ["src/**/*", "*.ts", "src/types/**/*.d.ts"],
+  "references": [
+    { "path": "../../packages/db" },
+    { "path": "../../packages/supabase" }
+  ]
 }

@@ -113,7 +113,7 @@ const updateUserLastSeenOn = async (context: {
     .where(eq(users.id, context.dbUser.id));
 };
 
-interface ActivityWithRelations {
+export interface ActivityWithRelations {
   id: string;
   tripId: string;
   activityType: string;
