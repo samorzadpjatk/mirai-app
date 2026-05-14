@@ -2,6 +2,7 @@
   "name": "@mirai-app/seed",
   "module": "index.ts",
   "type": "module",
+  "nx": { "tags": ["type:app", "scope:cli"] },
   "private": true,
   "license": "AGPL-3.0",
   "scripts": {

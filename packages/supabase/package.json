@@ -2,6 +2,7 @@
   "name": "@mirai-app/supabase",
   "version": "1.0.0",
   "description": "",
+  "nx": { "tags": ["type:package", "scope:shared"] },
   "private": true,
   "type": "module",
   "exports": {

@@ -1,0 +1,78 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "plugins": ["@nx/expo"],
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": ["{projectRoot}/dist/**", "{projectRoot}/.astro/**"],
+      "cache": true
+    },
+    "clean": {
+      "cache": true
+    },
+    "db:generate": {
+      "outputs": ["{projectRoot}/drizzle/**"],
+      "cache": true
+    },
+    "dev": {
+      "dependsOn": ["db:generate"],
+      "cache": false
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "cache": true
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/coverage/**"],
+      "cache": true
+    },
+    "test:ci": {
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/coverage/**"],
+      "cache": true
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/coverage/**"],
+      "cache": true
+    },
+    "test:watch": {
+      "cache": false
+    },
+    "format:check": {
+      "cache": true
+    },
+    "format:write": {
+      "cache": true
+    }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": ["{workspaceRoot}/package.json", "{workspaceRoot}/nx.json"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/*.test.ts",
+      "!{projectRoot}/**/*.test.tsx",
+      "!{projectRoot}/**/__tests__/**",
+      "!{projectRoot}/**/*.spec.ts",
+      "!{projectRoot}/**/*.spec.tsx"
+    ]
+  },
+  "generators": {
+    "@nx/expo:application": {
+      "linter": "eslint",
+      "unitTestRunner": "jest",
+      "e2eTestRunner": "none"
+    },
+    "@nx/expo:library": {
+      "linter": "eslint",
+      "unitTestRunner": "jest"
+    }
+  },
+  "nxCloudAccessToken": ""
+}

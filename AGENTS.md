@@ -9,7 +9,7 @@ MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 - **Frontend**: Expo React Native (iOS/Android)
 - **Backend**: Fastify + oRPC server with WebSocket support
 - **Database**: PostgreSQL via Drizzle ORM + Supabase
-- **Tooling**: Turborepo + Bun workspaces
+- **Tooling**: NX + Bun workspaces
 
 ## Monorepo Structure
 
@@ -27,23 +27,23 @@ MIRAI/
 │   ├── supabase/            # Supabase client configuration
 │   └── trpc/                # oRPC routers and utilities
 ├── docs/                    # Detailed documentation
-├── turbo.json               # Turborepo configuration
+├── nx.json                  # NX monorepo configuration
 ├── package.json             # Bun workspaces configuration
 └── AGENTS.md                # This file (base instructions)
 ```
 
 ## Build System
 
-### Turborepo Pipeline
+### NX Pipeline
 
 | Command | Description |
 |---------|-------------|
-| `turbo run build` | Build all apps and packages |
-| `turbo run dev` | Start development mode for all apps |
-| `turbo run lint` | Run ESLint across all packages |
-| `turbo run typecheck` | Type-check all packages |
-| `turbo run test` | Run test suites |
-| `turbo run clean` | Clean build artifacts |
+| `nx run-many -t build` | Build all apps and packages |
+| `nx run-many -t dev` | Start development mode for all apps |
+| `nx run-many -t lint` | Run ESLint across all packages |
+| `nx run-many -t typecheck` | Type-check all packages |
+| `nx run-many -t test` | Run test suites |
+| `nx run-many -t clean` | Clean build artifacts |
 
 **Pipeline order:** `build` → `typecheck` → `test` → `deploy`
 
@@ -79,11 +79,9 @@ MIRAI/
 bun install
 
 # Start all apps in dev mode
-turbo run dev
-
-# Or start specific apps
-turbo run dev --filter=@mirai-app/backend-server
-turbo run dev --filter=@mirai-app/native
+nx run-many -t dev
+nx run @mirai-app/backend-server:dev
+nx run @mirai-app/native:dev
 ```
 
 ### Environment Variables
@@ -165,7 +163,7 @@ Detailed documentation lives in `docs/` folder:
 
 | Path | Contents |
 |------|----------|
-| [docs/architecture/](./docs/architecture/) | Monorepo, Turborepo, Bun workspace docs |
+| [docs/architecture/](./docs/architecture/) | Monorepo, NX, Bun workspace docs |
 | [docs/development/](./docs/development/) | Setup guides, environment, scripts |
 | [docs/apps/](./docs/apps/) | Per-app detailed documentation |
 | [docs/packages/](./docs/packages/) | Per-package detailed documentation |

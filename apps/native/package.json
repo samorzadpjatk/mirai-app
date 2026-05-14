@@ -4,6 +4,7 @@
   "main": "index.ts",
   "type": "module",
   "license": "AGPL-3.0",
+  "nx": { "tags": ["type:app", "scope:mobile"] },
   "private": true,
   "scripts": {
     "dev": "bunx expo start",
@@ -31,7 +32,7 @@
     "test": "jest --coverage",
     "test:ci": "jest --passWithNoTests --ci --coverage",
     "test:watch": "jest --watch",
-    "clean": "rm -rf .expo .turbo node_modules dist coverage"
+    "clean": "rm -rf .expo .nx node_modules dist coverage"
   },
   "dependencies": {
     "@expo-google-fonts/ibm-plex-sans": "^0.4.1",

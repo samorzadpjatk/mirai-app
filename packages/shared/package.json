@@ -1,5 +1,6 @@
 {
   "name": "@mirai-app/shared",
+  "nx": { "tags": ["type:package", "scope:shared"] },
   "private": true,
   "license": "AGPL-3.0",
   "module": "index.ts",

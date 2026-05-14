@@ -1,6 +1,7 @@
 {
   "name": "@mirai-app/auth",
   "version": "0.1.0",
+  "nx": { "tags": ["type:package", "scope:auth"] },
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

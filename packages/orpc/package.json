@@ -38,6 +38,7 @@
     "clean": "rm -rf node_modules"
   },
   "keywords": [],
+  "nx": { "tags": ["type:package", "scope:api"] },
   "private": true,
   "license": "AGPL-3.0",
   "dependencies": {

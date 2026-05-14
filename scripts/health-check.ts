@@ -62,7 +62,7 @@ for (const ws of workspaces) {
   }
 }
 
-check("turbo.json exists", () => existsSync(resolve("turbo.json")));
+check("nx.json exists", () => existsSync(resolve("nx.json")));
 
 check("Docker available", () => {
   try {

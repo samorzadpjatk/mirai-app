@@ -1,6 +1,7 @@
 {
   "name": "@mirai-app/notification-sender",
   "version": "0.1.0",
+  "nx": { "tags": ["type:app", "scope:worker"] },
   "private": true,
   "license": "AGPL-3.0",
   "type": "module",

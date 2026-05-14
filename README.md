@@ -32,9 +32,9 @@ Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
 ## Project Structure
 
-The repository currently functions as a monorepo implemented using **Turborepo** for code build orchestration and **Bun workspaces** (Bun as package manager) for package management.
+The repository currently functions as a monorepo implemented using **NX** for code build orchestration and **Bun workspaces** (Bun as package manager) for package management.
 
-Check their configuration details inside [`turbo.json`](turbo.json) and [`bun.lock`](bun.lock)
+Check their configuration details inside [`nx.json`](nx.json) and [`bun.lock`](bun.lock)
 
 It contains:
 
