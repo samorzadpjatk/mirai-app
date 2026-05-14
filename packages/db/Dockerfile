@@ -5,7 +5,7 @@ ENV CI=true
 
 COPY . .
 RUN bun install --frozen-lockfile
-RUN npx nx build @mirai-app/db
+RUN bunx nx build @mirai-app/db
 
 FROM oven/bun:1.3.14-slim AS runner
 
@@ -13,7 +13,7 @@ WORKDIR /app
 ENV CI=true
 
 COPY --from=pruner /repo/packages/db ./packages/db
-COPY --from=pruner /repo/packages/db/tsconfig.base.json ./tsconfig.base.json
+COPY --from=pruner /repo/tsconfig.base.json ./tsconfig.base.json
 RUN --mount=type=cache,id=bun-cache,target=/root/.bun \
 	bun install --frozen-lockfile
 
