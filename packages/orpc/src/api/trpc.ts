@@ -41,56 +41,16 @@ const getAccessToken = (
   // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
   if (headerToken) {
-    console.log("[Auth] Token found in headers");
     return headerToken;
   }
 
-  console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
-
-  // Try connectionParams (sent as first WebSocket message)
-  if (
-   connectionParams &&    
-    "authorization" in connectionParams
-  ) {
+  if (connectionParams && "authorization" in connectionParams) {
     const token = connectionParams.authorization;
-    console.log("[Auth] authorization in connectionParams:", token ? "EXISTS" : "MISSING");
-
     if (token && token.trim().length > 0) {
-      console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
   }
 
-  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
-  // This is used because WebSocket connections via browser/React Native don't support custom headers
-  const urlString = headers.get("x-original-url");
-  if (urlString) {
-    try {
-      // Handle both absolute URLs and relative URLs (WebSocket connections)
-      let url: URL;
-      if (urlString.startsWith('http://') || urlString.startsWith('https://') || urlString.startsWith('ws://') || urlString.startsWith('wss://')) {
-        // Absolute URL
-        url = new URL(urlString);
-      } else {
-        // Relative URL - construct absolute URL for parsing
-        // Use a dummy base URL since we only care about parsing query params
-        url = new URL(urlString, 'http://localhost');
-      }
-      
-      const authParam = url.searchParams.get("authorization");
-      if (authParam) {
-        const [scheme, token] = authParam.split(" ");
-        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
-          console.log("[Auth] Token found in URL query params");
-          return token.trim();
-        }
-      }
-    } catch (err) {
-      console.error("[Auth] Failed to parse URL:", err);
-    }
-  }
-
-  console.log("[Auth] No token found");
   return null;
 };
 
@@ -138,17 +98,12 @@ export const createORPCContext = (opts: {
   supabaseKey: string;
   connectionParams?: Record<string, string>;
 }): TRPCContext => {
-  if (!supabase) {
-    supabase = createSupabaseClient(
-      opts.supabaseUrl,
-      opts.supabaseKey,
-      undefined,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
-    console.log("[Supabase] Created server singleton client using SERVICE_ROLE key");
-  } else {
-    console.log("[Supabase] Reusing server singleton Supabase client");
-  }
+  supabase ??= createSupabaseClient(
+    opts.supabaseUrl,
+    opts.supabaseKey,
+    undefined,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
 
   // Extract User-Agent from connection params for WebSocket connections
   const headers = new Headers(opts.headers);
@@ -157,10 +112,6 @@ export const createORPCContext = (opts: {
   }
 
   const accessToken = getAccessToken(headers, opts.connectionParams);
-  console.log(
-    "Creating oRPC context with access token:",
-    accessToken ? "YES" : "NO",
-  );
 
   const db = createDb(opts.databaseUrl);
 
@@ -184,31 +135,16 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
   const userAgent = context.headers.get("user-agent") ?? context.headers.get("User-Agent");
 
   const platform = getPlatformFromUserAgent(userAgent);
-  console.log("[Telemetry] User-Agent:", userAgent, "Platform:", platform);
 
   // Log user agent for update rollout analysis
   try {
-    // Try to extract user ID from auth token for better tracking
-    let userId = null;
-    if (context.accessToken) {
-      try {
-        // This is a lightweight way to get user ID without full validation
-        // since we're just logging, not authenticating here
-        const { data } = await context.supabase.auth.getUser(context.accessToken);
-        userId = data.user?.id ?? null;
-      } catch (error) {
-        // Ignore auth errors for logging purposes
-        console.log("[UserAgent Logging] Could not extract user ID:", error);
-      }
-    }
-
     if (userAgent && platform) {
       // Log to database asynchronously (fire and forget)
       void context.db.insert(userAgents)
         .values({
           userAgent,
           platform,
-          userId,
+          userId: null,
           endpoint: path.join("/"),
         })
         .catch((error: unknown) => {
@@ -252,16 +188,12 @@ export const publicProcedure = baseProcedure;
  */
 export const protectedProcedure = baseProcedure.use(async ({ context, next }) => {
   try {
-    console.log("[Auth] Protected procedure called, checking auth...");
-    console.log("[Auth] Access token present:", context.accessToken ? "YES" : "NO");
-    
     const { user, dbUser } = await requireAuth(
       context.db,
       context.supabase,
       context.accessToken ?? undefined,
     );
-    
-    console.log("[Auth] Auth successful for user:", user?.id || "unknown");
+
     return next({
       context: {
         user,
@@ -269,9 +201,7 @@ export const protectedProcedure = baseProcedure.use(async ({ context, next }) =>
       },
     });
   } catch (err) {
-    console.error("[Auth] Auth failed:", err);
     if (err instanceof AuthenticationError) {
-      console.log("[Auth] Throwing UNAUTHORIZED error");
       throw new ORPCError("UNAUTHORIZED", { message: err.message });
     }
     throw err;
