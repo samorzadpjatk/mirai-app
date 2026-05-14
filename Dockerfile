@@ -13,9 +13,9 @@ ARG PACKAGE
 WORKDIR /repo
 ENV CI=true
 COPY . .
-# bun.lock was generated on macOS and only contains darwin platform entries.
-# Remove it so bun resolves Linux binaries (turbo, esbuild) correctly.
-RUN rm -f bun.lock && bun install
+# bunfig.toml disables optional dependencies. Override so Linux binaries
+# (turbo, esbuild) install correctly inside Docker.
+RUN rm -f bun.lock && BUN_CONFIG_INSTALL_OPTIONAL=true bun install
 RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
