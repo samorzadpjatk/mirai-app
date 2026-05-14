@@ -35,6 +35,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set working directory explicitly
         run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
@@ -234,6 +235,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set working directory explicitly
         run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
@@ -292,6 +295,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set working directory explicitly
         run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
