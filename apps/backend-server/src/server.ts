@@ -32,7 +32,11 @@ function getClientIp(c: { req: { header: (name: string) => string | undefined } 
   return c.req.header("x-real-ip") ?? "unknown";
 }
 
-function checkRateLimit(ip: string, path: string, isAuthEndpoint: boolean): { allowed: boolean; retryAfter: number } {
+function checkRateLimit(
+  ip: string,
+  path: string,
+  isAuthEndpoint: boolean,
+): { allowed: boolean; retryAfter: number } {
   const now = Date.now();
   const windowMs = RATE_LIMIT_WINDOW_MS;
 
@@ -110,15 +114,18 @@ export function createServer(opts: ServerOptions) {
 
   if (dev) {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:8081"];
-    app.use("*", cors({
-      origin: (origin) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          return origin;
-        }
-        return null;
-      },
-      credentials: true,
-    }));
+    app.use(
+      "*",
+      cors({
+        origin: (origin) => {
+          if (!origin || allowedOrigins.includes(origin)) {
+            return origin;
+          }
+          return null;
+        },
+        credentials: true,
+      }),
+    );
   }
 
   const rpcHandler = new RPCHandler(appRouter, {
@@ -216,10 +223,7 @@ export function createServer(opts: ServerOptions) {
         fetch(req, server) {
           const url = new URL(req.url, "http://localhost");
 
-          if (
-            url.pathname.startsWith(prefix) &&
-            server.upgrade(req, { data: { url: req.url } })
-          ) {
+          if (url.pathname.startsWith(prefix) && server.upgrade(req, { data: { url: req.url } })) {
             return;
           }
 
@@ -234,9 +238,7 @@ export function createServer(opts: ServerOptions) {
             };
 
             const msgString =
-              typeof message === "string"
-                ? message
-                : new TextDecoder().decode(message);
+              typeof message === "string" ? message : new TextDecoder().decode(message);
 
             if (!data.authProcessed) {
               try {
@@ -244,10 +246,7 @@ export function createServer(opts: ServerOptions) {
                   type?: string;
                   payload?: { authorization?: string };
                 };
-                if (
-                  msg.type === "connection_init" &&
-                  msg.payload?.authorization
-                ) {
+                if (msg.type === "connection_init" && msg.payload?.authorization) {
                   data.connectionParams = {
                     authorization: msg.payload.authorization,
                   };
@@ -263,9 +262,7 @@ export function createServer(opts: ServerOptions) {
 
             const headers = new Headers();
             if (data.connectionParams) {
-              for (const [key, value] of Object.entries(
-                data.connectionParams,
-              )) {
+              for (const [key, value] of Object.entries(data.connectionParams)) {
                 headers.set(key, value);
               }
             }

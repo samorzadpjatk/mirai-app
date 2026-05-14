@@ -69,12 +69,13 @@ export const storageRouter = createORPCRouter({
           .string()
           .min(1)
           .max(500)
-          .regex(
-            /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]+$/,
-            "Must be in bucket/path format",
-          ),
+          .regex(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]+$/, "Must be in bucket/path format"),
         upsert: z.boolean().optional(),
-        fileSize: z.number().int().max(10 * 1024 * 1024).optional(),
+        fileSize: z
+          .number()
+          .int()
+          .max(10 * 1024 * 1024)
+          .optional(),
         contentType: z
           .string()
           .regex(

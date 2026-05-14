@@ -11,10 +11,7 @@ import {
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import { isValidHttpUrl } from "../../utils/url-validation";
-import {
-  captureTripRankingSnapshot,
-  createRankChangeActivities,
-} from "../../utils/activityFeed";
+import { captureTripRankingSnapshot, createRankChangeActivities } from "../../utils/activityFeed";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../utils/tripGuards";
 import { eq, and, inArray, count } from "drizzle-orm";
 import { groups, groupJoinRequests, tripParticipants, coinTransactions } from "@mirai-app/db";

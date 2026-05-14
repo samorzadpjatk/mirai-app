@@ -36,7 +36,7 @@ vi.stubGlobal(
     const instance = { close: vi.fn().mockResolvedValue(undefined) };
     mockWebSocketInstances.push(instance);
     return instance;
-  })
+  }),
 );
 
 // Import mocked modules for assertions
@@ -255,7 +255,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
     const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
@@ -281,7 +284,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const fetchError = new Error("Fetch error");
     fetchError.name = "FetchError";
@@ -307,7 +313,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const { ORPCError } = await import("@orpc/client");
     const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
@@ -325,7 +334,10 @@ describe("Retry Interceptor", () => {
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: { next: typeof vi.fn; path: string }) => Promise<unknown>;
+    const interceptor = callArgs?.interceptors[0] as (ctx: {
+      next: typeof vi.fn;
+      path: string;
+    }) => Promise<unknown>;
 
     const clientError = new Error("Client error");
 
