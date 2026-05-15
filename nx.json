@@ -48,53 +48,81 @@
       "options": {
         "targetName": "knip"
       }
-    },
+    }
   ],
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build", "db:generate"],
-      "outputs": ["{projectRoot}/dist/**", "{projectRoot}/.astro/**"],
+      "dependsOn": [
+        "^build",
+        "db:generate"
+      ],
+      "outputs": [
+        "{projectRoot}/dist/**",
+        "{projectRoot}/.astro/**"
+      ],
       "cache": true
     },
     "clean": {
       "cache": true
     },
     "container": {
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "cache": true
     },
     "db:generate": {
-      "outputs": ["{projectRoot}/drizzle/**"],
+      "outputs": [
+        "{projectRoot}/drizzle/**"
+      ],
       "cache": true
     },
     "dev": {
-      "dependsOn": ["db:generate"],
+      "dependsOn": [
+        "db:generate"
+      ],
       "cache": false
     },
     "knip": {
       "cache": true
     },
     "lint": {
-      "dependsOn": ["^lint"],
+      "dependsOn": [
+        "^lint"
+      ],
       "cache": true
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/coverage/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage/**"
+      ],
       "cache": true
     },
     "test:ci": {
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/coverage/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage/**"
+      ],
       "cache": true
     },
     "test:coverage": {
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/coverage/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage/**"
+      ],
       "cache": true
     },
     "test:watch": {
@@ -108,8 +136,14 @@
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": ["{workspaceRoot}/package.json", "{workspaceRoot}/nx.json"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "sharedGlobals": [
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/nx.json"
+    ],
     "production": [
       "default",
       "!{projectRoot}/**/*.test.ts",
@@ -130,5 +164,6 @@
       "unitTestRunner": "jest"
     }
   },
-  "nxCloudAccessToken": ""
+  "nxCloudAccessToken": "",
+  "analytics": false
 }
