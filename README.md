@@ -62,7 +62,7 @@ cd apps/native && bun run dev
 
 Make sure you have installed:
 
-- **Node.js** (version 18 or higher)
+- **Node.js** (version 24)
 - **Bun** (https://bun.sh)
 - **Docker** (for development environment, including Supabase)
 
@@ -72,7 +72,7 @@ Make sure you have installed:
 
 ```bash
 git clone <repository-url>
-cd integral-app
+cd mirai-app
 ```
 
 ### 2. Install dependencies
