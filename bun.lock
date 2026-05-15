@@ -33,6 +33,7 @@
       "name": "@mirai-app/backend-server",
       "version": "1.0.0",
       "dependencies": {
+        "@mirai-app/db": "workspace:*",
         "@mirai-app/orpc": "workspace:*",
         "@orpc/server": "^1.14.2",
         "hono": "^4.12.18",

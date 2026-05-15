@@ -37,7 +37,6 @@ services:
     depends_on:
       - kong
       - db
-      - db-migrations
     deploy:
       restart_policy:
         condition: on-failure
@@ -64,21 +63,6 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-      replicas: 1
-
-  db-migrations:
-    image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
-    environment:
-      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-
-    depends_on:
-      - db
-    command: ["bun", "run", "db:migrate"]
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-        max_attempts: 5
       replicas: 1
 
   email-templates:

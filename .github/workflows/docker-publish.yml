@@ -66,5 +66,5 @@ jobs:
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bunx nx run-many -t container \
-            --projects=apps/backend-server,apps/notification-sender,packages/db \
+            --projects=apps/backend-server,apps/notification-sender \
             --configuration=ci

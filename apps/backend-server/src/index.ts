@@ -1,6 +1,19 @@
+import { runMigrations } from "@mirai-app/db";
 import { serverConfig } from "./config";
 import { createServer } from "./server";
 
-const server = createServer(serverConfig);
+async function main() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("Missing DATABASE_URL environment variable");
+  }
 
-void server.start();
+  const migrationsFolder = process.env.MIGRATIONS_FOLDER;
+
+  await runMigrations(databaseUrl, migrationsFolder);
+
+  const server = createServer(serverConfig);
+  server.start();
+}
+
+void main();

@@ -2,7 +2,11 @@
 
 ## Overview
 
-Database migrations are managed through Drizzle Kit. All migration commands are run from the `apps/seed` directory or `packages/db`.
+Database migrations are managed through Drizzle Kit. All migration commands are run from the `packages/db` directory.
+
+> **2026-05-15**: The separate `db-migrations` Docker service has been removed. Migrations are now
+> applied automatically by the backend server on startup via `runMigrations()` from
+> `packages/db/src/migrate.ts`. See [Production Workflow](#production-workflow) below.
 
 ## Migration Workflow
 
@@ -20,15 +24,27 @@ bun run db:push
 
 ### Production Workflow
 
-```bash
-cd packages/db
+In production, migrations run automatically as part of the backend server startup:
 
-# Apply pending migrations
-bun run db:migrate
+1. The `backend-server` container starts
+2. Before serving any requests, it calls `runMigrations()` from `@mirai-app/db`
+3. Migrations are applied using Drizzle's programmatic migrator (`drizzle-orm/postgres-js/migrator`)
+4. Only after migrations complete does the server start listening
 
-# Or push changes (not recommended for production)
-bun run db:push
+This is handled by `apps/backend-server/src/index.ts`:
+
+```typescript
+import { runMigrations } from "@mirai-app/db";
+
+async function main() {
+  await runMigrations(databaseUrl, migrationsFolder);
+  const server = createServer(serverConfig);
+  server.start();
+}
 ```
+
+The migration SQL files are bundled into the Docker image at `/drizzle` (configurable
+via the `MIGRATIONS_FOLDER` environment variable).
 
 ## Migration Commands
 

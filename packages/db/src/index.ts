@@ -2,6 +2,7 @@ export { createDb } from "./client";
 export * from "./client";
 export * from "./schema";
 export type { TransactionDB } from "./client";
+export { runMigrations } from "./migrate";
 
 import type { users } from "./schema/users";
 import type { roleEnum } from "./schema/enums";

@@ -11,6 +11,7 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"],
   "references": [
+    { "path": "../../packages/db" },
     { "path": "../../packages/orpc" }
   ]
 }

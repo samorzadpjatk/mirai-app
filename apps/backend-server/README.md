@@ -26,7 +26,18 @@ PORT=2022
 # Supabase
 SUPABASE_URL="http://localhost:8000"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+
+# Database
+DATABASE_URL="postgresql://user:password@host:5432/db"
+MIGRATIONS_FOLDER="/drizzle"  # Optional, defaults to /drizzle
 ```
+
+## Startup
+
+On each startup, the server automatically runs pending Drizzle database migrations
+before it begins serving HTTP/WebSocket requests. Migrations are idempotent —
+only new journal entries are applied. This replaces the previously separate
+`db-migrations` Docker service.
 
 ## Authorization
 

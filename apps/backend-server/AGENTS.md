@@ -53,6 +53,14 @@ bun run test:watch
 bun run test:ui
 ```
 
+## Startup Behavior
+
+On startup, the server automatically:
+1. Runs pending Drizzle database migrations (idempotent)
+2. Starts the HTTP/WebSocket server
+
+This replaces the previously separate `db-migrations` Docker service. Migration SQL files are bundled into the Docker image at `/drizzle` (configurable via `MIGRATIONS_FOLDER` env var).
+
 ## Server Endpoints
 
 | Endpoint | Description |
@@ -69,12 +77,14 @@ bun run test:ui
 | `DATABASE_URL` | PostgreSQL URL | - |
 | `SUPABASE_URL` | Supabase URL | - |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key | - |
+| `MIGRATIONS_FOLDER` | Path to Drizzle migration SQL files | `/drizzle` |
 
 ## Dependencies
 
 ### Internal
 
 - `@mirai-app/orpc` - oRPC router
+- `@mirai-app/db` - Drizzle client, schema, and `runMigrations`
 
 ### External
 

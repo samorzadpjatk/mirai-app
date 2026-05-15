@@ -12,10 +12,10 @@ packages/db/
 │   ├── schema/            # Drizzle schema definitions
 │   ├── utils/
 │   │   └── uuid.ts        # Cross-platform UUID helper
-│   ├── index.ts           # Exported Drizzle client, schema, and types
-│   └── client.ts          # Drizzle client configuration
+│   │   ├── index.ts           # Exported Drizzle client, schema, and types
+│   ├── client.ts          # Drizzle client configuration
+│   └── migrate.ts         # Programmatic migration runner (used on server startup)
 ├── drizzle.config.ts      # Drizzle Kit configuration
-└── Dockerfile.migrations  # Migration container configuration
 ```
 
 ## Available Commands
@@ -60,11 +60,13 @@ cd packages/db && bun run db:studio
 
 #### `db:migrate`
 
-Applies pending migrations to database. **Used in production environment**.
+Applies pending migrations to database using Drizzle Kit CLI.
 
 ```bash
 cd packages/db && bun run db:migrate
 ```
+
+> **Note**: In production, migrations are applied automatically by the backend server on startup via `runMigrations()` from `src/migrate.ts`. The separate `db-migrations` Docker service has been removed — migrations now run inside the `backend-server` container before it starts serving requests.
 
 ## Development Workflow
 
@@ -111,7 +113,10 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 ## Usage in Applications
 
 ```typescript
-import { createDb, users } from "@mirai-app/db";
+import { createDb, runMigrations, users } from "@mirai-app/db";
+
+// Run migrations on startup (idempotent)
+await runMigrations(process.env.DATABASE_URL);
 
 // Create client
 const db = createDb(process.env.DATABASE_URL);

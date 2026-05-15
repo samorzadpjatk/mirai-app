@@ -48,8 +48,6 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
-      db-migrations:
-        condition: service_completed_successfully
       supavisor:
         condition: service_healthy
 
@@ -76,22 +74,6 @@ services:
         condition: service_healthy
       backend-server:
         condition: service_started
-
-  db-migrations:
-    image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-      - "com.centurylinklabs.watchtower.scope=db-migrations"
-      - "com.centurylinklabs.watchtower.lifecycle.pre-update=/bin/sh -c 'echo Starting database migration update'"
-      - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Database migration completed'"
-    environment:
-      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-
-    depends_on:
-      db:
-        condition: service_healthy
-    command: ["bun", "run", "db:migrate"]
-    restart: "no"
 
   email-templates:
     container_name: supabase-email-templates
@@ -575,24 +557,7 @@ services:
   # WATCHTOWER - Auto-update service
   # ===========================================================================
 
-  # Watchtower instance for database migrations - runs first
-  watchtower-db:
-    image: containrrr/watchtower:latest
-    container_name: watchtower-db
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_SCOPE: "db-migrations"
-      WATCHTOWER_SCHEDULE: "0 2 * * *"  # Run daily at 2 AM
-      WATCHTOWER_ROLLING_RESTART: "true"
-      WATCHTOWER_LABEL_ENABLE: "true"
-      WATCHTOWER_CLEANUP: "true"
-    command: --scope db-migrations --label-enable --cleanup --rolling-restart
-    depends_on:
-      - db-migrations
-
-  # Watchtower instance for backend services - runs after db migrations
+  # Watchtower instance for backend services
   watchtower-backend:
     image: containrrr/watchtower:latest
     container_name: watchtower-backend
@@ -601,14 +566,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       WATCHTOWER_SCOPE: "backend-services"
-      WATCHTOWER_SCHEDULE: "0 3 * * *"  # Run daily at 3 AM (after db migrations)
+      WATCHTOWER_SCHEDULE: "0 3 * * *"  # Run daily at 3 AM
       WATCHTOWER_ROLLING_RESTART: "true"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_TIMEOUT: "60s"  # Allow more time for graceful shutdown
     command: --scope backend-services --label-enable --cleanup --rolling-restart --stop-timeout 60s
-    depends_on:
-      - watchtower-db
 
 volumes:
   db-config:

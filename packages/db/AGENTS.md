@@ -10,7 +10,7 @@ Database layer for the MIRAI application. Contains Drizzle schema, database clie
 
 | Export | Path | Description |
 |--------|------|-------------|
-| `main` | `./src/index.ts` | Drizzle client, schema, and inferred model types |
+| `main` | `./src/index.ts` | Drizzle client, schema, `runMigrations`, and inferred model types |
 
 ## Tech Stack
 
@@ -29,8 +29,9 @@ packages/db/
 │   ├── schema/         # Drizzle schema definitions
 │   ├── utils/
 │   │   └── uuid.ts     # Cross-platform UUID helper
-│   ├── index.ts        # Schema and type exports
-│   └── client.ts       # Drizzle client factory
+│   │   ├── index.ts        # Schema and type exports
+│   ├── client.ts       # Drizzle client factory
+│   └── migrate.ts      # Programmatic migration runner (`runMigrations`)
 ├── drizzle.config.ts   # Drizzle Kit configuration
 ├── package.json
 └── AGENTS.md           # This file
@@ -45,10 +46,15 @@ bun run typecheck
 # Lint
 bun run lint
 
-# Migrations (run from apps/seed)
-cd apps/seed
-bun run db:migrate:dev
+# Generate migration SQL from schema changes
+bun run db:generate
+
+# Push schema directly (development only)
+bun run db:push
 ```
+
+> **Production migrations** are handled automatically by the backend server on startup
+> via `runMigrations()`. The separate `db-migrations` Docker service has been removed.
 
 ## Dependencies
 
