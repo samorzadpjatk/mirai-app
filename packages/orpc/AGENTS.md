@@ -86,30 +86,8 @@ bun run test:watch
 
 ## Usage in Apps
 
-### Server (backend-server)
-
-```typescript
-import { appRouter } from '@mirai-app/orpc';
-import { createContext } from '@mirai-app/orpc/server';
-
-// Create oRPC handler
-const handler = new RPCHandler(appRouter, { interceptors: [] });
-```
-
-### Client (native)
-
-```typescript
-import { orpc } from '@mirai-app/orpc/client';
-import { useQuery } from '@tanstack/react-query';
-
-// In React component
-function UserList() {
-  const { data, isLoading } = useQuery(orpc.user.list.queryOptions());
-  
-  if (isLoading) return <Loading />;
-  return <List users={data} />;
-}
-```
+Server: `import { appRouter } from '@mirai-app/orpc'`  
+Client: `import { orpc } from '@mirai-app/orpc/client'`
 
 ## Links
 

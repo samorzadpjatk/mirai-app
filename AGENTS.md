@@ -106,44 +106,7 @@ shared ────┘
 
 ## How AGENTS.md Works
 
-This project uses OpenAI's layered AGENTS.md discovery pattern:
-
-1. **Discovery order**: Root AGENTS.md → apps/packages → nested directories
-2. **Merge order**: Files concatenate from root down, separated by blank lines
-3. **Override mechanism**: Files closer to your working directory override earlier guidance
-4. **Override files**: `AGENTS.override.md` provides temporary team-specific rules
-
-### Example Layering
-
-```
-Root AGENTS.md                    # Base monorepo conventions
-├── apps/native/AGENTS.md         # Native app rules
-│   └── screens/AGENTS.override.md # Temporary overrides
-├── packages/db/AGENTS.md         # Database rules
-└── ...
-```
-
-### Override Files
-
-Create `AGENTS.override.md` in your working directory for temporary rules. Remove it when done.
-
-**Important**: Keep all AGENTS.md files concise. Combined total must stay under 32 KiB.
-
-## Instruction Size Guidelines
-
-To stay within OpenAI's default 32 KiB combined instruction limit:
-
-| File Type | Target Size |
-|-----------|-------------|
-| Root AGENTS.md | 5-8 KiB |
-| Per-app/package AGENTS.md | 2-4 KiB |
-| AGENTS.override.md | < 1 KiB (temporary only) |
-
-**Tips for keeping files small:**
-- Focus on high-level guidance and conventions
-- Put detailed technical content in `docs/`
-- Use relative links from AGENTS.md to docs/
-- Keep AGENTS.md scannable in 2-3 minutes
+This project uses OpenAI's layered AGENTS.md discovery pattern. Files concatenate from root down; later files override earlier guidance. Temporary overrides use `AGENTS.override.md`. See [docs/conventions/agents-md.md](./docs/conventions/agents-md.md) for size guidelines and templates.
 
 ## App & Package AGENTS.md Files
 
@@ -172,27 +135,11 @@ Detailed documentation lives in `docs/` folder:
 
 ## AI-Driven Change Workflow
 
-This project combines OpenSpec (change management) with CEK (Context Engineering Kit).
+This project uses CEK SDD. All implementation uses test-first methodology.
 
-```
-Discovery (OpenSpec) → Specification (OpenSpec) → Planning (CEK SDD) →
-Implementation with TDD (CEK SDD) → Verification (Both) → Reflection & Docs (CEK) → Archive (OpenSpec)
-```
+**Quick Reference:** `/sdd:brainstorm`, `/sdd:add-task`, `/sdd:plan`, `/sdd:implement`, `/tdd:test-driven-development`, `/review-local-changes`
 
-**TDD Integration**: All implementation uses test-first methodology. TDD is inherited in `/sdd:implement-task` and explicit in `/tdd:test-driven-development`.
-
-**Quick Reference:**
-- `/opsx:explore "idea"` - Exploring ideas
-- `/opsx:propose` → `/sdd:plan-task` → `/sdd:implement-task` - Complex feature (TDD inherited)
-- `/tdd:test-driven-development "feature"` - Direct TDD implementation
-- `/sadd:do-and-judge "Fix validation"` - Quick bug fix
-- `/review-local-changes` - Pre-commit review
-
-**See full documentation:**
-- [AI Change Workflow](./docs/workflows/ai-change-workflow.md) - Complete workflow phases
-- [Best Practices & Patterns](./docs/conventions/best-practices.md) - Task sizing, delta specs
-- [TDD Best Practices](./docs/conventions/tdd.md) - Test-driven development
-- [Documentation Best Practices](./docs/conventions/documentation.md) - Reflection & memorization
+**Full docs:** [AI Change Workflow](./docs/workflows/ai-change-workflow.md) · [Best Practices](./docs/conventions/best-practices.md) · [TDD](./docs/conventions/tdd.md) · [Docs](./docs/conventions/documentation.md)
 
 ## AGENTS.md Template
 
@@ -200,42 +147,7 @@ Use the template when creating new AGENTS.md files:
 
 **[→ View Template](./docs/templates/AGENTS.md.template)**
 
-## Instruction Chain Verification
 
-### Discovery Order
-
-Files are discovered in this order (root → apps/packages → nested):
-
-1. `/AGENTS.md` (~7 KiB) - Base monorepo conventions
-2. `/apps/[app]/AGENTS.md` (~2.5 KiB avg) - App-specific rules
-3. `/packages/[package]/AGENTS.md` (~2.5 KiB avg) - Package-specific rules
-4. `/*/AGENTS.override.md` (< 1 KiB) - Temporary overrides
-
-### Current Size Summary
-
-| Category | Files | Total Size |
-|----------|-------|------------|
-| Root | 1 | ~7 KiB |
-| Apps | 4 | ~10 KiB |
-| Packages | 5 | ~12.5 KiB |
-| **Combined** | **10** | **~29.5 KiB** |
-
-**Status**: ✓ Under 32 KiB limit
-
-### Verification
-
-To verify concatenation:
-
-```bash
-# Test root + one app
-cat AGENTS.md apps/native/AGENTS.md
-
-# Test root + one package
-cat AGENTS.md packages/trpc/AGENTS.md
-
-# Test full chain (simulated)
-cat AGENTS.md apps/*/AGENTS.md packages/*/AGENTS.md
-```
 
 ## License
 

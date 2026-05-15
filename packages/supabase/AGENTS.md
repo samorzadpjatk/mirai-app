@@ -61,37 +61,8 @@ bun run test
 
 ## Usage in Apps
 
-### Server-Side
-
-```typescript
-import { createClient } from '@mirai-app/supabase';
-
-const supabase = createClient();
-const { data, error } = await supabase
-  .from('users')
-  .select('*');
-```
-
-### Client-Side (React)
-
-```typescript
-import { SupabaseProvider, useSupabase } from '@mirai-app/supabase/react';
-
-// Wrap app with provider
-function App() {
-  return (
-    <SupabaseProvider>
-      <MyApp />
-    </SupabaseProvider>
-  );
-}
-
-// Use in components
-function MyComponent() {
-  const supabase = useSupabase();
-  // ...
-}
-```
+Server: `import { createClient } from '@mirai-app/supabase'`  
+Client: `import { SupabaseProvider, useSupabase } from '@mirai-app/supabase/react'`
 
 ## Environment Variables
 

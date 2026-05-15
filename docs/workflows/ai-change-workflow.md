@@ -1,12 +1,12 @@
 # AI-Driven Change Workflow (E2E)
 
-This project combines OpenSpec (change management) with CEK (Context Engineering Kit).
+This project uses CEK SDD (Structured Development and Deployment).
 
 ## Workflow Overview
 
 ```
-Discovery (OpenSpec) → Specification (OpenSpec) → Planning (CEK SDD) → 
-Implementation with TDD (CEK SDD) → Verification (Both) → Reflection & Docs (CEK) → Archive (OpenSpec)
+Brainstorm (CEK SDD) → Add Task (CEK SDD) → Planning (CEK SDD) →
+Implementation with TDD (CEK SDD) → Verification (CEK SDD) → Reflection & Docs (CEK SDD) → Archive (manual)
 ```
 
 **TDD Integration**: Implementation always follows test-first methodology: write failing tests (RED), implement to pass (GREEN), then refactor.
@@ -31,13 +31,13 @@ Implementation with TDD (CEK SDD) → Verification (Both) → Reflection & Docs 
 
 ---
 
-## Phase 1: Discovery - `/opsx:explore`
+## Phase 1: Brainstorm - `/sdd:brainstorm`
 
 **Purpose**: Unstructured thinking and investigation
 **When to use**: Unclear requirements, exploring solutions, investigating problems
 
 ```
-/opsx:explore "Add real-time event notifications"
+/sdd:brainstorm "Add real-time event notifications"
 ```
 
 **What happens**:
@@ -56,22 +56,15 @@ Implementation with TDD (CEK SDD) → Verification (Both) → Reflection & Docs 
 
 ---
 
-## Phase 2: Specification - `/opsx:propose` or `/opsx:ff-change`
+## Phase 2: Add Task - `/sdd:add-task`
 
-**Purpose**: Create structured change artifacts
+**Purpose**: Create draft task from user intent
 **When to use**: Requirements are clear, ready to formalize the change
 
-**Option A - Full proposal** (complex changes):
 ```
-/opsx:propose "add-realtime-notifications"
+/sdd:add-task "Implement real-time event notifications"
 ```
-Creates: proposal.md → specs/ → design.md → tasks.md
-
-**Option B - Fast-forward** (straightforward changes):
-```
-/opsx:ff-change "add-realtime-notifications"
-```
-Creates all artifacts in one step
+Creates: `.specs/tasks/draft/<task-name>.<type>.md`
 
 **Guardrails**:
 - **ALWAYS read dependency artifacts** before creating new ones
@@ -86,10 +79,10 @@ Creates all artifacts in one step
 ## Phase 3: Planning - `/sdd:plan-task`
 
 **Purpose**: Refine task specification with multi-agent analysis
-**When to use**: Complex implementation tasks from OpenSpec tasks.md
+**When to use**: Complex implementation tasks from CEK SDD task files
 
 ```
-# Extract task from openspec/changes/<name>/tasks.md
+# Extract task from .specs/tasks/draft/ or .specs/tasks/todo/
 /sdd:add-task "Implement WebSocket event broadcaster"
 /sdd:plan-task .specs/tasks/draft/<task-file>.md
 ```
@@ -275,9 +268,9 @@ Multi-agent review covering:
 - Contracts Reviewer (API changes, type safety)
 - Historical Context Reviewer (consistency with existing code)
 
-**Spec alignment check** (OpenSpec):
+**Spec alignment check** (CEK SDD):
 ```
-/opsx:verify "add-realtime-notifications"
+/sdd:judge
 ```
 
 Verifies:
@@ -347,27 +340,22 @@ Verifies:
 
 ---
 
-## Phase 7: Archive - `/opsx:archive`
+## Phase 7: Archive - Manual
 
-**Purpose**: Complete change lifecycle, sync specs to main
+**Purpose**: Complete change lifecycle, preserve knowledge
 **When to use**: Implementation verified and complete
 
-```
-/opsx:archive "add-realtime-notifications"
-```
-
 **What happens**:
-- Syncs delta specs to main specs (`openspec/specs/<capability>/`)
-- Moves change to archive with date prefix
-- Preserves full change history
+- Move completed task from `.specs/tasks/in-progress/` to `.specs/tasks/done/`
+- Update capability specs in `.specs/specs/<capability>/` if needed
+- Preserve full change history in `.specs/analysis/archive/`
 
 **Guardrails**:
-- **Check task completion** before archive (warns on incomplete tasks)
-- **Verify artifact completion** (warns on incomplete artifacts)
-- **Sync specs**: Recommend syncing delta specs to main specs
-- **Confirm**: Always prompt before archiving if warnings exist
+- **Check task completion** before archive (warns on incomplete items)
+- **Verify all artifacts** are complete (tests, docs, reviews)
+- **Confirm**: Always review before finalizing
 
-**Exit criteria**: Change archived, specs synced, knowledge preserved
+**Exit criteria**: Task in `done/`, knowledge preserved, docs updated
 
 ---
 
@@ -375,8 +363,8 @@ Verifies:
 
 | Scenario | Recommended Command | Why |
 |----------|---------------------|-----|
-| **Exploring ideas** | `/opsx:explore "idea"` | Unstructured thinking |
-| **Complex feature** | `/opsx:propose` → `/sdd:plan-task` → `/sdd:implement-task` | Full spec + **inherited TDD** |
+| **Exploring ideas** | `/sdd:brainstorm "idea"` | Unstructured thinking |
+| **Complex feature** | `/sdd:add-task` → `/sdd:plan-task` → `/sdd:implement-task` | Full spec + **inherited TDD** |
 | **TDD implementation** | `/tdd:test-driven-development` | Direct TDD without planning |
 | **Quick bug fix** | `/sadd:do-and-judge "Fix validation"` | Fast with quality gates |
 | **Refactor across packages** | `/sadd:do-in-parallel --files "pkg1,pkg2,pkg3" "task"` | Parallel execution |
@@ -408,18 +396,15 @@ Verifies:
 └── <skill-name>/
     └── SKILL.md
 
-openspec/                      # OpenSpec change management
-├── changes/
-│   ├── <change-name>/
-│   │   ├── .openspec.yaml
-│   │   ├── proposal.md
-│   │   ├── specs/<capability>/
-│   │   │   └── spec.md
-│   │   ├── design.md
-│   │   └── tasks.md
-│   └── archive/
-│       └── YYYY-MM-DD-<change-name>/
-└── specs/                     # Main specs (synced from changes)
+.specs/                        # CEK SDD change management
+├── tasks/
+│   ├── draft/                 # New tasks awaiting planning
+│   ├── todo/                  # Planned tasks ready to implement
+│   ├── in-progress/          # Currently being worked on
+│   └── done/                 # Completed tasks
+├── analysis/                 # Codebase impact analysis
+│   └── archive/             # Historical change records
+└── specs/                    # Capability specs
     └── <capability>/
         └── spec.md
 ```
