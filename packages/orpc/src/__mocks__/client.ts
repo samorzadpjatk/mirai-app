@@ -10,13 +10,14 @@ declare const jest: {
   fn: <T extends (...args: unknown[]) => unknown>(implementation?: T) => MockFunction<T>;
 };
 
-type MockFunction<T extends (...args: unknown[]) => unknown = (...args: unknown[]) => unknown> = T & {
-  mockReturnValue: (value: ReturnType<T>) => MockFunction<T>;
-  mockResolvedValue: (value: Awaited<ReturnType<T>>) => MockFunction<T>;
-  mockImplementation: (implementation: T) => MockFunction<T>;
-  mockClear: () => void;
-  mockReset: () => void;
-};
+type MockFunction<T extends (...args: unknown[]) => unknown = (...args: unknown[]) => unknown> =
+  T & {
+    mockReturnValue: (value: ReturnType<T>) => MockFunction<T>;
+    mockResolvedValue: (value: Awaited<ReturnType<T>>) => MockFunction<T>;
+    mockImplementation: (implementation: T) => MockFunction<T>;
+    mockClear: () => void;
+    mockReset: () => void;
+  };
 
 /**
  * Default mock router proxy that returns jest.fn() for any property access.
@@ -44,7 +45,7 @@ const createMockRouterProxy = () => {
         }
         return jest.fn(() => ({}));
       },
-    }
+    },
   );
 };
 

@@ -5,9 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Creates a mock Supabase client for testing.
  * Provides chainable query builder methods and mock auth methods.
  */
-export function createMockSupabaseClient(
-  overrides: Record<string, unknown> = {}
-): SupabaseClient {
+export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): SupabaseClient {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),

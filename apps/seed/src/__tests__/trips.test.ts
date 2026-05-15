@@ -23,7 +23,8 @@ const mockUpload = vi.fn();
 
 vi.mock("../utils/fs", () => ({
   readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,
-  readFile: (path: string) => mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
+  readFile: (path: string) =>
+    mockReadFile(path) as { stream: () => unknown; stat: () => Promise<{ size: number }> },
 }));
 
 vi.mock("../utils/path", () => ({
@@ -35,24 +36,36 @@ vi.mock("../users", () => ({
 }));
 
 vi.mock("../auth", () => ({
-  createAuthUserByEmail: (...args: unknown[]) => mockCreateAuthUserByEmail(...args) as Promise<SupabaseUser | null>,
-  ensureGhostAuthUser: (authUsers: AuthUserByEmail) => mockEnsureGhostAuthUser(authUsers) as Promise<SupabaseUser | null>,
+  createAuthUserByEmail: (...args: unknown[]) =>
+    mockCreateAuthUserByEmail(...args) as Promise<SupabaseUser | null>,
+  ensureGhostAuthUser: (authUsers: AuthUserByEmail) =>
+    mockEnsureGhostAuthUser(authUsers) as Promise<SupabaseUser | null>,
 }));
 
 vi.mock("@mirai-app/db", () => ({
   trips: { __table: "trips" },
   users: { __table: "users" },
-  tripParticipants: { __table: "tripParticipants", userId: { name: "userId" }, tripId: { name: "tripId" } },
+  tripParticipants: {
+    __table: "tripParticipants",
+    userId: { name: "userId" },
+    tripId: { name: "tripId" },
+  },
 }));
 
 vi.mock("../config/db", () => ({
   db: {
     query: {
       trips: {
-        findFirst: (...args: unknown[]) => mockTripFindFirst(...args) as Promise<{ id: string; name: string } | null>,
+        findFirst: (...args: unknown[]) =>
+          mockTripFindFirst(...args) as Promise<{ id: string; name: string } | null>,
       },
       users: {
-        findFirst: (...args: unknown[]) => mockUserFindFirst(...args) as Promise<{ id: string; authUserId: string; role: string } | null>,
+        findFirst: (...args: unknown[]) =>
+          mockUserFindFirst(...args) as Promise<{
+            id: string;
+            authUserId: string;
+            role: string;
+          } | null>,
       },
     },
     update: (table: { __table?: string }) => ({
@@ -95,7 +108,8 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     storage: {
       from: (bucket: string) => ({
-        upload: (path: string, file: unknown, options: object) => mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        upload: (path: string, file: unknown, options: object) =>
+          mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
       }),
     },
   },
@@ -216,7 +230,7 @@ describe("trips", () => {
         {
           upsert: true,
           contentType: "image/jpg",
-        }
+        },
       );
 
       consoleSpy.mockRestore();
@@ -279,9 +293,7 @@ describe("trips", () => {
 
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Background upload failed")
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Background upload failed"));
 
       warnSpy.mockRestore();
     });
@@ -312,7 +324,7 @@ describe("trips", () => {
 
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("Failed to read background image"),
-        expect.any(Error)
+        expect.any(Error),
       );
 
       warnSpy.mockRestore();
@@ -503,7 +515,7 @@ describe("trips", () => {
         "valid@test.com",
         "Valid",
         "Email",
-        "user"
+        "user",
       );
     });
 
@@ -516,9 +528,7 @@ describe("trips", () => {
         users: "users/list.csv",
       };
 
-      const users = [
-        { email: "fail@test.com", firstName: "Fail", lastName: "User", role: "user" },
-      ];
+      const users = [{ email: "fail@test.com", firstName: "Fail", lastName: "User", role: "user" }];
 
       mockReadTextFile.mockResolvedValue("csv content");
       mockParseUsersCsv.mockReturnValue(users);
@@ -663,10 +673,13 @@ describe("trips", () => {
       mockTripFindFirst.mockResolvedValue(null);
       mockTripCreate.mockResolvedValue({ id: "trip-1", name: "Trip With Roles" });
       mockCreateAuthUserByEmail.mockImplementation((email: string) =>
-        Promise.resolve({ id: `auth-${email}`, email } as SupabaseUser)
+        Promise.resolve({ id: `auth-${email}`, email } as SupabaseUser),
       );
       mockUserFindFirst.mockResolvedValue(null);
-      mockUserCreate.mockImplementation((data: { authUserId: string; firstName: string; lastName: string; role: string }) => Promise.resolve({ id: "db-new", ...data }));
+      mockUserCreate.mockImplementation(
+        (data: { authUserId: string; firstName: string; lastName: string; role: string }) =>
+          Promise.resolve({ id: "db-new", ...data }),
+      );
       mockEnsureGhostAuthUser.mockResolvedValue(null);
 
       const authUsers: AuthUserByEmail = new Map();

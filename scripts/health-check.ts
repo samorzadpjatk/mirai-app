@@ -32,7 +32,7 @@ function check(name: string, fn: () => boolean) {
 
 console.log(`${pc.bold("MIRAI Monorepo Health Check")}\n`);
 
- check("Root node_modules installed", () => existsSync(resolve("node_modules")));
+check("Root node_modules installed", () => existsSync(resolve("node_modules")));
 
 const workspaces = [
   ...readdirSync("apps").map((d) => `apps/${d}`),
@@ -42,10 +42,10 @@ for (const ws of workspaces) {
   check(`${ws} node_modules`, () => existsSync(resolve(ws, "node_modules")));
 }
 
- check("Lockfile (bun.lock) exists", () => existsSync(resolve("bun.lock")));
+check("Lockfile (bun.lock) exists", () => existsSync(resolve("bun.lock")));
 
- check("environment/.env exists", () => existsSync(resolve("environment/.env")));
- check("environment/.env.dev exists", () => existsSync(resolve("environment/.env.dev")));
+check("environment/.env exists", () => existsSync(resolve("environment/.env")));
+check("environment/.env.dev exists", () => existsSync(resolve("environment/.env.dev")));
 
 for (const ws of workspaces) {
   const pkgPath = resolve(ws, "package.json");
@@ -62,9 +62,9 @@ for (const ws of workspaces) {
   }
 }
 
- check("turbo.json exists", () => existsSync(resolve("turbo.json")));
+check("nx.json exists", () => existsSync(resolve("nx.json")));
 
- check("Docker available", () => {
+check("Docker available", () => {
   try {
     Bun.spawnSync({ cmd: ["docker", "--version"], stdout: "ignore" });
     return true;
@@ -73,8 +73,10 @@ for (const ws of workspaces) {
   }
 });
 
- check("Husky pre-commit hook exists", () => existsSync(resolve(".husky/pre-commit")));
- check("Husky commit-msg hook exists", () => existsSync(resolve(".husky/commit-msg")));
+check("Husky pre-commit hook exists", () => existsSync(resolve(".husky/pre-commit")));
+check("Husky commit-msg hook exists", () => existsSync(resolve(".husky/commit-msg")));
 
-console.log(`\n${issues === 0 ? pc.green("All checks passed!") : pc.yellow(`${issues} issue(s) found`) }\n`);
+console.log(
+  `\n${issues === 0 ? pc.green("All checks passed!") : pc.yellow(`${issues} issue(s) found`)}\n`,
+);
 process.exit(issues > 0 ? 1 : 0);

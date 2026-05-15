@@ -87,7 +87,10 @@ vi.mock("@mirai-app/db", () => {
       },
     },
     insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue([mockUser]) })),
-    update: vi.fn(() => ({ set: vi.fn().mockResolvedValue([mockUser]), where: vi.fn().mockResolvedValue([mockUser]) })),
+    update: vi.fn(() => ({
+      set: vi.fn().mockResolvedValue([mockUser]),
+      where: vi.fn().mockResolvedValue([mockUser]),
+    })),
     delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([mockUser]) })),
   };
 
@@ -115,7 +118,7 @@ vi.mock("@mirai-app/shared", () => {
       refreshSession: vi.fn(),
     }),
     setState: vi.fn(),
-    subscribe: vi.fn().mockReturnValue(() => {}),
+    subscribe: vi.fn().mockReturnValue(() => undefined),
   };
 
   return {
@@ -151,7 +154,7 @@ vi.mock("zustand", () => ({
     const store = {
       getState: vi.fn(),
       setState: vi.fn(),
-      subscribe: vi.fn().mockReturnValue(() => {}),
+      subscribe: vi.fn().mockReturnValue(() => undefined),
       destroy: vi.fn(),
     };
     store.getState.mockReturnValue(initializer(store.setState, store.getState, store));

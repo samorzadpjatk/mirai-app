@@ -5,7 +5,7 @@ This specification defines the documentation requirements for oRPC in the monore
 ## Requirements
 
 ### Requirement: oRPC router structure documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document the router structure, including how routers are composed and exported.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document the router structure, including how routers are composed and exported.
 
 #### Scenario: Understanding oRPC router composition
 - **WHEN** an AI assistant needs to understand the oRPC router structure
@@ -14,7 +14,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document the rou
 - **AND** they SHALL find where new routers should be added
 
 ### Requirement: oRPC procedure documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to create procedures (queries and mutations), including input validation and output types.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document how to create procedures (queries and mutations), including input validation and output types.
 
 #### Scenario: Creating new oRPC procedures
 - **WHEN** an AI assistant needs to create a new oRPC procedure
@@ -23,7 +23,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to 
 - **AND** they SHALL understand how to define output types
 
 ### Requirement: oRPC client usage documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to initialize and use the oRPC client in consuming applications.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document how to initialize and use the oRPC client in consuming applications.
 
 #### Scenario: Using oRPC client in apps
 - **WHEN** an AI assistant needs to use the oRPC client
@@ -32,7 +32,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to 
 - **AND** they SHALL understand type inference and safety
 
 ### Requirement: oRPC middleware documentation
-The docs/packages/trpc/ files SHALL document middleware patterns, including authentication, authorization, and logging middleware.
+The docs/packages/orpc/ files SHALL document middleware patterns, including authentication, authorization, and logging middleware.
 
 #### Scenario: Understanding oRPC middleware
 - **WHEN** an AI assistant needs to understand or create oRPC middleware
@@ -41,7 +41,7 @@ The docs/packages/trpc/ files SHALL document middleware patterns, including auth
 - **AND** they SHALL understand how middleware is applied to procedures
 
 ### Requirement: oRPC error handling documentation
-The docs/packages/trpc/ files SHALL document error handling patterns, including custom error classes and error formatting.
+The docs/packages/orpc/ files SHALL document error handling patterns, including custom error classes and error formatting.
 
 #### Scenario: Handling oRPC errors
 - **WHEN** an AI assistant needs to handle oRPC errors

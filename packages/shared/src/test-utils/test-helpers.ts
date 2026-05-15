@@ -21,9 +21,9 @@ export function resetMocks(): void {
  * Useful for suppressing expected warnings/errors in tests.
  */
 export function mockConsole(
-  methods: ("log" | "error" | "warn" | "info" | "debug")[] = ["error", "warn"]
+  methods: ("log" | "error" | "warn" | "info" | "debug")[] = ["error", "warn"],
 ): { restore: () => void } {
-  const originals: Partial<Record<typeof methods[number], typeof console.log>> = {};
+  const originals: Partial<Record<(typeof methods)[number], typeof console.log>> = {};
 
   for (const method of methods) {
     originals[method] = console[method];
@@ -63,7 +63,7 @@ export async function flushPromises(): Promise<void> {
 export async function waitFor(
   condition: () => boolean,
   timeout = 1000,
-  interval = 50
+  interval = 50,
 ): Promise<void> {
   const startTime = Date.now();
 
@@ -80,23 +80,15 @@ export async function waitFor(
 /**
  * Creates a mock function that resolves with a delayed value.
  */
-export function createDelayedMock<T>(
-  value: T,
-  delayMs = 100
-): () => Promise<T> {
+export function createDelayedMock<T>(value: T, delayMs = 100): () => Promise<T> {
   return vi.fn().mockImplementation(() => delay(delayMs).then(() => value));
 }
 
 /**
  * Creates a mock function that rejects with a delayed error.
  */
-export function createDelayedErrorMock(
-  error: Error,
-  delayMs = 100
-): () => Promise<never> {
-  return vi.fn().mockImplementation(() =>
-    delay(delayMs).then(() => Promise.reject(error))
-  );
+export function createDelayedErrorMock(error: Error, delayMs = 100): () => Promise<never> {
+  return vi.fn().mockImplementation(() => delay(delayMs).then(() => Promise.reject(error)));
 }
 
 /**

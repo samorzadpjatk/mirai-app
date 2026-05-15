@@ -164,7 +164,7 @@ jest.mock("~/components/map/LocationPicker", () => {
 describe("AdminRewardsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     uploadedArgs.length = 0;
     mockMutateAsync.mockResolvedValue({});
     mockUpload.mockImplementation((args: UploadArgs) => {

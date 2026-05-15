@@ -6,7 +6,7 @@ export type {
   User as SupabaseUser,
   RealtimePostgresChangesPayload,
   RealtimeChannel,
-  RealtimePostgresInsertPayload
+  RealtimePostgresInsertPayload,
 } from "@supabase/supabase-js";
 
 export { REALTIME_CHANNEL_STATES };

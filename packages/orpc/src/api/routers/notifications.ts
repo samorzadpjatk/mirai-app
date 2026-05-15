@@ -11,7 +11,12 @@ import { sendNotification, sendRankingUpdate } from "../../utils/notifications";
 import type { SendNotificationResult } from "../../utils/notifications";
 import { sendMobileNotifications } from "../../services/notificationService";
 import { eq, and, count } from "drizzle-orm";
-import { notifications, notificationPushes, pushSubscriptions, tripParticipants } from "@mirai-app/db";
+import {
+  notifications,
+  notificationPushes,
+  pushSubscriptions,
+  tripParticipants,
+} from "@mirai-app/db";
 
 export const notificationRouter = createORPCRouter({
   subscribe: protectedProcedure
@@ -22,18 +27,25 @@ export const notificationRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const [subscription] = await context.db.insert(pushSubscriptions).values({
-          userId: context.dbUser.id,
-          token: input.token,
-        }).onConflictDoUpdate({
-          target: [pushSubscriptions.userId, pushSubscriptions.token],
-          set: { updatedAt: new Date() },
-        }).returning();
+        const [subscription] = await context.db
+          .insert(pushSubscriptions)
+          .values({
+            userId: context.dbUser.id,
+            token: input.token,
+          })
+          .onConflictDoUpdate({
+            target: [pushSubscriptions.userId, pushSubscriptions.token],
+            set: { updatedAt: new Date() },
+          })
+          .returning();
         return { success: true, id: subscription!.id };
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error saving push subscription:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: `Failed to save push subscription: ${err.message}`, cause: err });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Failed to save push subscription: ${err.message}`,
+          cause: err,
+        });
       }
     }),
 
@@ -45,9 +57,15 @@ export const notificationRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const deleted = await context.db.delete(pushSubscriptions).where(
-          and(eq(pushSubscriptions.userId, context.dbUser.id), eq(pushSubscriptions.token, input.token))
-        ).returning();
+        const deleted = await context.db
+          .delete(pushSubscriptions)
+          .where(
+            and(
+              eq(pushSubscriptions.userId, context.dbUser.id),
+              eq(pushSubscriptions.token, input.token),
+            ),
+          )
+          .returning();
 
         if (deleted.length === 0) {
           throw new ORPCError("NOT_FOUND", { message: "No subscription found with that token" });
@@ -59,19 +77,24 @@ export const notificationRouter = createORPCRouter({
           throw error;
         }
         console.error("Error removing push subscription:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove push subscription" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to remove push subscription",
+        });
       }
     }),
 
   unsubscribeAll: protectedProcedure.handler(async ({ context }) => {
     try {
-      const deleted = await context.db.delete(pushSubscriptions).where(
-        eq(pushSubscriptions.userId, context.dbUser.id)
-      ).returning();
+      const deleted = await context.db
+        .delete(pushSubscriptions)
+        .where(eq(pushSubscriptions.userId, context.dbUser.id))
+        .returning();
       return { success: true, deletedCount: deleted.length };
     } catch (error) {
       console.error("Error removing all push subscriptions:", error);
-      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to remove all push subscriptions" });
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Failed to remove all push subscriptions",
+      });
     }
   }),
 
@@ -98,28 +121,32 @@ export const notificationRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const pushRows = await context.db.select({ notificationId: notificationPushes.notificationId })
+      const pushRows = await context.db
+        .select({ notificationId: notificationPushes.notificationId })
         .from(notificationPushes)
         .where(eq(notificationPushes.targetUserId, context.dbUser.id));
       const notificationIds = pushRows.map((p) => p.notificationId);
       const count = notificationIds.length;
       const totalPages = Math.ceil(count / input.pageSize);
       if (input.page > totalPages && totalPages > 0) {
-        throw new ORPCError("BAD_REQUEST", { message: `Page ${input.page} exceeds total pages ${totalPages}` });
+        throw new ORPCError("BAD_REQUEST", {
+          message: `Page ${input.page} exceeds total pages ${totalPages}`,
+        });
       }
-      const notificationList = notificationIds.length > 0
-        ? await context.db.query.notifications.findMany({
-            where: (n, { inArray }) => inArray(n.id, notificationIds),
-            with: {
-              createdBy: {
-                columns: { id: true, firstName: true, lastName: true },
+      const notificationList =
+        notificationIds.length > 0
+          ? await context.db.query.notifications.findMany({
+              where: (n, { inArray }) => inArray(n.id, notificationIds),
+              with: {
+                createdBy: {
+                  columns: { id: true, firstName: true, lastName: true },
+                },
               },
-            },
-            orderBy: (n, { desc }) => desc(n.createdAt),
-            limit: input.pageSize,
-            offset: (input.page - 1) * input.pageSize,
-          })
-        : [];
+              orderBy: (n, { desc }) => desc(n.createdAt),
+              limit: input.pageSize,
+              offset: (input.page - 1) * input.pageSize,
+            })
+          : [];
       return {
         notifications: notificationList,
         pagination: {
@@ -204,9 +231,15 @@ export const notificationRouter = createORPCRouter({
         if (group?.tripId !== input.tripId || group.isDeleted) {
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
-          .where(and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)));
+          .where(
+            and(
+              eq(tripParticipants.tripId, input.tripId),
+              eq(tripParticipants.groupId, input.groupId),
+            ),
+          );
         const userIds = participants.map((p) => p.userId);
         const result = await sendNotification({
           db: context.db,
@@ -223,7 +256,9 @@ export const notificationRouter = createORPCRouter({
         return result;
       } catch (error) {
         console.error("Error sending notification to group:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send notification to group" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send notification to group",
+        });
       }
     }),
 
@@ -238,7 +273,8 @@ export const notificationRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       try {
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
           .where(eq(tripParticipants.tripId, input.tripId));
         const userIds = participants.map((p) => p.userId);
@@ -257,7 +293,9 @@ export const notificationRouter = createORPCRouter({
         return result;
       } catch (error) {
         console.error("Error sending notification to all:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send notification to all users" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send notification to all users",
+        });
       }
     }),
 
@@ -272,7 +310,9 @@ export const notificationRouter = createORPCRouter({
         });
       } catch (error) {
         console.error("Error sending ranking update notifications:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send ranking update notifications" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send ranking update notifications",
+        });
       }
     }),
 
@@ -294,16 +334,21 @@ export const notificationRouter = createORPCRouter({
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
-          .where(and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)));
-        const userIds = participants.map((p) => p.userId);
-        const notificationData =
-          NotificationService.createCoinsAddedNotification(
-            group.name,
-            input.coins,
-            input.reason,
+          .where(
+            and(
+              eq(tripParticipants.tripId, input.tripId),
+              eq(tripParticipants.groupId, input.groupId),
+            ),
           );
+        const userIds = participants.map((p) => p.userId);
+        const notificationData = NotificationService.createCoinsAddedNotification(
+          group.name,
+          input.coins,
+          input.reason,
+        );
         return await sendNotification({
           db: context.db,
           userId: context.dbUser.id,
@@ -316,11 +361,10 @@ export const notificationRouter = createORPCRouter({
           },
         });
       } catch (error) {
-        console.error(
-          "Error sending coins added notification to group:",
-          error,
-        );
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send coins added notification to group" });
+        console.error("Error sending coins added notification to group:", error);
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send coins added notification to group",
+        });
       }
     }),
 
@@ -342,16 +386,21 @@ export const notificationRouter = createORPCRouter({
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
 
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
-          .where(and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)));
-        const userIds = participants.map((p) => p.userId);
-        const notificationData =
-          NotificationService.createCoinsRemovedNotification(
-            group.name,
-            input.coins,
-            input.reason,
+          .where(
+            and(
+              eq(tripParticipants.tripId, input.tripId),
+              eq(tripParticipants.groupId, input.groupId),
+            ),
           );
+        const userIds = participants.map((p) => p.userId);
+        const notificationData = NotificationService.createCoinsRemovedNotification(
+          group.name,
+          input.coins,
+          input.reason,
+        );
         return await sendNotification({
           db: context.db,
           userId: context.dbUser.id,
@@ -364,11 +413,10 @@ export const notificationRouter = createORPCRouter({
           },
         });
       } catch (error) {
-        console.error(
-          "Error sending coins removed notification to group:",
-          error,
-        );
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send coins removed notification to group" });
+        console.error("Error sending coins removed notification to group:", error);
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send coins removed notification to group",
+        });
       }
     }),
 
@@ -395,48 +443,46 @@ export const notificationRouter = createORPCRouter({
         if (!user) {
           throw new ORPCError("NOT_FOUND", { message: "User not found" });
         }
-        const firstName =
-          typeof user.firstName === "string" ? user.firstName : null;
-        const lastName =
-          typeof user.lastName === "string" ? user.lastName : null;
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const firstName = typeof user.firstName === "string" ? user.firstName : null;
+        const lastName = typeof user.lastName === "string" ? user.lastName : null;
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
-          .where(and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, group.id)));
+          .where(
+            and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, group.id)),
+          );
         const userIds = participants.map((p) => p.userId);
         const formatFullName = (): string => {
-          const fullName = [firstName, lastName]
-            .filter(Boolean)
-            .join(" ")
-            .trim();
+          const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
           if (fullName) return fullName;
           if (firstName) return firstName;
           if (lastName) return lastName;
           return "A new member";
         };
 
-        const notificationData =
-          NotificationService.createNewMemberNotification(
-            group.name,
-            formatFullName(),
-          );
-        const notificationResult: SendNotificationResult =
-          await sendNotification({
-            db: context.db,
-            userId: context.dbUser.id,
-            input: {
-              userIds,
-              title: notificationData.title,
-              body: notificationData.body,
-              url: notificationData.url,
-              tripId: input.tripId,
-            },
-          });
+        const notificationData = NotificationService.createNewMemberNotification(
+          group.name,
+          formatFullName(),
+        );
+        const notificationResult: SendNotificationResult = await sendNotification({
+          db: context.db,
+          userId: context.dbUser.id,
+          input: {
+            userIds,
+            title: notificationData.title,
+            body: notificationData.body,
+            url: notificationData.url,
+            tripId: input.tripId,
+          },
+        });
         return notificationResult;
       } catch (error) {
         const err = error instanceof Error ? error : new Error("Unknown error");
         console.error("Error sending new member notification to group:", err);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send new member notification to group", cause: err,
-         });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send new member notification to group",
+          cause: err,
+        });
       }
     }),
 
@@ -458,9 +504,15 @@ export const notificationRouter = createORPCRouter({
         if (group?.tripId !== input.tripId || group.isDeleted) {
           throw new ORPCError("NOT_FOUND", { message: "Group not found" });
         }
-        const participants = await context.db.select({ userId: tripParticipants.userId })
+        const participants = await context.db
+          .select({ userId: tripParticipants.userId })
           .from(tripParticipants)
-          .where(and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)));
+          .where(
+            and(
+              eq(tripParticipants.tripId, input.tripId),
+              eq(tripParticipants.groupId, input.groupId),
+            ),
+          );
         const userIds = participants.map((p) => p.userId);
         return await sendNotification({
           db: context.db,
@@ -475,7 +527,9 @@ export const notificationRouter = createORPCRouter({
         });
       } catch (error) {
         console.error("Error sending custom notification to group:", error);
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to send custom notification to group" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to send custom notification to group",
+        });
       }
     }),
 
@@ -491,7 +545,8 @@ export const notificationRouter = createORPCRouter({
           where: (n, { eq }) => eq(n.id, input.notificationId),
         });
         const pushes = await context.db.query.notificationPushes.findMany({
-          where: (np, { eq, and }) => and(eq(np.notificationId, input.notificationId), eq(np.status, "failed")),
+          where: (np, { eq, and }) =>
+            and(eq(np.notificationId, input.notificationId), eq(np.status, "failed")),
         });
         if (!notification) {
           throw new ORPCError("NOT_FOUND", { message: "Notification not found" });
@@ -500,13 +555,19 @@ export const notificationRouter = createORPCRouter({
           throw new ORPCError("BAD_REQUEST", { message: "No failed pushes to retry" });
         }
 
-        await context.db.update(notificationPushes).set({
-          status: "pending",
-          sentAt: null,
-          failureReason: null,
-        }).where(
-          and(eq(notificationPushes.notificationId, input.notificationId), eq(notificationPushes.status, "failed"))
-        );
+        await context.db
+          .update(notificationPushes)
+          .set({
+            status: "pending",
+            sentAt: null,
+            failureReason: null,
+          })
+          .where(
+            and(
+              eq(notificationPushes.notificationId, input.notificationId),
+              eq(notificationPushes.status, "failed"),
+            ),
+          );
 
         const retryResult = await sendMobileNotifications(context.db, input.notificationId);
 

@@ -1,8 +1,4 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { rewardRouter } from "../../routers/reward";
 import { createRouterClient } from "@orpc/server";
@@ -71,22 +67,23 @@ const createMockGroup = (overrides: Partial<Group> = {}): Group => ({
 });
 
 // Helper to create mock reward
-const createMockReward = (overrides: Partial<Reward> & { _count?: { purchases: number } } = {}): Reward =>
-  ({
-    id: "reward-123",
-    name: "Test Reward",
-    description: "A test reward",
-    availableQuantity: 10,
-    image: null,
-    coinCost: 50,
-    isHidden: false,
-    tripId: "trip-123",
-    createdById: "admin-123",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    _count: { purchases: 0 },
-    ...overrides,
-  });
+const createMockReward = (
+  overrides: Partial<Reward> & { _count?: { purchases: number } } = {},
+): Reward => ({
+  id: "reward-123",
+  name: "Test Reward",
+  description: "A test reward",
+  availableQuantity: 10,
+  image: null,
+  coinCost: 50,
+  isHidden: false,
+  tripId: "trip-123",
+  createdById: "admin-123",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  _count: { purchases: 0 },
+  ...overrides,
+});
 
 // Helper to create mock reward purchase
 const createMockRewardPurchase = (overrides: Partial<RewardPurchase> = {}): RewardPurchase =>
@@ -142,17 +139,33 @@ describe("rewardRouter", () => {
     vi.clearAllMocks();
 
     mockUser = createMockUser({ id: "user-123", role: "USER", authUserId: "auth-user-123" });
-    mockModeratorUser = createMockUser({ id: "moderator-123", role: "MODERATOR", authUserId: "auth-moderator-123" });
-    mockAdminUser = createMockUser({ id: "admin-123", role: "ADMIN", authUserId: "auth-admin-123" });
-    mockGroup = createMockGroup({ id: "group-123", tripId: "trip-123", coins: 100, organizerId: "user-123" });
+    mockModeratorUser = createMockUser({
+      id: "moderator-123",
+      role: "MODERATOR",
+      authUserId: "auth-moderator-123",
+    });
+    mockAdminUser = createMockUser({
+      id: "admin-123",
+      role: "ADMIN",
+      authUserId: "auth-admin-123",
+    });
+    mockGroup = createMockGroup({
+      id: "group-123",
+      tripId: "trip-123",
+      coins: 100,
+      organizerId: "user-123",
+    });
     mockReward = createMockReward({ id: "reward-123", tripId: "trip-123", coinCost: 50 });
 
     const { requireAuth, requireModerator, requireAdmin } = await import("@mirai-app/auth");
-     
-    requireAuth.mockResolvedValue({ user: { id: mockUser.authUserId, email: mockUser.email }, dbUser: mockUser });
-     
+
+    requireAuth.mockResolvedValue({
+      user: { id: mockUser.authUserId, email: mockUser.email },
+      dbUser: mockUser,
+    });
+
     requireModerator.mockResolvedValue(mockModeratorUser);
-     
+
     requireAdmin.mockResolvedValue(mockAdminUser);
 
     // Setup mock Supabase client
@@ -234,48 +247,66 @@ describe("rewardRouter", () => {
         async <T>(
           callback: T extends (tx: unknown) => Promise<unknown>
             ? (tx: typeof mockDb) => Promise<unknown>
-            : Promise<unknown>[]
-           
+            : Promise<unknown>[],
         ): Promise<any> => {
           if (typeof callback === "function") {
             const tx = {
               ...mockDb,
               reward: {
                 ...mockDb.reward,
-                findUnique: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.findUnique(...args)),
-                update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.reward.update(...args)),
+                findUnique: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) => mockDb.reward.findUnique(...args)),
+                update: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) => mockDb.reward.update(...args)),
               },
               tripParticipant: {
                 ...mockDb.tripParticipant,
-                findFirst: vi.fn().mockImplementation((...args: [unknown]) => mockDb.tripParticipant.findFirst(...args)),
+                findFirst: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) =>
+                    mockDb.tripParticipant.findFirst(...args),
+                  ),
               },
               group: {
                 ...mockDb.group,
-                update: vi.fn().mockImplementation((...args: [unknown]) => mockDb.group.update(...args)),
+                update: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) => mockDb.group.update(...args)),
               },
               rewardPurchase: {
                 ...mockDb.rewardPurchase,
-                create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.rewardPurchase.create(...args)),
+                create: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) =>
+                    mockDb.rewardPurchase.create(...args),
+                  ),
               },
               coinTransaction: {
                 ...mockDb.coinTransaction,
-                create: vi.fn().mockImplementation((...args: [unknown]) => mockDb.coinTransaction.create(...args)),
+                create: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) =>
+                    mockDb.coinTransaction.create(...args),
+                  ),
               },
               challenge: {
                 ...mockDb.challenge,
-                findMany: vi.fn().mockImplementation((...args: [unknown]) => mockDb.challenge.findMany(...args)),
+                findMany: vi
+                  .fn()
+                  .mockImplementation((...args: [unknown]) => mockDb.challenge.findMany(...args)),
               },
             };
-             
+
             return await callback(tx);
           }
           return Promise.all(callback);
-        }
+        },
       ),
     };
 
     addDrizzleApi(mockDb);
-    mockDb = mockDb;
   });
 
   // Helper to create authenticated context
@@ -342,7 +373,6 @@ describe("rewardRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getByTrip({ tripId: "all" });
 
-       
       expect(mockDb.reward.findMany).toHaveBeenCalled();
     });
 
@@ -494,7 +524,7 @@ describe("rewardRouter", () => {
 
       // Override requireAuth to return moderator user for this test
       const { requireAuth } = await import("@mirai-app/auth");
-       
+
       requireAuth.mockResolvedValue({
         user: { id: mockModeratorUser.authUserId, email: mockModeratorUser.email },
         dbUser: mockModeratorUser,
@@ -516,7 +546,6 @@ describe("rewardRouter", () => {
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
 
-       
       const result = await caller.create({
         tripId: "trip-123",
         name: "New Reward",
@@ -526,7 +555,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.name).toBe("Test Reward");
-       
+
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -537,13 +566,13 @@ describe("rewardRouter", () => {
             tripId: "trip-123",
             createdById: mockModeratorUser.id,
           }),
-        })
+        }),
       );
     });
 
     it("should support images array", async () => {
       mockDb.reward.create.mockResolvedValue(
-        createMockReward({ image: JSON.stringify(["image1.jpg", "image2.jpg"]) })
+        createMockReward({ image: JSON.stringify(["image1.jpg", "image2.jpg"]) }),
       );
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -559,13 +588,12 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
-       
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             image: JSON.stringify(["image1.jpg", "image2.jpg"]),
           }),
-        })
+        }),
       );
     });
 
@@ -584,13 +612,12 @@ describe("rewardRouter", () => {
         coinCost: 50,
       });
 
-       
       expect(mockDb.reward.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             image: "image.jpg",
           }),
-        })
+        }),
       );
     });
   });
@@ -623,13 +650,12 @@ describe("rewardRouter", () => {
         images: ["new-image.jpg"],
       });
 
-       
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             image: "new-image.jpg",
           }),
-        })
+        }),
       );
     });
 
@@ -644,13 +670,12 @@ describe("rewardRouter", () => {
         image: null,
       });
 
-       
       expect(mockDb.reward.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             image: null,
           }),
-        })
+        }),
       );
     });
   });
@@ -698,8 +723,8 @@ describe("rewardRouter", () => {
       const result = await caller.delete({ id: "reward-123" });
 
       expect(result.success).toBe(true);
-       
-      expect(mockDb.reward.delete).toHaveBeenCalled();;
+
+      expect(mockDb.reward.delete).toHaveBeenCalled();
     });
 
     it("should throw BAD_REQUEST when reward has purchases", async () => {
@@ -715,7 +740,7 @@ describe("rewardRouter", () => {
   describe("purchase (protectedProcedure)", () => {
     it("should purchase reward as group leader", async () => {
       const { ensureTripNotEnded } = await import("../../../utils/tripGuards");
-       
+
       ensureTripNotEnded.mockResolvedValue(undefined);
 
       mockDb.reward.findUnique.mockResolvedValue(mockReward);
@@ -739,7 +764,7 @@ describe("rewardRouter", () => {
       });
 
       expect(result.quantity).toBe(1);
-       
+
       expect(mockDb.reward.update).toHaveBeenCalled();
     });
 
@@ -754,7 +779,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "non-existent",
           quantity: 1,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -769,7 +794,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "reward-123",
           quantity: 1,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -784,7 +809,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "reward-123",
           quantity: 1,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -804,7 +829,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "reward-123",
           quantity: 1,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -825,7 +850,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "reward-123",
           quantity: 1,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -860,8 +885,7 @@ describe("rewardRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await caller.getPurchaseHistory({ tripId: "trip-123" });
 
-       
-      expect(mockDb.rewardPurchase.findMany).toHaveBeenCalled();;
+      expect(mockDb.rewardPurchase.findMany).toHaveBeenCalled();
     });
 
     it("should throw FORBIDDEN when user has no group", async () => {
@@ -878,7 +902,12 @@ describe("rewardRouter", () => {
   describe("getTotalAvailablePoints (moderatorProcedure)", () => {
     it("should return total available points", async () => {
       mockDb.challenge.findMany.mockResolvedValue([
-        createMockChallenge({ basePoints: 100, firstPlacePoints: 50, secondPlacePoints: 30, thirdPlacePoints: 20 }),
+        createMockChallenge({
+          basePoints: 100,
+          firstPlacePoints: 50,
+          secondPlacePoints: 30,
+          thirdPlacePoints: 20,
+        }),
       ]);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -891,7 +920,11 @@ describe("rewardRouter", () => {
 
     it("should handle unlimited scoring category", async () => {
       mockDb.challenge.findMany.mockResolvedValue([
-        createMockChallenge({ basePoints: 100, scoringCategory: "UNLIMITED", firstPlacePoints: 50 }),
+        createMockChallenge({
+          basePoints: 100,
+          scoringCategory: "UNLIMITED",
+          firstPlacePoints: 50,
+        }),
       ]);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -915,7 +948,7 @@ describe("rewardRouter", () => {
           description: "Test",
           availableQuantity: 10,
           coinCost: 50,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -930,7 +963,7 @@ describe("rewardRouter", () => {
           description: "",
           availableQuantity: 10,
           coinCost: 50,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -945,7 +978,7 @@ describe("rewardRouter", () => {
           description: "Test",
           availableQuantity: -1,
           coinCost: 50,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -960,7 +993,7 @@ describe("rewardRouter", () => {
           description: "Test",
           availableQuantity: 10,
           coinCost: 0,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -974,7 +1007,7 @@ describe("rewardRouter", () => {
         caller.purchase({
           rewardId: "reward-123",
           quantity: 0,
-        })
+        }),
       ).rejects.toThrow();
     });
   });

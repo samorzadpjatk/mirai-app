@@ -3,34 +3,29 @@ import { z } from "zod";
 
 export function validateDateRange(startDate: Date, endDate: Date): void {
   if (endDate <= startDate) {
-    throw new ORPCError("BAD_REQUEST", { message: `End date (${endDate.toISOString() }) must be after start date (${startDate.toISOString()})`,
+    throw new ORPCError("BAD_REQUEST", {
+      message: `End date (${endDate.toISOString()}) must be after start date (${startDate.toISOString()})`,
     });
   }
 }
 
-export function validateFutureDates(
-  startDate: Date,
-  endDate: Date,
-  allowPastStart = false,
-): void {
+export function validateFutureDates(startDate: Date, endDate: Date, allowPastStart = false): void {
   const now = new Date();
 
   if (!allowPastStart && startDate < now) {
-    throw new ORPCError("BAD_REQUEST", { message: `Start date (${startDate.toISOString() }) cannot be in the past. Current time: ${now.toISOString()}`,
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Start date (${startDate.toISOString()}) cannot be in the past. Current time: ${now.toISOString()}`,
     });
   }
 
   if (endDate < now) {
-    throw new ORPCError("BAD_REQUEST", { message: `End date (${endDate.toISOString() }) cannot be in the past. Current time: ${now.toISOString()}`,
+    throw new ORPCError("BAD_REQUEST", {
+      message: `End date (${endDate.toISOString()}) cannot be in the past. Current time: ${now.toISOString()}`,
     });
   }
 }
 
-export function validateScheduleTime(
-  startDate: Date,
-  hour: number,
-  minute: number,
-): void {
+export function validateScheduleTime(startDate: Date, hour: number, minute: number): void {
   const scheduleDateTime = new Date(startDate);
   scheduleDateTime.setUTCHours(hour, minute, 0, 0);
 
@@ -38,7 +33,8 @@ export function validateScheduleTime(
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
   if (scheduleDateTime < fiveMinutesFromNow) {
-    throw new ORPCError("BAD_REQUEST", { message: `Schedule time (${scheduleDateTime.toISOString() }) must be at least 5 minutes in the future. Current time: ${now.toISOString()}`,
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Schedule time (${scheduleDateTime.toISOString()}) must be at least 5 minutes in the future. Current time: ${now.toISOString()}`,
     });
   }
 }
@@ -48,7 +44,9 @@ export function validateMinimumDuration(startDate: Date, endDate: Date): void {
   const oneMinuteMs = 60 * 1000;
 
   if (durationMs < oneMinuteMs) {
-    throw new ORPCError("BAD_REQUEST", { message: `Schedule must run for at least 1 minute. Current duration: ${Math.floor(durationMs / 1000)} seconds` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Schedule must run for at least 1 minute. Current duration: ${Math.floor(durationMs / 1000)} seconds`,
+    });
   }
 }
 
@@ -60,17 +58,24 @@ export function validateNotificationContent(
 ): void {
   if (notificationType === "custom") {
     if (!notificationTitle?.trim()) {
-      throw new ORPCError("BAD_REQUEST", { message: "Notification title is required for custom notifications" });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Notification title is required for custom notifications",
+      });
     }
 
     if (!notificationBody?.trim()) {
-      throw new ORPCError("BAD_REQUEST", { message: "Notification body is required for custom notifications" });
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Notification body is required for custom notifications",
+      });
     }
 
     if (notificationUrl !== undefined && notificationUrl !== null) {
       const trimmedUrl = notificationUrl.trim();
       if (trimmedUrl && !isValidUrl(trimmedUrl)) {
-        throw new ORPCError("BAD_REQUEST", { message: "Notification URL must be a valid URL or path (e.g., /path or https://example.com)" });
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "Notification URL must be a valid URL or path (e.g., /path or https://example.com)",
+        });
       }
     }
   }
@@ -99,11 +104,15 @@ export function validateReasonableDateRange(
   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
   if (!allowPastStart && startDate < now) {
-    throw new ORPCError("BAD_REQUEST", { message: `Start date cannot be in the past. Current time: ${now.toISOString()}` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Start date cannot be in the past. Current time: ${now.toISOString()}`,
+    });
   }
 
   if (endDate > oneYearFromNow) {
-    throw new ORPCError("BAD_REQUEST", { message: `End date cannot be more than 1 year in the future. Maximum allowed: ${oneYearFromNow.toISOString()}` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `End date cannot be more than 1 year in the future. Maximum allowed: ${oneYearFromNow.toISOString()}`,
+    });
   }
 }
 

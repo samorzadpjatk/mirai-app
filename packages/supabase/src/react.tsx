@@ -9,15 +9,8 @@ export interface SupabaseProviderProps {
   children: ReactNode;
 }
 
-export const SupabaseProvider = ({
-  client,
-  children,
-}: SupabaseProviderProps) => {
-  return (
-    <SupabaseClientContext.Provider value={client}>
-      {children}
-    </SupabaseClientContext.Provider>
-  );
+export const SupabaseProvider = ({ client, children }: SupabaseProviderProps) => {
+  return <SupabaseClientContext.Provider value={client}>{children}</SupabaseClientContext.Provider>;
 };
 
 export const useSupabaseClient = (): SupabaseClient => {

@@ -1,0 +1,5 @@
+bun run format:write
+
+nx affected -t lint --uncommitted
+nx affected -t typecheck --uncommitted
+nx affected -t test --uncommitted

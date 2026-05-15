@@ -32,13 +32,16 @@ export async function sendNotification({
       async () => {
         const uniqueUserIds = Array.from(new Set(input.userIds));
 
-        const inserted = await db.insert(notifications).values({
-          title: input.title,
-          body: input.body,
-          url: input.url,
-          createdById: userId,
-          tripId: input.tripId,
-        }).returning();
+        const inserted = await db
+          .insert(notifications)
+          .values({
+            title: input.title,
+            body: input.body,
+            url: input.url,
+            createdById: userId,
+            tripId: input.tripId,
+          })
+          .returning();
         const notification = inserted[0];
 
         if (!notification) {
@@ -46,13 +49,16 @@ export async function sendNotification({
         }
 
         if (uniqueUserIds.length > 0) {
-          await db.insert(notificationPushes).values(
-            uniqueUserIds.map((targetUserId) => ({
-              notificationId: notification.id,
-              targetUserId,
-              status: "pending",
-            }))
-          ).onConflictDoNothing();
+          await db
+            .insert(notificationPushes)
+            .values(
+              uniqueUserIds.map((targetUserId) => ({
+                notificationId: notification.id,
+                targetUserId,
+                status: "pending",
+              })),
+            )
+            .onConflictDoNothing();
         }
 
         return {
@@ -61,10 +67,7 @@ export async function sendNotification({
         };
       },
       (error, retryAttempt) => {
-        console.error(
-          `Error creating notification (attempt ${retryAttempt + 1}):`,
-          error,
-        );
+        console.error(`Error creating notification (attempt ${retryAttempt + 1}):`, error);
       },
     );
   } catch (error) {
@@ -85,21 +88,23 @@ export async function sendRankingUpdate({
   success: boolean;
   notificationIds: string[];
 }> {
-  const groupRows = await db.select().from(groups)
+  const groupRows = await db
+    .select()
+    .from(groups)
     .where(and(eq(groups.tripId, tripId), eq(groups.isDeleted, false)))
     .orderBy(desc(groups.coins));
 
   const results = await Promise.allSettled(
     groupRows.map(async (group, index) => {
-      const participants = await db.select({ userId: tripParticipants.userId })
+      const participants = await db
+        .select({ userId: tripParticipants.userId })
         .from(tripParticipants)
         .where(and(eq(tripParticipants.tripId, tripId), eq(tripParticipants.groupId, group.id)));
       const userIds = participants.map((p) => p.userId);
-      const notificationData =
-        NotificationService.createRankingUpdateNotification(
-          group.name,
-          index + 1,
-        );
+      const notificationData = NotificationService.createRankingUpdateNotification(
+        group.name,
+        index + 1,
+      );
 
       return await sendNotification({
         db,

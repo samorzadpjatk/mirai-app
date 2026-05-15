@@ -72,8 +72,12 @@ describe("runSeed", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+      /* noop */
+    });
     const { dirExists } = await import("../utils/fs");
     (dirExists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     const { loadTripConfigs } = await import("../tripConfigs");
@@ -91,7 +95,7 @@ describe("runSeed", () => {
     const { ensureBuckets, ensurePlaceholderImage, uploadAssets } = await import("../storage");
     const { loadAuthUsers } = await import("../auth");
     const { loadTripConfigs } = await import("../tripConfigs");
-    
+
     await runSeed();
 
     expect(ensureBuckets).toHaveBeenCalled();
@@ -104,7 +108,7 @@ describe("runSeed", () => {
   it("should seed production environment with --prod flag", async () => {
     process.argv = ["--prod"];
     const { ensurePlaceholderImage, uploadAssets } = await import("../storage");
-    
+
     await runSeed();
 
     expect(ensurePlaceholderImage).toHaveBeenCalledWith("prod");
@@ -122,14 +126,14 @@ describe("runSeed", () => {
   it("should seed each trip from config", async () => {
     process.argv = [];
     const { seedTrip } = await import("../trips");
-    
+
     await runSeed();
 
     expect(seedTrip).toHaveBeenCalledWith(
       expect.objectContaining({ key: "test-trip" }),
       "users/test.csv",
       expect.stringContaining("dev"),
-      expect.any(Map)
+      expect.any(Map),
     );
   });
 
@@ -142,9 +146,7 @@ describe("runSeed", () => {
     await runSeed();
 
     expect(seedSponsors).not.toHaveBeenCalled();
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("✗ Failed to seed trip:")
-    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("✗ Failed to seed trip:"));
   });
 
   it("should handle sponsor seeding errors gracefully", async () => {
@@ -159,7 +161,7 @@ describe("runSeed", () => {
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to seed sponsors"),
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 
@@ -175,7 +177,7 @@ describe("runSeed", () => {
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to seed rewards"),
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 
@@ -191,14 +193,28 @@ describe("runSeed", () => {
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to seed trip info"),
-      expect.any(Error)
+      expect.any(Error),
     );
   });
 
   it("should seed multiple trips", async () => {
     const multipleTrips: TripConfig[] = [
-      { key: "trip-1", name: "Trip 1", description: "Desc 1", startDate: "2026-01-01", endDate: "2026-01-05", users: "users/trip1.csv" },
-      { key: "trip-2", name: "Trip 2", description: "Desc 2", startDate: "2026-02-01", endDate: "2026-02-05", users: "users/trip2.csv" },
+      {
+        key: "trip-1",
+        name: "Trip 1",
+        description: "Desc 1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-05",
+        users: "users/trip1.csv",
+      },
+      {
+        key: "trip-2",
+        name: "Trip 2",
+        description: "Desc 2",
+        startDate: "2026-02-01",
+        endDate: "2026-02-05",
+        users: "users/trip2.csv",
+      },
     ];
     const { loadTripConfigs } = await import("../tripConfigs");
     (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(multipleTrips);
@@ -216,8 +232,22 @@ describe("runSeed", () => {
 
   it("should continue seeding even if one trip fails", async () => {
     const multipleTrips: TripConfig[] = [
-      { key: "trip-1", name: "Trip 1", description: "Desc 1", startDate: "2026-01-01", endDate: "2026-01-05", users: "users/trip1.csv" },
-      { key: "trip-2", name: "Trip 2", description: "Desc 2", startDate: "2026-02-01", endDate: "2026-02-05", users: "users/trip2.csv" },
+      {
+        key: "trip-1",
+        name: "Trip 1",
+        description: "Desc 1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-05",
+        users: "users/trip1.csv",
+      },
+      {
+        key: "trip-2",
+        name: "Trip 2",
+        description: "Desc 2",
+        startDate: "2026-02-01",
+        endDate: "2026-02-05",
+        users: "users/trip2.csv",
+      },
     ];
     const { loadTripConfigs } = await import("../tripConfigs");
     (loadTripConfigs as ReturnType<typeof vi.fn>).mockResolvedValueOnce(multipleTrips);

@@ -10,7 +10,7 @@ const shouldSuppress = (message: string): boolean => {
     /Creating client with URL/,
     /Created server singleton client/,
   ];
-  return suppressedPatterns.some(pattern => pattern.test(message));
+  return suppressedPatterns.some((pattern) => pattern.test(message));
 };
 
 console.log = (...args: any[]) => {

@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { notificationDeliveryRouter } from "../../routers/notificationDelivery";
@@ -34,7 +31,8 @@ vi.mock("@mirai-app/auth", () => ({
   }),
 }));
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(notificationDeliveryRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(notificationDeliveryRouter, { context: ctx });
 
 // Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -51,7 +49,9 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 // Helper to create mock notification delivery
-const createMockDelivery = (overrides: Partial<NotificationDelivery> = {}): NotificationDelivery => ({
+const createMockDelivery = (
+  overrides: Partial<NotificationDelivery> = {},
+): NotificationDelivery => ({
   id: "delivery-123",
   notificationId: "notification-123",
   tripId: "trip-123",
@@ -133,7 +133,6 @@ describe("notificationDeliveryRouter", () => {
       },
     };
 
-
     const lastResults: Record<string, unknown> = {};
 
     function toCamelCase(str: string): string {
@@ -142,51 +141,62 @@ describe("notificationDeliveryRouter", () => {
 
     function getModelName(table: unknown): string {
       let name: string | undefined;
-      if (typeof table === 'string') {
+      if (typeof table === "string") {
         name = table;
-      } else if (table && typeof table === 'object') {
+      } else if (table && typeof table === "object") {
         const obj = table as Record<string | symbol, unknown>;
-        if (typeof obj.name === 'string') {
+        if (typeof obj.name === "string") {
           name = obj.name;
         } else {
-          const drizzleNameSym = Symbol.for('drizzle:Name');
-          if (typeof obj[drizzleNameSym] === 'string') {
+          const drizzleNameSym = Symbol.for("drizzle:Name");
+          if (typeof obj[drizzleNameSym] === "string") {
             name = obj[drizzleNameSym];
           } else {
             const sym = Object.getOwnPropertySymbols(obj).find(
-              (s) => s.description === 'drizzle:Name'
+              (s) => s.description === "drizzle:Name",
             );
-            if (sym && typeof obj[sym] === 'string') {
+            if (sym && typeof obj[sym] === "string") {
               name = obj[sym];
             }
           }
         }
       }
-      if (!name) return 'unknown';
-      const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+      if (!name) return "unknown";
+      const singular = name.replace(/ies$/, "y").replace(/s$/, "");
       return toCamelCase(singular);
     }
 
     const db = mockDb as Record<string, unknown>;
 
-    db.query = new Proxy({}, {
-      get(_, tableName) {
-        const name = String(tableName);
-        const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
-        const model = db[singular] ?? db[name];
-        if (model && typeof model === 'object') {
-          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
-          return new Proxy(modelObj, {
-            get(_, methodName) {
-              const method = String(methodName);
-              if (method === 'findFirst' || method === 'findUnique') {
-                return async (...args: unknown[]) => {
-                  if (modelObj[method]) {
-                    const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
+    db.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const name = String(tableName);
+          const singular = name.replace(/ies$/, "y").replace(/s$/, "");
+          const model = db[singular] ?? db[name];
+          if (model && typeof model === "object") {
+            const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
+            return new Proxy(modelObj, {
+              get(_, methodName) {
+                const method = String(methodName);
+                if (method === "findFirst" || method === "findUnique") {
+                  return async (...args: unknown[]) => {
+                    if (modelObj[method]) {
+                      const result = await modelObj[method](...args);
+                      if (result !== null && result !== undefined) {
+                        return result;
+                      }
+                      const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                      if (modelObj[otherMethod]) {
+                        const fb = await modelObj[otherMethod](...args);
+                        if (fb !== null && fb !== undefined) {
+                          return fb;
+                        }
+                      }
+                      return lastResults[singular] ?? null;
                     }
-                    const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                     if (modelObj[otherMethod]) {
                       const fb = await modelObj[otherMethod](...args);
                       if (fb !== null && fb !== undefined) {
@@ -194,24 +204,20 @@ describe("notificationDeliveryRouter", () => {
                       }
                     }
                     return lastResults[singular] ?? null;
-                  }
-                  const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
-                  if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
-                  }
-                  return lastResults[singular] ?? null;
-                };
-              }
-              return modelObj[method];
-            },
-          });
-        }
-        return { findFirst: vi.fn(() => Promise.resolve(null)), findUnique: vi.fn(() => Promise.resolve(null)), findMany: vi.fn(() => Promise.resolve([])) };
+                  };
+                }
+                return modelObj[method];
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+          };
+        },
       },
-    });
+    );
 
     db.insert = vi.fn((table: unknown) => {
       const modelName = getModelName(table);
@@ -219,7 +225,7 @@ describe("notificationDeliveryRouter", () => {
         values: vi.fn((data: unknown) => {
           const returningFn = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'create' in model) {
+            if (model && typeof model === "object" && "create" in model) {
               return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -233,26 +239,34 @@ describe("notificationDeliveryRouter", () => {
             onConflictDoUpdate: (_opts: unknown) => ({
               returning: () => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return [result];
-                  });
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return [result];
+                    });
                 }
                 return Promise.resolve([{}]);
               },
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+              then: (
+                resolve: (value: unknown) => unknown,
+                reject?: (reason: unknown) => unknown,
+              ) => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return resolve([result]);
-                  }, reject);
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return resolve([result]);
+                    }, reject);
                 }
                 return resolve([{}]);
               },
             }),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => returningFn().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              returningFn().then(resolve, reject),
           };
         }),
       };
@@ -264,7 +278,7 @@ describe("notificationDeliveryRouter", () => {
         set: vi.fn((data: unknown) => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'update' in model) {
+            if (model && typeof model === "object" && "update" in model) {
               return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -275,9 +289,11 @@ describe("notificationDeliveryRouter", () => {
           return {
             where: vi.fn(() => ({
               returning: execute,
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+                execute().then(resolve, reject),
             })),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -289,7 +305,7 @@ describe("notificationDeliveryRouter", () => {
         where: vi.fn(() => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'delete' in model) {
+            if (model && typeof model === "object" && "delete" in model) {
               return (model as Record<string, unknown>).delete().then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -299,7 +315,8 @@ describe("notificationDeliveryRouter", () => {
           };
           return {
             returning: execute,
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -308,9 +325,11 @@ describe("notificationDeliveryRouter", () => {
     db.select = vi.fn((fields?: unknown) => {
       let primaryTable: string | undefined;
       let hasGroupBy = false;
-      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields) : [];
-      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === 'count';
-      const hasAggregateFields = fieldNames.some((f) => ['count', 'sum', 'avg', 'min', 'max'].includes(f));
+      const fieldNames = fields && typeof fields === "object" ? Object.keys(fields) : [];
+      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+      const hasAggregateFields = fieldNames.some((f) =>
+        ["count", "sum", "avg", "min", "max"].includes(f),
+      );
       const chainable: any = {
         from: (table: unknown) => {
           primaryTable = getModelName(table);
@@ -330,16 +349,22 @@ describe("notificationDeliveryRouter", () => {
         then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           if (primaryTable) {
             const model = db[primaryTable];
-            if (model && typeof model === 'object') {
-              if (hasGroupBy && 'groupBy' in model) {
+            if (model && typeof model === "object") {
+              if (hasGroupBy && "groupBy" in model) {
                 return (model as Record<string, unknown>).groupBy().then((groups: unknown) => {
                   const mapped = (groups as Record<string, unknown>[]).map((row) => {
                     const item: Record<string, unknown> = {};
                     for (const field of fieldNames) {
                       if (field in row) {
                         item[field] = row[field];
-                      } else if (field === 'count' && (row as Record<string, Record<string, unknown>>)._count) {
-                        item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                      } else if (
+                        field === "count" &&
+                        (row as Record<string, Record<string, unknown>>)._count
+                      ) {
+                        item.count =
+                          (row as Record<string, Record<string, unknown>>)._count.id ??
+                          (row as Record<string, Record<string, unknown>>)._count._all ??
+                          0;
                       }
                     }
                     return item;
@@ -347,15 +372,17 @@ describe("notificationDeliveryRouter", () => {
                   return resolve(mapped);
                 }, reject);
               }
-              if (hasCountOnly && 'count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if (hasCountOnly && "count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if (hasAggregateFields && 'aggregate' in model) {
+              if (hasAggregateFields && "aggregate" in model) {
                 return (model as Record<string, unknown>).aggregate().then((aggResult: unknown) => {
                   const mapped: Record<string, unknown> = {};
                   const agg = aggResult as Record<string, Record<string, unknown>>;
                   for (const field of fieldNames) {
-                    if (field === 'count' && agg._count) {
+                    if (field === "count" && agg._count) {
                       mapped.count = agg._count.id ?? agg._count._all ?? 0;
                     } else if (agg._sum && field in agg._sum) {
                       mapped[field] = agg._sum[field];
@@ -366,14 +393,20 @@ describe("notificationDeliveryRouter", () => {
                   return resolve([mapped]);
                 }, reject);
               }
-              if ('findMany' in model) {
-                return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+              if ("findMany" in model) {
+                return (model as Record<string, unknown>)
+                  .findMany()
+                  .then((results: unknown) => resolve(results), reject);
               }
-              if ('count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if ("count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if ('aggregate' in model) {
-                return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+              if ("aggregate" in model) {
+                return (model as Record<string, unknown>)
+                  .aggregate()
+                  .then((agg: unknown) => resolve([agg]), reject);
               }
             }
           }
@@ -398,7 +431,6 @@ describe("notificationDeliveryRouter", () => {
     });
 
     mockDb = db as unknown as DB;
-
   });
 
   // Helper to create authenticated context
@@ -418,7 +450,9 @@ describe("notificationDeliveryRouter", () => {
         createMockDelivery({ id: "delivery-2", status: "failure" }),
       ];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(deliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        deliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -439,7 +473,9 @@ describe("notificationDeliveryRouter", () => {
     it("should filter deliveries by status", async () => {
       const deliveries = [createMockDelivery({ id: "delivery-1", status: "success" })];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(deliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        deliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -457,7 +493,9 @@ describe("notificationDeliveryRouter", () => {
     it("should filter deliveries by date range", async () => {
       const deliveries = [createMockDelivery({ id: "delivery-1" })];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(deliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        deliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -473,14 +511,16 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
-       
+
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalled();
     });
 
     it("should filter deliveries by scheduleId", async () => {
       const deliveries = [createMockDelivery({ id: "delivery-1", scheduleId: "schedule-123" })];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(deliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        deliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -492,12 +532,14 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.deliveries).toHaveLength(1);
-       
+
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalled();
     });
 
     it("should handle database errors gracefully", async () => {
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Database error"),
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -505,7 +547,7 @@ describe("notificationDeliveryRouter", () => {
       await expect(
         caller.getDeliveries({
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -531,7 +573,9 @@ describe("notificationDeliveryRouter", () => {
         },
       });
 
-      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(delivery);
+      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        delivery,
+      );
 
       const { buildAuthEmailLookup, resolveAuthEmail } = await import("../../../utils/authEmails");
 
@@ -555,7 +599,9 @@ describe("notificationDeliveryRouter", () => {
         notificationId: "notification-123",
       });
 
-      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(delivery);
+      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        delivery,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -564,7 +610,7 @@ describe("notificationDeliveryRouter", () => {
         caller.getDeliveryByNotificationId({
           notificationId: "notification-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -578,7 +624,7 @@ describe("notificationDeliveryRouter", () => {
         caller.getDeliveryByNotificationId({
           notificationId: "non-existent",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -602,7 +648,9 @@ describe("notificationDeliveryRouter", () => {
         },
       });
 
-      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(delivery);
+      (mockDb.notificationDelivery.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        delivery,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -691,7 +739,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(2);
-       
+
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalled();
     });
 
@@ -714,7 +762,7 @@ describe("notificationDeliveryRouter", () => {
       });
 
       expect(result.totalDeliveries).toBe(3);
-       
+
       expect(mockDb.notificationDelivery.aggregate).toHaveBeenCalled();
     });
   });
@@ -726,7 +774,9 @@ describe("notificationDeliveryRouter", () => {
         createMockDelivery({ id: "delivery-2", status: "partial_failure" }),
       ];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(failedDeliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        failedDeliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -738,14 +788,16 @@ describe("notificationDeliveryRouter", () => {
 
       expect(result.deliveries).toHaveLength(2);
       expect(result.total).toBe(2);
-       
+
       expect(mockDb.notificationDelivery.findMany).toHaveBeenCalled();
     });
 
     it("should paginate failed deliveries", async () => {
       const failedDeliveries = [createMockDelivery({ id: "delivery-1", status: "failure" })];
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(failedDeliveries);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        failedDeliveries,
+      );
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -780,7 +832,9 @@ describe("notificationDeliveryRouter", () => {
         },
       });
 
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([failedDelivery]);
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+        failedDelivery,
+      ]);
       (mockDb.notificationDelivery.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockAdminUser);
@@ -795,7 +849,9 @@ describe("notificationDeliveryRouter", () => {
     });
 
     it("should handle database errors", async () => {
-      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
+      (mockDb.notificationDelivery.findMany as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Database error"),
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -803,7 +859,7 @@ describe("notificationDeliveryRouter", () => {
       await expect(
         caller.getFailedDeliveries({
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });

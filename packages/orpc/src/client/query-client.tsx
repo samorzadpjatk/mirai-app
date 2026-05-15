@@ -73,10 +73,7 @@ export function QueryProvider({
     [authToken, httpUrl, wsUrl],
   );
 
-  const orpcUtils = useMemo(
-    () => createTanstackQueryUtils(client),
-    [client],
-  );
+  const orpcUtils = useMemo(() => createTanstackQueryUtils(client), [client]);
 
   orpc = orpcUtils;
 
@@ -113,14 +110,12 @@ export function QueryProvider({
       }
     };
 
-    const unsubscribeQuery = queryCache.subscribe(
-      (event: QueryCacheNotifyEvent | undefined) => {
-        const error: unknown = event?.query?.state?.error;
-        if (error) {
-          handleError(error);
-        }
-      },
-    );
+    const unsubscribeQuery = queryCache.subscribe((event: QueryCacheNotifyEvent | undefined) => {
+      const error: unknown = event?.query?.state?.error;
+      if (error) {
+        handleError(error);
+      }
+    });
 
     const unsubscribeMutation = mutationCache.subscribe(
       (event: MutationCacheNotifyEvent | undefined) => {
@@ -138,10 +133,7 @@ export function QueryProvider({
           cleanupRef.current = null;
         })
         .catch((error) => {
-          console.error(
-            "[QueryProvider] Error cleaning up previous WebSocket connection:",
-            error,
-          );
+          console.error("[QueryProvider] Error cleaning up previous WebSocket connection:", error);
         });
     }
 
@@ -159,16 +151,11 @@ export function QueryProvider({
             cleanupRef.current = null;
           })
           .catch((error) => {
-            console.error(
-              "[QueryProvider] Error cleaning up WebSocket connection:",
-              error,
-            );
+            console.error("[QueryProvider] Error cleaning up WebSocket connection:", error);
           });
       }
     };
   }, [cleanup, signOut, refreshSession, authToken]);
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

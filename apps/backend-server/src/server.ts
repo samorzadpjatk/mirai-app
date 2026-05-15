@@ -32,7 +32,11 @@ function getClientIp(c: { req: { header: (name: string) => string | undefined } 
   return c.req.header("x-real-ip") ?? "unknown";
 }
 
-function checkRateLimit(ip: string, path: string, isAuthEndpoint: boolean): { allowed: boolean; retryAfter: number } {
+function checkRateLimit(
+  ip: string,
+  path: string,
+  isAuthEndpoint: boolean,
+): { allowed: boolean; retryAfter: number } {
   const now = Date.now();
   const windowMs = RATE_LIMIT_WINDOW_MS;
 
@@ -110,15 +114,18 @@ export function createServer(opts: ServerOptions) {
 
   if (dev) {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:8081"];
-    app.use("*", cors({
-      origin: (origin) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-          return origin;
-        }
-        return null;
-      },
-      credentials: true,
-    }));
+    app.use(
+      "*",
+      cors({
+        origin: (origin) => {
+          if (!origin || allowedOrigins.includes(origin)) {
+            return origin;
+          }
+          return null;
+        },
+        credentials: true,
+      }),
+    );
   }
 
   const rpcHandler = new RPCHandler(appRouter, {
@@ -132,71 +139,66 @@ export function createServer(opts: ServerOptions) {
     ],
   });
 
-  app.use(
-    prefix + "/*",
-    async (c, next) => {
-      const request =
-        c.req.method === "GET" || c.req.method === "HEAD"
-          ? c.req.raw
-          : new Proxy(c.req.raw, {
-              get(target, prop) {
-                switch (prop) {
-                  case "arrayBuffer":
-                    return () => c.req.arrayBuffer();
-                  case "blob":
-                    return () => c.req.blob();
-                  case "formData":
-                    return () => c.req.formData();
-                  case "json":
-                    return () => c.req.json();
-                  case "text":
-                    return () => c.req.text();
-                  default:
-                    return Reflect.get(target, prop, target) as unknown;
-                }
-              },
-            });
+  app.use(prefix + "/*", async (c, next) => {
+    const request =
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? c.req.raw
+        : new Proxy(c.req.raw, {
+            get(target, prop) {
+              switch (prop) {
+                case "arrayBuffer":
+                  return () => c.req.arrayBuffer();
+                case "blob":
+                  return () => c.req.blob();
+                case "formData":
+                  return () => c.req.formData();
+                case "json":
+                  return () => c.req.json();
+                case "text":
+                  return () => c.req.text();
+                default:
+                  return Reflect.get(target, prop, target) as unknown;
+              }
+            },
+          });
 
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const databaseUrl = process.env.DATABASE_URL;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const databaseUrl = process.env.DATABASE_URL;
 
-      if (!supabaseUrl || !supabaseKey) {
-        throw new Error(
-          "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-        );
-      }
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error(
+        "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+      );
+    }
 
-      if (!databaseUrl) {
-        throw new Error(
-          "Missing database credentials. Set DATABASE_URL.",
-        );
-      }
+    if (!databaseUrl) {
+      throw new Error("Missing database credentials. Set DATABASE_URL.");
+    }
 
-      const headers = new Headers(c.req.raw.headers);
-      if (c.req.url) {
-        headers.set("x-original-url", c.req.url);
-      }
+    const headers = new Headers(c.req.raw.headers);
+    if (c.req.url) {
+      headers.set("x-original-url", c.req.url);
+    }
 
-      const context = createORPCContext({
-        headers,
-        databaseUrl,
-        supabaseUrl,
-        supabaseKey,
-      });
+    const context = createORPCContext({
+      headers,
+      databaseUrl,
+      supabaseUrl,
+      supabaseKey,
+    });
 
-      const { matched, response } = await rpcHandler.handle(request, {
-        prefix: prefix as `/${string}`,
-        context,
-      });
+    const { matched, response } = await rpcHandler.handle(request, {
+      prefix: prefix as `/${string}`,
+      context,
+    });
 
-      if (matched) {
-        return response;
-      }
+    if (matched) {
+      return response;
+    }
 
-      await next();
-    },
-  );
+    await next();
+  });
 
   app.get("/health", (c) => c.text("OK"));
 
@@ -221,10 +223,7 @@ export function createServer(opts: ServerOptions) {
         fetch(req, server) {
           const url = new URL(req.url, "http://localhost");
 
-          if (
-            url.pathname.startsWith(prefix) &&
-            server.upgrade(req, { data: { url: req.url } })
-          ) {
+          if (url.pathname.startsWith(prefix) && server.upgrade(req, { data: { url: req.url } })) {
             return;
           }
 
@@ -239,9 +238,7 @@ export function createServer(opts: ServerOptions) {
             };
 
             const msgString =
-              typeof message === "string"
-                ? message
-                : new TextDecoder().decode(message);
+              typeof message === "string" ? message : new TextDecoder().decode(message);
 
             if (!data.authProcessed) {
               try {
@@ -249,10 +246,7 @@ export function createServer(opts: ServerOptions) {
                   type?: string;
                   payload?: { authorization?: string };
                 };
-                if (
-                  msg.type === "connection_init" &&
-                  msg.payload?.authorization
-                ) {
+                if (msg.type === "connection_init" && msg.payload?.authorization) {
                   data.connectionParams = {
                     authorization: msg.payload.authorization,
                   };
@@ -268,9 +262,7 @@ export function createServer(opts: ServerOptions) {
 
             const headers = new Headers();
             if (data.connectionParams) {
-              for (const [key, value] of Object.entries(
-                data.connectionParams,
-              )) {
+              for (const [key, value] of Object.entries(data.connectionParams)) {
                 headers.set(key, value);
               }
             }
@@ -289,9 +281,7 @@ export function createServer(opts: ServerOptions) {
             }
 
             if (!databaseUrl) {
-              throw new Error(
-                "Missing database credentials. Set DATABASE_URL.",
-              );
+              throw new Error("Missing database credentials. Set DATABASE_URL.");
             }
 
             const context = createORPCContext({

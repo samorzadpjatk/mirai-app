@@ -10,23 +10,29 @@ Run from the repository root:
 
 ```bash
 # Development
-turbo run dev              # Start all dev servers
-turbo run dev:backend      # Start backend server only
-turbo run dev:native       # Start native app only
-turbo run dev:notification-sender  # Start notification sender
+nx run-many -t dev              # Start all dev servers
+nx run-many -t dev --projects='apps/backend-server'  # Start backend server only
+nx run-many -t dev --projects='apps/native'             # Start native app only
+nx run-many -t dev --projects='apps/notification-sender'  # Start notification sender
 
 # Building
-turbo run build            # Build all packages and apps
-turbo run build:packages   # Build packages only
+nx run-many -t build            # Build all packages and apps
+nx run-many -t build --projects='packages/*'          # Build packages only
 
 # Code Quality
-turbo run lint             # Lint all packages
-turbo run typecheck        # Type-check all packages
-turbo run format:check     # Check code formatting
-turbo run format:write     # Fix code formatting
+nx run-many -t lint             # Lint all packages
+nx run-many -t typecheck      # Type-check all packages
+nx run-many -t format:check   # Check code formatting
+nx run-many -t format:write   # Fix code formatting
+
+# Unused Dependencies
+nx run-many -t knip             # Detect unused dependencies
+
+# Docker Containers
+nx run-many -t container        # Build all Docker containers
 
 # Cleanup
-turbo run clean            # Clean build artifacts and node_modules
+nx run-many -t clean            # Clean build artifacts and node_modules
 ```
 
 ## Package-Level Scripts
@@ -113,25 +119,25 @@ bun run db:generate        # Generate Drizzle migrations
 
 ```bash
 # Check all files
-turbo run lint
-turbo run format:check
+nx run-many -t lint
+nx run-many -t format:check
 
 # Fix all files
-turbo run lint:fix
-turbo run format:write
+nx run-many -t lint:fix
+nx run-many -t format:write
 
 # Check specific package
-turbo run lint --filter=@mirai-app/orpc
+nx run @mirai-app/orpc:lint
 ```
 
 ## Testing
 
 ```bash
 # Run all tests
-turbo run test
+nx run-many -t test
 
 # Run tests for specific package
-turbo run test --filter=@mirai-app/orpc
+nx run @mirai-app/orpc:test
 
 # Watch mode
 cd packages/trpc && bun run test:watch
@@ -141,13 +147,13 @@ cd packages/trpc && bun run test:watch
 
 ```bash
 # Build everything
-turbo run build
+nx run-many -t build
 
 # Build specific package with dependencies
-turbo run build --filter=@mirai-app/orpc...
+nx run @mirai-app/orpc:build
 
 # Build packages only
-turbo run build --filter='./packages/*'
+nx run-many -t build --projects='packages/*'
 ```
 
 ## Script Patterns
@@ -170,22 +176,38 @@ Many scripts have environment-specific versions:
 - `:dev` - Development environment
 - `:prod` - Production environment
 
-## Turbo Filters
+## Nx Project Targeting
 
-Use `--filter` to target specific packages:
+Use `nx run` for single projects and `nx run-many` with `--projects` for groups:
 
 ```bash
 # Run script in specific package
-turbo run dev --filter=@mirai-app/native
+nx run @mirai-app/native:dev
 
 # Run script in package and its dependencies
-turbo run build --filter=@mirai-app/native...
+nx run @mirai-app/native:build
 
 # Run script in package and its dependents
-turbo run build --filter=@mirai-app/orpc^
+nx run @mirai-app/orpc:build
 
 # Run script in packages only
-turbo run lint --filter='./packages/*'
+nx run-many -t lint --projects='packages/*'
+```
+
+## Nx Graph and Project Inspection
+
+```bash
+# Show dependency graph
+nx graph
+
+# Show project details
+nx show project @mirai-app/native
+
+# Show all projects
+nx show projects
+
+# Run on changed projects (CI)
+nx affected -t build
 ```
 
 ## Troubleshooting
@@ -197,12 +219,12 @@ If a script is not found:
 2. Verify the script exists in `package.json`
 3. Run `bun install` to ensure dependencies are available
 
-### Turbo Cache Issues
+### Nx Cache Issues
 
 ```bash
-# Clear turbo cache
-rm -rf .turbo
+# Clear Nx cache
+nx reset
 
 # Run without cache
-turbo run build --force
+nx run-many -t build --skip-nx-cache
 ```

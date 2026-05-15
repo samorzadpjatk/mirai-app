@@ -87,19 +87,11 @@ bun run release:ios:submit
 
 ### Internal
 
-- `@mirai-app/auth` - Authentication
-- `@mirai-app/shared` - Shared utilities
-- `@mirai-app/supabase` - Supabase client
-- `@mirai-app/orpc` - oRPC client
+`@mirai-app/auth` · `@mirai-app/shared` · `@mirai-app/supabase` · `@mirai-app/orpc`
 
 ### Key External
 
-- `expo` - Expo SDK
-- `expo-router` - File-based routing
-- `nativewind` - Tailwind for RN
-- `@react-navigation/native` - Navigation
-- `zustand` - State management
-- `@tanstack/react-query` - Data fetching
+`expo` · `expo-router` · `nativewind` · `@react-navigation/native` · `zustand` · `@tanstack/react-query`
 
 ## Overrides to Root Conventions
 
@@ -110,9 +102,4 @@ bun run release:ios:submit
 
 ## Links
 
-- [Setup guide](../../docs/apps/native/setup.md)
-- [Navigation](../../docs/apps/native/navigation.md)
-- [Deployment](../../docs/apps/native/deployment.md)
-- [OTA Updates](../../docs/apps/native/ota-updates.md)
-- [State Management](../../docs/apps/native/state-management.md)
-- [Root AGENTS.md](../../AGENTS.md)
+[Setup](../../docs/apps/native/setup.md) · [Navigation](../../docs/apps/native/navigation.md) · [Deployment](../../docs/apps/native/deployment.md) · [OTA Updates](../../docs/apps/native/ota-updates.md) · [State Management](../../docs/apps/native/state-management.md) · [Root AGENTS.md](../../AGENTS.md)

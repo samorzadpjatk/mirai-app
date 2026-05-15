@@ -1,31 +1,42 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { groupRouter } from "../../routers/group";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, Group, TripParticipant, GroupJoinRequest, CoinTransaction } from "@mirai-app/db";
+import type {
+  DB,
+  User,
+  Group,
+  TripParticipant,
+  GroupJoinRequest,
+  CoinTransaction,
+} from "@mirai-app/db";
 import { addDrizzleApi } from "../../../../vitest.setup";
 
 // Mock the utility modules
 vi.mock("../../../utils/authEmails", () => ({
   buildAuthEmailLookup: vi.fn().mockResolvedValue(new Map()),
-  resolveAuthEmail: vi.fn().mockImplementation((emailMap: Map<string, string>, authUserId: string | null): string | null => {
-    if (!authUserId) return null;
-    return emailMap.get(authUserId) ?? null;
-  }),
+  resolveAuthEmail: vi
+    .fn()
+    .mockImplementation(
+      (emailMap: Map<string, string>, authUserId: string | null): string | null => {
+        if (!authUserId) return null;
+        return emailMap.get(authUserId) ?? null;
+      },
+    ),
 }));
 
 vi.mock("../../../utils/storage", () => ({
-  normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string): { bucket: string; path: string; storagePath: string } | null => {
-    if (!value) return null;
-    if (value.startsWith("http")) return null;
-    return { bucket: "images", path: value, storagePath: `images/${value}` };
-  }),
+  normalizeSupabaseStoragePath: vi
+    .fn()
+    .mockImplementation(
+      (value: string): { bucket: string; path: string; storagePath: string } | null => {
+        if (!value) return null;
+        if (value.startsWith("http")) return null;
+        return { bucket: "images", path: value, storagePath: `images/${value}` };
+      },
+    ),
 }));
 
 vi.mock("../../../utils/activityFeed", () => ({
@@ -126,17 +137,17 @@ describe("groupRouter", () => {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123" } }, error: null }),
         getSession: vi.fn(),
         admin: {
-          getUserById: vi.fn().mockResolvedValue({ 
-            data: { user: { id: "auth-123", email: "test@example.com" } }, 
-            error: null 
+          getUserById: vi.fn().mockResolvedValue({
+            data: { user: { id: "auth-123", email: "test@example.com" } },
+            error: null,
           }),
         },
       },
       storage: {
         from: vi.fn().mockReturnValue({
-          createSignedUrl: vi.fn().mockResolvedValue({ 
-            data: { signedUrl: "https://signed-url.example.com/image.jpg" }, 
-            error: null 
+          createSignedUrl: vi.fn().mockResolvedValue({
+            data: { signedUrl: "https://signed-url.example.com/image.jpg" },
+            error: null,
           }),
         }),
       },
@@ -205,13 +216,17 @@ describe("groupRouter", () => {
       userAgent: {
         create: vi.fn().mockResolvedValue({}),
       },
-      $transaction: vi.fn(async (callback: ((db: typeof mockDbBase) => Promise<unknown>) | Promise<unknown>[]): Promise<unknown> => {
-        if (typeof callback === "function") {
-          return await callback(mockDbBase);
-        }
-        // Handle array of promises
-        return Promise.all(callback);
-      }),
+      $transaction: vi.fn(
+        async (
+          callback: ((db: typeof mockDbBase) => Promise<unknown>) | Promise<unknown>[],
+        ): Promise<unknown> => {
+          if (typeof callback === "function") {
+            return await callback(mockDbBase);
+          }
+          // Handle array of promises
+          return Promise.all(callback);
+        },
+      ),
     };
 
     addDrizzleApi(mockDbBase);
@@ -327,8 +342,40 @@ describe("groupRouter", () => {
   describe("getAll", () => {
     it("should return paginated groups", async () => {
       const mockGroups = [
-        createMockGroup({ id: "group-1", name: "Group One", participants: [], organizer: { id: "user-1", firstName: "Test", lastName: "User", authUserId: "auth-1", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] }),
-        createMockGroup({ id: "group-2", name: "Group Two", participants: [], organizer: { id: "user-2", firstName: "Test", lastName: "User", authUserId: "auth-2", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] }),
+        createMockGroup({
+          id: "group-1",
+          name: "Group One",
+          participants: [],
+          organizer: {
+            id: "user-1",
+            firstName: "Test",
+            lastName: "User",
+            authUserId: "auth-1",
+            role: "USER",
+            hasAvatar: false,
+            lastSeenOn: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          coinTransactions: [],
+        }),
+        createMockGroup({
+          id: "group-2",
+          name: "Group Two",
+          participants: [],
+          organizer: {
+            id: "user-2",
+            firstName: "Test",
+            lastName: "User",
+            authUserId: "auth-2",
+            role: "USER",
+            hasAvatar: false,
+            lastSeenOn: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          coinTransactions: [],
+        }),
       ];
 
       mockDb.group.findMany.mockResolvedValue(mockGroups);
@@ -345,7 +392,25 @@ describe("groupRouter", () => {
     });
 
     it("should respect pagination parameters", async () => {
-      const mockGroups = [createMockGroup({ id: "group-1", name: "Group One", participants: [], organizer: { id: "user-1", firstName: "Test", lastName: "User", authUserId: "auth-1", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() }, coinTransactions: [] })];
+      const mockGroups = [
+        createMockGroup({
+          id: "group-1",
+          name: "Group One",
+          participants: [],
+          organizer: {
+            id: "user-1",
+            firstName: "Test",
+            lastName: "User",
+            authUserId: "auth-1",
+            role: "USER",
+            hasAvatar: false,
+            lastSeenOn: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          coinTransactions: [],
+        }),
+      ];
 
       mockDb.group.findMany.mockResolvedValue(mockGroups);
       mockDb.group.count.mockResolvedValue(2);
@@ -378,7 +443,17 @@ describe("groupRouter", () => {
           isDeleted: false,
           createdAt: new Date(),
           updatedAt: new Date(),
-          organizer: { id: "user-1", firstName: "Test", lastName: "User", authUserId: "auth-1", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() },
+          organizer: {
+            id: "user-1",
+            firstName: "Test",
+            lastName: "User",
+            authUserId: "auth-1",
+            role: "USER",
+            hasAvatar: false,
+            lastSeenOn: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
           _count: { participants: 5 },
         },
       ];
@@ -432,7 +507,17 @@ describe("groupRouter", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        trip: { id: "trip-123", name: "Test Trip", description: null, image: null, startDate: new Date(), endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), isDeleted: false, createdAt: new Date(), updatedAt: new Date() },
+        trip: {
+          id: "trip-123",
+          name: "Test Trip",
+          description: null,
+          image: null,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          isDeleted: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
         _count: { participants: 1 },
         challengeSubmissions: [],
       });
@@ -482,7 +567,17 @@ describe("groupRouter", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         _count: { participants: 5 },
-        organizer: { id: "user-123", firstName: "Test", lastName: "User", authUserId: "auth-123", role: "USER", hasAvatar: false, lastSeenOn: null, createdAt: new Date(), updatedAt: new Date() },
+        organizer: {
+          id: "user-123",
+          firstName: "Test",
+          lastName: "User",
+          authUserId: "auth-123",
+          role: "USER",
+          hasAvatar: false,
+          lastSeenOn: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       };
 
       mockDb.group.findFirst.mockResolvedValue(mockGroup);
@@ -556,7 +651,11 @@ describe("groupRouter", () => {
 
     it("should handle image upload with storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValue({ bucket: "images", path: "group/test-image.jpg", storagePath: "images/group/test-image.jpg" });
+      normalizeSupabaseStoragePath.mockReturnValue({
+        bucket: "images",
+        path: "group/test-image.jpg",
+        storagePath: "images/group/test-image.jpg",
+      });
 
       const newGroup = createMockGroup({
         id: "new-group-123",
@@ -609,8 +708,7 @@ describe("groupRouter", () => {
 
       const dbError = new Error("Unique constraint failed on the fields: (`code`)");
       (dbError as { code?: string }).code = "P2002";
-      mockDb.group.create.mockRejectedValueOnce(dbError)
-        .mockResolvedValueOnce(newGroup);
+      mockDb.group.create.mockRejectedValueOnce(dbError).mockResolvedValueOnce(newGroup);
       mockDb.group.findFirst.mockResolvedValue(newGroup);
 
       const ctx = createAuthContext(mockUser);
@@ -631,9 +729,9 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.create({ tripId: "trip-123", name: "New Group" })
-      ).rejects.toThrow("Test error");
+      await expect(caller.create({ tripId: "trip-123", name: "New Group" })).rejects.toThrow(
+        "Test error",
+      );
     });
   });
 
@@ -801,7 +899,7 @@ describe("groupRouter", () => {
           id: "group-123",
           tripId: "trip-123",
           name: "Updated Group",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -822,7 +920,7 @@ describe("groupRouter", () => {
           id: "group-123",
           tripId: "trip-123",
           organizerId: "new-organizer-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -843,7 +941,7 @@ describe("groupRouter", () => {
           id: "group-123",
           tripId: "trip-123",
           name: "Updated Group",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -863,7 +961,7 @@ describe("groupRouter", () => {
           id: "group-123",
           tripId: "trip-123",
           name: "Updated Group",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -983,7 +1081,9 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.join({ id: "non-existent", tripId: "trip-123" })).rejects.toThrow(ORPCError);
+      await expect(caller.join({ id: "non-existent", tripId: "trip-123" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should throw BAD_REQUEST for group in different trip", async () => {
@@ -1184,7 +1284,9 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getMyJoinRequestForGroup({ groupId: "group-123" })).rejects.toThrow(ORPCError);
+      await expect(caller.getMyJoinRequestForGroup({ groupId: "group-123" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
@@ -1284,7 +1386,9 @@ describe("groupRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(caller.getPendingJoinRequests({ groupId: "group-123" })).rejects.toThrow(ORPCError);
+      await expect(caller.getPendingJoinRequests({ groupId: "group-123" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
@@ -1322,12 +1426,14 @@ describe("groupRouter", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockDb.transaction.mockImplementation(async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
-              if (typeof fn === "function") {
-                return await fn(mockDb);
-              }
-              return Promise.all(fn);
-            });
+      mockDb.transaction.mockImplementation(
+        async (fn: ((db: typeof mockDb) => Promise<unknown>) | Promise<unknown>[]) => {
+          if (typeof fn === "function") {
+            return await fn(mockDb);
+          }
+          return Promise.all(fn);
+        },
+      );
 
       // Override the requireAuth mock to return the correct user for this test
       const { requireAuth } = await import("@mirai-app/auth");
@@ -1393,7 +1499,7 @@ describe("groupRouter", () => {
         caller.respondToJoinRequest({
           requestId: "non-existent",
           decision: "ACCEPT",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1420,7 +1526,7 @@ describe("groupRouter", () => {
         caller.respondToJoinRequest({
           requestId: "request-123",
           decision: "ACCEPT",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1455,7 +1561,7 @@ describe("groupRouter", () => {
         caller.respondToJoinRequest({
           requestId: "request-123",
           decision: "ACCEPT",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1495,7 +1601,7 @@ describe("groupRouter", () => {
           userId: "user-456",
           tripId: "trip-123",
           groupId: "group-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1515,7 +1621,7 @@ describe("groupRouter", () => {
           userId: "user-456",
           tripId: "trip-123",
           groupId: "group-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1545,7 +1651,7 @@ describe("groupRouter", () => {
           userId: "user-456",
           tripId: "trip-123",
           groupId: "group-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1655,7 +1761,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
           userIds: ["user-456"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1676,7 +1782,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           groupId: "group-123",
           userIds: ["user-456"],
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1792,7 +1898,7 @@ describe("groupRouter", () => {
         caller.removeUserFromGroup({
           userId: "user-456",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1807,7 +1913,7 @@ describe("groupRouter", () => {
         caller.removeUserFromGroup({
           userId: "user-456",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1822,7 +1928,7 @@ describe("groupRouter", () => {
         caller.removeUserFromGroup({
           userId: "user-123",
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1931,7 +2037,8 @@ describe("groupRouter", () => {
 
   describe("addCoins", () => {
     it("should add coins to group as moderator", async () => {
-      const { captureTripRankingSnapshot, createRankChangeActivities } = await import("../../../utils/activityFeed");
+      const { captureTripRankingSnapshot, createRankChangeActivities } =
+        await import("../../../utils/activityFeed");
       captureTripRankingSnapshot.mockResolvedValue(undefined);
       createRankChangeActivities.mockResolvedValue(undefined);
 
@@ -1993,7 +2100,7 @@ describe("groupRouter", () => {
           groupId: "group-123",
           amount: 100,
           tripId: "trip-123",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -2143,7 +2250,11 @@ describe("groupRouter", () => {
 
     it("should handle group image resolution with storage path", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValue({ bucket: "images", path: "group/test-image.jpg", storagePath: "images/group/test-image.jpg" });
+      normalizeSupabaseStoragePath.mockReturnValue({
+        bucket: "images",
+        path: "group/test-image.jpg",
+        storagePath: "images/group/test-image.jpg",
+      });
 
       const mockGroup = createMockGroup({
         id: "group-123",
@@ -2239,7 +2350,11 @@ describe("groupRouter", () => {
 
     it("should handle failed signed URL generation", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-      normalizeSupabaseStoragePath.mockReturnValue({ bucket: "images", path: "group/test-image.jpg", storagePath: "images/group/test-image.jpg" });
+      normalizeSupabaseStoragePath.mockReturnValue({
+        bucket: "images",
+        path: "group/test-image.jpg",
+        storagePath: "images/group/test-image.jpg",
+      });
 
       mockSupabase.storage.from = vi.fn().mockReturnValue({
         createSignedUrl: vi.fn().mockResolvedValue({
@@ -2285,7 +2400,7 @@ describe("groupRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing invalid input
-        caller.create({ tripId: "trip-123", name: "" })
+        caller.create({ tripId: "trip-123", name: "" }),
       ).rejects.toThrow();
     });
 
@@ -2299,7 +2414,7 @@ describe("groupRouter", () => {
           tripId: "trip-123",
           name: "Test Group",
           image: "",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -2445,7 +2560,17 @@ describe("groupRouter", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-        trip: { id: "trip-123", name: "Test Trip", description: null, image: null, startDate: new Date(), endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), isDeleted: false, createdAt: new Date(), updatedAt: new Date() },
+        trip: {
+          id: "trip-123",
+          name: "Test Trip",
+          description: null,
+          image: null,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          isDeleted: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
         _count: { participants: 0 },
         challengeSubmissions: [
           {
@@ -2453,14 +2578,34 @@ describe("groupRouter", () => {
             imageIds: ["image-1.jpg", "image-2.jpg"],
             createdAt: new Date(),
             reviewedAt: new Date(),
-            challenge: { id: "challenge-1", name: "Test Challenge", description: null, coins: 10, image: null, isDisabled: false, tripId: "trip-123", createdAt: new Date(), updatedAt: new Date() },
+            challenge: {
+              id: "challenge-1",
+              name: "Test Challenge",
+              description: null,
+              coins: 10,
+              image: null,
+              isDisabled: false,
+              tripId: "trip-123",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           },
           {
             id: "submission-2",
             imageIds: [],
             createdAt: new Date(),
             reviewedAt: new Date(),
-            challenge: { id: "challenge-2", name: "Another Challenge", description: null, coins: 10, image: null, isDisabled: false, tripId: "trip-123", createdAt: new Date(), updatedAt: new Date() },
+            challenge: {
+              id: "challenge-2",
+              name: "Another Challenge",
+              description: null,
+              coins: 10,
+              image: null,
+              isDisabled: false,
+              tripId: "trip-123",
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
           },
         ],
       });

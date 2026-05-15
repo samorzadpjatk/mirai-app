@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  fileExists,
-  dirExists,
-  readFile,
-  readTextFile,
-  listFilesRecursive,
-} from "../fs";
+import { fileExists, dirExists, readFile, readTextFile, listFilesRecursive } from "../fs";
 
 // Mock Bun global
 declare global {
@@ -21,7 +15,9 @@ describe("File System Utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBunFile = vi.fn();
-    (globalThis as unknown as { Bun: { file: typeof mockBunFile; Glob: ReturnType<typeof vi.fn> } }).Bun = {
+    (
+      globalThis as unknown as { Bun: { file: typeof mockBunFile; Glob: ReturnType<typeof vi.fn> } }
+    ).Bun = {
       file: mockBunFile,
       Glob: vi.fn(),
     };
@@ -194,10 +190,11 @@ describe("File System Utilities", () => {
 
     beforeEach(() => {
       mockGlob = vi.fn();
-      (globalThis as unknown as { Bun: { Glob: typeof mockGlob; file: typeof mockBunFile } }).Bun = {
-        file: mockBunFile,
-        Glob: mockGlob,
-      };
+      (globalThis as unknown as { Bun: { Glob: typeof mockGlob; file: typeof mockBunFile } }).Bun =
+        {
+          file: mockBunFile,
+          Glob: mockGlob,
+        };
     });
 
     it("should throw when directory does not exist", async () => {
@@ -226,11 +223,9 @@ describe("File System Utilities", () => {
       };
       mockBunFile.mockReturnValue(mockFile);
 
-      const mockScan = vi.fn().mockReturnValue([
-        "file1.txt",
-        "subdir/file2.txt",
-        "subdir/nested/file3.txt",
-      ]);
+      const mockScan = vi
+        .fn()
+        .mockReturnValue(["file1.txt", "subdir/file2.txt", "subdir/nested/file3.txt"]);
       const mockGlobInstance: { scan: typeof mockScan } = { scan: mockScan };
       mockGlob.mockReturnValue(mockGlobInstance);
 

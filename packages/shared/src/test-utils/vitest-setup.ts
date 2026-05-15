@@ -64,7 +64,7 @@ export function setupDbMocks(): void {
       trip: createMockDbModel(),
       event: createMockDbModel(),
       $transaction: vi.fn((cb: (client: typeof mockDbClient) => Promise<unknown[]>) =>
-        cb(mockDbClient)
+        cb(mockDbClient),
       ),
     };
 

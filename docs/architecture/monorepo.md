@@ -2,17 +2,18 @@
 
 ## Overview
 
-MIRAI uses a monorepo architecture managed by **Turborepo** and **Bun workspaces**. This document explains the high-level architectural decisions and how they enable efficient development across multiple applications and shared packages.
+MIRAI uses a monorepo architecture managed by **Nx** and **Bun workspaces**. This document explains the high-level architectural decisions and how they enable efficient development across multiple applications and shared packages.
 
-## Why Turborepo + Bun?
+## Why Nx + Bun?
 
-### Turborepo
+### Nx
 
-**Turborepo** provides:
+**Nx** provides:
 - **Task orchestration**: Define task dependencies and run them in optimal order
-- **Intelligent caching**: Skip work that's already been done
+- **Intelligent caching**: Skip work that's already been done with fine-grained input hashing
 - **Parallel execution**: Run independent tasks simultaneously
-- **Remote caching** (optional): Share build artifacts across team members
+- **Affected detection**: Run tasks only on projects changed since a git baseline
+- **Plugin ecosystem**: Automatic task inference from project configuration
 
 ### Bun
 
@@ -29,7 +30,7 @@ MIRAI uses a monorepo architecture managed by **Turborepo** and **Bun workspaces
 Applications are deployable units:
 
 - **native**: Expo React Native app for iOS/Android
-- **backend-server**: Fastify + oRPC API server
+- **backend-server**: Hono + oRPC API server
 - **notification-sender**: Background worker for push notifications
 - **seed**: CLI tool for database seeding
 
@@ -41,7 +42,7 @@ Packages are shared libraries:
 - **db**: Drizzle schema and database client
 - **shared**: Shared utilities and design tokens
 - **supabase**: Supabase client configuration
-- **trpc**: oRPC routers and client utilities
+- **orpc**: oRPC routers and client utilities
 
 ## Dependency Flow
 
@@ -61,7 +62,7 @@ Packages are shared libraries:
                     │
                     ▼
             ┌─────────────┐
-            │    trpc     │ ◄───── Used by native (client)
+            │    orpc     │ ◄───── Used by native (client)
             └──────┬──────┘
                    │
       ┌────────────┼────────────┐
@@ -83,12 +84,18 @@ Packages are shared libraries:
 
 ### Task Dependencies
 
-```
-build: depends on ^build (upstream builds)
-typecheck: depends on ^typecheck
-lint: depends on ^lint
-test: runs after build
-```
+Nx task dependencies are defined in `nx.json` via `targetDefaults`:
+
+| Task | Depends on | Caching |
+|------|-----------|---------|
+| `build` | `^build`, `db:generate` | Output artifacts cached |
+| `typecheck` | `^typecheck` | Cached |
+| `lint` | `^lint` | Cached |
+| `test` | `^build` | Coverage reports cached |
+| `container` | `build` | Cached |
+| `dev` | `db:generate` | Never cached |
+
+The `^` prefix means "upstream dependencies must complete this task first." Nx computes the project graph automatically from Bun workspace links.
 
 ## Code Organization Principles
 
@@ -99,11 +106,12 @@ test: runs after build
 
 ## Performance Considerations
 
-- **Incremental builds**: Only changed packages are rebuilt
-- **Parallel testing**: Tests run in parallel across packages
+- **Affected builds**: `nx affected -t build` rebuilds only changed projects and their dependents
+- **Parallel execution**: Independent tasks run simultaneously across the project graph
+- **Local caching**: Task outputs are cached in `.nx/cache` and reused across runs
 - **Hoisted dependencies**: Common dependencies are hoisted to root
 
 ## Further Reading
 
-- [Turborepo Configuration](./turborepo.md)
+- [Nx Configuration](./nx.md)
 - [Bun Workspaces](./bun-workspaces.md)

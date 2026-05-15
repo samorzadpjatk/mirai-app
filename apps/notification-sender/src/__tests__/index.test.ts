@@ -169,7 +169,7 @@ describe("Notification Sender - Client Initialization", () => {
       "http://localhost:8000",
       "test-key",
       undefined,
-      { realtime: { params: { eventsPerSecond: 2 } } }
+      { realtime: { params: { eventsPerSecond: 2 } } },
     );
   });
 
@@ -185,7 +185,7 @@ describe("Notification Sender - Client Initialization", () => {
     expect(mockGetORPCClient).toHaveBeenCalledWith(
       "http://localhost:2022/api/trpc",
       "ws://localhost:2022/api/trpc",
-      "test-key"
+      "test-key",
     );
   });
 
@@ -220,7 +220,9 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   it("should log realtime channel status", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
     let subscribeCallback: ((status: string) => void) | undefined;
     mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
@@ -243,7 +245,9 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   it("should handle different channel statuses", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
     let subscribeCallback: ((status: string) => void) | undefined;
     mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
@@ -300,11 +304,16 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should remove channel and cleanup on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
+      /* noop */
+    }) as (code?: string | number | null) => never);
     let sigintHandler: (() => Promise<void>) | undefined;
     const capturedChannel = { on: mockChannelOn, subscribe: mockChannelSubscribe };
 
-    processOnSpy.mockImplementation(((event: string | symbol, handler: (...args: unknown[]) => void) => {
+    processOnSpy.mockImplementation(((
+      event: string | symbol,
+      handler: (...args: unknown[]) => void,
+    ) => {
       if (event === "SIGINT") {
         sigintHandler = handler as () => Promise<void>;
       }
@@ -352,11 +361,18 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   it("should log shutdown message on SIGINT", async () => {
     const processOnSpy = vi.spyOn(process, "on");
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
+      /* noop */
+    }) as (code?: string | number | null) => never);
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
     let sigintHandler: (() => Promise<void>) | undefined;
 
-    processOnSpy.mockImplementation(((event: string | symbol, handler: (...args: unknown[]) => void) => {
+    processOnSpy.mockImplementation(((
+      event: string | symbol,
+      handler: (...args: unknown[]) => void,
+    ) => {
       if (event === "SIGINT") {
         sigintHandler = handler as () => Promise<void>;
       }
@@ -386,13 +402,24 @@ describe("Notification Sender - SIGINT Handling", () => {
 describe("Notification Sender - Notification Processing", () => {
   const originalEnv = process.env;
 
-  async function setupTest(mobileResponse?: { total: number; sent: number; failed: number; success: boolean }) {
+  async function setupTest(mobileResponse?: {
+    total: number;
+    sent: number;
+    failed: number;
+    success: boolean;
+  }) {
     vi.resetModules();
     vi.clearAllMocks();
 
-    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => { /* noop */ }) as (code?: string | number | null) => never);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => { /* noop */ });
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => { /* noop */ });
+    const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
+      /* noop */
+    }) as (code?: string | number | null) => never);
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {
+      /* noop */
+    });
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
+      /* noop */
+    });
 
     process.env = { ...originalEnv };
     process.env.TRPC_HOST = "localhost:2022";
@@ -401,12 +428,14 @@ describe("Notification Sender - Notification Processing", () => {
 
     mockChannelOn.mockReturnValue({ subscribe: vi.fn() });
     mockTrackDeliveryStart.mockResolvedValue(undefined);
-    mockSendMobileNotifications.mockResolvedValue(mobileResponse ?? {
-      total: 10,
-      sent: 8,
-      failed: 2,
-      success: false,
-    });
+    mockSendMobileNotifications.mockResolvedValue(
+      mobileResponse ?? {
+        total: 10,
+        sent: 8,
+        failed: 2,
+        success: false,
+      },
+    );
     mockTrackDeliveryComplete.mockResolvedValue(undefined);
     mockTrackDeliveryFailure.mockResolvedValue(undefined);
 
@@ -462,7 +491,12 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should log delivery summary", async () => {
-    const { payloadHandler, consoleLogSpy } = await setupTest({ total: 10, sent: 8, failed: 2, success: false });
+    const { payloadHandler, consoleLogSpy } = await setupTest({
+      total: 10,
+      sent: 8,
+      failed: 2,
+      success: false,
+    });
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
@@ -501,7 +535,7 @@ describe("Notification Sender - Notification Processing", () => {
         successCount: 5,
         failureCount: 5,
         errors: "Some deliveries failed",
-      })
+      }),
     );
   });
 
@@ -512,8 +546,13 @@ describe("Notification Sender - Notification Processing", () => {
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    interface TrackFailureCall { notificationId: string; error: Error }
-    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    interface TrackFailureCall {
+      notificationId: string;
+      error: Error;
+    }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as
+      | TrackFailureCall
+      | undefined;
     expect(trackFailureCall?.notificationId).toBe("notif-123");
     expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });
@@ -525,8 +564,13 @@ describe("Notification Sender - Notification Processing", () => {
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    interface TrackFailureCall { notificationId: string; error: Error }
-    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    interface TrackFailureCall {
+      notificationId: string;
+      error: Error;
+    }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as
+      | TrackFailureCall
+      | undefined;
     expect(trackFailureCall?.notificationId).toBe("notif-123");
     expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });
@@ -538,8 +582,13 @@ describe("Notification Sender - Notification Processing", () => {
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
     expect(consoleErrorSpy).toHaveBeenCalled();
-    interface TrackFailureCall { notificationId: string; error: Error }
-    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as TrackFailureCall | undefined;
+    interface TrackFailureCall {
+      notificationId: string;
+      error: Error;
+    }
+    const trackFailureCall = mockTrackDeliveryFailure.mock.calls[0]?.[0] as
+      | TrackFailureCall
+      | undefined;
     expect(trackFailureCall?.notificationId).toBe("notif-123");
     expect(trackFailureCall?.error).toBeInstanceOf(Error);
   });

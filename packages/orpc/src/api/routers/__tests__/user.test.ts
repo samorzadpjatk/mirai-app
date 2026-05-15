@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { userRouter } from "../user";
 import { createRouterClient } from "@orpc/server";
@@ -15,23 +12,42 @@ import { addDrizzleApi } from "../../../../vitest.setup";
 vi.mock("../../../utils/authEmails", () => ({
   buildAuthEmailLookup: vi.fn(),
   buildAuthUserSummaryLookup: vi.fn(),
-  resolveAuthEmail: vi.fn((emailByAuthUserId: Map<string, string>, authUserId: string | null): string | null => {
-    if (!authUserId) return null;
-    return emailByAuthUserId.get(authUserId) ?? null;
-  }),
+  resolveAuthEmail: vi.fn(
+    (emailByAuthUserId: Map<string, string>, authUserId: string | null): string | null => {
+      if (!authUserId) return null;
+      return emailByAuthUserId.get(authUserId) ?? null;
+    },
+  ),
 }));
 
 // Mock the auth module
 vi.mock("@mirai-app/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({
     user: { id: "auth-1", email: "user@example.com" },
-    dbUser: { id: "user-1", authUserId: "auth-1", email: "user@example.com", firstName: "John", lastName: "Doe", role: "USER" },
+    dbUser: {
+      id: "user-1",
+      authUserId: "auth-1",
+      email: "user@example.com",
+      firstName: "John",
+      lastName: "Doe",
+      role: "USER",
+    },
   }),
   requireAdmin: vi.fn().mockResolvedValue({
-    id: "admin-1", authUserId: "auth-1", email: "admin@example.com", firstName: "Admin", lastName: "User", role: "ADMIN",
+    id: "admin-1",
+    authUserId: "auth-1",
+    email: "admin@example.com",
+    firstName: "Admin",
+    lastName: "User",
+    role: "ADMIN",
   }),
   requireModerator: vi.fn().mockResolvedValue({
-    id: "moderator-1", authUserId: "auth-1", email: "moderator@example.com", firstName: "Moderator", lastName: "User", role: "MODERATOR",
+    id: "moderator-1",
+    authUserId: "auth-1",
+    email: "moderator@example.com",
+    firstName: "Moderator",
+    lastName: "User",
+    role: "MODERATOR",
   }),
   AuthenticationError: class AuthenticationError extends Error {},
   AuthorizationError: class AuthorizationError extends Error {},
@@ -42,23 +58,24 @@ import { requireAuth, requireAdmin, requireModerator } from "@mirai-app/auth";
 const createCaller = (ctx: TRPCContext) => createRouterClient(userRouter, { context: ctx });
 
 describe("userRouter", () => {
-   
   let mockDb: any;
-   
+
   let mockSupabase: any;
-   
+
   let mockBuildAuthEmailLookup: any;
-   
+
   let mockBuildAuthUserSummaryLookup: any;
-   
+
   let mockRequireAuth: any;
-   
+
   let mockRequireAdmin: any;
-   
+
   let mockRequireModerator: any;
 
   // Test data factories
-  const createMockSupabaseUser = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  const createMockSupabaseUser = (
+    overrides: Record<string, unknown> = {},
+  ): Record<string, unknown> => ({
     id: "auth-1",
     email: "user@example.com",
     app_metadata: {},
@@ -68,7 +85,9 @@ describe("userRouter", () => {
     ...overrides,
   });
 
-  const createMockAuthUser = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+  const createMockAuthUser = (
+    overrides: Record<string, unknown> = {},
+  ): Record<string, unknown> => ({
     id: "auth-1",
     authUserId: "auth-1",
     email: "user@example.com",
@@ -93,7 +112,9 @@ describe("userRouter", () => {
     ...overrides,
   });
 
-  const createMockParticipant = (overrides: Partial<TripParticipant & { user: User; group: Group | null }> = {}): TripParticipant & { user: User; group: Group | null } => ({
+  const createMockParticipant = (
+    overrides: Partial<TripParticipant & { user: User; group: Group | null }> = {},
+  ): TripParticipant & { user: User; group: Group | null } => ({
     id: "participant-1",
     userId: "user-1",
     tripId: "trip-1",
@@ -147,7 +168,6 @@ describe("userRouter", () => {
     };
 
     addDrizzleApi(mockDb);
-    mockDb = mockDb;
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -215,7 +235,10 @@ describe("userRouter", () => {
       it("should return not banned when user not found in admin lookup", async () => {
         mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -233,7 +256,10 @@ describe("userRouter", () => {
       it("should return not banned when no banned_until", async () => {
         mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -253,7 +279,10 @@ describe("userRouter", () => {
 
         mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -338,7 +367,10 @@ describe("userRouter", () => {
       it("should handle invalid banned_until date", async () => {
         mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -356,7 +388,10 @@ describe("userRouter", () => {
       it("should handle admin lookup error gracefully", async () => {
         mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -409,7 +444,13 @@ describe("userRouter", () => {
         });
 
         mockSupabase.auth.admin.getUserById.mockResolvedValue({
-          data: { user: createMockSupabaseUser({ id: "auth-1", email: "user@example.com", banned_until: null }) },
+          data: {
+            user: createMockSupabaseUser({
+              id: "auth-1",
+              email: "user@example.com",
+              banned_until: null,
+            }),
+          },
           error: null,
         });
 
@@ -430,7 +471,9 @@ describe("userRouter", () => {
         const futureDate = new Date(Date.now() + 86400000).toISOString();
 
         mockSupabase.auth.admin.listUsers.mockResolvedValue({
-          data: { users: [createMockSupabaseUser({ id: "auth-banned", email: "banned@example.com" })] },
+          data: {
+            users: [createMockSupabaseUser({ id: "auth-banned", email: "banned@example.com" })],
+          },
           error: null,
         });
 
@@ -477,7 +520,9 @@ describe("userRouter", () => {
 
         const caller = createCaller(ctx);
 
-        await expect(caller.getBanStatusByEmail({ email: "test@example.com" })).rejects.toThrow(ORPCError);
+        await expect(caller.getBanStatusByEmail({ email: "test@example.com" })).rejects.toThrow(
+          ORPCError,
+        );
       });
 
       it("should handle getUserById error after finding user", async () => {
@@ -500,19 +545,30 @@ describe("userRouter", () => {
 
         const caller = createCaller(ctx);
 
-        await expect(caller.getBanStatusByEmail({ email: "user@example.com" })).rejects.toThrow(ORPCError);
+        await expect(caller.getBanStatusByEmail({ email: "user@example.com" })).rejects.toThrow(
+          ORPCError,
+        );
       });
 
       it("should paginate through users to find email", async () => {
         const futureDate = new Date(Date.now() + 86400000).toISOString();
 
         // First page doesn't have the user
-        mockSupabase.auth.admin.listUsers.mockResolvedValueOnce({
-            data: { users: Array(1000).fill(null).map((_, i) => createMockSupabaseUser({ id: `auth-${i}`, email: `user${i}@example.com` })) },
+        mockSupabase.auth.admin.listUsers
+          .mockResolvedValueOnce({
+            data: {
+              users: Array(1000)
+                .fill(null)
+                .map((_, i) =>
+                  createMockSupabaseUser({ id: `auth-${i}`, email: `user${i}@example.com` }),
+                ),
+            },
             error: null,
           })
           .mockResolvedValueOnce({
-            data: { users: [createMockSupabaseUser({ id: "auth-target", email: "target@example.com" })] },
+            data: {
+              users: [createMockSupabaseUser({ id: "auth-target", email: "target@example.com" })],
+            },
             error: null,
           });
 
@@ -645,18 +701,20 @@ describe("userRouter", () => {
         const group = createMockGroup();
         const dbUser = {
           ...createMockUser(),
-          trips: [{
-            id: "participant-1",
-            tripId: "trip-1",
-            groupId: "group-1",
-            userId: "user-1",
-            wristNumber: null,
-            houseNumber: null,
-            group,
-            trip: { id: "trip-1", name: "Test Trip" },
-            createdAt: new Date("2024-01-01"),
-            updatedAt: new Date("2024-01-01"),
-          }],
+          trips: [
+            {
+              id: "participant-1",
+              tripId: "trip-1",
+              groupId: "group-1",
+              userId: "user-1",
+              wristNumber: null,
+              houseNumber: null,
+              group,
+              trip: { id: "trip-1", name: "Test Trip" },
+              createdAt: new Date("2024-01-01"),
+              updatedAt: new Date("2024-01-01"),
+            },
+          ],
           organizerGroup: null,
         };
         mockDb.user.findUnique.mockResolvedValue(dbUser);
@@ -708,7 +766,9 @@ describe("userRouter", () => {
 
         const caller = createCaller(ctx);
 
-        await expect(caller.updateMyProfile({ firstName: "John123", lastName: "Doe" })).rejects.toThrow();
+        await expect(
+          caller.updateMyProfile({ firstName: "John123", lastName: "Doe" }),
+        ).rejects.toThrow();
       });
 
       it("should reject names shorter than 2 characters", async () => {
@@ -735,7 +795,9 @@ describe("userRouter", () => {
         const caller = createCaller(ctx);
         const longName = "a".repeat(101);
 
-        await expect(caller.updateMyProfile({ firstName: longName, lastName: "Doe" })).rejects.toThrow();
+        await expect(
+          caller.updateMyProfile({ firstName: longName, lastName: "Doe" }),
+        ).rejects.toThrow();
       });
     });
 
@@ -868,18 +930,20 @@ describe("userRouter", () => {
         const group = createMockGroup();
         const user = {
           ...createMockUser(),
-          trips: [{
-            id: "participant-1",
-            tripId: "trip-1",
-            groupId: "group-1",
-            userId: "user-1",
-            wristNumber: null,
-            houseNumber: null,
-            group,
-            trip: { id: "trip-1", name: "Test Trip" },
-            createdAt: new Date("2024-01-01"),
-            updatedAt: new Date("2024-01-01"),
-          }],
+          trips: [
+            {
+              id: "participant-1",
+              tripId: "trip-1",
+              groupId: "group-1",
+              userId: "user-1",
+              wristNumber: null,
+              houseNumber: null,
+              group,
+              trip: { id: "trip-1", name: "Test Trip" },
+              createdAt: new Date("2024-01-01"),
+              updatedAt: new Date("2024-01-01"),
+            },
+          ],
           organizerGroup: null,
         };
         mockDb.user.findUnique.mockResolvedValue(user);
@@ -914,10 +978,12 @@ describe("userRouter", () => {
           }),
         ];
         mockDb.tripParticipant.findMany.mockResolvedValue(participants);
-        mockBuildAuthEmailLookup.mockResolvedValue(new Map([
-          ["auth-1", "user1@example.com"],
-          ["auth-2", "user2@example.com"],
-        ]));
+        mockBuildAuthEmailLookup.mockResolvedValue(
+          new Map([
+            ["auth-1", "user1@example.com"],
+            ["auth-2", "user2@example.com"],
+          ]),
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1127,10 +1193,18 @@ describe("userRouter", () => {
           }),
         ];
         mockDb.tripParticipant.findMany.mockResolvedValue(participants);
-        mockBuildAuthUserSummaryLookup.mockResolvedValue(new Map([
-          ["auth-1", { email: "john@example.com", bannedUntil: null, banReason: null, isBanned: false }],
-          ["auth-2", { email: "jane@example.com", bannedUntil: null, banReason: null, isBanned: false }],
-        ]));
+        mockBuildAuthUserSummaryLookup.mockResolvedValue(
+          new Map([
+            [
+              "auth-1",
+              { email: "john@example.com", bannedUntil: null, banReason: null, isBanned: false },
+            ],
+            [
+              "auth-2",
+              { email: "jane@example.com", bannedUntil: null, banReason: null, isBanned: false },
+            ],
+          ]),
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1151,11 +1225,13 @@ describe("userRouter", () => {
       });
 
       it("should handle pagination with limit and offset", async () => {
-        const participants = Array(10).fill(null).map((_, i) =>
-          createMockParticipant({
-            user: createMockUser({ id: `user-${i}`, authUserId: `auth-${i}` }),
-          })
-        );
+        const participants = Array(10)
+          .fill(null)
+          .map((_, i) =>
+            createMockParticipant({
+              user: createMockUser({ id: `user-${i}`, authUserId: `auth-${i}` }),
+            }),
+          );
         mockDb.tripParticipant.count.mockResolvedValue(10);
         mockDb.tripParticipant.findMany.mockResolvedValue(participants.slice(0, 2));
         mockBuildAuthUserSummaryLookup.mockResolvedValue(new Map());
@@ -1181,11 +1257,13 @@ describe("userRouter", () => {
       });
 
       it("should handle page-based pagination", async () => {
-        const participants = Array(5).fill(null).map((_, i) =>
-          createMockParticipant({
-            user: createMockUser({ id: `user-${i}`, authUserId: `auth-${i}` }),
-          })
-        );
+        const participants = Array(5)
+          .fill(null)
+          .map((_, i) =>
+            createMockParticipant({
+              user: createMockUser({ id: `user-${i}`, authUserId: `auth-${i}` }),
+            }),
+          );
         mockDb.tripParticipant.count.mockResolvedValue(0);
         mockDb.tripParticipant.findMany.mockResolvedValue([]);
         mockBuildAuthUserSummaryLookup.mockResolvedValue(new Map());
@@ -1249,7 +1327,11 @@ describe("userRouter", () => {
 
     describe("updateUserAdminStatus", () => {
       it("should update user role", async () => {
-        const updatedUser = createMockUser({ id: "user-2", authUserId: "auth-2", role: "MODERATOR" });
+        const updatedUser = createMockUser({
+          id: "user-2",
+          authUserId: "auth-2",
+          role: "MODERATOR",
+        });
         mockDb.user.update.mockResolvedValue(updatedUser);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
 
@@ -1277,12 +1359,16 @@ describe("userRouter", () => {
         const caller = createCaller(ctx);
 
         await expect(
-          caller.updateUserAdminStatus({ userId: mockDbUser.id, role: "USER" })
+          caller.updateUserAdminStatus({ userId: mockDbUser.id, role: "USER" }),
         ).rejects.toThrow(ORPCError);
       });
 
       it("should allow admin to change their role to another admin", async () => {
-        const updatedUser = createMockUser({ id: mockDbUser.id, authUserId: "auth-1", role: "ADMIN" });
+        const updatedUser = createMockUser({
+          id: mockDbUser.id,
+          authUserId: "auth-1",
+          role: "ADMIN",
+        });
         mockDb.user.update.mockResolvedValue(updatedUser);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-1", "admin@example.com"]]));
 
@@ -1303,7 +1389,10 @@ describe("userRouter", () => {
     describe("createUser", () => {
       it("should create new user and add to trip", async () => {
         const authUser = createMockSupabaseUser({ id: "auth-new", email: "new@example.com" });
-        mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: authUser }, error: null });
+        mockSupabase.auth.admin.createUser.mockResolvedValue({
+          data: { user: authUser },
+          error: null,
+        });
 
         const newUser = createMockUser({ id: "user-new", authUserId: "auth-new" });
         const participant = createMockParticipant({
@@ -1313,33 +1402,35 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
-          const tx = {
-            ...mockDb,
-            tripParticipant: {
-              ...mockDb.tripParticipant,
-              upsert: vi.fn().mockResolvedValue(participant),
-              findFirst: vi.fn().mockResolvedValue(participant),
-              findUnique: vi.fn().mockResolvedValue(participant),
-            },
-            user: {
-              ...mockDb.user,
-              upsert: vi.fn().mockResolvedValue(newUser),
-              findFirst: vi.fn().mockResolvedValue(newUser),
-              findUnique: vi.fn().mockResolvedValue(newUser),
-            },
-          };
-          tx.query = {
-            users: {
-              findFirst: vi.fn().mockResolvedValue(newUser),
-            },
-            tripParticipants: {
-              findFirst: vi.fn().mockResolvedValue(participant),
-            },
-          };
-          const result = await fn(tx as unknown);
-          return result;
-        });
+        mockDb.transaction.mockImplementation(
+          async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+            const tx = {
+              ...mockDb,
+              tripParticipant: {
+                ...mockDb.tripParticipant,
+                upsert: vi.fn().mockResolvedValue(participant),
+                findFirst: vi.fn().mockResolvedValue(participant),
+                findUnique: vi.fn().mockResolvedValue(participant),
+              },
+              user: {
+                ...mockDb.user,
+                upsert: vi.fn().mockResolvedValue(newUser),
+                findFirst: vi.fn().mockResolvedValue(newUser),
+                findUnique: vi.fn().mockResolvedValue(newUser),
+              },
+            };
+            tx.query = {
+              users: {
+                findFirst: vi.fn().mockResolvedValue(newUser),
+              },
+              tripParticipants: {
+                findFirst: vi.fn().mockResolvedValue(participant),
+              },
+            };
+            const result = await fn(tx as unknown);
+            return result;
+          },
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1361,8 +1452,14 @@ describe("userRouter", () => {
       });
 
       it("should use existing user if auth user already exists", async () => {
-        const authUser = createMockSupabaseUser({ id: "auth-existing", email: "existing@example.com" });
-        mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: authUser }, error: null });
+        const authUser = createMockSupabaseUser({
+          id: "auth-existing",
+          email: "existing@example.com",
+        });
+        mockSupabase.auth.admin.createUser.mockResolvedValue({
+          data: { user: authUser },
+          error: null,
+        });
 
         const existingUser = createMockUser({ id: "user-existing", authUserId: "auth-existing" });
         const participant = createMockParticipant({
@@ -1372,32 +1469,34 @@ describe("userRouter", () => {
         });
 
         mockDb.tripParticipant.upsert.mockResolvedValue(participant);
-        mockDb.transaction.mockImplementation(async (fn: (db: typeof mockDb) => Promise<unknown>) => {
-          const tx = {
-            ...mockDb,
-            tripParticipant: {
-              ...mockDb.tripParticipant,
-              upsert: vi.fn().mockResolvedValue(participant),
-              findFirst: vi.fn().mockResolvedValue(participant),
-              findUnique: vi.fn().mockResolvedValue(participant),
-            },
-            user: {
-              ...mockDb.user,
-              upsert: vi.fn().mockResolvedValue(existingUser),
-              findFirst: vi.fn().mockResolvedValue(existingUser),
-              findUnique: vi.fn().mockResolvedValue(existingUser),
-            },
-          };
-          tx.query = {
-            users: {
-              findFirst: vi.fn().mockResolvedValue(existingUser),
-            },
-            tripParticipants: {
-              findFirst: vi.fn().mockResolvedValue(participant),
-            },
-          };
-          return fn(tx as unknown);
-        });
+        mockDb.transaction.mockImplementation(
+          async (fn: (db: typeof mockDb) => Promise<unknown>) => {
+            const tx = {
+              ...mockDb,
+              tripParticipant: {
+                ...mockDb.tripParticipant,
+                upsert: vi.fn().mockResolvedValue(participant),
+                findFirst: vi.fn().mockResolvedValue(participant),
+                findUnique: vi.fn().mockResolvedValue(participant),
+              },
+              user: {
+                ...mockDb.user,
+                upsert: vi.fn().mockResolvedValue(existingUser),
+                findFirst: vi.fn().mockResolvedValue(existingUser),
+                findUnique: vi.fn().mockResolvedValue(existingUser),
+              },
+            };
+            tx.query = {
+              users: {
+                findFirst: vi.fn().mockResolvedValue(existingUser),
+              },
+              tripParticipants: {
+                findFirst: vi.fn().mockResolvedValue(participant),
+              },
+            };
+            return fn(tx as unknown);
+          },
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1418,7 +1517,16 @@ describe("userRouter", () => {
       });
 
       it("should throw error when auth user creation fails", async () => {
-        mockSupabase.auth.admin.createUser.mockResolvedValue({ data: { user: null }, error: { message: "Creation failed", code: "unknown", status: 500, __isAuthError: true, toJSON: () => ({}) } as never });
+        mockSupabase.auth.admin.createUser.mockResolvedValue({
+          data: { user: null },
+          error: {
+            message: "Creation failed",
+            code: "unknown",
+            status: 500,
+            __isAuthError: true,
+            toJSON: () => ({}),
+          } as never,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1435,7 +1543,7 @@ describe("userRouter", () => {
             firstName: "Test",
             lastName: "User",
             email: "test@example.com",
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1455,7 +1563,7 @@ describe("userRouter", () => {
             firstName: "",
             lastName: "User",
             email: "test@example.com",
-          })
+          }),
         ).rejects.toThrow();
 
         await expect(
@@ -1464,7 +1572,7 @@ describe("userRouter", () => {
             firstName: "Test",
             lastName: "",
             email: "test@example.com",
-          })
+          }),
         ).rejects.toThrow();
 
         await expect(
@@ -1473,7 +1581,7 @@ describe("userRouter", () => {
             firstName: "Test",
             lastName: "User",
             email: "invalid-email",
-          })
+          }),
         ).rejects.toThrow();
       });
     });
@@ -1522,7 +1630,7 @@ describe("userRouter", () => {
             userId: "user-2",
             firstName: "",
             lastName: "Name",
-          })
+          }),
         ).rejects.toThrow();
 
         await expect(
@@ -1530,7 +1638,7 @@ describe("userRouter", () => {
             userId: "user-2",
             firstName: "Test",
             lastName: "",
-          })
+          }),
         ).rejects.toThrow();
       });
     });
@@ -1542,9 +1650,15 @@ describe("userRouter", () => {
         mockDb.user.findUnique.mockResolvedValue(user);
 
         const authUser = createMockSupabaseUser({ id: "auth-2", email: "user2@example.com" });
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: authUser }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: authUser },
+          error: null,
+        });
 
-        mockSupabase.auth.admin.updateUserById.mockResolvedValue({ data: { user: authUser }, error: null });
+        mockSupabase.auth.admin.updateUserById.mockResolvedValue({
+          data: { user: authUser },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1579,7 +1693,7 @@ describe("userRouter", () => {
           caller.banUserUntil({
             userId: "nonexistent",
             bannedUntilMs: Date.now() + 86400000,
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1601,7 +1715,7 @@ describe("userRouter", () => {
           caller.banUserUntil({
             userId: "user-2",
             bannedUntilMs: pastDate,
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1622,7 +1736,7 @@ describe("userRouter", () => {
           caller.banUserUntil({
             userId: "user-2",
             bannedUntilMs: Number.NaN,
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1631,7 +1745,10 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(null);
 
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: null }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: null },
+          error: null,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1646,7 +1763,7 @@ describe("userRouter", () => {
           caller.banUserUntil({
             userId: "user-2",
             bannedUntilMs: futureDate,
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1656,9 +1773,21 @@ describe("userRouter", () => {
         mockDb.user.findUnique.mockResolvedValue(null);
 
         const authUser = createMockSupabaseUser({ id: "auth-2", email: "user2@example.com" });
-        mockSupabase.auth.admin.getUserById.mockResolvedValue({ data: { user: authUser }, error: null });
+        mockSupabase.auth.admin.getUserById.mockResolvedValue({
+          data: { user: authUser },
+          error: null,
+        });
 
-        mockSupabase.auth.admin.updateUserById.mockResolvedValue({ data: { user: authUser }, error: { message: "Update failed", code: "unknown", status: 500, __isAuthError: true, toJSON: () => ({}) } as never });
+        mockSupabase.auth.admin.updateUserById.mockResolvedValue({
+          data: { user: authUser },
+          error: {
+            message: "Update failed",
+            code: "unknown",
+            status: 500,
+            __isAuthError: true,
+            toJSON: () => ({}),
+          } as never,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1673,7 +1802,7 @@ describe("userRouter", () => {
           caller.banUserUntil({
             userId: "user-2",
             bannedUntilMs: futureDate,
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
     });
@@ -1687,7 +1816,9 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(0);
 
-        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) =>
+          fn(mockDb),
+        );
 
         mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: null });
 
@@ -1715,7 +1846,9 @@ describe("userRouter", () => {
         mockDb.tripParticipant.findUnique.mockResolvedValue(participant);
         mockDb.tripParticipant.count.mockResolvedValue(1); // User has other trips
 
-        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) =>
+          fn(mockDb),
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1749,7 +1882,7 @@ describe("userRouter", () => {
           caller.deleteUser({
             userId: "nonexistent",
             tripId: "trip-1",
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1757,7 +1890,9 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) =>
+          fn(mockDb),
+        );
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1772,7 +1907,7 @@ describe("userRouter", () => {
           caller.deleteUser({
             userId: "user-2",
             tripId: "trip-1",
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1780,9 +1915,20 @@ describe("userRouter", () => {
         const user = createMockUser({ authUserId: "auth-2" });
         mockDb.user.findUnique.mockResolvedValue(user);
 
-        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) => fn(mockDb));
+        mockDb.transaction.mockImplementation((fn: (db: typeof mockDb) => Promise<unknown>) =>
+          fn(mockDb),
+        );
 
-        mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: { user: null }, error: { message: "Delete failed", code: "unknown", status: 500, __isAuthError: true, toJSON: () => ({}) } as never });
+        mockSupabase.auth.admin.deleteUser.mockResolvedValue({
+          data: { user: null },
+          error: {
+            message: "Delete failed",
+            code: "unknown",
+            status: 500,
+            __isAuthError: true,
+            toJSON: () => ({}),
+          } as never,
+        });
 
         const ctx: TRPCContext = {
           db: mockDb,
@@ -1797,7 +1943,7 @@ describe("userRouter", () => {
           caller.deleteUser({
             userId: "user-2",
             tripId: "trip-1",
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
     });
@@ -1837,7 +1983,12 @@ describe("userRouter", () => {
       });
 
       it("should throw when wrist number already taken", async () => {
-        const existingUser = createMockUser({ id: "user-3", authUserId: "auth-3", firstName: "Jane", lastName: "Doe" });
+        const existingUser = createMockUser({
+          id: "user-3",
+          authUserId: "auth-3",
+          firstName: "Jane",
+          lastName: "Doe",
+        });
         const existingParticipant = createMockParticipant({
           user: existingUser,
           userId: "user-3",
@@ -1862,7 +2013,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
             wristNumber: "W123",
-          })
+          }),
         ).rejects.toThrow(ORPCError);
       });
 
@@ -1881,7 +2032,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
             wristNumber: "",
-          })
+          }),
         ).rejects.toThrow();
 
         await expect(
@@ -1889,7 +2040,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
             wristNumber: "a".repeat(21),
-          })
+          }),
         ).rejects.toThrow();
       });
     });
@@ -1973,7 +2124,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
             houseNumber: "",
-          })
+          }),
         ).rejects.toThrow();
 
         await expect(
@@ -1981,7 +2132,7 @@ describe("userRouter", () => {
             userId: "user-2",
             tripId: "trip-1",
             houseNumber: "a".repeat(21),
-          })
+          }),
         ).rejects.toThrow();
       });
     });
@@ -2084,7 +2235,7 @@ describe("userRouter", () => {
         const caller = createCaller(ctx);
 
         await expect(
-          caller.updateMyProfile({ firstName: "John123", lastName: "Doe" })
+          caller.updateMyProfile({ firstName: "John123", lastName: "Doe" }),
         ).rejects.toThrow();
       });
 
@@ -2107,7 +2258,7 @@ describe("userRouter", () => {
         const caller = createCaller(ctx);
 
         await expect(
-          caller.updateMyProfile({ firstName: "John", lastName: "Doe" })
+          caller.updateMyProfile({ firstName: "John", lastName: "Doe" }),
         ).resolves.toBeDefined();
       });
     });
@@ -2127,12 +2278,16 @@ describe("userRouter", () => {
 
         await expect(
           // @ts-expect-error - Testing invalid role
-          caller.updateUserAdminStatus({ userId: "user-2", role: "INVALID_ROLE" })
+          caller.updateUserAdminStatus({ userId: "user-2", role: "INVALID_ROLE" }),
         ).rejects.toThrow();
       });
 
       it("should accept valid roles", async () => {
-        const updatedUser = createMockUser({ id: "user-2", authUserId: "auth-2", role: "MODERATOR" });
+        const updatedUser = createMockUser({
+          id: "user-2",
+          authUserId: "auth-2",
+          role: "MODERATOR",
+        });
         mockRequireAdmin.mockResolvedValue(createMockUser({ role: "ADMIN" }));
         mockDb.user.update.mockResolvedValue(updatedUser);
         mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-2", "user2@example.com"]]));
@@ -2147,7 +2302,7 @@ describe("userRouter", () => {
         const caller = createCaller(ctx);
 
         await expect(
-          caller.updateUserAdminStatus({ userId: "user-2", role: "MODERATOR" })
+          caller.updateUserAdminStatus({ userId: "user-2", role: "MODERATOR" }),
         ).resolves.toBeDefined();
       });
     });

@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect } from "vitest";
 import {
   getDailyRankingScheduleTemplate,
@@ -14,9 +11,7 @@ import {
 describe("notificationTemplates", () => {
   describe("DAILY_RANKING_SCHEDULE_TEMPLATES", () => {
     it("should contain daily_morning template", () => {
-      const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find(
-        (t) => t.key === "daily_morning"
-      );
+      const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find((t) => t.key === "daily_morning");
       expect(template).toBeDefined();
       expect(template?.hour).toBe(7);
       expect(template?.minute).toBe(30);
@@ -24,9 +19,7 @@ describe("notificationTemplates", () => {
     });
 
     it("should contain daily_evening template", () => {
-      const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find(
-        (t) => t.key === "daily_evening"
-      );
+      const template = DAILY_RANKING_SCHEDULE_TEMPLATES.find((t) => t.key === "daily_evening");
       expect(template).toBeDefined();
       expect(template?.hour).toBe(18);
       expect(template?.minute).toBe(0);
@@ -43,9 +36,7 @@ describe("notificationTemplates", () => {
       DAILY_RANKING_SCHEDULE_TEMPLATES.forEach((template) => {
         expect(template.notificationTitle).toBeTruthy();
         expect(template.notificationBody).toBeTruthy();
-        expect(template.notificationBody).toContain(
-          RANKING_TEMPLATE_PLACEHOLDERS.groupName
-        );
+        expect(template.notificationBody).toContain(RANKING_TEMPLATE_PLACEHOLDERS.groupName);
       });
     });
   });
@@ -53,19 +44,11 @@ describe("notificationTemplates", () => {
   describe("RANKING_TEMPLATE_PLACEHOLDERS", () => {
     it("should have all required placeholders", () => {
       expect(RANKING_TEMPLATE_PLACEHOLDERS.groupName).toBe("<nazwa-grupy>");
-      expect(RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition).toBe(
-        "<miejsce-w-rankingu>"
-      );
-      expect(RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount).toBe(
-        "<liczba-aktywnych-wyzwan>"
-      );
+      expect(RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition).toBe("<miejsce-w-rankingu>");
+      expect(RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount).toBe("<liczba-aktywnych-wyzwan>");
       expect(RANKING_TEMPLATE_PLACEHOLDERS.tripName).toBe("<nazwa-wycieczki>");
-      expect(RANKING_TEMPLATE_PLACEHOLDERS.totalGroupsCount).toBe(
-        "<liczba-grup>"
-      );
-      expect(RANKING_TEMPLATE_PLACEHOLDERS.groupMembersCount).toBe(
-        "<liczba-czlonkow-grupy>"
-      );
+      expect(RANKING_TEMPLATE_PLACEHOLDERS.totalGroupsCount).toBe("<liczba-grup>");
+      expect(RANKING_TEMPLATE_PLACEHOLDERS.groupMembersCount).toBe("<liczba-czlonkow-grupy>");
       expect(RANKING_TEMPLATE_PLACEHOLDERS.currentDate).toBe("<data-dzisiaj>");
       expect(RANKING_TEMPLATE_PLACEHOLDERS.currentTime).toBe("<godzina-teraz>");
     });
@@ -85,9 +68,9 @@ describe("notificationTemplates", () => {
     });
 
     it("should throw error for unknown template key", () => {
-      expect(() =>
-        getDailyRankingScheduleTemplate("unknown_key" as "daily_morning")
-      ).toThrow("Unknown scheduled notification template: unknown_key");
+      expect(() => getDailyRankingScheduleTemplate("unknown_key" as "daily_morning")).toThrow(
+        "Unknown scheduled notification template: unknown_key",
+      );
     });
   });
 
@@ -146,8 +129,7 @@ describe("notificationTemplates", () => {
     });
 
     it("should replace multiple aliases for activeChallengesCount", () => {
-      const input =
-        "<liczba-aktywnych-wyzwań> <liczba_aktywnych_wyzwan> <liczba_aktywnych_wyzwań>";
+      const input = "<liczba-aktywnych-wyzwań> <liczba_aktywnych_wyzwan> <liczba_aktywnych_wyzwań>";
       const result = applyRankingTemplate(input, mockValues);
       expect(result).toBe("5 5 5");
     });
@@ -165,8 +147,7 @@ describe("notificationTemplates", () => {
     });
 
     it("should replace multiple aliases for groupMembersCount", () => {
-      const input =
-        "<liczba-członków-grupy> <liczba_czlonkow_grupy> <liczba_członków_grupy>";
+      const input = "<liczba-członków-grupy> <liczba_czlonkow_grupy> <liczba_członków_grupy>";
       const result = applyRankingTemplate(input, mockValues);
       expect(result).toBe("4 4 4");
     });

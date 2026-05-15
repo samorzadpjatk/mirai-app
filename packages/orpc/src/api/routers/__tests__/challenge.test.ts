@@ -1,13 +1,9 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { challengeRouter } from "../../routers/challenge";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Challenge } from "@mirai-app/db";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 
 // Mock utility modules
@@ -305,8 +301,8 @@ describe("challengeRouter", () => {
         name: mockChallenge.name,
         qrCodeValue: mockChallenge.expectedValue,
       });
-       
-      expect(mockDb.query.challenges.findMany).toHaveBeenCalled();;
+
+      expect(mockDb.query.challenges.findMany).toHaveBeenCalled();
     });
 
     it("should resolve challenge images with signed URLs", async () => {
@@ -320,7 +316,6 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getAll();
 
-       
       expect(mockSupabase.storage.from).toHaveBeenCalledWith("images");
     });
 
@@ -420,10 +415,8 @@ describe("challengeRouter", () => {
     });
 
     it("should include my group submission status", async () => {
-       
-       
       mockDb.query.challengeSubmissions.findMany.mockResolvedValue([
-        { challengeId: "challenge-1", status: "PENDING" }
+        { challengeId: "challenge-1", status: "PENDING" },
       ]);
       mockDb.query.tripParticipants.findFirst.mockResolvedValue({
         userId: "user-db-id",
@@ -445,8 +438,6 @@ describe("challengeRouter", () => {
     });
 
     it("should handle empty challenges list", async () => {
-       
-       
       mockDb.query.challenges.findMany.mockResolvedValue([]);
 
       const ctx: TRPCContext = {
@@ -497,10 +488,8 @@ describe("challengeRouter", () => {
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue(null);
-            mockDb.query.challenges.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -512,17 +501,16 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(caller.getById({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(
-        ORPCError
+        ORPCError,
       );
     });
 
     it("should resolve recurring challenge id for non-admin users", async () => {
-      const { resolveRecurringChallengeIdForTrip } = await import("../../../utils/recurringChallenges");
-       
+      const { resolveRecurringChallengeIdForTrip } =
+        await import("../../../utils/recurringChallenges");
+
       resolveRecurringChallengeIdForTrip.mockResolvedValue(null);
 
-       
-       
       mockDb.query.users.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -535,17 +523,15 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.getById({ id: "challenge-1", tripId: "trip-1" });
 
-       
       expect(resolveRecurringChallengeIdForTrip).toHaveBeenCalled();
     });
 
     it("should use original id for admin/moderator users", async () => {
-      const { resolveRecurringChallengeIdForTrip } = await import("../../../utils/recurringChallenges");
+      const { resolveRecurringChallengeIdForTrip } =
+        await import("../../../utils/recurringChallenges");
 
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue(mockChallenge);
-       
+
       resolveRecurringChallengeIdForTrip.mockResolvedValue("recurring-challenge-id");
 
       const ctx: TRPCContext = {
@@ -581,7 +567,7 @@ describe("challengeRouter", () => {
       });
 
       expect(result.name).toBe("Test Challenge");
-       
+
       expect(mockDb.insert).toHaveBeenCalled();
     });
 
@@ -664,7 +650,7 @@ describe("challengeRouter", () => {
           scoringCategory: "PEER_VOTING",
           endTime: new Date("2025-12-31"),
           votingDurationHours: 24,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -685,7 +671,7 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE",
           scoringCategory: "PEER_VOTING",
           votingDurationHours: 24,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -706,7 +692,7 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE",
           scoringCategory: "PEER_VOTING",
           endTime: new Date("2025-12-31"),
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -728,7 +714,7 @@ describe("challengeRouter", () => {
           scoringCategory: "PEER_VOTING",
           endTime: new Date("2025-12-31"),
           votingDurationHours: 0,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -751,7 +737,7 @@ describe("challengeRouter", () => {
           endTime: new Date("2025-12-31"),
           votingStartTime: new Date("2025-12-31"),
           votingEndTime: new Date("2025-01-01"),
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -777,7 +763,7 @@ describe("challengeRouter", () => {
           dailyEndTime: "18:00",
           endTime: new Date("2025-12-31"),
           votingDurationHours: 24,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -799,7 +785,7 @@ describe("challengeRouter", () => {
           scoringCategory: "SPEED",
           isRecurring: true,
           recurringDays: 7,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -822,7 +808,7 @@ describe("challengeRouter", () => {
           isRecurring: true,
           dailyStartTime: "09:00",
           dailyEndTime: "18:00",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -843,7 +829,7 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE_LOCATION",
           scoringCategory: "SPEED",
           autoApprove: true,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -864,7 +850,7 @@ describe("challengeRouter", () => {
           submissionType: "TEXT",
           scoringCategory: "SPEED",
           autoApprove: true,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -957,21 +943,24 @@ describe("challengeRouter", () => {
 
       // Should create activity for challenge start
       const { createChallengeStatusActivityById } = await import("../../../utils/activityFeed");
-       
+
       expect(createChallengeStatusActivityById).toHaveBeenCalled();
     });
 
     it("should precreate recurring instances for recurring challenge", async () => {
-      const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
+      const { precreateRecurringInstancesForTemplate } =
+        await import("../../../utils/recurringChallenges");
 
-       
-       
       mockDb.insert.mockReturnValue({
         values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([{
-            ...mockChallenge,
-            isRecurring: true,
-          }])),
+          returning: vi.fn(() =>
+            Promise.resolve([
+              {
+                ...mockChallenge,
+                isRecurring: true,
+              },
+            ]),
+          ),
         })),
       });
 
@@ -995,7 +984,6 @@ describe("challengeRouter", () => {
         startTime: new Date("2025-01-01"),
       });
 
-       
       expect(precreateRecurringInstancesForTemplate).toHaveBeenCalled();
     });
 
@@ -1021,7 +1009,7 @@ describe("challengeRouter", () => {
 
     it("should reject invalid image URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-       
+
       normalizeSupabaseStoragePath.mockReturnValue(null);
 
       const ctx: TRPCContext = {
@@ -1040,7 +1028,7 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
           image: "not-a-valid-url",
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -1062,15 +1050,13 @@ describe("challengeRouter", () => {
       });
 
       expect(result.name).toBe("Test Challenge");
-       
+
       expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue(null);
-            mockDb.query.challenges.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1086,12 +1072,13 @@ describe("challengeRouter", () => {
           id: "nonexistent",
           tripId: "trip-1",
           name: "Updated Challenge",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should update challenge status and create activity", async () => {
-      const { createChallengeStatusActivityFromTransition } = await import("../../../utils/activityFeed");
+      const { createChallengeStatusActivityFromTransition } =
+        await import("../../../utils/activityFeed");
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1107,13 +1094,10 @@ describe("challengeRouter", () => {
         status: "ACTIVE",
       });
 
-       
       expect(createChallengeStatusActivityFromTransition).toHaveBeenCalled();
     });
 
     it("should validate peer voting transition to voting phase", async () => {
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1125,17 +1109,17 @@ describe("challengeRouter", () => {
         endTime: new Date("2025-12-31"),
       });
 
-       
-       
-      mockDb.select.mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve([{ count: 1 }])),
-        })),
-      }).mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve([{ count: 0 }])),
-        })),
-      });
+      mockDb.select
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => Promise.resolve([{ count: 1 }])),
+          })),
+        })
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => Promise.resolve([{ count: 0 }])),
+          })),
+        });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1155,8 +1139,6 @@ describe("challengeRouter", () => {
     });
 
     it("should throw error when transitioning to voting phase with no submissions", async () => {
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1164,8 +1146,6 @@ describe("challengeRouter", () => {
         status: "ACTIVE",
       });
 
-       
-       
       mockDb.select.mockReturnValue({
         from: vi.fn(() => ({
           where: vi.fn(() => Promise.resolve([{ count: 0 }])),
@@ -1186,13 +1166,11 @@ describe("challengeRouter", () => {
           id: "challenge-1",
           tripId: "trip-1",
           status: "VOTING_PHASE",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw error when transitioning to voting phase with pending submissions", async () => {
-       
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1200,9 +1178,8 @@ describe("challengeRouter", () => {
         status: "ACTIVE",
       });
 
-       
-       
-      mockDb.query.challengeSubmissions.count.mockResolvedValueOnce(5) // total submissions
+      mockDb.query.challengeSubmissions.count
+        .mockResolvedValueOnce(5) // total submissions
         .mockResolvedValueOnce(2); // pending submissions
 
       const ctx: TRPCContext = {
@@ -1219,12 +1196,11 @@ describe("challengeRouter", () => {
           id: "challenge-1",
           tripId: "trip-1",
           status: "VOTING_PHASE",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should update recurring challenge with inferred days", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
@@ -1288,7 +1264,6 @@ describe("challengeRouter", () => {
     });
 
     it("should validate peer voting timeline on update", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1309,7 +1284,7 @@ describe("challengeRouter", () => {
           id: "challenge-1",
           tripId: "trip-1",
           votingDurationHours: 0,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1329,7 +1304,7 @@ describe("challengeRouter", () => {
           tripId: "trip-1",
           submissionType: "IMAGE_LOCATION",
           autoApprove: true,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1349,14 +1324,14 @@ describe("challengeRouter", () => {
           tripId: "trip-1",
           submissionType: "TEXT",
           autoApprove: true,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should precreate recurring instances on update", async () => {
-      const { precreateRecurringInstancesForTemplate } = await import("../../../utils/recurringChallenges");
+      const { precreateRecurringInstancesForTemplate } =
+        await import("../../../utils/recurringChallenges");
 
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         isRecurring: true,
@@ -1364,8 +1339,14 @@ describe("challengeRouter", () => {
         dailyEndTime: "18:00",
         startTime: new Date("2025-01-01"),
       });
-       
-      mockDb.update.mockReturnValue({ set: vi.fn(() => ({ where: vi.fn(() => ({ returning: vi.fn(() => Promise.resolve([createMockChallenge({ isRecurring: true })])) })) })) });
+
+      mockDb.update.mockReturnValue({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn(() => Promise.resolve([createMockChallenge({ isRecurring: true })])),
+          })),
+        })),
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1382,7 +1363,6 @@ describe("challengeRouter", () => {
         recurringDays: 7,
       });
 
-       
       expect(precreateRecurringInstancesForTemplate).toHaveBeenCalled();
     });
   });
@@ -1400,14 +1380,13 @@ describe("challengeRouter", () => {
       const result = await caller.delete({ id: "challenge-1", tripId: "trip-1" });
 
       expect(result.success).toBe(true);
-       
-      expect(mockDb.delete).toHaveBeenCalled();;
+
+      expect(mockDb.delete).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue(null);
-            mockDb.query.challenges.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1418,15 +1397,14 @@ describe("challengeRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.delete({ id: "nonexistent", tripId: "trip-1" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.delete({ id: "nonexistent", tripId: "trip-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
   describe("forceCloseVoting (adminProcedure)", () => {
     it("should force close voting for peer voting challenge", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1445,14 +1423,13 @@ describe("challengeRouter", () => {
       const result = await caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" });
 
       expect(result).toBeDefined();
-       
-      expect(mockDb.update).toHaveBeenCalled();;
+
+      expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when challenge does not exist", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue(null);
-            mockDb.query.challenges.findUnique.mockResolvedValue(null);
+      mockDb.query.challenges.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1464,12 +1441,11 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.forceCloseVoting({ id: "nonexistent", tripId: "trip-1" })
+        caller.forceCloseVoting({ id: "nonexistent", tripId: "trip-1" }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST for non-peer voting challenge", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "SPEED",
@@ -1485,12 +1461,11 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" })
+        caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when challenge is not in voting phase", async () => {
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1508,14 +1483,14 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" })
+        caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should create activity on force close", async () => {
-      const { createChallengeStatusActivityFromTransition } = await import("../../../utils/activityFeed");
+      const { createChallengeStatusActivityFromTransition } =
+        await import("../../../utils/activityFeed");
 
-       
       mockDb.query.challenges.findFirst.mockResolvedValue({
         ...mockChallenge,
         scoringCategory: "PEER_VOTING",
@@ -1533,7 +1508,6 @@ describe("challengeRouter", () => {
       const caller = createCaller(ctx);
       await caller.forceCloseVoting({ id: "challenge-1", tripId: "trip-1" });
 
-       
       expect(createChallengeStatusActivityFromTransition).toHaveBeenCalled();
     });
   });
@@ -1555,7 +1529,7 @@ describe("challengeRouter", () => {
           name: "Test Challenge",
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1575,7 +1549,7 @@ describe("challengeRouter", () => {
           name: "",
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1596,7 +1570,7 @@ describe("challengeRouter", () => {
           // @ts-expect-error - Testing invalid enum value
           submissionType: "INVALID_TYPE",
           scoringCategory: "SPEED",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1617,7 +1591,7 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE",
           // @ts-expect-error - Testing invalid enum value
           scoringCategory: "INVALID_CATEGORY",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1635,7 +1609,7 @@ describe("challengeRouter", () => {
         caller.getAllByTrip({
           tripId: "trip-1",
           pagination: { limit: 101, offset: 0 },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -1653,14 +1627,13 @@ describe("challengeRouter", () => {
         caller.getAllByTrip({
           tripId: "trip-1",
           pagination: { limit: 10, offset: -1 },
-        })
+        }),
       ).rejects.toThrow();
     });
   });
 
   describe("Edge cases and error handling", () => {
     it("should handle database errors gracefully", async () => {
-       
       mockDb.query.challenges.findMany.mockRejectedValue(new Error("Test error"));
 
       const ctx: TRPCContext = {
@@ -1677,7 +1650,7 @@ describe("challengeRouter", () => {
 
     it("should handle missing supabase storage signed URL", async () => {
       const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-       
+
       normalizeSupabaseStoragePath.mockReturnValue(null);
 
       const ctx: TRPCContext = {
@@ -1695,7 +1668,6 @@ describe("challengeRouter", () => {
     });
 
     it("should handle participant without group", async () => {
-       
       mockDb.query.tripParticipants.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -1712,9 +1684,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle challenge with external URL image", async () => {
-       
       mockDb.query.challenges.findMany.mockResolvedValue([
-        { ...mockChallenge, id: "challenge-external", image: "https://external.com/image.jpg" }
+        { ...mockChallenge, id: "challenge-external", image: "https://external.com/image.jpg" },
       ]);
 
       const ctx: TRPCContext = {
@@ -1731,9 +1702,8 @@ describe("challengeRouter", () => {
     });
 
     it("should handle challenge without image", async () => {
-       
       mockDb.query.challenges.findMany.mockResolvedValue([
-        { ...mockChallenge, id: "challenge-no-image", image: null }
+        { ...mockChallenge, id: "challenge-no-image", image: null },
       ]);
 
       const ctx: TRPCContext = {
@@ -1767,7 +1737,7 @@ describe("challengeRouter", () => {
           name: "Test Challenge",
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
-        })
+        }),
       ).rejects.toThrow();
     });
   });

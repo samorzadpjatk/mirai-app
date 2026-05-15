@@ -74,7 +74,7 @@ certificates/
 .eslintcache
 
 # monorepo setup
-.turbo/
+.nx/
 
 # non-pnpm lock files
 package-lock.json
@@ -100,3 +100,10 @@ Thumbs.db
 
 # specs scratchpad (temporary working files)
 .specs/scratchpad/
+
+
+
+.nx/cache
+.nx/workspace-data
+.claude/worktrees
+.claude/settings.local.json

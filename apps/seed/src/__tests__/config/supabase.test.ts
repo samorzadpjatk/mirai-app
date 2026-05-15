@@ -14,7 +14,8 @@ describe("config/supabase", () => {
     });
 
     vi.doMock("@mirai-app/supabase", () => ({
-      createSupabaseClient: (...args: unknown[]) => mockCreateSupabaseClient(...args) as SupabaseClient,
+      createSupabaseClient: (...args: unknown[]) =>
+        mockCreateSupabaseClient(...args) as SupabaseClient,
     }));
   });
 
@@ -40,7 +41,7 @@ describe("config/supabase", () => {
           autoRefreshToken: false,
           persistSession: false,
         },
-      })
+      }),
     );
   });
 
@@ -54,7 +55,12 @@ describe("config/supabase", () => {
 
     await import("../../config/supabase");
 
-    const callArgs = mockCreateSupabaseClient.mock.calls[0] as [string, string, undefined, { auth: { autoRefreshToken: boolean; persistSession: boolean } }];
+    const callArgs = mockCreateSupabaseClient.mock.calls[0] as [
+      string,
+      string,
+      undefined,
+      { auth: { autoRefreshToken: boolean; persistSession: boolean } },
+    ];
     const options = callArgs[3];
 
     expect(options.auth.autoRefreshToken).toBe(false);
@@ -105,7 +111,7 @@ describe("config/supabase", () => {
         url,
         "test-key",
         undefined,
-        expect.any(Object)
+        expect.any(Object),
       );
     }
   });
@@ -126,7 +132,7 @@ describe("config/supabase", () => {
       "https://test.supabase.co",
       longKey,
       undefined,
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 });

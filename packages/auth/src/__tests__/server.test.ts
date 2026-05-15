@@ -296,9 +296,7 @@ describe("server exports", () => {
         error: null,
       } as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthenticationError
-      );
+      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
     });
 
     it("should throw AuthenticationError when session user is null", async () => {
@@ -310,9 +308,7 @@ describe("server exports", () => {
       } as never);
       vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        "Unauthorized"
-      );
+      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow("Unauthorized");
     });
 
     it("should return user and dbUser when authenticated", async () => {
@@ -388,9 +384,7 @@ describe("server exports", () => {
         error: null,
       } as never);
 
-      await expect(requireAdmin(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthorizationError
-      );
+      await expect(requireAdmin(mockDb, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
     });
 
     it("should return dbUser when user is admin", async () => {
@@ -440,7 +434,7 @@ describe("server exports", () => {
       } as never);
 
       await expect(requireModerator(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthorizationError
+        AuthorizationError,
       );
     });
 
@@ -538,7 +532,7 @@ describe("server exports", () => {
         expect.objectContaining({
           authUserId: "auth-123",
           role: "ADMIN",
-        })
+        }),
       );
     });
 
@@ -562,7 +556,7 @@ describe("server exports", () => {
         expect.objectContaining({
           firstName: "John",
           lastName: "Doe",
-        })
+        }),
       );
     });
 
@@ -586,7 +580,7 @@ describe("server exports", () => {
         expect.objectContaining({
           firstName: "John",
           lastName: null,
-        })
+        }),
       );
     });
 
@@ -609,7 +603,7 @@ describe("server exports", () => {
       expect(mockUpsertUser).toHaveBeenCalledWith(
         expect.objectContaining({
           role: "MODERATOR",
-        })
+        }),
       );
     });
 
@@ -632,7 +626,7 @@ describe("server exports", () => {
       expect(mockUpsertUser).toHaveBeenCalledWith(
         expect.objectContaining({
           role: "SERVICE",
-        })
+        }),
       );
     });
 
@@ -655,7 +649,7 @@ describe("server exports", () => {
       expect(mockUpsertUser).toHaveBeenCalledWith(
         expect.objectContaining({
           role: "USER",
-        })
+        }),
       );
     });
   });

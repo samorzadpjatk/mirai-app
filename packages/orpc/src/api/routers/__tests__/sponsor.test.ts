@@ -1,13 +1,9 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sponsorRouter } from "../sponsor";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../../api/trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, Sponsor, TripSponsor, Trip, User } from "@mirai-app/db";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import * as auth from "@mirai-app/auth";
 
@@ -104,7 +100,10 @@ describe("sponsorRouter", () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123" } }, error: null }),
         admin: {
-          getUserById: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123", email: "admin@example.com" } }, error: null }),
+          getUserById: vi.fn().mockResolvedValue({
+            data: { user: { id: "auth-123", email: "admin@example.com" } },
+            error: null,
+          }),
         },
       },
     } satisfies SupabaseClient;
@@ -116,7 +115,7 @@ describe("sponsorRouter", () => {
         createMockSponsor({ id: "sponsor-1", name: "Sponsor One" }),
         createMockSponsor({ id: "sponsor-2", name: "Sponsor Two" }),
       ];
-       
+
       mockDb.query.sponsors.findMany.mockResolvedValue(mockSponsors);
 
       const ctx: TRPCContext = {
@@ -130,15 +129,15 @@ describe("sponsorRouter", () => {
       const result = await caller.getAll();
 
       expect(result).toEqual(mockSponsors);
-       
-      expect(mockDb.query.sponsors.findMany).toHaveBeenCalled();;
+
+      expect(mockDb.query.sponsors.findMany).toHaveBeenCalled();
     });
   });
 
   describe("getById", () => {
     it("should return sponsor by id", async () => {
       const mockSponsor = createMockSponsor({ id: "sponsor-123" });
-       
+
       mockDb.query.sponsors.findFirst.mockResolvedValue(mockSponsor);
 
       const ctx: TRPCContext = {
@@ -155,7 +154,6 @@ describe("sponsorRouter", () => {
     });
 
     it("should throw NOT_FOUND when sponsor doesn't exist", async () => {
-       
       mockDb.query.sponsors.findFirst.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -180,7 +178,7 @@ describe("sponsorRouter", () => {
           sponsor: createMockSponsor({ id: "sponsor-2", name: "Sponsor Two" }),
         }),
       ];
-       
+
       mockDb.query.tripSponsors.findMany.mockResolvedValue(mockTripSponsors);
 
       const ctx: TRPCContext = {
@@ -207,7 +205,7 @@ describe("sponsorRouter", () => {
         description: "New Description",
         logoPath: "https://example.com/new-logo.png",
       });
-       
+
       mockDb.insert.mockReturnValue({
         values: vi.fn(() => ({
           returning: vi.fn(() => Promise.resolve([newSponsor])),
@@ -233,7 +231,7 @@ describe("sponsorRouter", () => {
       });
 
       expect(result.name).toBe("New Sponsor");
-       
+
       expect(mockDb.insert).toHaveBeenCalled();
     });
   });
@@ -245,9 +243,9 @@ describe("sponsorRouter", () => {
         id: "sponsor-123",
         name: "Updated Name",
       });
-       
+
       mockDb.query.sponsors.findFirst.mockResolvedValue(existingSponsor);
-       
+
       mockDb.update.mockReturnValue({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -277,7 +275,6 @@ describe("sponsorRouter", () => {
     });
 
     it("should throw NOT_FOUND when updating non-existent sponsor", async () => {
-       
       mockDb.query.sponsors.findFirst.mockResolvedValue(null);
       auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
@@ -292,21 +289,21 @@ describe("sponsorRouter", () => {
       };
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.update({ id: "nonexistent", name: "New Name" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.update({ id: "nonexistent", name: "New Name" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
   describe("delete", () => {
     it("should delete a sponsor as admin", async () => {
       const sponsorToDelete = createMockSponsor({ id: "sponsor-123" });
-       
+
       mockDb.delete.mockReturnValue({
-      where: vi.fn(() => ({
-        returning: vi.fn(() => Promise.resolve([sponsorToDelete])),
-      })),
-    });
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([sponsorToDelete])),
+        })),
+      });
       auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
@@ -323,8 +320,8 @@ describe("sponsorRouter", () => {
       const result = await caller.delete({ id: "sponsor-123" });
 
       expect(result.id).toBe("sponsor-123");
-       
-      expect(mockDb.delete).toHaveBeenCalled();;
+
+      expect(mockDb.delete).toHaveBeenCalled();
     });
   });
 
@@ -333,14 +330,13 @@ describe("sponsorRouter", () => {
       const mockTrip = createMockTrip();
       const mockSponsor = createMockSponsor();
       const mockTripSponsor = createMockTripSponsor();
-      
-       
+
       mockDb.query.trips.findFirst.mockResolvedValue(mockTrip);
-       
+
       mockDb.query.sponsors.findFirst.mockResolvedValue(mockSponsor);
-       
+
       mockDb.query.tripSponsors.findFirst.mockResolvedValue(null);
-       
+
       mockDb.insert.mockReturnValue({
         values: vi.fn(() => ({
           returning: vi.fn(() => Promise.resolve([mockTripSponsor])),
@@ -371,12 +367,11 @@ describe("sponsorRouter", () => {
       const mockTrip = createMockTrip();
       const mockSponsor = createMockSponsor();
       const existingTripSponsor = createMockTripSponsor();
-      
-       
+
       mockDb.query.trips.findFirst.mockResolvedValue(mockTrip);
-       
+
       mockDb.query.sponsors.findFirst.mockResolvedValue(mockSponsor);
-       
+
       mockDb.query.tripSponsors.findFirst.mockResolvedValue(existingTripSponsor);
       auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
@@ -391,21 +386,21 @@ describe("sponsorRouter", () => {
       };
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.addToTrip({ tripId: "trip-1", sponsorId: "sponsor-1" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.addToTrip({ tripId: "trip-1", sponsorId: "sponsor-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 
   describe("removeFromTrip", () => {
     it("should remove sponsor from trip as admin", async () => {
       const mockTripSponsor = createMockTripSponsor();
-       
+
       mockDb.delete.mockReturnValue({
-      where: vi.fn(() => ({
-        returning: vi.fn(() => Promise.resolve([mockTripSponsor])),
-      })),
-    });
+        where: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([mockTripSponsor])),
+        })),
+      });
       auth.requireAdmin.mockResolvedValue({
         user: { id: "auth-123", email: "admin@example.com" },
         dbUser: { id: "admin-123", role: "ADMIN" } as User,
@@ -425,8 +420,8 @@ describe("sponsorRouter", () => {
       });
 
       expect(result).toBeDefined();
-       
-      expect(mockDb.delete).toHaveBeenCalled();;
+
+      expect(mockDb.delete).toHaveBeenCalled();
     });
   });
 });

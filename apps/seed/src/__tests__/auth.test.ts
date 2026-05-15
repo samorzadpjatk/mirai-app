@@ -10,8 +10,16 @@ vi.mock("../config/supabase", () => ({
   supabase: {
     auth: {
       admin: {
-        listUsers: (...args: unknown[]) => mockListUsers(...args) as Promise<{ data: { users: SupabaseUser[] } | null; error: { message: string } | null }>,
-        createUser: (...args: unknown[]) => mockCreateUser(...args) as Promise<{ data: { user: SupabaseUser | null } | null; error: { message: string } | null }>,
+        listUsers: (...args: unknown[]) =>
+          mockListUsers(...args) as Promise<{
+            data: { users: SupabaseUser[] } | null;
+            error: { message: string } | null;
+          }>,
+        createUser: (...args: unknown[]) =>
+          mockCreateUser(...args) as Promise<{
+            data: { user: SupabaseUser | null } | null;
+            error: { message: string } | null;
+          }>,
       },
     },
   },
@@ -53,9 +61,7 @@ describe("auth", () => {
     });
 
     it("should normalize email to lowercase", async () => {
-      const users = [
-        { id: "user-1", email: "User@Test.COM" },
-      ];
+      const users = [{ id: "user-1", email: "User@Test.COM" }];
       mockListUsers.mockResolvedValue({ data: { users }, error: null });
 
       const result = await loadAuthUsers();
@@ -83,9 +89,7 @@ describe("auth", () => {
         id: `user-${i}`,
         email: `user${i}@test.com`,
       }));
-      const page2Users = [
-        { id: "user-1000", email: "user1000@test.com" },
-      ];
+      const page2Users = [{ id: "user-1000", email: "user1000@test.com" }];
 
       mockListUsers
         .mockResolvedValueOnce({ data: { users: page1Users }, error: null })
@@ -123,12 +127,7 @@ describe("auth", () => {
       const mockUser = { id: "new-user", email: "new@test.com" };
       mockCreateUser.mockResolvedValue({ data: { user: mockUser }, error: null });
 
-      const result = await createAuthUserByEmail(
-        "new@test.com",
-        "John",
-        "Doe",
-        "user"
-      );
+      const result = await createAuthUserByEmail("new@test.com", "John", "Doe", "user");
 
       expect(result).toEqual(mockUser);
       expect(mockCreateUser).toHaveBeenCalledWith({
@@ -145,18 +144,15 @@ describe("auth", () => {
         error: { message: "Email already exists" },
       });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+        /* noop */
+      });
 
-      const result = await createAuthUserByEmail(
-        "existing@test.com",
-        "John",
-        "Doe",
-        "user"
-      );
+      const result = await createAuthUserByEmail("existing@test.com", "John", "Doe", "user");
 
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to create Supabase Auth user")
+        expect.stringContaining("Failed to create Supabase Auth user"),
       );
 
       consoleSpy.mockRestore();
@@ -165,14 +161,11 @@ describe("auth", () => {
     it("should return null when no user in response", async () => {
       mockCreateUser.mockResolvedValue({ data: { user: null }, error: null });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+        /* noop */
+      });
 
-      const result = await createAuthUserByEmail(
-        "test@test.com",
-        "John",
-        "Doe",
-        "user"
-      );
+      const result = await createAuthUserByEmail("test@test.com", "John", "Doe", "user");
 
       expect(result).toBeNull();
 
@@ -188,7 +181,7 @@ describe("auth", () => {
       expect(mockCreateUser).toHaveBeenCalledWith(
         expect.objectContaining({
           app_metadata: { role: "admin" },
-        })
+        }),
       );
     });
 
@@ -201,14 +194,17 @@ describe("auth", () => {
       expect(mockCreateUser).toHaveBeenCalledWith(
         expect.objectContaining({
           user_metadata: { firstName: "", lastName: "" },
-        })
+        }),
       );
     });
   });
 
   describe("ensureGhostAuthUser", () => {
     it("should return existing ghost user from map", async () => {
-      const existingGhost: SupabaseUser = { id: "ghost-1", email: "ghost@test.com" } as SupabaseUser;
+      const existingGhost: SupabaseUser = {
+        id: "ghost-1",
+        email: "ghost@test.com",
+      } as SupabaseUser;
       const authUsers: AuthUserByEmail = new Map([["ghost@test.com", existingGhost]]);
 
       const result = await ensureGhostAuthUser(authUsers);
@@ -235,22 +231,22 @@ describe("auth", () => {
       expect(authUsers.get("ghost@test.com")).toEqual(newGhost);
     });
 
-
-
     it("should handle ghost user creation error", async () => {
       mockCreateUser.mockResolvedValue({
         data: null,
         error: { message: "Creation failed" },
       });
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => { /* noop */ });
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
+        /* noop */
+      });
       const authUsers: AuthUserByEmail = new Map();
 
       const result = await ensureGhostAuthUser(authUsers);
 
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to create ghost auth user")
+        expect.stringContaining("Failed to create ghost auth user"),
       );
 
       consoleSpy.mockRestore();

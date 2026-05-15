@@ -59,7 +59,7 @@ import { normalizeCameraAsset } from "../camera";
 describe("Camera Utilities", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     mockManipulateAsync.mockResolvedValue({
       uri: "manipulated://result.jpg",
       width: 800,

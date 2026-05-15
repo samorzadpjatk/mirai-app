@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { locationRouter } from "../../routers/location";
@@ -83,7 +80,9 @@ const createMockParticipant = (overrides: Partial<TripParticipant> = {}): TripPa
 });
 
 // Helper to create mock location sharing request
-const createMockSharingRequest = (overrides: Partial<LocationSharingRequest> = {}): LocationSharingRequest => ({
+const createMockSharingRequest = (
+  overrides: Partial<LocationSharingRequest> = {},
+): LocationSharingRequest => ({
   id: "request-123",
   senderId: "user-456",
   receiverId: "user-123",
@@ -105,7 +104,11 @@ describe("locationRouter", () => {
 
     mockUser = createMockUser({ id: "user-123" });
     mockLocation = createMockLocation({ id: "location-123", userId: "user-123" });
-    mockParticipant = createMockParticipant({ id: "participant-123", userId: "user-123", tripId: "trip-123" });
+    mockParticipant = createMockParticipant({
+      id: "participant-123",
+      userId: "user-123",
+      tripId: "trip-123",
+    });
 
     // Setup mock database client
     mockDb = {
@@ -135,14 +138,16 @@ describe("locationRouter", () => {
       locationShare: {
         findMany: vi.fn().mockResolvedValue([]),
       },
-      $transaction: vi.fn().mockImplementation(<T>(
-        fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]
-      ): Promise<T | T[]> => {
-        if (typeof fn === "function") {
-          return fn(mockDb);
-        }
-        return Promise.all(fn);
-      }),
+      $transaction: vi
+        .fn()
+        .mockImplementation(
+          <T>(fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]): Promise<T | T[]> => {
+            if (typeof fn === "function") {
+              return fn(mockDb);
+            }
+            return Promise.all(fn);
+          },
+        ),
     };
 
     const lastResults: Record<string, unknown> = {};
@@ -153,51 +158,62 @@ describe("locationRouter", () => {
 
     function getModelName(table: unknown): string {
       let name: string | undefined;
-      if (typeof table === 'string') {
+      if (typeof table === "string") {
         name = table;
-      } else if (table && typeof table === 'object') {
+      } else if (table && typeof table === "object") {
         const obj = table as Record<string | symbol, unknown>;
-        if (typeof obj.name === 'string') {
+        if (typeof obj.name === "string") {
           name = obj.name;
         } else {
-          const drizzleNameSym = Symbol.for('drizzle:Name');
-          if (typeof obj[drizzleNameSym] === 'string') {
+          const drizzleNameSym = Symbol.for("drizzle:Name");
+          if (typeof obj[drizzleNameSym] === "string") {
             name = obj[drizzleNameSym];
           } else {
             const sym = Object.getOwnPropertySymbols(obj).find(
-              (s) => s.description === 'drizzle:Name'
+              (s) => s.description === "drizzle:Name",
             );
-            if (sym && typeof obj[sym] === 'string') {
+            if (sym && typeof obj[sym] === "string") {
               name = obj[sym];
             }
           }
         }
       }
-      if (!name) return 'unknown';
-      const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+      if (!name) return "unknown";
+      const singular = name.replace(/ies$/, "y").replace(/s$/, "");
       return toCamelCase(singular);
     }
 
     const db = mockDb as Record<string, unknown>;
 
-    db.query = new Proxy({}, {
-      get(_, tableName) {
-        const name = String(tableName);
-        const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
-        const model = db[singular] ?? db[name];
-        if (model && typeof model === 'object') {
-          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
-          return new Proxy(modelObj, {
-            get(_, methodName) {
-              const method = String(methodName);
-              if (method === 'findFirst' || method === 'findUnique') {
-                return async (...args: unknown[]) => {
-                  if (modelObj[method]) {
-                    const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
+    db.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const name = String(tableName);
+          const singular = name.replace(/ies$/, "y").replace(/s$/, "");
+          const model = db[singular] ?? db[name];
+          if (model && typeof model === "object") {
+            const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
+            return new Proxy(modelObj, {
+              get(_, methodName) {
+                const method = String(methodName);
+                if (method === "findFirst" || method === "findUnique") {
+                  return async (...args: unknown[]) => {
+                    if (modelObj[method]) {
+                      const result = await modelObj[method](...args);
+                      if (result !== null && result !== undefined) {
+                        return result;
+                      }
+                      const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                      if (modelObj[otherMethod]) {
+                        const fb = await modelObj[otherMethod](...args);
+                        if (fb !== null && fb !== undefined) {
+                          return fb;
+                        }
+                      }
+                      return lastResults[singular] ?? null;
                     }
-                    const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                     if (modelObj[otherMethod]) {
                       const fb = await modelObj[otherMethod](...args);
                       if (fb !== null && fb !== undefined) {
@@ -205,24 +221,20 @@ describe("locationRouter", () => {
                       }
                     }
                     return lastResults[singular] ?? null;
-                  }
-                  const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
-                  if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
-                  }
-                  return lastResults[singular] ?? null;
-                };
-              }
-              return modelObj[method];
-            },
-          });
-        }
-        return { findFirst: vi.fn(() => Promise.resolve(null)), findUnique: vi.fn(() => Promise.resolve(null)), findMany: vi.fn(() => Promise.resolve([])) };
+                  };
+                }
+                return modelObj[method];
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+          };
+        },
       },
-    });
+    );
 
     db.insert = vi.fn((table: unknown) => {
       const modelName = getModelName(table);
@@ -230,7 +242,7 @@ describe("locationRouter", () => {
         values: vi.fn((data: unknown) => {
           const returningFn = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'create' in model) {
+            if (model && typeof model === "object" && "create" in model) {
               return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -244,26 +256,34 @@ describe("locationRouter", () => {
             onConflictDoUpdate: (_opts: unknown) => ({
               returning: () => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return [result];
-                  });
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return [result];
+                    });
                 }
                 return Promise.resolve([{}]);
               },
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+              then: (
+                resolve: (value: unknown) => unknown,
+                reject?: (reason: unknown) => unknown,
+              ) => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return resolve([result]);
-                  }, reject);
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return resolve([result]);
+                    }, reject);
                 }
                 return resolve([{}]);
               },
             }),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => returningFn().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              returningFn().then(resolve, reject),
           };
         }),
       };
@@ -275,7 +295,7 @@ describe("locationRouter", () => {
         set: vi.fn((data: unknown) => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'update' in model) {
+            if (model && typeof model === "object" && "update" in model) {
               return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -286,9 +306,11 @@ describe("locationRouter", () => {
           return {
             where: vi.fn(() => ({
               returning: execute,
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+                execute().then(resolve, reject),
             })),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -300,7 +322,7 @@ describe("locationRouter", () => {
         where: vi.fn(() => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'delete' in model) {
+            if (model && typeof model === "object" && "delete" in model) {
               return (model as Record<string, unknown>).delete().then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -310,7 +332,8 @@ describe("locationRouter", () => {
           };
           return {
             returning: execute,
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -319,9 +342,11 @@ describe("locationRouter", () => {
     db.select = vi.fn((fields?: unknown) => {
       let primaryTable: string | undefined;
       let hasGroupBy = false;
-      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields) : [];
-      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === 'count';
-      const hasAggregateFields = fieldNames.some((f) => ['count', 'sum', 'avg', 'min', 'max'].includes(f));
+      const fieldNames = fields && typeof fields === "object" ? Object.keys(fields) : [];
+      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+      const hasAggregateFields = fieldNames.some((f) =>
+        ["count", "sum", "avg", "min", "max"].includes(f),
+      );
       const chainable: any = {
         from: (table: unknown) => {
           primaryTable = getModelName(table);
@@ -341,16 +366,22 @@ describe("locationRouter", () => {
         then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           if (primaryTable) {
             const model = db[primaryTable];
-            if (model && typeof model === 'object') {
-              if (hasGroupBy && 'groupBy' in model) {
+            if (model && typeof model === "object") {
+              if (hasGroupBy && "groupBy" in model) {
                 return (model as Record<string, unknown>).groupBy().then((groups: unknown) => {
                   const mapped = (groups as Record<string, unknown>[]).map((row) => {
                     const item: Record<string, unknown> = {};
                     for (const field of fieldNames) {
                       if (field in row) {
                         item[field] = row[field];
-                      } else if (field === 'count' && (row as Record<string, Record<string, unknown>>)._count) {
-                        item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                      } else if (
+                        field === "count" &&
+                        (row as Record<string, Record<string, unknown>>)._count
+                      ) {
+                        item.count =
+                          (row as Record<string, Record<string, unknown>>)._count.id ??
+                          (row as Record<string, Record<string, unknown>>)._count._all ??
+                          0;
                       }
                     }
                     return item;
@@ -358,15 +389,17 @@ describe("locationRouter", () => {
                   return resolve(mapped);
                 }, reject);
               }
-              if (hasCountOnly && 'count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if (hasCountOnly && "count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if (hasAggregateFields && 'aggregate' in model) {
+              if (hasAggregateFields && "aggregate" in model) {
                 return (model as Record<string, unknown>).aggregate().then((aggResult: unknown) => {
                   const mapped: Record<string, unknown> = {};
                   const agg = aggResult as Record<string, Record<string, unknown>>;
                   for (const field of fieldNames) {
-                    if (field === 'count' && agg._count) {
+                    if (field === "count" && agg._count) {
                       mapped.count = agg._count.id ?? agg._count._all ?? 0;
                     } else if (agg._sum && field in agg._sum) {
                       mapped[field] = agg._sum[field];
@@ -377,14 +410,20 @@ describe("locationRouter", () => {
                   return resolve([mapped]);
                 }, reject);
               }
-              if ('findMany' in model) {
-                return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+              if ("findMany" in model) {
+                return (model as Record<string, unknown>)
+                  .findMany()
+                  .then((results: unknown) => resolve(results), reject);
               }
-              if ('count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if ("count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if ('aggregate' in model) {
-                return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+              if ("aggregate" in model) {
+                return (model as Record<string, unknown>)
+                  .aggregate()
+                  .then((agg: unknown) => resolve([agg]), reject);
               }
             }
           }
@@ -552,10 +591,12 @@ describe("locationRouter", () => {
       });
 
       mockDb.locationShare.findMany.mockResolvedValue([{ locationId: "location-456" }]);
-      mockDb.location.findMany.mockResolvedValue([{
-        ...friendLocation,
-        user: friendUser,
-      }]);
+      mockDb.location.findMany.mockResolvedValue([
+        {
+          ...friendLocation,
+          user: friendUser,
+        },
+      ]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -622,9 +663,7 @@ describe("locationRouter", () => {
       };
       mockDb.location.upsert.mockResolvedValue(updatedLocation);
       mockDb.tripParticipant.findFirst.mockResolvedValue(mockParticipant);
-      mockDb.tripParticipant.findMany.mockResolvedValue([
-        { userId: "user-456" },
-      ]);
+      mockDb.tripParticipant.findMany.mockResolvedValue([{ userId: "user-456" }]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -648,7 +687,7 @@ describe("locationRouter", () => {
       await expect(
         caller.updateSharingSettings({
           isSharingLocation: true,
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -732,7 +771,9 @@ describe("locationRouter", () => {
     it("should add user to sharing list", async () => {
       mockDb.location.upsert.mockResolvedValue(mockLocation);
       mockDb.locationShare.findMany.mockResolvedValue([{ userId: "user-456" }]);
-      mockDb.user.findMany.mockResolvedValue([createMockUser({ id: "user-456", firstName: "Friend", lastName: "One" })]);
+      mockDb.user.findMany.mockResolvedValue([
+        createMockUser({ id: "user-456", firstName: "Friend", lastName: "One" }),
+      ]);
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
         callCount++;
@@ -764,9 +805,7 @@ describe("locationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.addUserToSharing({ userId: "user-123" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.addUserToSharing({ userId: "user-123" })).rejects.toThrow(ORPCError);
     });
 
     it("should throw BAD_REQUEST when user is outside sharing scope", async () => {
@@ -775,9 +814,7 @@ describe("locationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.addUserToSharing({ userId: "user-456" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.addUserToSharing({ userId: "user-456" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -805,7 +842,7 @@ describe("locationRouter", () => {
     it("should create new sharing request", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(null);
       mockDb.locationSharingRequest.create.mockResolvedValue(
-        createMockSharingRequest({ id: "new-request-123" })
+        createMockSharingRequest({ id: "new-request-123" }),
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -838,14 +875,14 @@ describe("locationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.requestLocationSharing({ receiverId: "user-123" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.requestLocationSharing({ receiverId: "user-123" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should throw BAD_REQUEST when request already pending", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "PENDING" })
+        createMockSharingRequest({ status: "PENDING" }),
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -868,14 +905,14 @@ describe("locationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.requestLocationSharing({ receiverId: "user-456" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.requestLocationSharing({ receiverId: "user-456" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should throw BAD_REQUEST when already sharing", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "ACCEPTED" })
+        createMockSharingRequest({ status: "ACCEPTED" }),
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -898,17 +935,17 @@ describe("locationRouter", () => {
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.requestLocationSharing({ receiverId: "user-456" })
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.requestLocationSharing({ receiverId: "user-456" })).rejects.toThrow(
+        ORPCError,
+      );
     });
 
     it("should update rejected request to pending", async () => {
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(
-        createMockSharingRequest({ status: "REJECTED" })
+        createMockSharingRequest({ status: "REJECTED" }),
       );
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "PENDING" })
+        createMockSharingRequest({ status: "PENDING" }),
       );
       let callCount = 0;
       mockDb.tripParticipant.findMany.mockImplementation(() => {
@@ -947,20 +984,22 @@ describe("locationRouter", () => {
         status: "PENDING",
       });
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(request);
-      mockDb.transaction.mockImplementation(<T>(
-        fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]
-      ): Promise<T | T[]> => {
-        if (typeof fn === "function") {
-          return fn(mockDb);
-        }
-        return Promise.all(fn);
-      });
+      mockDb.transaction.mockImplementation(
+        <T>(fn: ((client: typeof mockDb) => Promise<T>) | Promise<T>[]): Promise<T | T[]> => {
+          if (typeof fn === "function") {
+            return fn(mockDb);
+          }
+          return Promise.all(fn);
+        },
+      );
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "ACCEPTED" })
+        createMockSharingRequest({ status: "ACCEPTED" }),
       );
       mockDb.location.upsert.mockResolvedValue(mockLocation);
       mockDb.locationShare.findMany.mockResolvedValue([{ userId: "user-123" }]);
-      mockDb.user.findMany.mockResolvedValue([createMockUser({ id: "user-456", firstName: "Sender", lastName: "One" })]);
+      mockDb.user.findMany.mockResolvedValue([
+        createMockUser({ id: "user-456", firstName: "Sender", lastName: "One" }),
+      ]);
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({
           userId: "user-123",
@@ -985,7 +1024,7 @@ describe("locationRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.acceptLocationSharingRequest({ requestId: "non-existent" })
+        caller.acceptLocationSharingRequest({ requestId: "non-existent" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1001,7 +1040,7 @@ describe("locationRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.acceptLocationSharingRequest({ requestId: "request-123" })
+        caller.acceptLocationSharingRequest({ requestId: "request-123" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1017,7 +1056,7 @@ describe("locationRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.acceptLocationSharingRequest({ requestId: "request-123" })
+        caller.acceptLocationSharingRequest({ requestId: "request-123" }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1032,7 +1071,7 @@ describe("locationRouter", () => {
       });
       mockDb.locationSharingRequest.findFirst.mockResolvedValue(request);
       mockDb.locationSharingRequest.update.mockResolvedValue(
-        createMockSharingRequest({ status: "REJECTED" })
+        createMockSharingRequest({ status: "REJECTED" }),
       );
       mockDb.tripParticipant.findMany.mockResolvedValue([
         createMockParticipant({
@@ -1058,7 +1097,7 @@ describe("locationRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.rejectLocationSharingRequest({ requestId: "non-existent" })
+        caller.rejectLocationSharingRequest({ requestId: "non-existent" }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -1074,7 +1113,7 @@ describe("locationRouter", () => {
       const caller = createCaller(ctx);
 
       await expect(
-        caller.rejectLocationSharingRequest({ requestId: "request-123" })
+        caller.rejectLocationSharingRequest({ requestId: "request-123" }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -1136,7 +1175,8 @@ describe("locationRouter", () => {
           sender: createMockUser({ id: "user-789", firstName: "Sender", lastName: "One" }),
         }),
       ];
-      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce(sentRequests)
+      mockDb.locationSharingRequest.findMany
+        .mockResolvedValueOnce(sentRequests)
         .mockResolvedValueOnce(receivedRequests);
 
       const ctx = createAuthContext(mockUser);
@@ -1149,8 +1189,7 @@ describe("locationRouter", () => {
     });
 
     it("should return empty arrays when no requests exist", async () => {
-      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+      mockDb.locationSharingRequest.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

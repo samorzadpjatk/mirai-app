@@ -155,9 +155,7 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthenticationError
-      );
+      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
     });
 
     it("should throw AuthenticationError when session user is null", async () => {
@@ -169,9 +167,7 @@ describe("authServer", () => {
       } as never);
       vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        "Unauthorized"
-      );
+      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow("Unauthorized");
     });
 
     it("should return user and dbUser when authenticated", async () => {
@@ -241,12 +237,12 @@ describe("authServer", () => {
         error: { message: "Admin lookup failed" },
       } as never);
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       const result = await requireAuth(mockDb, mockSupabase, "token");
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        "[Auth] Failed to check ban status for auth-123: Admin lookup failed"
+        "[Auth] Failed to check ban status for auth-123: Admin lookup failed",
       );
       expect(result.dbUser).toEqual(mockDbUser);
 
@@ -274,7 +270,7 @@ describe("authServer", () => {
       } as never);
 
       await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        "User not found in database"
+        "User not found in database",
       );
     });
   });
@@ -298,9 +294,7 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      await expect(requireAdmin(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthorizationError
-      );
+      await expect(requireAdmin(mockDb, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
     });
 
     it("should return dbUser when user is admin", async () => {
@@ -346,7 +340,7 @@ describe("authServer", () => {
       } as never);
 
       await expect(requireModerator(mockDb, mockSupabase, "token")).rejects.toThrow(
-        AuthorizationError
+        AuthorizationError,
       );
     });
 
@@ -531,7 +525,7 @@ describe("authServer", () => {
         expect.objectContaining({
           authUserId: "auth-123",
           role: "ADMIN",
-        })
+        }),
       );
     });
 
@@ -555,7 +549,7 @@ describe("authServer", () => {
         expect.objectContaining({
           firstName: "John",
           lastName: "Doe",
-        })
+        }),
       );
     });
 
@@ -579,7 +573,7 @@ describe("authServer", () => {
         expect.objectContaining({
           firstName: "John",
           lastName: null,
-        })
+        }),
       );
     });
 
@@ -603,7 +597,7 @@ describe("authServer", () => {
         expect.objectContaining({
           firstName: "john.doe",
           lastName: null,
-        })
+        }),
       );
     });
 
@@ -627,7 +621,7 @@ describe("authServer", () => {
         expect.objectContaining({
           firstName: null,
           lastName: null,
-        })
+        }),
       );
     });
   });

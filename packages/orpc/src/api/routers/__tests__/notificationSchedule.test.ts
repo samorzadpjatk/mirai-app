@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { notificationScheduleRouter } from "../../routers/notificationSchedule";
@@ -17,7 +14,8 @@ vi.mock("../../../utils/authEmails", () => ({
 
 // Mock the validation utilities
 vi.mock("../../../utils/notificactionSchedule-validation", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../../utils/notificactionSchedule-validation")>();
+  const actual =
+    await importOriginal<typeof import("../../../utils/notificactionSchedule-validation")>();
   return {
     ...actual,
     validateDateRange: vi.fn(),
@@ -76,7 +74,8 @@ vi.mock("@mirai-app/auth", () => ({
   }),
 }));
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(notificationScheduleRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(notificationScheduleRouter, { context: ctx });
 
 // Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -93,7 +92,9 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 // Helper to create mock schedule
-const createMockSchedule = (overrides: Partial<NotificationSchedule> = {}): NotificationSchedule => ({
+const createMockSchedule = (
+  overrides: Partial<NotificationSchedule> = {},
+): NotificationSchedule => ({
   id: "schedule-123",
   name: "Test Schedule",
   tripId: "trip-123",
@@ -136,13 +137,19 @@ describe("notificationScheduleRouter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockModeratorUser = createMockUser({ id: "moderator-123", authUserId: "auth-123", role: "MODERATOR" });
+    mockModeratorUser = createMockUser({
+      id: "moderator-123",
+      authUserId: "auth-123",
+      role: "MODERATOR",
+    });
     mockAdminUser = createMockUser({ id: "admin-123", authUserId: "auth-123", role: "ADMIN" });
 
     // Setup mock Supabase client
     mockSupabase = {
       auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "moderator-123" } }, error: null }),
+        getUser: vi
+          .fn()
+          .mockResolvedValue({ data: { user: { id: "moderator-123" } }, error: null }),
         getSession: vi.fn(),
         admin: {
           getUserById: vi.fn().mockResolvedValue({
@@ -183,7 +190,6 @@ describe("notificationScheduleRouter", () => {
       },
     };
 
-
     const lastResults: Record<string, unknown> = {};
 
     function toCamelCase(str: string): string {
@@ -192,51 +198,62 @@ describe("notificationScheduleRouter", () => {
 
     function getModelName(table: unknown): string {
       let name: string | undefined;
-      if (typeof table === 'string') {
+      if (typeof table === "string") {
         name = table;
-      } else if (table && typeof table === 'object') {
+      } else if (table && typeof table === "object") {
         const obj = table as Record<string | symbol, unknown>;
-        if (typeof obj.name === 'string') {
+        if (typeof obj.name === "string") {
           name = obj.name;
         } else {
-          const drizzleNameSym = Symbol.for('drizzle:Name');
-          if (typeof obj[drizzleNameSym] === 'string') {
+          const drizzleNameSym = Symbol.for("drizzle:Name");
+          if (typeof obj[drizzleNameSym] === "string") {
             name = obj[drizzleNameSym];
           } else {
             const sym = Object.getOwnPropertySymbols(obj).find(
-              (s) => s.description === 'drizzle:Name'
+              (s) => s.description === "drizzle:Name",
             );
-            if (sym && typeof obj[sym] === 'string') {
+            if (sym && typeof obj[sym] === "string") {
               name = obj[sym];
             }
           }
         }
       }
-      if (!name) return 'unknown';
-      const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+      if (!name) return "unknown";
+      const singular = name.replace(/ies$/, "y").replace(/s$/, "");
       return toCamelCase(singular);
     }
 
     const db = mockDb as Record<string, unknown>;
 
-    db.query = new Proxy({}, {
-      get(_, tableName) {
-        const name = String(tableName);
-        const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
-        const model = db[singular] ?? db[name];
-        if (model && typeof model === 'object') {
-          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
-          return new Proxy(modelObj, {
-            get(_, methodName) {
-              const method = String(methodName);
-              if (method === 'findFirst' || method === 'findUnique') {
-                return async (...args: unknown[]) => {
-                  if (modelObj[method]) {
-                    const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
+    db.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const name = String(tableName);
+          const singular = name.replace(/ies$/, "y").replace(/s$/, "");
+          const model = db[singular] ?? db[name];
+          if (model && typeof model === "object") {
+            const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
+            return new Proxy(modelObj, {
+              get(_, methodName) {
+                const method = String(methodName);
+                if (method === "findFirst" || method === "findUnique") {
+                  return async (...args: unknown[]) => {
+                    if (modelObj[method]) {
+                      const result = await modelObj[method](...args);
+                      if (result !== null && result !== undefined) {
+                        return result;
+                      }
+                      const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                      if (modelObj[otherMethod]) {
+                        const fb = await modelObj[otherMethod](...args);
+                        if (fb !== null && fb !== undefined) {
+                          return fb;
+                        }
+                      }
+                      return lastResults[singular] ?? null;
                     }
-                    const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                     if (modelObj[otherMethod]) {
                       const fb = await modelObj[otherMethod](...args);
                       if (fb !== null && fb !== undefined) {
@@ -244,24 +261,20 @@ describe("notificationScheduleRouter", () => {
                       }
                     }
                     return lastResults[singular] ?? null;
-                  }
-                  const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
-                  if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
-                  }
-                  return lastResults[singular] ?? null;
-                };
-              }
-              return modelObj[method];
-            },
-          });
-        }
-        return { findFirst: vi.fn(() => Promise.resolve(null)), findUnique: vi.fn(() => Promise.resolve(null)), findMany: vi.fn(() => Promise.resolve([])) };
+                  };
+                }
+                return modelObj[method];
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+          };
+        },
       },
-    });
+    );
 
     db.insert = vi.fn((table: unknown) => {
       const modelName = getModelName(table);
@@ -269,7 +282,7 @@ describe("notificationScheduleRouter", () => {
         values: vi.fn((data: unknown) => {
           const returningFn = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'create' in model) {
+            if (model && typeof model === "object" && "create" in model) {
               return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -283,26 +296,34 @@ describe("notificationScheduleRouter", () => {
             onConflictDoUpdate: (_opts: unknown) => ({
               returning: () => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return [result];
-                  });
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return [result];
+                    });
                 }
                 return Promise.resolve([{}]);
               },
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+              then: (
+                resolve: (value: unknown) => unknown,
+                reject?: (reason: unknown) => unknown,
+              ) => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return resolve([result]);
-                  }, reject);
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return resolve([result]);
+                    }, reject);
                 }
                 return resolve([{}]);
               },
             }),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => returningFn().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              returningFn().then(resolve, reject),
           };
         }),
       };
@@ -314,7 +335,7 @@ describe("notificationScheduleRouter", () => {
         set: vi.fn((data: unknown) => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'update' in model) {
+            if (model && typeof model === "object" && "update" in model) {
               return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -325,9 +346,11 @@ describe("notificationScheduleRouter", () => {
           return {
             where: vi.fn(() => ({
               returning: execute,
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+                execute().then(resolve, reject),
             })),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -339,7 +362,7 @@ describe("notificationScheduleRouter", () => {
         where: vi.fn(() => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'delete' in model) {
+            if (model && typeof model === "object" && "delete" in model) {
               return (model as Record<string, unknown>).delete().then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -349,7 +372,8 @@ describe("notificationScheduleRouter", () => {
           };
           return {
             returning: execute,
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -358,9 +382,11 @@ describe("notificationScheduleRouter", () => {
     db.select = vi.fn((fields?: unknown) => {
       let primaryTable: string | undefined;
       let hasGroupBy = false;
-      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields) : [];
-      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === 'count';
-      const hasAggregateFields = fieldNames.some((f) => ['count', 'sum', 'avg', 'min', 'max'].includes(f));
+      const fieldNames = fields && typeof fields === "object" ? Object.keys(fields) : [];
+      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+      const hasAggregateFields = fieldNames.some((f) =>
+        ["count", "sum", "avg", "min", "max"].includes(f),
+      );
       const chainable: any = {
         from: (table: unknown) => {
           primaryTable = getModelName(table);
@@ -380,16 +406,22 @@ describe("notificationScheduleRouter", () => {
         then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           if (primaryTable) {
             const model = db[primaryTable];
-            if (model && typeof model === 'object') {
-              if (hasGroupBy && 'groupBy' in model) {
+            if (model && typeof model === "object") {
+              if (hasGroupBy && "groupBy" in model) {
                 return (model as Record<string, unknown>).groupBy().then((groups: unknown) => {
                   const mapped = (groups as Record<string, unknown>[]).map((row) => {
                     const item: Record<string, unknown> = {};
                     for (const field of fieldNames) {
                       if (field in row) {
                         item[field] = row[field];
-                      } else if (field === 'count' && (row as Record<string, Record<string, unknown>>)._count) {
-                        item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                      } else if (
+                        field === "count" &&
+                        (row as Record<string, Record<string, unknown>>)._count
+                      ) {
+                        item.count =
+                          (row as Record<string, Record<string, unknown>>)._count.id ??
+                          (row as Record<string, Record<string, unknown>>)._count._all ??
+                          0;
                       }
                     }
                     return item;
@@ -397,15 +429,17 @@ describe("notificationScheduleRouter", () => {
                   return resolve(mapped);
                 }, reject);
               }
-              if (hasCountOnly && 'count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if (hasCountOnly && "count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if (hasAggregateFields && 'aggregate' in model) {
+              if (hasAggregateFields && "aggregate" in model) {
                 return (model as Record<string, unknown>).aggregate().then((aggResult: unknown) => {
                   const mapped: Record<string, unknown> = {};
                   const agg = aggResult as Record<string, Record<string, unknown>>;
                   for (const field of fieldNames) {
-                    if (field === 'count' && agg._count) {
+                    if (field === "count" && agg._count) {
                       mapped.count = agg._count.id ?? agg._count._all ?? 0;
                     } else if (agg._sum && field in agg._sum) {
                       mapped[field] = agg._sum[field];
@@ -416,14 +450,20 @@ describe("notificationScheduleRouter", () => {
                   return resolve([mapped]);
                 }, reject);
               }
-              if ('findMany' in model) {
-                return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+              if ("findMany" in model) {
+                return (model as Record<string, unknown>)
+                  .findMany()
+                  .then((results: unknown) => resolve(results), reject);
               }
-              if ('count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if ("count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if ('aggregate' in model) {
-                return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+              if ("aggregate" in model) {
+                return (model as Record<string, unknown>)
+                  .aggregate()
+                  .then((agg: unknown) => resolve([agg]), reject);
               }
             }
           }
@@ -448,7 +488,6 @@ describe("notificationScheduleRouter", () => {
     });
 
     mockDb = db as unknown as DB;
-
   });
 
   // Helper to create authenticated context
@@ -468,7 +507,9 @@ describe("notificationScheduleRouter", () => {
         createMockSchedule({ id: "schedule-2" }),
       ];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
       (mockDb.notificationSchedule.count as ReturnType<typeof vi.fn>).mockResolvedValue(2);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -488,7 +529,9 @@ describe("notificationScheduleRouter", () => {
     it("should filter schedules by tripId", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1", tripId: "trip-123" })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
       (mockDb.notificationSchedule.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -504,7 +547,9 @@ describe("notificationScheduleRouter", () => {
     it("should filter schedules by notification type", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1", notificationType: "ranking" })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
       (mockDb.notificationSchedule.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -520,7 +565,9 @@ describe("notificationScheduleRouter", () => {
     it("should filter schedules by active status", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1", isActive: true })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
       (mockDb.notificationSchedule.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -536,7 +583,9 @@ describe("notificationScheduleRouter", () => {
     it("should search schedules by name", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1", name: "Daily Update" })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
       (mockDb.notificationSchedule.count as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -557,7 +606,9 @@ describe("notificationScheduleRouter", () => {
         createMockSchedule({ id: "schedule-2", isActive: true }),
       ];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -573,7 +624,9 @@ describe("notificationScheduleRouter", () => {
         createMockSchedule({ id: "schedule-2", hour: 9, minute: 30 }),
       ];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -586,7 +639,9 @@ describe("notificationScheduleRouter", () => {
     it("should get upcoming schedules for default 7 days", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1" })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -599,7 +654,9 @@ describe("notificationScheduleRouter", () => {
     it("should get upcoming schedules for custom days", async () => {
       const schedules = [createMockSchedule({ id: "schedule-1" })];
 
-      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(schedules);
+      (mockDb.notificationSchedule.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedules,
+      );
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -623,7 +680,9 @@ describe("notificationScheduleRouter", () => {
       });
 
       (mockDb.notificationSchedule as any).findFirst = vi.fn().mockResolvedValue(schedule);
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedule,
+      );
 
       const { buildAuthEmailLookup, resolveAuthEmail } = await import("../../../utils/authEmails");
 
@@ -663,7 +722,9 @@ describe("notificationScheduleRouter", () => {
         },
       ];
 
-      (mockDb.notificationScheduleExecution.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(executions);
+      (mockDb.notificationScheduleExecution.findMany as ReturnType<typeof vi.fn>).mockResolvedValue(
+        executions,
+      );
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -685,8 +746,12 @@ describe("notificationScheduleRouter", () => {
         name: "New Schedule",
       });
 
-      (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(newSchedule);
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(newSchedule);
+      (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        newSchedule,
+      );
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        newSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -715,7 +780,8 @@ describe("notificationScheduleRouter", () => {
     });
 
     it("should validate notification content for custom type", async () => {
-      const { validateNotificationContent } = await import("../../../utils/notificactionSchedule-validation");
+      const { validateNotificationContent } =
+        await import("../../../utils/notificactionSchedule-validation");
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -745,7 +811,7 @@ describe("notificationScheduleRouter", () => {
     it("should create new template schedule", async () => {
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockSchedule({ id: "template-schedule", name: "Daily Ranking" })
+        createMockSchedule({ id: "template-schedule", name: "Daily Ranking" }),
       );
 
       const ctx = createAuthContext(mockAdminUser);
@@ -762,10 +828,10 @@ describe("notificationScheduleRouter", () => {
 
     it("should update existing template schedule", async () => {
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockSchedule({ id: "existing-schedule", name: "Daily Ranking" })
+        createMockSchedule({ id: "existing-schedule", name: "Daily Ranking" }),
       );
       (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
-        createMockSchedule({ id: "existing-schedule", name: "Daily Ranking" })
+        createMockSchedule({ id: "existing-schedule", name: "Daily Ranking" }),
       );
 
       const ctx = createAuthContext(mockAdminUser);
@@ -789,7 +855,7 @@ describe("notificationScheduleRouter", () => {
         caller.upsertTemplate({
           tripId: "non-existent",
           templateKey: "daily_morning",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -802,8 +868,12 @@ describe("notificationScheduleRouter", () => {
         name: "Updated Name",
       });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(existingSchedule);
-      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(updatedSchedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        existingSchedule,
+      );
+      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        updatedSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -814,7 +884,7 @@ describe("notificationScheduleRouter", () => {
       });
 
       expect(result.id).toBe("schedule-123");
-       
+
       expect(mockDb.notificationSchedule.update).toHaveBeenCalled();
     });
 
@@ -828,7 +898,7 @@ describe("notificationScheduleRouter", () => {
         caller.update({
           id: "non-existent",
           name: "Updated Name",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });
@@ -843,7 +913,9 @@ describe("notificationScheduleRouter", () => {
         },
       });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedule,
+      );
       (mockDb.notificationSchedule.delete as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
       (mockDb.notificationScheduleExecution.count as ReturnType<typeof vi.fn>).mockResolvedValue(5);
 
@@ -912,7 +984,9 @@ describe("notificationScheduleRouter", () => {
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(originalSchedule)
         .mockResolvedValueOnce(duplicatedSchedule);
-      (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(duplicatedSchedule);
+      (mockDb.notificationSchedule.create as ReturnType<typeof vi.fn>).mockResolvedValue(
+        duplicatedSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -944,7 +1018,9 @@ describe("notificationScheduleRouter", () => {
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(schedule)
         .mockResolvedValueOnce(toggledSchedule);
-      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
+      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        toggledSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -961,7 +1037,9 @@ describe("notificationScheduleRouter", () => {
       (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce(schedule)
         .mockResolvedValueOnce(toggledSchedule);
-      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(toggledSchedule);
+      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        toggledSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -1001,8 +1079,12 @@ describe("notificationScheduleRouter", () => {
         lastRun: new Date(),
       });
 
-      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(schedule);
-      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(updatedSchedule);
+      (mockDb.notificationSchedule.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue(
+        schedule,
+      );
+      (mockDb.notificationSchedule.update as ReturnType<typeof vi.fn>).mockResolvedValue(
+        updatedSchedule,
+      );
 
       const ctx = createAuthContext(mockAdminUser);
       const caller = createCaller(ctx);
@@ -1026,7 +1108,7 @@ describe("notificationScheduleRouter", () => {
         caller.updateLastRun({
           id: "non-existent",
           lastRun: new Date(),
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
   });

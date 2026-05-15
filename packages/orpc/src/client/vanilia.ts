@@ -62,11 +62,7 @@ const isRetryableError = (error: unknown): boolean => {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const getORPCClient = (
-  httpUrl: string,
-  wsUrl: string,
-  authorizationToken?: string,
-) => {
+const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: string) => {
   const ws = createWsConnection(wsUrl, authorizationToken);
   new WSLink({ websocket: ws });
 

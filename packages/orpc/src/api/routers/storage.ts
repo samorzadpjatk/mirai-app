@@ -18,8 +18,7 @@ const resolveStoragePath = (value: string) => {
 };
 
 const getResumableEndpoint = () => {
-  const baseUrl =
-    process.env.SUPABASE_URL;
+  const baseUrl = process.env.SUPABASE_URL;
   if (!baseUrl) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Missing SUPABASE_URL" });
   }
@@ -42,7 +41,9 @@ const getResumableEndpoint = () => {
 const getPublicUrl = () => {
   const baseUrl = process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
   if (!baseUrl) {
-    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL" });
+    throw new ORPCError("INTERNAL_SERVER_ERROR", {
+      message: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL",
+    });
   }
 
   try {
@@ -68,12 +69,13 @@ export const storageRouter = createORPCRouter({
           .string()
           .min(1)
           .max(500)
-          .regex(
-            /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.\/-]+$/,
-            "Must be in bucket/path format",
-          ),
+          .regex(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]+$/, "Must be in bucket/path format"),
         upsert: z.boolean().optional(),
-        fileSize: z.number().int().max(10 * 1024 * 1024).optional(),
+        fileSize: z
+          .number()
+          .int()
+          .max(10 * 1024 * 1024)
+          .optional(),
         contentType: z
           .string()
           .regex(
@@ -91,7 +93,9 @@ export const storageRouter = createORPCRouter({
         .createSignedUploadUrl(objectInfo.path, { upsert: Boolean(input.upsert) });
 
       if (error || !data?.token) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Unable to create signed upload URL" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Unable to create signed upload URL",
+        });
       }
 
       return {
@@ -107,7 +111,12 @@ export const storageRouter = createORPCRouter({
     .input(
       z.object({
         storagePath: z.string().min(1),
-        expiresInSeconds: z.number().int().min(60).max(60 * 60).optional(),
+        expiresInSeconds: z
+          .number()
+          .int()
+          .min(60)
+          .max(60 * 60)
+          .optional(),
       }),
     )
     .handler(async ({ context, input }) => {
@@ -120,16 +129,14 @@ export const storageRouter = createORPCRouter({
 
       if (error || !data?.signedUrl) {
         const message =
-          typeof error?.message === "string"
-            ? error.message
-            : "Unable to create signed URL";
+          typeof error?.message === "string" ? error.message : "Unable to create signed URL";
         const looksLikeNotFound =
           message.toLowerCase().includes("not found") ||
           message.toLowerCase().includes("does not exist");
 
-        throw new ORPCError(looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR", { message: looksLikeNotFound
-          ? "Storage object not found"
-          : "Unable to create signed URL" });
+        throw new ORPCError(looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR", {
+          message: looksLikeNotFound ? "Storage object not found" : "Unable to create signed URL",
+        });
       }
 
       return {
@@ -146,13 +153,16 @@ export const storageRouter = createORPCRouter({
     )
     .handler(({ input }) => {
       const objectInfo = resolveStoragePath(input.storagePath);
-      
+
       if (objectInfo.bucket !== "files-public") {
-        throw new ORPCError("BAD_REQUEST", { message: "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets." });
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets.",
+        });
       }
-      
+
       const publicUrlBase = getPublicUrl();
-      
+
       return {
         publicUrl: `${publicUrlBase}/${objectInfo.bucket}/${objectInfo.path}`,
       };

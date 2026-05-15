@@ -45,21 +45,39 @@ interface MockSupabaseQueryBuilder {
 }
 
 interface MockSupabaseAuthAdmin {
-  getUserById: MockedFunction<(id: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>>;
+  getUserById: MockedFunction<
+    (id: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>
+  >;
   listUsers: MockedFunction<() => Promise<{ data: { users: SupabaseUser[] }; error: null }>>;
   createUser: MockedFunction<() => Promise<{ data: { user: SupabaseUser | null }; error: null }>>;
-  updateUserById: MockedFunction<() => Promise<{ data: { user: SupabaseUser | null }; error: null }>>;
+  updateUserById: MockedFunction<
+    () => Promise<{ data: { user: SupabaseUser | null }; error: null }>
+  >;
   deleteUser: MockedFunction<() => Promise<{ data: Record<string, never>; error: null }>>;
 }
 
 interface MockSupabaseAuth {
   getSession: MockedFunction<() => Promise<{ data: { session: null }; error: null }>>;
-  getUser: MockedFunction<(token?: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>>;
+  getUser: MockedFunction<
+    (token?: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>
+  >;
   signInWithOtp: MockedFunction<() => Promise<{ data: Record<string, never>; error: null }>>;
-  signInWithPassword: MockedFunction<() => Promise<{ data: { user: SupabaseUser | null; session: { access_token: string } | null }; error: null }>>;
+  signInWithPassword: MockedFunction<
+    () => Promise<{
+      data: { user: SupabaseUser | null; session: { access_token: string } | null };
+      error: null;
+    }>
+  >;
   signOut: MockedFunction<() => Promise<{ error: null }>>;
-  verifyOtp: MockedFunction<() => Promise<{ data: { user: SupabaseUser | null; session: { access_token: string } | null }; error: null }>>;
-  onAuthStateChange: MockedFunction<() => { data: { subscription: { unsubscribe: MockedFunction<() => void> } } }>;
+  verifyOtp: MockedFunction<
+    () => Promise<{
+      data: { user: SupabaseUser | null; session: { access_token: string } | null };
+      error: null;
+    }>
+  >;
+  onAuthStateChange: MockedFunction<
+    () => { data: { subscription: { unsubscribe: MockedFunction<() => void> } } }
+  >;
   admin: MockSupabaseAuthAdmin;
 }
 
@@ -98,7 +116,7 @@ function createMockQueryBuilder(): MockSupabaseQueryBuilder {
     delete: vi.fn<() => MockSupabaseQueryBuilder>(() => builder),
     eq: vi.fn<() => MockSupabaseQueryBuilder>(() => builder),
     single: vi.fn<() => Promise<{ data: null; error: null }>>(() =>
-      Promise.resolve({ data: null, error: null })
+      Promise.resolve({ data: null, error: null }),
     ),
   };
   return builder;
@@ -107,20 +125,20 @@ function createMockQueryBuilder(): MockSupabaseQueryBuilder {
 function createMockAuthAdmin(): MockSupabaseAuthAdmin {
   const mockUser = createMockSupabaseUser();
   return {
-    getUserById: vi.fn<(id: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser }, error: null })
-    ),
+    getUserById: vi.fn<
+      (id: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>
+    >(() => Promise.resolve({ data: { user: mockUser }, error: null })),
     listUsers: vi.fn<() => Promise<{ data: { users: SupabaseUser[] }; error: null }>>(() =>
-      Promise.resolve({ data: { users: [mockUser] }, error: null })
+      Promise.resolve({ data: { users: [mockUser] }, error: null }),
     ),
     createUser: vi.fn<() => Promise<{ data: { user: SupabaseUser | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser }, error: null })
+      Promise.resolve({ data: { user: mockUser }, error: null }),
     ),
     updateUserById: vi.fn<() => Promise<{ data: { user: SupabaseUser | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser }, error: null })
+      Promise.resolve({ data: { user: mockUser }, error: null }),
     ),
     deleteUser: vi.fn<() => Promise<{ data: Record<string, never>; error: null }>>(() =>
-      Promise.resolve({ data: {}, error: null })
+      Promise.resolve({ data: {}, error: null }),
     ),
   };
 }
@@ -129,24 +147,40 @@ function createMockAuth(): MockSupabaseAuth {
   const mockUser = createMockSupabaseUser();
   return {
     getSession: vi.fn<() => Promise<{ data: { session: null }; error: null }>>(() =>
-      Promise.resolve({ data: { session: null }, error: null })
+      Promise.resolve({ data: { session: null }, error: null }),
     ),
-    getUser: vi.fn<(token?: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser }, error: null })
-    ),
+    getUser: vi.fn<
+      (token?: string) => Promise<{ data: { user: SupabaseUser | null }; error: null }>
+    >(() => Promise.resolve({ data: { user: mockUser }, error: null })),
     signInWithOtp: vi.fn<() => Promise<{ data: Record<string, never>; error: null }>>(() =>
-      Promise.resolve({ data: {}, error: null })
+      Promise.resolve({ data: {}, error: null }),
     ),
-    signInWithPassword: vi.fn<() => Promise<{ data: { user: SupabaseUser | null; session: { access_token: string } | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser, session: { access_token: "test-token" } }, error: null })
+    signInWithPassword: vi.fn<
+      () => Promise<{
+        data: { user: SupabaseUser | null; session: { access_token: string } | null };
+        error: null;
+      }>
+    >(() =>
+      Promise.resolve({
+        data: { user: mockUser, session: { access_token: "test-token" } },
+        error: null,
+      }),
     ),
-    signOut: vi.fn<() => Promise<{ error: null }>>(() =>
-      Promise.resolve({ error: null })
+    signOut: vi.fn<() => Promise<{ error: null }>>(() => Promise.resolve({ error: null })),
+    verifyOtp: vi.fn<
+      () => Promise<{
+        data: { user: SupabaseUser | null; session: { access_token: string } | null };
+        error: null;
+      }>
+    >(() =>
+      Promise.resolve({
+        data: { user: mockUser, session: { access_token: "test-token" } },
+        error: null,
+      }),
     ),
-    verifyOtp: vi.fn<() => Promise<{ data: { user: SupabaseUser | null; session: { access_token: string } | null }; error: null }>>(() =>
-      Promise.resolve({ data: { user: mockUser, session: { access_token: "test-token" } }, error: null })
-    ),
-    onAuthStateChange: vi.fn<() => { data: { subscription: { unsubscribe: MockedFunction<() => void> } } }>(() => ({
+    onAuthStateChange: vi.fn<
+      () => { data: { subscription: { unsubscribe: MockedFunction<() => void> } } }
+    >(() => ({
       data: { subscription: { unsubscribe: vi.fn<() => void>() } },
     })),
     admin: createMockAuthAdmin(),
@@ -162,7 +196,13 @@ export function createMockSupabase(): MockSupabaseClient {
 
 function singularize(name: string): string {
   if (name.endsWith("ies")) return name.slice(0, -3) + "y";
-  if (name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") || name.endsWith("zes")) return name.slice(0, -2);
+  if (
+    name.endsWith("ches") ||
+    name.endsWith("shes") ||
+    name.endsWith("xes") ||
+    name.endsWith("zes")
+  )
+    return name.slice(0, -2);
   if (name.endsWith("s")) return name.slice(0, -1);
   return name;
 }
@@ -208,9 +248,7 @@ function getTableName(table: unknown): string | undefined {
     if (obj.name && typeof obj.name === "string") {
       return obj.name;
     }
-    const sym = Object.getOwnPropertySymbols(obj).find(
-      (s) => s.description === "drizzle:Name"
-    );
+    const sym = Object.getOwnPropertySymbols(obj).find((s) => s.description === "drizzle:Name");
     if (sym && typeof obj[sym] === "string") {
       return obj[sym] as string;
     }
@@ -241,7 +279,11 @@ function syncFindFirstWithFindUnique(model: Record<string, unknown>): void {
 export function addDrizzleApi(mockDb: Record<string, unknown>): void {
   for (const key of Object.keys(mockDb)) {
     const value = mockDb[key];
-    if (value && typeof value === "object" && ("findFirst" in value || "findUnique" in value || "findMany" in value)) {
+    if (
+      value &&
+      typeof value === "object" &&
+      ("findFirst" in value || "findUnique" in value || "findMany" in value)
+    ) {
       syncFindFirstWithFindUnique(value as Record<string, unknown>);
     }
   }
@@ -277,10 +319,12 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
                   };
                 }
                 if (typeof val === "undefined" && typeof prop === "string" && prop in defaults) {
-                  const fallbackProp = prop === "findFirst" && "findUnique" in modelObj ? "findUnique" : prop;
+                  const fallbackProp =
+                    prop === "findFirst" && "findUnique" in modelObj ? "findUnique" : prop;
                   const fallbackVal = modelObj[fallbackProp];
                   if (typeof fallbackVal === "function") {
-                    return (...args: unknown[]) => (fallbackVal as (...args: unknown[]) => unknown)(...args);
+                    return (...args: unknown[]) =>
+                      (fallbackVal as (...args: unknown[]) => unknown)(...args);
                   }
                   return (...args: unknown[]) => defaults[prop](...args);
                 }
@@ -295,7 +339,7 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
             count: vi.fn(() => Promise.resolve(0)),
           };
         },
-      }
+      },
     );
   }
 
@@ -309,7 +353,9 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
             returning: vi.fn(() => Promise.resolve([value])),
           });
           if (model && typeof model === "object" && "create" in model) {
-            const createFn = (model as Record<string, unknown>).create as (...args: unknown[]) => Promise<unknown>;
+            const createFn = (model as Record<string, unknown>).create as (
+              ...args: unknown[]
+            ) => Promise<unknown>;
             const resultPromise = Promise.resolve(createFn({ data }));
             return {
               returning: vi.fn(async () => Promise.resolve([await resultPromise])),
@@ -339,7 +385,9 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
           where: vi.fn(() => {
             const model = mockDb[modelName];
             if (model && typeof model === "object" && "update" in model) {
-              const updateFn = (model as Record<string, unknown>).update as (...args: unknown[]) => Promise<unknown>;
+              const updateFn = (model as Record<string, unknown>).update as (
+                ...args: unknown[]
+              ) => Promise<unknown>;
               const result = updateFn({ data });
               const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
               return {
@@ -362,7 +410,9 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
         where: vi.fn(() => {
           const model = mockDb[modelName];
           if (model && typeof model === "object" && "delete" in model) {
-            const deleteFn = (model as Record<string, unknown>).delete as (...args: unknown[]) => Promise<unknown>;
+            const deleteFn = (model as Record<string, unknown>).delete as (
+              ...args: unknown[]
+            ) => Promise<unknown>;
             const result = deleteFn();
             const resolvedResult = result instanceof Promise ? result : Promise.resolve(result);
             return {
@@ -415,57 +465,69 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
           if (primaryTable) {
             const model = mockDb[primaryTable];
             if (model && typeof model === "object") {
-              const fieldNames = fields && typeof fields === "object" ? Object.keys(fields as Record<string, unknown>) : [];
+              const fieldNames =
+                fields && typeof fields === "object"
+                  ? Object.keys(fields as Record<string, unknown>)
+                  : [];
               const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
               if (hasCountOnly && "count" in model) {
-                return (model as { count: () => Promise<number> }).count().then((count: number) => resolve([{ count }]));
+                return (model as { count: () => Promise<number> })
+                  .count()
+                  .then((count: number) => resolve([{ count }]));
               }
               if (hasGroupBy && "groupBy" in model) {
-                return (model as { groupBy: () => Promise<Record<string, unknown>[]> }).groupBy().then((groups) => {
-                  const mapped = groups.map((row) => {
-                    const item: Record<string, unknown> = {};
-                    for (const field of fieldNames) {
-                      if (field in row) item[field] = row[field];
-                      else if (field === "count" && row._count) {
-                        item.count = (row._count as Record<string, unknown>).id ?? (row._count as Record<string, unknown>).all ?? 0;
-                      }
-                    }
-                    return item;
-                  });
-                  return resolve(mapped);
-                });
-              }
-              if ("findMany" in model) {
-                return (model as { findMany: () => Promise<unknown[]> }).findMany().then((rows: unknown[]) => {
-                  if (!joins.length) return resolve(rows);
-
-                  const primaryAlias = getTableNameFromModel(primaryTable!);
-                  const mapped = rows.map((row) => {
-                    const mappedRow: Record<string, unknown> = {};
-                    mappedRow[primaryAlias] = row;
-
-                    for (const join of joins) {
-                      const joinModel = mockDb[join.alias];
-                      let joinData: unknown = null;
-                      if (join.alias === "user" && row && typeof row === "object") {
-                        joinData = (row as Record<string, unknown>).user ?? null;
-                      } else if (join.alias === "group" && row && typeof row === "object") {
-                        joinData = (row as Record<string, unknown>).group ?? null;
-                      }
-                      mappedRow[join.table] = joinData;
-                    }
-
-                    if (row && typeof row === "object") {
+                return (model as { groupBy: () => Promise<Record<string, unknown>[]> })
+                  .groupBy()
+                  .then((groups) => {
+                    const mapped = groups.map((row) => {
+                      const item: Record<string, unknown> = {};
                       for (const field of fieldNames) {
-                        if (field in (row as Record<string, unknown>)) {
-                          mappedRow[field] = (row as Record<string, unknown>)[field];
+                        if (field in row) item[field] = row[field];
+                        else if (field === "count" && row._count) {
+                          item.count =
+                            (row._count as Record<string, unknown>).id ??
+                            (row._count as Record<string, unknown>).all ??
+                            0;
                         }
                       }
-                    }
-                    return mappedRow;
+                      return item;
+                    });
+                    return resolve(mapped);
                   });
-                  return resolve(mapped);
-                });
+              }
+              if ("findMany" in model) {
+                return (model as { findMany: () => Promise<unknown[]> })
+                  .findMany()
+                  .then((rows: unknown[]) => {
+                    if (!joins.length) return resolve(rows);
+
+                    const primaryAlias = getTableNameFromModel(primaryTable!);
+                    const mapped = rows.map((row) => {
+                      const mappedRow: Record<string, unknown> = {};
+                      mappedRow[primaryAlias] = row;
+
+                      for (const join of joins) {
+                        const joinModel = mockDb[join.alias];
+                        let joinData: unknown = null;
+                        if (join.alias === "user" && row && typeof row === "object") {
+                          joinData = (row as Record<string, unknown>).user ?? null;
+                        } else if (join.alias === "group" && row && typeof row === "object") {
+                          joinData = (row as Record<string, unknown>).group ?? null;
+                        }
+                        mappedRow[join.table] = joinData;
+                      }
+
+                      if (row && typeof row === "object") {
+                        for (const field of fieldNames) {
+                          if (field in (row as Record<string, unknown>)) {
+                            mappedRow[field] = (row as Record<string, unknown>)[field];
+                          }
+                        }
+                      }
+                      return mappedRow;
+                    });
+                    return resolve(mapped);
+                  });
               }
             }
           }
@@ -533,7 +595,7 @@ export function createMockDb(): MockDbClient & Record<string, unknown> {
     $connect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
     $disconnect: vi.fn<() => Promise<void>>(() => Promise.resolve()),
     $transaction: vi.fn<<T>(callback: (db: MockDbClient) => Promise<T>) => Promise<T>>((callback) =>
-      callback(mockDb)
+      callback(mockDb),
     ),
   };
 
@@ -614,11 +676,13 @@ vi.mock("@mirai-app/auth", () => {
 vi.mock("@mirai-app/shared", () => {
   return {
     STANDARD_BUCKETS: {
-      IMAGES: 'images',
-      VIDEOS: 'videos',
-      PUBLIC: 'files-public'
+      IMAGES: "images",
+      VIDEOS: "videos",
+      PUBLIC: "files-public",
     },
-    normalizeStoragePath: vi.fn((path: string) => path.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '')),
+    normalizeStoragePath: vi.fn((path: string) =>
+      path.replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, ""),
+    ),
     normalizeBucketName: vi.fn((bucket: string) => bucket?.toLowerCase()),
   };
 });

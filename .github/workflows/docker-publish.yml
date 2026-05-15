@@ -13,10 +13,11 @@ on:
       - 'packages/shared/**'
       - 'packages/orpc/**'
       - 'packages/supabase/**'
-      - 'Dockerfile'
+      - 'apps/*/Dockerfile'
+      - 'packages/*/Dockerfile'
       - 'bun.lock'
       - 'package.json'
-      - 'turbo.json'
+      - 'nx.json'
       - 'tsconfig.base.json'
       - '.dockerignore'
 
@@ -29,19 +30,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-
-    strategy:
-      matrix:
-        include:
-          - package: backend-server
-            image: pjapp-backend-server
-            port: '2022'
-          - package: notification-sender
-            image: pjapp-notification-sender
-            port: '3011'
-          - package: db
-            image: pjapp-db-migrations
-            dockerfile: packages/db/Dockerfile.migrations
 
     steps:
       - uses: actions/checkout@v4
@@ -61,30 +49,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Resolve version
-        id: version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
-            VERSION="${TAG#v}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "publish_version=true" >> $GITHUB_OUTPUT
-          else
-            echo "publish_version=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
 
-      - name: Build & push ${{ matrix.image }}
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ${{ matrix.dockerfile || 'Dockerfile' }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          cache-from: type=gha,scope=pjapp
-          cache-to: type=gha,mode=max,scope=pjapp
-          build-args: |
-            PACKAGE=${{ matrix.package }}
-            PORT=${{ matrix.port }}
-          tags: |
-            ${{ steps.version.outputs.publish_version == 'true' && format('{0}/{1}/{2}:{3}', env.REGISTRY, github.repository_owner, matrix.image, steps.version.outputs.version) || '' }}
-            ${{ github.ref == 'refs/heads/main' && format('{0}/{1}/{2}:latest', env.REGISTRY, github.repository_owner, matrix.image) || '' }}
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build & push container images via Nx
+        env:
+          INPUT_PUSH: true
+          INPUT_REGISTRY: ${{ env.REGISTRY }}
+          INPUT_TAGS: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+        run: |
+          bunx nx run-many -t container \
+            --projects=apps/backend-server,apps/notification-sender,packages/db \
+            --configuration=ci

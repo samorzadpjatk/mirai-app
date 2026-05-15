@@ -16,7 +16,9 @@ describe("validateUrlProtocol", () => {
   });
 
   it("should reject data: URLs", () => {
-    expect(() => validateUrlProtocol("data:text/html,<script>alert(1)</script>")).toThrow(ORPCError);
+    expect(() => validateUrlProtocol("data:text/html,<script>alert(1)</script>")).toThrow(
+      ORPCError,
+    );
   });
 
   it("should reject file: URLs", () => {

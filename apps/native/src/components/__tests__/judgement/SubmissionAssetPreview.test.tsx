@@ -72,7 +72,7 @@ jest.mock("expo-image", () => ({
 jest.mock("expo-video", () => ({
   VideoView: () => mockReact.createElement(mockView, { testID: "video-view" }),
   useVideoPlayer: (source: unknown, callback?: (player: VideoPlayerMock) => void) =>
-    mockUseVideoPlayer(source, callback ?? (() => {})),
+    mockUseVideoPlayer(source, callback ?? (() => undefined)),
 }));
 
 jest.mock("~/hooks/files", () => ({

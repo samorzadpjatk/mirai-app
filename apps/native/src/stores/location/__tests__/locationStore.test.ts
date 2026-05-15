@@ -56,7 +56,7 @@ describe("locationStore", () => {
     });
     setLocationServerUpdater(null);
 
-    mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    mockAlert = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     mockOpenSettings = jest.spyOn(Linking, "openSettings").mockResolvedValue(undefined);
 
     mockGetBackgroundLocationPreference =

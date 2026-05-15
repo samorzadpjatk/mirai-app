@@ -1,12 +1,15 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { submissionReportRouter } from "../../routers/submissionReport";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, TripParticipant, ChallengeSubmission, SubmissionReport } from "@mirai-app/db";
+import type {
+  DB,
+  User,
+  TripParticipant,
+  ChallengeSubmission,
+  SubmissionReport,
+} from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
 import * as tripGuards from "../../../utils/tripGuards";
@@ -14,17 +17,20 @@ import * as tripGuards from "../../../utils/tripGuards";
 // Mock utility modules
 vi.mock("../../../utils/authEmails", () => ({
   buildAuthEmailLookup: vi.fn(),
-  resolveAuthEmail: vi.fn((lookup: Map<string, string | null>, authUserId: string | null | undefined): string | null => {
-    if (!authUserId) return null;
-    return lookup.get(authUserId) ?? null;
-  }),
+  resolveAuthEmail: vi.fn(
+    (lookup: Map<string, string | null>, authUserId: string | null | undefined): string | null => {
+      if (!authUserId) return null;
+      return lookup.get(authUserId) ?? null;
+    },
+  ),
 }));
 
 vi.mock("../../../utils/tripGuards", () => ({
   ensureTripNotEnded: vi.fn(),
 }));
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(submissionReportRouter, { context: ctx });
+const createCaller = (ctx: TRPCContext) =>
+  createRouterClient(submissionReportRouter, { context: ctx });
 
 describe("submissionReportRouter", () => {
   let mockDb: DB;
@@ -168,14 +174,17 @@ describe("submissionReportRouter", () => {
         findMany: vi.fn().mockResolvedValue([mockReport]),
         findUnique: vi.fn().mockResolvedValue(mockReport),
         findFirst: vi.fn().mockResolvedValue(mockReport),
-        create: vi.fn((args: { data: { submissionId: string; reporterId: string; reason: string; details?: string } }) => 
-          Promise.resolve({
-            ...mockReport,
-            submissionId: args.data.submissionId,
-            reporterId: args.data.reporterId,
-            reason: args.data.reason,
-            details: args.data.details,
-          })
+        create: vi.fn(
+          (args: {
+            data: { submissionId: string; reporterId: string; reason: string; details?: string };
+          }) =>
+            Promise.resolve({
+              ...mockReport,
+              submissionId: args.data.submissionId,
+              reporterId: args.data.reporterId,
+              reason: args.data.reason,
+              details: args.data.details,
+            }),
         ),
         update: vi.fn().mockResolvedValue(mockReport),
         delete: vi.fn().mockResolvedValue(mockReport),
@@ -213,51 +222,62 @@ describe("submissionReportRouter", () => {
 
     function getModelName(table: unknown): string {
       let name: string | undefined;
-      if (typeof table === 'string') {
+      if (typeof table === "string") {
         name = table;
-      } else if (table && typeof table === 'object') {
+      } else if (table && typeof table === "object") {
         const obj = table as Record<string | symbol, unknown>;
-        if (typeof obj.name === 'string') {
+        if (typeof obj.name === "string") {
           name = obj.name;
         } else {
-          const drizzleNameSym = Symbol.for('drizzle:Name');
-          if (typeof obj[drizzleNameSym] === 'string') {
+          const drizzleNameSym = Symbol.for("drizzle:Name");
+          if (typeof obj[drizzleNameSym] === "string") {
             name = obj[drizzleNameSym];
           } else {
             const sym = Object.getOwnPropertySymbols(obj).find(
-              (s) => s.description === 'drizzle:Name'
+              (s) => s.description === "drizzle:Name",
             );
-            if (sym && typeof obj[sym] === 'string') {
+            if (sym && typeof obj[sym] === "string") {
               name = obj[sym];
             }
           }
         }
       }
-      if (!name) return 'unknown';
-      const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+      if (!name) return "unknown";
+      const singular = name.replace(/ies$/, "y").replace(/s$/, "");
       return toCamelCase(singular);
     }
 
     const db = mockDb as Record<string, unknown>;
 
-    db.query = new Proxy({}, {
-      get(_, tableName) {
-        const name = String(tableName);
-        const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
-        const model = db[singular] ?? db[name];
-        if (model && typeof model === 'object') {
-          const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
-          return new Proxy(modelObj, {
-            get(_, methodName) {
-              const method = String(methodName);
-              if (method === 'findFirst' || method === 'findUnique') {
-                return async (...args: unknown[]) => {
-                  if (modelObj[method]) {
-                    const result = await modelObj[method](...args);
-                    if (result !== null && result !== undefined) {
-                      return result;
+    db.query = new Proxy(
+      {},
+      {
+        get(_, tableName) {
+          const name = String(tableName);
+          const singular = name.replace(/ies$/, "y").replace(/s$/, "");
+          const model = db[singular] ?? db[name];
+          if (model && typeof model === "object") {
+            const modelObj = model as Record<string, (...args: unknown[]) => Promise<unknown>>;
+            return new Proxy(modelObj, {
+              get(_, methodName) {
+                const method = String(methodName);
+                if (method === "findFirst" || method === "findUnique") {
+                  return async (...args: unknown[]) => {
+                    if (modelObj[method]) {
+                      const result = await modelObj[method](...args);
+                      if (result !== null && result !== undefined) {
+                        return result;
+                      }
+                      const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
+                      if (modelObj[otherMethod]) {
+                        const fb = await modelObj[otherMethod](...args);
+                        if (fb !== null && fb !== undefined) {
+                          return fb;
+                        }
+                      }
+                      return lastResults[singular] ?? null;
                     }
-                    const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
+                    const otherMethod = method === "findFirst" ? "findUnique" : "findFirst";
                     if (modelObj[otherMethod]) {
                       const fb = await modelObj[otherMethod](...args);
                       if (fb !== null && fb !== undefined) {
@@ -265,24 +285,20 @@ describe("submissionReportRouter", () => {
                       }
                     }
                     return lastResults[singular] ?? null;
-                  }
-                  const otherMethod = method === 'findFirst' ? 'findUnique' : 'findFirst';
-                  if (modelObj[otherMethod]) {
-                    const fb = await modelObj[otherMethod](...args);
-                    if (fb !== null && fb !== undefined) {
-                      return fb;
-                    }
-                  }
-                  return lastResults[singular] ?? null;
-                };
-              }
-              return modelObj[method];
-            },
-          });
-        }
-        return { findFirst: vi.fn(() => Promise.resolve(null)), findUnique: vi.fn(() => Promise.resolve(null)), findMany: vi.fn(() => Promise.resolve([])) };
+                  };
+                }
+                return modelObj[method];
+              },
+            });
+          }
+          return {
+            findFirst: vi.fn(() => Promise.resolve(null)),
+            findUnique: vi.fn(() => Promise.resolve(null)),
+            findMany: vi.fn(() => Promise.resolve([])),
+          };
+        },
       },
-    });
+    );
 
     db.insert = vi.fn((table: unknown) => {
       const modelName = getModelName(table);
@@ -290,7 +306,7 @@ describe("submissionReportRouter", () => {
         values: vi.fn((data: unknown) => {
           const returningFn = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'create' in model) {
+            if (model && typeof model === "object" && "create" in model) {
               return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -304,26 +320,34 @@ describe("submissionReportRouter", () => {
             onConflictDoUpdate: (_opts: unknown) => ({
               returning: () => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return [result];
-                  });
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return [result];
+                    });
                 }
                 return Promise.resolve([{}]);
               },
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
+              then: (
+                resolve: (value: unknown) => unknown,
+                reject?: (reason: unknown) => unknown,
+              ) => {
                 const model = db[modelName];
-                if (model && typeof model === 'object' && 'upsert' in model) {
-                  return (model as Record<string, unknown>).upsert({ data }).then((result: unknown) => {
-                    if (result != null) lastResults[modelName] = result;
-                    return resolve([result]);
-                  }, reject);
+                if (model && typeof model === "object" && "upsert" in model) {
+                  return (model as Record<string, unknown>)
+                    .upsert({ data })
+                    .then((result: unknown) => {
+                      if (result != null) lastResults[modelName] = result;
+                      return resolve([result]);
+                    }, reject);
                 }
                 return resolve([{}]);
               },
             }),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => returningFn().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              returningFn().then(resolve, reject),
           };
         }),
       };
@@ -335,7 +359,7 @@ describe("submissionReportRouter", () => {
         set: vi.fn((data: unknown) => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'update' in model) {
+            if (model && typeof model === "object" && "update" in model) {
               return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -346,9 +370,11 @@ describe("submissionReportRouter", () => {
           return {
             where: vi.fn(() => ({
               returning: execute,
-              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+              then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+                execute().then(resolve, reject),
             })),
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -360,7 +386,7 @@ describe("submissionReportRouter", () => {
         where: vi.fn(() => {
           const execute = () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'delete' in model) {
+            if (model && typeof model === "object" && "delete" in model) {
               return (model as Record<string, unknown>).delete().then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return Array.isArray(result) ? result : [result];
@@ -370,7 +396,8 @@ describe("submissionReportRouter", () => {
           };
           return {
             returning: execute,
-            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => execute().then(resolve, reject),
+            then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+              execute().then(resolve, reject),
           };
         }),
       };
@@ -379,9 +406,11 @@ describe("submissionReportRouter", () => {
     db.select = vi.fn((fields?: unknown) => {
       let primaryTable: string | undefined;
       let hasGroupBy = false;
-      const fieldNames = fields && typeof fields === 'object' ? Object.keys(fields) : [];
-      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === 'count';
-      const hasAggregateFields = fieldNames.some((f) => ['count', 'sum', 'avg', 'min', 'max'].includes(f));
+      const fieldNames = fields && typeof fields === "object" ? Object.keys(fields) : [];
+      const hasCountOnly = fieldNames.length === 1 && fieldNames[0] === "count";
+      const hasAggregateFields = fieldNames.some((f) =>
+        ["count", "sum", "avg", "min", "max"].includes(f),
+      );
       const chainable: any = {
         from: (table: unknown) => {
           primaryTable = getModelName(table);
@@ -401,16 +430,22 @@ describe("submissionReportRouter", () => {
         then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
           if (primaryTable) {
             const model = db[primaryTable];
-            if (model && typeof model === 'object') {
-              if (hasGroupBy && 'groupBy' in model) {
+            if (model && typeof model === "object") {
+              if (hasGroupBy && "groupBy" in model) {
                 return (model as Record<string, unknown>).groupBy().then((groups: unknown) => {
                   const mapped = (groups as Record<string, unknown>[]).map((row) => {
                     const item: Record<string, unknown> = {};
                     for (const field of fieldNames) {
                       if (field in row) {
                         item[field] = row[field];
-                      } else if (field === 'count' && (row as Record<string, Record<string, unknown>>)._count) {
-                        item.count = (row as Record<string, Record<string, unknown>>)._count.id ?? (row as Record<string, Record<string, unknown>>)._count._all ?? 0;
+                      } else if (
+                        field === "count" &&
+                        (row as Record<string, Record<string, unknown>>)._count
+                      ) {
+                        item.count =
+                          (row as Record<string, Record<string, unknown>>)._count.id ??
+                          (row as Record<string, Record<string, unknown>>)._count._all ??
+                          0;
                       }
                     }
                     return item;
@@ -418,15 +453,17 @@ describe("submissionReportRouter", () => {
                   return resolve(mapped);
                 }, reject);
               }
-              if (hasCountOnly && 'count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if (hasCountOnly && "count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if (hasAggregateFields && 'aggregate' in model) {
+              if (hasAggregateFields && "aggregate" in model) {
                 return (model as Record<string, unknown>).aggregate().then((aggResult: unknown) => {
                   const mapped: Record<string, unknown> = {};
                   const agg = aggResult as Record<string, Record<string, unknown>>;
                   for (const field of fieldNames) {
-                    if (field === 'count' && agg._count) {
+                    if (field === "count" && agg._count) {
                       mapped.count = agg._count.id ?? agg._count._all ?? 0;
                     } else if (agg._sum && field in agg._sum) {
                       mapped[field] = agg._sum[field];
@@ -437,14 +474,20 @@ describe("submissionReportRouter", () => {
                   return resolve([mapped]);
                 }, reject);
               }
-              if ('findMany' in model) {
-                return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+              if ("findMany" in model) {
+                return (model as Record<string, unknown>)
+                  .findMany()
+                  .then((results: unknown) => resolve(results), reject);
               }
-              if ('count' in model) {
-                return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+              if ("count" in model) {
+                return (model as Record<string, unknown>)
+                  .count()
+                  .then((count: unknown) => resolve([{ count }]), reject);
               }
-              if ('aggregate' in model) {
-                return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+              if ("aggregate" in model) {
+                return (model as Record<string, unknown>)
+                  .aggregate()
+                  .then((agg: unknown) => resolve([agg]), reject);
               }
             }
           }
@@ -473,9 +516,7 @@ describe("submissionReportRouter", () => {
 
   describe("create (protectedProcedure)", () => {
     it("should create a submission report successfully", async () => {
-      mockBuildAuthEmailLookup.mockResolvedValue(
-        new Map([["auth-user-1", "user@example.com"]])
-      );
+      mockBuildAuthEmailLookup.mockResolvedValue(new Map([["auth-user-1", "user@example.com"]]));
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -498,7 +539,7 @@ describe("submissionReportRouter", () => {
       expect(result.submissionId).toBe("submission-1");
       expect(result.reporter).toBeDefined();
       expect(result.reporter.user.email).toBe("user@example.com");
-       
+
       expect(mockDb.submissionReport.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -507,7 +548,7 @@ describe("submissionReportRouter", () => {
             reason: "Inappropriate content",
             details: "This submission contains offensive material",
           }),
-        })
+        }),
       );
     });
 
@@ -538,7 +579,6 @@ describe("submissionReportRouter", () => {
     });
 
     it("should throw FORBIDDEN when user is not a trip participant", async () => {
-       
       mockDb.tripParticipant.findUnique.mockResolvedValue(null);
 
       const ctx: TRPCContext = {
@@ -555,12 +595,11 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "submission-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
     it("should throw NOT_FOUND when submission does not exist", async () => {
-       
       mockDb.challengeSubmission.findFirst.mockResolvedValue(null);
       mockDb.challengeSubmission.findMany.mockResolvedValue([]);
 
@@ -578,7 +617,7 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "nonexistent-submission",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -601,7 +640,7 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "submission-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow(ORPCError);
     });
 
@@ -620,7 +659,7 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "submission-1",
           reason: "",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -639,7 +678,7 @@ describe("submissionReportRouter", () => {
         caller.create({
           submissionId: "submission-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -658,12 +697,11 @@ describe("submissionReportRouter", () => {
         caller.create({
           tripId: "trip-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow();
     });
 
     it("should handle database errors gracefully", async () => {
-       
       mockDb.submissionReport.create.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {
@@ -680,7 +718,7 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "submission-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -739,14 +777,13 @@ describe("submissionReportRouter", () => {
         },
       ];
 
-       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
       mockBuildAuthEmailLookup.mockResolvedValue(
         new Map([
           ["auth-user-1", "user1@example.com"],
           ["auth-user-2", "user2@example.com"],
-        ])
+        ]),
       );
 
       const ctx: TRPCContext = {
@@ -764,12 +801,11 @@ describe("submissionReportRouter", () => {
       expect(result[1].reason).toBe("Inappropriate content");
       expect(result[0].reporter.user.email).toBe("user1@example.com");
       expect(result[1].reporter.user.email).toBe("user2@example.com");
-       
+
       expect(mockDb.submissionReport.findMany).toHaveBeenCalled();
     });
 
     it("should return empty array when no reports exist", async () => {
-       
       mockDb.submissionReport.findMany.mockResolvedValue([]);
 
       mockBuildAuthEmailLookup.mockResolvedValue(new Map());
@@ -819,7 +855,6 @@ describe("submissionReportRouter", () => {
         },
       ];
 
-       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
       mockBuildAuthEmailLookup.mockResolvedValue(new Map());
@@ -835,7 +870,6 @@ describe("submissionReportRouter", () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _result = await caller.getBySubmission({ submissionId: "submission-1" });
 
-       
       expect(mockDb.submissionReport.findMany).toHaveBeenCalled();
     });
 
@@ -851,12 +885,11 @@ describe("submissionReportRouter", () => {
 
       await expect(
         // @ts-expect-error - Testing missing required field
-        caller.getBySubmission({})
+        caller.getBySubmission({}),
       ).rejects.toThrow();
     });
 
     it("should handle database errors gracefully", async () => {
-       
       mockDb.submissionReport.findMany.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {
@@ -868,9 +901,7 @@ describe("submissionReportRouter", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(
-        caller.getBySubmission({ submissionId: "submission-1" })
-      ).rejects.toThrow();
+      await expect(caller.getBySubmission({ submissionId: "submission-1" })).rejects.toThrow();
     });
 
     it("should handle missing auth emails gracefully", async () => {
@@ -889,7 +920,6 @@ describe("submissionReportRouter", () => {
         },
       ];
 
-       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
       mockBuildAuthEmailLookup.mockResolvedValue(new Map());
@@ -923,7 +953,6 @@ describe("submissionReportRouter", () => {
         },
       ];
 
-       
       mockDb.submissionReport.findMany.mockResolvedValue(mockReports);
 
       mockBuildAuthEmailLookup.mockResolvedValue(new Map());
@@ -948,7 +977,7 @@ describe("submissionReportRouter", () => {
         ...mockParticipant,
         groupId: null,
       };
-       
+
       mockDb.tripParticipant.findUnique.mockResolvedValue(participantWithoutGroup);
 
       const ctx: TRPCContext = {
@@ -969,7 +998,6 @@ describe("submissionReportRouter", () => {
     });
 
     it("should handle database errors during create", async () => {
-       
       mockDb.submissionReport.create.mockRejectedValue(new Error("Database error"));
 
       const ctx: TRPCContext = {
@@ -986,7 +1014,7 @@ describe("submissionReportRouter", () => {
           tripId: "trip-1",
           submissionId: "submission-1",
           reason: "Inappropriate content",
-        })
+        }),
       ).rejects.toThrow();
     });
 

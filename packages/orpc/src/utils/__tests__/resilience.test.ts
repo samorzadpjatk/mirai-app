@@ -1,6 +1,3 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { executeWithRetry } from "../resilience";
 
@@ -17,14 +14,15 @@ describe("resilience", () => {
       const result = await executeWithRetry(toExecute, onError);
 
       expect(result).toBe("success");
-       
+
       expect(toExecute).toHaveBeenCalledTimes(1);
-       
+
       expect(onError).not.toHaveBeenCalled();
     });
 
     it("should retry on failure and eventually succeed", async () => {
-      const toExecute = vi.fn<[], Promise<string>>()
+      const toExecute = vi
+        .fn<[], Promise<string>>()
         .mockRejectedValueOnce(new Error("First failure"))
         .mockRejectedValueOnce(new Error("Second failure"))
         .mockResolvedValue("success");
@@ -33,22 +31,14 @@ describe("resilience", () => {
       const result = await executeWithRetry(toExecute, onError, undefined, 5, 10);
 
       expect(result).toBe("success");
-       
+
       expect(toExecute).toHaveBeenCalledTimes(3);
-       
+
       expect(onError).toHaveBeenCalledTimes(2);
-       
-      expect(onError).toHaveBeenNthCalledWith(
-        1,
-        new Error("First failure"),
-        0
-      );
-       
-      expect(onError).toHaveBeenNthCalledWith(
-        2,
-        new Error("Second failure"),
-        1
-      );
+
+      expect(onError).toHaveBeenNthCalledWith(1, new Error("First failure"), 0);
+
+      expect(onError).toHaveBeenNthCalledWith(2, new Error("Second failure"), 1);
     });
 
     it("should throw error after max retries exceeded", async () => {
@@ -56,13 +46,12 @@ describe("resilience", () => {
       const toExecute = vi.fn<[], Promise<never>>().mockRejectedValue(error);
       const onError = vi.fn();
 
-      await expect(
-        executeWithRetry(toExecute, onError, undefined, 3, 10)
-      ).rejects.toThrow("Persistent failure");
+      await expect(executeWithRetry(toExecute, onError, undefined, 3, 10)).rejects.toThrow(
+        "Persistent failure",
+      );
 
-       
       expect(toExecute).toHaveBeenCalledTimes(3);
-       
+
       expect(onError).toHaveBeenCalledTimes(3);
     });
 
@@ -72,33 +61,27 @@ describe("resilience", () => {
       const onError = vi.fn();
 
       await expect(executeWithRetry(toExecute, onError, undefined, 5, 10)).rejects.toThrow(
-        "Persistent failure"
+        "Persistent failure",
       );
 
-       
       expect(toExecute).toHaveBeenCalledTimes(5);
     });
 
     it("should retry when isValidResult returns false", async () => {
-      const toExecute = vi.fn<[], Promise<string>>()
+      const toExecute = vi
+        .fn<[], Promise<string>>()
         .mockResolvedValueOnce("invalid")
         .mockResolvedValueOnce("invalid")
         .mockResolvedValue("valid");
       const onError = vi.fn();
       const isValidResult = (result: string): boolean => result === "valid";
 
-      const result = await executeWithRetry(
-        toExecute,
-        onError,
-        isValidResult,
-        5,
-        10
-      );
+      const result = await executeWithRetry(toExecute, onError, isValidResult, 5, 10);
 
       expect(result).toBe("valid");
-       
+
       expect(toExecute).toHaveBeenCalledTimes(3);
-       
+
       expect(onError).not.toHaveBeenCalled();
     });
 
@@ -107,28 +90,28 @@ describe("resilience", () => {
       const onError = vi.fn();
       const isValidResult = (result: string): boolean => result === "valid";
 
-      await expect(
-        executeWithRetry(toExecute, onError, isValidResult, 3, 10)
-      ).rejects.toThrow("None of the 3 retry attempts provided a valid result.");
+      await expect(executeWithRetry(toExecute, onError, isValidResult, 3, 10)).rejects.toThrow(
+        "None of the 3 retry attempts provided a valid result.",
+      );
 
-       
       expect(toExecute).toHaveBeenCalledTimes(3);
     });
 
     it("should handle async onError callback", async () => {
-      const toExecute = vi.fn<[], Promise<string>>()
+      const toExecute = vi
+        .fn<[], Promise<string>>()
         .mockRejectedValueOnce(new Error("Failure"))
         .mockResolvedValue("success");
       const asyncOnError = vi.fn<[Error, number], Promise<void>>().mockResolvedValue(undefined);
 
       await executeWithRetry(toExecute, asyncOnError, undefined, 3, 10);
 
-       
       expect(asyncOnError).toHaveBeenCalledTimes(1);
     });
 
     it("should apply exponential backoff with jitter", async () => {
-      const toExecute = vi.fn<[], Promise<string>>()
+      const toExecute = vi
+        .fn<[], Promise<string>>()
         .mockRejectedValueOnce(new Error("Failure 1"))
         .mockRejectedValueOnce(new Error("Failure 2"))
         .mockResolvedValue("success");
@@ -148,11 +131,10 @@ describe("resilience", () => {
       });
       const onError = vi.fn();
 
-      await expect(
-        executeWithRetry(toExecute, onError, undefined, 2, 10)
-      ).rejects.toThrow("Sync error");
+      await expect(executeWithRetry(toExecute, onError, undefined, 2, 10)).rejects.toThrow(
+        "Sync error",
+      );
 
-       
       expect(toExecute).toHaveBeenCalledTimes(2);
     });
 
@@ -160,16 +142,16 @@ describe("resilience", () => {
       const toExecute = vi.fn<[], Promise<string>>().mockRejectedValue("string error");
       const onError = vi.fn<[string, number], void>();
 
-      await expect(
-        executeWithRetry(toExecute, onError, undefined, 2, 10)
-      ).rejects.toBe("string error");
+      await expect(executeWithRetry(toExecute, onError, undefined, 2, 10)).rejects.toBe(
+        "string error",
+      );
 
-       
       expect(onError).toHaveBeenCalledWith("string error", 0);
     });
 
     it("should work without onError callback", async () => {
-      const toExecute = vi.fn<[], Promise<string>>()
+      const toExecute = vi
+        .fn<[], Promise<string>>()
         .mockRejectedValueOnce(new Error("Failure"))
         .mockResolvedValue("success");
 

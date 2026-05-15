@@ -88,7 +88,7 @@ Example content:
 
 While working on feature-X, use these additional conventions:
 
-- Always run tests before committing: `turbo run test`
+- Always run tests before committing: `nx run-many -t test`
 - Use the experimental API pattern in `packages/trpc/src/experimental/`
 ```
 

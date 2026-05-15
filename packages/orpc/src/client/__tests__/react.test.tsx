@@ -57,7 +57,7 @@ describe("QueryProvider", () => {
     const { getByTestId } = render(
       <QueryProvider httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000">
         <TestChild />
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(getByTestId("test-child")).toBeTruthy();
@@ -70,7 +70,7 @@ describe("QueryProvider", () => {
         <div>Child 1</div>
         <div>Child 2</div>
         <div>Child 3</div>
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(container.textContent).toContain("Child 1");
@@ -88,7 +88,7 @@ describe("QueryProvider", () => {
     const { getByTestId } = render(
       <QueryProvider httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000">
         <NestedComponent />
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(getByTestId("nested")).toBeTruthy();
@@ -98,7 +98,7 @@ describe("QueryProvider", () => {
     const { container } = render(
       <QueryProvider httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000">
         {null}
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(container).toBeDefined();
@@ -111,7 +111,7 @@ describe("QueryProvider", () => {
           <div>Fragment Child 1</div>
           <div>Fragment Child 2</div>
         </>
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(container.textContent).toContain("Fragment Child 1");
@@ -159,17 +159,13 @@ describe("Integration with React patterns", () => {
     const React = await import("react");
 
     const MemoizedComponent = React.memo(() => {
-      return (
-        <div data-testid="memoized">
-          memoized-content
-        </div>
-      );
+      return <div data-testid="memoized">memoized-content</div>;
     });
 
     const { getByTestId } = render(
       <QueryProvider httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000">
         <MemoizedComponent />
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(getByTestId("memoized").textContent).toBe("memoized-content");
@@ -185,17 +181,13 @@ describe("Integration with React patterns", () => {
         setEffectCalled(true);
       }, []);
 
-      return (
-        <div data-testid="effect-result">
-          {effectCalled ? "effect-called" : "waiting"}
-        </div>
-      );
+      return <div data-testid="effect-result">{effectCalled ? "effect-called" : "waiting"}</div>;
     };
 
     const { getByTestId } = render(
       <QueryProvider httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000">
         <EffectComponent />
-      </QueryProvider>
+      </QueryProvider>,
     );
 
     expect(getByTestId("effect-result").textContent).toBe("effect-called");

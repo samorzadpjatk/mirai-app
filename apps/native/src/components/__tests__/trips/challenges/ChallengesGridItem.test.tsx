@@ -25,7 +25,7 @@ describe("ChallengesGridItem", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => {});
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
   });
 
   it("renders the main labels", () => {

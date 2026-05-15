@@ -27,26 +27,31 @@ export const ensureBuckets = async () => {
     const createResult = await supabase.storage.createBucket(bucket, {
       public: bucket === env.publicBucket,
     });
-    if (createResult.error) throw new Error(`createBucket ${bucket} failed: ${createResult.error.message}`);
+    if (createResult.error)
+      throw new Error(`createBucket ${bucket} failed: ${createResult.error.message}`);
     console.log(`Created bucket ${bucket}`);
   }
 };
 
 export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
   const placeholderPath = "image/placeholder/trip-background.png";
-  
+
   // Check if placeholder already exists
   const { data: existingFile } = await supabase.storage
     .from(env.imageBucket)
     .list("image/placeholder", { search: "trip-background.png" });
-    
+
   if (existingFile && existingFile.length > 0) {
     console.log("✓ Placeholder image already exists");
     return;
   }
-  
+
   // Create a simple placeholder image (you would need to have this file in your assets)
-  const placeholderAbsPath = joinPath(assetsRoot, seedEnv, "images/placeholder/trip-background.png");
+  const placeholderAbsPath = joinPath(
+    assetsRoot,
+    seedEnv,
+    "images/placeholder/trip-background.png",
+  );
   try {
     const placeholderFile: BunFile = readFile(placeholderAbsPath);
     const uploadResult = await supabase.storage
@@ -55,7 +60,7 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
         upsert: true,
         contentType: "image/png",
       });
-      
+
     if (uploadResult.error) {
       console.warn(`✗ Failed to upload placeholder image: ${uploadResult.error.message}`);
     } else {
@@ -63,7 +68,9 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
     }
   } catch {
     console.warn(`✗ Placeholder image file not found at ${placeholderAbsPath}`);
-    console.log(`  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`);
+    console.log(
+      `  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`,
+    );
   }
 };
 
@@ -79,9 +86,10 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
 
     const [prefix, bucketFn] = bucketEntry;
     const bucketName = bucketFn();
-    const objectPath = prefix === "rewards"
-      ? rel // keep rewards/ namespace inside images bucket
-      : rel.replace(new RegExp(`^${prefix}/`), "");
+    const objectPath =
+      prefix === "rewards"
+        ? rel // keep rewards/ namespace inside images bucket
+        : rel.replace(new RegExp(`^${prefix}/`), "");
 
     const file: BunFile = readFile(absPath);
     const fileStat = await file.stat();

@@ -56,8 +56,7 @@ const ensureTripParticipant = async (
   tripId: string,
 ) => {
   const participant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { eq, and }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
   });
   if (!participant) {
     throw new ORPCError("FORBIDDEN", { message: "Brak dostepu do wyjazdu" });
@@ -82,10 +81,7 @@ const getChallengeInTrip = async (
   return challenge;
 };
 
-const ensureChallengeVoting = (params: {
-  challenge: ChallengeForVoting;
-  actorRole: string;
-}) => {
+const ensureChallengeVoting = (params: { challenge: ChallengeForVoting; actorRole: string }) => {
   const { challenge, actorRole } = params;
 
   if (challenge.scoringCategory === "PEER_VOTING") {
@@ -96,11 +92,15 @@ const ensureChallengeVoting = (params: {
   }
 
   if (challenge.scoringCategory !== "JUDGED_STAFF") {
-    throw new ORPCError("BAD_REQUEST", { message: "Voting is available only for peer voting and judged staff challenges" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Voting is available only for peer voting and judged staff challenges",
+    });
   }
 
   if (actorRole !== "ADMIN") {
-    throw new ORPCError("FORBIDDEN", { message: "Only admins can vote in judged staff challenges" });
+    throw new ORPCError("FORBIDDEN", {
+      message: "Only admins can vote in judged staff challenges",
+    });
   }
 
   if (challenge.status === "CANCELLED" || challenge.status === "COMPLETED") {
@@ -116,7 +116,9 @@ const ensureChallengeVoting = (params: {
   }
 
   if (challenge.endTime.getTime() > Date.now()) {
-    throw new ORPCError("BAD_REQUEST", { message: "Staff voting starts after submission phase ends" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Staff voting starts after submission phase ends",
+    });
   }
 };
 
@@ -179,25 +181,17 @@ const resolveRequiredVotePositions = async (
   };
 };
 
-const getTripAdminParticipantIds = async (
-  context: { db: DB | TransactionDB },
-  tripId: string,
-) => {
+const getTripAdminParticipantIds = async (context: { db: DB | TransactionDB }, tripId: string) => {
   const admins = await context.db
     .select({ id: tripParticipants.id })
     .from(tripParticipants)
     .innerJoin(users, eq(tripParticipants.userId, users.id))
-    .where(
-      and(eq(tripParticipants.tripId, tripId), eq(users.role, "ADMIN")),
-    );
+    .where(and(eq(tripParticipants.tripId, tripId), eq(users.role, "ADMIN")));
 
   return admins.map((admin) => admin.id);
 };
 
-const hasAllRequiredPositions = (
-  positions: Set<number>,
-  requiredPositions: number,
-) => {
+const hasAllRequiredPositions = (positions: Set<number>, requiredPositions: number) => {
   if (requiredPositions <= 0) return false;
 
   for (let position = 1; position <= requiredPositions; position += 1) {
@@ -213,11 +207,10 @@ const getJudgedStaffVotingProgress = async (
   context: { db: DB | TransactionDB },
   params: { challengeId: string; tripId: string },
 ): Promise<JudgedStaffVotingProgress> => {
-  const [{ requiredPositions, eligibleSubmissionsCount }, adminParticipantIds] =
-    await Promise.all([
-      resolveRequiredVotePositions(context, params.challengeId),
-      getTripAdminParticipantIds(context, params.tripId),
-    ]);
+  const [{ requiredPositions, eligibleSubmissionsCount }, adminParticipantIds] = await Promise.all([
+    resolveRequiredVotePositions(context, params.challengeId),
+    getTripAdminParticipantIds(context, params.tripId),
+  ]);
 
   if (adminParticipantIds.length === 0) {
     return {
@@ -232,10 +225,7 @@ const getJudgedStaffVotingProgress = async (
 
   const votes = await context.db.query.challengeVotes.findMany({
     where: (cv, { eq, and, inArray }) =>
-      and(
-        eq(cv.challengeId, params.challengeId),
-        inArray(cv.voterId, adminParticipantIds),
-      ),
+      and(eq(cv.challengeId, params.challengeId), inArray(cv.voterId, adminParticipantIds)),
     columns: {
       voterId: true,
       votePosition: true,
@@ -263,8 +253,7 @@ const getJudgedStaffVotingProgress = async (
     totalAdmins,
     votedAdmins,
     pendingAdmins,
-    allAdminsVoted:
-      requiredPositions > 0 && totalAdmins > 0 && votedAdmins >= totalAdmins,
+    allAdminsVoted: requiredPositions > 0 && totalAdmins > 0 && votedAdmins >= totalAdmins,
   };
 };
 
@@ -303,7 +292,7 @@ const maybeFinalizeJudgedStaffVoting = async (
 
   if (updated.length > 0) {
     await createChallengeCompletionWithWinnersById({
-        tx: context.db,
+      tx: context.db,
       challengeId: params.challenge.id,
       createdByAdmin: params.createdByAdminId,
     });
@@ -320,21 +309,24 @@ const validateJudgedStaffVotePayload = async (
     requireExactCount: boolean;
   },
 ) => {
-  const { requiredPositions } = await resolveRequiredVotePositions(
-    context,
-    params.challengeId,
-  );
+  const { requiredPositions } = await resolveRequiredVotePositions(context, params.challengeId);
 
   if (requiredPositions <= 0) {
-    throw new ORPCError("BAD_REQUEST", { message: "At least 2 eligible submissions are required for staff voting" });
+    throw new ORPCError("BAD_REQUEST", {
+      message: "At least 2 eligible submissions are required for staff voting",
+    });
   }
 
   if (params.votePositions.some((position) => position > requiredPositions)) {
-    throw new ORPCError("BAD_REQUEST", { message: `Staff voting accepts only positions 1-${requiredPositions}` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Staff voting accepts only positions 1-${requiredPositions}`,
+    });
   }
 
   if (params.requireExactCount && params.votePositions.length !== requiredPositions) {
-    throw new ORPCError("BAD_REQUEST", { message: `Staff voting requires exactly ${requiredPositions} votes` });
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Staff voting requires exactly ${requiredPositions} votes`,
+    });
   }
 
   return { requiredPositions };
@@ -370,7 +362,9 @@ export const challengeVoteRouter = createORPCRouter({
       const challenge = await getChallengeInTrip(context, input.challengeId, input.tripId);
 
       if (challenge.scoringCategory !== "JUDGED_STAFF") {
-        throw new ORPCError("BAD_REQUEST", { message: "Progress is available only for judged staff challenges" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Progress is available only for judged staff challenges",
+        });
       }
 
       const progress = await getJudgedStaffVotingProgress(context, {
@@ -390,7 +384,9 @@ export const challengeVoteRouter = createORPCRouter({
       const challenge = await getChallengeInTrip(context, input.challengeId, input.tripId);
 
       if (challenge.scoringCategory !== "JUDGED_STAFF") {
-        throw new ORPCError("BAD_REQUEST", { message: "Force end is available only for judged staff challenges" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Force end is available only for judged staff challenges",
+        });
       }
 
       if (challenge.status === "CANCELLED") {
@@ -398,11 +394,15 @@ export const challengeVoteRouter = createORPCRouter({
       }
 
       if (!challenge.endTime) {
-        throw new ORPCError("BAD_REQUEST", { message: "Staff voting requires submission end time" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Staff voting requires submission end time",
+        });
       }
 
       if (challenge.endTime.getTime() > Date.now()) {
-        throw new ORPCError("BAD_REQUEST", { message: "You can force end staff voting only after submission phase ends" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "You can force end staff voting only after submission phase ends",
+        });
       }
 
       const result = await context.db.transaction(async (tx) => {
@@ -470,7 +470,9 @@ export const challengeVoteRouter = createORPCRouter({
 
       const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
       if (uniqueSubmissionIds.size !== input.votes.length) {
-        throw new ORPCError("BAD_REQUEST", { message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie",
+        });
       }
 
       const uniquePositions = new Set(input.votes.map((vote) => vote.votePosition));
@@ -480,10 +482,7 @@ export const challengeVoteRouter = createORPCRouter({
 
       const submissions = await context.db.query.challengeSubmissions.findMany({
         where: (cs, { eq, and, inArray }) =>
-          and(
-            inArray(cs.id, [...uniqueSubmissionIds]),
-            eq(cs.challengeId, input.challengeId),
-          ),
+          and(inArray(cs.id, [...uniqueSubmissionIds]), eq(cs.challengeId, input.challengeId)),
         columns: { id: true, groupId: true },
       });
 
@@ -508,7 +507,9 @@ export const challengeVoteRouter = createORPCRouter({
       });
 
       if (existingVotes.length > 0) {
-        throw new ORPCError("CONFLICT", { message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu." });
+        throw new ORPCError("CONFLICT", {
+          message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
+        });
       }
 
       // Create new votes (no deletion allowed for any voting type)
@@ -527,10 +528,13 @@ export const challengeVoteRouter = createORPCRouter({
         await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
         if (challenge.scoringCategory === "JUDGED_STAFF") {
-          await maybeFinalizeJudgedStaffVoting({ db: tx }, {
-            challenge,
-            createdByAdminId: context.dbUser.id,
-          });
+          await maybeFinalizeJudgedStaffVoting(
+            { db: tx },
+            {
+              challenge,
+              createdByAdminId: context.dbUser.id,
+            },
+          );
         }
 
         return await tx.query.challengeVotes.findMany({
@@ -592,7 +596,9 @@ export const challengeVoteRouter = createORPCRouter({
       if (existingVotes.length > 0) {
         // For peer voting, any existing vote should prevent new votes
         if (challenge.scoringCategory === "PEER_VOTING") {
-          throw new ORPCError("CONFLICT", { message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu." });
+          throw new ORPCError("CONFLICT", {
+            message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
+          });
         }
 
         // For judged staff voting, check if position is already taken
@@ -610,22 +616,28 @@ export const challengeVoteRouter = createORPCRouter({
 
       try {
         const result = await context.db.transaction(async (tx) => {
-          const [createdVote] = await tx.insert(challengeVotes).values({
-            challengeId: input.challengeId,
-            submissionId: input.submissionId,
-            voterId: participant.id,
-            votePosition: input.votePosition,
-            votePoints: input.votePoints,
-            normalizedWeight: input.normalizedWeight ?? 1.0,
-          }).returning();
+          const [createdVote] = await tx
+            .insert(challengeVotes)
+            .values({
+              challengeId: input.challengeId,
+              submissionId: input.submissionId,
+              voterId: participant.id,
+              votePosition: input.votePosition,
+              votePoints: input.votePoints,
+              normalizedWeight: input.normalizedWeight ?? 1.0,
+            })
+            .returning();
 
           await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
           if (challenge.scoringCategory === "JUDGED_STAFF") {
-            await maybeFinalizeJudgedStaffVoting({ db: tx }, {
-              challenge,
-              createdByAdminId: context.dbUser.id,
-            });
+            await maybeFinalizeJudgedStaffVoting(
+              { db: tx },
+              {
+                challenge,
+                createdByAdminId: context.dbUser.id,
+              },
+            );
           }
 
           return createdVote;
@@ -637,8 +649,7 @@ export const challengeVoteRouter = createORPCRouter({
           typeof error === "object" && error !== null && "code" in error
             ? (error as { code?: unknown }).code
             : undefined;
-        const pgCodeValue =
-          typeof pgCode === "string" ? pgCode : "";
+        const pgCodeValue = typeof pgCode === "string" ? pgCode : "";
         if (pgCodeValue === "23505") {
           throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
         }

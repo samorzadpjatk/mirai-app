@@ -1,8 +1,4 @@
- 
- 
- 
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { ORPCError } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { appRouter } from "../../root";
 import { createRouterClient } from "@orpc/server";
@@ -17,19 +13,53 @@ type MockedFunction<T = unknown> = ReturnType<typeof vi.fn> & T;
 
 interface MockedDb {
   user: { findFirst: MockedFunction };
-  tripParticipant: { findUnique: MockedFunction; findFirst: MockedFunction; findMany: MockedFunction };
+  tripParticipant: {
+    findUnique: MockedFunction;
+    findFirst: MockedFunction;
+    findMany: MockedFunction;
+  };
   trip: { findUnique: MockedFunction; findMany: MockedFunction };
-  activityFeed: { findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; update: MockedFunction; delete: MockedFunction; count: MockedFunction };
-  activityReaction: { groupBy: MockedFunction; findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; delete: MockedFunction };
+  activityFeed: {
+    findMany: MockedFunction;
+    findUnique: MockedFunction;
+    create: MockedFunction;
+    update: MockedFunction;
+    delete: MockedFunction;
+    count: MockedFunction;
+  };
+  activityReaction: {
+    groupBy: MockedFunction;
+    findMany: MockedFunction;
+    findUnique: MockedFunction;
+    create: MockedFunction;
+    delete: MockedFunction;
+  };
   group: { findMany: MockedFunction; findFirst: MockedFunction; findUnique: MockedFunction };
   challengeSubmission: { findFirst: MockedFunction };
   challenge: { findFirst: MockedFunction; findMany: MockedFunction };
   query: {
     users: { findFirst: MockedFunction };
-    tripParticipants: { findUnique: MockedFunction; findFirst: MockedFunction; findMany: MockedFunction };
+    tripParticipants: {
+      findUnique: MockedFunction;
+      findFirst: MockedFunction;
+      findMany: MockedFunction;
+    };
     trips: { findUnique: MockedFunction; findMany: MockedFunction };
-    activityFeeds: { findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; update: MockedFunction; delete: MockedFunction; count: MockedFunction };
-    activityReactions: { groupBy: MockedFunction; findMany: MockedFunction; findUnique: MockedFunction; create: MockedFunction; delete: MockedFunction };
+    activityFeeds: {
+      findMany: MockedFunction;
+      findUnique: MockedFunction;
+      create: MockedFunction;
+      update: MockedFunction;
+      delete: MockedFunction;
+      count: MockedFunction;
+    };
+    activityReactions: {
+      groupBy: MockedFunction;
+      findMany: MockedFunction;
+      findUnique: MockedFunction;
+      create: MockedFunction;
+      delete: MockedFunction;
+    };
     groups: { findMany: MockedFunction; findFirst: MockedFunction; findUnique: MockedFunction };
     challengeSubmissions: { findFirst: MockedFunction };
     challenges: { findFirst: MockedFunction; findMany: MockedFunction };
@@ -151,28 +181,28 @@ const createMockDb = () => {
 
   function getModelName(table: unknown): string {
     let name: string | undefined;
-    if (typeof table === 'string') {
+    if (typeof table === "string") {
       name = table;
-    } else if (table && typeof table === 'object') {
+    } else if (table && typeof table === "object") {
       const obj = table as Record<string | symbol, unknown>;
-      if (typeof obj.name === 'string') {
+      if (typeof obj.name === "string") {
         name = obj.name;
       } else {
-        const drizzleNameSym = Symbol.for('drizzle:Name');
-        if (typeof obj[drizzleNameSym] === 'string') {
+        const drizzleNameSym = Symbol.for("drizzle:Name");
+        if (typeof obj[drizzleNameSym] === "string") {
           name = obj[drizzleNameSym];
         } else {
           const sym = Object.getOwnPropertySymbols(obj).find(
-            (s) => s.description === 'drizzle:Name'
+            (s) => s.description === "drizzle:Name",
           );
-          if (sym && typeof obj[sym] === 'string') {
+          if (sym && typeof obj[sym] === "string") {
             name = obj[sym];
           }
         }
       }
     }
-    if (!name) return 'unknown';
-    const singular = name.replace(/ies$/, 'y').replace(/s$/, '');
+    if (!name) return "unknown";
+    const singular = name.replace(/ies$/, "y").replace(/s$/, "");
     return toCamelCase(singular);
   }
 
@@ -182,7 +212,7 @@ const createMockDb = () => {
       values: vi.fn((data: unknown) => ({
         returning: () => {
           const model = db[modelName];
-          if (model && typeof model === 'object' && 'create' in model) {
+          if (model && typeof model === "object" && "create" in model) {
             return (model as Record<string, unknown>).create({ data }).then((result: unknown) => {
               if (result != null) lastResults[modelName] = result;
               return [result];
@@ -201,7 +231,7 @@ const createMockDb = () => {
         where: vi.fn(() => ({
           returning: () => {
             const model = db[modelName];
-            if (model && typeof model === 'object' && 'update' in model) {
+            if (model && typeof model === "object" && "update" in model) {
               return (model as Record<string, unknown>).update({ data }).then((result: unknown) => {
                 if (result != null) lastResults[modelName] = result;
                 return [result];
@@ -220,7 +250,7 @@ const createMockDb = () => {
       where: vi.fn(() => ({
         returning: () => {
           const model = db[modelName];
-          if (model && typeof model === 'object' && 'delete' in model) {
+          if (model && typeof model === "object" && "delete" in model) {
             return (model as Record<string, unknown>).delete().then((result: unknown) => {
               if (result != null) lastResults[modelName] = result;
               return [result];
@@ -236,8 +266,8 @@ const createMockDb = () => {
     let primaryTable: string | undefined;
     const chainable: any = {
       from: (table: unknown) => {
-        const name = typeof table === 'string' ? table : 'unknown';
-        primaryTable = name.replace(/ies$/, 'y').replace(/s$/, '');
+        const name = typeof table === "string" ? table : "unknown";
+        primaryTable = name.replace(/ies$/, "y").replace(/s$/, "");
         return chainable;
       },
       innerJoin: () => chainable,
@@ -251,18 +281,26 @@ const createMockDb = () => {
       then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) => {
         if (primaryTable) {
           const model = db[primaryTable];
-          if (model && typeof model === 'object') {
-            if ('findMany' in model) {
-              return (model as Record<string, unknown>).findMany().then((results: unknown) => resolve(results), reject);
+          if (model && typeof model === "object") {
+            if ("findMany" in model) {
+              return (model as Record<string, unknown>)
+                .findMany()
+                .then((results: unknown) => resolve(results), reject);
             }
-            if ('count' in model) {
-              return (model as Record<string, unknown>).count().then((count: unknown) => resolve([{ count }]), reject);
+            if ("count" in model) {
+              return (model as Record<string, unknown>)
+                .count()
+                .then((count: unknown) => resolve([{ count }]), reject);
             }
-            if ('aggregate' in model) {
-              return (model as Record<string, unknown>).aggregate().then((agg: unknown) => resolve([agg]), reject);
+            if ("aggregate" in model) {
+              return (model as Record<string, unknown>)
+                .aggregate()
+                .then((agg: unknown) => resolve([agg]), reject);
             }
-            if ('groupBy' in model) {
-              return (model as Record<string, unknown>).groupBy().then((groups: unknown) => resolve(groups), reject);
+            if ("groupBy" in model) {
+              return (model as Record<string, unknown>)
+                .groupBy()
+                .then((groups: unknown) => resolve(groups), reject);
             }
           }
         }
@@ -290,9 +328,7 @@ const createMockDb = () => {
 };
 
 const createMockSupabase = () => {
-  const getUserMock = vi.fn(() =>
-    Promise.resolve({ data: { user: null }, error: null }),
-  );
+  const getUserMock = vi.fn(() => Promise.resolve({ data: { user: null }, error: null }));
   const adminGetUserByIdMock = vi.fn(() =>
     Promise.resolve({
       data: { user: { id: "auth-user-1", banned_until: null } },
@@ -457,9 +493,7 @@ describe("activityFeed router", () => {
       setupUserMocks();
       mockCtx.db.query.tripParticipants.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
-      await expect(
-        caller.activityFeed.getByTrip({ tripId: "trip-1" }),
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.activityFeed.getByTrip({ tripId: "trip-1" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -506,9 +540,7 @@ describe("activityFeed router", () => {
       setupModeratorMocks();
       mockCtx.db.query.activityFeeds.findFirst.mockResolvedValueOnce(null);
       const caller = createCaller(mockCtx);
-      await expect(
-        caller.activityFeed.getById({ id: "nonexistent" }),
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.activityFeed.getById({ id: "nonexistent" })).rejects.toThrow(ORPCError);
     });
   });
 
@@ -712,9 +744,9 @@ describe("activityFeed router", () => {
     test("throws BAD_REQUEST when no fields provided", async () => {
       setupModeratorMocks();
       const caller = createCaller(mockCtx);
-      await expect(
-        caller.activityFeed.update({ activityId: "activity-1" }),
-      ).rejects.toThrow(ORPCError);
+      await expect(caller.activityFeed.update({ activityId: "activity-1" })).rejects.toThrow(
+        ORPCError,
+      );
     });
   });
 

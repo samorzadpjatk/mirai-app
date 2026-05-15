@@ -6,15 +6,7 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from "../../api/trpc";
-import {
-  eq,
-  and,
-  or,
-  lt,
-  count,
-  sql,
-  inArray,
-} from "drizzle-orm";
+import { eq, and, or, lt, count, sql, inArray } from "drizzle-orm";
 import {
   activityFeeds,
   activityReactions,
@@ -30,11 +22,7 @@ import { isValidHttpUrl } from "../../utils/url-validation";
 
 const REACTION_TYPES = ["heart", "fire", "clap", "star"] as const;
 
-const CHALLENGE_EVENT_TYPES = [
-  "challenge_started",
-  "voting_started",
-  "completed",
-] as const;
+const CHALLENGE_EVENT_TYPES = ["challenge_started", "voting_started", "completed"] as const;
 
 const activityCursorSchema = z.object({
   id: z.string(),
@@ -72,8 +60,7 @@ const ensureTripParticipant = async (
   tripId: string,
 ) => {
   const participant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { eq, and }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, tripId)),
     columns: {
       id: true,
       tripId: true,
@@ -103,10 +90,7 @@ const ensureTripExists = async (context: { db: DB }, tripId: string) => {
   return trip;
 };
 
-const updateUserLastSeenOn = async (context: {
-  db: DB;
-  dbUser: { id: string };
-}) => {
+const updateUserLastSeenOn = async (context: { db: DB; dbUser: { id: string } }) => {
   await context.db
     .update(users)
     .set({ lastSeenOn: new Date() })
@@ -211,7 +195,7 @@ export interface ActivityWithRelations {
       } | null;
     } | null;
   } | null;
-};
+}
 
 const emptyReactionCounts = () => ({
   heart: 0,
@@ -292,10 +276,7 @@ const enrichActivities = async (
       .groupBy(activityReactions.activityId, activityReactions.reactionType),
     context.db.query.activityReactions.findMany({
       where: (ar, { eq, and, inArray }) =>
-        and(
-          inArray(ar.activityId, activityIds),
-          eq(ar.userId, context.dbUser.id),
-        ),
+        and(inArray(ar.activityId, activityIds), eq(ar.userId, context.dbUser.id)),
       columns: {
         activityId: true,
         reactionType: true,
@@ -303,14 +284,10 @@ const enrichActivities = async (
     }),
   ]);
 
-  const countsByActivity = new Map<
-    string,
-    ReturnType<typeof emptyReactionCounts>
-  >();
+  const countsByActivity = new Map<string, ReturnType<typeof emptyReactionCounts>>();
 
   for (const group of reactionGroups) {
-    const counts =
-      countsByActivity.get(group.activityId) ?? emptyReactionCounts();
+    const counts = countsByActivity.get(group.activityId) ?? emptyReactionCounts();
     if (group.reactionType in counts) {
       counts[group.reactionType as keyof typeof counts] = Number(group.count);
     }
@@ -319,8 +296,7 @@ const enrichActivities = async (
 
   const myReactionsByActivity = new Map<string, Set<string>>();
   for (const reaction of myReactions) {
-    const values =
-      myReactionsByActivity.get(reaction.activityId) ?? new Set<string>();
+    const values = myReactionsByActivity.get(reaction.activityId) ?? new Set<string>();
     values.add(reaction.reactionType);
     myReactionsByActivity.set(reaction.activityId, values);
   }
@@ -339,8 +315,7 @@ const enrichActivities = async (
   await Promise.all(
     submissionTripIds.map(async (tripId) => {
       const rankedGroups = await context.db.query.groups.findMany({
-        where: (g, { eq, and }) =>
-          and(eq(g.tripId, tripId), eq(g.isDeleted, false)),
+        where: (g, { eq, and }) => and(eq(g.tripId, tripId), eq(g.isDeleted, false)),
         orderBy: (g, { desc, asc }) => [desc(g.coins), asc(g.id)],
         columns: { id: true },
       });
@@ -372,14 +347,11 @@ const enrichActivities = async (
         ? {
             ...activity.submissionActivity,
             currentGroupRank:
-              rankByTripGroup.get(
-                `${activity.tripId}:${activity.submissionActivity.groupId}`,
-              ) ?? null,
+              rankByTripGroup.get(`${activity.tripId}:${activity.submissionActivity.groupId}`) ??
+              null,
             group: {
               ...activity.submissionActivity.group,
-              image: await getResolvedImage(
-                activity.submissionActivity.group?.image,
-              ),
+              image: await getResolvedImage(activity.submissionActivity.group?.image),
             },
           }
         : null;
@@ -389,9 +361,7 @@ const enrichActivities = async (
             ...activity.challengeActivity,
             challenge: {
               ...activity.challengeActivity.challenge,
-              image: await getResolvedImage(
-                activity.challengeActivity.challenge?.image,
-              ),
+              image: await getResolvedImage(activity.challengeActivity.challenge?.image),
             },
           }
         : null;
@@ -401,9 +371,7 @@ const enrichActivities = async (
             ...activity.rankChangeActivity,
             group: {
               ...activity.rankChangeActivity.group,
-              image: await getResolvedImage(
-                activity.rankChangeActivity.group?.image,
-              ),
+              image: await getResolvedImage(activity.rankChangeActivity.group?.image),
             },
           }
         : null;
@@ -412,30 +380,22 @@ const enrichActivities = async (
         ? {
             ...activity.userPost,
             additionalImages: await Promise.all(
-              activity.userPost.additionalImages.map((image) =>
-                getResolvedImage(image),
-              ),
+              activity.userPost.additionalImages.map((image) => getResolvedImage(image)),
             ),
             author: {
               ...activity.userPost.author,
               group: activity.userPost.author?.group
                 ? {
                     ...activity.userPost.author.group,
-                    image: await getResolvedImage(
-                      activity.userPost.author.group.image,
-                    ),
+                    image: await getResolvedImage(activity.userPost.author.group.image),
                   }
                 : null,
             },
           }
         : null;
 
-      const counts =
-        countsByActivity.get(activity.id) ?? emptyReactionCounts();
-      const total = Object.values(counts).reduce(
-        (sum, value) => sum + value,
-        0,
-      );
+      const counts = countsByActivity.get(activity.id) ?? emptyReactionCounts();
+      const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
 
       return {
         ...activity,
@@ -447,9 +407,7 @@ const enrichActivities = async (
         reactionsSummary: {
           total,
           counts,
-          myReactions: Array.from(
-            myReactionsByActivity.get(activity.id) ?? [],
-          ),
+          myReactions: Array.from(myReactionsByActivity.get(activity.id) ?? []),
         },
       };
     }),
@@ -476,10 +434,7 @@ const buildActivityWhere = (
           eq(activityFeeds.isPinned, true),
           or(
             lt(activityFeeds.createdAt, cursor.createdAt),
-            and(
-              eq(activityFeeds.createdAt, cursor.createdAt),
-              lt(activityFeeds.id, cursor.id),
-            ),
+            and(eq(activityFeeds.createdAt, cursor.createdAt), lt(activityFeeds.id, cursor.id)),
           ),
         ),
         eq(activityFeeds.isPinned, false),
@@ -488,10 +443,7 @@ const buildActivityWhere = (
         eq(activityFeeds.isPinned, false),
         or(
           lt(activityFeeds.createdAt, cursor.createdAt),
-          and(
-            eq(activityFeeds.createdAt, cursor.createdAt),
-            lt(activityFeeds.id, cursor.id),
-          ),
+          and(eq(activityFeeds.createdAt, cursor.createdAt), lt(activityFeeds.id, cursor.id)),
         ),
       );
 
@@ -640,10 +592,7 @@ const getActivitiesPage = async (params: {
   pageSize: number;
   includeHidden: boolean;
 }) => {
-  const whereClause = buildActivityWhere(
-    params.tripId,
-    params.includeHidden,
-  );
+  const whereClause = buildActivityWhere(params.tripId, params.includeHidden);
 
   const countResult = await params.context.db
     .select({ count: sql<number>`count(*)` })
@@ -778,11 +727,7 @@ const getActivitiesPage = async (params: {
         },
       },
     },
-    orderBy: (af, { desc }) => [
-      desc(af.isPinned),
-      desc(af.createdAt),
-      desc(af.id),
-    ],
+    orderBy: (af, { desc }) => [desc(af.isPinned), desc(af.createdAt), desc(af.id)],
     limit: params.pageSize,
     offset: (params.page - 1) * params.pageSize,
   });
@@ -953,20 +898,13 @@ const getActivitiesCursorPage = async (params: {
         },
       },
     },
-    orderBy: (af, { desc }) => [
-      desc(af.isPinned),
-      desc(af.createdAt),
-      desc(af.id),
-    ],
+    orderBy: (af, { desc }) => [desc(af.isPinned), desc(af.createdAt), desc(af.id)],
     limit: params.pageSize + 1,
   });
 
   const hasMore = activities.length > params.pageSize;
-  const currentPageActivities = hasMore
-    ? activities.slice(0, params.pageSize)
-    : activities;
-  const lastActivity =
-    currentPageActivities[currentPageActivities.length - 1];
+  const currentPageActivities = hasMore ? activities.slice(0, params.pageSize) : activities;
+  const lastActivity = currentPageActivities[currentPageActivities.length - 1];
 
   return {
     activities: await enrichActivities(params.context, currentPageActivities),
@@ -1003,10 +941,7 @@ const getReactionSummary = async (params: {
       .groupBy(activityReactions.reactionType),
     params.context.db.query.activityReactions.findMany({
       where: (ar, { eq, and }) =>
-        and(
-          eq(ar.activityId, params.activityId),
-          eq(ar.userId, params.context.dbUser.id),
-        ),
+        and(eq(ar.activityId, params.activityId), eq(ar.userId, params.context.dbUser.id)),
       columns: {
         reactionType: true,
       },
@@ -1059,10 +994,7 @@ export const activityFeedRouter = createORPCRouter({
               cursor: input.cursor ?? null,
             });
 
-      const [activities] = await Promise.all([
-        activitiesPromise,
-        updateUserLastSeenOn(context),
-      ]);
+      const [activities] = await Promise.all([activitiesPromise, updateUserLastSeenOn(context)]);
 
       return activities;
     }),
@@ -1090,10 +1022,7 @@ export const activityFeedRouter = createORPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ context, input }) => {
-      const activity = await fetchActivityWithRelationsById(
-        context.db,
-        input.id,
-      );
+      const activity = await fetchActivityWithRelationsById(context.db, input.id);
 
       if (!activity) {
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
@@ -1135,10 +1064,7 @@ export const activityFeedRouter = createORPCRouter({
         });
       }
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch created activity",
@@ -1163,13 +1089,16 @@ export const activityFeedRouter = createORPCRouter({
       const participant = await ensureTripParticipant(context, input.tripId);
 
       const activity = await context.db.transaction(async (tx) => {
-        const [feed] = await tx.insert(activityFeeds).values({
-          tripId: input.tripId,
-          activityType: "user_post",
-          title: input.title,
-          description: input.description,
-          imageUrl: normalizeImageReference(input.imageUrl),
-        }).returning();
+        const [feed] = await tx
+          .insert(activityFeeds)
+          .values({
+            tripId: input.tripId,
+            activityType: "user_post",
+            title: input.title,
+            description: input.description,
+            imageUrl: normalizeImageReference(input.imageUrl),
+          })
+          .returning();
 
         if (!feed) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -1180,18 +1109,15 @@ export const activityFeedRouter = createORPCRouter({
         await tx.insert(userPosts).values({
           activityId: feed.id,
           authorId: participant.id,
-          additionalImages: (input.additionalImages ?? []).map((image) =>
-            normalizeImageReference(image) ?? image,
+          additionalImages: (input.additionalImages ?? []).map(
+            (image) => normalizeImageReference(image) ?? image,
           ),
         });
 
         return feed;
       });
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch created activity",
@@ -1220,24 +1146,22 @@ export const activityFeedRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const submission = await context.db.query.challengeSubmissions.findFirst(
-        {
-          where: (cs, { eq, and }) =>
-            and(
-              eq(cs.id, input.submissionId),
-              eq(cs.challengeId, input.challengeId),
-              eq(cs.groupId, input.groupId),
-            ),
-          columns: {
-            id: true,
-            videoId: true,
-            imageIds: true,
-          },
-          with: {
-            challenge: { columns: { tripId: true } },
-          },
+      const submission = await context.db.query.challengeSubmissions.findFirst({
+        where: (cs, { eq, and }) =>
+          and(
+            eq(cs.id, input.submissionId),
+            eq(cs.challengeId, input.challengeId),
+            eq(cs.groupId, input.groupId),
+          ),
+        columns: {
+          id: true,
+          videoId: true,
+          imageIds: true,
         },
-      );
+        with: {
+          challenge: { columns: { tripId: true } },
+        },
+      });
 
       if (!submission || submission.challenge?.tripId !== input.tripId) {
         throw new ORPCError("NOT_FOUND", {
@@ -1246,15 +1170,18 @@ export const activityFeedRouter = createORPCRouter({
       }
 
       const activity = await context.db.transaction(async (tx) => {
-        const [feed] = await tx.insert(activityFeeds).values({
-          tripId: input.tripId,
-          activityType: "submission",
-          title: input.title,
-          description: input.description,
-          imageUrl: submission.imageIds[0] ?? null,
-          isPinned: input.isPinned,
-          createdByAdmin: context.dbUser.id,
-        }).returning();
+        const [feed] = await tx
+          .insert(activityFeeds)
+          .values({
+            tripId: input.tripId,
+            activityType: "submission",
+            title: input.title,
+            description: input.description,
+            imageUrl: submission.imageIds[0] ?? null,
+            isPinned: input.isPinned,
+            createdByAdmin: context.dbUser.id,
+          })
+          .returning();
 
         if (!feed) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -1276,10 +1203,7 @@ export const activityFeedRouter = createORPCRouter({
         return feed;
       });
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch created activity",
@@ -1300,15 +1224,7 @@ export const activityFeedRouter = createORPCRouter({
         description: z.string().trim().optional(),
         endTime: z.coerce.date().optional(),
         submissionType: z
-          .enum([
-            "IMAGE",
-            "MULTI_IMAGE",
-            "VIDEO",
-            "TEXT",
-            "IMAGE_LOCATION",
-            "LOCATION",
-            "QR_CODE",
-          ])
+          .enum(["IMAGE", "MULTI_IMAGE", "VIDEO", "TEXT", "IMAGE_LOCATION", "LOCATION", "QR_CODE"])
           .optional(),
         basePoints: z.number().int().min(0).optional(),
         submissionCount: z.number().int().min(0).optional(),
@@ -1317,8 +1233,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       const challenge = await context.db.query.challenges.findFirst({
-        where: (c, { eq, and }) =>
-          and(eq(c.id, input.challengeId), eq(c.tripId, input.tripId)),
+        where: (c, { eq, and }) => and(eq(c.id, input.challengeId), eq(c.tripId, input.tripId)),
         columns: {
           id: true,
           description: true,
@@ -1336,15 +1251,18 @@ export const activityFeedRouter = createORPCRouter({
       }
 
       const activity = await context.db.transaction(async (tx) => {
-        const [feed] = await tx.insert(activityFeeds).values({
-          tripId: input.tripId,
-          activityType: "challenge_event",
-          title: input.title,
-          description: input.description ?? challenge.description ?? undefined,
-          imageUrl: challenge.image,
-          isPinned: input.isPinned,
-          createdByAdmin: context.dbUser.id,
-        }).returning();
+        const [feed] = await tx
+          .insert(activityFeeds)
+          .values({
+            tripId: input.tripId,
+            activityType: "challenge_event",
+            title: input.title,
+            description: input.description ?? challenge.description ?? undefined,
+            imageUrl: challenge.image,
+            isPinned: input.isPinned,
+            createdByAdmin: context.dbUser.id,
+          })
+          .returning();
 
         if (!feed) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -1365,10 +1283,7 @@ export const activityFeedRouter = createORPCRouter({
         return feed;
       });
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch created activity",
@@ -1394,8 +1309,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       const group = await context.db.query.groups.findFirst({
-        where: (g, { eq, and }) =>
-          and(eq(g.id, input.groupId), eq(g.tripId, input.tripId)),
+        where: (g, { eq, and }) => and(eq(g.id, input.groupId), eq(g.tripId, input.tripId)),
         columns: {
           id: true,
           image: true,
@@ -1409,15 +1323,18 @@ export const activityFeedRouter = createORPCRouter({
       }
 
       const activity = await context.db.transaction(async (tx) => {
-        const [feed] = await tx.insert(activityFeeds).values({
-          tripId: input.tripId,
-          activityType: "rank_change",
-          title: input.title,
-          description: input.description,
-          imageUrl: group.image,
-          isPinned: input.isPinned,
-          createdByAdmin: context.dbUser.id,
-        }).returning();
+        const [feed] = await tx
+          .insert(activityFeeds)
+          .values({
+            tripId: input.tripId,
+            activityType: "rank_change",
+            title: input.title,
+            description: input.description,
+            imageUrl: group.image,
+            isPinned: input.isPinned,
+            createdByAdmin: context.dbUser.id,
+          })
+          .returning();
 
         if (!feed) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -1436,10 +1353,7 @@ export const activityFeedRouter = createORPCRouter({
         return feed;
       });
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch created activity",
@@ -1488,10 +1402,7 @@ export const activityFeedRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch updated activity",
@@ -1520,10 +1431,7 @@ export const activityFeedRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch updated activity",
@@ -1557,10 +1465,7 @@ export const activityFeedRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch updated activity",
@@ -1589,10 +1494,7 @@ export const activityFeedRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Activity not found" });
       }
 
-      const result = await fetchActivityWithRelationsById(
-        context.db,
-        activity.id,
-      );
+      const result = await fetchActivityWithRelationsById(context.db, activity.id);
       if (!result) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to fetch updated activity",
@@ -1647,9 +1549,7 @@ export const activityFeedRouter = createORPCRouter({
       const isActive = !existing;
 
       if (existing) {
-        await context.db
-          .delete(activityReactions)
-          .where(eq(activityReactions.id, existing.id));
+        await context.db.delete(activityReactions).where(eq(activityReactions.id, existing.id));
       } else {
         await context.db.insert(activityReactions).values({
           activityId: input.activityId,
@@ -1672,9 +1572,7 @@ export const activityFeedRouter = createORPCRouter({
   delete: adminProcedure
     .input(z.object({ activityId: z.string() }))
     .handler(async ({ context, input }) => {
-      await context.db
-        .delete(activityFeeds)
-        .where(eq(activityFeeds.id, input.activityId));
+      await context.db.delete(activityFeeds).where(eq(activityFeeds.id, input.activityId));
 
       return { success: true };
     }),

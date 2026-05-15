@@ -1,13 +1,5 @@
- 
- 
- 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  createORPCRouter,
-  publicProcedure,
-  protectedProcedure,
-  adminProcedure,
-} from "../api/trpc";
+import { createORPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "../api/trpc";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../api/trpc";
 import { z } from "zod";
@@ -32,11 +24,9 @@ const testRouter = createORPCRouter({
   }),
 
   // Public procedure with input
-  greet: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .handler(({ input }) => {
-      return { greeting: `Hello, ${input.name}!` };
-    }),
+  greet: publicProcedure.input(z.object({ name: z.string() })).handler(({ input }) => {
+    return { greeting: `Hello, ${input.name}!` };
+  }),
 
   // Protected procedure - requires authentication
   getMe: protectedProcedure.handler(({ context }) => {
@@ -89,7 +79,9 @@ describe("oRPC Router Testing Patterns", () => {
         delete: vi.fn<() => Promise<User>>().mockResolvedValue({} as User),
         count: vi.fn<() => Promise<number>>().mockResolvedValue(0),
       },
-      $transaction: vi.fn<(cb: (db: DB) => Promise<unknown>) => Promise<unknown>>((cb) => cb(mockDb)),
+      $transaction: vi.fn<(cb: (db: DB) => Promise<unknown>) => Promise<unknown>>((cb) =>
+        cb(mockDb),
+      ),
     };
 
     // Setup mock Supabase client
@@ -115,9 +107,14 @@ describe("oRPC Router Testing Patterns", () => {
     mockSupabase = {
       auth: {
         getUser: vi.fn<() => Promise<{ data: { user: { id: string } | null }; error: null }>>(),
-        getSession: vi.fn<() => Promise<{ data: { session: { access_token: string } | null }; error: null }>>(),
+        getSession:
+          vi.fn<
+            () => Promise<{ data: { session: { access_token: string } | null }; error: null }>
+          >(),
         admin: {
-          getUserById: vi.fn<() => Promise<{ data: { user: null }; error: null }>>().mockResolvedValue({ data: { user: null }, error: null }),
+          getUserById: vi
+            .fn<() => Promise<{ data: { user: null }; error: null }>>()
+            .mockResolvedValue({ data: { user: null }, error: null }),
         },
       },
       from: vi.fn<(table: string) => MockQueryBuilder>(() => createMockQueryBuilder()),
@@ -204,15 +201,14 @@ describe("oRPC Router Testing Patterns", () => {
       };
 
       // Mock successful auth
-       
+
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
 
-       
       mockDb.user.findFirst.mockResolvedValue(mockDbUser);
-       
+
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: { user: null },
         error: null,
@@ -230,7 +226,6 @@ describe("oRPC Router Testing Patterns", () => {
       try {
         await caller.getMe();
       } catch {
-         
         expect(mockSupabase.auth.getUser).toHaveBeenCalledWith("test-token");
       }
     });
@@ -242,7 +237,6 @@ describe("oRPC Router Testing Patterns", () => {
         lastName: "Name",
       };
 
-       
       mockDb.user.update.mockResolvedValue(mockUpdatedUser);
 
       const ctx: TRPCContext = {
@@ -261,7 +255,7 @@ describe("oRPC Router Testing Patterns", () => {
       }
 
       // Verify the mock was set up correctly
-       
+
       expect(mockDb.user.update).toBeDefined();
     });
   });
@@ -276,7 +270,7 @@ describe("oRPC Router Testing Patterns", () => {
       };
 
       // Mock non-admin user
-       
+
       mockDb.user.findFirst.mockResolvedValue({
         id: "db-123",
         authUserId: "auth-123",
@@ -292,7 +286,7 @@ describe("oRPC Router Testing Patterns", () => {
       }
 
       // The procedure should attempt to verify admin status
-       
+
       expect(mockDb.user.findFirst).toBeDefined();
     });
 
@@ -322,7 +316,6 @@ describe("oRPC Router Testing Patterns", () => {
         },
       ];
 
-       
       mockDb.user.findMany.mockResolvedValue(mockUsers);
 
       const ctx: TRPCContext = {
@@ -380,10 +373,7 @@ describe("oRPC Router Testing Patterns", () => {
 
   describe("Error Handling", () => {
     it("should handle database errors gracefully", async () => {
-       
-      mockDb.user.findMany.mockRejectedValue(
-        new Error("Database connection failed")
-      );
+      mockDb.user.findMany.mockRejectedValue(new Error("Database connection failed"));
 
       const ctx: TRPCContext = {
         db: mockDb,

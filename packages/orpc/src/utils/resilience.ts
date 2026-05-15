@@ -37,7 +37,5 @@ export async function executeWithRetry<T>(
     }
   }
 
-  throw new Error(
-    `None of the ${maxRetriesCount} retry attempts provided a valid result.`,
-  );
+  throw new Error(`None of the ${maxRetriesCount} retry attempts provided a valid result.`);
 }

@@ -125,7 +125,7 @@ describe("useTripBackgroundImageDownload", () => {
       error,
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
     const { result } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
@@ -215,7 +215,7 @@ describe("useTripBackgroundImageDownload", () => {
       error: null,
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
 
     const { unmount } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
@@ -251,8 +251,8 @@ describe("useTripBackgroundImageDownload", () => {
       error: new Error("All downloads failed"),
     });
 
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
     const { result } = renderHook(() =>
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),

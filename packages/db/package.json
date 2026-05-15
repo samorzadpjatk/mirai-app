@@ -1,6 +1,7 @@
 {
   "name": "@mirai-app/db",
   "version": "0.1.0",
+  "nx": { "tags": ["type:package", "scope:db"] },
   "private": true,
   "type": "module",
   "exports": {

@@ -3,27 +3,52 @@
   "mcp": {
     "playwright": {
       "type": "local",
-      "command": ["npx", "-y", "@playwright/mcp@latest"]
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ]
     },
     "mobile-mcp": {
       "type": "local",
-      "command": ["npx", "-y", "@mobilenext/mobile-mcp@latest"]
+      "command": [
+        "npx",
+        "-y",
+        "@mobilenext/mobile-mcp@latest"
+      ]
     },
     "eslint": {
       "type": "local",
-      "command": ["npx", "-y", "@eslint/mcp@latest"]
+      "command": [
+        "npx",
+        "-y",
+        "@eslint/mcp@latest"
+      ]
     },
     "markitdown": {
       "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "mcp/markitdown:latest"]
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "mcp/markitdown:latest"
+      ]
     },
     "fetcher": {
       "type": "local",
-      "command": ["npx", "-y", "fetcher-mcp"]
+      "command": [
+        "npx",
+        "-y",
+        "fetcher-mcp"
+      ]
     },
     "maestro": {
       "type": "local",
-      "command": ["maestro", "mcp"]
+      "command": [
+        "maestro",
+        "mcp"
+      ]
     },
     "stitch": {
       "type": "remote",
@@ -32,6 +57,15 @@
         "Accept": "application/json",
         "X-Goog-Api-Key": "{env:STITCH_GOOGLE_API_KEY}"
       }
+    },
+    "nx-mcp": {
+      "type": "local",
+      "command": [
+        "npx",
+        "nx",
+        "mcp"
+      ],
+      "enabled": true
     }
   }
 }

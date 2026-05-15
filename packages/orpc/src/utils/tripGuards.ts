@@ -1,10 +1,7 @@
 import { ORPCError } from "@orpc/server";
 import type { DB } from "@mirai-app/db";
 
-export async function ensureTripNotEnded(
-  db: DB,
-  tripId: string,
-): Promise<void> {
+export async function ensureTripNotEnded(db: DB, tripId: string): Promise<void> {
   const trip = await db.query.trips.findFirst({
     where: (t, { eq }) => eq(t.id, tripId),
   });
@@ -22,10 +19,7 @@ export async function ensureTripNotEnded(
   }
 }
 
-export async function ensureTripNotEndedByGroupId(
-  db: DB,
-  groupId: string,
-): Promise<string> {
+export async function ensureTripNotEndedByGroupId(db: DB, groupId: string): Promise<string> {
   const group = await db.query.groups.findFirst({
     where: (g, { eq }) => eq(g.id, groupId),
   });

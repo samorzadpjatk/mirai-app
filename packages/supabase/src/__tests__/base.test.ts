@@ -21,17 +21,15 @@ describe("createBaseSupabaseClient", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createClient).mockReturnValue(mockSupabaseClient as unknown as ReturnType<typeof createClient>);
+    vi.mocked(createClient).mockReturnValue(
+      mockSupabaseClient as unknown as ReturnType<typeof createClient>,
+    );
   });
 
   it("should create a Supabase client with URL and anon key", () => {
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 
-    expect(createClient).toHaveBeenCalledWith(
-      mockUrl,
-      mockAnonKey,
-      expect.any(Object)
-    );
+    expect(createClient).toHaveBeenCalledWith(mockUrl, mockAnonKey, expect.any(Object));
   });
 
   it("should return the created Supabase client", () => {
@@ -53,7 +51,7 @@ describe("createBaseSupabaseClient", () => {
           persistSession: true,
           detectSessionInUrl: true,
         },
-      })
+      }),
     );
   });
 
@@ -70,7 +68,7 @@ describe("createBaseSupabaseClient", () => {
             eventsPerSecond: 10,
           },
         },
-      })
+      }),
     );
   });
 
@@ -94,7 +92,7 @@ describe("createBaseSupabaseClient", () => {
           persistSession: false,
           detectSessionInUrl: true,
         },
-      })
+      }),
     );
   });
 
@@ -121,7 +119,7 @@ describe("createBaseSupabaseClient", () => {
             customParam: "value",
           },
         },
-      })
+      }),
     );
   });
 
@@ -143,18 +141,16 @@ describe("createBaseSupabaseClient", () => {
             eventsPerSecond: 10,
           },
         },
-      })
+      }),
     );
   });
 
   it("should log client creation with URL", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      `[Supabase] Creating client with URL: ${mockUrl}`
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(`[Supabase] Creating client with URL: ${mockUrl}`);
 
     consoleSpy.mockRestore();
   });
@@ -174,11 +170,7 @@ describe("createBaseSupabaseClient", () => {
   });
 
   it("should handle different key formats", () => {
-    const keys = [
-      "test-anon-key",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test",
-      "service-role-key",
-    ];
+    const keys = ["test-anon-key", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test", "service-role-key"];
 
     keys.forEach((key) => {
       vi.clearAllMocks();
@@ -213,7 +205,7 @@ describe("createBaseSupabaseClient", () => {
           flowType: "pkce",
           debug: true,
         }),
-      })
+      }),
     );
   });
 
@@ -243,7 +235,7 @@ describe("createBaseSupabaseClient", () => {
             eventsPerSecond: 5,
           },
         },
-      })
+      }),
     );
   });
 
@@ -271,7 +263,7 @@ describe("createBaseSupabaseClient", () => {
             eventsPerSecond: 10,
           },
         },
-      })
+      }),
     );
   });
 });

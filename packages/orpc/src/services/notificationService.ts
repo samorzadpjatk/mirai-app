@@ -6,11 +6,7 @@ import {
   containsRankingTemplate,
   type RankingTemplateValues,
 } from "../utils/notificationTemplates";
-import {
-  tripParticipants,
-  challenges,
-  notificationPushes,
-} from "@mirai-app/db";
+import { tripParticipants, challenges, notificationPushes } from "@mirai-app/db";
 import { eq, and, count } from "drizzle-orm";
 
 export interface NotificationData {
@@ -43,9 +39,7 @@ function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
   const baseUrl = "https://integral.local";
 
   try {
-    const parsed = rawUrl.startsWith("/")
-      ? new URL(rawUrl, baseUrl)
-      : new URL(rawUrl);
+    const parsed = rawUrl.startsWith("/") ? new URL(rawUrl, baseUrl) : new URL(rawUrl);
 
     const audienceModeParam = parsed.searchParams.get(AUDIENCE_MODE_PARAM);
     const audienceGroupId = parsed.searchParams.get(AUDIENCE_GROUP_PARAM);
@@ -64,9 +58,7 @@ function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
     return {
       cleanUrl,
       audienceMode:
-        audienceModeParam === "group" || audienceModeParam === "all"
-          ? audienceModeParam
-          : null,
+        audienceModeParam === "group" || audienceModeParam === "all" ? audienceModeParam : null,
       audienceGroupId: audienceGroupId?.trim() ? audienceGroupId : null,
     };
   } catch {
@@ -100,14 +92,16 @@ async function getRankingTemplateValuesByUser(
 ): Promise<Map<string, RankingTemplateValues>> {
   const now = new Date();
   const [participants, rankedGroups, activeChallengesResult, trip] = await Promise.all([
-    db.select({ userId: tripParticipants.userId, groupId: tripParticipants.groupId })
+    db
+      .select({ userId: tripParticipants.userId, groupId: tripParticipants.groupId })
       .from(tripParticipants)
       .where(eq(tripParticipants.tripId, tripId)),
     db.query.groups.findMany({
       where: (g, { eq, and }) => and(eq(g.tripId, tripId), eq(g.isDeleted, false)),
       orderBy: (g, { desc }) => [desc(g.coins), g.name],
     }),
-    db.select({ count: count() })
+    db
+      .select({ count: count() })
       .from(challenges)
       .where(and(eq(challenges.tripId, tripId), eq(challenges.status, "ACTIVE"))),
     db.query.trips.findFirst({
@@ -118,9 +112,7 @@ async function getRankingTemplateValuesByUser(
   const activeChallengesCount = activeChallengesResult[0]?.count ?? 0;
 
   const groupById = new Map(rankedGroups.map((group) => [group.id, group]));
-  const groupRankById = new Map(
-    rankedGroups.map((group, index) => [group.id, index + 1]),
-  );
+  const groupRankById = new Map(rankedGroups.map((group, index) => [group.id, index + 1]));
   const groupMembersCountById = new Map<string, number>();
   participants.forEach((participant) => {
     if (!participant.groupId) return;
@@ -210,10 +202,7 @@ export class NotificationService {
     };
   }
 
-  static createNewMemberNotification(
-    groupName: string,
-    memberName: string,
-  ): NotificationData {
+  static createNewMemberNotification(groupName: string, memberName: string): NotificationData {
     return {
       title: `👥 New member in ${groupName}!`,
       body: `${memberName} joined your guild!`,
@@ -221,10 +210,7 @@ export class NotificationService {
     };
   }
 
-  static createRankingUpdateNotification(
-    groupName: string,
-    newPosition: number,
-  ): NotificationData {
+  static createRankingUpdateNotification(groupName: string, newPosition: number): NotificationData {
     return {
       title: `🏆 Ranking update!`,
       body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
@@ -233,10 +219,7 @@ export class NotificationService {
   }
 }
 
-export async function sendMobileNotifications(
-  db: DB,
-  notificationId: string,
-) {
+export async function sendMobileNotifications(db: DB, notificationId: string) {
   const notification = await db.query.notifications.findFirst({
     where: (n, { eq }) => eq(n.id, notificationId),
   });
@@ -247,13 +230,9 @@ export async function sendMobileNotifications(
   });
   const hasExplicitAudience = existingPushRows.length > 0;
   const pendingAudienceUserIds = new Set(
-    existingPushRows
-      .filter((push) => push.status === "pending")
-      .map((push) => push.targetUserId),
+    existingPushRows.filter((push) => push.status === "pending").map((push) => push.targetUserId),
   );
-  const explicitAudienceUserIds = new Set(
-    existingPushRows.map((push) => push.targetUserId),
-  );
+  const explicitAudienceUserIds = new Set(existingPushRows.map((push) => push.targetUserId));
 
   if (hasExplicitAudience && pendingAudienceUserIds.size === 0) {
     return {
@@ -275,21 +254,23 @@ export async function sendMobileNotifications(
   if (hasExplicitAudience) {
     scopedSubs = subs.filter((sub) => pendingAudienceUserIds.has(sub.userId));
   } else if (notification.tripId) {
-    const tripParticipantRows = await db.select({ userId: tripParticipants.userId })
+    const tripParticipantRows = await db
+      .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(eq(tripParticipants.tripId, notification.tripId));
-    const participantIds = new Set(
-      tripParticipantRows.map((participant) => participant.userId),
-    );
+    const participantIds = new Set(tripParticipantRows.map((participant) => participant.userId));
     scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
 
     if (parsedAudience.audienceMode === "group" && parsedAudience.audienceGroupId) {
-      const groupParticipantRows = await db.select({ userId: tripParticipants.userId })
+      const groupParticipantRows = await db
+        .select({ userId: tripParticipants.userId })
         .from(tripParticipants)
-        .where(and(
-          eq(tripParticipants.tripId, notification.tripId),
-          eq(tripParticipants.groupId, parsedAudience.audienceGroupId),
-        ));
+        .where(
+          and(
+            eq(tripParticipants.tripId, notification.tripId),
+            eq(tripParticipants.groupId, parsedAudience.audienceGroupId),
+          ),
+        );
       const groupParticipantIds = new Set(
         groupParticipantRows.map((participant) => participant.userId),
       );
@@ -299,8 +280,7 @@ export async function sendMobileNotifications(
 
   const requiresRankingTemplate =
     !!notification.tripId &&
-    (containsRankingTemplate(notification.title) ||
-      containsRankingTemplate(notification.body));
+    (containsRankingTemplate(notification.title) || containsRankingTemplate(notification.body));
 
   const rankingValuesByUser =
     requiresRankingTemplate && notification.tripId
@@ -309,16 +289,19 @@ export async function sendMobileNotifications(
 
   if (scopedSubs.length === 0) {
     if (hasExplicitAudience) {
-      await db.update(notificationPushes)
+      await db
+        .update(notificationPushes)
         .set({
           status: "failed",
           sentAt: new Date(),
           failureReason: "no_valid_push_token",
         })
-        .where(and(
-          eq(notificationPushes.notificationId, notification.id),
-          eq(notificationPushes.status, "pending"),
-        ));
+        .where(
+          and(
+            eq(notificationPushes.notificationId, notification.id),
+            eq(notificationPushes.status, "pending"),
+          ),
+        );
     }
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
@@ -400,9 +383,7 @@ export async function sendMobileNotifications(
       const statusCode = t.status === "ok" ? 200 : 500;
       return { userId, statusCode };
     })
-    .filter(
-      (r): r is { userId: string; statusCode: number } => r !== null,
-    )
+    .filter((r): r is { userId: string; statusCode: number } => r !== null)
     .forEach((r) => {
       const current = resultByUser.get(r.userId) ?? {
         hasSuccess: false,
@@ -432,44 +413,47 @@ export async function sendMobileNotifications(
     if (sentUserIds.length > 0) {
       await Promise.all(
         sentUserIds.map((userId) =>
-          db.update(notificationPushes)
+          db
+            .update(notificationPushes)
             .set({
               status: "sent",
               sentAt: new Date(),
               failureReason: null,
             })
-            .where(and(
-              eq(notificationPushes.targetUserId, userId),
-              eq(notificationPushes.notificationId, notification.id),
-            )),
+            .where(
+              and(
+                eq(notificationPushes.targetUserId, userId),
+                eq(notificationPushes.notificationId, notification.id),
+              ),
+            ),
         ),
       );
     }
 
-    const allFailedUserIds = Array.from(
-      new Set([...failedUserIds, ...unattemptedUserIds]),
-    );
+    const allFailedUserIds = Array.from(new Set([...failedUserIds, ...unattemptedUserIds]));
     if (allFailedUserIds.length > 0) {
       await Promise.all(
         allFailedUserIds.map((userId) =>
-          db.update(notificationPushes)
+          db
+            .update(notificationPushes)
             .set({
               status: "failed",
               sentAt: new Date(),
-              failureReason: attemptedUserIds.has(userId)
-                ? "expo"
-                : "no_valid_push_token",
+              failureReason: attemptedUserIds.has(userId) ? "expo" : "no_valid_push_token",
             })
-            .where(and(
-              eq(notificationPushes.targetUserId, userId),
-              eq(notificationPushes.notificationId, notification.id),
-            )),
+            .where(
+              and(
+                eq(notificationPushes.targetUserId, userId),
+                eq(notificationPushes.notificationId, notification.id),
+              ),
+            ),
         ),
       );
     }
   } else if (sentUserIds.length + failedUserIds.length > 0) {
-    await db.insert(notificationPushes).values(
-      [
+    await db
+      .insert(notificationPushes)
+      .values([
         ...sentUserIds.map((targetUserId) => ({
           notificationId: notification.id,
           targetUserId,
@@ -484,8 +468,8 @@ export async function sendMobileNotifications(
           sentAt: new Date(),
           failureReason: "expo" as const,
         })),
-      ],
-    ).onConflictDoNothing();
+      ])
+      .onConflictDoNothing();
   }
 
   const failedCount = hasExplicitAudience

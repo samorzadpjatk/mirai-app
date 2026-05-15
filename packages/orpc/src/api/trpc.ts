@@ -20,8 +20,7 @@ import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
 import { createDb, type DB, userAgents } from "@mirai-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization =
-    headers.get("authorization") ?? headers.get("Authorization");
+  const authorization = headers.get("authorization") ?? headers.get("Authorization");
   if (!authorization) {
     return null;
   }
@@ -56,13 +55,13 @@ const getAccessToken = (
 
 const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
   if (!userAgent) return null;
-  
+
   // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
   const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
-  
+
   // Android User Agent pattern: okhttp/4.12.0
   const androidPattern = /^okhttp\/[\d.]+$/;
-  
+
   if (iosPattern.test(userAgent)) return "ios";
   if (androidPattern.test(userAgent)) return "android";
   return null;
@@ -98,12 +97,9 @@ export const createORPCContext = (opts: {
   supabaseKey: string;
   connectionParams?: Record<string, string>;
 }): TRPCContext => {
-  supabase ??= createSupabaseClient(
-    opts.supabaseUrl,
-    opts.supabaseKey,
-    undefined,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+  supabase ??= createSupabaseClient(opts.supabaseUrl, opts.supabaseKey, undefined, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
   // Extract User-Agent from connection params for WebSocket connections
   const headers = new Headers(opts.headers);
@@ -140,7 +136,8 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
   try {
     if (userAgent && platform) {
       // Log to database asynchronously (fire and forget)
-      void context.db.insert(userAgents)
+      void context.db
+        .insert(userAgents)
         .values({
           userAgent,
           platform,

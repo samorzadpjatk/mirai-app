@@ -14,9 +14,7 @@ export const buildAuthEmailLookup = async (
   supabase: SupabaseClient,
   authUserIds: (string | null | undefined)[],
 ): Promise<Map<string, string | null>> => {
-  const uniqueIds = Array.from(
-    new Set(authUserIds.filter((id): id is string => Boolean(id))),
-  );
+  const uniqueIds = Array.from(new Set(authUserIds.filter((id): id is string => Boolean(id))));
 
   if (uniqueIds.length === 0) {
     return new Map();
@@ -26,9 +24,7 @@ export const buildAuthEmailLookup = async (
     uniqueIds.map(async (authUserId) => {
       const { data, error } = await supabase.auth.admin.getUserById(authUserId);
       if (error) {
-        console.warn(
-          `[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`,
-        );
+        console.warn(`[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`);
         return [authUserId, null] as const;
       }
 
@@ -50,9 +46,7 @@ export const buildAuthUserSummaryLookup = async (
   supabase: SupabaseClient,
   authUserIds: (string | null | undefined)[],
 ): Promise<Map<string, AuthUserSummary>> => {
-  const uniqueIds = Array.from(
-    new Set(authUserIds.filter((id): id is string => Boolean(id))),
-  );
+  const uniqueIds = Array.from(new Set(authUserIds.filter((id): id is string => Boolean(id))));
 
   if (uniqueIds.length === 0) {
     return new Map();
@@ -64,9 +58,7 @@ export const buildAuthUserSummaryLookup = async (
     uniqueIds.map(async (authUserId) => {
       const { data, error } = await supabase.auth.admin.getUserById(authUserId);
       if (error) {
-        console.warn(
-          `[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`,
-        );
+        console.warn(`[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`);
         return [
           authUserId,
           {
@@ -80,8 +72,7 @@ export const buildAuthUserSummaryLookup = async (
 
       const user = data.user as SupabaseAdminUser | null;
       const bannedUntilRaw = user?.banned_until ?? null;
-      const bannedUntil =
-        bannedUntilRaw && bannedUntilRaw.length > 0 ? bannedUntilRaw : null;
+      const bannedUntil = bannedUntilRaw && bannedUntilRaw.length > 0 ? bannedUntilRaw : null;
       const bannedUntilDate = bannedUntil ? new Date(bannedUntil) : null;
       const isBanned =
         !!bannedUntilDate &&

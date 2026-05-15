@@ -56,15 +56,13 @@ users: users/test.csv
         "/test/assets/dev/config/trip1.yaml",
         "/test/assets/dev/config/trip2.yml",
       ]);
-      mockReadTextFile
-        .mockResolvedValueOnce(`
+      mockReadTextFile.mockResolvedValueOnce(`
 key: trip-1
 name: Trip One
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/trip1.csv
-`)
-        .mockResolvedValueOnce(`
+`).mockResolvedValueOnce(`
 key: trip-2
 name: Trip Two
 startDate: 2026-02-01
@@ -86,15 +84,13 @@ users: users/trip2.csv
         "/test/assets/dev/config/data.json",
         "/test/assets/dev/config/other.yml",
       ]);
-      mockReadTextFile
-        .mockResolvedValueOnce(`
+      mockReadTextFile.mockResolvedValueOnce(`
 key: yaml-trip
 name: YAML Trip
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/test.csv
-`)
-        .mockResolvedValueOnce(`
+`).mockResolvedValueOnce(`
 key: yml-trip
 name: YML Trip
 startDate: 2026-02-01
@@ -114,15 +110,13 @@ users: users/test.csv
         "/test/assets/dev/config/valid.yaml",
         "/test/assets/dev/config/invalid.yaml",
       ]);
-      mockReadTextFile
-        .mockResolvedValueOnce(`
+      mockReadTextFile.mockResolvedValueOnce(`
 key: valid-trip
 name: Valid Trip
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/test.csv
-`)
-        .mockResolvedValueOnce(`
+`).mockResolvedValueOnce(`
 key: invalid-trip
 name: Invalid Trip
 `);

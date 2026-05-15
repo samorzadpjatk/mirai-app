@@ -8,5 +8,4 @@ export const TRIP_RESOURCE_TYPES = {
   SOS: "sos",
 } as const;
 
-export type TripResourceType =
-  (typeof TRIP_RESOURCE_TYPES)[keyof typeof TRIP_RESOURCE_TYPES];
+export type TripResourceType = (typeof TRIP_RESOURCE_TYPES)[keyof typeof TRIP_RESOURCE_TYPES];

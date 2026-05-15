@@ -37,7 +37,11 @@ describe("useExpoUpdates", () => {
     mockCheckForUpdateAsync.mockReset().mockResolvedValue({ isAvailable: false });
     mockFetchUpdateAsync.mockReset().mockResolvedValue(undefined);
     mockReloadAsync.mockReset().mockResolvedValue(undefined);
-    Object.defineProperty(globalThis, "__DEV__", { value: false, writable: true, configurable: true });
+    Object.defineProperty(globalThis, "__DEV__", {
+      value: false,
+      writable: true,
+      configurable: true,
+    });
     mockIsEnabled.value = false;
   });
 
@@ -59,7 +63,11 @@ describe("useExpoUpdates", () => {
   });
 
   it("should skip update check in development mode", async () => {
-    Object.defineProperty(globalThis, "__DEV__", { value: true, writable: true, configurable: true });
+    Object.defineProperty(globalThis, "__DEV__", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
 
     const { result } = renderHook(() => useExpoUpdates());
 
@@ -260,7 +268,11 @@ describe("useExpoUpdates", () => {
 
   it("should not auto-check for updates in development", async () => {
     mockIsEnabled.value = true;
-    Object.defineProperty(globalThis, "__DEV__", { value: true, writable: true, configurable: true });
+    Object.defineProperty(globalThis, "__DEV__", {
+      value: true,
+      writable: true,
+      configurable: true,
+    });
     mockCheckForUpdateAsync.mockResolvedValue({ isAvailable: false });
 
     const { result } = renderHook(() => useExpoUpdates());

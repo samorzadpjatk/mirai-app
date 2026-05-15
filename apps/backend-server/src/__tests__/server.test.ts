@@ -251,9 +251,7 @@ describe("Backend Server (Hono)", () => {
       });
       vi.stubGlobal("Bun", { serve: serveSpy });
 
-      const exitSpy = vi.spyOn(process, "exit").mockReturnValue(
-        undefined as never,
-      );
+      const exitSpy = vi.spyOn(process, "exit").mockReturnValue(undefined as never);
 
       const { start, stop } = createServer({
         dev: true,
@@ -296,9 +294,7 @@ describe("Backend Server (Hono)", () => {
 
       // Test fetch with WebSocket upgrade request at prefix
       const mockServer = { upgrade: vi.fn(() => true) };
-      const upgradeReq = new Request(
-        "ws://localhost:3007/trpc?authorization=Bearer%20token",
-      );
+      const upgradeReq = new Request("ws://localhost:3007/trpc?authorization=Bearer%20token");
       const result = await serveOptions.fetch(upgradeReq, mockServer);
       expect(mockServer.upgrade).toHaveBeenCalled();
       expect(result).toBeUndefined();

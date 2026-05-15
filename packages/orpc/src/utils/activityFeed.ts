@@ -8,16 +8,7 @@ import {
   groups,
   coinTransactions,
 } from "@mirai-app/db";
-import {
-  eq,
-  and,
-  or,
-  count,
-  sql,
-  lte,
-  gt,
-  isNull,
-} from "drizzle-orm";
+import { eq, and, or, count, sql, lte, gt, isNull } from "drizzle-orm";
 import type { DB, TransactionDB } from "@mirai-app/db";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -105,7 +96,8 @@ const createChallengeEventActivity = async (params: {
   eventType: ChallengeEventType;
   createdByAdmin?: string | null;
 }) => {
-  const submissionCountResult = await params.tx.select({ count: count() })
+  const submissionCountResult = await params.tx
+    .select({ count: count() })
     .from(challengeSubmissions)
     .where(eq(challengeSubmissions.challengeId, params.challenge.id));
   const submissionCount = Number(submissionCountResult[0]?.count ?? 0);
@@ -118,9 +110,7 @@ const createChallengeEventActivity = async (params: {
         : `Challenge completed: ${params.challenge.name}`;
 
   const challengeDescription =
-    params.eventType === "completed"
-      ? null
-      : params.challenge.description?.trim();
+    params.eventType === "completed" ? null : params.challenge.description?.trim();
 
   const description =
     challengeDescription ??
@@ -130,14 +120,17 @@ const createChallengeEventActivity = async (params: {
         ? "Challenge entered voting phase"
         : "Voting has ended");
 
-  const activityFeedResult = await params.tx.insert(activityFeeds).values({
-    tripId: params.challenge.tripId,
-    activityType: "challenge_event",
-    title,
-    description,
-    imageUrl: params.challenge.image,
-    createdByAdmin: params.createdByAdmin ?? null,
-  }).returning();
+  const activityFeedResult = await params.tx
+    .insert(activityFeeds)
+    .values({
+      tripId: params.challenge.tripId,
+      activityType: "challenge_event",
+      title,
+      description,
+      imageUrl: params.challenge.image,
+      createdByAdmin: params.createdByAdmin ?? null,
+    })
+    .returning();
 
   if (activityFeedResult[0]) {
     await params.tx.insert(challengeActivities).values({
@@ -151,16 +144,10 @@ const createChallengeEventActivity = async (params: {
             ? params.challenge.votingEndTime
             : new Date(),
       submissionType:
-        params.eventType === "challenge_started"
-          ? params.challenge.submissionType
-          : null,
-      basePoints:
-        params.eventType === "challenge_started"
-          ? params.challenge.basePoints
-          : null,
+        params.eventType === "challenge_started" ? params.challenge.submissionType : null,
+      basePoints: params.eventType === "challenge_started" ? params.challenge.basePoints : null,
       submissionCount:
-        params.eventType === "voting_started" ||
-        params.eventType === "completed"
+        params.eventType === "voting_started" || params.eventType === "completed"
           ? submissionCount
           : null,
     });
@@ -219,10 +206,8 @@ export const createChallengeCompletionWithWinnersById = async (params: {
   if (!challenge) return;
 
   const hasCompletedEvent = await params.tx.query.challengeActivities.findFirst({
-    where: (ca, { eq, and }) => and(
-      eq(ca.challengeId, challenge.id),
-      eq(ca.eventType, "completed"),
-    ),
+    where: (ca, { eq, and }) =>
+      and(eq(ca.challengeId, challenge.id), eq(ca.eventType, "completed")),
   });
 
   if (!hasCompletedEvent) {
@@ -235,10 +220,8 @@ export const createChallengeCompletionWithWinnersById = async (params: {
   }
 
   const sortedSubmissions = await params.tx.query.challengeSubmissions.findMany({
-    where: (cs, { eq, and, ne }) => and(
-      eq(cs.challengeId, challenge.id),
-      ne(cs.status, "REJECTED"),
-    ),
+    where: (cs, { eq, and, ne }) =>
+      and(eq(cs.challengeId, challenge.id), ne(cs.status, "REJECTED")),
     orderBy: (cs, { desc, asc }) => [
       desc(cs.voteScore),
       desc(cs.voteCount),
@@ -255,11 +238,9 @@ export const createChallengeCompletionWithWinnersById = async (params: {
   const topSubmissions = sortedSubmissions.slice(0, 3);
   const hasPotentialCoinChange = sortedSubmissions.some((submission, index) => {
     const nextRanking = index < 3 ? index + 1 : null;
-    const nextAwardedPoints =
-      nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    const nextAwardedPoints = nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
     return (
-      submission.ranking !== nextRanking ||
-      (submission.awardedPoints ?? 0) !== nextAwardedPoints
+      submission.ranking !== nextRanking || (submission.awardedPoints ?? 0) !== nextAwardedPoints
     );
   });
 
@@ -280,8 +261,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
     if (!submission) continue;
 
     const nextRanking = index < 3 ? index + 1 : null;
-    const nextAwardedPoints =
-      nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    const nextAwardedPoints = nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
     const currentAwardedPoints = submission.awardedPoints ?? 0;
     const pointsDelta = nextAwardedPoints - currentAwardedPoints;
     const shouldApprove =
@@ -295,7 +275,8 @@ export const createChallengeCompletionWithWinnersById = async (params: {
       continue;
     }
 
-    await params.tx.update(challengeSubmissions)
+    await params.tx
+      .update(challengeSubmissions)
       .set({
         ranking: nextRanking,
         awardedPoints: nextAwardedPoints,
@@ -312,7 +293,8 @@ export const createChallengeCompletionWithWinnersById = async (params: {
 
     if (pointsDelta !== 0) {
       hasCoinChanges = true;
-      await params.tx.update(groups)
+      await params.tx
+        .update(groups)
         .set({ coins: sql`${groups.coins} + ${pointsDelta}` })
         .where(eq(groups.id, submission.groupId));
 
@@ -320,9 +302,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
         await params.tx.insert(coinTransactions).values({
           groupId: submission.groupId,
           amount: pointsDelta,
-          reason: `Peer voting result: ${challenge.name}${
-            nextRanking ? ` (#${nextRanking})` : ""
-          }`,
+          reason: `Peer voting result: ${challenge.name}${nextRanking ? ` (#${nextRanking})` : ""}`,
           adminId: coinTransactionActorId,
         });
       }
@@ -338,12 +318,15 @@ export const createChallengeCompletionWithWinnersById = async (params: {
     });
   }
 
-  const existingWinners = await params.tx.select({ submissionId: submissionActivities.submissionId })
+  const existingWinners = await params.tx
+    .select({ submissionId: submissionActivities.submissionId })
     .from(submissionActivities)
-    .where(and(
-      eq(submissionActivities.challengeId, challenge.id),
-      eq(submissionActivities.isWinner, true),
-    ));
+    .where(
+      and(
+        eq(submissionActivities.challengeId, challenge.id),
+        eq(submissionActivities.isWinner, true),
+      ),
+    );
   const existingWinnerIds = new Set(existingWinners.map((item) => item.submissionId));
 
   for (let index = 0; index < topSubmissions.length; index += 1) {
@@ -360,14 +343,17 @@ export const createChallengeCompletionWithWinnersById = async (params: {
       `Points: +${pointsAwarded}`,
     ].join(" | ");
 
-    const activityFeedResult = await params.tx.insert(activityFeeds).values({
-      tripId: challenge.tripId,
-      activityType: "submission",
-      title,
-      description,
-      imageUrl: submission.imageIds[0] ?? challenge.image,
-      createdByAdmin: params.createdByAdmin ?? null,
-    }).returning();
+    const activityFeedResult = await params.tx
+      .insert(activityFeeds)
+      .values({
+        tripId: challenge.tripId,
+        activityType: "submission",
+        title,
+        description,
+        imageUrl: submission.imageIds[0] ?? challenge.image,
+        createdByAdmin: params.createdByAdmin ?? null,
+      })
+      .returning();
 
     if (activityFeedResult[0]) {
       await params.tx.insert(submissionActivities).values({
@@ -404,20 +390,8 @@ export const createChallengeStatusActivityById = async (params: {
 export const createChallengeStatusActivityFromTransition = async (params: {
   tx: DB | TransactionDB;
   challengeId: string;
-  previousStatus:
-    | "HIDDEN"
-    | "VISIBLE"
-    | "ACTIVE"
-    | "VOTING_PHASE"
-    | "COMPLETED"
-    | "CANCELLED";
-  nextStatus:
-    | "HIDDEN"
-    | "VISIBLE"
-    | "ACTIVE"
-    | "VOTING_PHASE"
-    | "COMPLETED"
-    | "CANCELLED";
+  previousStatus: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED";
+  nextStatus: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED";
   createdByAdmin?: string | null;
 }) => {
   if (params.previousStatus === params.nextStatus) {
@@ -444,10 +418,7 @@ export const createChallengeStatusActivityFromTransition = async (params: {
     return;
   }
 
-  if (
-    params.previousStatus === "VOTING_PHASE" &&
-    params.nextStatus === "COMPLETED"
-  ) {
+  if (params.previousStatus === "VOTING_PHASE" && params.nextStatus === "COMPLETED") {
     await createChallengeCompletionWithWinnersById({
       tx: params.tx,
       challengeId: params.challengeId,
@@ -474,20 +445,24 @@ export const promoteVisibleChallengesToActiveWithFeed = async (params: {
     conditions.push(eq(challenges.tripId, params.where.tripId));
   }
 
-  const toActivate = await params.tx.select({ id: challenges.id })
+  const toActivate = await params.tx
+    .select({ id: challenges.id })
     .from(challenges)
     .where(and(...conditions));
 
   const activatedIds: string[] = [];
 
   for (const challenge of toActivate) {
-    const result = await params.tx.update(challenges)
+    const result = await params.tx
+      .update(challenges)
       .set({ status: "ACTIVE" })
-      .where(and(
-        eq(challenges.id, challenge.id),
-        eq(challenges.status, "VISIBLE"),
-        lte(challenges.startTime, now),
-      ))
+      .where(
+        and(
+          eq(challenges.id, challenge.id),
+          eq(challenges.status, "VISIBLE"),
+          lte(challenges.startTime, now),
+        ),
+      )
       .returning({ id: challenges.id });
 
     if (result.length > 0) {
@@ -504,13 +479,11 @@ export const promoteVisibleChallengesToActiveWithFeed = async (params: {
   return activatedIds;
 };
 
-export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
-  params: {
-    tx: DB | TransactionDB;
-    where?: { id?: string; tripId?: string };
-    createdByAdmin?: string | null;
-  },
-) => {
+export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (params: {
+  tx: DB | TransactionDB;
+  where?: { id?: string; tripId?: string };
+  createdByAdmin?: string | null;
+}) => {
   const now = new Date();
   const conditions = [
     eq(challenges.status, "ACTIVE"),
@@ -524,24 +497,26 @@ export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
     conditions.push(eq(challenges.tripId, params.where.tripId));
   }
 
-  const toVoting = await params.tx.select({
-    id: challenges.id,
-    votingStartTime: challenges.votingStartTime,
-    votingEndTime: challenges.votingEndTime,
-  })
+  const toVoting = await params.tx
+    .select({
+      id: challenges.id,
+      votingStartTime: challenges.votingStartTime,
+      votingEndTime: challenges.votingEndTime,
+    })
     .from(challenges)
     .where(and(...conditions));
 
   const votingIds: string[] = [];
 
   for (const challenge of toVoting) {
-    const submissions = await params.tx.select({ status: challengeSubmissions.status })
+    const submissions = await params.tx
+      .select({ status: challengeSubmissions.status })
       .from(challengeSubmissions)
       .where(eq(challengeSubmissions.challengeId, challenge.id));
 
     const hasSubmissions = submissions.length > 0;
-    const allProcessed = submissions.every((s) =>
-      s.status === "APPROVED" || s.status === "REJECTED",
+    const allProcessed = submissions.every(
+      (s) => s.status === "APPROVED" || s.status === "REJECTED",
     );
     if (!hasSubmissions || !allProcessed) {
       continue;
@@ -552,22 +527,23 @@ export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
       challenge.votingEndTime,
     );
     const votingStartTime = new Date();
-    const votingEndTime = new Date(
-      votingStartTime.getTime() + votingDurationHours * HOUR_MS,
-    );
+    const votingEndTime = new Date(votingStartTime.getTime() + votingDurationHours * HOUR_MS);
 
-    const result = await params.tx.update(challenges)
+    const result = await params.tx
+      .update(challenges)
       .set({
         status: "VOTING_PHASE",
         votingStartTime,
         votingEndTime,
       })
-      .where(and(
-        eq(challenges.id, challenge.id),
-        eq(challenges.status, "ACTIVE"),
-        eq(challenges.scoringCategory, "PEER_VOTING"),
-        lte(challenges.endTime, now),
-      ))
+      .where(
+        and(
+          eq(challenges.id, challenge.id),
+          eq(challenges.status, "ACTIVE"),
+          eq(challenges.scoringCategory, "PEER_VOTING"),
+          lte(challenges.endTime, now),
+        ),
+      )
       .returning({ id: challenges.id });
 
     if (result.length > 0) {
@@ -590,10 +566,7 @@ export const finalizeVotingChallengesToCompletedWithFeed = async (params: {
   createdByAdmin?: string | null;
 }) => {
   const now = new Date();
-  const conditions = [
-    eq(challenges.status, "VOTING_PHASE"),
-    lte(challenges.votingEndTime, now),
-  ];
+  const conditions = [eq(challenges.status, "VOTING_PHASE"), lte(challenges.votingEndTime, now)];
   if (params.where?.id) {
     conditions.push(eq(challenges.id, params.where.id));
   }
@@ -601,20 +574,24 @@ export const finalizeVotingChallengesToCompletedWithFeed = async (params: {
     conditions.push(eq(challenges.tripId, params.where.tripId));
   }
 
-  const toComplete = await params.tx.select({ id: challenges.id })
+  const toComplete = await params.tx
+    .select({ id: challenges.id })
     .from(challenges)
     .where(and(...conditions));
 
   const completedIds: string[] = [];
 
   for (const challenge of toComplete) {
-    const result = await params.tx.update(challenges)
+    const result = await params.tx
+      .update(challenges)
       .set({ status: "COMPLETED" })
-      .where(and(
-        eq(challenges.id, challenge.id),
-        eq(challenges.status, "VOTING_PHASE"),
-        lte(challenges.votingEndTime, now),
-      ))
+      .where(
+        and(
+          eq(challenges.id, challenge.id),
+          eq(challenges.status, "VOTING_PHASE"),
+          lte(challenges.votingEndTime, now),
+        ),
+      )
       .returning({ id: challenges.id });
 
     if (result.length > 0) {
@@ -711,9 +688,7 @@ export const createRankChangeActivities = async (params: {
 
   const movementParts: string[] = [];
   if (movedUp) {
-    movementParts.push(
-      `⬆️ ${movedUp.group.name}: #${movedUp.previousRank} -> #${movedUp.newRank}`,
-    );
+    movementParts.push(`⬆️ ${movedUp.group.name}: #${movedUp.previousRank} -> #${movedUp.newRank}`);
   }
   if (movedDown && movedDown.group.id !== movedUp?.group.id) {
     movementParts.push(
@@ -721,20 +696,21 @@ export const createRankChangeActivities = async (params: {
     );
   }
 
-  const podiumPart = podium
-    .map((item) => `${item.medal} ${item.name}`)
-    .join(" • ");
+  const podiumPart = podium.map((item) => `${item.medal} ${item.name}`).join(" • ");
 
   const description = [...movementParts, `Podium: ${podiumPart}`].join(" | ");
 
-  const activityFeedResult = await params.tx.insert(activityFeeds).values({
-    tripId: params.tripId,
-    activityType: "rank_change",
-    title: "Zmiany w tabeli",
-    description,
-    imageUrl: anchor.group.image,
-    createdByAdmin: params.createdByAdmin ?? null,
-  }).returning();
+  const activityFeedResult = await params.tx
+    .insert(activityFeeds)
+    .values({
+      tripId: params.tripId,
+      activityType: "rank_change",
+      title: "Zmiany w tabeli",
+      description,
+      imageUrl: anchor.group.image,
+      createdByAdmin: params.createdByAdmin ?? null,
+    })
+    .returning();
 
   if (activityFeedResult[0]) {
     await params.tx.insert(rankChangeActivities).values({

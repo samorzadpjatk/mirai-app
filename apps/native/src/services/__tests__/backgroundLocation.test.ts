@@ -69,7 +69,7 @@ describe("Background Location Service", () => {
     });
 
     it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       const error = new Error("Storage error");
       mockGetItem.mockRejectedValue(error);
 
@@ -119,7 +119,7 @@ describe("Background Location Service", () => {
     });
 
     it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
       const error = new Error("Location error");
       mockHasStartedLocationUpdatesAsync.mockRejectedValue(error);
 

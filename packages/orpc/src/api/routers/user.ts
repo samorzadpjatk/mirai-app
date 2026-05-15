@@ -47,10 +47,7 @@ const formatUserFullName = (user?: {
   lastName?: string | null;
   email?: string | null;
 }) => {
-  const fullName = [user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
   if (fullName) return fullName;
   if (user?.firstName) return user.firstName;
   if (user?.lastName) return user.lastName;
@@ -95,12 +92,15 @@ const toPublicUserWithAuthSummary = (
   },
   authByAuthUserId: Map<
     string,
-    { email: string | null; bannedUntil: string | null; banReason: string | null; isBanned: boolean }
+    {
+      email: string | null;
+      bannedUntil: string | null;
+      banReason: string | null;
+      isBanned: boolean;
+    }
   >,
 ): PublicUser => {
-  const summary = user.authUserId
-    ? authByAuthUserId.get(user.authUserId) ?? null
-    : null;
+  const summary = user.authUserId ? (authByAuthUserId.get(user.authUserId) ?? null) : null;
   return {
     id: user.id,
     firstName: user.firstName ?? null,
@@ -173,9 +173,7 @@ export const userRouter = createORPCRouter({
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: error.message });
         }
 
-        const found = data?.users?.find(
-          (user) => user.email?.toLowerCase() === normalizedEmail,
-        );
+        const found = data?.users?.find((user) => user.email?.toLowerCase() === normalizedEmail);
 
         if (found?.id) {
           authUserId = found.id;
@@ -195,7 +193,9 @@ export const userRouter = createORPCRouter({
 
       const lookup = await context.supabase.auth.admin.getUserById(authUserId);
       if (lookup.error || !lookup.data.user) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: lookup.error?.message ?? "Failed to fetch auth user" });
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: lookup.error?.message ?? "Failed to fetch auth user",
+        });
       }
 
       const adminUser = lookup.data.user as SupabaseAdminUser | null;
@@ -227,9 +227,7 @@ export const userRouter = createORPCRouter({
 
       if (!dbUser) return null;
 
-      const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
-        dbUser.authUserId,
-      ]);
+      const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [dbUser.authUserId]);
 
       return {
         ...dbUser,
@@ -293,32 +291,33 @@ export const userRouter = createORPCRouter({
         },
       });
     }),
-  getMy: protectedProcedure
-    .handler(async ({ context }) => {
-      const baseUser = await context.db.query.users.findFirst({
-        where: (u, { eq }) => eq(u.id, context.dbUser.id),
-      });
-      if (!baseUser) return null;
+  getMy: protectedProcedure.handler(async ({ context }) => {
+    const baseUser = await context.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, context.dbUser.id),
+    });
+    if (!baseUser) return null;
 
-      const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
-        baseUser.authUserId,
-      ]);
+    const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [baseUser.authUserId]);
 
-      const hydratedUser = {
-        ...baseUser,
-        email: resolveAuthEmail(emailByAuthUserId, baseUser.authUserId),
-      };
+    const hydratedUser = {
+      ...baseUser,
+      email: resolveAuthEmail(emailByAuthUserId, baseUser.authUserId),
+    };
 
-      return hydratedUser;
-    }),
+    return hydratedUser;
+  }),
   updateAvatar: protectedProcedure
     .input(z.object({ hasAvatar: z.boolean() }))
     .handler(async ({ context, input }) => {
-      const [updatedUser] = await context.db.update(users).set({
-        hasAvatar: input.hasAvatar,
-      }).where(eq(users.id, context.dbUser.id)).returning({
-        hasAvatar: users.hasAvatar,
-      });
+      const [updatedUser] = await context.db
+        .update(users)
+        .set({
+          hasAvatar: input.hasAvatar,
+        })
+        .where(eq(users.id, context.dbUser.id))
+        .returning({
+          hasAvatar: users.hasAvatar,
+        });
 
       return updatedUser;
     }),
@@ -330,21 +329,26 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const [updatedUser] = await context.db.update(users).set({
-        firstName: input.firstName,
-        lastName: input.lastName,
-      }).where(eq(users.id, context.dbUser.id)).returning({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-      });
+      const [updatedUser] = await context.db
+        .update(users)
+        .set({
+          firstName: input.firstName,
+          lastName: input.lastName,
+        })
+        .where(eq(users.id, context.dbUser.id))
+        .returning({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        });
 
       return updatedUser;
     }),
   getAll: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      const rows = await context.db.select()
+      const rows = await context.db
+        .select()
         .from(tripParticipants)
         .innerJoin(users, eq(tripParticipants.userId, users.id))
         .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
@@ -397,22 +401,25 @@ export const userRouter = createORPCRouter({
     )
     .handler(async ({ context, input }) => {
       // Prevent admin from removing their own admin status
-      if (
-        input.userId === context.dbUser.id &&
-        input.role !== roleSchema.enum.ADMIN
-      ) {
-        throw new ORPCError("FORBIDDEN", { message: "Nie możesz usunąć swoich uprawnień administratora" });
+      if (input.userId === context.dbUser.id && input.role !== roleSchema.enum.ADMIN) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "Nie możesz usunąć swoich uprawnień administratora",
+        });
       }
 
-      const [updatedUser] = await context.db.update(users).set({
-        role: input.role,
-      }).where(eq(users.id, input.userId)).returning({
-        id: users.id,
-        authUserId: users.authUserId,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-      });
+      const [updatedUser] = await context.db
+        .update(users)
+        .set({
+          role: input.role,
+        })
+        .where(eq(users.id, input.userId))
+        .returning({
+          id: users.id,
+          authUserId: users.authUserId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+        });
 
       if (!updatedUser) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update user" });
@@ -446,7 +453,9 @@ export const userRouter = createORPCRouter({
       });
 
       if (error || !data?.user) {
-        throw new ORPCError("BAD_REQUEST", { message: error?.message ?? "Failed to create auth user" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: error?.message ?? "Failed to create auth user",
+        });
       }
 
       const authUserId = data.user.id;
@@ -459,31 +468,38 @@ export const userRouter = createORPCRouter({
 
         let dbUser = existingUser;
         if (!dbUser) {
-          const [inserted] = await tx.insert(users).values({
-            authUserId,
-            firstName,
-            lastName,
-            role: roleSchema.enum.USER,
-          }).returning({
-            id: users.id,
-            authUserId: users.authUserId,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            role: users.role,
-          });
+          const [inserted] = await tx
+            .insert(users)
+            .values({
+              authUserId,
+              firstName,
+              lastName,
+              role: roleSchema.enum.USER,
+            })
+            .returning({
+              id: users.id,
+              authUserId: users.authUserId,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              role: users.role,
+            });
           if (!inserted) {
             throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create user" });
           }
           dbUser = inserted;
         }
 
-        await tx.insert(tripParticipants).values({
-          userId: dbUser.id,
-          tripId: input.tripId,
-        }).onConflictDoUpdate({
-          target: [tripParticipants.userId, tripParticipants.tripId],
-          set: {},
-        }).returning();
+        await tx
+          .insert(tripParticipants)
+          .values({
+            userId: dbUser.id,
+            tripId: input.tripId,
+          })
+          .onConflictDoUpdate({
+            target: [tripParticipants.userId, tripParticipants.tripId],
+            set: {},
+          })
+          .returning();
 
         const participant = await tx.query.tripParticipants.findFirst({
           where: (tp, { eq, and }) => and(eq(tp.userId, dbUser.id), eq(tp.tripId, input.tripId)),
@@ -501,15 +517,15 @@ export const userRouter = createORPCRouter({
         });
 
         if (!participant) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create or update participant" });
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create or update participant",
+          });
         }
 
         return { participant, dbUser };
       });
 
-      const emailByAuthUserId = new Map([
-        [authUserId, data.user.email ?? email],
-      ]);
+      const emailByAuthUserId = new Map([[authUserId, data.user.email ?? email]]);
 
       return {
         ...toPublicUser(result.participant.user, emailByAuthUserId),
@@ -528,16 +544,20 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      const [updatedUser] = await context.db.update(users).set({
-        firstName: input.firstName.trim(),
-        lastName: input.lastName.trim(),
-      }).where(eq(users.id, input.userId)).returning({
-        id: users.id,
-        authUserId: users.authUserId,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-      });
+      const [updatedUser] = await context.db
+        .update(users)
+        .set({
+          firstName: input.firstName.trim(),
+          lastName: input.lastName.trim(),
+        })
+        .where(eq(users.id, input.userId))
+        .returning({
+          id: users.id,
+          authUserId: users.authUserId,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+        });
 
       if (!updatedUser) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update user" });
@@ -581,12 +601,12 @@ export const userRouter = createORPCRouter({
       const diffMinutes = Math.ceil(diffMs / 60000);
       const banDuration = `${diffMinutes}m`;
 
-      const adminUser = await context.supabase.auth.admin.getUserById(
-        user.authUserId,
-      );
+      const adminUser = await context.supabase.auth.admin.getUserById(user.authUserId);
 
       if (adminUser.error || !adminUser.data.user) {
-        throw new ORPCError("BAD_REQUEST", { message: adminUser.error?.message ?? "Failed to fetch auth user" });
+        throw new ORPCError("BAD_REQUEST", {
+          message: adminUser.error?.message ?? "Failed to fetch auth user",
+        });
       }
 
       const existingMetadata =
@@ -597,10 +617,10 @@ export const userRouter = createORPCRouter({
         ban_reason: reason && reason.length > 0 ? reason : null,
       };
 
-      const { error } = await context.supabase.auth.admin.updateUserById(
-        user.authUserId,
-        { ban_duration: banDuration, app_metadata: nextMetadata },
-      );
+      const { error } = await context.supabase.auth.admin.updateUserById(user.authUserId, {
+        ban_duration: banDuration,
+        app_metadata: nextMetadata,
+      });
 
       if (error) {
         throw new ORPCError("BAD_REQUEST", { message: error.message });
@@ -635,11 +655,17 @@ export const userRouter = createORPCRouter({
           throw new ORPCError("NOT_FOUND", { message: "User is not assigned to this trip" });
         }
 
-        await tx.delete(tripParticipants).where(
-          and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
-        );
+        await tx
+          .delete(tripParticipants)
+          .where(
+            and(
+              eq(tripParticipants.userId, input.userId),
+              eq(tripParticipants.tripId, input.tripId),
+            ),
+          );
 
-        const [remainingResult] = await tx.select({ count: count() })
+        const [remainingResult] = await tx
+          .select({ count: count() })
           .from(tripParticipants)
           .where(eq(tripParticipants.userId, input.userId));
         const remainingTrips = remainingResult?.count ?? 0;
@@ -652,9 +678,7 @@ export const userRouter = createORPCRouter({
       });
 
       if (result.remainingTrips === 0) {
-        const { error } = await context.supabase.auth.admin.deleteUser(
-          user.authUserId,
-        );
+        const { error } = await context.supabase.auth.admin.deleteUser(user.authUserId);
         if (error) {
           throw new ORPCError("BAD_REQUEST", { message: error.message });
         }
@@ -678,11 +702,12 @@ export const userRouter = createORPCRouter({
     .handler(async ({ context, input }) => {
       // Check if wrist number is already taken by another user
       const existingParticipant = await context.db.query.tripParticipants.findFirst({
-        where: (tp, { eq, and, ne }) => and(
-          eq(tp.tripId, input.tripId),
-          eq(tp.wristNumber, input.wristNumber),
-          ne(tp.userId, input.userId)
-        ),
+        where: (tp, { eq, and, ne }) =>
+          and(
+            eq(tp.tripId, input.tripId),
+            eq(tp.wristNumber, input.wristNumber),
+            ne(tp.userId, input.userId),
+          ),
         with: {
           user: {
             columns: userWithAuthSelect,
@@ -695,19 +720,25 @@ export const userRouter = createORPCRouter({
         const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
           existingParticipant.user.authUserId,
         ]);
-        throw new ORPCError("CONFLICT", { message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(
-          toPublicUser(existingParticipant.user, emailByAuthUserId),
-        )}` });
+        throw new ORPCError("CONFLICT", {
+          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(
+            toPublicUser(existingParticipant.user, emailByAuthUserId),
+          )}`,
+        });
       }
 
-      await context.db.insert(tripParticipants).values({
-        userId: input.userId,
-        tripId: input.tripId,
-        wristNumber: input.wristNumber,
-      }).onConflictDoUpdate({
-        target: [tripParticipants.userId, tripParticipants.tripId],
-        set: { wristNumber: input.wristNumber },
-      }).returning();
+      await context.db
+        .insert(tripParticipants)
+        .values({
+          userId: input.userId,
+          tripId: input.tripId,
+          wristNumber: input.wristNumber,
+        })
+        .onConflictDoUpdate({
+          target: [tripParticipants.userId, tripParticipants.tripId],
+          set: { wristNumber: input.wristNumber },
+        })
+        .returning();
 
       const participant = await context.db.query.tripParticipants.findFirst({
         where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
@@ -745,11 +776,15 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      await context.db.update(tripParticipants).set({
-        wristNumber: null,
-      }).where(
-        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
-      ).returning();
+      await context.db
+        .update(tripParticipants)
+        .set({
+          wristNumber: null,
+        })
+        .where(
+          and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId)),
+        )
+        .returning();
 
       const participant = await context.db.query.tripParticipants.findFirst({
         where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
@@ -791,14 +826,18 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      await context.db.insert(tripParticipants).values({
-        userId: input.userId,
-        tripId: input.tripId,
-        houseNumber: input.houseNumber,
-      }).onConflictDoUpdate({
-        target: [tripParticipants.userId, tripParticipants.tripId],
-        set: { houseNumber: input.houseNumber },
-      }).returning();
+      await context.db
+        .insert(tripParticipants)
+        .values({
+          userId: input.userId,
+          tripId: input.tripId,
+          houseNumber: input.houseNumber,
+        })
+        .onConflictDoUpdate({
+          target: [tripParticipants.userId, tripParticipants.tripId],
+          set: { houseNumber: input.houseNumber },
+        })
+        .returning();
 
       const participant = await context.db.query.tripParticipants.findFirst({
         where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
@@ -836,11 +875,15 @@ export const userRouter = createORPCRouter({
       }),
     )
     .handler(async ({ context, input }) => {
-      await context.db.update(tripParticipants).set({
-        houseNumber: null,
-      }).where(
-        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId))
-      ).returning();
+      await context.db
+        .update(tripParticipants)
+        .set({
+          houseNumber: null,
+        })
+        .where(
+          and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId)),
+        )
+        .returning();
 
       const participant = await context.db.query.tripParticipants.findFirst({
         where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
@@ -936,22 +979,17 @@ export const userRouter = createORPCRouter({
         const normalizedSearch = searchTerm?.toLowerCase();
         const filtered = participantRows.filter((participant) => {
           if (!normalizedSearch) return true;
-          const email =
-            authSummaryById.get(participant.user.authUserId)?.email ?? null;
+          const email = authSummaryById.get(participant.user.authUserId)?.email ?? null;
           return email?.toLowerCase().includes(normalizedSearch) ?? false;
         });
 
         const sorted = filtered.sort((a, b) => {
           const aUser = toPublicUserWithAuthSummary(a.user, authSummaryById);
           const bUser = toPublicUserWithAuthSummary(b.user, authSummaryById);
-          const firstNameCompare = (aUser.firstName ?? "").localeCompare(
-            bUser.firstName ?? "",
-          );
+          const firstNameCompare = (aUser.firstName ?? "").localeCompare(bUser.firstName ?? "");
           if (firstNameCompare !== 0) return firstNameCompare;
 
-          const lastNameCompare = (aUser.lastName ?? "").localeCompare(
-            bUser.lastName ?? "",
-          );
+          const lastNameCompare = (aUser.lastName ?? "").localeCompare(bUser.lastName ?? "");
           if (lastNameCompare !== 0) return lastNameCompare;
 
           return (aUser.email ?? "").localeCompare(bUser.email ?? "");
@@ -996,7 +1034,8 @@ export const userRouter = createORPCRouter({
       const where = buildWhere();
 
       const [rows, totalResult] = await Promise.all([
-        context.db.select()
+        context.db
+          .select()
           .from(tripParticipants)
           .innerJoin(users, eq(tripParticipants.userId, users.id))
           .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
@@ -1004,7 +1043,8 @@ export const userRouter = createORPCRouter({
           .orderBy(asc(users.firstName), asc(users.lastName))
           .limit(limit)
           .offset(offset),
-        context.db.select({ count: count() })
+        context.db
+          .select({ count: count() })
           .from(tripParticipants)
           .innerJoin(users, eq(tripParticipants.userId, users.id))
           .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
