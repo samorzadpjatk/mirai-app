@@ -13,6 +13,7 @@ on:
       - "*.yaml"
       - ".github/**"
       - "bun.lock"
+      - "knip.json"
       - "!.env*"
       - "!docs/**"
       - "!environment/**"
@@ -30,6 +31,7 @@ on:
       - "*.yaml"
       - ".github/**"
       - "bun.lock"
+      - "knip.json"
       - "!.env*"
       - "!docs/**"
       - "!environment/**"
@@ -103,6 +105,9 @@ jobs:
           else
             bunx nx run-many -t lint --exclude=@mirai-app/monorepo
           fi
+
+      - name: Run Knip dependency check
+        run: bunx knip
 
       - name: Run Format Check
         run: bun run format:check
