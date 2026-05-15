@@ -104,6 +104,10 @@ Thumbs.db
 # temporary working files
 .tmp-*
 
+# test coverage dumps
+test.txt
+coverage.txt
+
 
 
 .nx/cache

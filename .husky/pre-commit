@@ -1,4 +1,4 @@
-bun run format:write
+bunx lint-staged
 
 nx affected -t lint --uncommitted
 nx affected -t typecheck --uncommitted
