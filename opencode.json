@@ -4,7 +4,7 @@
     "playwright": {
       "type": "local",
       "command": [
-        "npx",
+        "bunx",
         "-y",
         "@playwright/mcp@latest"
       ]
@@ -12,7 +12,7 @@
     "mobile-mcp": {
       "type": "local",
       "command": [
-        "npx",
+        "bunx",
         "-y",
         "@mobilenext/mobile-mcp@latest"
       ]
@@ -20,7 +20,7 @@
     "eslint": {
       "type": "local",
       "command": [
-        "npx",
+        "bunx",
         "-y",
         "@eslint/mcp@latest"
       ]
@@ -38,7 +38,7 @@
     "fetcher": {
       "type": "local",
       "command": [
-        "npx",
+        "bunx",
         "-y",
         "fetcher-mcp"
       ]
@@ -61,7 +61,7 @@
     "nx-mcp": {
       "type": "local",
       "command": [
-        "npx",
+        "bunx",
         "nx",
         "mcp"
       ],

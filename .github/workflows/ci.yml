@@ -99,9 +99,9 @@ jobs:
       - name: Run Lint
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx nx affected -t lint --base=origin/${{ github.base_ref }}
+            bunx nx affected -t lint --base=origin/${{ github.base_ref }}
           else
-            npx nx run-many -t lint --exclude=@mirai-app/monorepo
+            bunx nx run-many -t lint --exclude=@mirai-app/monorepo
           fi
 
       - name: Run Format Check
@@ -112,9 +112,9 @@ jobs:
         run: |
           set -o pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx nx affected -t typecheck --base=origin/${{ github.base_ref }} 2>&1 | tee typecheck.log
+            bunx nx affected -t typecheck --base=origin/${{ github.base_ref }} 2>&1 | tee typecheck.log
           else
-            npx nx run-many -t typecheck --exclude=@mirai-app/monorepo 2>&1 | tee typecheck.log
+            bunx nx run-many -t typecheck --exclude=@mirai-app/monorepo 2>&1 | tee typecheck.log
           fi
 
       - name: Report TypeScript errors to PR
@@ -128,9 +128,9 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx nx affected -t test --base=origin/${{ github.base_ref }}
+            bunx nx affected -t test --base=origin/${{ github.base_ref }}
           else
-            npx nx run-many -t test --exclude=@mirai-app/monorepo
+            bunx nx run-many -t test --exclude=@mirai-app/monorepo
           fi
 
       - name: Upload coverage reports

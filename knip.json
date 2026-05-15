@@ -50,7 +50,6 @@
   ],
   "ignoreDependencies": [
     "@commitlint/config-conventional",
-    "@testing-library/jest-dom",
     "picocolors"
   ]
 }

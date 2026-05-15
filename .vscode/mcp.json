@@ -14,15 +14,15 @@
       "url": "https://api.githubcopilot.com/mcp/"
     },
     "playwright": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["@playwright/mcp@latest"]
     },
     "mobile-mcp": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["-y", "@mobilenext/mobile-mcp@latest"]
     },
     "ESLint": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["@eslint/mcp@latest"]
     },
     "markitdown": {
@@ -30,7 +30,7 @@
       "args": ["run", "--rm", "-i", "mcp/markitdown:latest"]
     },
     "fetcher": {
-      "command": "npx",
+      "command": "bunx",
       "args": ["-y", "fetcher-mcp"]
     },
     "maestro": {
