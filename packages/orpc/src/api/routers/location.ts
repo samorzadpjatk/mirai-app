@@ -94,6 +94,11 @@ export interface FriendLocationEvent {
   userId?: string;
 }
 
+/**
+ * @public
+ * Part of the location router's public type surface. Must remain exported for
+ * TypeScript inference in AppRouter (TS4023).
+ */
 export interface SharingUser {
   id: string;
   firstName: string | null;

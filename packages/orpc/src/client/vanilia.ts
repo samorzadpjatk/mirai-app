@@ -103,4 +103,3 @@ const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: stri
 };
 
 export { getORPCClient };
-export type { RouterClient, AppRouter };

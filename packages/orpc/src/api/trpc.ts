@@ -67,6 +67,11 @@ const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" |
   return null;
 };
 
+/**
+ * @public
+ * Base context type used by all oRPC procedures. Must remain exported for TypeScript
+ * inference in router types (TS4023).
+ */
 export interface ORPCContext {
   db: DB;
   supabase: SupabaseClient;

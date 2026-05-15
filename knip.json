@@ -2,54 +2,46 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "workspaces": {
     "apps/native": {
-      "entry": ["app/index.ts", "src/**/*.{ts,tsx}"],
-      "project": ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"]
+      "entry": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["tailwindcss", "expo-system-ui"]
     },
     "apps/backend-server": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "apps/notification-sender": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "apps/seed": {
-      "entry": ["index.ts", "src/**/*.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/auth": {
-      "entry": ["src/index.ts", "src/server.ts", "src/client.ts"],
       "project": ["src/**/*.ts", "src/**/*.tsx"]
     },
     "packages/db": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/orpc": {
-      "entry": ["src/index.ts", "src/server.ts", "src/client/index.ts"],
       "project": ["src/**/*.ts", "src/**/*.tsx"]
     },
     "packages/shared": {
-      "entry": ["index.ts", "src/index.ts"],
-      "project": ["src/**/*.ts", "src/**/*.tsx"]
+      "project": ["src/**/*.ts"]
     },
     "packages/supabase": {
-      "entry": ["src/index.ts", "src/react.tsx", "src/types.ts"],
       "project": ["src/**/*.ts", "src/**/*.tsx"]
     }
   },
   "ignore": [
-    "**/drizzle/**",
-    "**/.expo/**",
-    "**/coverage/**",
-    "**/dist/**",
-    "**/vitest.setup.ts",
     "**/vitest.config.ts",
-    "**/*.d.ts",
+    "apps/native/metro.config.cjs",
+    "commitlint.config.cjs",
     "scripts/**"
   ],
+  "ignoreBinaries": [
+    "dist/index.js",
+    "tsc"
+  ],
   "ignoreDependencies": [
-    "@commitlint/config-conventional",
-    "picocolors"
+    "@commitlint/config-conventional"
   ]
 }

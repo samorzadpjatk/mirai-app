@@ -53,7 +53,7 @@ export interface TripResourceConfig {
   sortOrder?: number;
 }
 
-export interface TripInsuranceStepConfig {
+interface TripInsuranceStepConfig {
   stepNumber: number;
   title: string;
   text: string;
@@ -62,7 +62,7 @@ export interface TripInsuranceStepConfig {
   additionalText?: string;
 }
 
-export interface TripInsuranceConfig {
+interface TripInsuranceConfig {
   label: string;
   phoneNumber: string;
   phoneDisplay: string;

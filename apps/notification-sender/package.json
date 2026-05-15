@@ -18,10 +18,8 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "@mirai-app/db": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
-    "@mirai-app/orpc": "workspace:*",
-    "@orpc/client": "^1.0.0"
+    "@mirai-app/orpc": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",

@@ -1,4 +1,4 @@
-export interface NotificationTemplate {
+interface NotificationTemplate {
   title: string;
   body: string;
   url: string;

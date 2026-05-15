@@ -27,7 +27,7 @@ export interface SignInWithOtpOptions {
   email: string;
 }
 
-export interface SignInWithPasswordOptions {
+interface SignInWithPasswordOptions {
   email: string;
   password: string;
 }

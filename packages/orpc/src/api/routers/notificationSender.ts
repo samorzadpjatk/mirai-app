@@ -4,7 +4,7 @@ import { notificationDeliveries } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
-export interface InactivityCheckResult {
+interface InactivityCheckResult {
   checked: number;
   notified: number;
   skipped: number;
@@ -150,4 +150,4 @@ export const notificationSenderRouter = createORPCRouter({
   }),
 });
 
-export type NotificationSenderRouter = typeof notificationSenderRouter;
+type NotificationSenderRouter = typeof notificationSenderRouter;

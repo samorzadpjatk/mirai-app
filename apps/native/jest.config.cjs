@@ -14,7 +14,7 @@ module.exports = {
   // The jest-expo preset has: /node_modules/(?!(.pnpm|react-native|...))
   // We add .bun alongside .pnpm
   transformIgnorePatterns: [
-    "node_modules/(?!.*(?:.bun|.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|react-native-svg|superjson|copy-anything|is-what|@orpc))",
+    "node_modules/(?!.*(?:.bun|.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|copy-anything|is-what|@orpc)),",
   ],
   // Handle ESM .mjs files from @orpc packages
   transform: {

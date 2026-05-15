@@ -107,36 +107,6 @@ export async function getAuthServerUser(
   return user;
 }
 
-export async function getAuthServerSession(supabase: SupabaseClient, accessToken?: string) {
-  if (!accessToken) {
-    return null;
-  }
-
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(accessToken);
-
-  if (error || !user) {
-    if (error) {
-      console.error("Error occurred while fetching user from token:", error);
-    }
-    return null;
-  }
-
-  const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
-
-  return {
-    user,
-    authUserId: user.id,
-    access_token: accessToken,
-    refresh_token: null,
-    token_type: "bearer",
-    expires_in: expiresIn,
-    expires_at: expiresAt ?? null,
-  } as const;
-}
-
 const toDisplayName = (
   firstName: string | null,
   lastName: string | null,
