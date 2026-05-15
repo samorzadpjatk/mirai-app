@@ -101,6 +101,9 @@ Thumbs.db
 # specs scratchpad (temporary working files)
 .specs/scratchpad/
 
+# temporary working files
+.tmp-*
+
 
 
 .nx/cache
