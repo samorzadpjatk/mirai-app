@@ -12,9 +12,6 @@ export default tseslint.config(
   ...nx.configs["flat/typescript"],
   {
     files: ["**/*.ts", "**/*.tsx"],
-    plugins: {
-      "@nx": nx,
-    },
     rules: {
       "@nx/enforce-module-boundaries": [
         "error",

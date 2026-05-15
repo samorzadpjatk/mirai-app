@@ -41,9 +41,12 @@ docs/
 environment/
 docker-compose*.yml
 
-# Apps not needed in backend containers
-apps/native/
-apps/seed/
+# Include workspace manifests so Bun lockfile validation passes,
+# but exclude their source since they're not needed for backend builds
+apps/native/*
+!apps/native/package.json
+apps/seed/*
+!apps/seed/package.json
 
 # Expo / Mobile
 .expo/
