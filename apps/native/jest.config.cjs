@@ -6,6 +6,12 @@
  *
  * @see https://docs.expo.dev/develop/unit-testing/
  */
+
+// NX 22.7.2 + Jest 29/30 conflict causes multiple signal-exit / tmp / graceful-fs
+// instances to register process exit listeners, exceeding the default limit of 10.
+// See: https://github.com/nrwl/nx/issues/33982
+process.setMaxListeners(20);
+
 module.exports = {
   preset: "jest-expo",
   // ESM support for Jest 30+ - only treat source files as ESM
