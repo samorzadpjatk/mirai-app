@@ -1,4 +1,4 @@
-npx commitlint --edit "$1" || exit 1
+bunx commitlint --edit "$1" || exit 1
 
 # Auto sign-off commit for DCO compliance
 # Adds Signed-off-by line automatically if not present
