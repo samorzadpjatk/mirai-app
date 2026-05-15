@@ -97,10 +97,10 @@ export default function RootLayout() {
 ### Using Queries
 
 ```typescript
-import { trpc } from '@mirai-app/orpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 
 function EventList() {
-  const { data, isLoading, error } = trpc.event.list.useQuery();
+  const { data, isLoading, error } = orpc.event.list.useQuery();
   
   if (isLoading) return <Loading />;
   if (error) return <Error message={error.message} />;
@@ -113,8 +113,8 @@ function EventList() {
 
 ```typescript
 function CreateEventForm() {
-  const utils = trpc.useUtils();
-  const create = trpc.event.create.useMutation({
+  const utils = orpc.useUtils();
+  const create = orpc.event.create.useMutation({
     onSuccess: () => {
       // Invalidate and refetch
       utils.event.list.invalidate();

@@ -10,16 +10,16 @@ This document describes how the backend API is organized.
 Client (Native/Web)
      │
      ▼
-Fastify Server
+Hono Server (Bun.serve)
      ├── /health         # Health check
-     ├── /trpc/*         # oRPC procedures
+     ├── /api/trpc/*     # oRPC procedures (HTTP + WebSocket)
      └── /ws             # WebSocket
 ```
 
 ## oRPC Router Structure
 
 ```
-appRouter (packages/trpc)
+appRouter (packages/orpc/src/api)
 ├── user
 │   ├── list        # GET /trpc/user.list
 │   ├── getById     # GET /trpc/user.getById
@@ -36,22 +36,22 @@ appRouter (packages/trpc)
 
 | Procedure Type | HTTP Method | URL Pattern |
 |----------------|-------------|-------------|
-| Query | GET | `/trpc/[router].[procedure]` |
-| Mutation | POST | `/trpc/[router].[procedure]` |
-| Subscription | WS | `/trpc/[router].[procedure]` |
+| Query | GET | `/api/trpc/[router].[procedure]` |
+| Mutation | POST | `/api/trpc/[router].[procedure]` |
+| Subscription | WS | `/api/trpc/[router].[procedure]` |
 
 ## Request Format
 
 ### Query
 
 ```http
-GET /trpc/user.list?batch=1&input={}
+GET /api/trpc/user.list?batch=1&input={}
 ```
 
 ### Mutation
 
 ```http
-POST /trpc/user.create
+POST /api/trpc/user.create
 Content-Type: application/json
 
 {
@@ -83,44 +83,44 @@ Content-Type: application/json
 ### 1. Create Router
 
 ```typescript
-// packages/trpc/src/routers/my-resource.ts
-import { router, publicProcedure } from '../trpc';
-import { z } from 'zod';
+// packages/orpc/src/api/routers/my-resource.ts
+import { os } from "@orpc/server";
+import { z } from "zod";
 
-export const myResourceRouter = router({
-  list: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.myResources.findMany();
-  }),
-
-  create: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const [created] = await ctx.db.insert(myResources).values(input).returning();
-      return created;
+export const myResource = os
+  .route({
+    list: os.handler(async ({ context }) => {
+      return context.db.query.myResources.findMany();
     }),
-});
+    create: os
+      .input(z.object({ name: z.string() }))
+      .handler(async ({ input, context }) => {
+        const [created] = await context.db.insert(myResources).values(input).returning();
+        return created;
+      }),
+  });
 ```
 
 ### 2. Add to Root Router
 
 ```typescript
-// packages/trpc/src/routers/index.ts
-import { myResourceRouter } from './my-resource';
+// packages/orpc/src/api/root.ts
+import { myResource } from './routers/my-resource';
 
-export const appRouter = router({
+export const appRouter = os.contract({
+  myResource,
   user: userRouter,
   event: eventRouter,
-  myResource: myResourceRouter, // Add here
 });
 ```
 
 ### 3. Client Access
 
 ```typescript
-import { trpc } from '@mirai-app/orpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 
 // Available immediately
-const { data } = trpc.myResource.list.useQuery();
+const { data } = orpc.myResource.list.useQuery();
 ```
 
 ## Batch Requests
@@ -128,8 +128,8 @@ const { data } = trpc.myResource.list.useQuery();
 ```typescript
 // Multiple procedures in one HTTP request
 const [users, events] = await Promise.all([
-  trpc.user.list.query(),
-  trpc.event.list.query(),
+  orpc.user.list.query(),
+  orpc.event.list.query(),
 ]);
 ```
 
@@ -157,69 +157,91 @@ const [users, events] = await Promise.all([
 ### URL-Based Versioning
 
 ```typescript
-// In packages/trpc
-const v1Router = router({ user: userRouter });
-const v2Router = router({ user: userV2Router });
+// In packages/orpc/src/api/root.ts
+const v1Router = os.contract({ user: userRouter });
+const v2Router = os.contract({ user: userV2Router });
 
-export const appRouter = router({
+export const appRouter = os.contract({
   v1: v1Router,
   v2: v2Router,
 });
 ```
 
-Access: `/trpc/v1.user.list`, `/trpc/v2.user.list`
+Access: `/api/trpc/v1.user.list`, `/api/trpc/v2.user.list`
 
 ## Rate Limiting
 
-### Implementation
+### Implementation (in `src/server.ts`)
+
+Rate limiting and security headers are built into the Hono middleware stack:
 
 ```typescript
-import rateLimit from '@fastify/rate-limit';
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 
-await fastify.register(rateLimit, {
-  max: 100,
-  timeWindow: '1 minute'
+const app = new Hono();
+
+// Rate limiting
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+app.use("*", async (c, next) => {
+  const ip = getClientIp(c);
+  const { allowed, retryAfter } = checkRateLimit(ip, path);
+  if (!allowed) {
+    c.header("Retry-After", String(retryAfter));
+    return c.text("Too Many Requests", 429);
+  }
+  await next();
 });
 ```
 
 ## CORS Configuration
 
-```typescript
-import cors from '@fastify/cors';
+CORS is configured using Hono's built-in `cors` middleware:
 
-await fastify.register(cors, {
-  origin: ['https://mirai.app', 'http://localhost:19006'],
+```typescript
+app.use("*", cors({
+  origin: (origin) => {
+    if (!origin || allowedOrigins.includes(origin)) return origin;
+    return null;
+  },
   credentials: true,
-});
+}));
 ```
 
 ## Monitoring
 
 ### Health Check
 
+The health endpoint is defined directly on the Hono app:
+
 ```typescript
-fastify.get('/health', async () => {
-  return {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  };
-});
+app.get("/health", (c) => c.text("OK"));
 ```
 
-### Metrics
+### WebSocket Support
+
+WebSocket connections use Bun's native WebSocket with `@orpc/server/bun-ws`:
 
 ```typescript
-fastify.get('/metrics', async () => {
-  return {
-    requests: requestCount,
-    errors: errorCount,
-    latency: averageLatency,
-  };
+import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+
+// Handled outside Hono via Bun.serve upgrade
+bunServer = Bun.serve({
+  port,
+  fetch(req, server) {
+    if (url.pathname.startsWith(prefix) && server.upgrade(req)) return;
+    return app.fetch(req);
+  },
+  websocket: {
+    async message(ws, message) {
+      await wsRpcHandler.message(ws, message, { context });
+    },
+  },
 });
 ```
 
 ## Further Reading
 
-- [oRPC HTTP Specification](https://trpc.io/docs/http-rpc-spec)
-- [Fastify Routing](https://fastify.dev/docs/latest/Reference/Routes/)
+- [oRPC HTTP Specification](https://orpc.unnoq.com/docs/http)
+- [Hono Documentation](https://hono.dev/)

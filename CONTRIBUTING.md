@@ -18,7 +18,7 @@ All contributions must include appropriate tests. The MIRAI monorepo uses **84+ 
 | Project | Runner | Packages |
 |---------|--------|----------|
 | `apps/native` | **Jest** (jest-expo preset) | React Native app |
-| All other apps & packages | **Vitest** | shared, auth, trpc, backend-server, notification-sender, seed |
+| All other apps & packages | **Vitest** | shared, auth, orpc, backend-server, notification-sender, seed |
 
 For detailed test commands, configuration, and examples, see [TESTING.md](TESTING.md).
 

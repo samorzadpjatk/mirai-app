@@ -4,8 +4,8 @@ Build a full admin trip creation screen with an integrated sponsor picker, so ad
 
 ## Current State
 
-- **Backend**: `trip.create` procedure exists (`packages/trpc/src/api/routers/trip.ts:301-321`) but accepts only `name`, `description`, `startDate`, `endDate`, `backgroundImagePath` — no `sponsorIds`.
-- **Backend**: `sponsor.addToTrip` / `removeFromTrip` already exist (`packages/trpc/src/api/routers/sponsor.ts:97-162`), but aren't called from any UI.
+- **Backend**: `trip.create` procedure exists (`packages/orpc/src/api/routers/trip.ts:301-321`) but accepts only `name`, `description`, `startDate`, `endDate`, `backgroundImagePath` — no `sponsorIds`.
+- **Backend**: `sponsor.addToTrip` / `removeFromTrip` already exist (`packages/orpc/src/api/routers/sponsor.ts:97-162`), but aren't called from any UI.
 - **Backend**: `sponsor.getAll` returns all active sponsors.
 - **DB schema**: `Sponsor` ↔ `TripSponsor` ↔ `Trip` many-to-many is fully modeled (`packages/db/src/schema.ts`).
 - **Native app**: No trip creation screen exists. Trips are selected via `TripPickerModal` on the admin index, but there's no way to create one.
@@ -15,7 +15,7 @@ Build a full admin trip creation screen with an integrated sponsor picker, so ad
 
 ### 1. Extend `trip.create` backend procedure to accept optional `sponsorIds`
 
-**File**: `packages/trpc/src/api/routers/trip.ts`
+**File**: `packages/orpc/src/api/routers/trip.ts`
 
 - Add `sponsorIds: z.array(z.string()).optional()` to the `create` input schema.
 - Wrap the trip creation + `TripSponsor` inserts in a Drizzle `db.transaction()` so it's atomic.
@@ -54,7 +54,7 @@ Following the same pattern as `admin/rewards/new.tsx` and `admin/groups/new.tsx`
 
 | Action | Path |
 |--------|------|
-| Modify | `packages/trpc/src/api/routers/trip.ts` — add `sponsorIds` to `create` |
+| Modify | `packages/orpc/src/api/routers/trip.ts` — add `sponsorIds` to `create` |
 | Create | `apps/native/src/app/(tabs)/admin/trips/new.tsx` — trip creation screen |
 | Create | `apps/native/src/components/admin/trips/SponsorPicker.tsx` — reusable sponsor multi-select |
 | Modify | `apps/native/src/app/(tabs)/admin/index.tsx` — add "Create Trip" navigation entry |

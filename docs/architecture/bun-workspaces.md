@@ -100,7 +100,7 @@ Bun automatically links workspace packages:
 
 ```typescript
 // In apps/native/some-file.ts
-import { trpc } from '@mirai-app/orpc';
+import { orpc } from '@mirai-app/orpc/client';
 // Resolves to packages/orpc/src/index.ts
 ```
 

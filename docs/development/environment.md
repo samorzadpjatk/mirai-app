@@ -71,8 +71,8 @@ EXPO_PUBLIC_API_URL=https://api.yourdomain.com
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://...` |
-| `PORT` | Server port | `3000` |
-| `HOST` | Server host | `0.0.0.0` |
+| `TRPC_SERVER_PORT` | Server port | `2022` |
+| `TRPC_SERVER_HOST` | Server host | `0.0.0.0` |
 
 ### Native App
 

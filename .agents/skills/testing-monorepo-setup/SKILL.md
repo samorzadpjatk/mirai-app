@@ -1,21 +1,24 @@
-# Testing Monorepo Setup Skill
-
-> **Purpose**: Set up unit testing infrastructure for TypeScript monorepo with Jest for Expo React Native and Vitest for backend packages.
+---
+name: testing-monorepo-setup
+description: Set up unit testing infrastructure for TypeScript monorepo with Jest for Expo React Native and Vitest for backend packages, using Nx + Bun workspaces.
+version: 1.0.0
+license: MIT
+---
 
 ## Overview
 
-This skill provides complete setup instructions for adding unit tests to a Turborepo + Bun workspaces monorepo with:
+This skill provides complete setup instructions for adding unit tests to an Nx + Bun workspaces monorepo with:
 - **Jest** for Expo React Native (apps/native)
-- **Vitest** for Fastify + tRPC backend (apps/backend-server, apps/notification-sender)
+- **Vitest** for Hono + oRPC backend (apps/backend-server, apps/notification-sender)
 - **Vitest** for shared utility packages (packages/*)
-- **Turborepo pipeline** integration
+- **Nx pipeline** integration via `@nx/vitest` and `@nx/jest` plugins
 - **GitHub Actions CI/CD** workflow updates
 
 ## Prerequisites
 
 - Bun 1.3.6+ (package manager)
 - Node.js 20+
-- Turborepo 2.8.12+
+- Nx 22.7+ (workspace orchestrator)
 - TypeScript 5.9+
 
 ## Installation Commands
@@ -51,7 +54,7 @@ bun add -D vitest @vitest/coverage-v8
 cd apps/notification-sender
 bun add -D vitest @vitest/coverage-v8
 
-cd packages/trpc
+cd packages/orpc
 bun add -D vitest @vitest/coverage-v8
 
 cd packages/auth
@@ -99,7 +102,7 @@ module.exports = {
     "**/__tests__/**/*.test.{ts,tsx}",
     "**/?(*.)+(spec|test).{ts,tsx}"
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@mirai-app/(.*)$": "<rootDir>/../../packages/$1/src"
   }
@@ -189,13 +192,11 @@ vi.mock("@mirai-app/db", async () => {
   const actual = await vi.importActual("@mirai-app/db");
   return {
     ...actual,
-    prisma: {
-      user: {
-        findUnique: vi.fn(),
-        findMany: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn()
-      }
+    drizzle: {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue([]),
     }
   };
 });
@@ -227,46 +228,77 @@ vi.mock("@mirai-app/db", async () => {
 }
 ```
 
-## Turborepo Pipeline Configuration
+## Nx Pipeline Configuration
 
-Update `turbo.json`:
+The Nx pipeline is configured in `nx.json` via `targetDefaults`. Runners are auto-detected by Nx plugins — `@nx/vitest` for Vitest packages and `@nx/jest` for the native app:
 
 ```json
 {
-  "$schema": "https://turbo.build/schema.json",
-  "tasks": {
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "plugins": [
+    "@nx/expo",
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": { "targetName": "typecheck" },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.build.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": { "targetName": "lint" }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "targetName": "test",
+        "ciTargetName": "test:ci",
+        "configName": "vitest.config.ts"
+      }
+    },
+    {
+      "plugin": "@nx/jest",
+      "options": {
+        "targetName": "test",
+        "ciTargetName": "test:ci"
+      }
+    },
+    {
+      "plugin": "@nx-tools/nx-container",
+      "options": { "targetName": "container" }
+    }
+  ],
+  "targetDefaults": {
     "build": {
+      "dependsOn": ["^build", "db:generate"],
+      "outputs": ["{projectRoot}/dist/**", "{projectRoot}/.astro/**"],
+      "cache": true
+    },
+    "test": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".astro/**"]
+      "outputs": ["{projectRoot}/coverage/**"],
+      "cache": true
     },
-    "clean": {
-      "outputs": []
+    "test:ci": {
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/coverage/**"],
+      "cache": true
     },
-    "dev": {
-      "cache": false,
-      "persistent": true
+    "test:watch": {
+      "cache": false
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "outputs": []
+      "cache": true
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"],
-      "outputs": []
-    },
-    "test": {
-      "dependsOn": ["build"],
-      "outputs": ["coverage/**"]
-    },
-    "test:watch": {
-      "cache": false,
-      "persistent": true
-    },
-    "format:check": {
-      "outputs": []
-    },
-    "format:write": {
-      "outputs": []
+      "dependsOn": ["^build"],
+      "cache": true
     }
   }
 }
@@ -409,13 +441,13 @@ describe("Button", () => {
 });
 ```
 
-### tRPC Router Test
+### oRPC Router Test
 
 ```typescript
-// packages/trpc/src/routers/__tests__/user.test.ts
+// packages/orpc/src/api/routers/__tests__/user.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { appRouter } from "../index";
-import { createCaller } from "../../test-utils";
+import { appRouter } from "../root";
+import { createCaller } from "../../../test-utils";
 
 describe("user router", () => {
   const caller = createCaller();
@@ -457,10 +489,10 @@ describe("formatDate", () => {
 
 **Problem**: Jest cannot resolve `@mirai-app/*` workspace imports.
 
-**Solution**: Add moduleNameMapping to jest.config.js:
+**Solution**: Add moduleNameMapper to jest.config.js:
 
 ```javascript
-moduleNameMapping: {
+moduleNameMapper: {
   "^@mirai-app/(.*)$": "<rootDir>/../../packages/$1/src"
 }
 ```
@@ -519,20 +551,26 @@ jest.mock("expo-font", () => ({
 }
 ```
 
-### 6. Turborepo caching test results
+### 6. Nx caching test results
 
 **Problem**: Tests not running after code changes.
 
-**Solution**: Add `dependsOn: ["build"]` to test task or disable cache for tests:
+**Solution**: Add test to `targetDefaults` in `nx.json` to control caching:
 
 ```json
 {
   "test": {
-    "dependsOn": ["build"],
-    "outputs": ["coverage/**"],
+    "dependsOn": ["^build"],
+    "outputs": ["{projectRoot}/coverage/**"],
     "cache": true
   }
 }
+```
+
+To force re-run tests and bypass cache, use:
+
+```bash
+nx run-many -t test --skip-nx-cache
 ```
 
 ### 7. TypeScript path aliases not working in tests
@@ -563,28 +601,34 @@ jest.mock("expo-font", () => ({
 ```typescript
 // vitest.setup.ts
 vi.mock("@mirai-app/db", () => ({
-  prisma: {
-    $transaction: vi.fn(),
-    user: {
-      findUnique: vi.fn(),
-      create: vi.fn()
-    }
+  drizzle: {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    execute: vi.fn().mockResolvedValue([])
   }
 }));
 ```
 
 ## Root Package.json Scripts
 
-Add to root `package.json`:
+Add to root `package.json`. Nx discovers targets automatically from plugin configuration, so test tasks are available via `nx run-many`:
 
 ```json
 {
   "scripts": {
-    "test": "turbo run test",
-    "test:watch": "turbo run test:watch",
-    "test:ci": "turbo run test --concurrency=1"
+    "test": "nx run-many -t test",
+    "test:watch": "nx run-many -t test:watch",
+    "test:coverage": "nx run-many -t test:coverage",
+    "test:ci": "nx run-many -t test:ci"
   }
 }
+```
+
+For affected-only testing in CI (runs tests only for changed packages and their dependents):
+
+```bash
+bunx nx affected -t test --base=origin/main
 ```
 
 ## Verification Checklist
@@ -597,7 +641,7 @@ After setup, verify:
 - [ ] Test files follow naming conventions
 - [ ] Workspace imports resolve correctly
 - [ ] Native modules mocked for RN tests
-- [ ] Turborepo pipeline includes test task
+- [ ] Nx targetDefaults includes test task
 
 ## Additional Resources
 
@@ -605,4 +649,4 @@ After setup, verify:
 - [Vitest Documentation](https://vitest.dev/guide/)
 - [Testing Library](https://testing-library.com/docs/)
 - [Expo Testing Guide](https://docs.expo.dev/develop/unit-testing/)
-- [Turborepo Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
+

@@ -151,7 +151,7 @@ function findById<T extends HasId>(items: T[], id: string): T | null {
 import { useState } from 'react';
 import { z } from 'zod';
 
-import { trpc } from '@mirai-app/orpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 import { colors } from '@mirai-app/shared/design-tokens';
 
 import { UserCard } from './components/UserCard';

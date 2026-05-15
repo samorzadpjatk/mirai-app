@@ -8,7 +8,7 @@ Enforce that trip participants cannot perform any mutations after a trip's `endD
 
 ### 1a. Shared helper `ensureTripNotEnded`
 
-Create a reusable async helper in `packages/trpc/src/utils/tripGuards.ts`:
+Create a reusable async helper in `packages/orpc/src/utils/tripGuards.ts`:
 
 ```ts
 async function ensureTripNotEnded(db, tripId: string): Promise<void>
@@ -89,6 +89,6 @@ In `TripCard.tsx`, the "Past" badge already renders. Optionally dim or de-emphas
 
 ## Files touched (estimated)
 
-- **New**: `packages/trpc/src/utils/tripGuards.ts`, `apps/native/src/utils/trip.ts`
-- **Backend**: `packages/trpc/src/api/routers/{group,challengeSubmission,challengeVote,reward,location,submissionReport}.ts`
+- **New**: `packages/orpc/src/utils/tripGuards.ts`, `apps/native/src/utils/trip.ts`
+- **Backend**: `packages/orpc/src/api/routers/{group,challengeSubmission,challengeVote,reward,location,submissionReport}.ts`
 - **Frontend**: `apps/native/src/hooks/trips/useTripDetails.ts`, `apps/native/src/app/(tabs)/trips/{details,groups/index,groups/[id],groups/create,groups/edit/[id],challenges/[id],challenges/vote/[id],rewards/index,map/index}.tsx`, `apps/native/src/components/rewards/RewardsView.tsx`

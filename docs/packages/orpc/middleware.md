@@ -11,23 +11,21 @@ The package provides pre-configured middleware:
 ### Authentication Middleware
 
 ```typescript
-// packages/trpc/src/middleware/auth.ts
-import { middleware } from '../trpc';
-import { TRPCError } from '@trpc/server';
+// packages/orpc/src/api/middleware/auth.ts
+import { os, ORPCError } from "@orpc/server";
 
-export const authMiddleware = middleware(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'You must be logged in',
+export const authMiddleware = os.middleware(async ({ context, next }) => {
+  if (!context.user) {
+    throw new ORPCError("UNAUTHORIZED", {
+      message: "You must be logged in",
     });
   }
-  
+
   return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user, // Now guaranteed to exist
-    }
+    context: {
+      ...context,
+      user: context.user, // Now guaranteed to exist
+    },
   });
 });
 ```
@@ -35,7 +33,7 @@ export const authMiddleware = middleware(async ({ ctx, next }) => {
 ### Logger Middleware
 
 ```typescript
-// packages/trpc/src/middleware/logger.ts
+// packages/orpc/src/api/middleware/logger.ts
 export const loggerMiddleware = middleware(async ({ path, type, next }) => {
   const start = Date.now();
   
@@ -53,8 +51,8 @@ export const loggerMiddleware = middleware(async ({ path, type, next }) => {
 ## Creating Procedures with Middleware
 
 ```typescript
-// packages/trpc/src/procedures.ts
-import { procedure } from './trpc';
+// packages/orpc/src/api/procedures.ts
+import { os } from "@orpc/server";
 import { authMiddleware } from './middleware/auth';
 import { loggerMiddleware } from './middleware/logger';
 
@@ -67,43 +65,41 @@ export const protectedProcedure = procedure
   .use(loggerMiddleware)
   .use(authMiddleware);
 
-// Admin-only procedure
-export const adminProcedure = protectedProcedure
-  .use(async ({ ctx, next }) => {
-    if (ctx.user.role !== 'admin') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Admin access required',
-      });
-    }
-    return next();
-  });
+// Admin-only middleware
+const adminMiddleware = os.middleware(async ({ context, next }) => {
+  if (context.user.role !== "admin") {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Admin access required",
+    });
+  }
+  return next({ context });
+});
 ```
 
 ## Using Middleware in Routers
 
 ```typescript
-import { router, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
+import { os } from "@orpc/server";
 
 export const userRouter = router({
   // No auth required
   list: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.users.findMany();
+    return context.db.query.users.findMany();
   }),
 
   // Auth required
   create: protectedProcedure
     .input(z.object({ name: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      // ctx.user is guaranteed to exist
-      const [created] = await ctx.db.insert(users).values(input).returning();
+      // context.user is guaranteed to exist
+      const [created] = await context.db.insert(users).values(input).returning();
       return created;
     }),
 
   // Admin only
   deleteAll: adminProcedure
     .mutation(async ({ ctx }) => {
-      return ctx.db.delete(users);
+      return context.db.delete(users);
     }),
 });
 ```
@@ -138,24 +134,11 @@ Middleware can add to the context:
 
 ```typescript
 export const withOrganization = middleware(async ({ ctx, next }) => {
-  const organization = await ctx.db.query.organizations.findFirst({
-    where: (o, { eq }) => eq(o.id, ctx.user.organizationId),
+  const organization = await context.db.query.organizations.findFirst({
+    where: (o, { eq }) => eq(o.id, context.user.organizationId),
   });
-
-  return next({
-    ctx: {
-      ...ctx,
-      organization,
-    }
-  });
-});
-
-// Usage
-const orgProcedure = protectedProcedure.use(withOrganization);
-
-// In router
-getOrg: orgProcedure.query(async ({ ctx }) => {
-  return ctx.organization; // Available here
+  
+  return context.organization; // Available here
 });
 ```
 

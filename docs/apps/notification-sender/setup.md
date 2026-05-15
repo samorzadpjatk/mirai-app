@@ -157,14 +157,8 @@ notificationQueue.process(async (job) => {
 
 ```typescript
 // Health check endpoint
-fastify.get('/health', async () => {
-  return {
-    status: 'ok',
-    queueLength: await notificationQueue.count(),
-    processed: await notificationQueue.getCompletedCount(),
-    failed: await notificationQueue.getFailedCount(),
-  };
-});
+// Health check is exposed via the backend server
+// The notification sender is a worker process that consumes Supabase Realtime events
 ```
 
 ## Deployment

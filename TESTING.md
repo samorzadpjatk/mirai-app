@@ -62,7 +62,7 @@ Vitest is used for all Node.js applications and utility packages:
 - `packages/auth`
 - `packages/shared`
 - `packages/supabase`
-- `packages/trpc`
+- `packages/orpc`
 
 #### Configuration
 
@@ -295,7 +295,7 @@ Benefits of this pattern:
 - **Consistent behavior**: All tests use the same mock implementation
 - **Easier maintenance**: Update mocks in one place
 
-### Testing Fastify Server (Backend)
+### Testing Hono Server (Backend)
 
 ```typescript
 import { describe, it, expect } from "vitest";
@@ -303,20 +303,18 @@ import { createServer } from "../server";
 
 describe("Backend Server API", () => {
   it("should return OK for health check", async () => {
-    const { server } = createServer({
+    const { app, stop } = createServer({
       dev: true,
       port: 3001,
       prefix: "/api/trpc",
       host: "127.0.0.1",
     });
 
-    const response = await server.inject({
-      method: "GET",
-      url: "/health",
-    });
+    const response = await app.request("/health");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("OK");
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toBe("OK");
+    await stop();
   });
 });
 ```
@@ -380,19 +378,21 @@ beforeEach(() => {
 });
 ```
 
-## Turborepo Pipeline
+## Nx Pipeline
 
-Tests are integrated into the Turborepo pipeline:
+Tests are integrated into the Nx pipeline via `targetDefaults` in `nx.json`:
 
 ```json
 {
   "test": {
     "dependsOn": ["^build"],
-    "outputs": ["coverage/**"]
+    "outputs": ["{projectRoot}/coverage/**"],
+    "cache": true
   },
   "test:ci": {
     "dependsOn": ["^build"],
-    "outputs": ["coverage/**"]
+    "outputs": ["{projectRoot}/coverage/**"],
+    "cache": true
   }
 }
 ```
@@ -401,6 +401,8 @@ This ensures:
 1. Tests run after their dependencies are built
 2. Coverage outputs are cached for performance
 3. Tests execute in the correct dependency order
+
+Test runners are auto-detected by Nx plugins — `@nx/vitest` for Vitest packages and `@nx/jest` for the native app — so no explicit runner configuration is needed in the pipeline.
 
 ## CI/CD Integration
 
@@ -643,7 +645,7 @@ env: {
 **Solution**:
 - Use `beforeEach` to reset state
 - Mock external dependencies (database, APIs)
-- Use `turbo run test` for parallelization
+- Use `nx run-many -t test` for parallelization
 
 #### Coverage not generated
 

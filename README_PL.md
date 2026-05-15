@@ -84,7 +84,7 @@ bun install
 
 ### 3. Uruchomienie środowiska deweloperskiego
 
-Spójrz na jego [dokumentację](environment/dev/README.md)
+Spójrz na jego [dokumentację](../environment/WATCHTOWER.md)
 
 ### 4. Przygotowuj schemat bazy danych
 

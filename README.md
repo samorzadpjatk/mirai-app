@@ -83,7 +83,7 @@ bun install
 
 ### 3. Run the development environment
 
-Check its [documentation](environment/dev/README.md)
+Check its [documentation](../environment/WATCHTOWER.md)
 
 ### 4. Prepare the database schema
 

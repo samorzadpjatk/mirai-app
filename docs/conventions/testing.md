@@ -16,11 +16,12 @@ Testing patterns and conventions for the MIRAI monorepo.
 ## File Organization
 
 ```
-packages/trpc/
+packages/orpc/
 ├── src/
-│   ├── routers/
-│   │   └── user.ts
-│   └── test/
+│   ├── api/
+│   │   └── routers/
+│   │       └── user.ts
+│   └── __tests__/
 │       ├── user.test.ts        # Test file
 │       └── setup.ts            # Test setup
 ├── vitest.config.ts
@@ -64,7 +65,7 @@ describe('calculateTotal', () => {
 ### Creating Test Caller
 
 ```typescript
-// packages/trpc/src/test/setup.ts
+// packages/orpc/src/test/setup.ts
 import { appRouter } from '../routers';
 import { createContext } from './test-context';
 

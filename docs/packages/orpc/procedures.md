@@ -11,14 +11,18 @@ This document covers oRPC procedure patterns for queries and mutations.
 Available to all clients:
 
 ```typescript
-import { publicProcedure } from '../trpc';
+import { os } from "@orpc/server";
 
-export const userRouter = router({
-  list: publicProcedure
-    .query(async ({ ctx }) => {
-      return ctx.db.query.users.findMany();
+export const user = os
+  .route({
+    list: os.handler(async ({ context }) => {
+      return context.db.query.users.findMany();
     }),
-});
+    getById: os
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input, context }) => {
+        return context.db.query.users.findFirst({,
+  });
 ```
 
 ### Protected Procedures
@@ -26,20 +30,23 @@ export const userRouter = router({
 Require authentication:
 
 ```typescript
-import { protectedProcedure } from '../trpc';
+import { os } from "@orpc/server";
+import { authMiddleware } from './middleware/auth';
 
-export const userRouter = router({
-  create: protectedProcedure
-    .input(z.object({ name: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      // ctx.user is guaranteed to exist
-      const [created] = await ctx.db.insert(users).values({
-        ...input,
-        createdBy: ctx.user.id,
-      }).returning();
-      return created;
-    }),
-});
+export const user = os
+  .middleware(authMiddleware)
+  .route({
+    create: os
+      .input(z.object({ name: z.string() }))
+      .handler(async ({ input, context }) => {
+        // context.user is guaranteed to exist
+        const [created] = await context.db.insert(users).values({
+          ...input,
+          createdBy: context.user.id,
+        }).returning();
+        return created;
+      }),
+  });
 ```
 
 ## Query Procedures
@@ -58,8 +65,8 @@ list: publicProcedure
 ```typescript
 getById: publicProcedure
   .input(z.object({ id: z.string() }))
-  .query(async ({ input, ctx }) => {
-    return ctx.db.query.users.findFirst({
+    .handler(async ({ input, context }) => {
+      return context.db.query.users.findFirst({
       where: (u, { eq }) => eq(u.id, input.id),
     });
   })
@@ -121,10 +128,10 @@ create: protectedProcedure
     email: z.string().email(),
     name: z.string().min(1).max(100),
   }))
-  .mutation(async ({ input, ctx }) => {
-    const [created] = await ctx.db.insert(users).values(input).returning();
-    return created;
-  })
+  .handler(async ({ input, context }) => {
+      const [created] = await context.db.insert(users).values(input).returning();
+      return created;
+    })
 ```
 
 ### Update
@@ -136,9 +143,9 @@ update: protectedProcedure
     name: z.string().min(1).optional(),
     email: z.string().email().optional(),
   }))
-  .mutation(async ({ input, ctx }) => {
-    const { id, ...data } = input;
-    const [updated] = await ctx.db.update(users)
+  .handler(async ({ input, context }) => {
+      const { id, ...data } = input;
+      const [updated] = await context.db.update(users)
       .set(data)
       .where(eq(users.id, id))
       .returning();
@@ -151,8 +158,8 @@ update: protectedProcedure
 ```typescript
 delete: protectedProcedure
   .input(z.object({ id: z.string() }))
-  .mutation(async ({ input, ctx }) => {
-    const [deleted] = await ctx.db.delete(users)
+  .handler(async ({ input, context }) => {
+      const [deleted] = await context.db.delete(users)
       .where(eq(users.id, input.id))
       .returning();
     return deleted;
@@ -205,10 +212,10 @@ create: protectedProcedure
 query: publicProcedure
   .query(async ({ ctx }) => {
     // Available in context:
-    ctx.db          // Database client
-    ctx.user        // Current user (if authenticated)
-    ctx.req         // Request object (server)
-    ctx.res         // Response object (server)
+    context.db          // Database client
+    context.user        // Current user (if authenticated)
+    context.req         // Request object (server)
+    context.res         // Response object (server)
   })
 ```
 

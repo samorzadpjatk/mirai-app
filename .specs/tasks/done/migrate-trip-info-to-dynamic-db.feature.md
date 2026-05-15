@@ -118,7 +118,7 @@ export type TripResourceType = (typeof TRIP_RESOURCE_TYPES)[keyof typeof TRIP_RE
 
 Used by seed (for validation) and native (for type-safe resource lookup).
 
-### 3. Backend — dedicated `trip.getResources` query (`packages/trpc`)
+### 3. Backend — dedicated `trip.getResources` query (`packages/orpc`)
 
 New `trip.getResources` procedure (separate from `getById` — lighter payload):
 
@@ -314,7 +314,7 @@ resources: []
 | **DB** | `packages/db/src/schema.ts` — add `tripResource`, `tripInsurance`, `tripInsuranceStep` tables + trip relations (with `storagePath` field) |
 | **Migration** | `packages/db/drizzle/` — generate and apply Drizzle migration |
 | **Shared** | new `packages/shared/src/tripInfo/types.ts` + re-export from index |
-| **oRPC** | `packages/trpc/src/api/routers/trip.ts` — add `getResources` procedure |
+| **oRPC** | `packages/orpc/src/api/routers/trip.ts` — add `getResources` procedure |
 | **Seed types** | `apps/seed/src/types.ts` — add `info?`, `TripResourceConfig` (with `storagePath`), `TripInsuranceConfig`, `TripInfoConfig` |
 | **Seed logic** | new `apps/seed/src/tripInfo.ts` (uploads files to Supabase Storage for `storagePath` resources) |
 | **Seed wiring** | `apps/seed/src/seed.ts` — call `seedTripInfo` |

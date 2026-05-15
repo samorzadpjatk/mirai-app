@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers setting up the Fastify + oRPC backend server.
+This guide covers setting up the Hono + oRPC backend server.
 
 ## Prerequisites
 
@@ -30,8 +30,8 @@ cp environment/.env.dev.example environment/.env.dev
 
 Required variables:
 ```bash
-PORT=3000
-HOST=0.0.0.0
+TRPC_SERVER_PORT=2022
+TRPC_SERVER_HOST=0.0.0.0
 DATABASE_URL=postgresql://...
 SUPABASE_URL=https://...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -68,47 +68,40 @@ bun run start
 ```
 src/
 ├── index.ts           # Entry point
-├── server.ts          # Fastify instance
-├── context.ts         # oRPC context
-├── routers/           # oRPC routers
-│   ├── index.ts       # Root router
-│   └── ...
-└── plugins/           # Fastify plugins
+├── server.ts          # Hono + oRPC server
+├── config.ts          # Server configuration
+└── __tests__/         # Tests
 ```
 
 ## Adding a Route
 
 ### HTTP Route
 
-```typescript
-// src/routes/health.ts
-import { FastifyInstance } from 'fastify';
+HTTP routes are defined directly on the Hono app in `src/server.ts`:
 
-export default async function (fastify: FastifyInstance) {
-  fastify.get('/health', async () => {
-    return { status: 'ok' };
-  });
-}
-```
-
-Register in server:
 ```typescript
 // src/server.ts
-import healthRoute from './routes/health';
+import { Hono } from "hono";
 
-await fastify.register(healthRoute);
+const app = new Hono();
+
+app.get("/health", (c) => c.text("OK"));
 ```
 
 ### oRPC Procedure
 
-```typescript
-// Add to packages/trpc/src/routers/my-router.ts
-import { router, publicProcedure } from '../trpc';
+oRPC procedures are added to routers in the `@mirai-app/orpc` package:
 
-export const myRouter = router({
-  hello: publicProcedure.query(() => 'Hello World'),
+```typescript
+// Add to packages/orpc/src/api/routers/my-router.ts
+import { os } from "@orpc/server";
+
+export const myRouter = os.route({
+  hello: os.handler(() => "Hello World"),
 });
 ```
+
+Then add to the root router in `packages/orpc/src/api/root.ts`.
 
 ## Testing
 
@@ -153,38 +146,23 @@ Create `.vscode/launch.json`:
 ### Console Logging
 
 ```typescript
-fastify.addHook('onRequest', async (request) => {
-  console.log(`→ ${request.method} ${request.url}`);
+app.use("*", async (c, next) => {
+  console.log(`→ ${c.req.method} ${c.req.url}`);
+  await next();
 });
 ```
 
-## Performance Tuning
+## Environment Variables
 
-### Connection Pooling
+The server uses these environment variables (from `src/config.ts`):
 
-```typescript
-// Use connection pooling in production
-import { createDb } from '@mirai-app/db';
-
-const db = createDb(process.env.DATABASE_URL);
-```
-
-### Response Caching
-
-```typescript
-fastify.get('/api/data', {
-  schema: {
-    response: {
-      200: {
-        type: 'object',
-      }
-    }
-  }
-}, async (request, reply) => {
-  reply.header('Cache-Control', 'public, max-age=60');
-  return data;
-});
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Server port (default: 2022) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `SUPABASE_URL` | Yes | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
+| `ALLOWED_ORIGINS` | No | CORS origins (dev only)
 
 ## Deployment
 
@@ -210,11 +188,13 @@ Ensure these are set in production:
 
 ```bash
 NODE_ENV=production
-PORT=3000
+TRPC_SERVER_PORT=2022
+TRPC_SERVER_HOST=0.0.0.0
 DATABASE_URL=postgresql://...
 ```
 
 ## Further Reading
 
-- [Fastify Documentation](https://fastify.dev/)
-- [oRPC Server](https://trpc.io/docs/server/introduction)
+- [Hono Documentation](https://hono.dev/)
+- [oRPC Documentation](https://orpc.unnoq.com/)
+- [oRPC Server](https://orpc.unnoq.com/docs/server)

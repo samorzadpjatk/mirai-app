@@ -48,7 +48,7 @@ For WebSocket connections, the token is passed in `connectionParams`:
 
 ```typescript
 createWSClient({
-  url: 'ws://localhost:2022/trpc',
+  url: 'ws://localhost:2022/api/trpc',
   connectionParams: {
     authToken: accessToken
   }
@@ -61,7 +61,7 @@ createWSClient({
    - Gets `access_token` from Supabase session
    - Passes token in `connectionParams` (WebSocket) or `Authorization` header (HTTP)
 
-2. **oRPC Context** (`packages/trpc/src/api/trpc.ts`):
+2. **oRPC Context** (`packages/orpc/src/api/trpc.ts`):
    - Extracts token from headers or `connectionParams`
    - Creates Supabase client
    - Passes token to context
@@ -132,7 +132,7 @@ Token changes cause oRPC client reconstruction with the new token in `connection
 ## Endpoints
 
 - `/health` - Health check endpoint
-- `/api/trpc` - oRPC endpoint (HTTP + WebSocket)
+- `/api/trpc` - oRPC endpoint (HTTP + WebSocket, configurable via `TRPC_SERVER_PORT` and `TRPC_SERVER_HOST`)
 
 ## Testing
 
@@ -144,7 +144,7 @@ import { createServer } from "../server";
 const server = createServer({
   dev: true,
   port: 3001,
-  prefix: "/trpc",
+  prefix: "/api/trpc",
 });
 
 await server.start();

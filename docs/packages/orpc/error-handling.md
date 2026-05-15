@@ -4,9 +4,9 @@
 
 This document covers error handling patterns in oRPC.
 
-## TRPCError Types
+## ORPCError Types
 
-oRPC provides standard error codes:
+oRPC provides standard error codes via `ORPCError`:
 
 | Code | HTTP Status | Usage |
 |------|-------------|-------|
@@ -29,10 +29,9 @@ oRPC provides standard error codes:
 ### Basic Error
 
 ```typescript
-import { TRPCError } from '@trpc/server';
+import { ORPCError } from "@orpc/server";
 
-throw new TRPCError({
-  code: 'NOT_FOUND',
+throw new ORPCError('NOT_FOUND', {
   message: 'User not found',
 });
 ```
@@ -40,8 +39,7 @@ throw new TRPCError({
 ### With Cause
 
 ```typescript
-throw new TRPCError({
-  code: 'INTERNAL_SERVER_ERROR',
+throw new ORPCError('INTERNAL_SERVER_ERROR', {
   message: 'Failed to create user',
   cause: originalError,
 });
@@ -60,8 +58,7 @@ getById: publicProcedure
     });
 
     if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw new ORPCError('NOT_FOUND', {
         message: `User with id ${input.id} not found`,
       });
     }
@@ -81,8 +78,7 @@ create: protectedProcedure
     });
 
     if (existing) {
-      throw new TRPCError({
-        code: 'CONFLICT',
+      throw new ORPCError('CONFLICT', {
         message: 'User with this email already exists',
       });
     }
@@ -95,30 +91,26 @@ create: protectedProcedure
 ### Unauthorized
 
 ```typescript
-protectedProcedure: procedure
-  .use(async ({ ctx, next }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
+protectedProcedure: os.middleware(async ({ context, next }) => {
+    if (!context.user) {
+      throw new ORPCError('UNAUTHORIZED', {
         message: 'You must be logged in to access this resource',
       });
     }
-    return next();
+    return next({ context });
   })
 ```
 
 ### Forbidden
 
 ```typescript
-adminProcedure: protectedProcedure
-  .use(async ({ ctx, next }) => {
-    if (ctx.user.role !== 'admin') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+adminProcedure: os.middleware(async ({ context, next }) => {
+    if (context.user.role !== 'admin') {
+      throw new ORPCError('FORBIDDEN', {
         message: 'Admin access required',
       });
     }
-    return next();
+    return next({ context });
   })
 ```
 
@@ -134,8 +126,7 @@ create: protectedProcedure
     // Zod handles validation automatically
     // But you can add custom validation:
     if (input.password === input.email) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw new ORPCError('BAD_REQUEST', {
         message: 'Password cannot be the same as email',
       });
     }
@@ -150,10 +141,10 @@ create: protectedProcedure
 ### React Query Integration
 
 ```typescript
-import { trpc } from '@mirai-app/orpc/client';
+import { orpc } from '@mirai-app/orpc/client';
 
 function UserProfile({ userId }: { userId: string }) {
-  const { data, error, isError } = trpc.user.getById.useQuery(
+  const { data, error, isError } = orpc.user.getById.useQuery(
     { id: userId },
     {
       retry: (failureCount, error) => {
@@ -179,7 +170,7 @@ function UserProfile({ userId }: { userId: string }) {
 
 ```typescript
 // Error shape
-interface TRPCClientError {
+interface ORPCClientError {
   message: string;
   code: string;
   data: {
@@ -196,24 +187,20 @@ interface TRPCClientError {
 ### Custom Error Formatter
 
 ```typescript
-// packages/trpc/src/trpc.ts
-import { initTRPC } from '@trpc/server';
+// packages/orpc/src/api/trpc.ts
+import { os, ORPCError } from "@orpc/server";
 
-const t = initTRPC.create({
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        // Add custom fields
-        timestamp: new Date().toISOString(),
-        // Hide stack in production
-        stack: process.env.NODE_ENV === 'development' 
-          ? shape.data.stack 
-          : undefined,
+// oRPC error handling is configured on the handler/server side
+// Custom interceptors can be added to the RPCHandler
+const rpcHandler = new RPCHandler(appRouter, {
+  interceptors: [
+    onError((error): void => {
+      console.error(error);
+      if (!dev && !(error instanceof ORPCError)) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
       }
-    };
-  }
+    }),
+  ],
 });
 ```
 
@@ -228,22 +215,24 @@ const t = initTRPC.create({
 ## Global Error Handler
 
 ```typescript
-// packages/trpc/src/trpc.ts
-const t = initTRPC.create({
-  onError: ({ error, path, type }) => {
-    // Log error
-    console.error(`oRPC Error in ${type} ${path}:`, error);
-    
-    // Send to error tracking service
-    if (error.code === 'INTERNAL_SERVER_ERROR') {
-      errorTracker.captureException(error);
-    }
-  }
+// packages/orpc/src/api/trpc.ts
+// Global error handling is done via RPCHandler interceptors
+const rpcHandler = new RPCHandler(appRouter, {
+  interceptors: [
+    onError((error): void => {
+      console.error(error);
+      
+      // Send to error tracking service
+      if (error instanceof ORPCError && error.code === 'INTERNAL_SERVER_ERROR') {
+        errorTracker.captureException(error);
+      }
+    }),
+  ],
 });
 ```
 
 ## Further Reading
 
-- [oRPC Error Handling Docs](https://trpc.io/docs/error-handling)
+- [oRPC Error Handling Docs](https://orpc.unnoq.com/docs/error-handling)
 - [Procedures](./procedures.md)
 - [Middleware](./middleware.md)

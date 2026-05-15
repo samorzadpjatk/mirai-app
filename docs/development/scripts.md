@@ -140,7 +140,7 @@ nx run-many -t test
 nx run @mirai-app/orpc:test
 
 # Watch mode
-cd packages/trpc && bun run test:watch
+cd packages/orpc && bun run test:watch
 ```
 
 ## Building

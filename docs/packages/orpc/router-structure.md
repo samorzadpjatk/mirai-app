@@ -24,14 +24,14 @@ appRouter (root)
 ## Root Router
 
 ```typescript
-// packages/trpc/src/routers/index.ts
-import { router } from '../trpc';
-import { userRouter } from './user';
-import { postRouter } from './post';
+// packages/orpc/src/api/root.ts
+import { os } from "@orpc/server";
+import { user } from './routers/user';
+import { post } from './routers/post';
 
-export const appRouter = router({
-  user: userRouter,
-  post: postRouter,
+export const appRouter = os.contract({
+  user,
+  post,
 });
 
 // Export type for client
@@ -41,8 +41,8 @@ export type AppRouter = typeof appRouter;
 ## Sub-Router Pattern
 
 ```typescript
-// packages/trpc/src/routers/user.ts
-import { router, publicProcedure, protectedProcedure } from '../trpc';
+// packages/orpc/src/api/routers/user.ts
+import { os } from "@orpc/server";
 import { z } from 'zod';
 
 export const userRouter = router({
@@ -93,8 +93,8 @@ export const userRouter = router({
 
 1. **Create router file**:
    ```typescript
-   // packages/trpc/src/routers/product.ts
-   import { router, publicProcedure } from '../trpc';
+   // packages/orpc/src/api/routers/product.ts
+   import { os } from "@orpc/server";
    
     export const productRouter = router({
       list: publicProcedure.query(async ({ ctx }) => {
@@ -105,7 +105,7 @@ export const userRouter = router({
 
 2. **Add to root router**:
    ```typescript
-   // packages/trpc/src/routers/index.ts
+   // packages/orpc/src/api/root.ts
    import { productRouter } from './product';
    
    export const appRouter = router({
@@ -139,7 +139,7 @@ export const userRouter = router({
 ## Router Organization
 
 ```
-packages/trpc/src/routers/
+packages/orpc/src/api/routers/
 ├── index.ts          # Root router export
 ├── user.ts           # User procedures
 ├── post.ts           # Post procedures
@@ -150,15 +150,15 @@ packages/trpc/src/routers/
 ## Client Usage
 
 ```typescript
-// The router structure maps to client API
-const trpc = createTRPCReact<AppRouter>();
+// The router structure maps to client API via QueryProvider
+import { orpc } from "@mirai-app/orpc/client";
 
 // Queries
-trpc.user.list.useQuery();
-trpc.user.getById.useQuery({ id: '123' });
+orpc.user.list.useQuery();
+orpc.user.getById.useQuery({ id: '123' });
 
 // Mutations
-const createUser = trpc.user.create.useMutation();
+const createUser = orpc.user.create.useMutation();
 createUser.mutate({ email: 'user@example.com', name: 'John' });
 ```
 

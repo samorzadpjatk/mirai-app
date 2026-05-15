@@ -7,7 +7,7 @@
 MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 
 - **Frontend**: Expo React Native (iOS/Android)
-- **Backend**: Fastify + oRPC server with WebSocket support
+- **Backend**: Hono + oRPC server with WebSocket support
 - **Database**: PostgreSQL via Drizzle ORM + Supabase
 - **Tooling**: NX + Bun workspaces
 
@@ -17,7 +17,7 @@ MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
 MIRAI/
 ├── apps/
 │   ├── native/              # Expo React Native app (iOS/Android)
-│   ├── backend-server/      # Fastify + oRPC API server
+│   ├── backend-server/      # Hono + oRPC API server
 │   ├── notification-sender/ # Notification service worker
 │   └── seed/                # Database seeding CLI
 ├── packages/
@@ -25,7 +25,7 @@ MIRAI/
 │   ├── db/                  # Drizzle schema and client
 │   ├── shared/              # Shared utilities, design tokens
 │   ├── supabase/            # Supabase client configuration
-│   └── trpc/                # oRPC routers and utilities
+│   └── orpc/                # oRPC routers and utilities
 ├── docs/                    # Detailed documentation
 ├── nx.json                  # NX monorepo configuration
 ├── package.json             # Bun workspaces configuration
@@ -96,7 +96,7 @@ cp environment/.env.dev.example environment/.env.dev
 
 ```
 auth ──────┐
-           ├──→ trpc ────→ backend-server, notification-sender
+           ├──→ orpc ────→ backend-server, notification-sender
 db ────────┤      └──→ native (via client)
            │
 supabase ──┤      └──→ native (via client)
@@ -111,7 +111,7 @@ This project uses OpenAI's layered AGENTS.md discovery pattern. Files concatenat
 ## App & Package AGENTS.md Files
 
 - [apps/native/AGENTS.md](./apps/native/AGENTS.md) - Expo React Native app
-- [apps/backend-server/AGENTS.md](./apps/backend-server/AGENTS.md) - Fastify + oRPC server
+- [apps/backend-server/AGENTS.md](./apps/backend-server/AGENTS.md) - Hono + oRPC server
 - [apps/notification-sender/AGENTS.md](./apps/notification-sender/AGENTS.md) - Notification service
 - [apps/seed/AGENTS.md](./apps/seed/AGENTS.md) - Database seeding CLI
 - [packages/auth/AGENTS.md](./packages/auth/AGENTS.md) - Authentication utilities
