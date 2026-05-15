@@ -1,4 +1,51 @@
 .git
 .gitignore
+**/.DS_Store
+
+# Dependencies
 node_modules
+*/node_modules
+*/*/node_modules
+
+# Environment & Secrets
 .env*
+**/.env.*
+
+# NX
+.nx/
+**/.nx/
+
+# Build outputs
+dist/
+build/
+coverage/
+*.log
+
+# Temporary files
+.tmp-*
+*.tmp
+*.temp
+
+# Development tooling
+.husky/
+.agents/
+.claude/
+.specs/
+
+# Documentation
+docs/
+*.md
+!**/README.md
+
+# Local dev environment
+environment/
+docker-compose*.yml
+
+# Apps not needed in backend containers
+apps/native/
+apps/seed/
+
+# Expo / Mobile
+.expo/
+.expo-shared/
+web-build/
