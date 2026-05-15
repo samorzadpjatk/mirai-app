@@ -61,8 +61,9 @@ jobs:
           INPUT_REGISTRY: ${{ env.REGISTRY }}
           INPUT_TAGS: |
             type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bunx nx run-many -t container \
             --projects=apps/backend-server,apps/notification-sender,packages/db \

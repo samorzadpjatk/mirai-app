@@ -1,0 +1,30 @@
+{
+  "name": "@mirai-app/notification-sender",
+  "targets": {
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "dependsOn": ["build"],
+      "options": {
+        "engine": "docker",
+        "tags": ["pjapp-notification-sender:dev"],
+        "load": true
+      },
+      "configurations": {
+        "ci": {
+          "load": false,
+          "push": true,
+          "metadata": {
+            "images": ["ghcr.io/samorzadpjatk/pjapp-notification-sender"],
+            "tags": [
+              "type=schedule",
+              "type=ref,event=branch",
+              "type=ref,event=tag",
+              "type=ref,event=pr",
+              "type=sha,prefix=sha-"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
