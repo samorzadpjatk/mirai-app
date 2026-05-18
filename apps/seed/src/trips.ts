@@ -169,10 +169,7 @@ export const seedTrip = async (
         userId: dbUser.id,
         tripId: trip.id,
       })
-      .onConflictDoUpdate({
-        target: [tripParticipants.userId, tripParticipants.tripId],
-        set: {},
-      });
+      .onConflictDoNothing();
   }
 
   const ghostAuth = await ensureGhostAuthUser(authUsers);
@@ -207,10 +204,7 @@ export const seedTrip = async (
           userId: ghostUser.id,
           tripId: trip.id,
         })
-        .onConflictDoUpdate({
-          target: [tripParticipants.userId, tripParticipants.tripId],
-          set: {},
-        });
+        .onConflictDoNothing();
     }
   }
 

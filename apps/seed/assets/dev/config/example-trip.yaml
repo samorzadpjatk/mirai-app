@@ -4,7 +4,7 @@ description: Example trip description
 startDate: 2026-02-20
 endDate: 2026-03-01
 users: users/example-trip-members.csv
-background: images/trips/example-trip/background.png
-sponsors: sponsors/example-trip-sponsors.yaml
-rewards: rewards/example-trip-rewards.yaml
-info: info/example-trip-info.yaml
+background: images/trips/example-trip/background.jpg
+sponsors: sponsors/example-sponsors.yaml
+rewards: rewards/example-rewards.yaml
+info: info/example-info.yaml
