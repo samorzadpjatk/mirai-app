@@ -14,14 +14,35 @@ import { getORPCClient } from "./vanilia";
 import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSession, useAuth } from "@mirai-app/auth/client";
+import { useSession, useAuth, authStore } from "@mirai-app/auth/client";
 
 function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 60 * 1000,
-        refetchInterval: 30 * 1000,
+        // Disable aggressive polling; rely on staleTime + manual invalidation
+        refetchInterval: false,
+        // Disable window focus refetch (mobile apps don't have "windows")
+        refetchOnWindowFocus: false,
+        // Retry with exponential backoff and jitter; don't retry on 4xx client errors
+        retry: (failureCount, error) => {
+          const statusCode = (error as { status?: number })?.status;
+          // Don't retry client errors (4xx) except 429 (rate limited)
+          if (statusCode && statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
+            return false;
+          }
+          // Max 3 retries for network/server errors and rate limits
+          return failureCount < 3;
+        },
+        retryDelay: (attemptIndex, error) => {
+          const statusCode = (error as { status?: number })?.status;
+          // For 429 rate limit errors, use longer delays
+          const baseDelay = statusCode === 429 ? 5000 : 1000;
+          const exponential = baseDelay * Math.pow(2, attemptIndex);
+          const jitter = exponential * (0.5 + Math.random() * 0.5);
+          return Math.min(jitter, 30000);
+        },
       },
     },
   });
@@ -76,6 +97,13 @@ export function QueryProvider({
   const orpcUtils = useMemo(() => createTanstackQueryUtils(client), [client]);
 
   orpc = orpcUtils;
+
+  useEffect(() => {
+    const currentState = authStore.getState();
+    if (authToken && currentState.session?.user && !currentState.user && !currentState.isLoading) {
+      void currentState.refetchUser();
+    }
+  }, [authToken]);
 
   useEffect(() => {
     const queryCache = queryClient.getQueryCache();

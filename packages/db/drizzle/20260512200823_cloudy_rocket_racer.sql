@@ -1,11 +1,47 @@
-CREATE TYPE "public"."challenge_status" AS ENUM('HIDDEN', 'VISIBLE', 'ACTIVE', 'VOTING_PHASE', 'COMPLETED', 'CANCELLED');--> statement-breakpoint
-CREATE TYPE "public"."location_sharing_request_status" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED');--> statement-breakpoint
-CREATE TYPE "public"."reward_purchase_status" AS ENUM('BOUGHT', 'ACCEPTED', 'IN_DELIVERY', 'CANCELLED', 'DELIVERED');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('USER', 'ADMIN', 'MODERATOR', 'SERVICE');--> statement-breakpoint
-CREATE TYPE "public"."scoring_category" AS ENUM('SPEED', 'UNLIMITED', 'JUDGED_STAFF', 'PEER_VOTING');--> statement-breakpoint
-CREATE TYPE "public"."submission_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');--> statement-breakpoint
-CREATE TYPE "public"."submission_type" AS ENUM('IMAGE', 'MULTI_IMAGE', 'VIDEO', 'TEXT', 'IMAGE_LOCATION', 'LOCATION', 'QR_CODE');--> statement-breakpoint
-CREATE TABLE "users" (
+DROP TABLE IF EXISTS "_prisma_migrations";--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."challenge_status" AS ENUM('HIDDEN', 'VISIBLE', 'ACTIVE', 'VOTING_PHASE', 'COMPLETED', 'CANCELLED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."location_sharing_request_status" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."reward_purchase_status" AS ENUM('BOUGHT', 'ACCEPTED', 'IN_DELIVERY', 'CANCELLED', 'DELIVERED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."role" AS ENUM('USER', 'ADMIN', 'MODERATOR', 'SERVICE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."scoring_category" AS ENUM('SPEED', 'UNLIMITED', 'JUDGED_STAFF', 'PEER_VOTING');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."submission_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."submission_type" AS ENUM('IMAGE', 'MULTI_IMAGE', 'VIDEO', 'TEXT', 'IMAGE_LOCATION', 'LOCATION', 'QR_CODE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "users" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"auth_user_id" text NOT NULL,
 	"first_name" text NOT NULL,
@@ -18,7 +54,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_auth_user_id_unique" UNIQUE("auth_user_id")
 );
 --> statement-breakpoint
-CREATE TABLE "trip_insurance_steps" (
+CREATE TABLE IF NOT EXISTS "trip_insurance_steps" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"insurance_id" varchar(36) NOT NULL,
 	"step_number" integer NOT NULL,
@@ -31,7 +67,7 @@ CREATE TABLE "trip_insurance_steps" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "trip_insurances" (
+CREATE TABLE IF NOT EXISTS "trip_insurances" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"label" text NOT NULL,
@@ -48,7 +84,7 @@ CREATE TABLE "trip_insurances" (
 	CONSTRAINT "trip_insurances_trip_id_unique" UNIQUE("trip_id")
 );
 --> statement-breakpoint
-CREATE TABLE "trip_participants" (
+CREATE TABLE IF NOT EXISTS "trip_participants" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"user_id" varchar(36) NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
@@ -60,7 +96,7 @@ CREATE TABLE "trip_participants" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "trip_resources" (
+CREATE TABLE IF NOT EXISTS "trip_resources" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"type" text NOT NULL,
@@ -77,7 +113,7 @@ CREATE TABLE "trip_resources" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "trips" (
+CREATE TABLE IF NOT EXISTS "trips" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
@@ -88,7 +124,7 @@ CREATE TABLE "trips" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "events" (
+CREATE TABLE IF NOT EXISTS "events" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"creator_id" varchar(36) NOT NULL,
 	"organizer_group_id" varchar(36),
@@ -102,7 +138,7 @@ CREATE TABLE "events" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "user_events" (
+CREATE TABLE IF NOT EXISTS "user_events" (
 	"user_id" varchar(36) NOT NULL,
 	"event_id" varchar(36) NOT NULL,
 	"interested_in" boolean DEFAULT false NOT NULL,
@@ -112,7 +148,7 @@ CREATE TABLE "user_events" (
 	CONSTRAINT "user_events_user_id_event_id_pk" PRIMARY KEY("user_id","event_id")
 );
 --> statement-breakpoint
-CREATE TABLE "group_join_requests" (
+CREATE TABLE IF NOT EXISTS "group_join_requests" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"group_id" varchar(36) NOT NULL,
@@ -120,7 +156,7 @@ CREATE TABLE "group_join_requests" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "groups" (
+CREATE TABLE IF NOT EXISTS "groups" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"name" text NOT NULL,
@@ -135,7 +171,7 @@ CREATE TABLE "groups" (
 	CONSTRAINT "groups_code_unique" UNIQUE("code")
 );
 --> statement-breakpoint
-CREATE TABLE "challenge_submissions" (
+CREATE TABLE IF NOT EXISTS "challenge_submissions" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"challenge_id" varchar(36) NOT NULL,
 	"group_id" varchar(36) NOT NULL,
@@ -157,7 +193,7 @@ CREATE TABLE "challenge_submissions" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "challenge_votes" (
+CREATE TABLE IF NOT EXISTS "challenge_votes" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"challenge_id" varchar(36) NOT NULL,
 	"submission_id" varchar(36) NOT NULL,
@@ -168,7 +204,7 @@ CREATE TABLE "challenge_votes" (
 	"voted_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "challenges" (
+CREATE TABLE IF NOT EXISTS "challenges" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"name" text NOT NULL,
@@ -196,7 +232,7 @@ CREATE TABLE "challenges" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "submission_reports" (
+CREATE TABLE IF NOT EXISTS "submission_reports" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"submission_id" varchar(36) NOT NULL,
 	"reporter_id" varchar(36) NOT NULL,
@@ -205,7 +241,7 @@ CREATE TABLE "submission_reports" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "activity_feeds" (
+CREATE TABLE IF NOT EXISTS "activity_feeds" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"activity_type" text NOT NULL,
@@ -222,7 +258,7 @@ CREATE TABLE "activity_feeds" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "activity_reactions" (
+CREATE TABLE IF NOT EXISTS "activity_reactions" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"activity_id" varchar(36) NOT NULL,
 	"user_id" varchar(36) NOT NULL,
@@ -230,7 +266,7 @@ CREATE TABLE "activity_reactions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "challenge_activities" (
+CREATE TABLE IF NOT EXISTS "challenge_activities" (
 	"activity_id" varchar(36) PRIMARY KEY NOT NULL,
 	"challenge_id" varchar(36) NOT NULL,
 	"event_type" text NOT NULL,
@@ -240,7 +276,7 @@ CREATE TABLE "challenge_activities" (
 	"submission_count" integer
 );
 --> statement-breakpoint
-CREATE TABLE "rank_change_activities" (
+CREATE TABLE IF NOT EXISTS "rank_change_activities" (
 	"activity_id" varchar(36) PRIMARY KEY NOT NULL,
 	"group_id" varchar(36) NOT NULL,
 	"new_rank" integer NOT NULL,
@@ -248,7 +284,7 @@ CREATE TABLE "rank_change_activities" (
 	"coins_gained" integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "submission_activities" (
+CREATE TABLE IF NOT EXISTS "submission_activities" (
 	"activity_id" varchar(36) PRIMARY KEY NOT NULL,
 	"submission_id" varchar(36) NOT NULL,
 	"challenge_id" varchar(36) NOT NULL,
@@ -259,13 +295,13 @@ CREATE TABLE "submission_activities" (
 	"points_awarded" integer
 );
 --> statement-breakpoint
-CREATE TABLE "user_posts" (
+CREATE TABLE IF NOT EXISTS "user_posts" (
 	"activity_id" varchar(36) PRIMARY KEY NOT NULL,
 	"author_id" varchar(36) NOT NULL,
 	"additional_images" text[] DEFAULT '{}' NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "notification_deliveries" (
+CREATE TABLE IF NOT EXISTS "notification_deliveries" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36),
 	"notification_id" varchar(36) NOT NULL,
@@ -282,7 +318,7 @@ CREATE TABLE "notification_deliveries" (
 	CONSTRAINT "notification_deliveries_notification_id_unique" UNIQUE("notification_id")
 );
 --> statement-breakpoint
-CREATE TABLE "notification_pushes" (
+CREATE TABLE IF NOT EXISTS "notification_pushes" (
 	"target_user_id" varchar(36) NOT NULL,
 	"notification_id" varchar(36) NOT NULL,
 	"status" text NOT NULL,
@@ -291,14 +327,14 @@ CREATE TABLE "notification_pushes" (
 	CONSTRAINT "notification_pushes_target_user_id_notification_id_pk" PRIMARY KEY("target_user_id","notification_id")
 );
 --> statement-breakpoint
-CREATE TABLE "notification_schedule_executions" (
+CREATE TABLE IF NOT EXISTS "notification_schedule_executions" (
 	"notification_id" varchar(36) NOT NULL,
 	"schedule_id" varchar(36) NOT NULL,
 	"executed_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "notification_schedule_executions_notification_id_schedule_id_executed_at_pk" PRIMARY KEY("notification_id","schedule_id","executed_at")
 );
 --> statement-breakpoint
-CREATE TABLE "notification_schedules" (
+CREATE TABLE IF NOT EXISTS "notification_schedules" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36),
 	"name" text NOT NULL,
@@ -317,7 +353,7 @@ CREATE TABLE "notification_schedules" (
 	"created_by_id" varchar(36) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "notifications" (
+CREATE TABLE IF NOT EXISTS "notifications" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36),
 	"title" text NOT NULL,
@@ -328,7 +364,7 @@ CREATE TABLE "notifications" (
 	"created_by_id" varchar(36) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "push_subscriptions" (
+CREATE TABLE IF NOT EXISTS "push_subscriptions" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"user_id" varchar(36) NOT NULL,
 	"token" text NOT NULL,
@@ -336,13 +372,13 @@ CREATE TABLE "push_subscriptions" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "location_shares" (
+CREATE TABLE IF NOT EXISTS "location_shares" (
 	"location_id" varchar(36) NOT NULL,
 	"user_id" varchar(36) NOT NULL,
 	CONSTRAINT "location_shares_location_id_user_id_pk" PRIMARY KEY("location_id","user_id")
 );
 --> statement-breakpoint
-CREATE TABLE "location_sharing_requests" (
+CREATE TABLE IF NOT EXISTS "location_sharing_requests" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"sender_id" varchar(36) NOT NULL,
 	"receiver_id" varchar(36) NOT NULL,
@@ -351,7 +387,7 @@ CREATE TABLE "location_sharing_requests" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "locations" (
+CREATE TABLE IF NOT EXISTS "locations" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"user_id" varchar(36) NOT NULL,
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL,
@@ -367,7 +403,7 @@ CREATE TABLE "locations" (
 	CONSTRAINT "locations_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
-CREATE TABLE "coin_transactions" (
+CREATE TABLE IF NOT EXISTS "coin_transactions" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"group_id" varchar(36) NOT NULL,
 	"amount" integer NOT NULL,
@@ -377,7 +413,7 @@ CREATE TABLE "coin_transactions" (
 	"admin_id" varchar(36) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "reward_purchases" (
+CREATE TABLE IF NOT EXISTS "reward_purchases" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"reward_id" varchar(36) NOT NULL,
 	"group_id" varchar(36) NOT NULL,
@@ -391,7 +427,7 @@ CREATE TABLE "reward_purchases" (
 	"purchased_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "rewards" (
+CREATE TABLE IF NOT EXISTS "rewards" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text NOT NULL,
@@ -405,7 +441,7 @@ CREATE TABLE "rewards" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "sponsors" (
+CREATE TABLE IF NOT EXISTS "sponsors" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text NOT NULL,
@@ -418,14 +454,14 @@ CREATE TABLE "sponsors" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "trip_sponsors" (
+CREATE TABLE IF NOT EXISTS "trip_sponsors" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"trip_id" varchar(36) NOT NULL,
 	"sponsor_id" varchar(36) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "user_agents" (
+CREATE TABLE IF NOT EXISTS "user_agents" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"user_agent" text NOT NULL,
 	"platform" text NOT NULL,
@@ -434,123 +470,189 @@ CREATE TABLE "user_agents" (
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "trip_insurance_steps" DROP CONSTRAINT IF EXISTS "trip_insurance_steps_insurance_id_trip_insurances_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_insurance_steps" ADD CONSTRAINT "trip_insurance_steps_insurance_id_trip_insurances_id_fk" FOREIGN KEY ("insurance_id") REFERENCES "public"."trip_insurances"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_insurances" DROP CONSTRAINT IF EXISTS "trip_insurances_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_insurances" ADD CONSTRAINT "trip_insurances_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_resources" DROP CONSTRAINT IF EXISTS "trip_resources_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_resources" ADD CONSTRAINT "trip_resources_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" DROP CONSTRAINT IF EXISTS "events_creator_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_creator_id_users_id_fk" FOREIGN KEY ("creator_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" DROP CONSTRAINT IF EXISTS "events_organizer_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_organizer_group_id_groups_id_fk" FOREIGN KEY ("organizer_group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_events" DROP CONSTRAINT IF EXISTS "user_events_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "user_events" ADD CONSTRAINT "user_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_events" DROP CONSTRAINT IF EXISTS "user_events_event_id_events_id_fk";--> statement-breakpoint
 ALTER TABLE "user_events" ADD CONSTRAINT "user_events_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "groups" DROP CONSTRAINT IF EXISTS "groups_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "groups" ADD CONSTRAINT "groups_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "groups" DROP CONSTRAINT IF EXISTS "groups_organizer_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "groups" ADD CONSTRAINT "groups_organizer_id_users_id_fk" FOREIGN KEY ("organizer_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_reviewed_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_reviewed_by_id_users_id_fk" FOREIGN KEY ("reviewed_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_voter_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_voter_id_trip_participants_id_fk" FOREIGN KEY ("voter_id") REFERENCES "public"."trip_participants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenges" DROP CONSTRAINT IF EXISTS "challenges_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "challenges" ADD CONSTRAINT "challenges_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_reports" DROP CONSTRAINT IF EXISTS "submission_reports_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_reports" ADD CONSTRAINT "submission_reports_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_reports" DROP CONSTRAINT IF EXISTS "submission_reports_reporter_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_reports" ADD CONSTRAINT "submission_reports_reporter_id_trip_participants_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."trip_participants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_hidden_by_admin_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_hidden_by_admin_users_id_fk" FOREIGN KEY ("hidden_by_admin") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_created_by_admin_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_created_by_admin_users_id_fk" FOREIGN KEY ("created_by_admin") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_reactions" DROP CONSTRAINT IF EXISTS "activity_reactions_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_reactions" ADD CONSTRAINT "activity_reactions_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_reactions" DROP CONSTRAINT IF EXISTS "activity_reactions_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_reactions" ADD CONSTRAINT "activity_reactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_activities" DROP CONSTRAINT IF EXISTS "challenge_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_activities" ADD CONSTRAINT "challenge_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_activities" DROP CONSTRAINT IF EXISTS "challenge_activities_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_activities" ADD CONSTRAINT "challenge_activities_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rank_change_activities" DROP CONSTRAINT IF EXISTS "rank_change_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "rank_change_activities" ADD CONSTRAINT "rank_change_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rank_change_activities" DROP CONSTRAINT IF EXISTS "rank_change_activities_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "rank_change_activities" ADD CONSTRAINT "rank_change_activities_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_posts" DROP CONSTRAINT IF EXISTS "user_posts_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "user_posts" ADD CONSTRAINT "user_posts_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_posts" DROP CONSTRAINT IF EXISTS "user_posts_author_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "user_posts" ADD CONSTRAINT "user_posts_author_id_trip_participants_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."trip_participants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_deliveries" DROP CONSTRAINT IF EXISTS "notification_deliveries_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_deliveries" ADD CONSTRAINT "notification_deliveries_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_deliveries" DROP CONSTRAINT IF EXISTS "notification_deliveries_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_deliveries" ADD CONSTRAINT "notification_deliveries_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_pushes" DROP CONSTRAINT IF EXISTS "notification_pushes_target_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_pushes" ADD CONSTRAINT "notification_pushes_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_pushes" DROP CONSTRAINT IF EXISTS "notification_pushes_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_pushes" ADD CONSTRAINT "notification_pushes_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedule_executions" DROP CONSTRAINT IF EXISTS "notification_schedule_executions_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedule_executions" ADD CONSTRAINT "notification_schedule_executions_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedule_executions" DROP CONSTRAINT IF EXISTS "notification_schedule_executions_schedule_id_notification_schedules_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedule_executions" ADD CONSTRAINT "notification_schedule_executions_schedule_id_notification_schedules_id_fk" FOREIGN KEY ("schedule_id") REFERENCES "public"."notification_schedules"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedules" DROP CONSTRAINT IF EXISTS "notification_schedules_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedules" ADD CONSTRAINT "notification_schedules_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedules" DROP CONSTRAINT IF EXISTS "notification_schedules_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedules" ADD CONSTRAINT "notification_schedules_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" DROP CONSTRAINT IF EXISTS "notifications_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" DROP CONSTRAINT IF EXISTS "notifications_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "push_subscriptions" DROP CONSTRAINT IF EXISTS "push_subscriptions_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_shares" DROP CONSTRAINT IF EXISTS "location_shares_location_id_locations_id_fk";--> statement-breakpoint
 ALTER TABLE "location_shares" ADD CONSTRAINT "location_shares_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_shares" DROP CONSTRAINT IF EXISTS "location_shares_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_shares" ADD CONSTRAINT "location_shares_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_sharing_requests" DROP CONSTRAINT IF EXISTS "location_sharing_requests_sender_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_sharing_requests" ADD CONSTRAINT "location_sharing_requests_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_sharing_requests" DROP CONSTRAINT IF EXISTS "location_sharing_requests_receiver_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_sharing_requests" ADD CONSTRAINT "location_sharing_requests_receiver_id_users_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "locations" DROP CONSTRAINT IF EXISTS "locations_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "coin_transactions" DROP CONSTRAINT IF EXISTS "coin_transactions_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "coin_transactions" ADD CONSTRAINT "coin_transactions_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "coin_transactions" DROP CONSTRAINT IF EXISTS "coin_transactions_admin_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "coin_transactions" ADD CONSTRAINT "coin_transactions_admin_id_users_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_reward_id_rewards_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_reward_id_rewards_id_fk" FOREIGN KEY ("reward_id") REFERENCES "public"."rewards"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_purchased_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_purchased_by_id_users_id_fk" FOREIGN KEY ("purchased_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_status_updated_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_status_updated_by_id_users_id_fk" FOREIGN KEY ("status_updated_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rewards" DROP CONSTRAINT IF EXISTS "rewards_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rewards" DROP CONSTRAINT IF EXISTS "rewards_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_sponsors" DROP CONSTRAINT IF EXISTS "trip_sponsors_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_sponsors" ADD CONSTRAINT "trip_sponsors_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_sponsors" DROP CONSTRAINT IF EXISTS "trip_sponsors_sponsor_id_sponsors_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_sponsors" ADD CONSTRAINT "trip_sponsors_sponsor_id_sponsors_id_fk" FOREIGN KEY ("sponsor_id") REFERENCES "public"."sponsors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_agents" DROP CONSTRAINT IF EXISTS "user_agents_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "user_agents" ADD CONSTRAINT "user_agents_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "trip_insurance_steps_insurance_id_step_number_idx" ON "trip_insurance_steps" USING btree ("insurance_id","step_number");--> statement-breakpoint
-CREATE UNIQUE INDEX "trip_participants_user_id_trip_id_unique" ON "trip_participants" USING btree ("user_id","trip_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "trip_participants_trip_id_wrist_number_unique" ON "trip_participants" USING btree ("trip_id","wrist_number");--> statement-breakpoint
-CREATE INDEX "trip_participants_trip_id_group_id_idx" ON "trip_participants" USING btree ("trip_id","group_id");--> statement-breakpoint
-CREATE INDEX "trip_resources_trip_id_type_idx" ON "trip_resources" USING btree ("trip_id","type");--> statement-breakpoint
-CREATE UNIQUE INDEX "group_join_requests_trip_id_user_id_unique" ON "group_join_requests" USING btree ("trip_id","user_id");--> statement-breakpoint
-CREATE INDEX "group_join_requests_group_id_created_at_idx" ON "group_join_requests" USING btree ("group_id","created_at");--> statement-breakpoint
-CREATE INDEX "group_join_requests_user_id_trip_id_idx" ON "group_join_requests" USING btree ("user_id","trip_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "challenge_submissions_challenge_id_group_id_unique" ON "challenge_submissions" USING btree ("challenge_id","group_id");--> statement-breakpoint
-CREATE INDEX "challenge_submissions_challenge_id_status_idx" ON "challenge_submissions" USING btree ("challenge_id","status");--> statement-breakpoint
-CREATE INDEX "challenge_submissions_group_id_idx" ON "challenge_submissions" USING btree ("group_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "challenge_votes_challenge_id_submission_id_voter_id_unique" ON "challenge_votes" USING btree ("challenge_id","submission_id","voter_id");--> statement-breakpoint
-CREATE INDEX "challenge_votes_challenge_id_idx" ON "challenge_votes" USING btree ("challenge_id");--> statement-breakpoint
-CREATE INDEX "challenge_votes_submission_id_idx" ON "challenge_votes" USING btree ("submission_id");--> statement-breakpoint
-CREATE INDEX "challenges_trip_id_status_idx" ON "challenges" USING btree ("trip_id","status");--> statement-breakpoint
-CREATE INDEX "challenges_is_recurring_idx" ON "challenges" USING btree ("is_recurring");--> statement-breakpoint
-CREATE INDEX "submission_reports_submission_id_idx" ON "submission_reports" USING btree ("submission_id");--> statement-breakpoint
-CREATE INDEX "activity_feeds_trip_id_created_at_idx" ON "activity_feeds" USING btree ("trip_id","created_at");--> statement-breakpoint
-CREATE INDEX "activity_feeds_trip_id_is_pinned_idx" ON "activity_feeds" USING btree ("trip_id","is_pinned");--> statement-breakpoint
-CREATE INDEX "activity_feeds_trip_id_is_hidden_idx" ON "activity_feeds" USING btree ("trip_id","is_hidden");--> statement-breakpoint
-CREATE INDEX "activity_feeds_trip_id_activity_type_idx" ON "activity_feeds" USING btree ("trip_id","activity_type");--> statement-breakpoint
-CREATE UNIQUE INDEX "activity_reactions_activity_id_user_id_reaction_type_unique" ON "activity_reactions" USING btree ("activity_id","user_id","reaction_type");--> statement-breakpoint
-CREATE INDEX "activity_reactions_activity_id_idx" ON "activity_reactions" USING btree ("activity_id");--> statement-breakpoint
-CREATE INDEX "activity_reactions_user_id_idx" ON "activity_reactions" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "challenge_activities_challenge_id_idx" ON "challenge_activities" USING btree ("challenge_id");--> statement-breakpoint
-CREATE INDEX "challenge_activities_event_type_idx" ON "challenge_activities" USING btree ("event_type");--> statement-breakpoint
-CREATE INDEX "rank_change_activities_group_id_idx" ON "rank_change_activities" USING btree ("group_id");--> statement-breakpoint
-CREATE INDEX "rank_change_activities_new_rank_idx" ON "rank_change_activities" USING btree ("new_rank");--> statement-breakpoint
-CREATE INDEX "submission_activities_submission_id_idx" ON "submission_activities" USING btree ("submission_id");--> statement-breakpoint
-CREATE INDEX "submission_activities_challenge_id_idx" ON "submission_activities" USING btree ("challenge_id");--> statement-breakpoint
-CREATE INDEX "submission_activities_group_id_idx" ON "submission_activities" USING btree ("group_id");--> statement-breakpoint
-CREATE INDEX "submission_activities_is_winner_idx" ON "submission_activities" USING btree ("is_winner");--> statement-breakpoint
-CREATE INDEX "user_posts_author_id_idx" ON "user_posts" USING btree ("author_id");--> statement-breakpoint
-CREATE INDEX "notification_deliveries_delivery_started_at_idx" ON "notification_deliveries" USING btree ("delivery_started_at");--> statement-breakpoint
-CREATE INDEX "notification_deliveries_status_idx" ON "notification_deliveries" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "notification_deliveries_schedule_id_idx" ON "notification_deliveries" USING btree ("schedule_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "push_subscriptions_user_id_token_unique" ON "push_subscriptions" USING btree ("user_id","token");--> statement-breakpoint
-CREATE UNIQUE INDEX "location_sharing_requests_sender_id_receiver_id_unique" ON "location_sharing_requests" USING btree ("sender_id","receiver_id");--> statement-breakpoint
-CREATE INDEX "location_sharing_requests_receiver_id_status_idx" ON "location_sharing_requests" USING btree ("receiver_id","status");--> statement-breakpoint
-CREATE INDEX "location_sharing_requests_sender_id_status_idx" ON "location_sharing_requests" USING btree ("sender_id","status");--> statement-breakpoint
-CREATE INDEX "reward_purchases_reward_id_idx" ON "reward_purchases" USING btree ("reward_id");--> statement-breakpoint
-CREATE INDEX "reward_purchases_group_id_idx" ON "reward_purchases" USING btree ("group_id");--> statement-breakpoint
-CREATE INDEX "reward_purchases_status_idx" ON "reward_purchases" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "reward_purchases_status_updated_by_id_idx" ON "reward_purchases" USING btree ("status_updated_by_id");--> statement-breakpoint
-CREATE INDEX "rewards_trip_id_idx" ON "rewards" USING btree ("trip_id");--> statement-breakpoint
-CREATE INDEX "sponsors_is_active_idx" ON "sponsors" USING btree ("is_active");--> statement-breakpoint
-CREATE INDEX "sponsors_created_at_idx" ON "sponsors" USING btree ("created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "trip_sponsors_trip_id_sponsor_id_unique" ON "trip_sponsors" USING btree ("trip_id","sponsor_id");--> statement-breakpoint
-CREATE INDEX "trip_sponsors_trip_id_idx" ON "trip_sponsors" USING btree ("trip_id");--> statement-breakpoint
-CREATE INDEX "trip_sponsors_sponsor_id_idx" ON "trip_sponsors" USING btree ("sponsor_id");--> statement-breakpoint
-CREATE INDEX "user_agents_timestamp_idx" ON "user_agents" USING btree ("timestamp");--> statement-breakpoint
-CREATE INDEX "user_agents_platform_idx" ON "user_agents" USING btree ("platform");--> statement-breakpoint
-CREATE INDEX "user_agents_user_id_idx" ON "user_agents" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX "user_agents_user_agent_idx" ON "user_agents" USING btree ("user_agent");
+CREATE INDEX IF NOT EXISTS "trip_insurance_steps_insurance_id_step_number_idx" ON "trip_insurance_steps" USING btree ("insurance_id","step_number");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "trip_participants_user_id_trip_id_unique" ON "trip_participants" USING btree ("user_id","trip_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "trip_participants_trip_id_wrist_number_unique" ON "trip_participants" USING btree ("trip_id","wrist_number");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "trip_participants_trip_id_group_id_idx" ON "trip_participants" USING btree ("trip_id","group_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "trip_resources_trip_id_type_idx" ON "trip_resources" USING btree ("trip_id","type");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "group_join_requests_trip_id_user_id_unique" ON "group_join_requests" USING btree ("trip_id","user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "group_join_requests_group_id_created_at_idx" ON "group_join_requests" USING btree ("group_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "group_join_requests_user_id_trip_id_idx" ON "group_join_requests" USING btree ("user_id","trip_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "challenge_submissions_challenge_id_group_id_unique" ON "challenge_submissions" USING btree ("challenge_id","group_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_submissions_challenge_id_status_idx" ON "challenge_submissions" USING btree ("challenge_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_submissions_group_id_idx" ON "challenge_submissions" USING btree ("group_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "challenge_votes_challenge_id_submission_id_voter_id_unique" ON "challenge_votes" USING btree ("challenge_id","submission_id","voter_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_votes_challenge_id_idx" ON "challenge_votes" USING btree ("challenge_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_votes_submission_id_idx" ON "challenge_votes" USING btree ("submission_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenges_trip_id_status_idx" ON "challenges" USING btree ("trip_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenges_is_recurring_idx" ON "challenges" USING btree ("is_recurring");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "submission_reports_submission_id_idx" ON "submission_reports" USING btree ("submission_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_feeds_trip_id_created_at_idx" ON "activity_feeds" USING btree ("trip_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_feeds_trip_id_is_pinned_idx" ON "activity_feeds" USING btree ("trip_id","is_pinned");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_feeds_trip_id_is_hidden_idx" ON "activity_feeds" USING btree ("trip_id","is_hidden");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_feeds_trip_id_activity_type_idx" ON "activity_feeds" USING btree ("trip_id","activity_type");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "activity_reactions_activity_id_user_id_reaction_type_unique" ON "activity_reactions" USING btree ("activity_id","user_id","reaction_type");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_reactions_activity_id_idx" ON "activity_reactions" USING btree ("activity_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "activity_reactions_user_id_idx" ON "activity_reactions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_activities_challenge_id_idx" ON "challenge_activities" USING btree ("challenge_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "challenge_activities_event_type_idx" ON "challenge_activities" USING btree ("event_type");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "rank_change_activities_group_id_idx" ON "rank_change_activities" USING btree ("group_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "rank_change_activities_new_rank_idx" ON "rank_change_activities" USING btree ("new_rank");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "submission_activities_submission_id_idx" ON "submission_activities" USING btree ("submission_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "submission_activities_challenge_id_idx" ON "submission_activities" USING btree ("challenge_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "submission_activities_group_id_idx" ON "submission_activities" USING btree ("group_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "submission_activities_is_winner_idx" ON "submission_activities" USING btree ("is_winner");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_posts_author_id_idx" ON "user_posts" USING btree ("author_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_deliveries_delivery_started_at_idx" ON "notification_deliveries" USING btree ("delivery_started_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_deliveries_status_idx" ON "notification_deliveries" USING btree ("status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "notification_deliveries_schedule_id_idx" ON "notification_deliveries" USING btree ("schedule_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "push_subscriptions_user_id_token_unique" ON "push_subscriptions" USING btree ("user_id","token");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "location_sharing_requests_sender_id_receiver_id_unique" ON "location_sharing_requests" USING btree ("sender_id","receiver_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "location_sharing_requests_receiver_id_status_idx" ON "location_sharing_requests" USING btree ("receiver_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "location_sharing_requests_sender_id_status_idx" ON "location_sharing_requests" USING btree ("sender_id","status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reward_purchases_reward_id_idx" ON "reward_purchases" USING btree ("reward_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reward_purchases_group_id_idx" ON "reward_purchases" USING btree ("group_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reward_purchases_status_idx" ON "reward_purchases" USING btree ("status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reward_purchases_status_updated_by_id_idx" ON "reward_purchases" USING btree ("status_updated_by_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "rewards_trip_id_idx" ON "rewards" USING btree ("trip_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sponsors_is_active_idx" ON "sponsors" USING btree ("is_active");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sponsors_created_at_idx" ON "sponsors" USING btree ("created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "trip_sponsors_trip_id_sponsor_id_unique" ON "trip_sponsors" USING btree ("trip_id","sponsor_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "trip_sponsors_trip_id_idx" ON "trip_sponsors" USING btree ("trip_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "trip_sponsors_sponsor_id_idx" ON "trip_sponsors" USING btree ("sponsor_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_agents_timestamp_idx" ON "user_agents" USING btree ("timestamp");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_agents_platform_idx" ON "user_agents" USING btree ("platform");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_agents_user_id_idx" ON "user_agents" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_agents_user_agent_idx" ON "user_agents" USING btree ("user_agent");

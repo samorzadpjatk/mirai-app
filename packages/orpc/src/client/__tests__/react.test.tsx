@@ -1,16 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, renderHook } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { QueryProvider, queryClient, orpc } from "../query-client";
-import type { ReactNode } from "react";
 
 // Mock auth hooks
-vi.mock("@mirai-app/auth/client", () => ({
-  useSession: vi.fn(() => ({ access_token: "test-token" })),
-  useAuth: vi.fn(() => ({
-    signOut: vi.fn(),
-    refreshSession: vi.fn(),
-  })),
-}));
+vi.mock("@mirai-app/auth/client", () => {
+  const mockRefetchUser = vi.fn();
+  return {
+    useSession: vi.fn(() => ({ access_token: "test-token" })),
+    useAuth: vi.fn(() => ({
+      signOut: vi.fn(),
+      refreshSession: vi.fn(),
+    })),
+    authStore: {
+      getState: vi.fn(() => ({
+        session: { user: { id: "user-1" } },
+        user: null,
+        refetchUser: mockRefetchUser,
+      })),
+      subscribe: vi.fn(() => vi.fn()),
+      setState: vi.fn(),
+    },
+  };
+});
 
 // Mock getORPCClient
 const mockCleanup = vi.fn().mockResolvedValue(undefined);

@@ -3,9 +3,14 @@
 import { createStore } from "zustand/vanilla";
 import { useStore } from "zustand";
 import React, { createContext, useContext } from "react";
-import { interpolate, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import {
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { Gesture } from "react-native-gesture-handler";
-import { scheduleOnRN } from "react-native-worklets";
 import type { UserLocation } from "~/components/map/UserMap";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapSelectedUser } from "~/hooks/map";
@@ -352,9 +357,7 @@ export function useMapOverlayStore() {
       const shouldExpand = expandValue.value > 0.5 || event.velocityY < -500;
       expandValue.value = withSpring(shouldExpand ? 1 : 0);
       if (shouldExpand !== store.isListExpanded) {
-        scheduleOnRN(() => {
-          store.toggleListExpansion();
-        });
+        runOnJS(store.toggleListExpansion)();
       }
     });
 

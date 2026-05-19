@@ -114,3 +114,11 @@ coverage.txt
 .nx/workspace-data
 .claude/worktrees
 .claude/settings.local.json
+
+# omo / playwright
+.omo/
+.playwright-mcp/
+
+# migration planning
+.specs/analysis/analysis-supabase-removal.md
+.specs/tasks/draft/remove-supabase-replace-with-better-auth-bullmq-valkey-garage.refactor.md

@@ -71,6 +71,7 @@ export interface AuthActions {
   verifyOtp: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  refetchUser: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   setSession: (session: SupabaseSession | null) => void;
   setLoading: (loading: boolean) => void;
@@ -96,6 +97,8 @@ export type AuthStore = AuthState & AuthActions;
  */
 let _supabaseClient: SupabaseClient | null = null;
 let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined;
+let _fetchingUserId: string | null = null;
+let _fetchingUserPromise: Promise<AuthUser | null> | null = null;
 
 /**
  * Reset internal state for testing purposes.
@@ -104,6 +107,8 @@ let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined
 export function _resetAuthStoreForTests(): void {
   _supabaseClient = null;
   _onUserFetch = undefined;
+  _fetchingUserId = null;
+  _fetchingUserPromise = null;
 }
 
 const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthState>) => void) => {
@@ -112,13 +117,31 @@ const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthSt
     return;
   }
 
+  if (_fetchingUserId === authUserId && _fetchingUserPromise) {
+    set({ isLoading: true });
+    try {
+      const user = await _fetchingUserPromise;
+      set({ user, isAuthenticated: !!user, isLoading: false });
+    } catch (error) {
+      console.error("[AuthStore] Failed to fetch user:", error);
+      set({ isLoading: false });
+    }
+    return;
+  }
+
+  _fetchingUserId = authUserId;
+  _fetchingUserPromise = _onUserFetch(authUserId);
+
   set({ isLoading: true });
   try {
-    const user = await _onUserFetch(authUserId);
+    const user = await _fetchingUserPromise;
     set({ user, isAuthenticated: !!user, isLoading: false });
   } catch (error) {
     console.error("[AuthStore] Failed to fetch user:", error);
     set({ isLoading: false });
+  } finally {
+    _fetchingUserId = null;
+    _fetchingUserPromise = null;
   }
 };
 
@@ -253,6 +276,31 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     }
 
     set({ session: data?.session });
+  },
+
+  /**
+   * Re-fetch the current user from the backend.
+   * Useful when the user fetch mechanism (e.g. oRPC client) becomes available
+   * after initial auth store initialization.
+   */
+  refetchUser: async () => {
+    if (!_supabaseClient) {
+      throw new Error("[AuthStore] Not initialized. Call initialize() first.");
+    }
+
+    const { data: sessionData } = await _supabaseClient.auth.getSession();
+    const session = sessionData?.session;
+
+    if (session?.user && _onUserFetch) {
+      set({ isLoading: true });
+      try {
+        const user = await _onUserFetch(session.user.id);
+        set({ user, isAuthenticated: !!user, isLoading: false });
+      } catch (error) {
+        console.error("[AuthStore] Failed to refetch user:", error);
+        set({ isLoading: false });
+      }
+    }
   },
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),

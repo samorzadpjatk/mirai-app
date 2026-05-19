@@ -1,5 +1,5 @@
 import { assetsRoot } from "./constants";
-import { ensureBuckets, uploadAssets, ensurePlaceholderImage } from "./storage";
+import { ensureBuckets, uploadAssets, ensurePlaceholderImage, cleanupOldAssets } from "./storage";
 import { loadAuthUsers } from "./auth";
 import { loadTripConfigs } from "./tripConfigs";
 import { seedTrip } from "./trips";
@@ -22,6 +22,7 @@ export const runSeed = async () => {
   }
 
   await ensureBuckets();
+  await cleanupOldAssets();
   await ensurePlaceholderImage(seedEnv);
   await uploadAssets(seedEnv);
 

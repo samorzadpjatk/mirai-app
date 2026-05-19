@@ -99,6 +99,12 @@ vi.mock("../config/db", () => ({
           }
           return Promise.resolve();
         },
+        onConflictDoNothing: () => {
+          if (table?.__table === "tripParticipants") {
+            mockTripParticipantUpsert({ values: data, conflictAction: "nothing" });
+          }
+          return Promise.resolve();
+        },
       }),
     }),
   },
@@ -110,6 +116,7 @@ vi.mock("../config/supabase", () => ({
       from: (bucket: string) => ({
         upload: (path: string, file: unknown, options: object) =>
           mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        remove: () => Promise.resolve({ error: null }),
       }),
     },
   },
@@ -229,7 +236,7 @@ describe("trips", () => {
         mockFile,
         {
           upsert: true,
-          contentType: "image/jpg",
+          contentType: "image/jpeg",
         },
       );
 
@@ -399,8 +406,7 @@ describe("trips", () => {
       expect(mockCreateAuthUserByEmail).not.toHaveBeenCalled();
       expect(mockTripParticipantUpsert).toHaveBeenCalledWith({
         values: { userId: "db-existing", tripId: "trip-1" },
-        target: [tripParticipants.userId, tripParticipants.tripId],
-        set: {},
+        conflictAction: "nothing",
       });
 
       consoleSpy.mockRestore();
@@ -574,8 +580,7 @@ describe("trips", () => {
 
       expect(mockTripParticipantUpsert).toHaveBeenCalledWith({
         values: { userId: "db-ghost", tripId: "trip-1" },
-        target: [tripParticipants.userId, tripParticipants.tripId],
-        set: {},
+        conflictAction: "nothing",
       });
 
       consoleSpy.mockRestore();

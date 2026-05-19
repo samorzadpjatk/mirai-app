@@ -10,6 +10,12 @@
     "dev:backend": "nx run @mirai-app/backend-server:dev",
     "dev:notification-sender": "nx run @mirai-app/notification-sender:dev",
     "dev:native": "nx run @mirai-app/native:dev",
+    "seed:dev": "nx run @mirai-app/seed:db:seed:dev",
+    "seed:prod": "nx run @mirai-app/seed:db:seed:prod",
+    "reset:dev": "nx run @mirai-app/seed:db:reset:dev",
+    "reset:prod": "nx run @mirai-app/seed:db:reset:prod",
+    "fresh:dev": "nx run @mirai-app/seed:db:fresh:dev",
+    "fresh:prod": "nx run @mirai-app/seed:db:fresh:prod",
     "lint": "nx run-many -t lint --exclude=@mirai-app/monorepo",
     "lint:boundaries": "eslint . --rule '@nx/enforce-module-boundaries: error'",
     "typecheck": "nx run-many -t typecheck --exclude=@mirai-app/monorepo",
@@ -24,6 +30,7 @@
     "setup:dev": "bun run scripts/setup-dev.ts"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.29.2",
     "@berenddeboer/nx-knip": "^1.1.0",
     "@commitlint/config-conventional": "^20.4.2",
     "@nx-tools/nx-container": "^7.2.3",

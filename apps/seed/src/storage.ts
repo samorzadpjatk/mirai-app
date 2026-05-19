@@ -74,6 +74,31 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
   }
 };
 
+export const cleanupOldAssets = async () => {
+  const oldPaths = ["sponsors/example-sponsor.png"];
+
+  for (const path of oldPaths) {
+    const { error } = await supabase.storage.from(env.imageBucket).remove([path]);
+    if (error) {
+      console.warn(`✗ Failed to remove old asset ${env.imageBucket}/${path}: ${error.message}`);
+    } else {
+      console.log(`✓ Removed old asset: ${env.imageBucket}/${path}`);
+    }
+  }
+};
+
+export const cleanupTripBackground = async (tripKey: string) => {
+  const path = `trips/${tripKey}/background.jpg`;
+  const { error } = await supabase.storage.from(env.imageBucket).remove([path]);
+  if (error) {
+    console.warn(
+      `✗ Failed to remove old trip background ${env.imageBucket}/${path}: ${error.message}`,
+    );
+  } else {
+    console.log(`✓ Removed old trip background: ${env.imageBucket}/${path}`);
+  }
+};
+
 export const uploadAssets = async (seedEnv: SeedEnv) => {
   const envRoot = joinPath(assetsRoot, seedEnv);
   const files = await listFilesRecursive(envRoot);
