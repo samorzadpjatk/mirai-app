@@ -237,7 +237,7 @@ export const userRouter = createORPCRouter({
   getTripParticipant: moderatorProcedure
     .input(z.object({ userId: z.string(), tripId: z.string() }))
     .handler(async ({ context, input }) => {
-      return context.db.query.tripParticipants.findFirst({
+      const participant = await context.db.query.tripParticipants.findFirst({
         where: (tp, { eq, and }) => and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId)),
         columns: {
           userId: true,
@@ -246,6 +246,7 @@ export const userRouter = createORPCRouter({
           houseNumber: true,
         },
       });
+      return participant ?? null;
     }),
   getByIdWithGroup: moderatorProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))

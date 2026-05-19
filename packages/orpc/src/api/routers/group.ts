@@ -788,7 +788,7 @@ export const groupRouter = createORPCRouter({
         throw new ORPCError("NOT_FOUND", { message: "Group not found" });
       }
 
-      return await context.db.query.groupJoinRequests.findFirst({
+      const joinRequest = await context.db.query.groupJoinRequests.findFirst({
         where: (gjr, { and, eq }) =>
           and(
             eq(gjr.groupId, group.id),
@@ -797,6 +797,7 @@ export const groupRouter = createORPCRouter({
           ),
         orderBy: (gjr, { desc }) => [desc(gjr.createdAt)],
       });
+      return joinRequest ?? null;
     }),
   cancelMyJoinRequest: protectedProcedure
     .input(z.object({ groupId: z.string() }))
