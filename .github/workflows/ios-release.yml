@@ -160,6 +160,12 @@ jobs:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
 
+      - name: Materialize App Store Connect API key
+        run: |
+          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+        env:
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+
       - name: Materialize credentials.json from secret values
         run: |
           ruby -rjson -e 'payload={"ios"=>{"distributionCertificate"=>{"path"=>"credentials/ios/dist-cert.p12","password"=>ENV.fetch("IOS_DIST_CERT_PASSWORD")},"provisioningProfilePath"=>"credentials/ios/profile.mobileprovision"}}; File.write("credentials.json", JSON.pretty_generate(payload)+"\n")'
@@ -197,7 +203,7 @@ jobs:
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
-          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
       - name: Upload iOS release artifact + metadata
@@ -254,6 +260,12 @@ jobs:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
 
+      - name: Materialize App Store Connect API key
+        run: |
+          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+        env:
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+
       - name: Submit iOS release to external testing
         run: |
           bundle exec fastlane ios ios_submit \
@@ -267,7 +279,7 @@ jobs:
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
-          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
   submit_production:
@@ -316,6 +328,12 @@ jobs:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
 
+      - name: Materialize App Store Connect API key
+        run: |
+          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+        env:
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+
       - name: Submit iOS release to App Store
         run: |
           bundle exec fastlane ios ios_submit \
@@ -329,4 +347,4 @@ jobs:
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
-          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8

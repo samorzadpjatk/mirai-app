@@ -18,6 +18,7 @@ File payload secrets (base64 encoded):
 
 - `IOS_PROFILE_MOBILEPROVISION_BASE64` -> `credentials/ios/profile.mobileprovision`
 - `IOS_DIST_CERT_P12_BASE64` -> `credentials/ios/dist-cert.p12`
+- `IOS_ASC_KEY_CONTENT_BASE64` -> `credentials/ios/asc-api-key.p8`
 
 Plain-text secrets:
 
@@ -25,7 +26,6 @@ Plain-text secrets:
 - `IOS_BUNDLE_IDENTIFIER` (example: `edu.samorzadpjatk.mirai`)
 - `IOS_ASC_KEY_ID`
 - `IOS_ASC_ISSUER_ID`
-- `IOS_ASC_KEY_CONTENT_BASE64` (App Store Connect API private key as base64)
 - `IOS_TESTFLIGHT_EXTERNAL_GROUPS` (comma-separated, optional for external distribution)
 
 ## EAS iOS Phase Mapping
@@ -93,4 +93,4 @@ If Fastlane release fails critical checks during stabilization:
 - `Provisioning profile ... incompatible with bundle identifier`: confirm profile app identifier matches `IOS_BUNDLE_IDENTIFIER`.
 - `Unable to resolve iOS workspace/project`: verify `expo prebuild --platform ios` completed successfully.
 - `Multiple iOS artifacts matched ...`: pass explicit `artifact_path` to `ios_submit`.
-- App Store Connect auth errors: verify `IOS_ASC_KEY_ID`, `IOS_ASC_ISSUER_ID`, and `IOS_ASC_KEY_CONTENT_BASE64` are valid and not expired.
+- App Store Connect auth errors: verify `IOS_ASC_KEY_ID`, `IOS_ASC_ISSUER_ID`, and `IOS_ASC_KEY_CONTENT_BASE64` are valid and not expired. Ensure the decoded key file at `credentials/ios/asc-api-key.p8` contains a valid `BEGIN PRIVATE KEY` block.
