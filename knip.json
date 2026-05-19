@@ -41,6 +41,7 @@
     "tsc"
   ],
   "ignoreDependencies": [
-    "@commitlint/config-conventional"
+    "@commitlint/config-conventional",
+    "@babel/runtime"
   ]
 }
