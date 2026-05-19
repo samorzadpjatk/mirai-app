@@ -1,11 +1,46 @@
 DROP TABLE IF EXISTS "_prisma_migrations";--> statement-breakpoint
-CREATE TYPE "public"."challenge_status" AS ENUM('HIDDEN', 'VISIBLE', 'ACTIVE', 'VOTING_PHASE', 'COMPLETED', 'CANCELLED');--> statement-breakpoint
-CREATE TYPE "public"."location_sharing_request_status" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED');--> statement-breakpoint
-CREATE TYPE "public"."reward_purchase_status" AS ENUM('BOUGHT', 'ACCEPTED', 'IN_DELIVERY', 'CANCELLED', 'DELIVERED');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('USER', 'ADMIN', 'MODERATOR', 'SERVICE');--> statement-breakpoint
-CREATE TYPE "public"."scoring_category" AS ENUM('SPEED', 'UNLIMITED', 'JUDGED_STAFF', 'PEER_VOTING');--> statement-breakpoint
-CREATE TYPE "public"."submission_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');--> statement-breakpoint
-CREATE TYPE "public"."submission_type" AS ENUM('IMAGE', 'MULTI_IMAGE', 'VIDEO', 'TEXT', 'IMAGE_LOCATION', 'LOCATION', 'QR_CODE');--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."challenge_status" AS ENUM('HIDDEN', 'VISIBLE', 'ACTIVE', 'VOTING_PHASE', 'COMPLETED', 'CANCELLED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."location_sharing_request_status" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."reward_purchase_status" AS ENUM('BOUGHT', 'ACCEPTED', 'IN_DELIVERY', 'CANCELLED', 'DELIVERED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."role" AS ENUM('USER', 'ADMIN', 'MODERATOR', 'SERVICE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."scoring_category" AS ENUM('SPEED', 'UNLIMITED', 'JUDGED_STAFF', 'PEER_VOTING');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."submission_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."submission_type" AS ENUM('IMAGE', 'MULTI_IMAGE', 'VIDEO', 'TEXT', 'IMAGE_LOCATION', 'LOCATION', 'QR_CODE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" varchar(36) PRIMARY KEY NOT NULL,
 	"auth_user_id" text NOT NULL,
@@ -435,71 +470,137 @@ CREATE TABLE IF NOT EXISTS "user_agents" (
 	"timestamp" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "trip_insurance_steps" DROP CONSTRAINT IF EXISTS "trip_insurance_steps_insurance_id_trip_insurances_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_insurance_steps" ADD CONSTRAINT "trip_insurance_steps_insurance_id_trip_insurances_id_fk" FOREIGN KEY ("insurance_id") REFERENCES "public"."trip_insurances"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_insurances" DROP CONSTRAINT IF EXISTS "trip_insurances_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_insurances" ADD CONSTRAINT "trip_insurances_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_participants" DROP CONSTRAINT IF EXISTS "trip_participants_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_participants" ADD CONSTRAINT "trip_participants_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_resources" DROP CONSTRAINT IF EXISTS "trip_resources_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_resources" ADD CONSTRAINT "trip_resources_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" DROP CONSTRAINT IF EXISTS "events_creator_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_creator_id_users_id_fk" FOREIGN KEY ("creator_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "events" DROP CONSTRAINT IF EXISTS "events_organizer_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_organizer_group_id_groups_id_fk" FOREIGN KEY ("organizer_group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_events" DROP CONSTRAINT IF EXISTS "user_events_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "user_events" ADD CONSTRAINT "user_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_events" DROP CONSTRAINT IF EXISTS "user_events_event_id_events_id_fk";--> statement-breakpoint
 ALTER TABLE "user_events" ADD CONSTRAINT "user_events_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "group_join_requests" DROP CONSTRAINT IF EXISTS "group_join_requests_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "group_join_requests" ADD CONSTRAINT "group_join_requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "groups" DROP CONSTRAINT IF EXISTS "groups_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "groups" ADD CONSTRAINT "groups_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "groups" DROP CONSTRAINT IF EXISTS "groups_organizer_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "groups" ADD CONSTRAINT "groups_organizer_id_users_id_fk" FOREIGN KEY ("organizer_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_submissions" DROP CONSTRAINT IF EXISTS "challenge_submissions_reviewed_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_submissions" ADD CONSTRAINT "challenge_submissions_reviewed_by_id_users_id_fk" FOREIGN KEY ("reviewed_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_votes" DROP CONSTRAINT IF EXISTS "challenge_votes_voter_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_votes" ADD CONSTRAINT "challenge_votes_voter_id_trip_participants_id_fk" FOREIGN KEY ("voter_id") REFERENCES "public"."trip_participants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenges" DROP CONSTRAINT IF EXISTS "challenges_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "challenges" ADD CONSTRAINT "challenges_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_reports" DROP CONSTRAINT IF EXISTS "submission_reports_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_reports" ADD CONSTRAINT "submission_reports_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_reports" DROP CONSTRAINT IF EXISTS "submission_reports_reporter_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_reports" ADD CONSTRAINT "submission_reports_reporter_id_trip_participants_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."trip_participants"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_hidden_by_admin_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_hidden_by_admin_users_id_fk" FOREIGN KEY ("hidden_by_admin") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_feeds" DROP CONSTRAINT IF EXISTS "activity_feeds_created_by_admin_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_feeds" ADD CONSTRAINT "activity_feeds_created_by_admin_users_id_fk" FOREIGN KEY ("created_by_admin") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_reactions" DROP CONSTRAINT IF EXISTS "activity_reactions_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_reactions" ADD CONSTRAINT "activity_reactions_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_reactions" DROP CONSTRAINT IF EXISTS "activity_reactions_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "activity_reactions" ADD CONSTRAINT "activity_reactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_activities" DROP CONSTRAINT IF EXISTS "challenge_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_activities" ADD CONSTRAINT "challenge_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "challenge_activities" DROP CONSTRAINT IF EXISTS "challenge_activities_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "challenge_activities" ADD CONSTRAINT "challenge_activities_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rank_change_activities" DROP CONSTRAINT IF EXISTS "rank_change_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "rank_change_activities" ADD CONSTRAINT "rank_change_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rank_change_activities" DROP CONSTRAINT IF EXISTS "rank_change_activities_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "rank_change_activities" ADD CONSTRAINT "rank_change_activities_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_submission_id_challenge_submissions_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_submission_id_challenge_submissions_id_fk" FOREIGN KEY ("submission_id") REFERENCES "public"."challenge_submissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_challenge_id_challenges_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "submission_activities" DROP CONSTRAINT IF EXISTS "submission_activities_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "submission_activities" ADD CONSTRAINT "submission_activities_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_posts" DROP CONSTRAINT IF EXISTS "user_posts_activity_id_activity_feeds_id_fk";--> statement-breakpoint
 ALTER TABLE "user_posts" ADD CONSTRAINT "user_posts_activity_id_activity_feeds_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activity_feeds"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_posts" DROP CONSTRAINT IF EXISTS "user_posts_author_id_trip_participants_id_fk";--> statement-breakpoint
 ALTER TABLE "user_posts" ADD CONSTRAINT "user_posts_author_id_trip_participants_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."trip_participants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_deliveries" DROP CONSTRAINT IF EXISTS "notification_deliveries_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_deliveries" ADD CONSTRAINT "notification_deliveries_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_deliveries" DROP CONSTRAINT IF EXISTS "notification_deliveries_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_deliveries" ADD CONSTRAINT "notification_deliveries_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_pushes" DROP CONSTRAINT IF EXISTS "notification_pushes_target_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_pushes" ADD CONSTRAINT "notification_pushes_target_user_id_users_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_pushes" DROP CONSTRAINT IF EXISTS "notification_pushes_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_pushes" ADD CONSTRAINT "notification_pushes_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedule_executions" DROP CONSTRAINT IF EXISTS "notification_schedule_executions_notification_id_notifications_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedule_executions" ADD CONSTRAINT "notification_schedule_executions_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedule_executions" DROP CONSTRAINT IF EXISTS "notification_schedule_executions_schedule_id_notification_schedules_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedule_executions" ADD CONSTRAINT "notification_schedule_executions_schedule_id_notification_schedules_id_fk" FOREIGN KEY ("schedule_id") REFERENCES "public"."notification_schedules"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedules" DROP CONSTRAINT IF EXISTS "notification_schedules_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedules" ADD CONSTRAINT "notification_schedules_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_schedules" DROP CONSTRAINT IF EXISTS "notification_schedules_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notification_schedules" ADD CONSTRAINT "notification_schedules_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" DROP CONSTRAINT IF EXISTS "notifications_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" DROP CONSTRAINT IF EXISTS "notifications_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "push_subscriptions" DROP CONSTRAINT IF EXISTS "push_subscriptions_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_shares" DROP CONSTRAINT IF EXISTS "location_shares_location_id_locations_id_fk";--> statement-breakpoint
 ALTER TABLE "location_shares" ADD CONSTRAINT "location_shares_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_shares" DROP CONSTRAINT IF EXISTS "location_shares_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_shares" ADD CONSTRAINT "location_shares_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_sharing_requests" DROP CONSTRAINT IF EXISTS "location_sharing_requests_sender_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_sharing_requests" ADD CONSTRAINT "location_sharing_requests_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "location_sharing_requests" DROP CONSTRAINT IF EXISTS "location_sharing_requests_receiver_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "location_sharing_requests" ADD CONSTRAINT "location_sharing_requests_receiver_id_users_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "locations" DROP CONSTRAINT IF EXISTS "locations_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "coin_transactions" DROP CONSTRAINT IF EXISTS "coin_transactions_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "coin_transactions" ADD CONSTRAINT "coin_transactions_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "coin_transactions" DROP CONSTRAINT IF EXISTS "coin_transactions_admin_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "coin_transactions" ADD CONSTRAINT "coin_transactions_admin_id_users_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_reward_id_rewards_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_reward_id_rewards_id_fk" FOREIGN KEY ("reward_id") REFERENCES "public"."rewards"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_group_id_groups_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_group_id_groups_id_fk" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_purchased_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_purchased_by_id_users_id_fk" FOREIGN KEY ("purchased_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reward_purchases" DROP CONSTRAINT IF EXISTS "reward_purchases_status_updated_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "reward_purchases" ADD CONSTRAINT "reward_purchases_status_updated_by_id_users_id_fk" FOREIGN KEY ("status_updated_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rewards" DROP CONSTRAINT IF EXISTS "rewards_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rewards" DROP CONSTRAINT IF EXISTS "rewards_created_by_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_sponsors" DROP CONSTRAINT IF EXISTS "trip_sponsors_trip_id_trips_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_sponsors" ADD CONSTRAINT "trip_sponsors_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trip_sponsors" DROP CONSTRAINT IF EXISTS "trip_sponsors_sponsor_id_sponsors_id_fk";--> statement-breakpoint
 ALTER TABLE "trip_sponsors" ADD CONSTRAINT "trip_sponsors_sponsor_id_sponsors_id_fk" FOREIGN KEY ("sponsor_id") REFERENCES "public"."sponsors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_agents" DROP CONSTRAINT IF EXISTS "user_agents_user_id_users_id_fk";--> statement-breakpoint
 ALTER TABLE "user_agents" ADD CONSTRAINT "user_agents_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "trip_insurance_steps_insurance_id_step_number_idx" ON "trip_insurance_steps" USING btree ("insurance_id","step_number");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "trip_participants_user_id_trip_id_unique" ON "trip_participants" USING btree ("user_id","trip_id");--> statement-breakpoint
