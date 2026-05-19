@@ -9,12 +9,12 @@ This guide covers setting up the Expo React Native app for development.
 ### Required
 
 - Bun 1.3.6+
-- Node.js 20+
+- Node.js 24+
 - Expo CLI (via `bunx expo`)
 
 ### iOS Development (macOS only)
 
-- Xcode 15+
+- Xcode 26.5+
 - iOS Simulator
 - CocoaPods (`sudo gem install cocoapods`)
 
@@ -170,6 +170,22 @@ eas build --profile preview
 # Production build
 eas build --profile production
 ```
+
+## Dependencies
+
+### Required Runtime Dependencies
+
+The app uses NativeWind v4 for styling, which requires `react-native-css-interop` as a direct dependency:
+
+```json
+"dependencies": {
+  "nativewind": "^4.2.4",
+  "react-native-css-interop": "0.2.4",
+  "tailwindcss": "^3.4.19"
+}
+```
+
+> **Note:** `react-native-css-interop` must be declared as a direct dependency even though it's also a transitive dependency of `nativewind`. Metro bundler cannot resolve it otherwise in release builds.
 
 ## Further Reading
 

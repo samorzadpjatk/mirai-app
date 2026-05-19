@@ -88,6 +88,12 @@ bun run release:ios:submit     # Upload to App Store
 
 ## Environment Setup
 
+### Prerequisites
+
+- Xcode 26.5+ (for iOS builds)
+- Node.js 24+
+- Bun 1.3.14+
+
 ### EAS Credentials
 
 ```bash
@@ -96,6 +102,39 @@ eas login
 
 # Configure credentials
 eas credentials
+```
+
+### iOS Certificates and API Key
+
+Fastlane uses App Store Connect API key authentication. The credentials directory structure:
+
+```
+credentials/ios/
+├── api_key_<KEY_ID>.json     # App Store Connect API key (JSON format)
+├── dist-cert.p12              # Distribution certificate
+└── profile.mobileprovision    # Provisioning profile
+```
+
+The API key JSON file must contain:
+
+```json
+{
+  "key_id": "YOUR_KEY_ID",
+  "issuer_id": "YOUR_ISSUER_ID",
+  "key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+}
+```
+
+Or use a raw `.p8` key file:
+
+```
+credentials/ios/ApiKey_<KEY_ID>.p8
+```
+
+Set the environment variable:
+
+```bash
+export IOS_ASC_API_KEY_PATH="$(pwd)/credentials/ios/api_key_YOUR_KEY_ID.json"
 ```
 
 ### iOS Certificates
@@ -223,6 +262,15 @@ fastlane match nuke appstore
 # Regenerate
 cd fastlane && bundle exec fastlane ios match_init
 ```
+
+### App Store Connect API Key Errors
+
+**"invalid curve name"**: This occurs when Fastlane cannot parse the API key. Ensure:
+- The API key file is in the correct format (JSON with `key_id`, `issuer_id`, `key` OR raw `.p8` file)
+- The `IOS_ASC_API_KEY_PATH` environment variable points to the correct file
+- The key file contains a valid EC P-256 private key
+
+**"No value found for 'key_id'"**: The App Store Connect API key requires `key_id` and `issuer_id`. When using a raw `.p8` file, set these as environment variables or use the JSON credential file format instead.
 
 ## Further Reading
 
