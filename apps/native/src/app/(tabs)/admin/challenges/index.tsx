@@ -400,7 +400,7 @@ export default function AdminChallengesScreen() {
         },
       }),
       enabled: Boolean(tripId),
-      refetchInterval: 15_000,
+      staleTime: 5 * 60 * 1000,
     })),
   });
 

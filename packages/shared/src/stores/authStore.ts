@@ -96,6 +96,8 @@ export type AuthStore = AuthState & AuthActions;
  */
 let _supabaseClient: SupabaseClient | null = null;
 let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined;
+let _fetchingUserId: string | null = null;
+let _fetchingUserPromise: Promise<AuthUser | null> | null = null;
 
 /**
  * Reset internal state for testing purposes.
@@ -104,6 +106,8 @@ let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined
 export function _resetAuthStoreForTests(): void {
   _supabaseClient = null;
   _onUserFetch = undefined;
+  _fetchingUserId = null;
+  _fetchingUserPromise = null;
 }
 
 const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthState>) => void) => {
@@ -112,13 +116,31 @@ const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthSt
     return;
   }
 
+  if (_fetchingUserId === authUserId && _fetchingUserPromise) {
+    set({ isLoading: true });
+    try {
+      const user = await _fetchingUserPromise;
+      set({ user, isAuthenticated: !!user, isLoading: false });
+    } catch (error) {
+      console.error("[AuthStore] Failed to fetch user:", error);
+      set({ isLoading: false });
+    }
+    return;
+  }
+
+  _fetchingUserId = authUserId;
+  _fetchingUserPromise = _onUserFetch(authUserId);
+
   set({ isLoading: true });
   try {
-    const user = await _onUserFetch(authUserId);
+    const user = await _fetchingUserPromise;
     set({ user, isAuthenticated: !!user, isLoading: false });
   } catch (error) {
     console.error("[AuthStore] Failed to fetch user:", error);
     set({ isLoading: false });
+  } finally {
+    _fetchingUserId = null;
+    _fetchingUserPromise = null;
   }
 };
 

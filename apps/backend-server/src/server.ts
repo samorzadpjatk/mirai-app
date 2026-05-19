@@ -14,8 +14,8 @@ export interface ServerOptions {
 
 const TEN_MB = 10 * 1024 * 1024;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const GLOBAL_RATE_LIMIT = 100;
-const AUTH_RATE_LIMIT = 10;
+const GLOBAL_RATE_LIMIT = 600;
+const AUTH_RATE_LIMIT = 30;
 
 interface RateLimitEntry {
   count: number;

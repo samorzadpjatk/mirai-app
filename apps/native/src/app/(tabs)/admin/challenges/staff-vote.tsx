@@ -76,7 +76,7 @@ export default function AdminChallengeStaffVotingScreen() {
   } = useQuery({
     ...judgedStaffProgressQuery,
     enabled: !!challengeId && !!tripId && challenge?.scoringCategory === "JUDGED_STAFF",
-    refetchInterval: 10_000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const submitVoteMutation = useMutation(orpc.challengeVote.submitVotes.mutationOptions());

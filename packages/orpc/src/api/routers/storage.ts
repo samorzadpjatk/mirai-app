@@ -139,8 +139,23 @@ export const storageRouter = createORPCRouter({
         });
       }
 
+      let signedUrl = data.signedUrl;
+      const publicUrl = process.env.SUPABASE_PUBLIC_URL;
+      if (publicUrl) {
+        try {
+          const signed = new URL(signedUrl);
+          const pub = new URL(publicUrl);
+          signed.host = pub.host;
+          signed.protocol = pub.protocol;
+          signed.port = pub.port;
+          signedUrl = signed.toString();
+        } catch {
+          // If URL parsing fails, fall back to the original signed URL
+        }
+      }
+
       return {
-        signedUrl: data.signedUrl,
+        signedUrl,
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
       };
     }),

@@ -53,23 +53,23 @@ export default function TripInfoScreen() {
   const mapPdfDownload = useFileDownload();
   const infopackDownload = useFileDownload();
 
-  // Download images on component mount
+  const { download: downloadHero } = heroImageDownload;
+  const { download: downloadMapBg } = mapBgImageDownload;
+
   useEffect(() => {
     if (!isLoading) {
       const heroResource = getResource("HERO_IMAGE");
       const mapBgResource = getResource("MAP_BG_IMAGE");
 
       if (heroResource?.storagePath) {
-        heroImageDownload.download({ storagePath: heroResource.storagePath }).catch(console.error);
+        downloadHero({ storagePath: heroResource.storagePath }).catch(console.error);
       }
 
       if (mapBgResource?.storagePath) {
-        mapBgImageDownload
-          .download({ storagePath: mapBgResource.storagePath })
-          .catch(console.error);
+        downloadMapBg({ storagePath: mapBgResource.storagePath }).catch(console.error);
       }
     }
-  }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
+  }, [tripId, isLoading, getResource, downloadHero, downloadMapBg]);
 
   // Check if PDFs are downloaded on component mount
   useEffect(() => {

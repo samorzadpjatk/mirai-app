@@ -8,6 +8,10 @@
   "scripts": {
     "db:seed:dev": "bun run --env-file=.env.dev index.ts",
     "db:seed:prod": "bun run --env-file=.env.prod index.ts --prod",
+    "db:reset:dev": "bun run --env-file=.env.dev reset.ts",
+    "db:reset:prod": "bun run --env-file=.env.prod reset.ts --prod",
+    "db:fresh:dev": "bun run db:reset:dev && bun run db:seed:dev",
+    "db:fresh:prod": "bun run db:reset:prod && bun run db:seed:prod",
     "db:generate": "cd ../../packages/db && bun run db:generate",
     "db:migrate": "cd ../../packages/db && bun run db:migrate",
     "db:migrate:deploy": "cd ../../packages/db && bun run db:migrate",

@@ -25,6 +25,32 @@ interface DownloadResult {
   totalBytes: number;
 }
 
+// Deduplicate concurrent requests for the same storage path to avoid
+// hitting the backend rate limit when multiple images load simultaneously.
+const inFlightUrlRequests = new Map<string, Promise<{ signedUrl: string }>>();
+
+const getSignedUrl = async (storagePath: string, expiresInSeconds?: number): Promise<string> => {
+  const cacheKey = `${storagePath}:${expiresInSeconds ?? "default"}`;
+  const existing = inFlightUrlRequests.get(cacheKey);
+  if (existing) {
+    const response = await existing;
+    return response.signedUrl;
+  }
+
+  const promise = orpc.storage.createDownloadUrl.call({
+    storagePath,
+    expiresInSeconds,
+  });
+  inFlightUrlRequests.set(cacheKey, promise);
+
+  try {
+    const response = await promise;
+    return response.signedUrl;
+  } finally {
+    inFlightUrlRequests.delete(cacheKey);
+  }
+};
+
 const toDownloadResult = (file: File, fileName: string): DownloadResult => ({
   uri: file.uri,
   contentType: file.type,
@@ -68,7 +94,6 @@ export const deleteCachedDownload = async (storagePath: string): Promise<void> =
 };
 
 export const useFileDownload = () => {
-  const trpcClient = orpc;
   const [status, setStatus] = useState<DownloadStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
   const [file, setFile] = useState<DownloadResult | null>(null);
@@ -96,157 +121,149 @@ export const useFileDownload = () => {
     setFile(null);
   }, []);
 
-  const download = useCallback(
-    async (input: DownloadInput): Promise<DownloadResult> => {
-      // Reset abort state and set to loading
-      abortRequestedRef.current = false;
-      if (!mountedRef.current) {
-        throw new Error("Download aborted: component unmounted");
+  const download = useCallback(async (input: DownloadInput): Promise<DownloadResult> => {
+    // Reset abort state and set to loading
+    abortRequestedRef.current = false;
+    if (!mountedRef.current) {
+      throw new Error("Download aborted: component unmounted");
+    }
+
+    setStatus("loading");
+    setError(null);
+    setFile(null);
+
+    try {
+      const destinationDir = new Directory(Paths.cache, "downloads");
+      if (!destinationDir.exists) {
+        destinationDir.create();
       }
 
-      setStatus("loading");
-      setError(null);
-      setFile(null);
+      const stableCachedFileName = await buildCacheFileNameFromStoragePath(input.storagePath);
+      const stableCachedFile = new File(destinationDir, stableCachedFileName);
 
-      try {
-        const destinationDir = new Directory(Paths.cache, "downloads");
-        if (!destinationDir.exists) {
-          destinationDir.create();
-        }
-
-        const stableCachedFileName = await buildCacheFileNameFromStoragePath(input.storagePath);
-        const stableCachedFile = new File(destinationDir, stableCachedFileName);
-
-        // Try local cache first so offline users can still see previously downloaded files.
-        if (stableCachedFile.exists && !input.skipCache) {
-          const cachedResult = toDownloadResult(stableCachedFile, stableCachedFileName);
-
-          if (mountedRef.current) {
-            setFile(cachedResult);
-            setStatus("success");
-          }
-
-          return cachedResult;
-        }
-
-        if (stableCachedFile.exists && input.skipCache) {
-          try {
-            stableCachedFile.delete();
-          } catch (deleteError) {
-            console.warn("[Download] Failed to clear cached file", {
-              storagePath: input.storagePath,
-              message: deleteError instanceof Error ? deleteError.message : "Unknown error",
-            });
-          }
-        }
-
-        // Use public URL if available, otherwise get signed URL
-        let signedUrl: string;
-        if (input.publicUrl) {
-          signedUrl = input.publicUrl;
-        } else {
-          const response = await trpcClient.storage.createDownloadUrl.call({
-            storagePath: input.storagePath,
-            expiresInSeconds: input.expiresInSeconds,
-          });
-          signedUrl = response.signedUrl;
-        }
-
-        const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
-        const targetFile = new File(destinationDir, cachedFileName);
-
-        // Backward compatibility: older cache entries can use URL-derived extension.
-        if (targetFile.exists && !input.skipCache) {
-          const cachedResult = toDownloadResult(targetFile, cachedFileName);
-
-          if (mountedRef.current) {
-            setFile(cachedResult);
-            setStatus("success");
-          }
-
-          return cachedResult;
-        }
-
-        if (targetFile.exists && input.skipCache) {
-          try {
-            targetFile.delete();
-          } catch (deleteError) {
-            console.warn("[Download] Failed to clear cached file", {
-              storagePath: input.storagePath,
-              message: deleteError instanceof Error ? deleteError.message : "Unknown error",
-            });
-          }
-        }
-
-        // Download the file to the target file; if destination already exists, clear it once and retry
-        const performDownload = async () => {
-          try {
-            if (targetFile.exists) targetFile.delete();
-            return await File.downloadFileAsync(signedUrl, targetFile);
-          } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            if (message.toLowerCase().includes("destination already exists")) {
-              try {
-                if (targetFile.exists) targetFile.delete();
-              } catch (deleteErr) {
-                console.warn("[Download] Failed to delete existing target file", deleteErr);
-              }
-              try {
-                return await File.downloadFileAsync(signedUrl, targetFile);
-              } catch (retryErr) {
-                const retryMessage =
-                  retryErr instanceof Error ? retryErr.message : String(retryErr);
-                if (
-                  retryMessage.toLowerCase().includes("destination already exists") &&
-                  targetFile.exists
-                ) {
-                  // Another parallel download already wrote the same file.
-                  // Reuse it instead of crashing with a race-condition error.
-                  return targetFile;
-                }
-                throw retryErr;
-              }
-            }
-            throw err;
-          }
-        };
-
-        const downloadResult = await performDownload();
-
-        const totalBytes = downloadResult.size;
-        const contentType = downloadResult.type;
-        const fileName = cachedFileName;
-
-        const result: DownloadResult = {
-          uri: downloadResult.uri,
-          contentType,
-          fileName,
-          totalBytes,
-        };
+      // Try local cache first so offline users can still see previously downloaded files.
+      if (stableCachedFile.exists && !input.skipCache) {
+        const cachedResult = toDownloadResult(stableCachedFile, stableCachedFileName);
 
         if (mountedRef.current) {
-          setFile(result);
+          setFile(cachedResult);
           setStatus("success");
         }
 
-        return result;
-      } catch (downloadError) {
-        const errorObject = downloadError as Error;
-        const isAbortError =
-          abortRequestedRef.current || (errorObject as { name?: string }).name === "AbortError";
+        return cachedResult;
+      }
+
+      if (stableCachedFile.exists && input.skipCache) {
+        try {
+          stableCachedFile.delete();
+        } catch (deleteError) {
+          console.warn("[Download] Failed to clear cached file", {
+            storagePath: input.storagePath,
+            message: deleteError instanceof Error ? deleteError.message : "Unknown error",
+          });
+        }
+      }
+
+      // Use public URL if available, otherwise get signed URL (deduplicated)
+      let signedUrl: string;
+      if (input.publicUrl) {
+        signedUrl = input.publicUrl;
+      } else {
+        signedUrl = await getSignedUrl(input.storagePath, input.expiresInSeconds);
+      }
+
+      const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
+      const targetFile = new File(destinationDir, cachedFileName);
+
+      // Backward compatibility: older cache entries can use URL-derived extension.
+      if (targetFile.exists && !input.skipCache) {
+        const cachedResult = toDownloadResult(targetFile, cachedFileName);
 
         if (mountedRef.current) {
-          setStatus(isAbortError ? "idle" : "error");
-          if (!isAbortError) {
-            setError(errorObject);
-          }
+          setFile(cachedResult);
+          setStatus("success");
         }
 
-        throw errorObject;
+        return cachedResult;
       }
-    },
-    [trpcClient],
-  );
+
+      if (targetFile.exists && input.skipCache) {
+        try {
+          targetFile.delete();
+        } catch (deleteError) {
+          console.warn("[Download] Failed to clear cached file", {
+            storagePath: input.storagePath,
+            message: deleteError instanceof Error ? deleteError.message : "Unknown error",
+          });
+        }
+      }
+
+      // Download the file to the target file; if destination already exists, clear it once and retry
+      const performDownload = async () => {
+        try {
+          if (targetFile.exists) targetFile.delete();
+          return await File.downloadFileAsync(signedUrl, targetFile);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          if (message.toLowerCase().includes("destination already exists")) {
+            try {
+              if (targetFile.exists) targetFile.delete();
+            } catch (deleteErr) {
+              console.warn("[Download] Failed to delete existing target file", deleteErr);
+            }
+            try {
+              return await File.downloadFileAsync(signedUrl, targetFile);
+            } catch (retryErr) {
+              const retryMessage = retryErr instanceof Error ? retryErr.message : String(retryErr);
+              if (
+                retryMessage.toLowerCase().includes("destination already exists") &&
+                targetFile.exists
+              ) {
+                // Another parallel download already wrote the same file.
+                // Reuse it instead of crashing with a race-condition error.
+                return targetFile;
+              }
+              throw retryErr;
+            }
+          }
+          throw err;
+        }
+      };
+
+      const downloadResult = await performDownload();
+
+      const totalBytes = downloadResult.size;
+      const contentType = downloadResult.type;
+      const fileName = cachedFileName;
+
+      const result: DownloadResult = {
+        uri: downloadResult.uri,
+        contentType,
+        fileName,
+        totalBytes,
+      };
+
+      if (mountedRef.current) {
+        setFile(result);
+        setStatus("success");
+      }
+
+      return result;
+    } catch (downloadError) {
+      const errorObject = downloadError as Error;
+      const isAbortError =
+        abortRequestedRef.current || (errorObject as { name?: string }).name === "AbortError";
+
+      if (mountedRef.current) {
+        setStatus(isAbortError ? "idle" : "error");
+        if (!isAbortError) {
+          setError(errorObject);
+        }
+      }
+
+      throw errorObject;
+    }
+  }, []);
 
   return {
     download,

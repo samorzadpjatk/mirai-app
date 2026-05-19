@@ -2,6 +2,7 @@ import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
 import { db } from "./config/db";
 import { supabase } from "./config/supabase";
 import { env } from "./config/env";
+import { cleanupTripBackground } from "./storage";
 import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
@@ -31,11 +32,15 @@ export const seedTrip = async (
         const ext = tripConfig.background.split(".").pop()?.toLowerCase() ?? "jpg";
         const storagePath = `trips/${tripConfig.key}/background.${ext}`;
 
+        await cleanupTripBackground(tripConfig.key);
+
+        const mimeType = ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`;
+
         const uploadResult = await supabase.storage
           .from(env.imageBucket)
           .upload(storagePath, backgroundFile, {
             upsert: true,
-            contentType: `image/${ext}`,
+            contentType: mimeType,
           });
 
         if (uploadResult.error) {
