@@ -42,7 +42,7 @@ The workflow pauses before each promotion until approved.
 
 You can run the same CD flow locally with Fastlane.
 
-1. Option A: Create `apps/native/credential.json` from `apps/native/credential.example.json` and fill Android keystore values.
+1. Option A: Create `apps/native/credentials.json` from `apps/native/credentials.example.json` and fill Android keystore values.
 2. Option B: Export required environment variables directly (same values as repo secrets):
    - `GOOGLE_SERVICES_JSON_BASE64`
    - `ANDROID_APP_PACKAGE`
@@ -60,7 +60,7 @@ bundle exec fastlane android android_local_cd
 
 Fastlane bootstrap behavior:
 
-- If env vars are missing, Fastlane tries to populate Android release values from `credential.json` (or `CREDENTIALS_JSON_PATH`).
+- If env vars are missing, Fastlane tries to populate Android release values from `credentials.json` (or `CREDENTIALS_JSON_PATH`).
 - `ANDROID_APP_PACKAGE` falls back to `expo.android.package` from `app.json`.
 - `PLAY_JSON_KEY_PATH` defaults to `credentials/android/play-credentials.json` or `credentials/android/service-account.json` when present.
 
