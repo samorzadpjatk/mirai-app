@@ -1,8 +1,8 @@
 key: example-trip
 name: Example Trip
 description: Example trip description
-startDate: 2026-02-20
-endDate: 2026-03-01
+startDate: 2026-05-01
+endDate: 2026-12-31
 users: users/example-trip-members.csv
 background: images/trips/example-trip/background.jpg
 sponsors: sponsors/example-sponsors.yaml

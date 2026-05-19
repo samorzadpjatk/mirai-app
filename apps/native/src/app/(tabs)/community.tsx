@@ -312,7 +312,7 @@ export default function CommunityScreen() {
 
         {selectedTrip && feedQuery.isLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingStateText}>Loading feed...</Text>
           </View>
         ) : null}
@@ -467,13 +467,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loadingState: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.xs,
+    justifyContent: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.xl,
   },
   loadingStateText: {
     color: colors.textSecondary,
-    fontSize: typography.sm,
+    fontSize: typography.lg,
+    fontWeight: typography.semibold,
   },
 });

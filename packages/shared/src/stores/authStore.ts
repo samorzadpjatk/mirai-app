@@ -71,6 +71,7 @@ export interface AuthActions {
   verifyOtp: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  refetchUser: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   setSession: (session: SupabaseSession | null) => void;
   setLoading: (loading: boolean) => void;
@@ -275,6 +276,31 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     }
 
     set({ session: data?.session });
+  },
+
+  /**
+   * Re-fetch the current user from the backend.
+   * Useful when the user fetch mechanism (e.g. oRPC client) becomes available
+   * after initial auth store initialization.
+   */
+  refetchUser: async () => {
+    if (!_supabaseClient) {
+      throw new Error("[AuthStore] Not initialized. Call initialize() first.");
+    }
+
+    const { data: sessionData } = await _supabaseClient.auth.getSession();
+    const session = sessionData?.session;
+
+    if (session?.user && _onUserFetch) {
+      set({ isLoading: true });
+      try {
+        const user = await _onUserFetch(session.user.id);
+        set({ user, isAuthenticated: !!user, isLoading: false });
+      } catch (error) {
+        console.error("[AuthStore] Failed to refetch user:", error);
+        set({ isLoading: false });
+      }
+    }
   },
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),

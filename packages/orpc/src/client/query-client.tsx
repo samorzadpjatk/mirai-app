@@ -14,7 +14,7 @@ import { getORPCClient } from "./vanilia";
 import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSession, useAuth } from "@mirai-app/auth/client";
+import { useSession, useAuth, authStore } from "@mirai-app/auth/client";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -97,6 +97,13 @@ export function QueryProvider({
   const orpcUtils = useMemo(() => createTanstackQueryUtils(client), [client]);
 
   orpc = orpcUtils;
+
+  useEffect(() => {
+    const currentState = authStore.getState();
+    if (authToken && currentState.session?.user && !currentState.user && !currentState.isLoading) {
+      void currentState.refetchUser();
+    }
+  }, [authToken]);
 
   useEffect(() => {
     const queryCache = queryClient.getQueryCache();

@@ -4,7 +4,7 @@
     "apps/native": {
       "entry": ["src/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["tailwindcss", "expo-system-ui"]
+      "ignoreDependencies": ["tailwindcss", "expo-system-ui", "@babel/plugin-transform-react-jsx"]
     },
     "apps/backend-server": {
       "project": ["src/**/*.ts"]
@@ -33,7 +33,6 @@
   },
   "ignore": [
     "**/vitest.config.ts",
-    "apps/native/metro.config.cjs",
     "commitlint.config.cjs",
     "scripts/**"
   ],

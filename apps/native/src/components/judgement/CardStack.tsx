@@ -5,12 +5,12 @@ import { Alert, Modal, Pressable, Text, TextInput, View, useWindowDimensions } f
 import {
   Extrapolation,
   interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { scheduleOnRN } from "react-native-worklets";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { colors } from "~/styles";
 import { type ReviewStatus, useJudgement } from "~/stores/judgement";
@@ -78,8 +78,8 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       if (status === "REJECTED" && !normalizedRejectionReason) return;
       const toValue = status === "APPROVED" ? width * 1.2 : -width * 1.2;
       runSwipeAnimation(toValue, () => {
-        scheduleOnRN(reviewCurrent, status, normalizedRejectionReason, ranking);
-        resetCardPosition();
+        runOnJS(reviewCurrent)(status, normalizedRejectionReason, ranking);
+        runOnJS(resetCardPosition)();
       });
     },
     [currentSubmission, isReviewing, reviewCurrent, resetCardPosition, runSwipeAnimation, width],
@@ -131,8 +131,8 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const animateApproveSwipe = useCallback(
     (targetWidth: number) => {
       translateX.value = withTiming(targetWidth * 1.2, { duration: 220 }, () => {
-        scheduleOnRN(reviewCurrent, "APPROVED");
-        resetCardPosition();
+        runOnJS(reviewCurrent)("APPROVED");
+        runOnJS(resetCardPosition)();
       });
     },
     [resetCardPosition, reviewCurrent, translateX],
@@ -141,8 +141,8 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const animateRejectSwipe = useCallback(
     (targetWidth: number) => {
       translateX.value = withTiming(-targetWidth * 1.2, { duration: 220 }, () => {
-        scheduleOnRN(openRejectModal);
-        resetCardPosition();
+        runOnJS(openRejectModal)();
+        runOnJS(resetCardPosition)();
       });
     },
     [openRejectModal, resetCardPosition, translateX],
@@ -161,7 +161,7 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       if (shouldApprove) {
         if (isJudgedStaff) {
           springBack();
-          scheduleOnRN(openApproveSelection);
+          runOnJS(openApproveSelection)();
           return;
         }
         animateApproveSwipe(width);
