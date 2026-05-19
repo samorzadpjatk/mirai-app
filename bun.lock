@@ -89,6 +89,7 @@
         "react-dom": "19.2.0",
         "react-native": "0.83.6",
         "react-native-blob-util": "^0.24.8",
+        "react-native-css-interop": "0.2.4",
         "react-native-gesture-handler": "~2.30.0",
         "react-native-pdf": "^7.0.3",
         "react-native-reanimated": "4.2.1",
