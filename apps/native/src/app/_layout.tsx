@@ -11,7 +11,6 @@ import { LocationStoreProvider } from "~/stores/location";
 
 // Global handler for notifications (module-level)
 Notifications.setNotificationHandler({
-   
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
