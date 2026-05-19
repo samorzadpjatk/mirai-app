@@ -9,6 +9,7 @@
         "postgres": "^3.4.9",
       },
       "devDependencies": {
+        "@babel/runtime": "^7.29.2",
         "@berenddeboer/nx-knip": "^1.1.0",
         "@commitlint/config-conventional": "^20.4.2",
         "@nx-tools/nx-container": "^7.2.3",
@@ -106,6 +107,7 @@
         "@babel/preset-flow": "^7.27.1",
         "@babel/preset-react": "^7.28.5",
         "@babel/preset-typescript": "^7.28.5",
+        "@babel/runtime": "^7.29.2",
         "@jest/globals": "^30.3.0",
         "@testing-library/jest-native": "^5.4.3",
         "@testing-library/react-native": "^13.3.3",
