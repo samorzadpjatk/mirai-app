@@ -116,6 +116,7 @@ vi.mock("../config/supabase", () => ({
       from: (bucket: string) => ({
         upload: (path: string, file: unknown, options: object) =>
           mockUpload(bucket, path, file, options) as Promise<{ error: { message: string } | null }>,
+        remove: () => Promise.resolve({ error: null }),
       }),
     },
   },
@@ -235,7 +236,7 @@ describe("trips", () => {
         mockFile,
         {
           upsert: true,
-          contentType: "image/jpg",
+          contentType: "image/jpeg",
         },
       );
 

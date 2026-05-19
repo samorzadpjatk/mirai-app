@@ -587,7 +587,7 @@ describe("Backend Server (Hono)", () => {
 
       const ip = "192.168.1.100";
 
-      for (let i = 0; i < 101; i++) {
+      for (let i = 0; i < 601; i++) {
         await app.request("/health", {
           headers: { "x-forwarded-for": ip },
         });

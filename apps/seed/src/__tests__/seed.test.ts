@@ -17,6 +17,7 @@ vi.mock("../storage", () => ({
   ensureBuckets: vi.fn().mockResolvedValue(undefined),
   ensurePlaceholderImage: vi.fn().mockResolvedValue(undefined),
   uploadAssets: vi.fn().mockResolvedValue(undefined),
+  cleanupOldAssets: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../auth", () => ({
