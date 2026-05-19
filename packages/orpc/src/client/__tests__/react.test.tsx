@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, renderHook } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { QueryProvider, queryClient, orpc } from "../query-client";
-import type { ReactNode } from "react";
 
 // Mock auth hooks
 vi.mock("@mirai-app/auth/client", () => {
@@ -18,7 +17,7 @@ vi.mock("@mirai-app/auth/client", () => {
         user: null,
         refetchUser: mockRefetchUser,
       })),
-      subscribe: vi.fn(() => () => {}),
+      subscribe: vi.fn(() => vi.fn()),
       setState: vi.fn(),
     },
   };
