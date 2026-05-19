@@ -42,18 +42,17 @@ def mask_sensitive_value(value)
 end
 
 # Hide sensitive environment variables from Fastlane output
-def hide_sensitive_env_vars!
-  sensitive_keys = %w[
-    ANDROID_KEYSTORE_PASSWORD
-    ANDROID_KEY_PASSWORD
-    IOS_DIST_CERT_PASSWORD
-    IOS_KEYCHAIN_PASSWORD
-    IOS_ASC_KEY_PATH
-    FASTLANE_PASSWORD
-    MATCH_PASSWORD
-    GH_TOKEN
-    GITHUB_TOKEN
-  ]
+  def hide_sensitive_env_vars!
+    sensitive_keys = %w[
+      ANDROID_KEYSTORE_PASSWORD
+      ANDROID_KEY_PASSWORD
+      IOS_DIST_CERT_PASSWORD
+      IOS_KEYCHAIN_PASSWORD
+      FASTLANE_PASSWORD
+      MATCH_PASSWORD
+      GH_TOKEN
+      GITHUB_TOKEN
+    ]
 
   sensitive_keys.each do |key|
     next unless ENV[key]
@@ -624,9 +623,7 @@ platform :ios do
   ].freeze
 
   REQUIRED_ENV_IOS_SUBMIT = %w[
-    IOS_ASC_KEY_ID
-    IOS_ASC_ISSUER_ID
-    IOS_ASC_KEY_PATH
+    IOS_ASC_API_KEY_PATH
     IOS_BUNDLE_IDENTIFIER
   ].freeze
 
@@ -888,17 +885,11 @@ platform :ios do
   end
 
   def ios_app_store_connect_api_key!
-    key_id = ios_ensure_env!("IOS_ASC_KEY_ID")
-    issuer_id = ios_ensure_env!("IOS_ASC_ISSUER_ID")
-    key_path = ios_ensure_env!("IOS_ASC_KEY_PATH")
+    api_key_path = ios_ensure_env!("IOS_ASC_API_KEY_PATH")
 
-    UI.message("Creating App Store Connect API key (key_id: #{key_id})")
+    UI.message("Loading App Store Connect API key from #{api_key_path}")
     app_store_connect_api_key(
-      key_id: key_id,
-      issuer_id: issuer_id,
-      key_filepath: key_path,
-      duration: 1200,
-      in_house: false,
+      key_filepath: api_key_path,
     )
   end
 

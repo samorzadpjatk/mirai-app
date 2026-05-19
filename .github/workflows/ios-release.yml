@@ -162,9 +162,19 @@ jobs:
 
       - name: Materialize App Store Connect API key
         run: |
-          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+          ruby -rjson -rbase64 -e '
+            key_content = Base64.decode64(ENV.fetch("IOS_ASC_KEY_CONTENT_BASE64"))
+            payload = {
+              "key_id" => ENV.fetch("IOS_ASC_KEY_ID"),
+              "issuer_id" => ENV.fetch("IOS_ASC_ISSUER_ID"),
+              "key" => key_content
+            }
+            File.write(ARGV[0], JSON.pretty_generate(payload))
+          ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
 
       - name: Materialize credentials.json from secret values
         run: |
@@ -201,9 +211,7 @@ jobs:
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
           IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
-          IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8
+          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ secrets.IOS_ASC_KEY_ID }}.json
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
       - name: Upload iOS release artifact + metadata
@@ -262,9 +270,19 @@ jobs:
 
       - name: Materialize App Store Connect API key
         run: |
-          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+          ruby -rjson -rbase64 -e '
+            key_content = Base64.decode64(ENV.fetch("IOS_ASC_KEY_CONTENT_BASE64"))
+            payload = {
+              "key_id" => ENV.fetch("IOS_ASC_KEY_ID"),
+              "issuer_id" => ENV.fetch("IOS_ASC_ISSUER_ID"),
+              "key" => key_content
+            }
+            File.write(ARGV[0], JSON.pretty_generate(payload))
+          ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to external testing
         run: |
@@ -277,9 +295,7 @@ jobs:
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
           IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
-          IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8
+          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ secrets.IOS_ASC_KEY_ID }}.json
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
   submit_production:
@@ -330,9 +346,19 @@ jobs:
 
       - name: Materialize App Store Connect API key
         run: |
-          printf '%s' "${IOS_ASC_KEY_CONTENT_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/asc-api-key.p8"
+          ruby -rjson -rbase64 -e '
+            key_content = Base64.decode64(ENV.fetch("IOS_ASC_KEY_CONTENT_BASE64"))
+            payload = {
+              "key_id" => ENV.fetch("IOS_ASC_KEY_ID"),
+              "issuer_id" => ENV.fetch("IOS_ASC_ISSUER_ID"),
+              "key" => key_content
+            }
+            File.write(ARGV[0], JSON.pretty_generate(payload))
+          ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to App Store
         run: |
