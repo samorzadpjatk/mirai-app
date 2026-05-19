@@ -4,7 +4,7 @@
 
 > **Native-Specific Overrides**:
 > - Uses Expo SDK 54
-> - React Native 0.81.5
+> - React Native 0.83.6
 > - Uses `expo-router` for navigation
 > - Tailwind CSS via NativeWind
 
@@ -15,7 +15,7 @@ Expo React Native application for iOS and Android. The primary mobile interface 
 ## Tech Stack
 
 - **Framework**: Expo ~54.0.33
-- **React Native**: 0.81.5
+- **React Native**: 0.83.6
 - **Router**: Expo Router ~6.0.23
 - **Styling**: Tailwind CSS 3.4 + NativeWind 4.2.1
 - **State**: Zustand 5.0.11

@@ -7,7 +7,7 @@ Before you begin, ensure you have the following installed:
 ### Required
 
 - **Bun 1.3.6+** - Package manager and runtime
-- **Node.js 20+** - For tooling compatibility
+- **Node.js 24+** - For tooling compatibility
 - **Git** - Version control
 
 ### Optional

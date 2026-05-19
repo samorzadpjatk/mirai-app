@@ -69,7 +69,7 @@ MIRAI/
 ### Prerequisites
 
 - Bun 1.3.6+ (package manager)
-- Node.js 20+ (for tooling)
+- Node.js 24+ (for tooling)
 - Docker (optional, for local PostgreSQL)
 
 ### Quick Start
