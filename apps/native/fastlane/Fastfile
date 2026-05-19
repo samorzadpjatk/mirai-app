@@ -888,9 +888,21 @@ platform :ios do
     api_key_path = ios_ensure_env!("IOS_ASC_API_KEY_PATH")
 
     UI.message("Loading App Store Connect API key from #{api_key_path}")
-    app_store_connect_api_key(
-      key_filepath: api_key_path,
-    )
+
+    # Support both JSON credential files (with key_id/issuer_id/key) and raw .p8 files
+    content = File.read(api_key_path)
+    if content.start_with?("{")
+      config = JSON.parse(content)
+      app_store_connect_api_key(
+        key_id: config["key_id"],
+        issuer_id: config["issuer_id"],
+        key_content: config["key"],
+      )
+    else
+      app_store_connect_api_key(
+        key_filepath: api_key_path,
+      )
+    end
   end
 
   def ios_verify_eas_parity!
