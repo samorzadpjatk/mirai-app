@@ -50,10 +50,13 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
   );
 
   // Inject the server updater into the store
+  // Runs after every render so that when the oRPC client changes (e.g. auth
+  // token becomes available after app startup), the store always uses the
+  // current mutation bound to the up-to-date client.
   useEffect(() => {
     setLocationServerUpdater((input) => updateSharingMutation.mutateAsync(input));
     return () => setLocationServerUpdater(null);
-  }, [updateSharingMutation]);
+  });
 
   // Hydrate store when server settings arrive
   useEffect(() => {

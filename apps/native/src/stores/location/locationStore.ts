@@ -272,14 +272,9 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to toggle location sharing:", error);
-      if (error instanceof Error) {
-        Alert.alert(
-          "Authentication Error",
-          "Failed to update location settings. Please check your connection and try again.",
-        );
-      } else {
-        Alert.alert("Error", "Failed to update location settings");
-      }
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update location settings";
+      Alert.alert("Location Sharing Error", errorMessage);
     } finally {
       set({ isUpdatingSharing: false });
     }

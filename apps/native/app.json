@@ -2,7 +2,7 @@
   "expo": {
     "name": "MIRAI",
     "slug": "mirai",
-    "version": "15.2.3",
+    "version": "15.6.10",
     "extra": {
       "eas": {
         "projectId": "f6a5489a-21d3-4cf2-8dec-f98151979b91"
@@ -23,6 +23,7 @@
       "icon": "./assets/ios_logo.icon",
       "supportsTablet": false,
       "bundleIdentifier": "edu.samorzadpjatk.mirai",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to provide nearby features.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background.",
@@ -30,7 +31,7 @@
       },
       "appleTeamId": "92Z87C8SAM",
       "entitlements": {
-        "aps-environment": "development"
+        "aps-environment": "production"
       }
     },
     "android": {
@@ -71,6 +72,7 @@
         {
           "locationWhenInUsePermission": "This app uses your location to provide nearby features.",
           "locationAlwaysAndWhenInUsePermission": "This app needs access to your location even when the app is in the background.",
+          "locationAlwaysPermission": "This app needs access to your location even when the app is in the background to share your location with trip participants.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true

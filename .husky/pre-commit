@@ -1,3 +1,28 @@
+# Sync apps/native/app.json version with the latest SemVer tag
+# to prevent mismatches between git tags and the native app version.
+# Find the latest SemVer tag globally (same logic as Fastlane's latest_semver_tag)
+LATEST_TAG=$(git tag --sort=-v:refname | grep '^v[0-9]' | head -1 | sed 's/^v//')
+APP_JSON="apps/native/app.json"
+
+if [ -n "$LATEST_TAG" ] && [ -f "$APP_JSON" ]; then
+  CURRENT_VERSION=$(grep -o '"version": *"[^"]*"' "$APP_JSON" | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+
+  if [ "$CURRENT_VERSION" != "$LATEST_TAG" ]; then
+    echo "[pre-commit] Updating $APP_JSON version: $CURRENT_VERSION → $LATEST_TAG"
+    sed -i '' 's/"version": *"'"$CURRENT_VERSION"'"/"version": "'"$LATEST_TAG"'"/' "$APP_JSON"
+
+    # Validate JSON is still parseable
+    if ! python3 -m json.tool "$APP_JSON" > /dev/null 2>&1; then
+      echo "[pre-commit] ERROR: $APP_JSON is invalid after version update. Reverting."
+      git checkout -- "$APP_JSON"
+      exit 1
+    fi
+
+    git add "$APP_JSON"
+    echo "[pre-commit] Staged updated $APP_JSON"
+  fi
+fi
+
 bunx lint-staged
 
 nx affected -t lint --uncommitted
