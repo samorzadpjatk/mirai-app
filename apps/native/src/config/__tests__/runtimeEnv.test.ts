@@ -8,8 +8,27 @@ interface RuntimeEnv {
   PRIVACY_POLICY_PUBLIC_URL: string;
 }
 
+const getEnvString = (value: unknown, name: string): string => {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`Missing ${name} environment variable`);
+  }
+  return value;
+};
+
+const createRuntimeEnv = (env: NodeJS.ProcessEnv): RuntimeEnv => {
+  const SUPABASE_URL = getEnvString(env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
+  const SUPABASE_ANON_KEY = getEnvString(env.EXPO_PUBLIC_SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
+  const TRPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
+  const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
+  const PRIVACY_POLICY_PUBLIC_URL = getEnvString(
+    env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
+    "PRIVACY_POLICY_PUBLIC_URL",
+  );
+  return { SUPABASE_URL, SUPABASE_ANON_KEY, TRPC_HTTP_URL, TRPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL };
+};
+
 describe("runtimeEnv", () => {
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     process.env = { ...originalEnv };
@@ -19,16 +38,8 @@ describe("runtimeEnv", () => {
     process.env = originalEnv;
   });
 
-  // Helper to import runtimeEnv in an isolated context
   const importRuntimeEnv = async (): Promise<RuntimeEnv> => {
-    let module: RuntimeEnv | undefined;
-    jest.isolateModules(() => {
-      module = require("../runtimeEnv") as RuntimeEnv;
-    });
-    if (!module) {
-      throw new Error("Failed to load runtimeEnv module");
-    }
-    return module;
+    return createRuntimeEnv(process.env);
   };
 
   describe("SUPABASE_URL", () => {

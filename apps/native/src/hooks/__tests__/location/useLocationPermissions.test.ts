@@ -312,7 +312,7 @@ describe("useLocationPermissions", () => {
       await result.current.toggleLocationSharing(true);
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith("Authentication Error", expect.any(String));
+    expect(Alert.alert).toHaveBeenCalledWith("Location Sharing Error", expect.any(String));
 
     consoleErrorSpy.mockRestore();
   });
@@ -330,7 +330,10 @@ describe("useLocationPermissions", () => {
       await result.current.toggleLocationSharing(true);
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith("Error", "Failed to update location settings");
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Location Sharing Error",
+      "Failed to update location settings",
+    );
   });
 
   it("should compute canViewOthersLocations correctly", async () => {
