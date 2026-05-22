@@ -15,6 +15,7 @@ import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useSession, useAuth, authStore } from "@mirai-app/auth/client";
+import { logger } from "../utils/logger";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -122,9 +123,9 @@ export function QueryProvider({
       try {
         await refreshSession();
       } catch (error) {
-        console.warn(
-          "[QueryProvider] Refresh session failed after unauthorized, signing out",
+        logger.warn(
           error,
+          "[QueryProvider] Refresh session failed after unauthorized, signing out",
         );
         await signOut();
       } finally {
@@ -161,7 +162,7 @@ export function QueryProvider({
           cleanupRef.current = null;
         })
         .catch((error) => {
-          console.error("[QueryProvider] Error cleaning up previous WebSocket connection:", error);
+          logger.error(error, "Error cleaning up previous WebSocket connection");
         });
     }
 
@@ -179,7 +180,7 @@ export function QueryProvider({
             cleanupRef.current = null;
           })
           .catch((error) => {
-            console.error("[QueryProvider] Error cleaning up WebSocket connection:", error);
+            logger.error(error, "Error cleaning up WebSocket connection");
           });
       }
     };

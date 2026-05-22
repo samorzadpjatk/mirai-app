@@ -89,6 +89,29 @@ bun run test:watch
 Server: `import { appRouter } from '@mirai-app/orpc'`  
 Client: `import { orpc } from '@mirai-app/orpc/client'`
 
+## Code Quality Rules
+
+### Router File Size Limits
+
+- **Rule**: Router files >1000 lines violate SRP. Split into directory-based modules: `{router}/types.ts`, `{router}/utils.ts`, `{router}/queries.ts`, `{router}/mutations.ts`, `{router}/index.ts`.
+- **Import path fix when moving deeper**: `../../api/trpc` → `../../trpc`, `../../utils/` → `../../../utils/`.
+- **Verification after split**: Run `tsc --noEmit` in the package, then `bun run test`.
+- **Never add new code to files >1000 lines** without first extracting into smaller modules.
+
+### Transaction Testing Requirements
+
+- **Critical**: The `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
+- **Rule**: Add at least one failure-path transaction test per router. Create `MockTransactionDB` that simulates rollback.
+
+### Error Handling Standards
+
+- **Pattern**: Use `ORPCError` with specific codes (`NOT_FOUND`, `FORBIDDEN`, `BAD_REQUEST`, etc.).
+- **Logging standard**: Use the shared Pino logger from `@mirai-app/orpc`. Never use `console.*` in production code.
+
+## Architecture Decisions
+
+**Verdict**: Do NOT introduce Effect, fp-ts, or similar FP libraries. See [Best Practices](../../docs/conventions/best-practices.md) for full analysis.
+
 ## Links
 
 - [Router structure](../../docs/packages/orpc/router-structure.md)
