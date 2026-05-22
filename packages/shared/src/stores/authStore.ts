@@ -1,6 +1,7 @@
 "use client";
 
 import { createStore } from "zustand/vanilla";
+import { logger } from "../utils/logger";
 
 // Supabase types - will be injected at runtime
 export type AuthChangeEvent =
@@ -123,7 +124,7 @@ const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthSt
       const user = await _fetchingUserPromise;
       set({ user, isAuthenticated: !!user, isLoading: false });
     } catch (error) {
-      console.error("[AuthStore] Failed to fetch user:", error);
+      logger.error(error, "Failed to fetch user");
       set({ isLoading: false });
     }
     return;
@@ -137,7 +138,7 @@ const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthSt
     const user = await _fetchingUserPromise;
     set({ user, isAuthenticated: !!user, isLoading: false });
   } catch (error) {
-    console.error("[AuthStore] Failed to fetch user:", error);
+    logger.error(error, "Failed to fetch user");
     set({ isLoading: false });
   } finally {
     _fetchingUserId = null;
@@ -297,7 +298,7 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
         const user = await _onUserFetch(session.user.id);
         set({ user, isAuthenticated: !!user, isLoading: false });
       } catch (error) {
-        console.error("[AuthStore] Failed to refetch user:", error);
+        logger.error(error, "Failed to refetch user");
         set({ isLoading: false });
       }
     }
