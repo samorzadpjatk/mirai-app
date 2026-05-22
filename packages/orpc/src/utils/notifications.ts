@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
+import { logger } from "./logger";
 
 export interface SendNotificationInput {
   title: string;
@@ -67,11 +68,11 @@ export async function sendNotification({
         };
       },
       (error, retryAttempt) => {
-        console.error(`Error creating notification (attempt ${retryAttempt + 1}):`, error);
+        logger.error({ retryAttempt: retryAttempt + 1, error }, "Error creating notification");
       },
     );
   } catch (error) {
-    console.error("Error creating notification after retries:", error);
+    logger.error({ error }, "Error creating notification after retries");
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create notification" });
   }
 }

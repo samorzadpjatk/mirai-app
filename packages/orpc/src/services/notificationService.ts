@@ -1,4 +1,5 @@
 import { executeWithRetry } from "../utils/resilience";
+import { logger } from "../utils/logger";
 import { type DB } from "@mirai-app/db";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import {
@@ -350,9 +351,9 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
       const t = await executeWithRetry(
         () => expo.sendPushNotificationsAsync(chunk),
         (err, retryAttempt) => {
-          console.error(
-            `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
+          logger.error(
             err,
+            `Error sending push notification chunk (attempt ${retryAttempt + 1})`,
           );
         },
         undefined,
