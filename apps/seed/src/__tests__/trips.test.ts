@@ -330,8 +330,8 @@ describe("trips", () => {
       await seedTrip(tripConfig, "users/test.csv", "/test/assets/dev", authUsers);
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to read background image"),
         expect.any(Error),
+        expect.stringContaining("✗ Failed to read background image"),
       );
 
       warnSpy.mockRestore();

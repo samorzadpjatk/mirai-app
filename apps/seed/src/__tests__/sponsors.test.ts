@@ -325,7 +325,7 @@ describe("sponsors", () => {
       await expect(seedSponsors("db-url", "trip-1", "dev", sponsorConfigs)).rejects.toThrow(
         "DB Error",
       );
-      expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed sponsors:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error), "✗ Failed to seed sponsors");
 
       consoleSpy.mockRestore();
     });

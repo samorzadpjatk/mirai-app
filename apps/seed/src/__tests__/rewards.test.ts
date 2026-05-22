@@ -383,8 +383,8 @@ describe("rewards", () => {
       await seedRewards(rewardConfigs, "trip-1", authUsers);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to create reward"),
         expect.any(Error),
+        expect.stringContaining("Failed to create reward"),
       );
 
       consoleSpy.mockRestore();

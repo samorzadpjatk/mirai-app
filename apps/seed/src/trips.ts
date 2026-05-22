@@ -10,6 +10,7 @@ import { readTextFile, readFile } from "./utils/fs";
 import type { Role } from "@mirai-app/db";
 import { trips, users, tripParticipants } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
+import { logger } from "@mirai-app/shared";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -44,20 +45,20 @@ export const seedTrip = async (
           });
 
         if (uploadResult.error) {
-          console.warn(
+          logger.warn(
             `✗ Background upload failed for ${tripConfig.name}: ${uploadResult.error.message}`,
           );
         } else {
           backgroundImagePath = storagePath;
-          console.log(`✓ Uploaded background for ${tripConfig.name}: ${storagePath}`);
+          logger.info(`✓ Uploaded background for ${tripConfig.name}: ${storagePath}`);
         }
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
-      console.warn(
-        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`,
-        error,
-      );
+        logger.warn(
+          error,
+          `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}`,
+        );
     }
   }
 
@@ -104,7 +105,7 @@ export const seedTrip = async (
         row.role ?? "user",
       );
       if (!authUser) {
-        console.warn(
+        logger.warn(
           `✗ Supabase Auth user not found/created for ${email}, skipping DB user/participant.`,
         );
         continue;
@@ -117,7 +118,7 @@ export const seedTrip = async (
     });
 
     if (!dbUser) {
-      console.warn(
+      logger.warn(
         `✗ DB user not yet created for ${email} (auth id ${authUser.id}). Creating manually...`,
       );
 
@@ -141,9 +142,9 @@ export const seedTrip = async (
           })
           .returning();
         dbUser = inserted[0];
-        console.log(`✓ Manually created DB user for ${email} with role: ${dbRole}`);
+        logger.info(`✓ Manually created DB user for ${email} with role: ${dbRole}`);
       } catch (error) {
-        console.warn(`✗ Failed to create DB user manually for ${email}:`, error);
+        logger.warn(error, `✗ Failed to create DB user manually for ${email}`);
         continue;
       }
     } else {
@@ -164,7 +165,7 @@ export const seedTrip = async (
     }
 
     if (!dbUser) {
-      console.warn(`✗ DB user missing for ${email}, skipping participant.`);
+      logger.warn(`✗ DB user missing for ${email}, skipping participant.`);
       continue;
     }
 
@@ -183,7 +184,7 @@ export const seedTrip = async (
       where: (u, { eq }) => eq(u.authUserId, ghostAuth.id),
     });
     if (!ghostUser) {
-      console.warn(`✗ Ghost DB user missing for auth id ${ghostAuth.id}. Creating manually...`);
+      logger.warn(`✗ Ghost DB user missing for auth id ${ghostAuth.id}. Creating manually...`);
       try {
         const inserted = await db
           .insert(users)
@@ -195,9 +196,9 @@ export const seedTrip = async (
           })
           .returning();
         ghostUser = inserted[0];
-        console.log(`✓ Manually created ghost DB user`);
+        logger.info(`✓ Manually created ghost DB user`);
       } catch (error) {
-        console.warn(`✗ Failed to create ghost DB user manually:`, error);
+        logger.warn(error, `✗ Failed to create ghost DB user manually`);
         return trip;
       }
     }
@@ -213,6 +214,6 @@ export const seedTrip = async (
     }
   }
 
-  console.log(`Trip seeded: ${trip.name} (${csvUsers.length} participants)`);
+  logger.info(`Trip seeded: ${trip.name} (${csvUsers.length} participants)`);
   return trip;
 };

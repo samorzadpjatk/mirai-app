@@ -4,6 +4,7 @@ import { joinPath } from "./utils/path";
 import { db } from "./config/db";
 import type { RewardConfig, AuthUserByEmail } from "./types";
 import { rewards } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared";
 
 function isRewardConfig(value: unknown): value is RewardConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -57,11 +58,11 @@ export const seedRewards = async (
   }
 
   if (!dbUser) {
-    console.warn("No valid database user found to create rewards");
+    logger.warn("No valid database user found to create rewards");
     return;
   }
 
-  console.log(`Using user ${dbUser.id} (${dbUser.role}) to create rewards`);
+  logger.info(`Using user ${dbUser.id} (${dbUser.role}) to create rewards`);
 
   for (const rewardConfig of rewardConfigs) {
     try {
@@ -80,9 +81,9 @@ export const seedRewards = async (
         createdById: dbUser.id,
       });
 
-      console.log(`✓ Created reward: ${rewardConfig.name}`);
+      logger.info(`✓ Created reward: ${rewardConfig.name}`);
     } catch (error) {
-      console.error(`✗ Failed to create reward ${rewardConfig.name}:`, error);
+      logger.error(error, `✗ Failed to create reward ${rewardConfig.name}`);
     }
   }
 };
