@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Text } from "rea
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName, getInitials } from "@mirai-app/shared";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { orpc } from "@mirai-app/orpc/client";
@@ -164,12 +165,7 @@ export default function GroupDetailsScreen() {
     return <GroupNotFoundState onGoBack={() => router.back()} />;
   }
 
-  const getInitials = (firstName?: string | null, lastName?: string | null) => {
-    const f = (firstName ?? "")[0] ?? "";
-    const l = (lastName ?? "")[0] ?? "";
-    const initials = `${f}${l}`.toUpperCase();
-    return initials || "?";
-  };
+
 
   const organizerId = group.organizer?.id;
   const isGroupMember = group.participants.some(
@@ -190,7 +186,7 @@ export default function GroupDetailsScreen() {
   });
   const memberList = sortedParticipants.map((p) => ({
     id: p.user.id,
-    name: `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim(),
+    name: formatDisplayName(p.user.firstName, p.user.lastName) ?? "Unknown User",
     initials: getInitials(p.user.firstName, p.user.lastName),
     role: p.user.id === organizerId ? "Group Leader" : "Member",
     isLeader: p.user.id === organizerId,
@@ -212,8 +208,7 @@ export default function GroupDetailsScreen() {
             try {
               await leaveGroupMutation.mutateAsync({ groupId: group.id });
               router.replace(`/trips/groups?tripId=${group.trip.id}`);
-            } catch (error) {
-              console.error("Failed to leave group:", error);
+            } catch {
               Alert.alert("Error", "Failed to leave group");
             }
           })();
@@ -358,8 +353,7 @@ export default function GroupDetailsScreen() {
                   <View style={styles.joinRequestTop}>
                     <View style={styles.joinRequestAvatar}>
                       <Text style={styles.joinRequestAvatarText}>
-                        {`${request.user.firstName?.[0] ?? ""}${request.user.lastName?.[0] ?? ""}`.toUpperCase() ||
-                          "?"}
+                        {getInitials(request.user.firstName, request.user.lastName)}
                       </Text>
                     </View>
                     <Text style={styles.joinRequestDate}>
@@ -368,8 +362,7 @@ export default function GroupDetailsScreen() {
                   </View>
                   <View style={styles.joinRequestUser}>
                     <Text style={styles.joinRequestName}>
-                      {[request.user.firstName, request.user.lastName].filter(Boolean).join(" ") ||
-                        "Unknown user"}
+                      {formatDisplayName(request.user.firstName, request.user.lastName) ?? "Unknown User"}
                     </Text>
                     <Text style={styles.joinRequestEmail}>{request.user.email ?? "No email"}</Text>
                   </View>

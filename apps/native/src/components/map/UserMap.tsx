@@ -158,6 +158,82 @@ export function getActivityOpacity(
   return Math.max(0, Math.min(1, ratio));
 }
 
+export function processUserLocationUpdate(
+  loc: {
+    coords?: { longitude?: number | null; latitude?: number | null };
+  },
+  currentUserId: string | undefined,
+  canShareOwnLocation: boolean,
+  hasCentered: boolean,
+): {
+  shouldUpdateLocation: boolean;
+  coordinate: [number, number] | null;
+  shouldCenter: boolean;
+  shouldNotify: boolean;
+} {
+  if (!loc.coords) {
+    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+  }
+
+  const { longitude, latitude } = loc.coords;
+  if (longitude == null || latitude == null) {
+    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+  }
+
+  const shouldUpdateLocation = Boolean(currentUserId && canShareOwnLocation);
+  const shouldCenter = !hasCentered;
+  const shouldNotify = true;
+
+  return {
+    shouldUpdateLocation,
+    coordinate: [longitude, latitude],
+    shouldCenter,
+    shouldNotify,
+  };
+}
+
+export function buildMapStyleConfig(
+  mapStyleURL: string | undefined,
+  mapTheme: "dark" | "light",
+): MapStyleConfig {
+  if (mapStyleURL) {
+    return { style: mapStyleURL };
+  }
+  return MAP_STYLES[mapTheme];
+}
+
+export function buildFilteredUsers(
+  users: UserLocation[],
+  now: number,
+  currentUserId: string | undefined,
+  currentUserLocation: [number, number] | null,
+  currentUserName: string | undefined,
+  currentUserAvatarUrl: string | null | undefined,
+  canViewOthersLocations: boolean,
+  canShareOwnLocation: boolean,
+): UserLocation[] {
+  if (!canViewOthersLocations) {
+    return [];
+  }
+
+  let displayUsers = users.filter(
+    (user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0,
+  );
+
+  if (currentUserId && currentUserLocation && currentUserName && canShareOwnLocation) {
+    const currentUser: UserLocation = {
+      id: currentUserId,
+      name: currentUserName,
+      coordinate: currentUserLocation,
+      avatarUrl: currentUserAvatarUrl ?? null,
+      lastActiveAt: now,
+    };
+    displayUsers = [currentUser, ...displayUsers];
+  }
+
+  return displayUsers;
+}
+
 export const UserMap: React.FC<UserMapProps> = ({
   users,
   onUserPress,
@@ -189,40 +265,29 @@ export const UserMap: React.FC<UserMapProps> = ({
   // Track current user's location directly from MapLibreUserLocation
   const [currentUserLocation, setCurrentUserLocation] = useState<[number, number] | null>(null);
 
-  const filteredUsers = useMemo(() => {
-    // If location sharing is disabled, show no other users
-    if (!canViewOthersLocations) {
-      return [];
-    }
-
-    // Start with other users (exclude current user)
-    let displayUsers = users.filter(
-      (user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0,
-    );
-
-    // Add current user if location is available and enabled
-    if (currentUserId && currentUserLocation && currentUserName && canShareOwnLocation) {
-      const currentUser: UserLocation = {
-        id: currentUserId,
-        name: currentUserName,
-        coordinate: currentUserLocation,
-        avatarUrl: currentUserAvatarUrl ?? null,
-        lastActiveAt: now,
-      };
-      displayUsers = [currentUser, ...displayUsers];
-    }
-
-    return displayUsers;
-  }, [
-    users,
-    now,
-    currentUserId,
-    currentUserLocation,
-    currentUserName,
-    currentUserAvatarUrl,
-    canViewOthersLocations,
-    canShareOwnLocation,
-  ]);
+  const filteredUsers = useMemo(
+    () =>
+      buildFilteredUsers(
+        users,
+        now,
+        currentUserId,
+        currentUserLocation,
+        currentUserName,
+        currentUserAvatarUrl,
+        canViewOthersLocations,
+        canShareOwnLocation,
+      ),
+    [
+      users,
+      now,
+      currentUserId,
+      currentUserLocation,
+      currentUserName,
+      currentUserAvatarUrl,
+      canViewOthersLocations,
+      canShareOwnLocation,
+    ],
+  );
 
   useEffect(() => {
     if (!focusedCoordinate) return;
@@ -237,17 +302,17 @@ export const UserMap: React.FC<UserMapProps> = ({
   const handleUserLocationUpdate = (loc: {
     coords?: { longitude?: number | null; latitude?: number | null };
   }) => {
-    if (!loc.coords) return;
+    const result = processUserLocationUpdate(loc, currentUserId, canShareOwnLocation, hasCenteredRef.current);
 
-    const { longitude, latitude } = loc.coords;
-    if (longitude == null || latitude == null) return;
+    if (!result.coordinate) return;
 
-    // Update current user's location directly from device only if sharing is enabled
-    if (currentUserId && canShareOwnLocation) {
+    const [longitude, latitude] = result.coordinate;
+
+    if (result.shouldUpdateLocation) {
       setCurrentUserLocation([longitude, latitude]);
     }
 
-    if (!hasCenteredRef.current) {
+    if (result.shouldCenter) {
       cameraRef.current?.setCamera?.({
         centerCoordinate: [longitude, latitude],
         zoomLevel: initialZoomLevel,
@@ -256,10 +321,12 @@ export const UserMap: React.FC<UserMapProps> = ({
       hasCenteredRef.current = true;
     }
 
-    onLocationUpdate?.({ longitude, latitude });
+    if (result.shouldNotify) {
+      onLocationUpdate?.({ longitude, latitude });
+    }
   };
 
-  const selectedMapConfig = mapStyleURL ? { style: mapStyleURL } : MAP_STYLES[mapTheme];
+  const selectedMapConfig = buildMapStyleConfig(mapStyleURL, mapTheme);
   const currentMapStyle = selectedMapConfig.style;
 
   return (

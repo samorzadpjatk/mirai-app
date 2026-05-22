@@ -74,8 +74,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
           onPress: () => router.back(),
         },
       ]);
-    } catch (error) {
-      console.error(`Failed to ${operation} coins`, error);
+    } catch {
       Alert.alert("Error", "Operation failed. Try again.");
     }
   };

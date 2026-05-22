@@ -3,6 +3,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { Alert } from "react-native";
 
+export function extractSharingUserIds(
+  sharingSettings: { usersToShareWith: { id: string }[] } | null | undefined,
+): string[] {
+  return sharingSettings?.usersToShareWith.map((u) => u.id) ?? [];
+}
+
 export function useMapSharing(enabledForAllUsersQuery: boolean, tripId?: string | null) {
   const sharingQuery = useQuery(orpc.location.getMySharingSettings.queryOptions({ input: {} }));
   const { data: sharingSettings, refetch: refetchSharing } = sharingQuery;
@@ -17,23 +23,21 @@ export function useMapSharing(enabledForAllUsersQuery: boolean, tripId?: string 
 
   const updateSharingMutation = useMutation(
     orpc.location.updateSharingSettings.mutationOptions({
-      onError: (err) => {
-        console.error("[Map] Failed to update sharing:", err);
+      onError: () => {
         Alert.alert("Update Failed", "Failed to update sharing settings. Please try again.");
       },
     }),
   );
   const removeUserMutation = useMutation(
     orpc.location.removeUserFromSharing.mutationOptions({
-      onError: (err) => {
-        console.error("[Map] Failed to remove user from sharing:", err);
+      onError: () => {
         Alert.alert("Remove Failed", "Failed to remove user from sharing. Please try again.");
       },
     }),
   );
 
   const sharingUserIds = useMemo(
-    () => sharingSettings?.usersToShareWith.map((u) => u.id) ?? [],
+    () => extractSharingUserIds(sharingSettings),
     [sharingSettings],
   );
 

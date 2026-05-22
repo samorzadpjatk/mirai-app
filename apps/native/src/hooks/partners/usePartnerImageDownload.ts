@@ -4,6 +4,27 @@ import { useFileDownload } from "~/hooks/files/useFileDownload";
 let placeholderUriCache: string | null | undefined;
 let placeholderErrorLogged = false;
 
+export function getPlaceholderPath(): string {
+  return "image/placeholder/partner-logo.png";
+}
+
+export function isComponentUnmountedErrorMessage(message: string): boolean {
+  return message.includes("component unmounted");
+}
+
+export function resolveImageUrlFromDownloadResult(
+  result: { uri?: string } | null | undefined,
+): string | null {
+  return result?.uri ?? null;
+}
+
+export function calculatePartnerImageLoadingState(
+  isLoading: boolean,
+  downloadStatus: string,
+): boolean {
+  return isLoading || downloadStatus === "loading";
+}
+
 export function usePartnerImageDownload(logoPath: string | null | undefined) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,8 +54,9 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
 
           if (!mountedRef.current) return;
 
-          if (result?.uri) {
-            setImageUrl(result.uri);
+          const uri = resolveImageUrlFromDownloadResult(result);
+          if (uri) {
+            setImageUrl(uri);
             return;
           }
         }
@@ -43,22 +65,17 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
 
         // If no logo path or download failed, try to get placeholder from Supabase (once)
         if (placeholderUriCache === undefined) {
-          const placeholderPath = "image/placeholder/partner-logo.png";
+          const placeholderPath = getPlaceholderPath();
           try {
             const placeholderResult = await download({
               storagePath: placeholderPath,
               expiresInSeconds: 60 * 60, // 1 hour
             });
 
-            if (placeholderResult?.uri) {
-              placeholderUriCache = placeholderResult.uri;
-            } else {
-              placeholderUriCache = null;
-            }
-          } catch (placeholderError) {
+            placeholderUriCache = resolveImageUrlFromDownloadResult(placeholderResult);
+          } catch {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn("Failed to download partner placeholder image:", placeholderError);
               placeholderErrorLogged = true;
             }
           }
@@ -76,8 +93,8 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
       } catch (error) {
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes("component unmounted")) {
-          console.error("Failed to load partner image:", error);
+        if (!isComponentUnmountedErrorMessage(message)) {
+          // TODO: Add Sentry crash reporting for production errors
         }
         if (mountedRef.current) setImageUrl(null);
       } finally {
@@ -90,7 +107,7 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
 
   return {
     imageUrl,
-    isLoading: isLoading || downloadStatus === "loading",
+    isLoading: calculatePartnerImageLoadingState(isLoading, downloadStatus),
     error: downloadError,
     status: downloadStatus,
   };

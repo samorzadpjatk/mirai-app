@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName } from "@mirai-app/shared";
 import { colors, spacing, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import type { User, Group } from "~/hooks/admin/useAdminUsers";
@@ -43,8 +44,8 @@ export function GroupAssignmentModal({
       await onAssign(user.id, selectedGroup.id);
       setSelectedGroup(null);
       onClose();
-    } catch (error) {
-      console.error("Failed to assign to group:", error);
+    } catch {
+      // TODO: Add Sentry crash reporting for production errors
     }
   };
 
@@ -80,9 +81,7 @@ export function GroupAssignmentModal({
               marginBottom: spacing.xs,
             }}
           >
-            {[user.firstName, user.lastName].filter(Boolean).join(" ") ??
-              user.email ??
-              "Unknown User"}
+            {formatDisplayName(user.firstName, user.lastName) ?? "Unknown User"}
           </Text>
           <Text
             style={{

@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName } from "@mirai-app/shared";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 
@@ -49,8 +50,7 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
               }}
             >
               Organizer:{" "}
-              {[group.organizer.firstName, group.organizer.lastName].filter(Boolean).join(" ") ||
-                "Unknown"}
+              {formatDisplayName(group.organizer.firstName, group.organizer.lastName) ?? "Unknown User"}
             </Text>
           )}
         </View>

@@ -68,19 +68,13 @@ describe("Background Location Service", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    it("should return false on error", async () => {
       const error = new Error("Storage error");
       mockGetItem.mockRejectedValue(error);
 
       const result = await getBackgroundLocationPreference();
 
       expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to read background location preference:",
-        error,
-      );
-      consoleSpy.mockRestore();
     });
   });
 
@@ -118,19 +112,13 @@ describe("Background Location Service", () => {
       expect(result).toBe(false);
     });
 
-    it("should return false on error and log warning", async () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    it("should return false on error", async () => {
       const error = new Error("Location error");
       mockHasStartedLocationUpdatesAsync.mockRejectedValue(error);
 
       const result = await hasBackgroundLocationTaskStarted();
 
       expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to check background location task state:",
-        error,
-      );
-      consoleSpy.mockRestore();
     });
   });
 

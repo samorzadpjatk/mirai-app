@@ -275,8 +275,7 @@ export default function AdminCreateNotificationScreen() {
       await refreshAdminNotificationLists();
       Alert.alert("Success", "One-time scheduled notification created.");
       router.back();
-    } catch (error) {
-      console.error("Failed to create/send notification", error);
+    } catch {
       Alert.alert("Error", "Operation failed. Check input values and try again.");
     }
   };

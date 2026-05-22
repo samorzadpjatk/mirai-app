@@ -158,8 +158,6 @@ describe("useShareModal", () => {
       await result.current.confirm();
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to update sharing:", expect.any(Error));
-
     consoleErrorSpy.mockRestore();
   });
 

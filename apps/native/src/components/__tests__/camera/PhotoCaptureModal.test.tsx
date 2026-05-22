@@ -66,23 +66,7 @@ jest.mock("expo-camera", () => {
   };
 });
 
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { View, Text } = require("react-native");
 
-  return {
-    AppModalShell: ({ visible, title, children, onClose: _onClose }: AppModalShellProps) => {
-      if (!visible) return null;
-
-      return React.createElement(
-        View,
-        { testID: "modal-shell" },
-        React.createElement(Text, { testID: "modal-title" }, title),
-        children,
-      );
-    },
-  };
-});
 
 describe("PhotoCaptureModal", () => {
   beforeEach(() => {
@@ -106,15 +90,15 @@ describe("PhotoCaptureModal", () => {
 
   describe("rendering", () => {
     it("should render modal with title", () => {
-      const { getByTestId } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
-      expect(getByTestId("modal-title").children[0]).toBe("Take Photo");
+      const { getByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
+      expect(getByText("Take Photo")).toBeOnTheScreen();
     });
 
     it("should not render when not visible", () => {
       const { queryByTestId } = renderWithProviders(
         <PhotoCaptureModal {...defaultProps} visible={false} />,
       );
-      expect(queryByTestId("modal-shell")).toBeNull();
+      expect(queryByTestId("app-modal")).toBeNull();
     });
 
     it("should render camera view when visible", () => {
@@ -302,6 +286,9 @@ describe("PhotoCaptureModal", () => {
       });
 
       rerender(<PhotoCaptureModal {...defaultProps} visible={false} />);
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
       rerender(<PhotoCaptureModal {...defaultProps} visible={true} />);
 
       await waitFor(() => {

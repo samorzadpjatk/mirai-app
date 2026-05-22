@@ -17,4 +17,22 @@ const getInitials = (name: string): string => {
   return `${first}${last}`.toUpperCase();
 };
 
+export function isNonEmptyString(value: string): boolean {
+  return value.trim().length > 0;
+}
+
+export function isNameValid(firstName: string, lastName: string): boolean {
+  return isNonEmptyString(firstName) && isNonEmptyString(lastName);
+}
+
+export function isBanReady(banUntil: Date | null): boolean {
+  return banUntil != null && banUntil > new Date();
+}
+
+export function formatBanLabel(banUntil: Date | null): string {
+  return banUntil
+    ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Select date & time";
+}
+
 export { formatDate, getInitials };

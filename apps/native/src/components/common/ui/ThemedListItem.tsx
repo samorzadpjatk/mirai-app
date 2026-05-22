@@ -33,7 +33,7 @@ export function ThemedListItem({
 
   return (
     <Pressable
-      testID="themed-list-item-pressable"
+      testID="themed-list-item"
       style={({ pressed }) => [
         styles.item,
         bordered && styles.itemBordered,
@@ -46,13 +46,13 @@ export function ThemedListItem({
     >
       <View style={styles.content}>
         {leftAvatar && (
-          <View style={styles.avatarWrapper}>
+          <View testID="item-avatar" style={styles.avatarWrapper}>
             <UserAvatar imageUrl={leftAvatar.imageUrl ?? null} name={leftAvatar.name} size={48} />
           </View>
         )}
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <Text testID="item-title" style={styles.title}>{title}</Text>
+          {subtitle && <Text testID="item-subtitle" style={styles.subtitle}>{subtitle}</Text>}
         </View>
         {rightElement}
       </View>

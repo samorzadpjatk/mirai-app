@@ -55,10 +55,9 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
             } else {
               placeholderUriCache = null;
             }
-          } catch (placeholderError) {
+          } catch {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn("Failed to download placeholder image:", placeholderError);
               placeholderErrorLogged = true;
             }
           }
@@ -77,7 +76,7 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         if (!message.includes("component unmounted")) {
-          console.error("Failed to load trip background image:", error);
+          /* no-op */
         }
         if (mountedRef.current) setImageUrl(null);
       } finally {

@@ -84,6 +84,10 @@ const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   },
 };
 
+import { isPointFeature, extractCoordinateFromFeature } from "./locationPickerUtils";
+
+export { isPointFeature, extractCoordinateFromFeature };
+
 export const LocationPicker: React.FC<Props> = ({
   visible,
   initialLocation,
@@ -127,11 +131,12 @@ export const LocationPicker: React.FC<Props> = ({
   }, [isMapReady, initialLocation]);
 
   const handleMapPress = (feature: GeoJSON.Feature) => {
-    if (feature.geometry.type !== "Point") return;
-    const [longitude, latitude] = feature.geometry.coordinates as [number, number];
-    const loc: LocationCoordinate = { latitude, longitude };
-    setMarkerCoordinate(loc);
-    setSelectedLocation(loc);
+    if (!isPointFeature(feature)) return;
+    const loc = extractCoordinateFromFeature(feature);
+    if (loc) {
+      setMarkerCoordinate(loc);
+      setSelectedLocation(loc);
+    }
   };
 
   const handleMapLoadComplete = () => {
@@ -139,7 +144,7 @@ export const LocationPicker: React.FC<Props> = ({
   };
 
   const handleMapLoadError = () => {
-    console.error("Map failed to load");
+    // TODO: Add Sentry crash reporting for production errors
     setIsMapReady(true); // Still set to true to hide loading indicator
   };
 
@@ -187,8 +192,7 @@ export const LocationPicker: React.FC<Props> = ({
           animationDuration: 1000,
         });
       }
-    } catch (error) {
-      console.error("Error getting location:", error);
+    } catch {
       Alert.alert("Location Error", "Unable to get your current location. Please try again.", [
         { text: "OK" },
       ]);

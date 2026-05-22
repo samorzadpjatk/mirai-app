@@ -4,32 +4,7 @@ import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
-jest.mock("~/components/common/ui", () => {
-  const { createElement } = require("react");
-  const { View, Text, Pressable } = require("react-native");
 
-  return {
-    AppModalShell: (props: {
-      visible: boolean;
-      title: string;
-      onClose: () => void;
-      children: React.ReactNode;
-    }) =>
-      !props.visible
-        ? null
-        : createElement(
-            View,
-            { testID: "app-modal-shell" },
-            createElement(Text, { testID: "modal-title" }, props.title),
-            createElement(
-              Pressable,
-              { testID: "close-modal-button", onPress: props.onClose },
-              createElement(Text, null, "Close"),
-            ),
-            props.children,
-          ),
-  };
-});
 
 const noop = (): void => undefined;
 
@@ -41,7 +16,7 @@ describe("MapModalShell", () => {
       </MapModalShell>,
     );
 
-    expect(screen.getByTestId("modal-title").children[0]).toBe("Test Modal");
+    expect(screen.getByText("Test Modal")).toBeOnTheScreen();
   });
 
   it("should render children", () => {
@@ -61,7 +36,7 @@ describe("MapModalShell", () => {
       </MapModalShell>,
     );
 
-    expect(screen.queryByTestId("app-modal-shell")).toBeNull();
+    expect(screen.queryByTestId("app-modal")).toBeNull();
   });
 
   it("should pass maxHeight prop", () => {
@@ -71,7 +46,7 @@ describe("MapModalShell", () => {
       </MapModalShell>,
     );
 
-    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
+    expect(screen.getByTestId("app-modal")).toBeOnTheScreen();
   });
 
   it("should pass contentStyle prop", () => {
@@ -86,7 +61,7 @@ describe("MapModalShell", () => {
       </MapModalShell>,
     );
 
-    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
+    expect(screen.getByTestId("app-modal")).toBeOnTheScreen();
   });
 
   it("should use default maxHeight when not specified", () => {
@@ -96,6 +71,6 @@ describe("MapModalShell", () => {
       </MapModalShell>,
     );
 
-    expect(screen.getByTestId("app-modal-shell")).toBeOnTheScreen();
+    expect(screen.getByTestId("app-modal")).toBeOnTheScreen();
   });
 });

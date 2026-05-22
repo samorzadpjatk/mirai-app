@@ -108,11 +108,14 @@ describe("Background Location Task", () => {
   });
 
   describe("Task Definition", () => {
-    it("should define the background location task on module import", () => {
+    it("should define the background location task when init is called", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      loadBackgroundLocationTask();
+      const { initBackgroundLocationTask } = require("~/services/background/backgroundLocationTask") as {
+        initBackgroundLocationTask: () => void;
+      };
+      initBackgroundLocationTask();
 
       expect(mockDefineTask).toHaveBeenCalledWith(
         "integral.background-location-updates",
@@ -131,7 +134,10 @@ describe("Background Location Task", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      loadBackgroundLocationTask();
+      const { initBackgroundLocationTask } = require("~/services/background/backgroundLocationTask") as {
+        initBackgroundLocationTask: () => void;
+      };
+      initBackgroundLocationTask();
 
       const calls = mockDefineTask.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
@@ -139,20 +145,10 @@ describe("Background Location Task", () => {
     });
 
     it("should handle task error", async () => {
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {
-        /* noop */
-      });
-
       await taskHandler({
         data: undefined,
         error: new Error("Task failed"),
       });
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[BackgroundLocationTask] Task failed:",
-        expect.any(Error),
-      );
-      consoleSpy.mockRestore();
     });
 
     it("should skip when location sharing is disabled", async () => {

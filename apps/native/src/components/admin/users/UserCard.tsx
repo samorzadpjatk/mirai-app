@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName } from "@mirai-app/shared";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import type { User } from "~/hooks/admin/useAdminUsers";
 
@@ -10,8 +11,7 @@ interface UserCardProps {
 }
 
 export function UserCard({ user, onEdit }: UserCardProps) {
-  const userName =
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ?? user.email ?? "Unknown User";
+  const userName = formatDisplayName(user.firstName, user.lastName, user.email) ?? "Unknown User";
   const groupName = user.group?.name ?? "Not selected";
   const isAdmin = user.role === "ADMIN";
   const bannedUntilLabel = user.bannedUntil ? new Date(user.bannedUntil).toLocaleString() : null;

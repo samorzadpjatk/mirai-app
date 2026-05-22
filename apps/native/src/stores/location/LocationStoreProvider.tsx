@@ -30,7 +30,6 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
         });
       },
       onError: (error) => {
-        console.error("Failed to update location sharing settings:", error);
         const code = (error as { code?: string })?.code;
         if (code === "UNAUTHORIZED") {
           Alert.alert(

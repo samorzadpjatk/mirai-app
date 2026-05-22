@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
-import { useAdminUsers } from "../../admin/useAdminUsers";
+import { useAdminUsers, buildUserSearchQueryInput, getNextUserSearchPageParam } from "../../admin/useAdminUsers";
 
 // Mock oRPC
 const mockSearchWithPaginationQuery = jest.fn((options: { input: { tripId: string } }) => ({
@@ -918,5 +918,90 @@ describe("useAdminUsers", () => {
     const { result } = renderHook(() => useAdminUsers(tripId, "", "firstName"));
 
     expect(result.current.usersRefetching).toBe(true);
+  });
+});
+
+describe("buildUserSearchQueryInput", () => {
+  it("should build query input with valid parameters", () => {
+    const result = buildUserSearchQueryInput("trip-123", "firstName", "John", 30);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      field: "firstName",
+      searchTerm: "John",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should omit searchTerm when empty", () => {
+    const result = buildUserSearchQueryInput("trip-123", "firstName", "", 0);
+    expect(result.searchTerm).toBeUndefined();
+    expect(result).toEqual({
+      tripId: "trip-123",
+      field: "firstName",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+
+describe("getNextUserSearchPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextUserSearchPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextUserSearchPageParam({
+      pagination: { hasMore: true, offset: 30, limit: 30 },
+    });
+    expect(result).toBe(60);
+  });
+});
+
+import {
+  normalizeSearchTerm,
+  normalizeUserName,
+  shouldUpdateIdentifier,
+} from "../../admin/useAdminUsers";
+
+describe("normalizeSearchTerm", () => {
+  it("should trim leading and trailing whitespace", () => {
+    expect(normalizeSearchTerm("  hello  ")).toBe("hello");
+  });
+
+  it("should handle empty string", () => {
+    expect(normalizeSearchTerm("")).toBe("");
+  });
+
+  it("should handle already clean string", () => {
+    expect(normalizeSearchTerm("john")).toBe("john");
+  });
+});
+
+describe("normalizeUserName", () => {
+  it("should trim both first and last names", () => {
+    const result = normalizeUserName("  John  ", "  Doe  ");
+    expect(result).toEqual({ firstName: "John", lastName: "Doe" });
+  });
+
+  it("should handle empty strings", () => {
+    const result = normalizeUserName("", "");
+    expect(result).toEqual({ firstName: "", lastName: "" });
+  });
+});
+
+describe("shouldUpdateIdentifier", () => {
+  it("should return true for non-empty string", () => {
+    expect(shouldUpdateIdentifier("W123")).toBe(true);
+    expect(shouldUpdateIdentifier("  W123  ")).toBe(true);
+  });
+
+  it("should return false for empty string", () => {
+    expect(shouldUpdateIdentifier("")).toBe(false);
+  });
+
+  it("should return false for whitespace-only string", () => {
+    expect(shouldUpdateIdentifier("   ")).toBe(false);
   });
 });

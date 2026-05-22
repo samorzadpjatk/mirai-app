@@ -32,6 +32,76 @@ export interface User {
   tripId: string;
 }
 
+export function buildAdminGroupQueryInput(tripId: string, pageParam: number) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    tripId,
+    pagination: {
+      limit: GROUPS_PER_PAGE,
+      offset,
+    },
+  };
+}
+
+export function getNextAdminGroupPageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
+export function transformRawGroup(rawGroup: {
+  id: string;
+  name: string;
+  description: string | null;
+  image: string | null;
+  code: string;
+  coins: number;
+  organizer: { id: string; firstName: string | null; lastName: string | null } | null;
+  participants: unknown[];
+}): Group {
+  return {
+    id: rawGroup.id,
+    name: rawGroup.name,
+    description: rawGroup.description,
+    image: rawGroup.image,
+    code: rawGroup.code,
+    coins: rawGroup.coins,
+    organizer: rawGroup.organizer
+      ? {
+          id: rawGroup.organizer.id,
+          firstName: rawGroup.organizer.firstName,
+          lastName: rawGroup.organizer.lastName,
+        }
+      : null,
+    _count: {
+      participants: rawGroup.participants.length,
+    },
+  };
+}
+
+export function flattenGroupPages(
+  pages: { groups?: typeof transformRawGroup extends (x: infer U) => unknown ? U[] : never[] }[],
+): Group[] {
+  return (pages ?? []).flatMap((page) => (page.groups ?? []).map(transformRawGroup));
+}
+
+export function buildUpdateGroupInput(
+  id: string,
+  tripId: string,
+  name?: string,
+  organizerId?: string,
+) {
+  return {
+    id,
+    tripId,
+    ...(name !== undefined ? { name } : {}),
+    organizerId,
+  };
+}
+
 export function useAdminGroups(tripId: string) {
   const {
     data,
@@ -43,47 +113,14 @@ export function useAdminGroups(tripId: string) {
     refetch: refetchGroups,
   } = useInfiniteQuery(
     orpc.group.getAll.infiniteOptions({
-      input: (pageParam: number) => {
-        const offset = typeof pageParam === "number" ? pageParam : 0;
-        return {
-          tripId,
-          pagination: {
-            limit: GROUPS_PER_PAGE,
-            offset,
-          },
-        };
-      },
+      input: (pageParam: number) => buildAdminGroupQueryInput(tripId, pageParam),
       initialPageParam: 0,
-      getNextPageParam: (lastPage) => {
-        if (!lastPage.pagination.hasMore) {
-          return undefined;
-        }
-
-        return lastPage.pagination.offset + lastPage.pagination.limit;
-      },
+      getNextPageParam: getNextAdminGroupPageParam,
       enabled: Boolean(tripId),
     }),
   );
 
-  const groups = useMemo(
-    () =>
-      (data?.pages ?? []).flatMap((page) =>
-        (page.groups ?? []).map((group) => ({
-          ...group,
-          organizer: group.organizer
-            ? {
-                id: group.organizer.id,
-                firstName: group.organizer.firstName,
-                lastName: group.organizer.lastName,
-              }
-            : null,
-          _count: {
-            participants: group.participants.length,
-          },
-        })),
-      ),
-    [data?.pages],
-  );
+  const groups = useMemo(() => flattenGroupPages(data?.pages ?? []), [data?.pages]);
 
   const groupsPagination = useMemo(() => data?.pages?.[data.pages.length - 1]?.pagination, [data]);
 
@@ -127,12 +164,7 @@ export function useAdminGroups(tripId: string) {
   };
 
   const updateGroup = (id: string, name?: string, organizerId?: string) => {
-    return updateGroupMutation.mutateAsync({
-      id,
-      tripId,
-      ...(name !== undefined ? { name } : {}),
-      organizerId,
-    });
+    return updateGroupMutation.mutateAsync(buildUpdateGroupInput(id, tripId, name, organizerId));
   };
 
   const deleteGroup = (id: string) => {

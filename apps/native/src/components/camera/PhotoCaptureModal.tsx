@@ -29,7 +29,7 @@ interface LensPresetOption {
   lens: string;
 }
 
-const toLensPreset = (lens: string): LensPresetLabel | null => {
+export const toLensPreset = (lens: string): LensPresetLabel | null => {
   const normalized = lens.toLowerCase();
 
   if (normalized.includes("ultrawide")) return "0.5x";
@@ -49,7 +49,7 @@ const toLensPreset = (lens: string): LensPresetLabel | null => {
   return null;
 };
 
-const buildLensPresetOptions = (lenses: string[]): LensPresetOption[] => {
+export const buildLensPresetOptions = (lenses: string[]): LensPresetOption[] => {
   const preferredOrder: LensPresetLabel[] = ["0.5x", "1x", "2x"];
   const picked: Partial<Record<LensPresetLabel, string>> = {};
 

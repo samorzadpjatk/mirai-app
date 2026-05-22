@@ -16,6 +16,32 @@ import { FormField } from "~/components/common/ui/FormField";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { type useChallengeForm } from "~/hooks/admin/useChallengeForm";
 
+export function formatLocationText(targetLocation: { latitude: number; longitude: number } | null): string {
+  if (!targetLocation) return "Tap to select location on map";
+  return `Selected: ${targetLocation.latitude.toFixed(5)}, ${targetLocation.longitude.toFixed(5)}`;
+}
+
+export function getAutoApproveSwitchValue(
+  isAutoApproveForced: boolean,
+  isAutoApproveDisabled: boolean,
+  autoApprove: boolean,
+): boolean {
+  if (isAutoApproveForced) return true;
+  if (isAutoApproveDisabled) return false;
+  return autoApprove;
+}
+
+export function getAutoApproveThumbColor(
+  isAutoApproveForced: boolean,
+  isAutoApproveDisabled: boolean,
+  autoApprove: boolean,
+  primaryColor: string,
+  textSecondaryColor: string,
+): string {
+  if ((isAutoApproveForced || autoApprove) && !isAutoApproveDisabled) return primaryColor;
+  return textSecondaryColor;
+}
+
 interface ChallengeFormFieldsProps {
   formState: ReturnType<typeof useChallengeForm>;
   onSave: () => void;
@@ -175,9 +201,7 @@ export function ChallengeFormFields({
               <View style={styles.locationContent}>
                 <View style={styles.locationInfo}>
                   <Text style={styles.locationText}>
-                    {form.targetLocation
-                      ? `Selected: ${form.targetLocation.latitude.toFixed(5)}, ${form.targetLocation.longitude.toFixed(5)}`
-                      : "Tap to select location on map"}
+                    {formatLocationText(form.targetLocation)}
                   </Text>
                   <Text style={styles.hint}>Tap to open map and select the exact location</Text>
                 </View>
@@ -375,18 +399,20 @@ export function ChallengeFormFields({
         <View style={styles.switchRow}>
           <Text style={styles.labelInline}>Auto-approve submissions</Text>
           <Switch
-            value={isAutoApproveForced ? true : isAutoApproveDisabled ? false : form.autoApprove}
+            value={getAutoApproveSwitchValue(isAutoApproveForced, isAutoApproveDisabled, form.autoApprove)}
             onValueChange={(value) => updateForm("autoApprove", value)}
             disabled={isAutoApproveForced || isAutoApproveDisabled}
             trackColor={{
               false: colors.borderDark,
               true: colors.primaryOpacity80,
             }}
-            thumbColor={
-              (isAutoApproveForced || form.autoApprove) && !isAutoApproveDisabled
-                ? colors.primary
-                : colors.textSecondary
-            }
+            thumbColor={getAutoApproveThumbColor(
+              isAutoApproveForced,
+              isAutoApproveDisabled,
+              form.autoApprove,
+              colors.primary,
+              colors.textSecondary,
+            )}
           />
         </View>
         {isAutoApproveForced ? (

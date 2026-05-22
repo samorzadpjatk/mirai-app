@@ -47,35 +47,6 @@ jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: jest.fn(),
 }));
 
-interface AppModalShellProps {
-  children: React.ReactNode;
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-}
-
-interface AppModalFooterProps {
-  primaryLabel: string;
-  onPrimary: () => void;
-  isPrimaryLoading: boolean;
-  secondaryLabel: string;
-  onSecondary: () => void;
-}
-
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
-
-interface ThemedTextInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
-  multiline?: boolean;
-}
-
 interface LocationPickerProps {
   visible: boolean;
   onClose: () => void;
@@ -83,62 +54,6 @@ interface LocationPickerProps {
 }
 
 const mockLaunchImageLibraryAsync = jest.mocked(ImagePicker.launchImageLibraryAsync);
-
-jest.mock("~/components/common/ui", () => {
-  const React = require("react");
-  const { View, Text, TouchableOpacity, TextInput } = require("react-native");
-
-  return {
-    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-      !visible ? null : (
-        <View testID="modal-shell">
-          <Text testID="modal-title">{title}</Text>
-          <TouchableOpacity testID="close-button" onPress={onClose}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-          {children}
-        </View>
-      ),
-    AppModalFooter: ({
-      primaryLabel,
-      onPrimary,
-      isPrimaryLoading,
-      secondaryLabel,
-      onSecondary,
-    }: AppModalFooterProps) => (
-      <View testID="modal-footer">
-        <TouchableOpacity testID="primary-button" onPress={onPrimary}>
-          <Text>{isPrimaryLoading ? "Loading..." : primaryLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity testID="secondary-button" onPress={onSecondary}>
-          <Text>{secondaryLabel}</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-    FormField: ({ children, label, required }: FormFieldProps) => (
-      <View testID="form-field">
-        <Text testID="field-label">{`${label}${required ? " *" : ""}`}</Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType,
-      multiline,
-    }: ThemedTextInputProps) => (
-      <TextInput
-        testID="text-input"
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        multiline={multiline}
-      />
-    ),
-  };
-});
 
 jest.mock("~/components/map/LocationPicker", () => {
   const React = require("react");
@@ -181,20 +96,20 @@ describe("AdminRewardsModal", () => {
 
   describe("rendering", () => {
     it("should render modal with title", () => {
-      const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      expect(getByTestId("modal-title").children[0]).toBe("New Reward");
+      const { getByText } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
+      expect(getByText("New Reward")).toBeTruthy();
     });
 
     it("should not render when not visible", () => {
       const { queryByTestId } = renderWithProviders(
         <AdminRewardsModal {...defaultProps} visible={false} />,
       );
-      expect(queryByTestId("modal-shell")).toBeNull();
+      expect(queryByTestId("app-modal")).toBeNull();
     });
 
     it("should render all form fields", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const formFields = getAllByTestId("form-field");
+      const formFields = getAllByTestId("form-field-container");
       expect(formFields.length).toBeGreaterThanOrEqual(4);
     });
 
@@ -230,43 +145,43 @@ describe("AdminRewardsModal", () => {
 
     it("should render footer buttons", () => {
       const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      expect(getByTestId("primary-button")).toBeTruthy();
-      expect(getByTestId("secondary-button")).toBeTruthy();
+      expect(getByTestId("app-modal-footer-primary")).toBeTruthy();
+      expect(getByTestId("app-modal-footer-secondary")).toBeTruthy();
     });
   });
 
   describe("form interactions", () => {
     it("should update reward name when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Branded T-shirt");
       expect(inputs[0]!.props.value).toBe("Branded T-shirt");
     });
 
     it("should update description when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[1]!, "A cool branded t-shirt");
       expect(inputs[1]!.props.value).toBe("A cool branded t-shirt");
     });
 
     it("should update available quantity when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[2]!, "50");
       expect(inputs[2]!.props.value).toBe("50");
     });
 
     it("should update coin cost when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[3]!, "10");
       expect(inputs[3]!.props.value).toBe("10");
     });
 
     it("should handle numeric keyboard for quantity field", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       const numericInputs = inputs.filter((input) => input.props.keyboardType === "numeric");
       expect(numericInputs.length).toBeGreaterThanOrEqual(2);
     });
@@ -290,13 +205,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} tripId={null} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
@@ -308,13 +223,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} tripId="all" />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
@@ -324,7 +239,7 @@ describe("AdminRewardsModal", () => {
     it("should show error when required fields are empty", async () => {
       const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Fill in all required fields");
@@ -336,13 +251,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "0");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
@@ -354,13 +269,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "150");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
@@ -372,13 +287,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "abc");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
@@ -390,13 +305,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "A test description");
       fireEvent.changeText(inputs[2]!, "50");
       fireEvent.changeText(inputs[3]!, "10");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -416,13 +331,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Success", "Reward has been created");
@@ -434,13 +349,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalled();
@@ -452,13 +367,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(inputs[0]!.props.value).toBe("");
@@ -475,13 +390,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Failed to create reward");
@@ -492,7 +407,7 @@ describe("AdminRewardsModal", () => {
   describe("cancel action", () => {
     it("should call onClose when cancel button is pressed", () => {
       const { getByTestId } = renderWithProviders(<AdminRewardsModal {...defaultProps} />);
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
       expect(mockOnClose).toHaveBeenCalled();
     });
   });
@@ -610,13 +525,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} tripId="" />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Select a trip in the admin panel first");
@@ -628,13 +543,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "1");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ coinCost: 1 }));
@@ -646,13 +561,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "10");
       fireEvent.changeText(inputs[3]!, "100");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ coinCost: 100 }));
@@ -664,13 +579,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "0");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(
@@ -684,13 +599,13 @@ describe("AdminRewardsModal", () => {
         <AdminRewardsModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Test Reward");
       fireEvent.changeText(inputs[1]!, "Description");
       fireEvent.changeText(inputs[2]!, "999999");
       fireEvent.changeText(inputs[3]!, "5");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith(

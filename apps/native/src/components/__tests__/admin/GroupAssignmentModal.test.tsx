@@ -16,27 +16,6 @@ interface GroupAssignmentResult {
   houseNumber: string | null;
 }
 
-jest.mock("~/components/common/ui", () => {
-  const { View, Text, TouchableOpacity } = require("react-native");
-  return {
-    AppModalShell: (props: {
-      children: React.ReactNode;
-      visible: boolean;
-      title: string;
-      onClose: () => void;
-    }) =>
-      !props.visible ? null : (
-        <View>
-          <Text>{props.title}</Text>
-          <TouchableOpacity onPress={props.onClose}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-          {props.children}
-        </View>
-      ),
-  };
-});
-
 describe("GroupAssignmentModal", () => {
   const groups: Group[] = [
     { id: "group-1", name: "Group One" },

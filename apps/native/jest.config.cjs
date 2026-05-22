@@ -34,6 +34,7 @@ module.exports = {
     "^@mirai-app/db$": "<rootDir>/../../packages/db/src/index.ts",
     "^@mirai-app/orpc/client/query$": "<rootDir>/../../packages/orpc/src/client/query/index.ts",
     "^@mirai-app/orpc/client$": "<rootDir>/../../packages/orpc/src/client/index.ts",
+    "^@mirai-app/orpc/utils/activityFeed$": "<rootDir>/../../packages/orpc/src/utils/activityFeed.ts",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   // Exclude helper files from test discovery
@@ -45,18 +46,20 @@ module.exports = {
   ],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
     "!src/**/__tests__/helpers/**",
     "!src/**/index.ts",
     "!src/types/**",
     "!src/app/**",
     "!src/styles/**",
+    "!src/config/**",
   ],
   coverageThreshold: {
     global: {
-      branches: 69,
-      functions: 71,
-      lines: 75,
-      statements: 75,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
 };

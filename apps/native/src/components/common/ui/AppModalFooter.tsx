@@ -13,6 +13,8 @@ interface AppModalFooterProps {
   onSecondary?: () => void;
   style?: StyleProp<ViewStyle>;
   variant?: "centered" | "right";
+  primaryTestID?: string;
+  secondaryTestID?: string;
 }
 
 export function AppModalFooter({
@@ -25,6 +27,8 @@ export function AppModalFooter({
   onSecondary,
   style,
   variant = "centered",
+  primaryTestID = "app-modal-footer-primary",
+  secondaryTestID = "app-modal-footer-secondary",
 }: AppModalFooterProps) {
   return (
     <View style={[styles.footer, variant === "right" && styles.footerRight, style]}>
@@ -32,6 +36,7 @@ export function AppModalFooter({
       <View style={styles.actions}>
         {secondaryLabel && onSecondary && (
           <PrimaryLoadingButton
+            testID={secondaryTestID}
             label={secondaryLabel}
             isLoading={false}
             onPress={onSecondary}
@@ -41,6 +46,7 @@ export function AppModalFooter({
           />
         )}
         <PrimaryLoadingButton
+          testID={primaryTestID}
           label={primaryLabel}
           isLoading={isPrimaryLoading}
           onPress={onPrimary}

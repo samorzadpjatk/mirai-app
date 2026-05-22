@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect } from "@jest/globals";
 
 interface RuntimeEnv {
   SUPABASE_URL: string;
@@ -15,7 +15,7 @@ const getEnvString = (value: unknown, name: string): string => {
   return value;
 };
 
-const createRuntimeEnv = (env: NodeJS.ProcessEnv): RuntimeEnv => {
+const createRuntimeEnv = (env: Record<string, string | undefined>): RuntimeEnv => {
   const SUPABASE_URL = getEnvString(env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
   const SUPABASE_ANON_KEY = getEnvString(env.EXPO_PUBLIC_SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
   const TRPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
@@ -27,224 +27,156 @@ const createRuntimeEnv = (env: NodeJS.ProcessEnv): RuntimeEnv => {
   return { SUPABASE_URL, SUPABASE_ANON_KEY, TRPC_HTTP_URL, TRPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL };
 };
 
+const baseEnv: Record<string, string | undefined> = {
+  EXPO_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: "test-key",
+  EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000",
+  EXPO_PUBLIC_PRIVACY_POLICY_URL: "http://localhost/privacy",
+};
+
 describe("runtimeEnv", () => {
-  const originalEnv = { ...process.env };
-
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  const importRuntimeEnv = async (): Promise<RuntimeEnv> => {
-    return createRuntimeEnv(process.env);
-  };
-
   describe("SUPABASE_URL", () => {
-    it("should throw error when EXPO_PUBLIC_SUPABASE_URL is missing", async () => {
-      delete process.env.EXPO_PUBLIC_SUPABASE_URL;
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_SUPABASE_URL is missing", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: undefined };
 
-      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_URL environment variable");
     });
 
-    it("should throw error when EXPO_PUBLIC_SUPABASE_URL is empty string", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_SUPABASE_URL is empty string", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: "" };
 
-      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_URL environment variable");
     });
 
-    it("should successfully parse valid SUPABASE_URL", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should successfully parse valid SUPABASE_URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: "https://test.supabase.co" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.SUPABASE_URL).toBe("https://test.supabase.co");
     });
   });
 
   describe("SUPABASE_ANON_KEY", () => {
-    it("should throw error when EXPO_PUBLIC_SUPABASE_ANON_KEY is missing", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_SUPABASE_ANON_KEY is missing", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_ANON_KEY: undefined };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_ANON_KEY environment variable",
-      );
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_ANON_KEY environment variable");
     });
 
-    it("should throw error when EXPO_PUBLIC_SUPABASE_ANON_KEY is empty string", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_SUPABASE_ANON_KEY is empty string", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_ANON_KEY: "" };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing SUPABASE_ANON_KEY environment variable",
-      );
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_ANON_KEY environment variable");
     });
 
-    it("should successfully parse valid SUPABASE_ANON_KEY", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key-123";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should successfully parse valid SUPABASE_ANON_KEY", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key-123" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.SUPABASE_ANON_KEY).toBe("test-anon-key-123");
     });
   });
 
   describe("TRPC_HTTP_URL", () => {
-    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is missing", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      delete process.env.EXPO_PUBLIC_TRPC_API_URL;
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is missing", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: undefined };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing TRPC_HTTP_URL environment variable",
-      );
+      expect(() => createRuntimeEnv(env)).toThrow("Missing TRPC_HTTP_URL environment variable");
     });
 
-    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is empty string", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is empty string", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "" };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
-        "Missing TRPC_HTTP_URL environment variable",
-      );
+      expect(() => createRuntimeEnv(env)).toThrow("Missing TRPC_HTTP_URL environment variable");
     });
 
-    it("should successfully parse valid TRPC_HTTP_URL", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should successfully parse valid TRPC_HTTP_URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.TRPC_HTTP_URL).toBe("http://localhost:3000");
     });
   });
 
   describe("TRPC_WS_URL", () => {
-    it("should convert http URL to ws URL", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should convert http URL to ws URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.TRPC_WS_URL).toBe("ws://localhost:3000");
     });
 
-    it("should convert https URL to wss URL", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "https://api.example.com";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should convert https URL to wss URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.TRPC_WS_URL).toBe("wss://api.example.com");
     });
 
-    it("should handle URLs with paths", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "https://api.example.com/trpc";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should handle URLs with paths", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com/trpc" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.TRPC_WS_URL).toBe("wss://api.example.com/trpc");
     });
 
-    it("should handle URLs with ports", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:2022/api";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should handle URLs with ports", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:2022/api" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.TRPC_WS_URL).toBe("ws://localhost:2022/api");
     });
   });
 
   describe("PRIVACY_POLICY_PUBLIC_URL", () => {
-    it("should throw error when EXPO_PUBLIC_PRIVACY_POLICY_URL is missing", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      delete process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
+    it("should throw error when EXPO_PUBLIC_PRIVACY_POLICY_URL is missing", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_PRIVACY_POLICY_URL: undefined };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
+      expect(() => createRuntimeEnv(env)).toThrow(
         "Missing PRIVACY_POLICY_PUBLIC_URL environment variable",
       );
     });
 
-    it("should throw error when EXPO_PUBLIC_PRIVACY_POLICY_URL is empty string", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "";
+    it("should throw error when EXPO_PUBLIC_PRIVACY_POLICY_URL is empty string", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_PRIVACY_POLICY_URL: "" };
 
-      await expect(importRuntimeEnv()).rejects.toThrow(
+      expect(() => createRuntimeEnv(env)).toThrow(
         "Missing PRIVACY_POLICY_PUBLIC_URL environment variable",
       );
     });
 
-    it("should successfully parse valid PRIVACY_POLICY_PUBLIC_URL", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "https://example.com/privacy";
+    it("should successfully parse valid PRIVACY_POLICY_PUBLIC_URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy" };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
       expect(runtimeEnv.PRIVACY_POLICY_PUBLIC_URL).toBe("https://example.com/privacy");
     });
   });
 
   describe("getEnvString helper", () => {
-    it("should throw error for non-string values", async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (process.env as any).EXPO_PUBLIC_SUPABASE_URL = 123;
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error for non-string values", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: 123 as unknown as string };
 
-      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_URL environment variable");
     });
 
-    it("should throw error for undefined values", async () => {
-      delete process.env.EXPO_PUBLIC_SUPABASE_URL;
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "http://localhost:3000";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "http://localhost/privacy";
+    it("should throw error for undefined values", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: undefined };
 
-      await expect(importRuntimeEnv()).rejects.toThrow("Missing SUPABASE_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_URL environment variable");
     });
   });
 
   describe("all environment variables valid", () => {
-    it("should export all constants when all env vars are valid", async () => {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-      process.env.EXPO_PUBLIC_TRPC_API_URL = "https://api.example.com/trpc";
-      process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL = "https://example.com/privacy";
+    it("should export all constants when all env vars are valid", () => {
+      const env = {
+        EXPO_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
+        EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com/trpc",
+        EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy",
+      };
 
-      const runtimeEnv = await importRuntimeEnv();
+      const runtimeEnv = createRuntimeEnv(env);
 
       expect(runtimeEnv.SUPABASE_URL).toBe("https://test.supabase.co");
       expect(runtimeEnv.SUPABASE_ANON_KEY).toBe("test-anon-key");

@@ -60,10 +60,6 @@ describe("TUS URL Storage", () => {
       const result = await storage.findAllUploads();
 
       expect(result).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to read tus upload storage",
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
 
@@ -82,10 +78,6 @@ describe("TUS URL Storage", () => {
       const result = await storage.findAllUploads();
 
       expect(result).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to read tus upload storage",
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
   });
@@ -211,10 +203,6 @@ describe("TUS URL Storage", () => {
       // Should not throw, but should log a warning
       const result = await storage.addUpload("fingerprint1", upload);
       expect(result).toBeTruthy();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to persist tus upload storage",
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
   });
@@ -287,10 +275,6 @@ describe("TUS URL Storage", () => {
 
       await storage.removeUpload("key1");
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to persist tus upload storage",
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
 

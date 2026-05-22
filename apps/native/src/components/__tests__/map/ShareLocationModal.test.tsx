@@ -98,29 +98,7 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => ({
   },
 }));
 
-interface ThemedTextInputProps {
-  placeholder: string;
-  value: string;
-  onChangeText: (text: string) => void;
-}
 
-jest.mock("~/components/common/ui", () => ({
-  ThemedTextInput: function MockThemedTextInput({
-    placeholder,
-    value,
-    onChangeText,
-  }: ThemedTextInputProps) {
-    const { TextInput } = jest.requireActual("react-native");
-    return (
-      <TextInput
-        testID="search-input"
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-      />
-    );
-  },
-}));
 
 describe("ShareLocationModal", () => {
   beforeEach(() => {
@@ -137,7 +115,7 @@ describe("ShareLocationModal", () => {
   it("should render search input", () => {
     renderWithProviders(<ShareLocationModal />);
 
-    expect(screen.getByTestId("search-input")).toBeOnTheScreen();
+    expect(screen.getByPlaceholderText("Type at least 2 characters to search...")).toBeOnTheScreen();
   });
 
   it("should show empty state when search query is too short", () => {
@@ -151,7 +129,7 @@ describe("ShareLocationModal", () => {
   it("should call setSearchQuery when typing", () => {
     renderWithProviders(<ShareLocationModal />);
 
-    fireEvent.changeText(screen.getByTestId("search-input"), "Jo");
+    fireEvent.changeText(screen.getByPlaceholderText("Type at least 2 characters to search..."), "Jo");
 
     expect(mockSetSearchQuery).toHaveBeenCalledWith("Jo");
   });

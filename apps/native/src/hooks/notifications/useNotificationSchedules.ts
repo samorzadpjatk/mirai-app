@@ -10,8 +10,8 @@ export function useNotificationSchedules() {
       onSuccess: async () => {
         await invalidateNotificationQueries(queryClient);
       },
-      onError: (err) => {
-        console.error("Error deleting schedule:", err);
+      onError: () => {
+        /* no-op */
       },
     }),
   );
@@ -20,8 +20,8 @@ export function useNotificationSchedules() {
       onSuccess: async () => {
         await invalidateNotificationQueries(queryClient);
       },
-      onError: (err) => {
-        console.error("Error toggling schedule:", err);
+      onError: () => {
+        /* no-op */
       },
     }),
   );

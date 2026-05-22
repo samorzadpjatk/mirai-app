@@ -26,6 +26,29 @@ export type NotificationStatus = "pending" | "sent" | "failed" | "all";
 
 const PAGE_SIZE = 50;
 
+export function buildNotificationQueryInput(
+  notificationsQueryInput: { tripId: string } | undefined,
+  pageParam: number,
+) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    ...(notificationsQueryInput ?? {}),
+    pagination: {
+      limit: PAGE_SIZE,
+      offset,
+    },
+  };
+}
+
+export function getNextNotificationPageParam(lastPage: {
+  pagination?: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination?.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
 export function useAdminNotifications(tripId?: string) {
   const [status, setStatus] = useState<NotificationStatus>("all");
 
@@ -34,23 +57,9 @@ export function useAdminNotifications(tripId?: string) {
   const { data, isLoading, isFetchingNextPage, isRefetching, hasNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.notifications.getAll.infiniteOptions({
-        input: (pageParam: number) => {
-          const offset = typeof pageParam === "number" ? pageParam : 0;
-          return {
-            ...(notificationsQueryInput ?? {}),
-            pagination: {
-              limit: PAGE_SIZE,
-              offset,
-            },
-          };
-        },
+        input: (pageParam: number) => buildNotificationQueryInput(notificationsQueryInput, pageParam),
         initialPageParam: 0,
-        getNextPageParam: (lastPage) => {
-          if (!lastPage.pagination?.hasMore) {
-            return undefined;
-          }
-          return lastPage.pagination.offset + lastPage.pagination.limit;
-        },
+        getNextPageParam: getNextNotificationPageParam,
       }),
     );
 

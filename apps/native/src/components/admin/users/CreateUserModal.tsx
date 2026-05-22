@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { isNameValid, isNonEmptyString } from "~/utils/validation";
 
 interface CreateUserModalProps {
   visible: boolean;
@@ -21,20 +22,16 @@ export function CreateUserModal({ visible, onClose, onCreate, isCreating }: Crea
     onClose();
   };
 
+  const isValid = isNameValid(firstName, lastName) && isNonEmptyString(email);
+
   const handleCreate = () => {
-    const trimmedFirstName = firstName.trim();
-    const trimmedLastName = lastName.trim();
-    const trimmedEmail = email.trim();
-    if (!trimmedFirstName || !trimmedLastName || !trimmedEmail) return;
+    if (!isValid) return;
     onCreate({
-      firstName: trimmedFirstName,
-      lastName: trimmedLastName,
-      email: trimmedEmail,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
     });
   };
-
-  const isValid =
-    firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0;
 
   return (
     <AdminModal

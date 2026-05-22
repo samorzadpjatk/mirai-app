@@ -14,6 +14,7 @@ import { useFileDownload } from "~/hooks/files";
 import { useLocationContext } from "~/stores/location";
 import { useSelectedTrip } from "~/hooks/trips";
 import { useTripDetails } from "~/hooks/trips";
+import { formatDisplayName } from "@mirai-app/shared";
 
 function MapScreenContent({
   onLocationUpdate,
@@ -85,7 +86,7 @@ export default function MapScreen() {
     abort: abortAvatar,
   } = useFileDownload();
   const avatarStoragePath = currentUser?.id ? `avatar/${currentUser.id}.jpg` : null;
-  const currentUserName = `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim();
+  const currentUserName = formatDisplayName(currentUser?.firstName, currentUser?.lastName) ?? undefined;
 
   useEffect(() => {
     if (!currentUser?.hasAvatar || !avatarStoragePath) {
@@ -162,7 +163,7 @@ export default function MapScreen() {
         }
       }}
       currentUserId={currentUser?.id}
-      currentUserName={currentUserName.length > 0 ? currentUserName : undefined}
+      currentUserName={currentUserName && currentUserName.length > 0 ? currentUserName : undefined}
       currentUserAvatarUrl={avatarFile?.uri ?? null}
     />
   );

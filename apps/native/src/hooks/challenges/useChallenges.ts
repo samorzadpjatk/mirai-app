@@ -1,10 +1,36 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import {
+  mapChallengeToListItem,
+  countCompletedChallenges,
+  calculateLeaderboardInfo,
+  findUserGroup,
+} from "@mirai-app/shared";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 30;
+
+export function buildChallengeQueryInput(tripId: string | null | undefined, pageParam: number) {
+  const offset = pageParam || 0;
+  return {
+    tripId: tripId ?? "",
+    pagination: {
+      limit: PAGE_SIZE,
+      offset,
+    },
+  };
+}
+
+export function getNextChallengePageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
 
 export function useChallenges(tripId?: string | null) {
   const tripQuery = useQuery({
@@ -14,24 +40,9 @@ export function useChallenges(tripId?: string | null) {
 
   const challengesQuery = useInfiniteQuery(
     orpc.challenge.getAllByTrip.infiniteOptions({
-      input: (pageParam: number) => {
-        const offset = pageParam || 0;
-        return {
-          tripId: tripId ?? "",
-          pagination: {
-            limit: PAGE_SIZE,
-            offset,
-          },
-        };
-      },
+      input: (pageParam: number) => buildChallengeQueryInput(tripId, pageParam),
       initialPageParam: 0,
-      getNextPageParam: (lastPage) => {
-        if (!lastPage.pagination.hasMore) {
-          return undefined;
-        }
-
-        return lastPage.pagination.offset + lastPage.pagination.limit;
-      },
+      getNextPageParam: getNextChallengePageParam,
       enabled: Boolean(tripId),
     }),
   );
@@ -48,39 +59,13 @@ export function useChallenges(tripId?: string | null) {
 
   const userGroup = useMemo(() => {
     if (!currentUser || !trip?.participants) return null;
-    const participant = trip.participants.find((p) => p.user.id === currentUser.id);
-    return participant?.group ?? null;
+    return findUserGroup(currentUser.id, trip.participants)?.group ?? null;
   }, [currentUser, trip]);
 
-  const leaderboardInfo = useMemo(() => {
-    if (!userGroup || !trip?.groups) return null;
-
-    const sortedGroups = [...trip.groups].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
-    const position = sortedGroups.findIndex((g) => g.id === userGroup.id) + 1;
-
-    let pointsDifference = 0;
-    let targetPosition: number | null = null;
-    let targetGroupName: string | null = null;
-    if (position === 1 && sortedGroups.length > 1) {
-      const secondPlace = sortedGroups[1];
-      pointsDifference = (userGroup.coins ?? 0) - (secondPlace?.coins ?? 0);
-      targetPosition = 2;
-      targetGroupName = secondPlace?.name ?? null;
-    } else if (position > 1) {
-      const groupAhead = sortedGroups[position - 2];
-      pointsDifference = (groupAhead?.coins ?? 0) - (userGroup.coins ?? 0);
-      targetPosition = position - 1;
-      targetGroupName = groupAhead?.name ?? null;
-    }
-
-    return {
-      position,
-      pointsDifference,
-      totalGroups: sortedGroups.length,
-      targetPosition,
-      targetGroupName,
-    };
-  }, [userGroup, trip]);
+  const leaderboardInfo = useMemo(
+    () => calculateLeaderboardInfo(userGroup, trip?.groups),
+    [userGroup, trip],
+  );
 
   interface DBChallenge {
     id: string;
@@ -104,58 +89,17 @@ export function useChallenges(tripId?: string | null) {
     myGroupSubmissionStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   }
 
-  const challenges: ChallengeListItem[] = useMemo(() => {
+
+
+  const challenges = useMemo(() => {
     const apiChallenges = (challengesData ?? []) as DBChallenge[];
-
-    return apiChallenges.map((dbChallenge) => {
-      const rawStatus = dbChallenge.status ?? "HIDDEN";
-      const mySubmissionStatus = dbChallenge.myGroupSubmissionStatus ?? null;
-
-      const cardStatus: ChallengeListItem["status"] =
-        rawStatus === "HIDDEN" || rawStatus === "CANCELLED"
-          ? "locked"
-          : mySubmissionStatus === "APPROVED"
-            ? "solved"
-            : mySubmissionStatus === "PENDING"
-              ? "submitted"
-              : mySubmissionStatus === "REJECTED"
-                ? "rejected"
-                : rawStatus === "VOTING_PHASE"
-                  ? "locked"
-                  : rawStatus === "COMPLETED"
-                    ? "completed"
-                    : rawStatus === "VISIBLE"
-                      ? "visible"
-                      : "to_solve";
-
-      const basePoints = dbChallenge.basePoints ?? 0;
-      const maxPoints =
-        dbChallenge.scoringCategory === "UNLIMITED"
-          ? basePoints
-          : (dbChallenge.firstPlacePoints ?? basePoints);
-
-      return {
-        id: dbChallenge.id,
-        title: dbChallenge.name,
-        points: maxPoints,
-        icon: "trophy",
-        iconColor: colors.primary,
-        status: cardStatus,
-        submissionType: dbChallenge.submissionType ?? "IMAGE",
-        scoringCategory: dbChallenge.scoringCategory ?? undefined,
-        lifecycleStatus: rawStatus,
-        description: dbChallenge.description ?? undefined,
-        image: dbChallenge.image ?? undefined,
-        participantGroupsCount: dbChallenge.participantGroupsCount ?? 0,
-      };
-    });
+    return apiChallenges.map((dbChallenge) =>
+      mapChallengeToListItem(dbChallenge, colors.primary),
+    ) as ChallengeListItem[];
   }, [challengesData]);
 
   const completedChallengesCount = useMemo(
-    () =>
-      challenges.filter(
-        (challenge) => challenge.status === "solved" || challenge.status === "submitted",
-      ).length,
+    () => countCompletedChallenges(challenges),
     [challenges],
   );
 

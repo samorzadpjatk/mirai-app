@@ -6,10 +6,12 @@ export function formatNumber(value: number): string {
 }
 
 /**
- * Format a date to a localized string
+ * Format a date to a localized string.
+ * Returns "Unknown date" for invalid inputs.
  */
 export function formatDate(date: Date | string): string {
   const dateObj = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(dateObj.getTime())) return "Unknown date";
   return dateObj.toLocaleString();
 }
 

@@ -13,30 +13,15 @@ import {
 
 const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
 
-let isSending = false;
+import {
+  toFiniteNumberOrNull,
+  toNonNegativeOrNull,
+  toHeadingOrNull,
+} from "./backgroundLocationTaskUtils";
 
-const toFiniteNumberOrNull = (value: number | null | undefined): number | null => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
-  }
-  return value;
-};
+export { toFiniteNumberOrNull, toNonNegativeOrNull, toHeadingOrNull };
 
-const toNonNegativeOrNull = (value: number | null | undefined): number | null => {
-  const normalized = toFiniteNumberOrNull(value);
-  if (normalized == null || normalized < 0) {
-    return null;
-  }
-  return normalized;
-};
-
-const toHeadingOrNull = (value: number | null | undefined): number | null => {
-  const normalized = toFiniteNumberOrNull(value);
-  if (normalized == null || normalized < 0 || normalized > 360) {
-    return null;
-  }
-  return normalized;
-};
+const isSending = false;
 
 async function shouldSendBackgroundLocation(): Promise<boolean> {
   const [sharingEnabled, backgroundEnabled] = await Promise.all([
@@ -54,7 +39,6 @@ async function getAccessToken(): Promise<string | null> {
   } = await supabaseClient.auth.getSession();
 
   if (error) {
-    console.warn("[BackgroundLocationTask] Failed to load session:", error);
     return null;
   }
 
@@ -70,10 +54,6 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   const latitude = toFiniteNumberOrNull(location.coords.latitude);
   const longitude = toFiniteNumberOrNull(location.coords.longitude);
   if (latitude == null || longitude == null) {
-    console.warn("[BackgroundLocationTask] Skipping update due to invalid coordinates.", {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    });
     return;
   }
 
@@ -94,44 +74,67 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   }
 }
 
-try {
-  TaskManager.defineTask(BACKGROUND_LOCATION_TASK_NAME, async ({ data, error }) => {
-    if (error) {
-      console.error("[BackgroundLocationTask] Task failed:", error);
+export interface BackgroundTaskState {
+  isSending: boolean;
+}
+
+export interface BackgroundTaskDeps {
+  shouldSend: () => Promise<boolean>;
+  sendUpdate: (location: LocationObject) => Promise<void>;
+}
+
+export async function handleBackgroundLocationTask(
+  data: { locations?: LocationObject[] } | undefined,
+  error: Error | null,
+  state: BackgroundTaskState,
+  deps: BackgroundTaskDeps,
+): Promise<void> {
+  if (error) {
+    return;
+  }
+
+  if (state.isSending) {
+    return;
+  }
+
+  state.isSending = true;
+  try {
+    if (!(await deps.shouldSend())) {
       return;
     }
 
-    if (isSending) {
+    const latestLocation = data?.locations?.at(-1);
+    if (!latestLocation) {
       return;
     }
 
-    isSending = true;
-    try {
-      if (!(await shouldSendBackgroundLocation())) {
-        return;
-      }
+    await deps.sendUpdate(latestLocation);
+  } catch {
+    /* no-op */
+  } finally {
+    state.isSending = false;
+  }
+}
 
-      const taskData = data as
-        | {
-            locations?: LocationObject[];
-          }
-        | undefined;
+export function initBackgroundLocationTask(): void {
+  const state: BackgroundTaskState = { isSending: false };
 
-      const latestLocation = taskData?.locations?.at(-1);
-      if (!latestLocation) {
-        return;
-      }
-
-      await sendLocationUpdate(latestLocation);
-    } catch (taskError) {
-      console.error("[BackgroundLocationTask] Failed to send location update:", taskError);
-    } finally {
-      isSending = false;
+  try {
+    TaskManager.defineTask(BACKGROUND_LOCATION_TASK_NAME, async ({ data, error }) => {
+      await handleBackgroundLocationTask(
+        data as { locations?: LocationObject[] } | undefined,
+        error,
+        state,
+        {
+          shouldSend: shouldSendBackgroundLocation,
+          sendUpdate: sendLocationUpdate,
+        },
+      );
+    });
+  } catch (error) {
+    // Hot reload can try to re-register the same task name in development.
+    if (!(error instanceof Error) || !error.message.includes("has already been defined")) {
+      /* no-op */
     }
-  });
-} catch (error) {
-  // Hot reload can try to re-register the same task name in development.
-  if (!(error instanceof Error) || !error.message.includes("has already been defined")) {
-    console.error("[BackgroundLocationTask] Failed to define task:", error);
   }
 }

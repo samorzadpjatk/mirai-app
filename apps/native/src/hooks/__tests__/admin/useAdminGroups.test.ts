@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
-import { useAdminGroups } from "../../admin/useAdminGroups";
+import { useAdminGroups, buildAdminGroupQueryInput, getNextAdminGroupPageParam } from "../../admin/useAdminGroups";
 
 // Mock oRPC
 const mockGetAllInfiniteOptions = jest.fn(
@@ -787,5 +787,146 @@ describe("useAdminGroups", () => {
 
     const lastCall = mockUseInfiniteQuery.mock.calls[mockUseInfiniteQuery.mock.calls.length - 1];
     expect(lastCall![0].enabled).toBe(false);
+  });
+});
+
+describe("buildAdminGroupQueryInput", () => {
+  it("should build query input with valid tripId and pageParam", () => {
+    const result = buildAdminGroupQueryInput("trip-123", 30);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should default offset to 0 when pageParam is 0", () => {
+    const result = buildAdminGroupQueryInput("trip-123", 0);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+
+describe("getNextAdminGroupPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextAdminGroupPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextAdminGroupPageParam({
+      pagination: { hasMore: true, offset: 30, limit: 30 },
+    });
+    expect(result).toBe(60);
+  });
+});
+
+import { transformRawGroup, flattenGroupPages, buildUpdateGroupInput } from "../../admin/useAdminGroups";
+
+describe("transformRawGroup", () => {
+  it("should transform group with organizer", () => {
+    const rawGroup = {
+      id: "g1",
+      name: "Group A",
+      description: "Desc",
+      image: "img.jpg",
+      code: "CODEA",
+      coins: 100,
+      organizer: { id: "u1", firstName: "John", lastName: "Doe" },
+      participants: [{ id: "p1" }, { id: "p2" }],
+    };
+
+    const result = transformRawGroup(rawGroup);
+
+    expect(result).toEqual({
+      id: "g1",
+      name: "Group A",
+      description: "Desc",
+      image: "img.jpg",
+      code: "CODEA",
+      coins: 100,
+      organizer: { id: "u1", firstName: "John", lastName: "Doe" },
+      _count: { participants: 2 },
+    });
+  });
+
+  it("should transform group without organizer", () => {
+    const rawGroup = {
+      id: "g2",
+      name: "Group B",
+      description: null,
+      image: null,
+      code: "CODEB",
+      coins: 0,
+      organizer: null,
+      participants: [],
+    };
+
+    const result = transformRawGroup(rawGroup);
+
+    expect(result.organizer).toBeNull();
+    expect(result._count.participants).toBe(0);
+  });
+});
+
+describe("flattenGroupPages", () => {
+  it("should flatten and transform groups from multiple pages", () => {
+    const pages = [
+      {
+        groups: [
+          { id: "g1", name: "A", description: null, image: null, code: "A", coins: 0, organizer: null, participants: [] },
+        ],
+      },
+      {
+        groups: [
+          { id: "g2", name: "B", description: null, image: null, code: "B", coins: 0, organizer: null, participants: [] },
+        ],
+      },
+    ];
+
+    const result = flattenGroupPages(pages);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.id).toBe("g1");
+    expect(result[1]!.id).toBe("g2");
+  });
+
+  it("should handle empty pages", () => {
+    expect(flattenGroupPages([])).toEqual([]);
+    expect(flattenGroupPages([{}])).toEqual([]);
+  });
+});
+
+describe("buildUpdateGroupInput", () => {
+  it("should include name when provided", () => {
+    const result = buildUpdateGroupInput("g1", "trip-1", "New Name", "u1");
+    expect(result).toEqual({
+      id: "g1",
+      tripId: "trip-1",
+      name: "New Name",
+      organizerId: "u1",
+    });
+  });
+
+  it("should not include name when undefined", () => {
+    const result = buildUpdateGroupInput("g1", "trip-1", undefined, "u1");
+    expect(result).toEqual({
+      id: "g1",
+      tripId: "trip-1",
+      organizerId: "u1",
+    });
+    expect(result).not.toHaveProperty("name");
+  });
+
+  it("should include name when empty string", () => {
+    const result = buildUpdateGroupInput("g1", "trip-1", "", "u1");
+    expect(result).toEqual({
+      id: "g1",
+      tripId: "trip-1",
+      name: "",
+      organizerId: "u1",
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
-import { useAdminTransactions } from "../../admin/useAdminTransactions";
+import { useAdminTransactions, buildTransactionQueryInput, getNextTransactionPageParam } from "../../admin/useAdminTransactions";
 
 // Mock oRPC
 const mockGetAllInfiniteOptions = jest.fn(
@@ -364,5 +364,39 @@ describe("useAdminTransactions", () => {
 
     const infiniteQueryCall = mockUseInfiniteQuery.mock.calls[0];
     expect((infiniteQueryCall![0] as { enabled?: boolean }).enabled).toBe(false);
+  });
+});
+
+describe("buildTransactionQueryInput", () => {
+  it("should build query input with valid tripId and pageParam", () => {
+    const result = buildTransactionQueryInput("trip-123", 50);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 50, offset: 50 },
+    });
+  });
+
+  it("should default offset to 0 when pageParam is 0", () => {
+    const result = buildTransactionQueryInput("trip-123", 0);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 50, offset: 0 },
+    });
+  });
+});
+
+describe("getNextTransactionPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextTransactionPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 50 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextTransactionPageParam({
+      pagination: { hasMore: true, offset: 50, limit: 50 },
+    });
+    expect(result).toBe(100);
   });
 });

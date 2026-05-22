@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatDate } from "~/utils/format";
 
 interface CommunitySubmission {
   id: string;
@@ -41,11 +42,58 @@ const placeStyleMap: Record<number, { borderColor: string; label: string }> = {
   3: { borderColor: "#d97706", label: "3rd Place" },
 };
 
-const formatDateTime = (value: string | Date) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "Unknown date";
-  return date.toLocaleString();
-};
+export function filterImageSubmissions(submissions: CommunitySubmission[]): CommunitySubmission[] {
+  return submissions.filter(
+    (submission) => submission.status === "APPROVED" && Boolean(submission.imageIds[0]),
+  );
+}
+
+export function getPodiumSubmissions(
+  imageSubmissions: CommunitySubmission[],
+  showPodium: boolean,
+): CommunitySubmission[] {
+  if (!showPodium) return [];
+  return imageSubmissions
+    .filter(
+      (submission) =>
+        typeof submission.ranking === "number" &&
+        submission.ranking >= 1 &&
+        submission.ranking <= 3,
+    )
+    .sort((a, b) => (a.ranking ?? 99) - (b.ranking ?? 99));
+}
+
+export function getRegularSubmissions(
+  imageSubmissions: CommunitySubmission[],
+  podiumSubmissions: CommunitySubmission[],
+  showPodium: boolean,
+): CommunitySubmission[] {
+  if (!showPodium) return imageSubmissions;
+  const podiumIds = new Set(podiumSubmissions.map((submission) => submission.id));
+  return imageSubmissions.filter((submission) => !podiumIds.has(submission.id));
+}
+
+export function calculatePreviewRegularLimit(
+  showPodium: boolean,
+  podiumSubmissionsLength: number,
+): number {
+  return showPodium ? Math.max(0, PREVIEW_LIMIT - podiumSubmissionsLength) : PREVIEW_LIMIT;
+}
+
+export function buildGallerySubmissions(
+  showPodium: boolean,
+  podiumSubmissions: CommunitySubmission[],
+  regularSubmissions: CommunitySubmission[],
+  imageSubmissions: CommunitySubmission[],
+): CommunitySubmission[] {
+  return showPodium ? [...podiumSubmissions, ...regularSubmissions] : imageSubmissions;
+}
+
+export function buildGalleryIndexBySubmissionId(
+  gallerySubmissions: CommunitySubmission[],
+): Map<string, number> {
+  return new Map(gallerySubmissions.map((submission, index) => [submission.id, index]));
+}
 
 export function ChallengeCommunitySubmissionsCard({
   submissions,
@@ -58,49 +106,35 @@ export function ChallengeCommunitySubmissionsCard({
   const { width, height } = useWindowDimensions();
 
   const imageSubmissions = useMemo(
-    () =>
-      submissions.filter(
-        (submission) => submission.status === "APPROVED" && Boolean(submission.imageIds[0]),
-      ),
+    () => filterImageSubmissions(submissions),
     [submissions],
   );
 
-  const podiumSubmissions = useMemo(() => {
-    if (!showPodium) return [];
-    return imageSubmissions
-      .filter(
-        (submission) =>
-          submission.status === "APPROVED" &&
-          typeof submission.ranking === "number" &&
-          submission.ranking >= 1 &&
-          submission.ranking <= 3,
-      )
-      .sort((a, b) => (a.ranking ?? 99) - (b.ranking ?? 99));
-  }, [imageSubmissions, showPodium]);
+  const podiumSubmissions = useMemo(
+    () => getPodiumSubmissions(imageSubmissions, showPodium),
+    [imageSubmissions, showPodium],
+  );
 
   const podiumByRank = useMemo(
     () => new Map(podiumSubmissions.map((submission) => [submission.ranking!, submission])),
     [podiumSubmissions],
   );
 
-  const regularSubmissions = useMemo(() => {
-    if (!showPodium) return imageSubmissions;
-    const podiumIds = new Set(podiumSubmissions.map((submission) => submission.id));
-    return imageSubmissions.filter((submission) => !podiumIds.has(submission.id));
-  }, [imageSubmissions, podiumSubmissions, showPodium]);
+  const regularSubmissions = useMemo(
+    () => getRegularSubmissions(imageSubmissions, podiumSubmissions, showPodium),
+    [imageSubmissions, podiumSubmissions, showPodium],
+  );
 
-  const previewRegularLimit = showPodium
-    ? Math.max(0, PREVIEW_LIMIT - podiumSubmissions.length)
-    : PREVIEW_LIMIT;
+  const previewRegularLimit = calculatePreviewRegularLimit(showPodium, podiumSubmissions.length);
   const previewRegularSubmissions = regularSubmissions.slice(0, previewRegularLimit);
 
   const gallerySubmissions = useMemo(
-    () => (showPodium ? [...podiumSubmissions, ...regularSubmissions] : imageSubmissions),
+    () => buildGallerySubmissions(showPodium, podiumSubmissions, regularSubmissions, imageSubmissions),
     [imageSubmissions, podiumSubmissions, regularSubmissions, showPodium],
   );
 
   const galleryIndexBySubmissionId = useMemo(
-    () => new Map(gallerySubmissions.map((submission, index) => [submission.id, index])),
+    () => buildGalleryIndexBySubmissionId(gallerySubmissions),
     [gallerySubmissions],
   );
 
@@ -405,7 +439,7 @@ function FullscreenSubmissionSlide({
             {placeStyle.label}
           </Text>
         ) : null}
-        <Text style={styles.fullscreenDate}>{formatDateTime(submission.createdAt)}</Text>
+        <Text style={styles.fullscreenDate}>{formatDate(submission.createdAt)}</Text>
       </View>
     </View>
   );

@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
-import { useAdminNotifications } from "../../admin/useAdminNotifications";
+import { useAdminNotifications, buildNotificationQueryInput, getNextNotificationPageParam } from "../../admin/useAdminNotifications";
 
 // Mock oRPC
 const mockGetAllInfiniteOptions = jest.fn(
@@ -441,5 +441,43 @@ describe("useAdminNotifications", () => {
     const { result } = renderHook(() => useAdminNotifications(tripId));
 
     expect(result.current.isRefetching).toBe(true);
+  });
+});
+
+describe("buildNotificationQueryInput", () => {
+  it("should build query input with tripId filter", () => {
+    const result = buildNotificationQueryInput({ tripId: "trip-123" }, 50);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 50, offset: 50 },
+    });
+  });
+
+  it("should build query input without tripId filter", () => {
+    const result = buildNotificationQueryInput(undefined, 0);
+    expect(result).toEqual({
+      pagination: { limit: 50, offset: 0 },
+    });
+  });
+});
+
+describe("getNextNotificationPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextNotificationPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 50 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextNotificationPageParam({
+      pagination: { hasMore: true, offset: 50, limit: 50 },
+    });
+    expect(result).toBe(100);
+  });
+
+  it("should handle missing pagination", () => {
+    const result = getNextNotificationPageParam({});
+    expect(result).toBeUndefined();
   });
 });

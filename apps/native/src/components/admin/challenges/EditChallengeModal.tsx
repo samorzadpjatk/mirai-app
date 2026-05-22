@@ -12,6 +12,12 @@ interface Props {
   challenge: AdminChallengeUI;
 }
 
+export function filterTripsByName(trips: { name: string }[], searchTerm: string): { name: string }[] {
+  const q = searchTerm.trim().toLowerCase();
+  if (!q) return [];
+  return trips.filter((t) => t.name.toLowerCase().includes(q)).slice(0, 6);
+}
+
 export default function EditChallengeModal({ visible, onClose, challenge }: Props) {
   const [state, setState] = useState({
     title: challenge.title,

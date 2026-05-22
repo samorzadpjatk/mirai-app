@@ -1,5 +1,75 @@
 import "@testing-library/jest-native/extend-expect";
 
+jest.mock("react-native-worklets", () => require("react-native-worklets/src/mock"));
+
+jest.mock("react-native-reanimated", () => {
+  const Reanimated = require("react-native-reanimated/mock");
+  Reanimated.setUpTests();
+  return Reanimated;
+});
+
+jest.mock("react-native-gesture-handler", () => {
+  return {
+    Gesture: {
+      Pan: () => ({
+        enabled: jest.fn().mockReturnThis(),
+        minDistance: jest.fn().mockReturnThis(),
+        onBegin: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+      }),
+    },
+    GestureDetector: ({ children }) => children,
+  };
+});
+
+jest.mock("@maplibre/maplibre-react-native", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    MapView: ({ children, testID, ...props }) => React.createElement(View, { testID: testID || "map-view", ...props }, children),
+    Camera: "Camera",
+    UserLocation: "UserLocation",
+    PointAnnotation: "PointAnnotation",
+    VectorSource: "VectorSource",
+    RasterSource: "RasterSource",
+    RasterLayer: "RasterLayer",
+  };
+});
+
+jest.mock("expo-image", () => ({
+  Image: "Image",
+}));
+
+jest.mock("expo-video", () => ({
+  VideoView: "VideoView",
+  useVideoPlayer: jest.fn(() => ({})),
+}));
+
+jest.mock("expo-notifications", () => ({
+  PermissionStatus: {
+    UNDETERMINED: "undetermined",
+    GRANTED: "granted",
+    DENIED: "denied",
+  },
+  getPermissionsAsync: jest.fn(),
+  requestPermissionsAsync: jest.fn(),
+  getExpoPushTokenAsync: jest.fn(),
+}));
+
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: function Ionicons(props) {
+    const React = require("react");
+    const { Text } = require("react-native");
+    return React.createElement(Text, { testID: "ionicon", ...props }, props.name);
+  },
+}));
+
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: jest.fn(() => ({ top: 0, bottom: 0, left: 0, right: 0 })),
+  SafeAreaProvider: ({ children }) => children,
+}));
+
 // Global test utilities
 global.beforeEach(() => {
   jest.clearAllMocks();

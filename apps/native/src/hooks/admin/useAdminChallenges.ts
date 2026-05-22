@@ -24,6 +24,57 @@ export interface AdminChallengeUI {
   targetLongitude?: number | null;
 }
 
+interface DBChallenge {
+  id: string;
+  tripId: string;
+  name?: string | null;
+  title?: string | null;
+  description?: string | null;
+  points?: number | null;
+  category?: string | null;
+  icon?: string | null;
+  status?: string | null;
+}
+
+export function transformRawChallenge(rawChallenge: DBChallenge): AdminChallengeUI {
+  return {
+    id: String(rawChallenge.id),
+    title: rawChallenge.name ?? rawChallenge.title ?? "",
+    description: rawChallenge.description ?? "",
+    points: Number(rawChallenge.points ?? 0),
+    category: (rawChallenge.category ?? "standard") as AdminChallengeUI["category"],
+    icon: rawChallenge.icon ?? "star",
+    status: rawChallenge.status ?? "active",
+    submissionType: "IMAGE",
+    scoringCategory: "JUDGED_STAFF",
+    tripId: rawChallenge.tripId,
+  };
+}
+
+export function buildCreateChallengeInput(
+  payload: { tripId: string } & Partial<AdminChallengeUI>,
+) {
+  const submissionType =
+    payload.submissionType === "MULTI_IMAGE" ? "IMAGE" : (payload.submissionType ?? "IMAGE");
+
+  return {
+    tripId: payload.tripId,
+    name: payload.title ?? "",
+    description: payload.description ?? "",
+    submissionType,
+    scoringCategory: payload.scoringCategory ?? "JUDGED_STAFF",
+    targetLatitude: payload.targetLatitude ?? undefined,
+    targetLongitude: payload.targetLongitude ?? undefined,
+  } as const;
+}
+
+export function buildChallengeStats(challenges: AdminChallengeUI[]) {
+  return {
+    activeChallenges: challenges.filter((c) => c.status === "active").length,
+    wintegralChallenges: challenges.filter((c) => c.category === "wintegral").length,
+  };
+}
+
 export function useAdminChallenges() {
   const queryClient = useQueryClient();
 
@@ -61,50 +112,13 @@ export function useAdminChallenges() {
     }),
   );
 
-  interface DBChallenge {
-    id: string;
-    tripId: string;
-    name?: string | null;
-    title?: string | null;
-    description?: string | null;
-    points?: number | null;
-    category?: string | null;
-    icon?: string | null;
-    status?: string | null;
-  }
-
   const challenges: AdminChallengeUI[] = useMemo(() => {
     if (!Array.isArray(challengesData)) return [];
-
-    const apiChallenges = challengesData as DBChallenge[];
-
-    return apiChallenges.map((c) => ({
-      id: String(c.id),
-      title: c.name ?? c.title ?? "",
-      description: c.description ?? "",
-      points: Number(c.points ?? 0),
-      category: (c.category ?? "standard") as AdminChallengeUI["category"],
-      icon: c.icon ?? "star",
-      status: c.status ?? "active",
-      submissionType: "IMAGE",
-      scoringCategory: "JUDGED_STAFF",
-      tripId: c.tripId,
-    }));
+    return (challengesData as DBChallenge[]).map(transformRawChallenge);
   }, [challengesData]);
 
   const createChallenge = async (payload: { tripId: string } & Partial<AdminChallengeUI>) => {
-    const submissionType =
-      payload.submissionType === "MULTI_IMAGE" ? "IMAGE" : (payload.submissionType ?? "IMAGE");
-
-    return createMutation.mutateAsync({
-      tripId: payload.tripId,
-      name: payload.title ?? "",
-      description: payload.description ?? "",
-      submissionType,
-      scoringCategory: payload.scoringCategory ?? "JUDGED_STAFF",
-      targetLatitude: payload.targetLatitude ?? undefined,
-      targetLongitude: payload.targetLongitude ?? undefined,
-    } as const);
+    return createMutation.mutateAsync(buildCreateChallengeInput(payload));
   };
 
   const updateChallenge = async (
@@ -123,13 +137,7 @@ export function useAdminChallenges() {
     return deleteMutation.mutateAsync({ id, tripId } as const);
   };
 
-  const stats = useMemo(
-    () => ({
-      activeChallenges: challenges.filter((c) => c.status === "active").length,
-      wintegralChallenges: challenges.filter((c) => c.category === "wintegral").length,
-    }),
-    [challenges],
-  );
+  const stats = useMemo(() => buildChallengeStats(challenges), [challenges]);
 
   return {
     challenges,

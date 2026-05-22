@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
 import { useFileUpload } from "~/hooks/files";
+import { getFileExtension, getFileContentType, getUploadFileName } from "~/utils/image";
 
 interface ChallengeCaptureOptions {
   tripId: string | undefined;
@@ -20,6 +21,37 @@ interface ChallengeUploadAsset {
 interface SubmissionLocation {
   latitude: number;
   longitude: number;
+}
+
+export function validateChallengeSubmission(
+  tripId: string | undefined,
+  challengeId: string | undefined,
+  userTrip: { trips?: { tripId: string; group?: { id: string } }[] } | null | undefined,
+): string | null {
+  if (!tripId || !challengeId) return null;
+  if (!userTrip) return null;
+  const userTripForCurrentTrip = userTrip?.trips?.find((t) => t.tripId === tripId);
+  return userTripForCurrentTrip?.group?.id ?? null;
+}
+
+export function buildStoragePath(
+  challengeId: string,
+  groupId: string,
+  extension: string,
+  now: number = Date.now(),
+): string {
+  return `challenge/${challengeId}/${groupId}-${now}.${extension}`;
+}
+
+export function buildUploadConfig(
+  asset: ChallengeUploadAsset,
+  storagePath: string,
+  extension: string,
+  type: "image" | "video" = "image",
+) {
+  const fileName = getUploadFileName(asset, extension, "challenge");
+  const contentType = asset.mimeType ?? getFileContentType(extension);
+  return { storagePath, fileUri: asset.uri, fileName, contentType, upsert: true };
 }
 
 export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOptions) {
@@ -58,60 +90,6 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
   const [isLoading, setIsLoading] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
-
-  const resolveExtension = useCallback((asset: ChallengeUploadAsset) => {
-    if (asset.fileName) {
-      const parts = asset.fileName.split(".");
-      if (parts.length > 1) {
-        return parts[parts.length - 1]?.toLowerCase() ?? "jpg";
-      }
-    }
-
-    const contentType = asset.mimeType ?? "";
-    if (contentType === "image/png") return "png";
-    if (contentType === "image/webp") return "webp";
-    if (contentType === "image/heic" || contentType === "image/heif") return "heic";
-    if (contentType === "video/quicktime") return "mov";
-    if (contentType === "video/x-m4v") return "m4v";
-    if (contentType === "video/mp4") return "mp4";
-    if (contentType === "video/webm") return "webm";
-    return "jpg";
-  }, []);
-
-  const resolveMimeType = useCallback((extension: string) => {
-    switch (extension) {
-      case "png":
-        return "image/png";
-      case "webp":
-        return "image/webp";
-      case "heic":
-      case "heif":
-        return "image/heic";
-      case "mov":
-        return "video/quicktime";
-      case "m4v":
-        return "video/x-m4v";
-      case "mp4":
-        return "video/mp4";
-      case "webm":
-        return "video/webm";
-      default:
-        return "image/jpeg";
-    }
-  }, []);
-
-  const resolveFileName = useCallback((asset: ChallengeUploadAsset, extension: string) => {
-    if (asset.fileName && asset.fileName.trim().length > 0) {
-      return asset.fileName;
-    }
-
-    const uriLastSegment = asset.uri.split("/").pop();
-    if (uriLastSegment?.includes(".")) {
-      return uriLastSegment;
-    }
-
-    return `challenge-${Date.now()}.${extension}`;
-  }, []);
 
   const showSuccessAlert = useCallback(
     (challengeName?: string, points?: number, destinationTripId?: string | null) => {
@@ -168,8 +146,8 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
       setIsLoading(true);
       let createdSubmissionId: string | null = null;
       try {
-        const extension = resolveExtension(asset);
-        const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
+        const extension = getFileExtension(asset);
+        const storagePath = buildStoragePath(challengeId, groupId, extension);
         const submission = await createSubmissionMutation.mutateAsync({
           tripId,
           challengeId,
@@ -180,16 +158,8 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
         createdSubmissionId = submission.id;
         setSubmissionId(submission.id);
 
-        const fileName = resolveFileName(asset, extension);
-        const contentType = asset.mimeType ?? resolveMimeType(extension);
-
-        await upload({
-          storagePath,
-          fileUri: asset.uri,
-          fileName,
-          contentType,
-          upsert: true,
-        });
+        const config = buildUploadConfig(asset, storagePath, extension);
+        await upload(config);
 
         setCapturedImage(asset.uri);
         showSuccessAlert(challengeName, points, tripId);
@@ -213,9 +183,6 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
     [
       challengeId,
       deleteSubmissionMutation,
-      resolveExtension,
-      resolveFileName,
-      resolveMimeType,
       showSuccessAlert,
       createSubmissionMutation,
       tripId,
@@ -286,8 +253,8 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
       setIsLoading(true);
       let createdSubmissionId: string | null = null;
       try {
-        const extension = resolveExtension(asset);
-        const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
+        const extension = getFileExtension(asset);
+        const storagePath = buildStoragePath(challengeId, groupId, extension);
         const submission = await createSubmissionMutation.mutateAsync({
           tripId,
           challengeId,
@@ -296,16 +263,8 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
         createdSubmissionId = submission.id;
         setSubmissionId(submission.id);
 
-        const fileName = resolveFileName(asset, extension);
-        const contentType = asset.mimeType ?? resolveMimeType(extension);
-
-        await upload({
-          storagePath,
-          fileUri: asset.uri,
-          fileName,
-          contentType,
-          upsert: true,
-        });
+        const config = buildUploadConfig(asset, storagePath, extension);
+        await upload(config);
 
         setCapturedImage(null);
         showSuccessAlert(challengeName, points, tripId);
@@ -329,9 +288,6 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
     [
       challengeId,
       deleteSubmissionMutation,
-      resolveExtension,
-      resolveFileName,
-      resolveMimeType,
       showSuccessAlert,
       createSubmissionMutation,
       tripId,

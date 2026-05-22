@@ -8,6 +8,10 @@ interface GroupStatsGridProps {
   rankingPosition?: number | null;
 }
 
+export function formatRankingPosition(rankingPosition?: number | null): string {
+  return rankingPosition ? `#${rankingPosition}` : "--";
+}
+
 export function GroupStatsGrid({ membersCount, coins, rankingPosition }: GroupStatsGridProps) {
   return (
     <View style={styles.statsGrid}>
@@ -24,7 +28,7 @@ export function GroupStatsGrid({ membersCount, coins, rankingPosition }: GroupSt
       <View style={styles.statCard}>
         <Text style={styles.statLabel}>Position</Text>
         <Text style={[styles.statValue, styles.statValuePosition]}>
-          {rankingPosition ? `#${rankingPosition}` : "--"}
+          {formatRankingPosition(rankingPosition)}
         </Text>
       </View>
     </View>

@@ -46,33 +46,6 @@ jest.mock("~/components/admin/AdminModal", () => {
   };
 });
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
-
-interface ThemedTextInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder: string;
-}
-
-jest.mock("~/components/common/ui", () => {
-  const { View, Text, TextInput } = jest.requireActual("react-native");
-  return {
-    FormField: ({ children, label, required }: FormFieldProps) => (
-      <View>
-        <Text>{`${label}${required ? "*" : ""}`}</Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({ value, onChangeText, placeholder }: ThemedTextInputProps) => (
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} />
-    ),
-  };
-});
-
 const group: Group = {
   id: "group-1",
   name: "Existing Group",

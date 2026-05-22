@@ -8,6 +8,7 @@ function PartnerLogo({ sponsor }: { sponsor: Partner }) {
 
   return (
     <Image
+      testID="partner-logo"
       source={imageUrl ? { uri: imageUrl } : undefined}
       style={[
         styles.logo,

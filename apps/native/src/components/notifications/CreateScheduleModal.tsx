@@ -18,6 +18,57 @@ interface CreateScheduleModalProps {
   onCreated: () => void;
 }
 
+export function canSubmitSchedule(
+  createName: string,
+  createStartDate: string,
+  createEndDate: string,
+  createType: "custom" | "ranking",
+  createTripId: string | null,
+): boolean {
+  return (
+    createName.trim().length > 0 &&
+    createStartDate.length > 0 &&
+    createEndDate.length > 0 &&
+    (createType !== "ranking" || !!createTripId)
+  );
+}
+
+export function isScheduleSubmitDisabled(
+  createName: string,
+  createStartDate: string,
+  createEndDate: string,
+  createType: "custom" | "ranking",
+  createTripId: string | null,
+  isPending: boolean,
+): boolean {
+  return !canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId) || isPending;
+}
+
+export function buildScheduleInput(
+  createName: string,
+  createType: "custom" | "ranking",
+  createTripId: string | null,
+  createTitle: string,
+  createBody: string,
+  createStartDate: string,
+  createEndDate: string,
+  createHour: string,
+  createMinute: string,
+) {
+  return {
+    name: createName.trim(),
+    ...(createTripId ? { tripId: createTripId } : {}),
+    notificationType: createType,
+    notificationTitle: createType === "custom" ? createTitle : undefined,
+    notificationBody: createType === "custom" ? createBody : undefined,
+    startDate: new Date(createStartDate),
+    endDate: new Date(createEndDate),
+    hour: parseInt(createHour, 10),
+    minute: parseInt(createMinute, 10),
+    isActive: true,
+  };
+}
+
 export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateScheduleModalProps) {
   const queryClient = useQueryClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
@@ -70,44 +121,44 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         setCreateHour("9");
         setCreateMinute("0");
       },
-      onError: (err) => {
-        console.error("Error creating schedule:", err);
+      onError: () => {
+        // TODO: Add Sentry crash reporting for production errors
       },
     }),
   );
 
-  const isSubmitDisabled =
-    !createName.trim() ||
-    !createStartDate ||
-    !createEndDate ||
-    (createType === "ranking" && !createTripId) ||
-    createScheduleMutation.isPending;
-
-  const handleSubmit = () => {
-    if (
-      createName.trim() &&
-      createStartDate &&
-      createEndDate &&
-      (createType !== "ranking" || createTripId)
-    ) {
-      createScheduleMutation.mutate({
-        name: createName.trim(),
-        ...(createTripId ? { tripId: createTripId } : {}),
-        notificationType: createType,
-        notificationTitle: createType === "custom" ? createTitle : undefined,
-        notificationBody: createType === "custom" ? createBody : undefined,
-        startDate: new Date(createStartDate),
-        endDate: new Date(createEndDate),
-        hour: parseInt(createHour, 10),
-        minute: parseInt(createMinute, 10),
-        isActive: true,
-      });
-    }
-  };
+  const isSubmitDisabled = isScheduleSubmitDisabled(
+    createName,
+    createStartDate,
+    createEndDate,
+    createType,
+    createTripId,
+    createScheduleMutation.isPending,
+  );
 
   const handleSelectType = (type: "custom" | "ranking") => {
     setCreateType(type);
     setCreateTripId(type === "ranking" ? (trips[0]?.id ?? null) : null);
+  };
+
+  const handleSubmit = () => {
+    if (
+      canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId)
+    ) {
+      createScheduleMutation.mutate(
+        buildScheduleInput(
+          createName,
+          createType,
+          createTripId,
+          createTitle,
+          createBody,
+          createStartDate,
+          createEndDate,
+          createHour,
+          createMinute,
+        ),
+      );
+    }
   };
 
   return (

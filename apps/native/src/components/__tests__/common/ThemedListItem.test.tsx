@@ -33,33 +33,33 @@ describe("ThemedListItem", () => {
     const onPress = jest.fn();
     renderWithProviders(<ThemedListItem title="Pressable Item" onPress={onPress} />);
 
-    fireEvent.press(screen.getByTestId("themed-list-item-pressable"));
+    fireEvent.press(screen.getByTestId("themed-list-item"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it("should not be pressable when onPress is not provided", () => {
     renderWithProviders(<ThemedListItem title="Non-pressable Item" />);
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should be disabled when disabled prop is true", () => {
     const onPress = jest.fn();
     renderWithProviders(<ThemedListItem title="Disabled Item" onPress={onPress} disabled={true} />);
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should apply selected style when selected is true", () => {
     renderWithProviders(<ThemedListItem title="Selected Item" selected={true} />);
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should apply bordered style when bordered is true", () => {
     renderWithProviders(<ThemedListItem title="Bordered Item" bordered={true} />);
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should render left avatar when provided", () => {
@@ -70,7 +70,7 @@ describe("ThemedListItem", () => {
       />,
     );
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should render left avatar without image", () => {
@@ -91,7 +91,7 @@ describe("ThemedListItem", () => {
     const customStyle = { marginBottom: 10 };
     renderWithProviders(<ThemedListItem title="Styled Item" style={customStyle} />);
 
-    expect(screen.getByTestId("themed-list-item-pressable")).toBeTruthy();
+    expect(screen.getByTestId("themed-list-item")).toBeTruthy();
   });
 
   it("should render with all props combined", () => {
@@ -118,7 +118,7 @@ describe("ThemedListItem", () => {
     const onPress = jest.fn();
     renderWithProviders(<ThemedListItem title="Pressable Item" onPress={onPress} />);
 
-    const pressable = screen.getByTestId("themed-list-item-pressable");
+    const pressable = screen.getByTestId("themed-list-item");
     expect(pressable.props.style).toBeDefined();
   });
 

@@ -24,51 +24,6 @@ interface AdminModalButtonProps {
   loading?: boolean;
 }
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
-
-type ThemedTextInputProps = React.ComponentProps<typeof TextInput>;
-
-jest.mock("~/components/admin/AdminModal", () => {
-  const { View, Text, Pressable } = require("react-native");
-  return {
-    AdminModal: ({ children, visible, title, onClose, actions }: AdminModalProps) =>
-      !visible ? null : (
-        <View>
-          <Text>{title}</Text>
-          <Pressable onPress={onClose}>
-            <Text>Close</Text>
-          </Pressable>
-          {children}
-          {actions}
-        </View>
-      ),
-    AdminModalButton: ({ title, onPress, disabled, loading }: AdminModalButtonProps) => (
-      <Pressable onPress={onPress} disabled={(disabled ?? false) || (loading ?? false)}>
-        <Text>{loading ? "Loading..." : title}</Text>
-      </Pressable>
-    ),
-  };
-});
-
-jest.mock("~/components/common/ui", () => {
-  const { View, Text, TextInput } = require("react-native");
-  return {
-    FormField: ({ children, label, required }: FormFieldProps) => (
-      <View>
-        <Text>{`${label}${required ? "*" : ""}`}</Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({ value, onChangeText, placeholder, ...props }: ThemedTextInputProps) => (
-      <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} {...props} />
-    ),
-  };
-});
-
 const createSchedule = (overrides: Partial<NotificationSchedule> = {}): NotificationSchedule => ({
   id: "schedule-1",
   name: "Old name",

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   StyleSheet,
@@ -10,11 +9,13 @@ import {
   useWindowDimensions,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useFileDownload } from "~/hooks/files";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import SubmissionCircle from "./SubmissionCircle";
+import FullscreenSubmissionSlide, { formatDateTime } from "./FullscreenSubmissionSlide";
+
+export { formatDateTime };
 
 interface ApprovedSubmissionItem {
   submissionId: string;
@@ -28,6 +29,20 @@ interface GroupApprovedChallengesProps {
   submissions: ApprovedSubmissionItem[];
 }
 
+import {
+  calculateNextIndexFromScroll,
+  calculateBoundedIndex,
+  canOpenFullscreen,
+  needsFullscreenClose,
+} from "./groupApprovedChallengesUtils";
+
+export {
+  calculateNextIndexFromScroll,
+  calculateBoundedIndex,
+  canOpenFullscreen,
+  needsFullscreenClose,
+};
+
 export function GroupApprovedChallenges({ submissions }: GroupApprovedChallengesProps) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -37,7 +52,7 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
 
   const openFullscreen = useCallback(
     (index: number) => {
-      if (!submissions.length) return;
+      if (!canOpenFullscreen(submissions.length)) return;
       setActiveIndex(index);
       setIsFullscreenOpen(true);
     },
@@ -51,27 +66,27 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;
-      const nextIndex = Math.round(offsetX / Math.max(width, 1));
-      const boundedIndex = Math.max(0, Math.min(nextIndex, submissions.length - 1));
+      const nextIndex = calculateNextIndexFromScroll(offsetX, width);
+      const boundedIndex = calculateBoundedIndex(nextIndex, submissions.length - 1);
       setActiveIndex(boundedIndex);
     },
     [submissions.length, width],
   );
 
   useEffect(() => {
-    if (submissions.length === 0) {
+    if (needsFullscreenClose(submissions.length)) {
       setTimeout(() => setIsFullscreenOpen(false), 0);
       return;
     }
     if (!isFullscreenOpen) return;
-    const boundedIndex = Math.max(0, Math.min(activeIndex, submissions.length - 1));
+    const boundedIndex = calculateBoundedIndex(activeIndex, submissions.length - 1);
     const timeout = setTimeout(() => {
       listRef.current?.scrollToIndex({ index: boundedIndex, animated: true });
     }, 100);
     return () => clearTimeout(timeout);
   }, [isFullscreenOpen, activeIndex, submissions.length]);
 
-  if (submissions.length === 0) {
+  if (!canOpenFullscreen(submissions.length)) {
     return null;
   }
 
@@ -80,6 +95,7 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Challenge Photos</Text>
         <TouchableOpacity
+          testID="view-all-button"
           style={styles.showAllButton}
           onPress={() => openFullscreen(0)}
           activeOpacity={0.8}
@@ -112,7 +128,7 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
               <Text style={styles.fullscreenCounter}>
                 {`${activeIndex + 1}/${submissions.length}`}
               </Text>
-              <TouchableOpacity style={styles.fullscreenClose} onPress={closeFullscreen}>
+              <TouchableOpacity testID="fullscreen-close-button" style={styles.fullscreenClose} onPress={closeFullscreen}>
                 <Ionicons name="close" size={20} color={colors.white} />
               </TouchableOpacity>
             </View>
@@ -159,110 +175,6 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
   );
 }
 
-function SubmissionCircle({
-  submission,
-  onPress,
-}: {
-  submission: ApprovedSubmissionItem;
-  onPress: () => void;
-}) {
-  const { download, status, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!submission.imageStoragePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, reset, submission.imageStoragePath]);
-
-  return (
-    <TouchableOpacity style={styles.item} activeOpacity={0.85} onPress={onPress}>
-      <View style={styles.imageWrap}>
-        {status === "loading" ? (
-          <View style={styles.imageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.image} contentFit="cover" />
-        ) : (
-          <View style={styles.imageFallback}>
-            <Ionicons name="image-outline" size={18} color={colors.textMuted} />
-          </View>
-        )}
-      </View>
-      <Text style={styles.title} numberOfLines={2}>
-        {submission.challengeTitle}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-function FullscreenSubmissionSlide({
-  submission,
-  width,
-  height,
-  topInset,
-}: {
-  submission: ApprovedSubmissionItem;
-  width: number;
-  height: number;
-  topInset: number;
-}) {
-  const { download, status, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!submission.imageStoragePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, reset, submission.imageStoragePath]);
-
-  return (
-    <View style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
-      <View style={styles.fullscreenImageWrap}>
-        {status === "loading" ? (
-          <View style={styles.fullscreenFallback}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.fullscreenImage} contentFit="contain" />
-        ) : (
-          <View style={styles.fullscreenFallback}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.fullscreenMeta}>
-        <Text style={styles.fullscreenChallengeTitle} numberOfLines={1}>
-          {submission.challengeTitle}
-        </Text>
-        <Text style={styles.fullscreenDate}>{formatDateTime(submission.approvedAt)}</Text>
-      </View>
-    </View>
-  );
-}
-
-const formatDateTime = (value: string | Date) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "Unknown date";
-  return date.toLocaleString();
-};
-
 const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xxl,
@@ -304,36 +216,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.md,
   },
-  item: {
-    width: "22%",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  imageWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 11,
-    color: colors.white,
-    textAlign: "center",
-    fontWeight: typography.medium,
-    lineHeight: 14,
-  },
   fullscreen: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
@@ -371,41 +253,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  fullscreenSlide: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    justifyContent: "center",
-  },
-  fullscreenImageWrap: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
-    backgroundColor: colors.surfaceDark,
-  },
-  fullscreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullscreenFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenMeta: {
-    marginTop: spacing.sm,
-    gap: 2,
-  },
-  fullscreenChallengeTitle: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreenDate: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
   },
 });

@@ -34,6 +34,10 @@ export function AppModalShell({
 }: AppModalShellProps) {
   const isPageSheet = variant === "pageSheet";
 
+  if (!visible) {
+    return null;
+  }
+
   return (
     <Modal
       visible={visible}

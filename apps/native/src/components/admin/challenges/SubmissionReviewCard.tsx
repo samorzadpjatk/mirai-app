@@ -36,7 +36,7 @@ interface SubmissionReviewCardProps {
   onReject: (submission: SubmissionItem) => void;
 }
 
-const getStatusMeta = (status: SubmissionStatus) => {
+export function getStatusMeta(status: SubmissionStatus) {
   if (status === "APPROVED") {
     return { color: "#22c55e", bg: "rgba(34,197,94,0.15)" };
   }
@@ -44,16 +44,16 @@ const getStatusMeta = (status: SubmissionStatus) => {
     return { color: "#ef4444", bg: "rgba(239,68,68,0.15)" };
   }
   return { color: "#f59e0b", bg: "rgba(245,158,11,0.15)" };
-};
+}
 
-const formatDateTime = (value: string | Date | null | undefined) => {
+export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString();
-};
+}
 
-const formatPersonName = (
+export function formatPersonName(
   person:
     | {
         firstName?: string | null;
@@ -62,12 +62,12 @@ const formatPersonName = (
       }
     | null
     | undefined,
-) => {
+): string {
   if (!person) return "Unknown admin";
   const fullName = `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim();
   if (fullName.length > 0) return fullName;
   return person.email ?? "Unknown admin";
-};
+}
 
 export function SubmissionReviewCard({
   submission,

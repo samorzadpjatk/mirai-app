@@ -17,13 +17,9 @@ import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEd
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { getImageExtension, getImageContentType } from "~/utils/image";
+import { formatDisplayName, getInitials } from "@mirai-app/shared";
 
-const getInitials = (firstName?: string | null, lastName?: string | null) => {
-  const f = (firstName ?? "")[0] ?? "";
-  const l = (lastName ?? "")[0] ?? "";
-  const initials = `${f}${l}`.toUpperCase();
-  return initials || "?";
-};
+
 
 export default function EditGroupScreen() {
   const router = useRouter();
@@ -89,7 +85,6 @@ export default function EditGroupScreen() {
 
       router.back();
     } catch (error: unknown) {
-      console.error("Save error:", error);
       const message = error instanceof Error ? error.message : "Failed to save group changes";
       Alert.alert("Error", message);
     }
@@ -244,9 +239,7 @@ export default function EditGroupScreen() {
 
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>
-                        {[participant.user.firstName, participant.user.lastName]
-                          .filter(Boolean)
-                          .join(" ") || "Unknown user"}
+                        {formatDisplayName(participant.user.firstName, participant.user.lastName) ?? "Unknown user"}
                       </Text>
                       <Text style={styles.memberMeta}>
                         {participant.user.email ?? "No email"}
