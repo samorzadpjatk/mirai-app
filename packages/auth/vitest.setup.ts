@@ -124,6 +124,17 @@ vi.mock("@mirai-app/shared", () => {
   return {
     authStore: mockAuthStore,
     AuthStoreProvider: vi.fn(({ children }: { children: React.ReactNode }) => children),
+    formatDisplayName: vi.fn((firstName?: string | null, lastName?: string | null, fallback?: string | null) => {
+      const parts = [firstName?.trim(), lastName?.trim()].filter(Boolean);
+      if (parts.length > 0) return parts.join(" ");
+      return fallback?.trim() ?? null;
+    }),
+    logger: {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    },
   };
 });
 

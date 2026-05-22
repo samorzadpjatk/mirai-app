@@ -57,6 +57,16 @@ vi.mock("@supabase/supabase-js", () => {
   };
 });
 
+// Mock @mirai-app/shared
+vi.mock("@mirai-app/shared", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 // Mock next/headers
 vi.mock("next/headers", () => ({
   cookies: vi.fn(),

@@ -88,6 +88,26 @@ const allUsers = await db.query.users.findMany();
 const newUser = await db.insert(users).values({ email: "user@example.com" }).returning();
 ```
 
+## Testing
+
+This package follows an **integration-only testing approach**. We don't maintain unit tests here because:
+
+- Database schema changes require a real database to validate properly
+- Drizzle ORM behavior depends on actual database state and responses
+- The package contains no business logic, only schema definitions and client exports
+
+**However**, consuming packages MUST test transaction rollback:
+- The `$transaction` mock in router tests is currently a pass-through (no rollback/atomicity tested)
+- Create `MockTransactionDB` that simulates rollback on failure
+- Add at least one failure-path transaction test per router in `packages/orpc`
+
+Database commands serve as implicit integration tests:
+- `db:generate` validates schema syntax and generates migration SQL
+- `db:push` and `db:migrate` verify migrations apply correctly
+- `db:studio` provides manual verification of schema changes
+
+For detailed testing rationale and patterns for consuming packages, see the root [TESTING.md](../../TESTING.md). For general monorepo testing conventions, see the root [AGENTS.md](../../AGENTS.md).
+
 ## Links
 
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)

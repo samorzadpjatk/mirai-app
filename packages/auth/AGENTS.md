@@ -67,6 +67,19 @@ cd packages/auth && bun run dev
 
 - `react` ^19.1.0
 
+## Code Quality Rules
+
+### Auth Error Handling
+
+- **Pattern**: Use custom `AuthenticationError` / `AuthorizationError` classes with typed messages.
+- **Avoid**: Generic `Error` throws without context. Backend should map these to `ORPCError` codes (`UNAUTHORIZED`, `FORBIDDEN`).
+
+### Test Quality
+
+- **Rating**: Auth logic tests (`auth.test.ts`) are 4/5 — they verify real auth branches (token, roles, bans, invalid tokens).
+- **Rating**: Server smoke tests (`server.test.ts`) are 1/5 — mostly export checks. Consider pruning or expanding.
+- **Rule**: Focus tests on domain behavior ("user with banned_until is rejected") not implementation details ("mock was called").
+
 ## Usage in Apps
 
 ### Native App
