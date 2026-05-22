@@ -164,11 +164,54 @@ createUser.mutate({ email: 'user@example.com', name: 'John' });
 
 ## Best Practices
 
-1. **Keep routers small** - Split when you have >10 procedures
-2. **Use consistent naming** - Follow the conventions above
-3. **Group by domain** - Not by CRUD operation
-4. **Version in router name** if needed: `userV2Router`
-5. **Document with JSDoc** for complex procedures
+1. **Keep routers small** - Split when you have >10 procedures OR >1000 lines
+2. **Enforce file size limits** - Router files >1000 lines violate SRP and are hard to review/test safely
+3. **Split pattern**: Extract into `*Queries.ts`, `*Mutations.ts`, `*Enrichment.ts` files
+4. **Current debt**: `activityFeed.ts` (1579), `group.ts` (1427), `location.ts` (1281), `challengeSubmission.ts` (1164), `reward.ts` (1152)
+5. **Use consistent naming** - Follow the conventions above
+6. **Group by domain** - Not by CRUD operation
+7. **Version in router name** if needed: `userV2Router`
+8. **Document with JSDoc** for complex procedures
+
+## Router Directory Module Pattern
+
+Established convention for splitting monolithic oRPC router files:
+
+```
+packages/orpc/src/api/routers/{name}/
+├── index.ts      # exports router, wires .input().handler() to extracted functions
+├── types.ts      # Zod schemas, type aliases (may be empty if no shared types)
+├── queries.ts    # async handler functions for .query() procedures
+├── mutations.ts  # async handler functions for .mutation() procedures
+├── utils.ts      # helper functions (may be empty)
+```
+
+**Import path fixes when moving from flat file to directory**:
+- `../../api/trpc` → `../../trpc` (drop `api/` because we're already inside `api/`)
+- `../../utils/*` → `../../../utils/*` (one extra level up)
+- `../../services/*` → `../../../services/*`
+
+**Module resolution**: TypeScript/Bun resolves `./routers/coin` to `./routers/coin/index.ts` automatically. No changes needed in `root.ts` or test imports.
+
+### Context Type Narrowing in Extracted Handlers
+
+When extracting inline `.handler()` bodies to standalone functions in `queries.ts`/`mutations.ts`:
+
+**Problem**: The oRPC context includes `db: DB`, but some handlers also accept `db: TransactionDB` when called from within a transaction wrapper. Typing the function parameter as `DB | TransactionDB` can cause assignability errors with helper functions that expect only `DB`.
+
+**Solution**: Define a base context type with `db: DB` for helpers. In the handler function signatures, use `DB | TransactionDB` only when the function itself calls `.transaction()`. Pass `{ db: tx }` explicitly when calling helpers from inside a transaction.
+
+### Verification Checklist for Router Splits
+
+- [ ] All 5 files created (index, types, queries, mutations, utils)
+- [ ] Original `.ts` file deleted
+- [ ] No `.ts` files remain in `packages/orpc/src/api/routers/` (only directories)
+- [ ] `tsc --noEmit` passes in `packages/orpc`
+- [ ] Tests for the specific router pass
+- [ ] Regexes and string literals match the original character-by-character
+- [ ] `root.ts` needs no import path changes (directory resolution handles it)
+
+**Completed splits in this repo**: `activityFeed`, `challenge`, `challengeSubmission`, `group`, `location`, `reward`, `user`, `coin`, `coinTransaction`, `notificationDelivery`, `notificationSender`, `notifications`, `notificationSchedule`, `sponsor`, `storage`, `submissionReport`, `trip`, `challengeVote`.
 
 ## Further Reading
 

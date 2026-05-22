@@ -204,12 +204,22 @@ const rpcHandler = new RPCHandler(appRouter, {
 });
 ```
 
+## Architecture Decision: Effect Is Not Needed
+
+**Verdict**: The existing error handling is sufficient. Do NOT introduce Effect, fp-ts, or similar FP libraries for error handling in this codebase.
+
+**Why (LOC metric)**: "Net-negative refactor" means net-negative count of overall lines of code. Measured against 164 async functions in this codebase, Effect equivalents add **+25% to +67% lines per function** (e.g., `executeWithRetry` 41→55-65 lines, `requireAuth` 60→75-90 lines). Aggregate impact: **+5,400 to +7,400 lines added** (~4–5% total codebase increase) including error type definitions, Layer/Context setup, and test adaptations.
+
+**Why (architectural)**: `ORPCError` + Zod + auth middleware already provide structured typed errors at the API boundary. The existing stack solves what Effect offers without the bundle cost (20–70KB) or learning curve (2–4 weeks).
+
+**When to consider**: Only if codebase reaches 500k+ lines with 5+ microservices AND team has FP experience AND stable maintainership exists AND a pilot migration demonstrably reduces LOC.
+
 ## Best Practices
 
 1. **Use appropriate error codes** - Don't use INTERNAL_SERVER_ERROR for everything
 2. **Provide helpful messages** - "User not found" not "Error"
 3. **Don't leak sensitive info** - Don't expose internal details
-4. **Log server errors** - But don't send stack traces to clients
+4. **Use structured logging** - Replace `console.error` with Pino or similar. 28 console calls currently exist in backend routers.
 5. **Handle errors gracefully** on the client
 
 ## Global Error Handler

@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-MIRAI (PJApp) is a TypeScript monorepo for an event management platform:
+MIRAI (PJApp) is a TypeScript monorepo for event management:
 
 - **Frontend**: Expo React Native (iOS/Android)
 - **Backend**: Hono + oRPC server with WebSocket support
@@ -29,7 +29,7 @@ MIRAI/
 ├── docs/                    # Detailed documentation
 ├── nx.json                  # NX monorepo configuration
 ├── package.json             # Bun workspaces configuration
-└── AGENTS.md                # This file (base instructions)
+└── AGENTS.md                # This file
 ```
 
 ## Build System
@@ -44,8 +44,6 @@ MIRAI/
 | `nx run-many -t typecheck` | Type-check all packages |
 | `nx run-many -t test` | Run test suites |
 | `nx run-many -t clean` | Clean build artifacts |
-
-**Pipeline order:** `build` → `typecheck` → `test` → `deploy`
 
 ### Bun Workspaces
 
@@ -148,6 +146,57 @@ Use the template when creating new AGENTS.md files:
 **[→ View Template](./docs/templates/AGENTS.md.template)**
 
 
+
+## Code Quality Standards
+
+### File Size Limits
+
+- **Rule**: Router/service files >1000 lines violate SRP and are hard to review/test safely.
+- **Action**: Split into directory-based modules: `{router}/types.ts`, `{router}/utils.ts`, `{router}/queries.ts`, `{router}/mutations.ts`, `{router}/index.ts`.
+- **Import path fix when moving deeper**: `../../api/trpc` → `../../trpc`, `../../utils/` → `../../../utils/`.
+- **Verification after split**: Run `tsc --noEmit` in the package, then `bun run test`.
+- **Completed splits**: `activityFeed.ts` → `activityFeed/`, `group.ts` → `group/`, `location.ts` → `location/`, `challengeSubmission.ts` → `challengeSubmission/`, `reward.ts` → `reward/`, `user.ts` → `user/`, `challenge.ts` → `challenge/`.
+- **Parallel execution**: Independent file splits can be delegated to 4+ background subagents simultaneously.
+
+### Module-Level Side Effects
+
+- **Rule**: Move setup into explicit `init()` functions called from app entry points.
+- **Fixed**: All module-level side effects refactored into `init*()` functions in `apps/native/src/app/_layout.tsx`, `apps/native/src/services/background/backgroundLocationTask.ts`, `packages/orpc/src/api/trpc.ts`, `apps/backend-server/src/server.ts`.
+
+### Console Logging as Error Handling
+
+- **Rule**: Use **Pino** for structured logging. Never commit `console.*` in production code.
+- **Backend**: Import `logger` from `@mirai-app/orpc`.
+- **Native**: Use Sentry for runtime error reporting.
+- **Status**: ✅ Complete. All production `console.*` calls eliminated.
+
+### Functional Core, Imperative Shell
+
+- **Pattern**: Extract pure business logic from any package/app into `@mirai-app/shared`. Leave hooks, routers, and components as thin shells.
+- **Why**: Pure functions test with real data (no mocks). Replaces 1,000-line mock-verification tests with 30-line real data tests.
+- **Rule**: When a test file exceeds 200 lines mocking framework internals, the code has extractable domain logic.
+- **Deduplication**: Search across packages before extracting. Extract once, import everywhere.
+
+## Testing Standards
+
+See [Testing Conventions](./docs/conventions/testing.md) for detailed standards.
+
+- **Test behavior, not implementation.** Avoid mock-verification tests.
+- **Extract pure domain logic** to `@mirai-app/shared` for real-data testing.
+- **Export at top level only** — never inside hooks or components.
+- **Add failure-path transaction tests** per router. Create `MockTransactionDB` simulating rollback.
+- **Constructor mock resilience**: Use `Object.defineProperty(mock, "fn", { get: () => jest.fn(), configurable: true })` to survive `jest.clearAllMocks()`.
+
+## Architecture Decisions
+
+### Functional Programming Libraries
+
+**Verdict**: Do NOT introduce Effect, fp-ts, or similar FP libraries. See [Best Practices](./docs/conventions/best-practices.md) for full analysis.
+
+- Effect would be a **net-negative refactor** (+4–5% LOC, ~5,400–7,400 lines added)
+- Existing stack already solves what Effect offers: `ORPCError` for errors, React Query for async state, Drizzle for transactions, `executeWithRetry` for retries
+- Team is actively seeking maintainers — FP libraries would reduce contributor pool to near-zero
+- **Acceptable**: `neverthrow` (~3KB) or `oxide.ts` (~2KB) for specific functions if needed
 
 ## License
 
