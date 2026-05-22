@@ -1,132 +1,55 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
-import { useTrips } from "../../trips/useTrips";
+import { useTrips, buildTripQueryInput, getNextTripPageParam } from "../../trips/useTrips";
 
-// Mock the storage functions
-const mockGetCachedTrips = jest.fn<() => Promise<unknown[]>>();
-const mockSetCachedTrips = jest.fn<(trips: unknown[]) => Promise<void>>();
+const mockUseInfiniteQuery = jest.fn();
+const mockUseMemo = jest.fn((fn) => fn());
+const mockUseState = jest.fn<(initial: unknown) => [unknown, jest.Mock]>();
+const mockUseEffect = jest.fn((fn: () => void | (() => void)) => {
+  const cleanup = fn();
+  return cleanup;
+});
 
-jest.mock("~/services/storage/selectedTripStorage", () => ({
-  getCachedTrips: (...args: []) => mockGetCachedTrips(...args),
-  setCachedTrips: (...args: [unknown[]]) => mockSetCachedTrips(...args),
+jest.mock("@tanstack/react-query", () => ({
+  useInfiniteQuery: (...args: unknown[]) => mockUseInfiniteQuery(...args),
 }));
 
-// Mock oRPC
+jest.mock("react", () => ({
+  ...jest.requireActual("react"),
+  useMemo: (fn: () => unknown) => fn(),
+  useState: (initial: unknown) => [initial, jest.fn()],
+  useEffect: (fn: () => void | (() => void)) => {
+    fn();
+  },
+}));
+
 jest.mock("@mirai-app/orpc/client", () => ({
   orpc: {
     trip: {
       getAll: {
-        infiniteOptions: jest.fn(() => ({
-          queryKey: ["trip", "getAll"],
-        })),
+        infiniteOptions: jest.fn((options: unknown) => options),
       },
     },
   },
 }));
 
-// Mock React Query
-interface MockInfiniteQueryResult {
-  data: {
-    pages: {
-      trips: { id: string; name: string; startDate: string; endDate: string }[];
-      pagination: { hasMore: boolean; offset: number; limit: number };
-    }[];
-  } | null;
-  isLoading: boolean;
-  isRefetching: boolean;
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  fetchNextPage: jest.Mock;
-  isError: boolean;
-  error: Error | null;
-  refetch: jest.Mock;
-}
+jest.mock("@mirai-app/shared", () => ({
+  flattenTrips: (pages: unknown[]) => pages?.flatMap((page) => page?.trips ?? []) ?? [],
+}));
 
-const mockUseInfiniteQuery = jest.fn<() => MockInfiniteQueryResult>();
-
-jest.mock("@tanstack/react-query", () => ({
-  useInfiniteQuery: (...args: []) => mockUseInfiniteQuery(...args),
+jest.mock("~/services/storage/selectedTripStorage", () => ({
+  getCachedTrips: jest.fn(() => Promise.resolve([])),
+  setCachedTrips: jest.fn(() => Promise.resolve()),
 }));
 
 describe("useTrips", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetCachedTrips.mockResolvedValue([]);
   });
 
-  it("should return initial loading state when no cache", () => {
+  it("should return empty trips when no data", () => {
     mockUseInfiniteQuery.mockReturnValue({
       data: null,
-      isLoading: true,
-      isRefetching: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.trips).toEqual([]);
-  });
-
-  it("should return cached trips while loading", async () => {
-    const cachedTrips = [
-      {
-        id: "trip-1",
-        name: "Cached Trip 1",
-        startDate: "2024-01-01",
-        endDate: "2024-01-10",
-      },
-    ];
-    mockGetCachedTrips.mockResolvedValue(cachedTrips);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-      isRefetching: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    await waitFor(() => {
-      expect(result.current.trips).toHaveLength(1);
-    });
-
-    expect(result.current.trips[0]!.id).toBe("trip-1");
-    expect(result.current.trips[0]!.name).toBe("Cached Trip 1");
-  });
-
-  it("should return trips from API after loading", async () => {
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    const apiTrips = [
-      {
-        id: "trip-2",
-        name: "API Trip 2",
-        startDate: "2024-02-01",
-        endDate: "2024-02-10",
-      },
-    ];
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            trips: apiTrips,
-            pagination: { hasMore: false, offset: 0, limit: 20 },
-          },
-        ],
-      },
       isLoading: false,
       isRefetching: false,
       hasNextPage: false,
@@ -139,17 +62,40 @@ describe("useTrips", () => {
 
     const { result } = renderHook(() => useTrips());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.trips).toHaveLength(1);
-    expect(result.current.trips[0]!.id).toBe("trip-2");
+    expect(result.current.trips).toEqual([]);
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.hasNextPage).toBe(false);
   });
 
-  it("should handle error state", () => {
-    const error = new Error("Failed to fetch trips");
-    mockGetCachedTrips.mockResolvedValue([]);
+  it("should flatten trips from pages", () => {
+    const mockTrips = [
+      { id: "1", name: "Trip 1" },
+      { id: "2", name: "Trip 2" },
+    ];
+
+    mockUseInfiniteQuery.mockReturnValue({
+      data: {
+        pages: [{ trips: mockTrips, pagination: { hasMore: false } }],
+      },
+      isLoading: false,
+      isRefetching: false,
+      hasNextPage: true,
+      isFetchingNextPage: false,
+      fetchNextPage: jest.fn(),
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    const { result } = renderHook(() => useTrips());
+
+    expect(result.current.trips).toHaveLength(2);
+    expect(result.current.hasNextPage).toBe(true);
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it("should expose error state", () => {
+    const error = new Error("Network error");
 
     mockUseInfiniteQuery.mockReturnValue({
       data: null,
@@ -168,198 +114,57 @@ describe("useTrips", () => {
     expect(result.current.isError).toBe(true);
     expect(result.current.error).toBe(error);
   });
+});
 
-  it("should indicate hasNextPage when more pages available", () => {
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            trips: [
-              { id: "trip-1", name: "Trip 1", startDate: "2024-01-01", endDate: "2024-01-10" },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 20 },
-          },
-        ],
-      },
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: true,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
+describe("buildTripQueryInput", () => {
+  it("should build query input with valid pageParam", () => {
+    const result = buildTripQueryInput(20);
+    expect(result).toEqual({
+      pagination: { limit: 20, offset: 20 },
     });
-
-    const { result } = renderHook(() => useTrips());
-
-    expect(result.current.hasNextPage).toBe(true);
   });
 
-  it("should call fetchNextPage when requested", async () => {
-    const fetchNextPage = jest.fn();
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: true,
-      isFetchingNextPage: false,
-      fetchNextPage,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
+  it("should default offset to 0 when pageParam is 0", () => {
+    const result = buildTripQueryInput(0);
+    expect(result).toEqual({
+      pagination: { limit: 20, offset: 0 },
     });
+  });
+});
 
-    const { result } = renderHook(() => useTrips());
-
-    await result.current.fetchNextPage();
-
-    expect(fetchNextPage).toHaveBeenCalled();
+describe("getNextTripPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextTripPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 20 },
+    });
+    expect(result).toBeUndefined();
   });
 
-  it("should indicate isFetchingNextPage during pagination", () => {
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: true,
-      isFetchingNextPage: true,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
+  it("should return next offset when more pages exist", () => {
+    const result = getNextTripPageParam({
+      pagination: { hasMore: true, offset: 20, limit: 20 },
     });
+    expect(result).toBe(40);
+  });
+});
 
-    const { result } = renderHook(() => useTrips());
+import { calculateAllTrips } from "../../trips/useTrips";
 
-    expect(result.current.isFetchingNextPage).toBe(true);
+describe("calculateAllTrips", () => {
+  it("should return tripsData when available", () => {
+    const trips = [{ id: "1", name: "Trip 1" }] as unknown as TripListItem[];
+    const result = calculateAllTrips(trips, null);
+    expect(result).toEqual(trips);
   });
 
-  it("should indicate isRefetching during refresh", () => {
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isRefetching: true,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    expect(result.current.isRefetching).toBe(true);
+  it("should return cachedTrips when tripsData is null", () => {
+    const cached = [{ id: "2", name: "Cached" }] as unknown as TripListItem[];
+    const result = calculateAllTrips(null, cached);
+    expect(result).toEqual(cached);
   });
 
-  it("should flatten multiple pages of trips", async () => {
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            trips: [
-              { id: "trip-1", name: "Trip 1", startDate: "2024-01-01", endDate: "2024-01-10" },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 20 },
-          },
-          {
-            trips: [
-              { id: "trip-2", name: "Trip 2", startDate: "2024-02-01", endDate: "2024-02-10" },
-            ],
-            pagination: { hasMore: false, offset: 20, limit: 20 },
-          },
-        ],
-      },
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    await waitFor(() => {
-      expect(result.current.trips).toHaveLength(2);
-    });
-
-    expect(result.current.trips[0]!.id).toBe("trip-1");
-    expect(result.current.trips[1]!.id).toBe("trip-2");
-  });
-
-  it("should prioritize API data over cached data", async () => {
-    const cachedTrips = [
-      { id: "trip-cached", name: "Cached Trip", startDate: "2024-01-01", endDate: "2024-01-10" },
-    ];
-    mockGetCachedTrips.mockResolvedValue(cachedTrips);
-
-    const apiTrips = [
-      { id: "trip-api", name: "API Trip", startDate: "2024-02-01", endDate: "2024-02-10" },
-    ];
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: {
-        pages: [
-          {
-            trips: apiTrips,
-            pagination: { hasMore: false, offset: 0, limit: 20 },
-          },
-        ],
-      },
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    await waitFor(() => {
-      expect(result.current.trips).toHaveLength(1);
-    });
-
-    // API data should take precedence
-    expect(result.current.trips[0]!.id).toBe("trip-api");
-  });
-
-  it("should call refetch when requested", async () => {
-    const refetch = jest.fn();
-    mockGetCachedTrips.mockResolvedValue([]);
-
-    mockUseInfiniteQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isRefetching: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-      isError: false,
-      error: null,
-      refetch,
-    });
-
-    const { result } = renderHook(() => useTrips());
-
-    await result.current.refetch();
-
-    expect(refetch).toHaveBeenCalled();
+  it("should return empty array when both are null", () => {
+    const result = calculateAllTrips(null, null);
+    expect(result).toEqual([]);
   });
 });

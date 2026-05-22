@@ -30,10 +30,10 @@ const ELO_K = 32;
 const TOP3_STABILITY_REQUIRED = 3;
 const MIN_SUBMISSIONS_TO_VOTE = 2;
 
-const toPairKey = (leftId: string, rightId: string) =>
+export const toPairKey = (leftId: string, rightId: string) =>
   leftId < rightId ? `${leftId}|${rightId}` : `${rightId}|${leftId}`;
 
-const rankByRating = (submissions: VotingSubmission[], ratings: Record<string, number>) =>
+export const rankByRating = (submissions: VotingSubmission[], ratings: Record<string, number>) =>
   [...submissions].sort((a, b) => {
     const ratingDelta = (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
     if (Math.abs(ratingDelta) > 0.0001) return ratingDelta;
@@ -42,7 +42,7 @@ const rankByRating = (submissions: VotingSubmission[], ratings: Record<string, n
     return a.id.localeCompare(b.id);
   });
 
-const pickNextPair = (
+export const pickNextPair = (
   submissions: VotingSubmission[],
   ratings: Record<string, number>,
   comparedPairs: Set<string>,

@@ -238,7 +238,7 @@ describe("Notification Sender - Subscribe Callback", () => {
 
     if (subscribeCallback) {
       subscribeCallback("SUBSCRIBED");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status:", "SUBSCRIBED");
+      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "SUBSCRIBED" });
     }
 
     consoleLogSpy.mockRestore();
@@ -263,10 +263,10 @@ describe("Notification Sender - Subscribe Callback", () => {
 
     if (subscribeCallback) {
       subscribeCallback("CLOSED");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status:", "CLOSED");
+      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CLOSED" });
 
       subscribeCallback("CHANNEL_ERROR");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status:", "CHANNEL_ERROR");
+      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CHANNEL_ERROR" });
     }
 
     consoleLogSpy.mockRestore();
@@ -390,7 +390,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     if (sigintHandler) {
       await sigintHandler();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith("Shutting down...");
+      expect(consoleLogSpy).toHaveBeenCalledWith("Shutting down");
     }
 
     processOnSpy.mockRestore();
@@ -500,7 +500,7 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleLogSpy).toHaveBeenCalledWith("Delivery summary:", {
+    expect(consoleLogSpy).toHaveBeenCalledWith("Delivery summary", {
       mobile: {
         total: 10,
         sent: 8,

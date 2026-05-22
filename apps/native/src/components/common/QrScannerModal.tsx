@@ -13,6 +13,17 @@ export interface QrScannerModalProps {
   scanOncePerSession?: boolean;
 }
 
+export function shouldDisableScanning(
+  scanOncePerSession: boolean,
+  hasScannedThisSession: boolean,
+): boolean {
+  return scanOncePerSession && hasScannedThisSession;
+}
+
+export function formatScanErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Invalid QR code";
+}
+
 export function QrScannerModal({
   visible,
   onClose,
@@ -27,7 +38,7 @@ export function QrScannerModal({
   const insets = useSafeAreaInsets();
 
   const handleBarcodeScanned = async (event: { data: string }) => {
-    if (scanOncePerSession && hasScannedThisSession) return;
+    if (shouldDisableScanning(scanOncePerSession, hasScannedThisSession)) return;
     if (scanLockRef.current) return;
 
     scanLockRef.current = true;
@@ -40,8 +51,7 @@ export function QrScannerModal({
       onClose();
     } catch (error) {
       onClose();
-      const message = error instanceof Error ? error.message : "Invalid QR code";
-      Alert.alert("Invalid QR code", message);
+      Alert.alert("Invalid QR code", formatScanErrorMessage(error));
     } finally {
       scanLockRef.current = false;
     }

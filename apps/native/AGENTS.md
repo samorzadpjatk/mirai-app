@@ -100,6 +100,16 @@ bun run release:ios:submit
 3. **Uses Fastlane** for release management
 4. **Patches node modules** via `postinstall` script
 
+## Native-Specific Code Quality Rules
+
+See [Native Code Quality](./../../docs/apps/native/code-quality.md) for detailed standards. Key rules:
+
+- **Bundle Budget**: Every KB matters for OTA. Verify dependencies >5KB replace existing ones.
+- **Hook Test Anti-Patterns**: Stop mock-verification hook tests. Extract pure domain logic to `@mirai-app/shared`.
+- **Pure Function Extraction**: Name with `calculateXxx`, `syncXxx`, `executeXxx`, `buildXxx`, `toXxxOrNull`.
+- **Mock Removal for UI**: Render real components. Query by descriptive `testID` props.
+- **Coverage**: 83.74% statements, 3,034 tests across 267 suites.
+
 ## Links
 
 [Setup](../../docs/apps/native/setup.md) · [Navigation](../../docs/apps/native/navigation.md) · [Deployment](../../docs/apps/native/deployment.md) · [OTA Updates](../../docs/apps/native/ota-updates.md) · [State Management](../../docs/apps/native/state-management.md) · [Root AGENTS.md](../../AGENTS.md)

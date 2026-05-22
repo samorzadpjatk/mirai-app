@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, waitFor, act } from "@testing-library/react-native";
-import { useAdminChallengesByTrip } from "../../admin/useAdminChallengesByTrip";
+import { useAdminChallengesByTrip, buildAdminChallengeQueryInput, getNextAdminChallengePageParam } from "../../admin/useAdminChallengesByTrip";
 
 // Mock oRPC
 const mockGetAllByTripQuery = jest.fn((options: { input: { tripId: string } }) => ({
@@ -583,5 +583,39 @@ describe("useAdminChallengesByTrip", () => {
 
     const lastCall = mockUseInfiniteQuery.mock.calls[mockUseInfiniteQuery.mock.calls.length - 1];
     expect(lastCall![0].enabled).toBe(false);
+  });
+});
+
+describe("buildAdminChallengeQueryInput", () => {
+  it("should build query input with valid tripId and pageParam", () => {
+    const result = buildAdminChallengeQueryInput("trip-123", 30);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should default offset to 0 when pageParam is 0", () => {
+    const result = buildAdminChallengeQueryInput("trip-123", 0);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+
+describe("getNextAdminChallengePageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextAdminChallengePageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextAdminChallengePageParam({
+      pagination: { hasMore: true, offset: 30, limit: 30 },
+    });
+    expect(result).toBe(60);
   });
 });

@@ -4,6 +4,36 @@ import { Ionicons } from "@expo/vector-icons";
 import type { AdminChallengeUI } from "~/hooks/admin";
 import { commonStyles } from "~/styles/commonStyles";
 
+const CHALLENGE_ICON_MAP: Record<string, ComponentProps<typeof Ionicons>["name"]> = {
+  eco: "leaf",
+  terminal: "terminal",
+  flight_takeoff: "airplane",
+  fitness_center: "barbell",
+  star: "star",
+};
+
+export function getChallengeIcon(icon: string): ComponentProps<typeof Ionicons>["name"] {
+  return CHALLENGE_ICON_MAP[icon] ?? "star";
+}
+
+export function getChallengeBackgroundColor(category: string): string {
+  return category === "wintegral" ? "#00ced1" : "rgba(0, 206, 209, 0.1)";
+}
+
+export function getChallengeIconColor(category: string): string {
+  return category === "wintegral" ? "#0f2323" : "#00ced1";
+}
+
+export function getChallengeStatusColor(status: string): string {
+  return status === "draft" ? "#ef4444" : "#9ca3af";
+}
+
+export function getChallengeStatusLabel(status: string, category: string): string {
+  if (status === "draft") return "DRAFT";
+  if (category === "wintegral") return "Trip";
+  return "Campus";
+}
+
 export default function ChallengeCard({
   challenge,
   onEdit,
@@ -13,17 +43,6 @@ export default function ChallengeCard({
   onEdit?: (c: AdminChallengeUI) => void;
   onDelete?: (id: string, tripId?: string) => void;
 }) {
-  const getChallengeIcon = (icon: string) => {
-    const iconMap: Record<string, ComponentProps<typeof Ionicons>["name"]> = {
-      eco: "leaf",
-      terminal: "terminal",
-      flight_takeoff: "airplane",
-      fitness_center: "barbell",
-      star: "star",
-    };
-    return iconMap[icon] ?? "star";
-  };
-
   return (
     <View style={[commonStyles.card, { flexDirection: "row", alignItems: "center", gap: 16 }]}>
       <View
@@ -33,14 +52,13 @@ export default function ChallengeCard({
           alignItems: "center",
           justifyContent: "center",
           borderRadius: 8,
-          backgroundColor:
-            challenge.category === "wintegral" ? "#00ced1" : "rgba(0, 206, 209, 0.1)",
+          backgroundColor: getChallengeBackgroundColor(challenge.category),
         }}
       >
         <Ionicons
           name={getChallengeIcon(challenge.icon)}
           size={24}
-          color={challenge.category === "wintegral" ? "#0f2323" : "#00ced1"}
+          color={getChallengeIconColor(challenge.category)}
         />
       </View>
 
@@ -52,18 +70,13 @@ export default function ChallengeCard({
           </Text>
           <Text
             style={{
-              color: challenge.status === "draft" ? "#ef4444" : "#9ca3af",
+              color: getChallengeStatusColor(challenge.status),
               fontSize: 10,
               textTransform: "uppercase",
               fontWeight: "bold",
             }}
           >
-            •{" "}
-            {challenge.status === "draft"
-              ? "DRAFT"
-              : challenge.category === "wintegral"
-                ? "Trip"
-                : "Campus"}
+            • {getChallengeStatusLabel(challenge.status, challenge.category)}
           </Text>
         </View>
       </View>

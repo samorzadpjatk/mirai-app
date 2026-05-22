@@ -4,8 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName } from "@mirai-app/shared";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
+import { isBanReady, formatBanLabel } from "~/utils/validation";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
@@ -36,7 +38,7 @@ export default function AdminEditUserScreen() {
     }),
   );
   const groups = groupsResponse?.groups ?? [];
-  console.debug("EditUser groups debug", { tripId, groupsResponse, groups, groupsError });
+
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
@@ -236,10 +238,8 @@ export default function AdminEditUserScreen() {
     updateWristNumberMutation.isPending ||
     updateHouseNumberMutation.isPending ||
     assignToGroupMutation.isPending;
-  const isBanReady = banUntil != null && banUntil > new Date();
-  const banLabel = banUntil
-    ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : "Select date & time";
+  const banReady = isBanReady(banUntil);
+  const banLabel = formatBanLabel(banUntil);
 
   if (isLoading) {
     return (
@@ -277,7 +277,7 @@ export default function AdminEditUserScreen() {
       >
         <View style={styles.userInfo}>
           <Text style={styles.userName}>
-            {[firstName, lastName].filter(Boolean).join(" ") || "Unknown user"}
+            {formatDisplayName(firstName, lastName, "Unknown user")}
           </Text>
           <Text style={styles.userEmail}>{user.email ?? "No email"}</Text>
         </View>
@@ -372,10 +372,10 @@ export default function AdminEditUserScreen() {
           <TouchableOpacity
             style={[
               styles.banButton,
-              (!isBanReady || banUserMutation.isPending) && styles.dangerButtonDisabled,
-            ]}
-            onPress={handleBan}
-            disabled={!isBanReady || banUserMutation.isPending}
+                (!banReady || banUserMutation.isPending) && styles.dangerButtonDisabled,
+              ]}
+              onPress={handleBanUser}
+              disabled={!banReady || banUserMutation.isPending}
           >
             <Text style={styles.banButtonText}>
               {banUserMutation.isPending ? "Banning..." : "Ban user"}

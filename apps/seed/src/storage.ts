@@ -4,6 +4,7 @@ import { assetsRoot } from "./constants";
 import type { SeedEnv } from "./types";
 import { listFilesRecursive, readFile } from "./utils/fs";
 import { joinPath, normalizePath, relativePath } from "./utils/path";
+import { logger } from "@mirai-app/shared";
 
 export const BUCKET_MAP = {
   public: () => env.publicBucket,
@@ -29,7 +30,7 @@ export const ensureBuckets = async () => {
     });
     if (createResult.error)
       throw new Error(`createBucket ${bucket} failed: ${createResult.error.message}`);
-    console.log(`Created bucket ${bucket}`);
+    logger.info(`Created bucket ${bucket}`);
   }
 };
 
@@ -42,7 +43,7 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
     .list("image/placeholder", { search: "trip-background.png" });
 
   if (existingFile && existingFile.length > 0) {
-    console.log("✓ Placeholder image already exists");
+    logger.info("✓ Placeholder image already exists");
     return;
   }
 
@@ -62,13 +63,13 @@ export const ensurePlaceholderImage = async (seedEnv: SeedEnv) => {
       });
 
     if (uploadResult.error) {
-      console.warn(`✗ Failed to upload placeholder image: ${uploadResult.error.message}`);
+      logger.warn(`✗ Failed to upload placeholder image: ${uploadResult.error.message}`);
     } else {
-      console.log(`✓ Uploaded placeholder image: ${placeholderPath}`);
+      logger.info(`✓ Uploaded placeholder image: ${placeholderPath}`);
     }
   } catch {
-    console.warn(`✗ Placeholder image file not found at ${placeholderAbsPath}`);
-    console.log(
+    logger.warn(`✗ Placeholder image file not found at ${placeholderAbsPath}`);
+    logger.info(
       `  Note: Add a placeholder image at apps/seed/assets/${seedEnv}/images/placeholder/trip-background.png`,
     );
   }
@@ -80,9 +81,9 @@ export const cleanupOldAssets = async () => {
   for (const path of oldPaths) {
     const { error } = await supabase.storage.from(env.imageBucket).remove([path]);
     if (error) {
-      console.warn(`✗ Failed to remove old asset ${env.imageBucket}/${path}: ${error.message}`);
+      logger.warn(`✗ Failed to remove old asset ${env.imageBucket}/${path}: ${error.message}`);
     } else {
-      console.log(`✓ Removed old asset: ${env.imageBucket}/${path}`);
+      logger.info(`✓ Removed old asset: ${env.imageBucket}/${path}`);
     }
   }
 };
@@ -91,11 +92,11 @@ export const cleanupTripBackground = async (tripKey: string) => {
   const path = `trips/${tripKey}/background.jpg`;
   const { error } = await supabase.storage.from(env.imageBucket).remove([path]);
   if (error) {
-    console.warn(
+    logger.warn(
       `✗ Failed to remove old trip background ${env.imageBucket}/${path}: ${error.message}`,
     );
   } else {
-    console.log(`✓ Removed old trip background: ${env.imageBucket}/${path}`);
+    logger.info(`✓ Removed old trip background: ${env.imageBucket}/${path}`);
   }
 };
 
@@ -125,9 +126,9 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
       upsert: true,
     });
     if (uploadResult.error) {
-      console.warn(`✗ Upload failed ${bucketName}/${objectPath}: ${uploadResult.error.message}`);
+      logger.warn(`✗ Upload failed ${bucketName}/${objectPath}: ${uploadResult.error.message}`);
     } else {
-      console.log(`✓ Uploaded ${bucketName}/${objectPath}`);
+      logger.info(`✓ Uploaded ${bucketName}/${objectPath}`);
     }
   }
 };

@@ -110,6 +110,7 @@ describe("authEmails", () => {
       expect(result.get("user-1")).toBeNull();
       expect(console.warn).toHaveBeenCalledWith(
         "[Auth] Failed to fetch auth user user-1: User not found",
+        { authUserId: "user-1", error: "User not found" },
       );
     });
 
@@ -265,6 +266,7 @@ describe("authEmails", () => {
       });
       expect(console.warn).toHaveBeenCalledWith(
         "[Auth] Failed to fetch auth user user-1: API Error",
+        { authUserId: "user-1", error: "API Error" },
       );
     });
 

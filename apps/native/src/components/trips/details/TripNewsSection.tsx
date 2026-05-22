@@ -24,7 +24,7 @@ interface AdminNewsItem {
   } | null;
 }
 
-const formatRelativeTime = (value: Date | string) => {
+export function formatRelativeTime(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value);
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.floor(diffMs / 60000);
@@ -38,14 +38,14 @@ const formatRelativeTime = (value: Date | string) => {
     minute: "2-digit",
   });
   return `${datePart} ${timePart}`;
-};
+}
 
-const formatAdminName = (item: AdminNewsItem) => {
+export function formatAdminName(item: AdminNewsItem): string {
   const firstName = item.admin?.firstName?.trim();
   const lastName = item.admin?.lastName?.trim();
   const full = `${firstName ?? ""} ${lastName ?? ""}`.trim();
   return full.length > 0 ? full : "Admin";
-};
+}
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   const router = useRouter();

@@ -19,28 +19,33 @@ export interface TransactionItem {
 
 const PAGE_SIZE = 50;
 
+export function buildTransactionQueryInput(tripId: string, pageParam: number) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    tripId,
+    pagination: {
+      limit: PAGE_SIZE,
+      offset,
+    },
+  };
+}
+
+export function getNextTransactionPageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
 export function useAdminTransactions(tripId: string) {
   const { data, isLoading, isRefetching, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.coinTransaction.getAll.infiniteOptions({
-        input: (pageParam: number) => {
-          const offset = typeof pageParam === "number" ? pageParam : 0;
-          return {
-            tripId,
-            pagination: {
-              limit: PAGE_SIZE,
-              offset,
-            },
-          };
-        },
+        input: (pageParam: number) => buildTransactionQueryInput(tripId, pageParam),
         initialPageParam: 0,
-        getNextPageParam: (lastPage) => {
-          if (!lastPage.pagination.hasMore) {
-            return undefined;
-          }
-
-          return lastPage.pagination.offset + lastPage.pagination.limit;
-        },
+        getNextPageParam: getNextTransactionPageParam,
         enabled: Boolean(tripId),
       }),
     );

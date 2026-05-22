@@ -5,6 +5,7 @@ import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
 import { sponsors, tripSponsors } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared";
 
 function isSponsorConfig(value: unknown): value is SponsorConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -34,10 +35,10 @@ export const seedSponsors = async (
   seedEnv: SeedEnv,
   sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
-  console.log("Seeding sponsors...");
+  logger.info("Seeding sponsors...");
 
   if (sponsorConfigs.length === 0) {
-    console.log("No sponsors configured, skipping...");
+    logger.info("No sponsors configured, skipping...");
     return;
   }
 
@@ -64,7 +65,7 @@ export const seedSponsors = async (
           set: sponsor,
         });
 
-      console.log(`✓ Seeded sponsor: ${sponsorConfig.name}`);
+      logger.info(`✓ Seeded sponsor: ${sponsorConfig.name}`);
     }
 
     for (const sponsorConfig of sponsorConfigs) {
@@ -81,12 +82,12 @@ export const seedSponsors = async (
           set: tripSponsorData,
         });
 
-      console.log(`✓ Associated sponsor ${sponsorConfig.name} with trip`);
+      logger.info(`✓ Associated sponsor ${sponsorConfig.name} with trip`);
     }
 
-    console.log("✓ Sponsors seeding completed");
+    logger.info("✓ Sponsors seeding completed");
   } catch (error) {
-    console.error("✗ Failed to seed sponsors:", error);
+    logger.error(error, "✗ Failed to seed sponsors");
     throw error;
   }
 };

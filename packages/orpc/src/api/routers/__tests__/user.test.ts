@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, TripParticipant, Group } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import * as authEmails from "../../../utils/authEmails";
-import { addDrizzleApi } from "../../../../vitest.setup";
+import { addDrizzleApi, createFailingTransactionMock } from "../../../../vitest.setup";
 
 // Mock the authEmails utilities
 vi.mock("../../../utils/authEmails", () => ({
@@ -2305,6 +2305,79 @@ describe("userRouter", () => {
           caller.updateUserAdminStatus({ userId: "user-2", role: "MODERATOR" }),
         ).resolves.toBeDefined();
       });
+    });
+  });
+
+  describe("Transaction rollback", () => {
+    it("should rollback transaction when user creation fails", async () => {
+      const authUser = createMockSupabaseUser({ id: "auth-new", email: "new@example.com" });
+      mockSupabase.auth.admin.createUser.mockResolvedValue({
+        data: { user: authUser },
+        error: null,
+      });
+
+      mockDb.transaction = createFailingTransactionMock(mockDb, {
+        failAfterCalls: 1,
+        failWithError: new Error("User creation failed"),
+        shouldRollback: true,
+      });
+
+      mockRequireAdmin.mockResolvedValue(createMockUser({ role: "ADMIN" }));
+
+      const ctx: TRPCContext = {
+        db: mockDb,
+        supabase: mockSupabase,
+        headers: new Headers(),
+        accessToken: "admin-token",
+      };
+
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.createUser({
+          tripId: "trip-1",
+          firstName: "New",
+          lastName: "User",
+          email: "new@example.com",
+        }),
+      ).rejects.toThrow("User creation failed");
+    });
+
+    it("should rollback transaction when participant creation fails after user creation", async () => {
+      const authUser = createMockSupabaseUser({ id: "auth-new", email: "new@example.com" });
+      mockSupabase.auth.admin.createUser.mockResolvedValue({
+        data: { user: authUser },
+        error: null,
+      });
+
+      const newUser = createMockUser({ id: "user-new", authUserId: "auth-new" });
+      mockDb.user.upsert.mockResolvedValue(newUser);
+
+      mockDb.transaction = createFailingTransactionMock(mockDb, {
+        failAfterCalls: 2,
+        failWithError: new Error("Participant creation failed"),
+        shouldRollback: true,
+      });
+
+      mockRequireAdmin.mockResolvedValue(createMockUser({ role: "ADMIN" }));
+
+      const ctx: TRPCContext = {
+        db: mockDb,
+        supabase: mockSupabase,
+        headers: new Headers(),
+        accessToken: "admin-token",
+      };
+
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.createUser({
+          tripId: "trip-1",
+          firstName: "New",
+          lastName: "User",
+          email: "new@example.com",
+        }),
+      ).rejects.toThrow("Participant creation failed");
     });
   });
 });

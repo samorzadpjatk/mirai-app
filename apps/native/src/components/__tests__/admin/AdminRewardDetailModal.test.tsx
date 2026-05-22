@@ -79,60 +79,7 @@ interface ThemedTextInputProps {
   multiline?: boolean;
 }
 
-jest.mock("~/components/common/ui", () => {
-  const React = jest.requireActual("react");
-  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
 
-  return {
-    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-      visible ? (
-        <View>
-          <Text>{title}</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-          {children}
-        </View>
-      ) : null,
-    AppModalFooter: ({
-      primaryLabel,
-      onPrimary,
-      secondaryLabel,
-      onSecondary,
-      isPrimaryLoading,
-    }: AppModalFooterProps) => (
-      <View>
-        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}>
-          <Text>{primaryLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onSecondary}>
-          <Text>{secondaryLabel}</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-    FormField: ({ children, label }: FormFieldProps) => (
-      <View>
-        <Text>{label}</Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType,
-      multiline,
-    }: ThemedTextInputProps) => (
-      <TextInput
-        value={value}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        onChangeText={onChangeText}
-      />
-    ),
-  };
-});
 
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {
@@ -153,7 +100,7 @@ describe("AdminRewardDetailModal", () => {
     const { getByText } = renderWithProviders(
       <AdminRewardDetailModal rewardId="reward-1" onClose={onClose} />,
     );
-    fireEvent.press(getByText("Close"));
+    fireEvent.press(getByText("✕"));
     expect(onClose).toHaveBeenCalled();
   });
 

@@ -103,8 +103,12 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Scheduler task failed",
+        expect.objectContaining({ message: "Task failed", type: "Error" }),
+      );
 
+      scheduler.stop();
       consoleSpy.mockRestore();
     });
 
@@ -277,8 +281,12 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Scheduler task failed",
+        expect.objectContaining({ message: "Sync error", type: "Error" }),
+      );
 
+      scheduler.stop();
       consoleSpy.mockRestore();
     });
 
@@ -296,6 +304,7 @@ describe("Scheduler", () => {
       // Should not throw error since non-promise is awaitable
       expect(consoleSpy).not.toHaveBeenCalled();
 
+      scheduler.stop();
       consoleSpy.mockRestore();
     });
   });
@@ -310,8 +319,9 @@ describe("Scheduler", () => {
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started. Running task every 5 minutes.");
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started", { intervalMinutes: 5 });
 
+      scheduler.stop();
       consoleSpy.mockRestore();
     });
 
@@ -325,7 +335,7 @@ describe("Scheduler", () => {
       scheduler.start();
       scheduler.stop();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler stopped.");
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler stopped");
 
       consoleSpy.mockRestore();
     });
@@ -339,8 +349,9 @@ describe("Scheduler", () => {
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started. Running task every 15 minutes.");
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started", { intervalMinutes: 15 });
 
+      scheduler.stop();
       consoleSpy.mockRestore();
     });
   });
@@ -383,9 +394,12 @@ describe("createInactivityScheduler", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalledWith("Running inactivity check...");
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", { inactiveUsers: 5 });
+    expect(consoleSpy).toHaveBeenCalledTimes(3);
+    expect(consoleSpy).toHaveBeenNthCalledWith(1, "Scheduler started", { intervalMinutes: 5 });
+    expect(consoleSpy).toHaveBeenNthCalledWith(2, "Running inactivity check");
+    expect(consoleSpy).toHaveBeenNthCalledWith(3, "Inactivity check completed", { result: { inactiveUsers: 5 } });
 
+    scheduler.stop();
     consoleSpy.mockRestore();
   });
 
@@ -401,8 +415,12 @@ describe("createInactivityScheduler", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Scheduler task failed",
+      expect.objectContaining({ message: "Check failed", type: "Error" }),
+    );
 
+    scheduler.stop();
     consoleSpy.mockRestore();
   });
 
@@ -423,6 +441,8 @@ describe("createInactivityScheduler", () => {
     // Third execution after another 5 minutes
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(checkFunction).toHaveBeenCalledTimes(3);
+
+    scheduler.stop();
   });
 
   it("should handle check function returning different types", async () => {
@@ -435,7 +455,7 @@ describe("createInactivityScheduler", () => {
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", [1, 2, 3]);
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: [1, 2, 3] });
     scheduler1.stop();
 
     // Test with null
@@ -443,7 +463,7 @@ describe("createInactivityScheduler", () => {
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", null);
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: null });
     scheduler2.stop();
 
     // Test with undefined
@@ -451,7 +471,7 @@ describe("createInactivityScheduler", () => {
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", undefined);
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: null });
     scheduler3.stop();
 
     consoleSpy.mockRestore();
@@ -467,7 +487,7 @@ describe("createInactivityScheduler", () => {
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", 42);
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: 42 });
     scheduler1.stop();
 
     // Test with string
@@ -475,7 +495,7 @@ describe("createInactivityScheduler", () => {
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", "completed");
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: "completed" });
     scheduler2.stop();
 
     // Test with boolean
@@ -483,7 +503,7 @@ describe("createInactivityScheduler", () => {
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", true);
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: true });
     scheduler3.stop();
 
     consoleSpy.mockRestore();

@@ -5,9 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Image,
-  Modal,
-  TextInput,
   ActivityIndicator,
   useWindowDimensions,
   RefreshControl,
@@ -20,9 +17,127 @@ import { useTripDetails } from "~/hooks/trips";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RewardListItem } from "./types";
 import { commonStyles } from "~/styles/commonStyles";
+import RewardCard from "./RewardCard";
+import RewardPurchaseModal from "./RewardPurchaseModal";
+import RewardDetailsModal from "./RewardDetailsModal";
 
 interface Props {
   tripId: string;
+}
+
+export function extractSafeRewards(rewards: unknown): RewardListItem[] {
+  const data = rewards as RewardListItem[] | undefined;
+  if (Array.isArray(data)) return data;
+  return [];
+}
+
+export function getRewardImages(reward: RewardListItem): string[] {
+  if (reward.signedImageUrls && reward.signedImageUrls.length > 0) {
+    return reward.signedImageUrls;
+  }
+  if (reward.images && reward.images.length > 0) {
+    return reward.images;
+  }
+  if (reward.signedImageUrl) return [reward.signedImageUrl];
+  if (reward.image) return [reward.image];
+  return [];
+}
+
+export interface RewardButtonState {
+  disabled: boolean;
+  text: string;
+  backgroundColor: string;
+  opacity: number;
+}
+
+export function getRewardButtonState(
+  canAfford: boolean,
+  isEligibleToBuy: boolean,
+  isOutOfStock: boolean,
+  isTripPast: boolean,
+): RewardButtonState {
+  const enabled = canAfford && isEligibleToBuy && !isOutOfStock && !isTripPast;
+  let text: string;
+  if (isTripPast) {
+    text = "Trip ended";
+  } else if (isOutOfStock) {
+    text = "Sold out";
+  } else if (!isEligibleToBuy) {
+    text = "Only group leader";
+  } else if (!canAfford) {
+    text = "Not enough coins";
+  } else {
+    text = "Claim reward";
+  }
+  return {
+    disabled: !enabled,
+    text,
+    backgroundColor: enabled ? "#00ced1" : "#374151",
+    opacity: enabled ? 1 : 0.5,
+  };
+}
+
+export function getRewardBorderColor(
+  justRefreshed: boolean,
+  isOutOfStock: boolean,
+): string {
+  if (justRefreshed && !isOutOfStock) return "#10b981";
+  if (isOutOfStock) return "#ef4444";
+  return "#273a3a";
+}
+
+export function getRewardShadowProps(justRefreshed: boolean): {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number } | undefined;
+  shadowOpacity: number;
+  shadowRadius: number;
+} {
+  return {
+    shadowColor: justRefreshed ? "#10b981" : "transparent",
+    shadowOffset: justRefreshed ? { width: 0, height: 0 } : undefined,
+    shadowOpacity: justRefreshed ? 0.3 : 0,
+    shadowRadius: justRefreshed ? 4 : 0,
+  };
+}
+
+export function getRewardAvailabilityText(
+  isOutOfStock: boolean,
+  availableQuantity: number | null | undefined,
+): string {
+  return isOutOfStock ? "Sold out" : `${availableQuantity ?? 0} pcs.`;
+}
+
+export function getRewardAvailabilityColor(isOutOfStock: boolean): string {
+  return isOutOfStock ? "#ef4444" : "#10b981";
+}
+
+export function getTotalCost(coinCost: number, quantity: string): number {
+  return coinCost * (parseInt(quantity, 10) || 1);
+}
+
+export function isValidQuantity(quantity: string): boolean {
+  const qty = parseInt(quantity, 10);
+  return !isNaN(qty) && qty >= 1;
+}
+
+export function getPurchaseModalError(
+  currentUserGroup: unknown,
+  isEligibleToBuy: boolean,
+): string | null {
+  if (!currentUserGroup) return "You are not assigned to any group";
+  if (!isEligibleToBuy) return "Only group leader can claim rewards";
+  return null;
+}
+
+export function getPurchaseValidationError(
+  quantity: string,
+  coinCost: number,
+  groupCoins: number,
+): string | null {
+  if (!isValidQuantity(quantity)) return "Enter a valid quantity";
+  const totalCost = getTotalCost(coinCost, quantity);
+  if (totalCost > groupCoins) return "You do not have enough coins";
+  return null;
 }
 
 export default function RewardsView({ tripId }: Props) {
@@ -43,76 +158,41 @@ export default function RewardsView({ tripId }: Props) {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [justRefreshed, setJustRefreshed] = useState(false);
 
-  const safeRewards: RewardListItem[] = useMemo(() => {
-    // The useRewards hook returns data directly, not wrapped in an object
-    const data = rewards as RewardListItem[] | undefined;
-
-    if (Array.isArray(data)) return data;
-    return [];
-  }, [rewards]);
+  const safeRewards = useMemo(() => extractSafeRewards(rewards), [rewards]);
 
   const groupCoins = currentUserGroup?.coins ?? 0;
   const previewCarouselWidth = Math.max(260, viewportWidth - 48);
+  const previewImages = previewReward ? getRewardImages(previewReward) : [];
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      // Refresh rewards data to get updated dynamic pricing
       await refetch();
-
-      // Also refresh group data to get updated coin balance
       await queryClient.invalidateQueries({ queryKey: [["group"]] });
-
-      // Invalidate any reward-related queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: [["reward"]] });
-
-      // Update last refresh time and trigger animation
       setLastRefreshTime(new Date());
       setJustRefreshed(true);
-
-      // Remove the animation indicator after 2 seconds
       setTimeout(() => setJustRefreshed(false), 2000);
-
-      // Show subtle success message
       Alert.alert("Updated", "Reward pricing has been refreshed", [
         { text: "OK", style: "default" },
       ]);
-    } catch (error) {
-      console.error("Failed to refresh rewards:", error);
+    } catch {
       Alert.alert("Error", "Failed to refresh rewards");
     } finally {
       setRefreshing(false);
     }
   };
 
-  const getRewardImages = (reward: RewardListItem): string[] => {
-    if (reward.signedImageUrls && reward.signedImageUrls.length > 0) {
-      return reward.signedImageUrls;
-    }
-    if (reward.images && reward.images.length > 0) {
-      return reward.images;
-    }
-    if (reward.signedImageUrl) return [reward.signedImageUrl];
-    if (reward.image) return [reward.image];
-    return [];
-  };
-
   const handlePurchase = async () => {
     if (!selectedReward || !quantity) return;
-
-    const qty = parseInt(quantity, 10);
-    if (isNaN(qty) || qty < 1) {
-      Alert.alert("Error", "Enter a valid quantity");
-      return;
-    }
-
-    const totalCost = selectedReward.coinCost * qty;
-    if (totalCost > groupCoins) {
-      Alert.alert("Error", "You do not have enough coins");
+    const error = getPurchaseValidationError(quantity, selectedReward.coinCost, groupCoins);
+    if (error) {
+      Alert.alert("Error", error);
       return;
     }
 
     try {
+      const qty = parseInt(quantity, 10);
       await purchaseReward.mutateAsync({
         rewardId: selectedReward.id,
         quantity: qty,
@@ -128,13 +208,9 @@ export default function RewardsView({ tripId }: Props) {
   };
 
   const openPurchaseModal = (reward: RewardListItem) => {
-    if (!currentUserGroup) {
-      Alert.alert("Error", "You are not assigned to any group");
-      return;
-    }
-
-    if (!reward.isEligibleToBuy) {
-      Alert.alert("Error", "Only group leader can claim rewards");
+    const error = getPurchaseModalError(currentUserGroup, reward.isEligibleToBuy);
+    if (error) {
+      Alert.alert("Error", error);
       return;
     }
 
@@ -148,8 +224,6 @@ export default function RewardsView({ tripId }: Props) {
     setPreviewImageIndex(0);
     setShowRewardDetailsModal(true);
   };
-
-  const previewImages = previewReward ? getRewardImages(previewReward) : [];
 
   if (isLoading) {
     return (
@@ -184,12 +258,7 @@ export default function RewardsView({ tripId }: Props) {
 
   return (
     <View style={commonStyles.container}>
-      {/* Header with group coins */}
-      <View
-        style={{
-          padding: 16,
-        }}
-      >
+      <View style={{ padding: 16 }}>
         <View
           style={{
             flexDirection: "row",
@@ -265,492 +334,40 @@ export default function RewardsView({ tripId }: Props) {
             rowGap: 16,
           }}
         >
-          {safeRewards.map((reward) => {
-            const rewardImages = getRewardImages(reward);
-            const rewardPrimaryImage = rewardImages[0] ?? null;
-
-            return (
-              <View
-                key={reward.id}
-                style={{
-                  width: "48%",
-                  backgroundColor: "#0f2323",
-                  borderWidth: 2,
-                  borderColor:
-                    justRefreshed && !reward.isOutOfStock
-                      ? "#10b981"
-                      : reward.isOutOfStock
-                        ? "#ef4444"
-                        : "#273a3a",
-                  borderRadius: 12,
-                  padding: 16,
-                  shadowColor: justRefreshed ? "#10b981" : "transparent",
-                  shadowOffset: justRefreshed ? { width: 0, height: 0 } : undefined,
-                  shadowOpacity: justRefreshed ? 0.3 : 0,
-                  shadowRadius: justRefreshed ? 4 : 0,
-                }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => openRewardDetailsModal(reward)}
-                >
-                  {/* Reward Image */}
-                  {rewardPrimaryImage ? (
-                    <Image
-                      source={{ uri: rewardPrimaryImage }}
-                      style={{
-                        width: "100%",
-                        aspectRatio: 1,
-                        borderRadius: 8,
-                        marginBottom: 12,
-                      }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        width: "100%",
-                        aspectRatio: 1,
-                        borderRadius: 8,
-                        marginBottom: 12,
-                        borderWidth: 1,
-                        borderColor: "#273a3a",
-                        backgroundColor: "#0b1a1a",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Ionicons name="gift-outline" size={36} color="#6b7280" />
-                    </View>
-                  )}
-
-                  {/* Reward Info */}
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={[commonStyles.h4, { marginBottom: 4 }]}>{reward.name}</Text>
-                    <Text
-                      numberOfLines={3}
-                      ellipsizeMode="tail"
-                      style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 6 }]}
-                    >
-                      {reward.description}
-                    </Text>
-                    <Text
-                      style={[
-                        commonStyles.textSecondary,
-                        { color: "#00ced1", fontSize: 11, marginBottom: 8 },
-                      ]}
-                    >
-                      Tap to read full description
-                    </Text>
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                        <Ionicons name="cash" size={16} color="#fbbf24" />
-                        <View style={{ alignItems: "flex-start" }}>
-                          <Text
-                            style={[
-                              commonStyles.textPrimary,
-                              { color: "#fbbf24", fontSize: 12, lineHeight: 14 },
-                            ]}
-                          >
-                            {reward.coinCost} coins
-                          </Text>
-                          {reward.originalCoinCost && (
-                            <Text
-                              style={[
-                                commonStyles.textSecondary,
-                                { color: "#9ca3af", fontSize: 10, lineHeight: 12 },
-                              ]}
-                            >
-                              {reward.originalCoinCost}% of total points
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-
-                      <Text
-                        style={[
-                          commonStyles.textPrimary,
-                          {
-                            color: reward.isOutOfStock ? "#ef4444" : "#10b981",
-                            fontWeight: "600",
-                          },
-                        ]}
-                      >
-                        {reward.isOutOfStock ? "Sold out" : `${reward.availableQuantity ?? 0} pcs.`}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Purchase Button */}
-                <TouchableOpacity
-                  onPress={() => openPurchaseModal(reward)}
-                  disabled={
-                    !reward.canAfford ||
-                    !reward.isEligibleToBuy ||
-                    reward.isOutOfStock ||
-                    isTripPast
-                  }
-                  style={[
-                    commonStyles.button,
-                    {
-                      backgroundColor:
-                        reward.canAfford &&
-                        reward.isEligibleToBuy &&
-                        !reward.isOutOfStock &&
-                        !isTripPast
-                          ? "#00ced1"
-                          : "#374151",
-                      opacity:
-                        reward.canAfford &&
-                        reward.isEligibleToBuy &&
-                        !reward.isOutOfStock &&
-                        !isTripPast
-                          ? 1
-                          : 0.5,
-                    },
-                  ]}
-                >
-                  <Text style={commonStyles.buttonText}>
-                    {isTripPast
-                      ? "Trip ended"
-                      : reward.isOutOfStock
-                        ? "Sold out"
-                        : !reward.isEligibleToBuy
-                          ? "Only group leader"
-                          : !reward.canAfford
-                            ? "Not enough coins"
-                            : "Claim reward"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
+          {safeRewards.map((reward) => (
+            <RewardCard
+              key={reward.id}
+              reward={reward}
+              justRefreshed={justRefreshed}
+              isTripPast={isTripPast}
+              onPress={openRewardDetailsModal}
+              onPurchasePress={openPurchaseModal}
+            />
+          ))}
         </View>
       </ScrollView>
 
-      {/* Purchase Modal */}
-      <Modal
-        testID="purchase-modal"
+      <RewardPurchaseModal
         visible={showPurchaseModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowPurchaseModal(false)}
-      >
-        <View style={commonStyles.container}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={[commonStyles.h3]}>Claim reward</Text>
-            <TouchableOpacity onPress={() => setShowPurchaseModal(false)}>
-              <Ionicons name="close" size={24} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
+        reward={selectedReward}
+        quantity={quantity}
+        onClose={() => setShowPurchaseModal(false)}
+        onQuantityChange={setQuantity}
+        onConfirm={handlePurchase}
+        isPending={purchaseReward.isPending}
+      />
 
-          <ScrollView style={{ padding: 24 }}>
-            {selectedReward && (
-              <>
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={[commonStyles.h4, { marginBottom: 8 }]}>{selectedReward.name}</Text>
-                  <Text
-                    style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 16 }]}
-                  >
-                    {selectedReward.description}
-                  </Text>
-
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Ionicons name="cash" size={16} color="#fbbf24" />
-                      <View style={{ alignItems: "flex-start" }}>
-                        <Text
-                          style={[
-                            commonStyles.textPrimary,
-                            { color: "#fbbf24", fontSize: 14, lineHeight: 16 },
-                          ]}
-                        >
-                          {selectedReward.coinCost} coins / item
-                        </Text>
-                        {selectedReward.originalCoinCost && (
-                          <Text
-                            style={[
-                              commonStyles.textSecondary,
-                              { color: "#9ca3af", fontSize: 11, lineHeight: 13 },
-                            ]}
-                          >
-                            {selectedReward.originalCoinCost}% of total points
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-
-                    <Text style={[commonStyles.textPrimary, { color: "#10b981" }]}>
-                      Available: {selectedReward.availableQuantity} pcs.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Quantity</Text>
-                  <TextInput
-                    style={{
-                      backgroundColor: "#0f2323",
-                      borderWidth: 1,
-                      borderColor: "#273a3a",
-                      borderRadius: 12,
-                      padding: 12,
-                      color: "#fff",
-                    }}
-                    placeholder="1"
-                    placeholderTextColor="#6b7280"
-                    value={quantity}
-                    onChangeText={setQuantity}
-                    keyboardType="numeric"
-                  />
-                </View>
-
-                <View
-                  style={{
-                    backgroundColor: "#1f2937",
-                    padding: 16,
-                    borderRadius: 12,
-                    marginBottom: 24,
-                  }}
-                >
-                  <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Total cost:</Text>
-                  <Text style={[commonStyles.h4, { color: "#fbbf24" }]}>
-                    {selectedReward.coinCost * (parseInt(quantity, 10) || 1)} coins
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={handlePurchase}
-                  disabled={purchaseReward.isPending}
-                  style={[commonStyles.button, { marginBottom: 24 }]}
-                >
-                  <Text style={commonStyles.buttonText}>
-                    {purchaseReward.isPending ? "Claiming..." : "Confirm claim"}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Reward Details Modal */}
-      <Modal
-        testID="reward-details-modal"
+      <RewardDetailsModal
         visible={showRewardDetailsModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowRewardDetailsModal(false)}
-      >
-        <View style={commonStyles.container}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={[commonStyles.h3]}>Reward details</Text>
-            <TouchableOpacity onPress={() => setShowRewardDetailsModal(false)}>
-              <Ionicons name="close" size={24} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={{ padding: 24 }}>
-            {previewReward ? (
-              <>
-                {previewImages.length > 0 ? (
-                  <View
-                    style={{ width: previewCarouselWidth, alignSelf: "center", marginBottom: 16 }}
-                  >
-                    <ScrollView
-                      horizontal
-                      pagingEnabled
-                      showsHorizontalScrollIndicator={false}
-                      onMomentumScrollEnd={(event) => {
-                        const nextIndex = Math.round(
-                          event.nativeEvent.contentOffset.x / previewCarouselWidth,
-                        );
-                        setPreviewImageIndex(nextIndex);
-                      }}
-                    >
-                      {previewImages.map((imageUri, index) => (
-                        <Image
-                          key={`${imageUri}-${index}`}
-                          source={{ uri: imageUri }}
-                          style={{
-                            width: previewCarouselWidth,
-                            aspectRatio: 1.2,
-                            borderRadius: 12,
-                            backgroundColor: "#0f2323",
-                          }}
-                          resizeMode="cover"
-                        />
-                      ))}
-                    </ScrollView>
-                    {previewImages.length > 1 ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "center",
-                          gap: 6,
-                          marginTop: 10,
-                        }}
-                      >
-                        {previewImages.map((_, index) => (
-                          <View
-                            key={`dot-${index}`}
-                            style={{
-                              width: 7,
-                              height: 7,
-                              borderRadius: 999,
-                              backgroundColor: index === previewImageIndex ? "#00ced1" : "#4b5563",
-                            }}
-                          />
-                        ))}
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
-
-                <Text style={[commonStyles.h3, { marginBottom: 8 }]}>{previewReward.name}</Text>
-                <Text
-                  style={[
-                    commonStyles.textPrimary,
-                    { color: "#e5e7eb", lineHeight: 22, marginBottom: 20 },
-                  ]}
-                >
-                  {previewReward.description}
-                </Text>
-
-                <View
-                  style={{
-                    backgroundColor: "#1f2937",
-                    padding: 16,
-                    borderRadius: 12,
-                    marginBottom: 20,
-                    gap: 8,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={commonStyles.textSecondary}>Price</Text>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                        {previewReward.coinCost} coins
-                      </Text>
-                      {previewReward.originalCoinCost && (
-                        <Text
-                          style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11 }]}
-                        >
-                          {previewReward.originalCoinCost}% of total points
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={commonStyles.textSecondary}>Availability</Text>
-                    <Text
-                      style={[
-                        commonStyles.textPrimary,
-                        {
-                          color: previewReward.isOutOfStock ? "#ef4444" : "#10b981",
-                        },
-                      ]}
-                    >
-                      {previewReward.isOutOfStock
-                        ? "Sold out"
-                        : `${previewReward.availableQuantity ?? 0} pcs.`}
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowRewardDetailsModal(false);
-                    openPurchaseModal(previewReward);
-                  }}
-                  disabled={
-                    !previewReward.canAfford ||
-                    !previewReward.isEligibleToBuy ||
-                    previewReward.isOutOfStock ||
-                    isTripPast
-                  }
-                  style={[
-                    commonStyles.button,
-                    {
-                      backgroundColor:
-                        previewReward.canAfford &&
-                        previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock &&
-                        !isTripPast
-                          ? "#00ced1"
-                          : "#374151",
-                      opacity:
-                        previewReward.canAfford &&
-                        previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock &&
-                        !isTripPast
-                          ? 1
-                          : 0.5,
-                      marginBottom: 24,
-                    },
-                  ]}
-                >
-                  <Text style={commonStyles.buttonText}>
-                    {isTripPast
-                      ? "Trip ended"
-                      : previewReward.isOutOfStock
-                        ? "Sold out"
-                        : !previewReward.isEligibleToBuy
-                          ? "Only group leader"
-                          : !previewReward.canAfford
-                            ? "Not enough coins"
-                            : "Claim reward"}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            ) : null}
-          </ScrollView>
-        </View>
-      </Modal>
+        reward={previewReward}
+        images={previewImages}
+        carouselWidth={previewCarouselWidth}
+        imageIndex={previewImageIndex}
+        onClose={() => setShowRewardDetailsModal(false)}
+        onPurchase={openPurchaseModal}
+        onImageIndexChange={setPreviewImageIndex}
+        isTripPast={isTripPast}
+      />
     </View>
   );
 }

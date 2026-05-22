@@ -205,85 +205,6 @@ interface AppModalFooterProps {
   onSecondary: () => void;
 }
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-  style?: object;
-}
-
-interface ThemedTextInputProps {
-  placeholder?: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  keyboardType?: string;
-  multiline?: boolean;
-  editable?: boolean;
-}
-
-jest.mock("~/components/common/ui", () => {
-  const mockReact = jest.requireActual("react");
-  const mockRN = jest.requireActual("react-native");
-  return {
-    AppModalShell: function MockAppModalShell(props: AppModalShellProps) {
-      if (!props.visible) return null;
-      return mockReact.createElement(
-        mockRN.View,
-        { testID: "modal-shell" },
-        mockReact.createElement(mockRN.Text, { testID: "modal-title" }, props.title),
-        props.children,
-      );
-    },
-    AppModalFooter: function MockAppModalFooter(props: AppModalFooterProps) {
-      return mockReact.createElement(
-        mockRN.View,
-        { testID: "modal-footer" },
-        mockReact.createElement(
-          mockRN.TouchableOpacity,
-          {
-            testID: "primary-button",
-            onPress: props.onPrimary,
-            disabled: props.isPrimaryDisabled,
-          },
-          mockReact.createElement(
-            mockRN.Text,
-            null,
-            props.isPrimaryLoading ? "Loading..." : props.primaryLabel,
-          ),
-        ),
-        mockReact.createElement(
-          mockRN.TouchableOpacity,
-          { testID: "secondary-button", onPress: props.onSecondary },
-          mockReact.createElement(mockRN.Text, null, props.secondaryLabel),
-        ),
-      );
-    },
-    FormField: function MockFormField(props: FormFieldProps) {
-      return mockReact.createElement(
-        mockRN.View,
-        { testID: "form-field", style: props.style },
-        mockReact.createElement(
-          mockRN.Text,
-          { testID: "field-label" },
-          `${props.label}${props.required ? " *" : ""}`,
-        ),
-        props.children,
-      );
-    },
-    ThemedTextInput: function MockThemedTextInput(props: ThemedTextInputProps) {
-      return mockReact.createElement(mockRN.TextInput, {
-        testID: "text-input",
-        placeholder: props.placeholder,
-        value: props.value,
-        onChangeText: props.onChangeText,
-        keyboardType: props.keyboardType,
-        multiline: props.multiline,
-        editable: props.editable,
-      });
-    },
-  };
-});
-
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -302,15 +223,15 @@ describe("AdminRewardDetailModal", () => {
 
   describe("rendering", () => {
     it("should render modal with title", () => {
-      const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      expect(getByTestId("modal-title").children[0]).toBe("Reward Details");
+      const { getByText } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
+      expect(getByText("Reward Details")).toBeTruthy();
     });
 
     it("should not render when rewardId is null", () => {
       const { queryByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} rewardId={null} />,
       );
-      expect(queryByTestId("modal-shell")).toBeNull();
+      expect(queryByTestId("app-modal")).toBeNull();
     });
 
     it("should show loading state when data is loading", () => {
@@ -349,15 +270,15 @@ describe("AdminRewardDetailModal", () => {
 
     it("should render footer buttons", () => {
       const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      expect(getByTestId("primary-button")).toBeTruthy();
-      expect(getByTestId("secondary-button")).toBeTruthy();
+      expect(getByTestId("app-modal-footer-primary")).toBeTruthy();
+      expect(getByTestId("app-modal-footer-secondary")).toBeTruthy();
     });
   });
 
   describe("form interactions", () => {
     it("should populate form with reward data", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       expect(inputs[0]!.props.value).toBe("Test Reward");
       expect(inputs[1]!.props.value).toBe("A test reward description");
       expect(inputs[2]!.props.value).toBe("50");
@@ -366,28 +287,28 @@ describe("AdminRewardDetailModal", () => {
 
     it("should update name field when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Updated Reward Name");
       expect(inputs[0]!.props.value).toBe("Updated Reward Name");
     });
 
     it("should update description field when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[1]!, "Updated description");
       expect(inputs[1]!.props.value).toBe("Updated description");
     });
 
     it("should update available quantity when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[2]!, "100");
       expect(inputs[2]!.props.value).toBe("100");
     });
 
     it("should update coin cost when typing", () => {
       const { getAllByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[3]!, "20");
       expect(inputs[3]!.props.value).toBe("20");
     });
@@ -399,10 +320,10 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Fill in all required fields");
@@ -414,10 +335,10 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[3]!, "0");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
@@ -429,10 +350,10 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[3]!, "150");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Cost must be between 1% and 100%");
@@ -444,13 +365,13 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       fireEvent.changeText(inputs[0]!, "Updated Reward");
       fireEvent.changeText(inputs[1]!, "Updated description");
       fireEvent.changeText(inputs[2]!, "75");
       fireEvent.changeText(inputs[3]!, "15");
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -467,7 +388,7 @@ describe("AdminRewardDetailModal", () => {
     it("should show success alert after saving", async () => {
       const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Saved", "Reward has been updated");
@@ -477,7 +398,7 @@ describe("AdminRewardDetailModal", () => {
     it("should call onClose after successful save", async () => {
       const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(mockOnClose).toHaveBeenCalled();
@@ -489,7 +410,7 @@ describe("AdminRewardDetailModal", () => {
 
       const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
 
-      fireEvent.press(getByTestId("primary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-primary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith("Error", "Save failed");
@@ -501,7 +422,7 @@ describe("AdminRewardDetailModal", () => {
     it("should show delete confirmation dialog", async () => {
       const { getByTestId } = renderWithProviders(<AdminRewardDetailModal {...defaultProps} />);
 
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
 
       await waitFor(() => {
         expect(Alert.alert).toHaveBeenCalledWith(
@@ -522,7 +443,7 @@ describe("AdminRewardDetailModal", () => {
         },
       );
 
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
 
       await waitFor(() => {
         expect(alertCallbacks.length).toBeGreaterThan(0);
@@ -550,7 +471,7 @@ describe("AdminRewardDetailModal", () => {
         },
       );
 
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
 
       await waitFor(() => {
         const deleteButton = alertCallbacks.find(
@@ -576,7 +497,7 @@ describe("AdminRewardDetailModal", () => {
         },
       );
 
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
 
       await waitFor(() => {
         const deleteButton = alertCallbacks.find(
@@ -604,7 +525,7 @@ describe("AdminRewardDetailModal", () => {
         },
       );
 
-      fireEvent.press(getByTestId("secondary-button"));
+      fireEvent.press(getByTestId("app-modal-footer-secondary"));
 
       await waitFor(() => {
         const deleteButton = alertCallbacks.find(
@@ -738,7 +659,7 @@ describe("AdminRewardDetailModal", () => {
         <AdminRewardDetailModal {...defaultProps} />,
       );
 
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       const collectionInput = inputs.find(
         (input) => input.props.placeholder === "Collection method (e.g. pick up at HQ desk)",
       );
@@ -933,7 +854,7 @@ describe("AdminRewardDetailModal", () => {
       const { getAllByTestId } = renderWithProviders(
         <AdminRewardDetailModal {...defaultProps} rewardId="original-cost-reward" />,
       );
-      const inputs = getAllByTestId("text-input");
+      const inputs = getAllByTestId("themed-text-input");
       expect(inputs[3]!.props.value).toBe("15");
     });
 

@@ -500,3 +500,79 @@ describe("useAdminSchedules", () => {
     expect(result.current.isLoading).toBe(false);
   });
 });
+
+import {
+  toTriggerTime,
+  isScheduleRecurring,
+  buildScheduleMessage,
+} from "../../admin/useAdminSchedules";
+
+describe("toTriggerTime", () => {
+  it("should format single-digit hour and minute with leading zeros", () => {
+    expect(toTriggerTime(9, 5)).toBe("09:05");
+  });
+
+  it("should format double-digit hour and minute", () => {
+    expect(toTriggerTime(23, 59)).toBe("23:59");
+  });
+
+  it("should handle midnight", () => {
+    expect(toTriggerTime(0, 0)).toBe("00:00");
+  });
+
+  it("should handle noon", () => {
+    expect(toTriggerTime(12, 0)).toBe("12:00");
+  });
+});
+
+describe("isScheduleRecurring", () => {
+  it("should return true for multi-day schedule", () => {
+    const startDate = "2024-01-01T00:00:00Z";
+    const endDate = "2024-01-02T00:00:01Z";
+    expect(isScheduleRecurring(startDate, endDate)).toBe(true);
+  });
+
+  it("should return false for same-day schedule", () => {
+    const startDate = "2024-01-01T00:00:00Z";
+    const endDate = "2024-01-01T23:59:59Z";
+    expect(isScheduleRecurring(startDate, endDate)).toBe(false);
+  });
+
+  it("should return true for exact 24-hour schedule", () => {
+    const startDate = "2024-01-01T00:00:00Z";
+    const endDate = "2024-01-02T00:00:00Z";
+    expect(isScheduleRecurring(startDate, endDate)).toBe(true);
+  });
+
+  it("should handle Date objects", () => {
+    const startDate = new Date("2024-01-01T00:00:00Z");
+    const endDate = new Date("2024-01-03T00:00:00Z");
+    expect(isScheduleRecurring(startDate, endDate)).toBe(true);
+  });
+});
+
+describe("buildScheduleMessage", () => {
+  it("should prefer notification body over title", () => {
+    expect(buildScheduleMessage("Body", "Title", "TYPE")).toBe("Body");
+  });
+
+  it("should fall back to title when body is null", () => {
+    expect(buildScheduleMessage(null, "Title", "TYPE")).toBe("Title");
+  });
+
+  it("should fall back to title when body is undefined", () => {
+    expect(buildScheduleMessage(undefined, "Title", "TYPE")).toBe("Title");
+  });
+
+  it("should use default message when both are null", () => {
+    expect(buildScheduleMessage(null, null, "REMINDER")).toBe("Scheduled notification: REMINDER");
+  });
+
+  it("should use default message when both are undefined", () => {
+    expect(buildScheduleMessage(undefined, undefined, "ALERT")).toBe("Scheduled notification: ALERT");
+  });
+
+  it("should prefer body even when title is null", () => {
+    expect(buildScheduleMessage("Body", null, "TYPE")).toBe("Body");
+  });
+});

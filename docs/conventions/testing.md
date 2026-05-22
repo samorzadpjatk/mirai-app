@@ -241,6 +241,93 @@ export default defineConfig({
 bun run test --coverage
 ```
 
+## Test Quality Standards
+
+### The "Mock Verification" Anti-Pattern
+
+- **Pattern**: Mock `useQuery`/`useMutation`, return fake data, assert the hook returns that exact data.
+- **Problem**: Tests the mock, not the code. Passes even if actual API, cache keys, or error handling is broken.
+- **Prevalence**: 40+ native hook test files in this monorepo.
+- **Rule**: Test behavior, not implementation. If a test passes with a dummy implementation, delete or rewrite it.
+
+### Transaction Rollback Testing Gap
+
+- **Critical**: `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
+- **Rule**: Add at least one failure-path transaction test per router. Create `MockTransactionDB` that simulates rollback.
+
+### Verification Checklist for All Tests
+
+Before merging any test, verify:
+
+- [ ] Does the test verify **output/behavior**, not just that a mock was called?
+- [ ] Would the test **fail** if the real implementation had a bug?
+- [ ] Does the test still pass if you replace the implementation with a dummy? If **yes** → delete or rewrite.
+- [ ] Are error paths tested (timeout, retry exhaustion, partial failure)?
+- [ ] Are transactions tested for rollback on failure?
+
+### Test Value Ratings (Evidence-Based)
+
+| Area | Rating | Why |
+|------|--------|-----|
+| Router tests (`packages/orpc`) | 4/5 | Test actual router outputs via `createRouterClient` |
+| Auth logic tests (`packages/auth`) | 4/5 | Verify real auth branches (token, roles, bans) |
+| Store tests (`packages/shared`) | 3/5 | Good state transitions but has useless runtime type tests |
+| Component tests (`apps/native`) | 4/5 | Improved — mock removal completed for 14 test files, real component rendering |
+| Hook tests (`apps/native`) | 3/5 | Improving — pure function extraction ongoing; mock-verification tests being replaced |
+| Database tests (`packages/db`) | N/A | Explicitly no unit tests — needs integration tests |
+
+### Component Mock Removal Playbook
+
+**Context**: Mocking shared UI components per test (`jest.mock("~/components/common/ui")`).
+
+**Problem**: Breaks when component API changes; tests fake behavior rather than real component rendering.
+
+**Steps**:
+1. Delete `jest.mock("~/components/common/ui")` from test file
+2. Add descriptive `testID` props to real components (if missing)
+3. Update test queries: `getByTestId("mock-id")` → `getByTestId("real-component-id")` or `getByText`
+4. Run tests. If component API changed since mock was written, fix the test to match real behavior.
+5. Verify the test still fails if the real component breaks.
+
+**Examples of descriptive testIDs**:
+- `ThemedTextInput` → `testID="themed-text-input"`
+- `SegmentedOption` → `testID="segmented-option-${label}"`
+- `AppModalFooter` → `primaryTestID="app-modal-footer-primary"`, `secondaryTestID="app-modal-footer-secondary"`
+
+### Pure Function Extraction Playbook
+
+**Context**: Hook test files exceeding 200 lines mocking React Query internals.
+
+**Steps**:
+1. Identify 30–60 lines of domain logic inside hook (callbacks, transformations, calculations)
+2. Extract to top-level function with dependencies passed as parameters
+3. Write unit tests for the extracted function using real data (no mocks)
+4. Replace hook body with thin imperative shell calling the extracted function
+5. Delete or shrink hook test file if it only verified mocks
+
+**Naming conventions**:
+| Prefix | Use case |
+|--------|----------|
+| `calculateXxx` | Derived state from inputs |
+| `syncXxx` | Reconcile local and remote state |
+| `executeXxx` | Side-effectful operation with DI |
+| `buildXxx` | Factory for callbacks/closures |
+| `toXxxOrNull` | Type coercion with validation |
+
+### Constructor Mock Resilience
+
+**Context**: `jest.clearAllMocks()` in global `beforeEach` resets all mocks including properties on constructor mocks.
+
+**Anti-pattern**: `mockFileConstructor.downloadFileAsync = jest.fn()` — gets wiped between tests.
+
+**Pattern**: Use `Object.defineProperty` with getter:
+```javascript
+Object.defineProperty(mockFileConstructor, "downloadFileAsync", {
+  get: () => jest.fn(),
+  configurable: true,
+});
+```
+
 ## Best Practices
 
 1. **Test behavior, not implementation** - Test what code does, not how
@@ -257,6 +344,13 @@ bun run test --coverage
    });
    ```
 
+### What NOT to Test
+
+- **TypeScript interface runtime tests**: `expect(user.role).toBe(role)` after assigning `role` — TypeScript compiler already verifies this.
+- **"It didn't crash" tests**: `expect(element).toBeOnTheScreen()` after rendering with a prop.
+- **Framework plumbing**: Testing that React Query's `isLoading` flag propagates through your hook.
+- **Mock call counts**: `expect(mockFn).toHaveBeenCalledTimes(1)` — tests implementation, not behavior.
+
 ## Running Tests
 
 ```bash
@@ -272,6 +366,24 @@ bun run test:ui
 # Specific file
 bun run test src/test/user.test.ts
 ```
+
+## Test Runner
+
+### Vitest vs Bun Test Runner
+
+**Rule**: This monorepo uses Vitest (`vitest run`), NOT Bun's native test runner.
+
+- `bun test` → uses Bun's built-in test runner. **DO NOT USE.** It lacks support for `vi.importActual`, `vi.stubGlobal`, `vi.fn().mockRejectedValueOnce()`, and other vitest-specific APIs.
+- `bun run test` → runs `vitest run` per `package.json` script. **ALWAYS USE THIS.**
+
+**Verification**: If you see `TypeError: vi.importActual is not a function` or `TypeError: vi.stubGlobal is not a function`, you are running `bun test` instead of `bun run test`.
+
+### Test Failure Classification
+
+When seeing many test failures after a refactoring:
+1. First run `bun run test` (vitest) to get the real picture
+2. If vitest passes but `bun test` fails → the failures are false positives from the wrong runner
+3. If both fail → investigate actual regressions
 
 ## Further Reading
 

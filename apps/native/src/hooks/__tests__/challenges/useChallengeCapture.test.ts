@@ -1,6 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
-import { useChallengeCapture } from "../../challenges/useChallengeCapture";
+import {
+  useChallengeCapture,
+  validateChallengeSubmission,
+  buildStoragePath,
+  buildUploadConfig,
+} from "../../challenges/useChallengeCapture";
 import { Alert } from "react-native";
 
 // Mock expo-image-picker
@@ -1292,5 +1297,102 @@ describe("useChallengeCapture", () => {
         fileName: "image.jpg",
       }),
     );
+  });
+});
+
+describe("validateChallengeSubmission", () => {
+  it("should return groupId when all preconditions are met", () => {
+    const userTrip = {
+      trips: [{ tripId: "trip1", group: { id: "group1" } }],
+    };
+    expect(validateChallengeSubmission("trip1", "challenge1", userTrip)).toBe("group1");
+  });
+
+  it("should return null when tripId is missing", () => {
+    const userTrip = { trips: [{ tripId: "trip1", group: { id: "group1" } }] };
+    expect(validateChallengeSubmission(undefined, "challenge1", userTrip)).toBeNull();
+  });
+
+  it("should return null when challengeId is missing", () => {
+    const userTrip = { trips: [{ tripId: "trip1", group: { id: "group1" } }] };
+    expect(validateChallengeSubmission("trip1", undefined, userTrip)).toBeNull();
+  });
+
+  it("should return null when userTrip is null", () => {
+    expect(validateChallengeSubmission("trip1", "challenge1", null)).toBeNull();
+  });
+
+  it("should return null when userTrip is undefined", () => {
+    expect(validateChallengeSubmission("trip1", "challenge1", undefined)).toBeNull();
+  });
+
+  it("should return null when no matching trip found", () => {
+    const userTrip = { trips: [{ tripId: "other", group: { id: "group1" } }] };
+    expect(validateChallengeSubmission("trip1", "challenge1", userTrip)).toBeNull();
+  });
+
+  it("should return null when matching trip has no group", () => {
+    const userTrip = { trips: [{ tripId: "trip1", group: null }] };
+    expect(validateChallengeSubmission("trip1", "challenge1", userTrip)).toBeNull();
+  });
+
+  it("should find correct trip among multiple trips", () => {
+    const userTrip = {
+      trips: [
+        { tripId: "tripA", group: { id: "groupA" } },
+        { tripId: "trip1", group: { id: "groupB" } },
+      ],
+    };
+    expect(validateChallengeSubmission("trip1", "challenge1", userTrip)).toBe("groupB");
+  });
+});
+
+describe("buildStoragePath", () => {
+  it("should build path with given challengeId, groupId, extension, and timestamp", () => {
+    const path = buildStoragePath("ch1", "g1", "jpg", 1234567890);
+    expect(path).toBe("challenge/ch1/g1-1234567890.jpg");
+  });
+
+  it("should build path with default timestamp when not provided", () => {
+    const before = Date.now();
+    const path = buildStoragePath("ch1", "g1", "png");
+    const after = Date.now();
+
+    expect(path).toMatch(/^challenge\/ch1\/g1-\d+\.png$/);
+    const timestamp = Number(path.match(/g1-(\d+)\.png/)?.[1]);
+    expect(timestamp).toBeGreaterThanOrEqual(before);
+    expect(timestamp).toBeLessThanOrEqual(after);
+  });
+});
+
+describe("buildUploadConfig", () => {
+  it("should build upload config from asset and storage path", () => {
+    const asset = {
+      uri: "file:///test/image.jpg",
+      fileName: "my-image.jpg",
+      mimeType: "image/jpeg",
+    };
+
+    const config = buildUploadConfig(asset, "challenge/ch1/g1-123.jpg", "jpg");
+
+    expect(config).toEqual({
+      storagePath: "challenge/ch1/g1-123.jpg",
+      fileUri: "file:///test/image.jpg",
+      fileName: expect.any(String),
+      contentType: "image/jpeg",
+      upsert: true,
+    });
+  });
+
+  it("should compute contentType from extension when mimeType is null", () => {
+    const asset = {
+      uri: "file:///test/image.jpg",
+      fileName: "image.jpg",
+      mimeType: null,
+    };
+
+    const config = buildUploadConfig(asset, "path/to/file.jpg", "jpg");
+
+    expect(config.contentType).toBeTruthy();
   });
 });

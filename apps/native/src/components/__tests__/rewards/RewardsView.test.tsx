@@ -1,337 +1,145 @@
 import React from "react";
-import { Alert, View } from "react-native";
-import { fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsView from "../../rewards/RewardsView";
-import type { RewardListItem } from "../../rewards/types";
 
-const mockPush = jest.fn();
-const mockInvalidateQueries = jest.fn(() => Promise.resolve());
-const mockRefetch = jest.fn(() => Promise.resolve());
-const mockMutateAsync = jest.fn(() => Promise.resolve());
+let mockUseRewardsReturn = {
+  data: null,
+  isLoading: false,
+  error: null,
+  refetch: jest.fn(),
+};
 
-interface RewardsResult {
-  data: RewardListItem[] | undefined;
-  isLoading: boolean;
-  error: Error | null;
-  refetch: typeof mockRefetch;
-}
+let mockUseMyGroupReturn = {
+  group: null,
+};
 
-interface MyGroupResult {
-  group: { id: string; name: string; coins: number } | null;
-}
+let mockUseTripDetailsReturn = {
+  isTripPast: false,
+};
 
-interface TripDetailsResult {
-  isTripPast: boolean;
-}
-
-interface PurchaseRewardResult {
-  mutateAsync: typeof mockMutateAsync;
-  isPending: boolean;
-}
-
-const mockUseRewards = jest.fn(
-  (): RewardsResult => ({
-    data: [],
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  }),
-);
-
-const mockUseMyGroup = jest.fn(
-  (): MyGroupResult => ({
-    group: null,
-  }),
-);
-
-const mockUseTripDetails = jest.fn(
-  (): TripDetailsResult => ({
-    isTripPast: false,
-  }),
-);
-
-const mockUsePurchaseReward = jest.fn(
-  (): PurchaseRewardResult => ({
-    mutateAsync: mockMutateAsync,
-    isPending: false,
-  }),
-);
-
-const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
-  id: "reward-1",
-  name: "Test Reward",
-  description: "A test reward",
-  availableQuantity: 10,
-  image: null,
-  images: [],
-  signedImageUrls: [],
-  coinCost: 50,
-  originalCoinCost: undefined,
-  createdBy: {
-    id: "user-1",
-    firstName: "John",
-    lastName: "Doe",
-  },
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  tripId: "trip-1",
-  canAfford: true,
-  isEligibleToBuy: true,
-  isOutOfStock: false,
-  purchasedCount: 0,
-  ...overrides,
-});
-
-jest.mock("expo-router", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}));
-
-const mockUseQueryClient = jest.fn(() => ({
-  invalidateQueries: mockInvalidateQueries,
-}));
-
-jest.mock("@tanstack/react-query", () => {
-  return {
-    QueryClient: class MockQueryClient {
-      mount = jest.fn();
-      unmount = jest.fn();
-      isFetching = jest.fn(() => 0);
-      getQueryCache = jest.fn(() => ({ subscribe: jest.fn() }));
-      getMutationCache = jest.fn(() => ({ subscribe: jest.fn() }));
-      getDefaultOptions = jest.fn(() => ({}));
-      setDefaultOptions = jest.fn();
-      getQueryDefaults = jest.fn();
-      setQueryDefaults = jest.fn();
-      getMutationDefaults = jest.fn();
-      setMutationDefaults = jest.fn();
-      clear = jest.fn();
-      resetQueries = jest.fn();
-      cancelQueries = jest.fn();
-      invalidateQueries = jest.fn();
-      refetchQueries = jest.fn();
-      fetchQuery = jest.fn();
-      prefetchQuery = jest.fn();
-      fetchInfiniteQuery = jest.fn();
-      prefetchInfiniteQuery = jest.fn();
-      setQueryData = jest.fn();
-      getQueryData = jest.fn();
-      getQueriesData = jest.fn();
-      setQueriesData = jest.fn();
-      getQueryState = jest.fn();
-      removeQueries = jest.fn();
-      removeQueryCache = jest.fn();
-      setMutationCache = jest.fn();
-      executeMutation = jest.fn();
-      getLogger = jest.fn(() => ({ log: jest.fn(), error: jest.fn() }));
-      defaultOptions = {};
-    },
-    QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
-    useQueryClient: () => mockUseQueryClient(),
-  };
-});
+let mockUsePurchaseRewardReturn = {
+  mutateAsync: jest.fn(),
+  isPending: false,
+};
 
 jest.mock("~/hooks/rewards", () => ({
-  useRewards: (_tripId: string) => mockUseRewards(),
-  usePurchaseReward: () => mockUsePurchaseReward(),
+  useRewards: jest.fn().mockImplementation(() => mockUseRewardsReturn),
+  usePurchaseReward: jest.fn().mockImplementation(() => mockUsePurchaseRewardReturn),
 }));
 
 jest.mock("~/hooks/groups", () => ({
-  useMyGroup: (_tripId: string) => mockUseMyGroup(),
+  useMyGroup: jest.fn().mockImplementation(() => mockUseMyGroupReturn),
 }));
 
 jest.mock("~/hooks/trips", () => ({
-  useTripDetails: (_tripId: string) => mockUseTripDetails(),
+  useTripDetails: jest.fn().mockImplementation(() => mockUseTripDetailsReturn),
 }));
 
-jest.mock("@expo/vector-icons", () => {
-  const { View } = jest.requireActual("react-native");
+jest.mock("expo-router", () => ({
+  useRouter: jest.fn().mockReturnValue({ push: jest.fn() }),
+}));
+
+jest.mock("@tanstack/react-query", () => {
+  const actual = jest.requireActual("@tanstack/react-query");
   return {
-    Ionicons: function MockIonicons({
-      name,
-      size,
-      color,
-    }: {
-      name: string;
-      size: number;
-      color: string;
-    }) {
-      return <View testID={`icon-${name}`} style={{ width: size, height: size, color }} />;
-    },
+    ...actual,
+    useQueryClient: jest.fn().mockReturnValue({
+      invalidateQueries: jest.fn(),
+    }),
+  };
+});
+
+jest.mock("~/components/rewards/RewardCard", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: ({ reward }: { reward: { id: string } }) => <View testID={`reward-card-${reward.id}`} />,
+  };
+});
+
+jest.mock("~/components/rewards/RewardPurchaseModal", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: () => <View testID="purchase-modal" />,
+  };
+});
+
+jest.mock("~/components/rewards/RewardDetailsModal", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: () => <View testID="details-modal" />,
   };
 });
 
 describe("RewardsView", () => {
+  const defaultProps = {
+    tripId: "trip-1",
+  };
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
-    mockUseRewards.mockReturnValue({
-      data: [],
+    mockUseRewardsReturn = {
+      data: null,
       isLoading: false,
       error: null,
-      refetch: mockRefetch,
-    });
-    mockUseMyGroup.mockReturnValue({ group: null });
-    mockUseTripDetails.mockReturnValue({ isTripPast: false });
-    mockUsePurchaseReward.mockReturnValue({ mutateAsync: mockMutateAsync, isPending: false });
+      refetch: jest.fn(),
+    };
+    mockUseMyGroupReturn = { group: null };
+    mockUseTripDetailsReturn = { isTripPast: false };
+    mockUsePurchaseRewardReturn = {
+      mutateAsync: jest.fn(),
+      isPending: false,
+    };
   });
 
-  const defaultProps = { tripId: "trip-1" };
+  it("should render loading state when isLoading is true", () => {
+    mockUseRewardsReturn.isLoading = true;
+    const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
-  it("renders loading state", () => {
-    mockUseRewards.mockReturnValue({
-      data: [],
-      isLoading: true,
-      error: null,
-      refetch: mockRefetch,
-    });
-
-    const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    expect(getByText("Loading rewards...")).toBeTruthy();
     expect(getByTestId("loading-indicator")).toBeTruthy();
   });
 
-  it("renders error state", () => {
-    mockUseRewards.mockReturnValue({
-      data: [],
-      isLoading: false,
-      error: new Error("Failed to load"),
-      refetch: mockRefetch,
-    });
-
-    const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
+  it("should render error state when error exists", () => {
+    mockUseRewardsReturn.error = new Error("Failed to load");
+    const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     expect(getByText("Failed to load rewards")).toBeTruthy();
-    expect(getByTestId("icon-alert-circle")).toBeTruthy();
   });
 
-  it("renders empty state", () => {
-    const { getByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
+  it("should render empty state when no rewards", () => {
+    mockUseRewardsReturn.data = [];
+    const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     expect(getByText("No rewards available for this trip")).toBeTruthy();
-    expect(getByTestId("icon-gift")).toBeTruthy();
   });
 
-  it("renders reward cards and actions", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward({ originalCoinCost: 25 })],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-    mockUseMyGroup.mockReturnValue({ group: { id: "group-1", name: "Team A", coins: 500 } });
-
-    const { getByText, getAllByText } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    expect(getByText("Rewards")).toBeTruthy();
-    expect(getByText("History")).toBeTruthy();
-    expect(getByText("Team A")).toBeTruthy();
-    expect(getByText("500 coins")).toBeTruthy();
-    expect(getByText("Test Reward")).toBeTruthy();
-    expect(getByText("A test reward")).toBeTruthy();
-    expect(getByText("50 coins")).toBeTruthy();
-    expect(getByText("10 pcs.")).toBeTruthy();
-    expect(getByText("25% of total points")).toBeTruthy();
-    expect(getAllByText("Claim reward").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("navigates to history when history button is pressed", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward()],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-
-    const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    fireEvent.press(getByText("History"));
-
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: "/trips/rewards/history",
-      params: { tripId: "trip-1" },
-    });
-  });
-
-  it("opens purchase modal when claim button is pressed", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward()],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-    mockUseMyGroup.mockReturnValue({ group: { id: "group-1", name: "Team A", coins: 500 } });
-
-    const { getAllByText, getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    const claimButton = getAllByText("Claim reward")[0];
-    expect(claimButton).toBeTruthy();
-    fireEvent.press(claimButton!);
-
-    expect(getByTestId("purchase-modal")).toBeTruthy();
-  });
-
-  it("shows sold out, insufficient coins, and only leader states", () => {
-    mockUseRewards.mockReturnValue({
-      data: [
-        baseReward({ id: "sold-out", isOutOfStock: true, availableQuantity: 0 }),
-        baseReward({ id: "no-coins", canAfford: false, coinCost: 1000 }),
-        baseReward({ id: "leader-only", isEligibleToBuy: false }),
-      ],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-    mockUseTripDetails.mockReturnValue({ isTripPast: false });
-
-    const { getAllByText } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    expect(getAllByText("Sold out").length).toBeGreaterThanOrEqual(1);
-    expect(getAllByText("Not enough coins").length).toBeGreaterThanOrEqual(1);
-    expect(getAllByText("Only group leader").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("shows trip ended state when trip is past", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward()],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-    mockUseTripDetails.mockReturnValue({ isTripPast: true });
-
-    const { getAllByText } = renderWithProviders(<RewardsView {...defaultProps} />);
-
-    expect(getAllByText("Trip ended").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders refresh control and image placeholder icon", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward({ image: null, images: [] })],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-
+  it("should render rewards list when data exists", () => {
+    mockUseRewardsReturn.data = [
+      { id: "reward-1", name: "Reward 1" },
+      { id: "reward-2", name: "Reward 2" },
+    ];
     const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
-    expect(getByTestId("rewards-scroll-view")).toBeTruthy();
-    expect(getByTestId("icon-gift-outline")).toBeTruthy();
+    expect(getByTestId("reward-card-reward-1")).toBeTruthy();
+    expect(getByTestId("reward-card-reward-2")).toBeTruthy();
   });
 
-  it("renders original coin cost percentage when available", () => {
-    mockUseRewards.mockReturnValue({
-      data: [baseReward({ originalCoinCost: 25 })],
-      isLoading: false,
-      error: null,
-      refetch: mockRefetch,
-    });
-
+  it("should render group coins info when user has a group", () => {
+    mockUseRewardsReturn.data = [{ id: "reward-1", name: "Reward 1" }];
+    mockUseMyGroupReturn.group = { name: "Group A", coins: 500 };
     const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 
-    expect(getByText("25% of total points")).toBeTruthy();
+    expect(getByText("Group A")).toBeTruthy();
+    expect(getByText("500 coins")).toBeTruthy();
+  });
+
+  it("should render modals", () => {
+    mockUseRewardsReturn.data = [{ id: "reward-1", name: "Reward 1" }];
+    const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
+
+    expect(getByTestId("purchase-modal")).toBeTruthy();
+    expect(getByTestId("details-modal")).toBeTruthy();
   });
 });

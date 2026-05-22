@@ -1,6 +1,7 @@
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { logger } from "@mirai-app/shared";
 
 const DEFAULT_MIGRATIONS_FOLDER = "/drizzle";
 
@@ -19,7 +20,7 @@ const DEFAULT_MIGRATIONS_FOLDER = "/drizzle";
 export async function runMigrations(databaseUrl: string, migrationsFolder?: string): Promise<void> {
   const folder = migrationsFolder ?? process.env.MIGRATIONS_FOLDER ?? DEFAULT_MIGRATIONS_FOLDER;
 
-  console.log(`[Migration] Starting database migrations from "${folder}"...`);
+  logger.info({ folder }, "Starting database migrations");
   const start = Date.now();
 
   const client = postgres(databaseUrl, { max: 1 });
@@ -28,9 +29,9 @@ export async function runMigrations(databaseUrl: string, migrationsFolder?: stri
   try {
     await migrate(db, { migrationsFolder: folder });
     const elapsed = Date.now() - start;
-    console.log(`[Migration] Completed successfully in ${elapsed}ms`);
+    logger.info({ elapsed }, "Database migrations completed");
   } catch (error) {
-    console.error("[Migration] Failed:", error);
+    logger.error(error, "Database migrations failed");
     throw error;
   } finally {
     await client.end();

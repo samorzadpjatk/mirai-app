@@ -10,6 +10,15 @@ import {
 import { useLocationContext } from "~/stores/location";
 import { useMapOverlayStore } from "~/stores/map";
 import { colors, spacing, typography } from "~/styles";
+import {
+  calculateBackgroundDisplayState,
+  buildBackgroundStatusLabel,
+  calculateBackgroundControlDisabled,
+  getBackgroundIconName,
+  getLocationIconName,
+  getThemeIconName,
+  getBackgroundIconColor,
+} from "./mapActionButtonsUtils";
 
 export function MapActionButtons() {
   const {
@@ -23,10 +32,16 @@ export function MapActionButtons() {
   } = useLocationContext();
   const { mapTheme, onRecenter, toggleTheme } = useMapOverlayStore();
 
-  const isBackgroundDisplayedOn = isLocationSharingEnabled && isBackgroundLocationEnabled;
-  const backgroundStatusLabel = isBackgroundDisplayedOn ? "On" : "Off";
-  const isBackgroundControlDisabled =
-    !isLocationSharingEnabled || isLoading || isUpdatingBackgroundLocation;
+  const isBackgroundDisplayedOn = calculateBackgroundDisplayState(
+    isLocationSharingEnabled,
+    isBackgroundLocationEnabled,
+  );
+  const backgroundStatusLabel = buildBackgroundStatusLabel(isBackgroundDisplayedOn);
+  const isBackgroundControlDisabled = calculateBackgroundControlDisabled(
+    isLocationSharingEnabled,
+    isLoading,
+    isUpdatingBackgroundLocation,
+  );
 
   return (
     <>
@@ -68,15 +83,9 @@ export function MapActionButtons() {
                 {backgroundStatusLabel}
               </Text>
               <Ionicons
-                name={isBackgroundDisplayedOn ? "navigate" : "navigate-outline"}
+                name={getBackgroundIconName(isBackgroundDisplayedOn)}
                 size={18}
-                color={
-                  isBackgroundControlDisabled
-                    ? colors.textMuted
-                    : isBackgroundDisplayedOn
-                      ? colors.primary
-                      : colors.white
-                }
+                color={getBackgroundIconColor(isBackgroundControlDisabled, isBackgroundDisplayedOn)}
               />
             </>
           )}
@@ -104,7 +113,7 @@ export function MapActionButtons() {
                 {isLocationSharingEnabled ? "On" : "Off"}
               </Text>
               <Ionicons
-                name={isLocationSharingEnabled ? "location" : "locate"}
+                name={getLocationIconName(isLocationSharingEnabled)}
                 size={20}
                 color={isLocationSharingEnabled ? colors.primary : colors.white}
               />
@@ -116,7 +125,7 @@ export function MapActionButtons() {
           style={styles.themeToggleButton}
           onPress={toggleTheme}
         >
-          <Ionicons name={mapTheme === "dark" ? "sunny" : "moon"} size={22} color="#00ced1" />
+          <Ionicons name={getThemeIconName(mapTheme)} size={22} color="#00ced1" />
         </Pressable>
         {isLocationSharingEnabled && (
           <Pressable testID="recenter-button" style={styles.recenterButton} onPress={onRecenter}>

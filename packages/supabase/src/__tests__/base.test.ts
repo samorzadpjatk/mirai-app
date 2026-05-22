@@ -1,11 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import createBaseSupabaseClient from "../base";
 import { createClient } from "@supabase/supabase-js";
+import { logger } from "@mirai-app/shared";
 import type { SupabaseClientOptions } from "../types";
 
 // Mock the @supabase/supabase-js module
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(),
+}));
+
+vi.mock("@mirai-app/shared", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 describe("createBaseSupabaseClient", () => {
@@ -145,14 +155,13 @@ describe("createBaseSupabaseClient", () => {
     );
   });
 
-  it("should log client creation with URL", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-
+  it("should log client creation with URL", async () => {
     createBaseSupabaseClient(mockUrl, mockAnonKey);
 
-    expect(consoleSpy).toHaveBeenCalledWith(`[Supabase] Creating client with URL: ${mockUrl}`);
-
-    consoleSpy.mockRestore();
+    expect(logger.debug).toHaveBeenCalledWith(
+      { url: mockUrl },
+      "Creating Supabase client",
+    );
   });
 
   it("should handle different URL formats", () => {

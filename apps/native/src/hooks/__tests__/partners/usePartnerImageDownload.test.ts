@@ -12,7 +12,13 @@ jest.mock("~/hooks/files/useFileDownload", () => ({
   })),
 }));
 
-import { usePartnerImageDownload } from "../../partners/usePartnerImageDownload";
+import {
+  usePartnerImageDownload,
+  getPlaceholderPath,
+  isComponentUnmountedErrorMessage,
+  resolveImageUrlFromDownloadResult,
+  calculatePartnerImageLoadingState,
+} from "../../partners/usePartnerImageDownload";
 
 describe("usePartnerImageDownload", () => {
   beforeEach(() => {
@@ -81,5 +87,47 @@ describe("usePartnerImageDownload", () => {
     await waitFor(() => {
       expect(mockDownload).toHaveBeenCalledTimes(2);
     });
+  });
+});
+
+describe("getPlaceholderPath", () => {
+  it("should return placeholder path", () => {
+    expect(getPlaceholderPath()).toBe("image/placeholder/partner-logo.png");
+  });
+});
+
+describe("isComponentUnmountedErrorMessage", () => {
+  it("should return true for unmounted message", () => {
+    expect(isComponentUnmountedErrorMessage("component unmounted")).toBe(true);
+  });
+
+  it("should return false for other messages", () => {
+    expect(isComponentUnmountedErrorMessage("network error")).toBe(false);
+  });
+});
+
+describe("resolveImageUrlFromDownloadResult", () => {
+  it("should return uri when present", () => {
+    expect(resolveImageUrlFromDownloadResult({ uri: "file:///test.jpg" })).toBe("file:///test.jpg");
+  });
+
+  it("should return null when uri is missing", () => {
+    expect(resolveImageUrlFromDownloadResult({})).toBeNull();
+    expect(resolveImageUrlFromDownloadResult(null)).toBeNull();
+    expect(resolveImageUrlFromDownloadResult(undefined)).toBeNull();
+  });
+});
+
+describe("calculatePartnerImageLoadingState", () => {
+  it("should return true when isLoading is true", () => {
+    expect(calculatePartnerImageLoadingState(true, "idle")).toBe(true);
+  });
+
+  it("should return true when download status is loading", () => {
+    expect(calculatePartnerImageLoadingState(false, "loading")).toBe(true);
+  });
+
+  it("should return false when neither is loading", () => {
+    expect(calculatePartnerImageLoadingState(false, "idle")).toBe(false);
   });
 });

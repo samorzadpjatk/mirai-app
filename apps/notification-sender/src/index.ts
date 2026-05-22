@@ -1,6 +1,7 @@
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
 import { getORPCClient } from "@mirai-app/orpc/client";
+import { logger } from "@mirai-app/orpc";
 
 interface NotificationRow {
   id: string;
@@ -37,7 +38,7 @@ export function main() {
       const mobile = await client.notificationSender.sendMobileNotifications({
         notificationId: id,
       });
-      console.log("Delivery summary:", { mobile });
+      logger.info({ mobile }, "Delivery summary");
 
       await client.notificationSender.trackDeliveryComplete({
         notificationId: id,
@@ -47,7 +48,7 @@ export function main() {
         errors: mobile.success ? null : "Some deliveries failed",
       });
     } catch (err) {
-      console.error("Failed handling Notification INSERT:", err);
+      logger.error(err, "Failed handling Notification INSERT");
 
       try {
         await client.notificationSender.trackDeliveryFailure({
@@ -55,7 +56,7 @@ export function main() {
           error: err instanceof Error ? err : String(err),
         });
       } catch (trackErr) {
-        console.error("Failed to track delivery failure:", trackErr);
+        logger.error(trackErr, "Failed to track delivery failure");
       }
     }
   };
@@ -72,11 +73,11 @@ export function main() {
       },
     )
     .subscribe((status) => {
-      console.log("Realtime channel status:", status);
+      logger.info({ status }, "Realtime channel status");
     });
 
   process.on("SIGINT", () => {
-    console.log("Shutting down...");
+    logger.info("Shutting down");
     void supabase.removeChannel(channel);
     void cleanup();
     process.exit(0);
@@ -87,7 +88,7 @@ if (import.meta.main) {
   try {
     main();
   } catch (err) {
-    console.error(err);
+    logger.error(err, "Notification sender fatal error");
     process.exit(1);
   }
 }

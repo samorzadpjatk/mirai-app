@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook } from "@testing-library/react-native";
-import { useGroups } from "../../groups/useGroups";
+import { useGroups, buildGroupQueryInput, getNextGroupPageParam } from "../../groups/useGroups";
 
 const mockUseInfiniteQuery = jest.fn();
 const mockGetAllInfiniteOptions = jest.fn(
@@ -407,5 +407,49 @@ describe("useGroups", () => {
 
       expect(typeof result.current.setSearchQuery).toBe("function");
     });
+  });
+});
+
+describe("buildGroupQueryInput", () => {
+  it("should build query input with valid tripId and pageParam", () => {
+    const result = buildGroupQueryInput("trip-123", 30);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should default offset to 0 when pageParam is 0", () => {
+    const result = buildGroupQueryInput("trip-123", 0);
+    expect(result).toEqual({
+      tripId: "trip-123",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+
+  it("should use empty string for null tripId", () => {
+    const result = buildGroupQueryInput(null, 0);
+    expect(result.tripId).toBe("");
+  });
+
+  it("should use empty string for undefined tripId", () => {
+    const result = buildGroupQueryInput(undefined, 0);
+    expect(result.tripId).toBe("");
+  });
+});
+
+describe("getNextGroupPageParam", () => {
+  it("should return undefined when no more pages", () => {
+    const result = getNextGroupPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return next offset when more pages exist", () => {
+    const result = getNextGroupPageParam({
+      pagination: { hasMore: true, offset: 30, limit: 30 },
+    });
+    expect(result).toBe(60);
   });
 });

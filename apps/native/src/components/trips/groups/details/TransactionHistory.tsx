@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName } from "@mirai-app/shared";
 import { colors, spacing, borderRadius, typography } from "../../../../styles";
 
 interface CoinTransaction {
@@ -20,11 +21,6 @@ interface TransactionHistoryProps {
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transactions }) => {
-  const formatUserName = (firstName?: string | null, lastName?: string | null) => {
-    const name = [firstName, lastName].filter(Boolean).join(" ");
-    return name || "Unknown Admin";
-  };
-
   const formatDate = (date: Date | string) => {
     const dateObj = typeof date === "string" ? new Date(date) : date;
     return dateObj.toLocaleString("en-US", {
@@ -80,7 +76,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
               <View style={styles.transactionMeta}>
                 <Text style={styles.date}>{formatDate(transaction.createdAt)}</Text>
                 <Text style={styles.admin}>
-                  by {formatUserName(transaction.admin.firstName, transaction.admin.lastName)}
+                  by {formatDisplayName(transaction.admin.firstName, transaction.admin.lastName, "Unknown Admin")}
                 </Text>
               </View>
             </View>

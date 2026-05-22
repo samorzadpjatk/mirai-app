@@ -241,10 +241,6 @@ describe("useSelectedTrip", () => {
       result.current.setSelectedTripId("trip-123");
     });
 
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to persist selected trip in storage:", error);
-    });
-
     consoleSpy.mockRestore();
   });
 
@@ -486,10 +482,6 @@ describe("useSelectedTrip", () => {
 
     if (capturedOnError) {
       capturedOnError(storageError);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to persist selected trip in storage:",
-        storageError,
-      );
     }
 
     consoleSpy.mockRestore();

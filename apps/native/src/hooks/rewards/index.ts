@@ -8,6 +8,26 @@ import {
 
 const PAGE_SIZE = 30;
 
+export function buildAdminRewardQueryInput(tripId: string | null | undefined, pageParam: number) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    tripId: tripId ?? "",
+    pagination: {
+      limit: PAGE_SIZE,
+      offset,
+    },
+  };
+}
+
+export function getNextAdminRewardPageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
 export const useRewards = (tripId: string) => {
   return useQuery(
     orpc.reward.getByTrip.queryOptions({ input: { tripId }, enabled: Boolean(tripId) }),
@@ -26,24 +46,9 @@ export const useAdminRewards = (tripId?: string | null) => {
     fetchNextPage,
   } = useInfiniteQuery(
     orpc.reward.getByTripAdmin.infiniteOptions({
-      input: (pageParam: number) => {
-        const offset = typeof pageParam === "number" ? pageParam : 0;
-        return {
-          tripId: tripId ?? "",
-          pagination: {
-            limit: PAGE_SIZE,
-            offset,
-          },
-        };
-      },
+      input: (pageParam: number) => buildAdminRewardQueryInput(tripId, pageParam),
       initialPageParam: 0,
-      getNextPageParam: (lastPage) => {
-        if (!lastPage.pagination.hasMore) {
-          return undefined;
-        }
-
-        return lastPage.pagination.offset + lastPage.pagination.limit;
-      },
+      getNextPageParam: getNextAdminRewardPageParam,
       enabled: Boolean(tripId),
     }),
   );
@@ -132,6 +137,26 @@ export const usePurchaseReward = () => {
   );
 };
 
+export function buildPurchaseHistoryQueryInput(tripId: string, pageParam: number) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    tripId,
+    pagination: {
+      limit: PAGE_SIZE,
+      offset,
+    },
+  };
+}
+
+export function getNextPurchaseHistoryPageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
 export const useRewardPurchaseHistory = (tripId: string) => {
   const {
     data,
@@ -144,24 +169,9 @@ export const useRewardPurchaseHistory = (tripId: string) => {
     fetchNextPage,
   } = useInfiniteQuery(
     orpc.reward.getPurchaseHistory.infiniteOptions({
-      input: (pageParam: number) => {
-        const offset = typeof pageParam === "number" ? pageParam : 0;
-        return {
-          tripId,
-          pagination: {
-            limit: PAGE_SIZE,
-            offset,
-          },
-        };
-      },
+      input: (pageParam: number) => buildPurchaseHistoryQueryInput(tripId, pageParam),
       initialPageParam: 0,
-      getNextPageParam: (lastPage) => {
-        if (!lastPage.pagination.hasMore) {
-          return undefined;
-        }
-
-        return lastPage.pagination.offset + lastPage.pagination.limit;
-      },
+      getNextPageParam: getNextPurchaseHistoryPageParam,
       enabled: Boolean(tripId),
     }),
   );

@@ -13,14 +13,16 @@ interface ChallengeTimeLeftCardProps {
   dailyEndTime?: string | null;
 }
 
-const toDate = (value?: Date | string | null) => {
+export function toDate(value?: Date | string | null): Date | null {
   if (!value) return null;
   return value instanceof Date ? value : new Date(value);
-};
+}
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
 
-const parseClockToMinutes = (value?: string | null) => {
+export function parseClockToMinutes(value?: string | null): number | null {
   if (!value) return null;
   const [hoursRaw, minutesRaw] = value.split(":");
   const hours = Number(hoursRaw);
@@ -36,9 +38,12 @@ const parseClockToMinutes = (value?: string | null) => {
     return null;
   }
   return hours * 60 + minutes;
-};
+}
 
-const getNextRecurringDeadline = (dailyEndTime?: string | null, nowDate?: Date) => {
+export function getNextRecurringDeadline(
+  dailyEndTime?: string | null,
+  nowDate?: Date,
+): Date | null {
   if (!dailyEndTime) return null;
   const [hoursRaw, minutesRaw] = dailyEndTime.split(":");
   const hours = Number(hoursRaw);
@@ -61,9 +66,9 @@ const getNextRecurringDeadline = (dailyEndTime?: string | null, nowDate?: Date) 
     target.setDate(target.getDate() + 1);
   }
   return target;
-};
+}
 
-const formatCountdown = (ms: number) => {
+export function formatCountdown(ms: number): string {
   if (ms <= 0) return "Ended";
   const totalSeconds = Math.floor(ms / 1000);
   const days = Math.floor(totalSeconds / 86400);
@@ -75,16 +80,16 @@ const formatCountdown = (ms: number) => {
   if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
-};
+}
 
-const formatDeadlineDate = (date: Date) => {
+export function formatDeadlineDate(date: Date): string {
   const day = `${date.getDate()}`.padStart(2, "0");
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const year = date.getFullYear();
   const hours = `${date.getHours()}`.padStart(2, "0");
   const minutes = `${date.getMinutes()}`.padStart(2, "0");
   return `${day}.${month}.${year} ${hours}:${minutes}`;
-};
+}
 
 export function ChallengeTimeLeftCard({
   phaseLabel,

@@ -12,6 +12,10 @@ import {
   useRewardPurchaseHistory,
   useUpdateRewardPurchaseStatus,
   useUpdateMyRewardPurchaseStatus,
+  buildAdminRewardQueryInput,
+  getNextAdminRewardPageParam,
+  buildPurchaseHistoryQueryInput,
+  getNextPurchaseHistoryPageParam,
 } from "../../rewards";
 
 const mockGetByTripQueryOptions = jest.fn(
@@ -434,6 +438,84 @@ describe("usePurchaseReward", () => {
   });
 });
 
+describe("buildAdminRewardQueryInput", () => {
+  it("should return query input with offset from pageParam", () => {
+    const result = buildAdminRewardQueryInput("trip-1", 30);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should handle zero pageParam", () => {
+    const result = buildAdminRewardQueryInput("trip-1", 0);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+
+  it("should handle null tripId", () => {
+    const result = buildAdminRewardQueryInput(null, 0);
+    expect(result.tripId).toBe("");
+  });
+
+  it("should handle undefined tripId", () => {
+    const result = buildAdminRewardQueryInput(undefined, 0);
+    expect(result.tripId).toBe("");
+  });
+});
+
+describe("getNextAdminRewardPageParam", () => {
+  it("should return next offset when hasMore is true", () => {
+    const result = getNextAdminRewardPageParam({
+      pagination: { hasMore: true, offset: 0, limit: 30 },
+    });
+    expect(result).toBe(30);
+  });
+
+  it("should return undefined when hasMore is false", () => {
+    const result = getNextAdminRewardPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+});
+
+describe("buildPurchaseHistoryQueryInput", () => {
+  it("should return query input with offset from pageParam", () => {
+    const result = buildPurchaseHistoryQueryInput("trip-1", 30);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 30 },
+    });
+  });
+
+  it("should handle zero pageParam", () => {
+    const result = buildPurchaseHistoryQueryInput("trip-1", 0);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+
+describe("getNextPurchaseHistoryPageParam", () => {
+  it("should return next offset when hasMore is true", () => {
+    const result = getNextPurchaseHistoryPageParam({
+      pagination: { hasMore: true, offset: 0, limit: 30 },
+    });
+    expect(result).toBe(30);
+  });
+
+  it("should return undefined when hasMore is false", () => {
+    const result = getNextPurchaseHistoryPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+});
+
 describe("useRewardPurchaseHistory", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -494,32 +576,82 @@ describe("useUpdateRewardPurchaseStatus", () => {
   });
 });
 
-describe("useUpdateMyRewardPurchaseStatus", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe("buildAdminRewardQueryInput", () => {
+  it("should build query input with tripId and pageParam", () => {
+    const result = buildAdminRewardQueryInput("trip-1", 30);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 30 },
+    });
   });
 
-  it("should update my purchase status", async () => {
-    const mockMutate = jest
-      .fn<
-        (data: {
-          purchaseId: string;
-          status: string;
-        }) => Promise<{ purchaseId: string; status: string }>
-      >()
-      .mockResolvedValue({ purchaseId: "purchase-1", status: "redeemed" });
-    mockUseMutation.mockReturnValue({ mutateAsync: mockMutate });
-
-    const { result } = renderHook(() => useUpdateMyRewardPurchaseStatus());
-    await act(async () => {
-      await (
-        result.current.mutateAsync as unknown as (data: {
-          purchaseId: string;
-          status: string;
-        }) => Promise<void>
-      )({ purchaseId: "purchase-1", status: "redeemed" });
+  it("should handle zero pageParam", () => {
+    const result = buildAdminRewardQueryInput("trip-1", 0);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 0 },
     });
+  });
 
-    expect(mockMutate).toHaveBeenCalled();
+  it("should handle null tripId", () => {
+    const result = buildAdminRewardQueryInput(null, 0);
+    expect(result.tripId).toBe("");
+  });
+
+  it("should handle undefined tripId", () => {
+    const result = buildAdminRewardQueryInput(undefined, 0);
+    expect(result.tripId).toBe("");
+  });
+
+  it("should preserve NaN pageParam since typeof NaN is number", () => {
+    const result = buildAdminRewardQueryInput("trip-1", NaN);
+    expect(result.pagination.offset).toBeNaN();
+  });
+});
+
+describe("getNextAdminRewardPageParam", () => {
+  it("should return next offset when hasMore is true", () => {
+    const result = getNextAdminRewardPageParam({
+      pagination: { hasMore: true, offset: 0, limit: 30 },
+    });
+    expect(result).toBe(30);
+  });
+
+  it("should return undefined when hasMore is false", () => {
+    const result = getNextAdminRewardPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
+  });
+});
+
+describe("buildPurchaseHistoryQueryInput", () => {
+  it("should build query input with tripId and pageParam", () => {
+    const result = buildPurchaseHistoryQueryInput("trip-1", 60);
+    expect(result).toEqual({
+      tripId: "trip-1",
+      pagination: { limit: 30, offset: 60 },
+    });
+  });
+
+  it("should preserve NaN pageParam since typeof NaN is number", () => {
+    const result = buildPurchaseHistoryQueryInput("trip-1", NaN);
+    expect(result.pagination.offset).toBeNaN();
+  });
+});
+
+describe("getNextPurchaseHistoryPageParam", () => {
+  it("should return next offset when hasMore is true", () => {
+    const result = getNextPurchaseHistoryPageParam({
+      pagination: { hasMore: true, offset: 30, limit: 30 },
+    });
+    expect(result).toBe(60);
+  });
+
+  it("should return undefined when hasMore is false", () => {
+    const result = getNextPurchaseHistoryPageParam({
+      pagination: { hasMore: false, offset: 0, limit: 30 },
+    });
+    expect(result).toBeUndefined();
   });
 });

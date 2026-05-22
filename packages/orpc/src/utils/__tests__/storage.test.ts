@@ -90,9 +90,7 @@ describe("storage", () => {
     it("should return null for URL without storage path", () => {
       const url = "https://example.com/other/path/file.jpg";
       const result = parseSupabaseStorageObject(url);
-      // The implementation parses the URL path and tries to extract bucket/path
-      // "other" is treated as bucket, "path/file.jpg" as path
-      expect(result).toEqual({ bucket: "other", path: "path/file.jpg" });
+      expect(result).toBeNull();
     });
 
     it("should return null for path with less than 2 segments", () => {
@@ -269,10 +267,7 @@ describe("storage", () => {
     it("should handle unknown path patterns", () => {
       const path = "unknown/path/file.jpg";
       const result = parseSupabaseStoragePath(path);
-      expect(result).toEqual({
-        bucket: "unknown",
-        path: "path/file.jpg",
-      });
+      expect(result).toBeNull();
     });
 
     it("should handle webm video extension", () => {

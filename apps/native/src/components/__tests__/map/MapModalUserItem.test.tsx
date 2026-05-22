@@ -4,33 +4,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalUserItem } from "../../map/modals/MapModalUserItem";
 
-jest.mock("~/components/common/ui", () => ({
-  ThemedListItem: function ThemedListItem(props: Record<string, unknown>) {
-    const React = require("react");
-    const { TouchableOpacity, Text } = require("react-native");
 
-    return React.createElement(
-      TouchableOpacity,
-      {
-        testID: "themed-list-item",
-        onPress: props.onPress,
-        disabled: props.disabled,
-      },
-      React.createElement(Text, { testID: "item-title" }, props.title),
-      props.subtitle
-        ? React.createElement(Text, { testID: "item-subtitle" }, props.subtitle)
-        : null,
-      props.leftAvatar && typeof props.leftAvatar === "object" && props.leftAvatar !== null
-        ? React.createElement(
-            Text,
-            { testID: "item-avatar" },
-            (props.leftAvatar as Record<string, string>).name,
-          )
-        : null,
-      props.rightElement,
-    );
-  },
-}));
 
 describe("MapModalUserItem", () => {
   it("should render with name", () => {
@@ -50,7 +24,7 @@ describe("MapModalUserItem", () => {
       <MapModalUserItem name="John Doe" imageUrl="https://example.com/avatar.jpg" />,
     );
 
-    expect(screen.getByTestId("item-avatar").children[0]).toBe("John Doe");
+    expect(screen.getByTestId("user-avatar-image")).toBeTruthy();
   });
 
   it("should handle onPress", () => {
@@ -99,7 +73,7 @@ describe("MapModalUserItem", () => {
   it("should handle null imageUrl", () => {
     renderWithProviders(<MapModalUserItem name="John Doe" imageUrl={null} />);
 
-    expect(screen.getByTestId("item-avatar").children[0]).toBe("John Doe");
+    expect(screen.getByTestId("user-avatar-initials-text")).toBeTruthy();
   });
 
   it("should render without optional props", () => {

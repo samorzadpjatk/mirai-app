@@ -44,39 +44,60 @@ export type UserSearchField =
   | "houseNumber"
   | "groupName";
 
+export function buildUserSearchQueryInput(
+  tripId: string,
+  field: UserSearchField,
+  searchTerm: string,
+  pageParam: number,
+) {
+  const offset = typeof pageParam === "number" ? pageParam : 0;
+  return {
+    tripId,
+    field,
+    searchTerm: searchTerm || undefined,
+    pagination: {
+      limit: USERS_PER_PAGE,
+      offset,
+    },
+  };
+}
+
+export function getNextUserSearchPageParam(lastPage: {
+  pagination: { hasMore: boolean; offset: number; limit: number };
+}) {
+  if (!lastPage.pagination.hasMore) {
+    return undefined;
+  }
+  return lastPage.pagination.offset + lastPage.pagination.limit;
+}
+
+export function normalizeSearchTerm(term: string): string {
+  return term.trim();
+}
+
+export function normalizeUserName(firstName: string, lastName: string) {
+  return { firstName: firstName.trim(), lastName: lastName.trim() };
+}
+
+export function shouldUpdateIdentifier(identifier: string): boolean {
+  return identifier.trim().length > 0;
+}
+
 export function useAdminUsers(tripId: string, searchTerm: string, field: UserSearchField) {
-  // Use direct oRPC + React Query for queries
   const queryClient = useQueryClient();
   const { data: groupsData, isLoading: groupsLoading } = useQuery(
     orpc.group.getAll.queryOptions({ input: { tripId } }),
   );
   const groups = (groupsData ?? []) as Group[];
 
-  const normalizedSearchTerm = searchTerm.trim();
+  const normalizedSearchTerm = normalizeSearchTerm(searchTerm);
 
   const { data, isLoading, isRefetching, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.user.searchWithPagination.infiniteOptions({
-        input: (pageParam: number) => {
-          const offset = typeof pageParam === "number" ? pageParam : 0;
-          return {
-            tripId,
-            field,
-            searchTerm: normalizedSearchTerm || undefined,
-            pagination: {
-              limit: USERS_PER_PAGE,
-              offset,
-            },
-          };
-        },
+        input: (pageParam: number) => buildUserSearchQueryInput(tripId, field, normalizedSearchTerm, pageParam),
         initialPageParam: 0,
-        getNextPageParam: (lastPage) => {
-          if (!lastPage.pagination.hasMore) {
-            return undefined;
-          }
-
-          return lastPage.pagination.offset + lastPage.pagination.limit;
-        },
+        getNextPageParam: getNextUserSearchPageParam,
         enabled: Boolean(tripId),
       }),
     );
@@ -193,15 +214,16 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
   };
 
   const updateName = (input: { userId: string; firstName: string; lastName: string }) => {
+    const normalized = normalizeUserName(input.firstName, input.lastName);
     return updateNameMutation.mutateAsync({
       userId: input.userId,
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
+      firstName: normalized.firstName,
+      lastName: normalized.lastName,
     });
   };
 
   const updateWristNumber = (userId: string, wristNumber: string) => {
-    return wristNumber.trim()
+    return shouldUpdateIdentifier(wristNumber)
       ? updateWristNumberMutation.mutateAsync({
           userId,
           tripId,
@@ -211,7 +233,7 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
   };
 
   const updateHouseNumber = (userId: string, houseNumber: string) => {
-    return houseNumber.trim()
+    return shouldUpdateIdentifier(houseNumber)
       ? updateHouseNumberMutation.mutateAsync({
           userId,
           tripId,

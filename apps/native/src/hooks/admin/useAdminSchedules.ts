@@ -24,8 +24,24 @@ export interface NotificationSchedule {
   notificationUrl?: string | null;
 }
 
-function toTriggerTime(hour: number, minute: number): string {
+export function toTriggerTime(hour: number, minute: number): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+export function isScheduleRecurring(startDate: string | Date, endDate: string | Date): boolean {
+  return (
+    new Date(endDate).getTime() - new Date(startDate).getTime() >= 24 * 60 * 60 * 1000
+  );
+}
+
+export function buildScheduleMessage(
+  notificationBody: string | null | undefined,
+  notificationTitle: string | null | undefined,
+  notificationType: string,
+): string {
+  return (
+    notificationBody ?? notificationTitle ?? `Scheduled notification: ${notificationType}`
+  );
 }
 
 export function useAdminSchedules(tripId?: string) {
@@ -91,10 +107,11 @@ export function useAdminSchedules(tripId?: string) {
     return rawSchedules.map((schedule) => ({
       id: schedule.id,
       name: schedule.name,
-      message:
-        schedule.notificationBody ??
-        schedule.notificationTitle ??
-        `Scheduled notification: ${schedule.notificationType}`,
+      message: buildScheduleMessage(
+        schedule.notificationBody,
+        schedule.notificationTitle,
+        schedule.notificationType,
+      ),
       triggerTime: toTriggerTime(schedule.hour, schedule.minute),
       isActive: schedule.isActive,
       createdAt: new Date(schedule.createdAt).toISOString(),
@@ -102,9 +119,7 @@ export function useAdminSchedules(tripId?: string) {
       endDate: new Date(schedule.endDate).toISOString(),
       lastTriggered: schedule.lastRun ? new Date(schedule.lastRun).toISOString() : undefined,
       executionCount: schedule._count?.notificationExecutions ?? 0,
-      isRecurring:
-        new Date(schedule.endDate).getTime() - new Date(schedule.startDate).getTime() >=
-        24 * 60 * 60 * 1000,
+      isRecurring: isScheduleRecurring(schedule.startDate, schedule.endDate),
       tripId: schedule.tripId,
       hour: schedule.hour,
       minute: schedule.minute,

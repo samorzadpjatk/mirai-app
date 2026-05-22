@@ -4,7 +4,7 @@ import { colors } from "~/styles";
 export function GroupDetailsLoadingState() {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator testID="group-details-loading-indicator" size="large" color={colors.primary} />
     </View>
   );
 }

@@ -1,18 +1,19 @@
 import { useCallback, useMemo } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { toggleHeartSummary, filterActivities } from "@mirai-app/shared";
 import type {
   CommunityFeedActivity,
   ActivityFilter,
 } from "~/components/community/CommunityActivityCard";
 
-type FeedCursor = {
+export type FeedCursor = {
   id: string;
   createdAt: Date | string;
   isPinned: boolean;
 } | null;
 
-interface FeedPageData {
+export interface FeedPageData {
   activities: CommunityFeedActivity[];
   pagination: {
     total: number | null;
@@ -24,45 +25,165 @@ interface FeedPageData {
   nextCursor?: FeedCursor;
 }
 
-const emptyReactionSummary = () => ({
-  total: 0,
-  counts: {
-    heart: 0,
-    fire: 0,
-    clap: 0,
-    star: 0,
-  },
-  myReactions: [] as string[],
-});
-
-const toggleHeartSummaryLocally = (
-  summary: CommunityFeedActivity["reactionsSummary"] | undefined,
-) => {
-  const normalized = summary ?? emptyReactionSummary();
-  const myReactions = new Set(normalized.myReactions ?? []);
-  const hadHeart = myReactions.has("heart");
-
-  if (hadHeart) {
-    myReactions.delete("heart");
-  } else {
-    myReactions.add("heart");
-  }
-
-  return {
-    ...normalized,
-    total: Math.max(0, normalized.total + (hadHeart ? -1 : 1)),
-    counts: {
-      ...(normalized.counts ?? emptyReactionSummary().counts),
-      heart: Math.max(0, (normalized.counts?.heart ?? 0) + (hadHeart ? -1 : 1)),
-    },
-    myReactions: Array.from(myReactions),
-  };
-};
-
-interface UseCommunityFeedProps {
+export interface UseCommunityFeedProps {
   selectedTripId: string | null;
   selectedFilter: ActivityFilter;
   focusActivityId?: string;
+}
+
+export function buildEmptyFeedPageData(): FeedPageData {
+  return {
+    activities: [],
+    pagination: {
+      total: null,
+      page: null,
+      pageSize: 30,
+      totalPages: null,
+      hasMore: false,
+    },
+    nextCursor: null,
+  };
+}
+
+export function getNextCommunityFeedPageParam(lastPage: FeedPageData): FeedCursor | undefined {
+  return lastPage.nextCursor ?? undefined;
+}
+
+export function updateActivityReactionsInPages(
+  pages: FeedPageData[],
+  activityId: string,
+  updater:
+    | CommunityFeedActivity["reactionsSummary"]
+    | ((
+        current: CommunityFeedActivity["reactionsSummary"] | undefined,
+      ) => CommunityFeedActivity["reactionsSummary"]),
+): FeedPageData[] {
+  return pages.map((page) => ({
+    ...page,
+    activities: page.activities.map((activity) => {
+      if (activity.id !== activityId) return activity;
+      const nextSummary =
+        typeof updater === "function" ? updater(activity.reactionsSummary) : updater;
+      return {
+        ...activity,
+        reactionsSummary: nextSummary,
+      };
+    }),
+  }));
+}
+
+export function applyReactionSummaryToFeed(
+  queryClient: ReturnType<typeof useQueryClient>,
+  queryKey: readonly unknown[],
+  activityId: string,
+  updater:
+    | CommunityFeedActivity["reactionsSummary"]
+    | ((
+        current: CommunityFeedActivity["reactionsSummary"] | undefined,
+      ) => CommunityFeedActivity["reactionsSummary"]),
+): void {
+  queryClient.setQueryData(queryKey, (oldData: { pages: FeedPageData[] } | undefined) => {
+    if (!oldData?.pages) return oldData;
+    return {
+      ...oldData,
+      pages: updateActivityReactionsInPages(oldData.pages, activityId, updater),
+    };
+  });
+}
+
+export function buildCommunityFeedQueryFn(
+  selectedTripId: string | null,
+  trpcClient: typeof orpc,
+) {
+  return async ({ pageParam }: { pageParam: FeedCursor }): Promise<FeedPageData> => {
+    if (!selectedTripId) {
+      return buildEmptyFeedPageData();
+    }
+
+    return (await trpcClient.activityFeed.getByTrip.call({
+      tripId: selectedTripId,
+      page: 1,
+      pageSize: 30,
+      cursor: pageParam ?? undefined,
+    })) as FeedPageData;
+  };
+}
+
+export interface ToggleHeartMutationConfig {
+  trpcClient: typeof orpc;
+  queryClient: ReturnType<typeof useQueryClient>;
+  feedQueryKey: readonly [string, string, number] | null;
+  selectedTripId: string | null;
+}
+
+export function buildToggleHeartMutation(
+  config: ToggleHeartMutationConfig,
+) {
+  const { trpcClient, queryClient, feedQueryKey, selectedTripId } = config;
+
+  return {
+    mutationFn: async ({ activityId }: { activityId: string }) => {
+      return await trpcClient.activityFeed.toggleReaction.call({
+        activityId,
+        reactionType: "heart",
+      });
+    },
+    onMutate: async ({ activityId }: { activityId: string }) => {
+      const queryKey = feedQueryKey;
+      if (!selectedTripId || !queryKey) {
+        return undefined;
+      }
+
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData(feedQueryKey);
+      applyReactionSummaryToFeed(
+        queryClient,
+        queryKey,
+        activityId,
+        toggleHeartSummary as (current: unknown) => ReturnType<typeof toggleHeartSummary>,
+      );
+      return { queryKey, previousData };
+    },
+    onError: (_error: unknown, _variables: { activityId: string }, context: { queryKey?: readonly unknown[]; previousData?: unknown }) => {
+      if (!context?.queryKey || !context.previousData) return;
+      queryClient.setQueryData(context.queryKey, context.previousData);
+    },
+    onSuccess: (
+      result: { activityId: string; reactionsSummary: CommunityFeedActivity["reactionsSummary"] },
+      _variables: { activityId: string },
+      context: { queryKey?: readonly unknown[] },
+    ) => {
+      if (context?.queryKey) {
+        applyReactionSummaryToFeed(
+          queryClient,
+          context.queryKey,
+          result.activityId,
+          result.reactionsSummary,
+        );
+      }
+    },
+  };
+}
+
+export function buildCommunityFeedQueryKey(
+  selectedTripId: string | null,
+): readonly [string, string, number] | null {
+  if (!selectedTripId) return null;
+  return ["community-feed", selectedTripId, 30] as const;
+}
+
+export function buildCommunityFeedActivities(
+  pages: FeedPageData[] | undefined,
+): CommunityFeedActivity[] {
+  return (pages ?? []).flatMap((page) => page.activities ?? []);
+}
+
+export function buildHandleToggleHeart(
+  toggleHeart: (args: { activityId: string }) => Promise<unknown>,
+): (activityId: string) => void {
+  return (activityId: string) => {
+    void toggleHeart({ activityId });
+  };
 }
 
 export const useCommunityFeed = ({
@@ -74,124 +195,50 @@ export const useCommunityFeed = ({
   const trpcClient = orpc;
 
   const feedQueryKey = useMemo(
-    () => (selectedTripId ? (["community-feed", selectedTripId, 30] as const) : null),
+    () => buildCommunityFeedQueryKey(selectedTripId),
     [selectedTripId],
+  );
+
+  const queryFn = useMemo(
+    () => buildCommunityFeedQueryFn(selectedTripId, trpcClient),
+    [selectedTripId, trpcClient],
   );
 
   const feedQuery = useInfiniteQuery({
     queryKey: feedQueryKey ?? ["community-feed-disabled"],
     enabled: Boolean(selectedTripId && feedQueryKey),
     initialPageParam: null as FeedCursor,
-    queryFn: async ({ pageParam }) => {
-      if (!selectedTripId) {
-        return {
-          activities: [],
-          pagination: {
-            total: null,
-            page: null,
-            pageSize: 30,
-            totalPages: null,
-            hasMore: false,
-          },
-          nextCursor: null,
-        } satisfies FeedPageData;
-      }
-
-      return (await trpcClient.activityFeed.getByTrip.call({
-        tripId: selectedTripId,
-        page: 1,
-        pageSize: 30,
-        cursor: pageParam ?? undefined,
-      })) as FeedPageData;
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    queryFn,
+    getNextPageParam: (lastPage) => getNextCommunityFeedPageParam(lastPage),
   });
 
-  const applyReactionSummaryToFeed = (
-    activityId: string,
-    updater:
-      | CommunityFeedActivity["reactionsSummary"]
-      | ((
-          current: CommunityFeedActivity["reactionsSummary"] | undefined,
-        ) => CommunityFeedActivity["reactionsSummary"]),
-    queryKeyOverride?: readonly unknown[],
-  ) => {
-    const queryKey = queryKeyOverride ?? feedQueryKey;
-    if (!queryKey) return;
+  const toggleHeartMutationConfig = useMemo(
+    () =>
+      buildToggleHeartMutation({
+        trpcClient,
+        queryClient,
+        feedQueryKey,
+        selectedTripId,
+      }),
+    [trpcClient, queryClient, feedQueryKey, selectedTripId],
+  );
 
-    queryClient.setQueryData(queryKey, (oldData: { pages: FeedPageData[] } | undefined) => {
-      if (!oldData?.pages) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: FeedPageData) => ({
-          ...page,
-          activities: page.activities.map((activity) => {
-            if (activity.id !== activityId) return activity;
-            const nextSummary =
-              typeof updater === "function" ? updater(activity.reactionsSummary) : updater;
-            return {
-              ...activity,
-              reactionsSummary: nextSummary,
-            };
-          }),
-        })),
-      };
-    });
-  };
-
-  const { mutateAsync: toggleHeart } = useMutation({
-    mutationFn: async ({ activityId }: { activityId: string }) => {
-      return await trpcClient.activityFeed.toggleReaction.call({
-        activityId,
-        reactionType: "heart",
-      });
-    },
-    onMutate: async ({ activityId }) => {
-      const queryKey = feedQueryKey;
-      if (!selectedTripId || !queryKey) {
-        return undefined;
-      }
-
-      await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData(feedQueryKey);
-      applyReactionSummaryToFeed(activityId, toggleHeartSummaryLocally, queryKey);
-      return { queryKey, previousData };
-    },
-    onError: (_error, _variables, context) => {
-      if (!context?.queryKey || !context.previousData) return;
-      queryClient.setQueryData(context.queryKey, context.previousData);
-    },
-    onSuccess: (result, _variables, context) => {
-      applyReactionSummaryToFeed(result.activityId, result.reactionsSummary, context?.queryKey);
-    },
-  });
+  const { mutateAsync: toggleHeart } = useMutation(toggleHeartMutationConfig);
 
   const handleToggleHeart = useCallback(
-    (activityId: string) => {
-      void toggleHeart({ activityId });
-    },
+    buildHandleToggleHeart(toggleHeart),
     [toggleHeart],
   );
 
   const activities = useMemo(
-    () => (feedQuery.data?.pages ?? []).flatMap((page) => page.activities ?? []),
+    () => buildCommunityFeedActivities(feedQuery.data?.pages),
     [feedQuery.data?.pages],
   );
 
-  const filteredActivities = useMemo(() => {
-    const base =
-      selectedFilter === "all"
-        ? activities
-        : activities.filter((activity) => activity.activityType === selectedFilter);
-
-    if (!focusActivityId) return base;
-
-    const focused = base.find((activity) => activity.id === focusActivityId);
-    if (!focused) return base;
-
-    const rest = base.filter((activity) => activity.id !== focusActivityId);
-    return [focused, ...rest];
-  }, [activities, focusActivityId, selectedFilter]);
+  const filteredActivities = useMemo(
+    () => filterActivities(activities, selectedFilter, focusActivityId),
+    [activities, selectedFilter, focusActivityId],
+  );
 
   return {
     feedQuery,

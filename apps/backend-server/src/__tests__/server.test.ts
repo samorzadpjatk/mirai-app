@@ -11,6 +11,13 @@ vi.mock("@mirai-app/orpc", () => ({
     supabaseKey: opts.supabaseKey,
     connectionParams: opts.connectionParams,
   })),
+  enableUserAgentTelemetry: vi.fn(),
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 let createServer: typeof ServerModule.createServer;

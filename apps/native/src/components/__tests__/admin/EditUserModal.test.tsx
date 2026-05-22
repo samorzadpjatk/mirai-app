@@ -51,50 +51,7 @@ jest.mock("../../admin/AdminModal", () => {
   };
 });
 
-jest.mock("~/components/common/ui", () => {
-  const { View, Text, TextInput } = require("react-native");
-  return {
-    FormField: ({
-      children,
-      label,
-      required,
-    }: {
-      children: React.ReactNode;
-      label: string;
-      required?: boolean;
-    }) => (
-      <View>
-        <Text>
-          {label}
-          {required ? "*" : ""}
-        </Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType,
-      multiline,
-    }: {
-      value: string;
-      onChangeText: (text: string) => void;
-      placeholder?: string;
-      keyboardType?: string;
-      multiline?: boolean;
-    }) => (
-      <TextInput
-        value={value}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        onChangeText={onChangeText}
-      />
-    ),
-    DateTimePickerModal: () => null,
-  };
-});
+
 
 describe("EditUserModal", () => {
   const mockUser = {

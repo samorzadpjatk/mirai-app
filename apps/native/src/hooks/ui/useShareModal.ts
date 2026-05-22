@@ -37,8 +37,8 @@ export function useShareModal({
     const newIds = [...new Set([...sharingUserIds, ...Array.from(selectedUsers)])];
     try {
       await updateSharing?.(newIds);
-    } catch (err) {
-      console.error("Failed to update sharing:", err);
+    } catch {
+      // Error handling is done in useMapSharing hook
     }
     reset();
   };

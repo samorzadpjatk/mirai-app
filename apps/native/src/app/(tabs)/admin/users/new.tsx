@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
+import { isNameValid, isNonEmptyString } from "~/utils/validation";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
@@ -40,12 +41,10 @@ export default function AdminCreateUserScreen() {
     }),
   );
 
-  const handleSubmit: () => void = () => {
-    const trimmedFirstName = firstName.trim();
-    const trimmedLastName = lastName.trim();
-    const trimmedEmail = email.trim();
+  const isValid = isNameValid(firstName, lastName) && isNonEmptyString(email);
 
-    if (!trimmedFirstName || !trimmedLastName || !trimmedEmail) {
+  const handleSubmit: () => void = () => {
+    if (!isValid) {
       Alert.alert("Validation", "All fields are required.");
       return;
     }
@@ -56,15 +55,12 @@ export default function AdminCreateUserScreen() {
     }
 
     void createUserMutation.mutateAsync({
-      firstName: trimmedFirstName,
-      lastName: trimmedLastName,
-      email: trimmedEmail,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
       tripId,
     });
   };
-
-  const isValid =
-    firstName.trim().length > 0 && lastName.trim().length > 0 && email.trim().length > 0;
 
   return (
     <View

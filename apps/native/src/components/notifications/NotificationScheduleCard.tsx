@@ -19,8 +19,8 @@ export function NotificationScheduleCard({ schedule }: NotificationScheduleCardP
           queryKey: orpc.notificationSchedule.getAll.queryOptions({ input: {} }).queryKey,
         });
       },
-      onError: (err) => {
-        console.error("Error deleting schedule:", err);
+      onError: () => {
+        // TODO: Add Sentry crash reporting for production errors
       },
     }),
   );
@@ -32,8 +32,8 @@ export function NotificationScheduleCard({ schedule }: NotificationScheduleCardP
           queryKey: orpc.notificationSchedule.getAll.queryOptions({ input: {} }).queryKey,
         });
       },
-      onError: (err) => {
-        console.error("Error toggling schedule:", err);
+      onError: () => {
+        // TODO: Add Sentry crash reporting for production errors
       },
     }),
   );

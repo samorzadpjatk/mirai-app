@@ -116,7 +116,7 @@ describe("UserCard", () => {
     const userWithNoName = { ...mockUser, firstName: null, lastName: null };
     renderWithProviders(<UserCard user={userWithNoName} onEdit={mockOnEdit} />);
 
-    expect(screen.getByText("john@example.com")).toBeTruthy();
+    expect(screen.getAllByText("john@example.com").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders 'Not selected' when user has no group", () => {

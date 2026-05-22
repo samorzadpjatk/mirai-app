@@ -92,48 +92,6 @@ interface ThemedTextInputProps {
   multiline?: boolean;
 }
 
-interface PrimaryLoadingButtonProps {
-  label: string;
-  onPress: () => void;
-  isLoading?: boolean;
-  disabled?: boolean;
-}
-
-jest.mock("~/components/common/ui", () => {
-  const ReactNative = require("react-native");
-  return {
-    FormField: ({ children, label }: FormFieldProps) => (
-      <ReactNative.View>
-        <ReactNative.Text>{label}</ReactNative.Text>
-        {children}
-      </ReactNative.View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType,
-      multiline,
-    }: ThemedTextInputProps) => (
-      <ReactNative.TextInput
-        value={value}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        onChangeText={onChangeText}
-      />
-    ),
-    PrimaryLoadingButton: ({ label, onPress, isLoading, disabled }: PrimaryLoadingButtonProps) => (
-      <ReactNative.TouchableOpacity
-        onPress={onPress}
-        disabled={(isLoading ?? false) || (disabled ?? false)}
-      >
-        <ReactNative.Text>{label}</ReactNative.Text>
-      </ReactNative.TouchableOpacity>
-    ),
-  };
-});
-
 describe("ChallengeFormFields", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -196,5 +154,75 @@ describe("ChallengeFormFields", () => {
 
     fireEvent.press(screen.getByText("Save Changes"));
     expect(onSave).toHaveBeenCalled();
+  });
+
+  it("renders QR code field when submission type is QR_CODE", () => {
+    const qrFormState = {
+      ...mockFormState,
+      form: { ...mockFormState.form, submissionType: "QR_CODE" as const },
+      submissionTypeLabel: "QR Code",
+    };
+    renderWithProviders(
+      <ChallengeFormFields
+        formState={qrFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
+    );
+
+    expect(screen.getByText("QR Code")).toBeOnTheScreen();
+  });
+
+  it("renders location field when needsLocation is true", () => {
+    const locationFormState = {
+      ...mockFormState,
+      needsLocation: true,
+      form: {
+        ...mockFormState.form,
+        targetLocation: { latitude: 52.2297, longitude: 21.0122 },
+      },
+    };
+    renderWithProviders(
+      <ChallengeFormFields
+        formState={locationFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
+    );
+
+    expect(screen.getByText("Target Location")).toBeOnTheScreen();
+  });
+
+  it("renders recurring fields when isRecurring is true", () => {
+    const recurringFormState = {
+      ...mockFormState,
+      form: { ...mockFormState.form, isRecurring: true },
+    };
+    renderWithProviders(
+      <ChallengeFormFields
+        formState={recurringFormState}
+        onSave={jest.fn()}
+        saveButtonText="Save Changes"
+        isSaving={false}
+      />,
+    );
+
+    expect(screen.getByText("Daily Time Window")).toBeOnTheScreen();
+  });
+
+  it("renders New Challenge title when isNewChallenge is true", () => {
+    renderWithProviders(
+      <ChallengeFormFields
+        formState={mockFormState}
+        onSave={jest.fn()}
+        saveButtonText="Create Challenge"
+        isSaving={false}
+        isNewChallenge={true}
+      />,
+    );
+
+    expect(screen.getByText("New Challenge")).toBeOnTheScreen();
   });
 });

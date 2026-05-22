@@ -44,11 +44,27 @@ function MemberAvatar({ member }: { member: GroupMember }) {
   return <Text style={styles.avatarText}>{member.initials}</Text>;
 }
 
+export function calculateHasMoreThanPreview(members: GroupMember[]): boolean {
+  return members.length > 3;
+}
+
+export function calculateVisibleMembers(members: GroupMember[], isExpanded: boolean): GroupMember[] {
+  return isExpanded ? members : members.slice(0, 3);
+}
+
+export function buildExpandButtonText(isExpanded: boolean): string {
+  return isExpanded ? "Show Less" : "View All";
+}
+
+export function formatMemberRole(role: string): string {
+  return role.toUpperCase();
+}
+
 export function GroupMemberList({ members }: GroupMemberListProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasMoreThanPreview = members.length > 3;
+  const hasMoreThanPreview = calculateHasMoreThanPreview(members);
   const visibleMembers = useMemo(
-    () => (isExpanded ? members : members.slice(0, 3)),
+    () => calculateVisibleMembers(members, isExpanded),
     [isExpanded, members],
   );
 
@@ -58,7 +74,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
         <Text style={styles.memberHeaderTitle}>Member Directory</Text>
         {hasMoreThanPreview ? (
           <TouchableOpacity activeOpacity={0.7} onPress={() => setIsExpanded((prev) => !prev)}>
-            <Text style={styles.viewAllButton}>{isExpanded ? "Show Less" : "View All"}</Text>
+            <Text style={styles.viewAllButton}>{buildExpandButtonText(isExpanded)}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -76,7 +92,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
               <View style={styles.memberDetails}>
                 <Text style={styles.memberName}>{member.name}</Text>
                 <Text style={[styles.memberRole, member.isLeader && styles.memberRoleLeader]}>
-                  {member.role.toUpperCase()}
+                  {formatMemberRole(member.role)}
                 </Text>
               </View>
             </View>

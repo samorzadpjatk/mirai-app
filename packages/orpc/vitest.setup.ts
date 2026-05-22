@@ -549,6 +549,65 @@ export function addDrizzleApi(mockDb: Record<string, unknown>): void {
   }
 }
 
+export function createFailingTransactionMock(
+  mockDb: Record<string, unknown>,
+  options: {
+    failAfterCalls?: number;
+    failWithError?: Error;
+    shouldRollback?: boolean;
+  } = {},
+): (callback: (tx: Record<string, unknown>) => Promise<unknown>) => Promise<unknown> {
+  const { failAfterCalls = 1, failWithError = new Error("Transaction failed"), shouldRollback = true } = options;
+
+  return vi.fn(async (callback: (tx: Record<string, unknown>) => Promise<unknown>) => {
+    const tx: Record<string, unknown> = {};
+    for (const key of Object.keys(mockDb)) {
+      tx[key] = mockDb[key];
+    }
+
+    let callCount = 0;
+
+    if (shouldRollback) {
+      const wrapMutation = <T extends (...args: unknown[]) => unknown>(fn: T): T => {
+        return ((...args: unknown[]) => {
+          callCount++;
+          if (callCount >= failAfterCalls) {
+            throw failWithError;
+          }
+          return (fn as (...args: unknown[]) => unknown)(...args);
+        }) as T;
+      };
+
+      for (const key of Object.keys(tx)) {
+        const value = tx[key];
+        if (value && typeof value === "object") {
+          const model = value as Record<string, unknown>;
+          if ("create" in model && typeof model.create === "function") {
+            model.create = wrapMutation(model.create as (...args: unknown[]) => unknown);
+          }
+          if ("update" in model && typeof model.update === "function") {
+            model.update = wrapMutation(model.update as (...args: unknown[]) => unknown);
+          }
+          if ("delete" in model && typeof model.delete === "function") {
+            model.delete = wrapMutation(model.delete as (...args: unknown[]) => unknown);
+          }
+          if ("upsert" in model && typeof model.upsert === "function") {
+            model.upsert = wrapMutation(model.upsert as (...args: unknown[]) => unknown);
+          }
+        }
+      }
+    }
+
+    delete tx.insert;
+    delete tx.update;
+    delete tx.delete;
+    delete tx.select;
+    addDrizzleApi(tx);
+
+    return await callback(tx);
+  });
+}
+
 export function createMockDb(): MockDbClient & Record<string, unknown> {
   const mockUser = createMockDbUser();
 
@@ -674,16 +733,123 @@ vi.mock("@mirai-app/auth", () => {
 });
 
 vi.mock("@mirai-app/shared", () => {
+  const normalizeStoragePathImpl = (path: string) =>
+    path
+      .replace(/\\/g, "/")
+      .replace(/^\/+/, "")
+      .replace(/\/+$/, "")
+      .split("/")
+      .filter(Boolean)
+      .join("/");
+
+  const normalizeBucketNameImpl = (bucket: string) => {
+    const normalized = bucket?.toLowerCase();
+    const standard = ["images", "videos", "files-public"];
+    if (standard.includes(normalized)) return normalized;
+    const aliases: Record<string, string> = {
+      image: "images",
+      video: "videos",
+      public: "files-public",
+      "file-public": "files-public",
+    };
+    return aliases[normalized] ?? null;
+  };
+
+  const inferBucketFromPath = (rawPath: string) => {
+    const normalized = rawPath.replace(/^\/+/, "");
+    if (!normalized) return null;
+    if (normalized.startsWith("files-public/")) {
+      return { bucket: "files-public", path: normalized.slice("files-public/".length) };
+    }
+    if (normalized.startsWith("avatar/")) return { bucket: "images", path: normalized };
+    if (normalized.startsWith("challenge/")) return { bucket: "images", path: normalized };
+    if (normalized.startsWith("group/")) return { bucket: "images", path: normalized };
+    if (normalized.startsWith("trips/")) return { bucket: "images", path: normalized };
+    if (normalized.startsWith("rewards/") || normalized.startsWith("activity/")) {
+      return { bucket: "images", path: normalized };
+    }
+    return null;
+  };
+
+  const parseStoragePath = (fullPath: string) => {
+    const normalized = normalizeStoragePathImpl(fullPath);
+    if (!normalized) return null;
+    const segments = normalized.split("/");
+    if (segments.length < 2) return null;
+    const bucket = normalizeBucketNameImpl(segments[0]);
+    if (!bucket) {
+      return inferBucketFromPath(normalized);
+    }
+    const path = segments.slice(1).join("/");
+    return { bucket, path };
+  };
+
+  const resolveStorageUrlImpl = async (
+    supabase: {
+      storage: {
+        from: (bucket: string) => {
+          createSignedUrl: (path: string, expiresIn: number) => Promise<{
+            data: { signedUrl?: string | null } | null;
+            error: unknown;
+          }>;
+        };
+      };
+    },
+    path: string | null | undefined,
+    _seconds?: number,
+  ) => {
+    if (!path) return null;
+    const parsed = parseStoragePath(path);
+    if (!parsed) return path;
+    const { data, error } = await supabase.storage
+      .from(parsed.bucket)
+      .createSignedUrl(parsed.path, 86400);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  };
+
+  const formatDisplayNameImpl = (
+    firstName?: string | null,
+    lastName?: string | null,
+    fallback?: string | null,
+  ): string | null => {
+    const parts = [firstName?.trim(), lastName?.trim()].filter(Boolean);
+    if (parts.length > 0) return parts.join(" ");
+    return fallback?.trim() ?? null;
+  };
+
+  const getInitialsImpl = (
+    firstName?: string | null,
+    lastName?: string | null,
+    fallback = "?",
+  ): string => {
+    const f = (firstName ?? "")[0] ?? "";
+    const l = (lastName ?? "")[0] ?? "";
+    const initials = `${f}${l}`.toUpperCase();
+    return initials || fallback;
+  };
+
   return {
     STANDARD_BUCKETS: {
       IMAGES: "images",
       VIDEOS: "videos",
       PUBLIC: "files-public",
     },
-    normalizeStoragePath: vi.fn((path: string) =>
-      path.replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, ""),
-    ),
-    normalizeBucketName: vi.fn((bucket: string) => bucket?.toLowerCase()),
+    normalizeStoragePath: vi.fn(normalizeStoragePathImpl),
+    normalizeBucketName: vi.fn(normalizeBucketNameImpl),
+    resolveStorageUrl: vi.fn(resolveStorageUrlImpl),
+    resolveStorageUrls: vi.fn(async (
+      supabase: unknown,
+      items: { image: string | null }[],
+      seconds?: number,
+    ) => Promise.all(
+      items.map(async (item) => ({
+        ...item,
+        image: await resolveStorageUrlImpl(supabase as Parameters<typeof resolveStorageUrlImpl>[0], item.image, seconds),
+      })),
+    )),
+    formatDisplayName: vi.fn(formatDisplayNameImpl),
+    getInitials: vi.fn(getInitialsImpl),
   };
 });
 

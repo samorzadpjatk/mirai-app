@@ -11,7 +11,7 @@ interface TripHeroCardProps {
   backgroundImagePath?: string | null;
 }
 
-const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
+export const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   const now = new Date();
   const start = new Date(startDate);
   const end = new Date(endDate);

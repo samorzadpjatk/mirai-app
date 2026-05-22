@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { formatDisplayName } from "@mirai-app/shared";
 import { colors, spacing, borderRadius, typography } from "~/styles";
+import { isBanReady, isNameValid, formatBanLabel } from "~/utils/validation";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
 import type { User } from "~/hooks/admin/useAdminUsers";
@@ -58,11 +60,9 @@ export function EditUserModal({
     onBan(user.id, banUntil.getTime(), banReason.trim());
   };
 
-  const isBanReady = banUntil != null && banUntil > new Date();
-  const isNameValid = firstName.trim().length > 0 && lastName.trim().length > 0;
-  const banLabel = banUntil
-    ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : "Select date & time";
+  const banReady = isBanReady(banUntil);
+  const nameValid = isNameValid(firstName, lastName);
+  const banLabel = formatBanLabel(banUntil);
 
   const openBanPicker = () => {
     setIsBanPickerOpen(true);
@@ -80,7 +80,7 @@ export function EditUserModal({
             title="Save"
             onPress={handleSave}
             loading={isSaving}
-            disabled={isSaving || !user || !isNameValid}
+            disabled={isSaving || !user || !nameValid}
           />
         </>
       }
@@ -96,7 +96,7 @@ export function EditUserModal({
                 marginBottom: spacing.xs,
               }}
             >
-              {[firstName, lastName].filter(Boolean).join(" ") || "Unknown user"}
+              {formatDisplayName(firstName, lastName, "Unknown user")}
             </Text>
             <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>
               {user.email ?? "No email"}
@@ -166,10 +166,10 @@ export function EditUserModal({
             <TouchableOpacity
               style={[
                 styles.banButton,
-                !isBanReady || isBanning ? styles.dangerButtonDisabled : null,
+                !banReady || isBanning ? styles.dangerButtonDisabled : null,
               ]}
               onPress={handleBan}
-              disabled={!isBanReady || isBanning}
+              disabled={!banReady || isBanning}
             >
               <Text style={styles.banButtonText}>{isBanning ? "Banning..." : "Ban user"}</Text>
             </TouchableOpacity>

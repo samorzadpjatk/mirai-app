@@ -3,6 +3,7 @@ import type { User, Role, DB } from "@mirai-app/db";
 import { users } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 import type { AuthUser } from "@mirai-app/shared";
+import { formatDisplayName, logger } from "@mirai-app/shared";
 
 interface MinimalBuffer {
   from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
@@ -42,10 +43,10 @@ function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unk
       return JSON.parse(decoded) as T;
     }
 
-    console.error("Unable to decode JWT payload: missing base64 decoder");
+    logger.error("Unable to decode JWT payload: missing base64 decoder");
     return null;
   } catch (error) {
-    console.error("Error decoding JWT payload:", error);
+    logger.error(error, "Error decoding JWT payload");
     return null;
   }
 }
@@ -100,22 +101,12 @@ export async function getAuthServerUser(
   } = response;
 
   if (error) {
-    console.error("Error occurred while fetching user:", error);
+    logger.error(error, "Error occurred while fetching user");
     return null;
   }
 
   return user;
 }
-
-const toDisplayName = (
-  firstName: string | null,
-  lastName: string | null,
-  fallback?: string | null,
-): string | null => {
-  const parts = [firstName?.trim(), lastName?.trim()].filter(Boolean);
-  if (parts.length > 0) return parts.join(" ");
-  return fallback?.trim() ?? null;
-};
 
 export function mapDatabaseUserToAuthUser(
   dbUser: User | null,
@@ -130,7 +121,7 @@ export function mapDatabaseUserToAuthUser(
     ? new Date(supabaseUser.email_confirmed_at)
     : null;
 
-  const displayName = toDisplayName(
+  const displayName = formatDisplayName(
     dbUser.firstName,
     dbUser.lastName,
     email?.split("@")[0] ?? null,
@@ -219,8 +210,9 @@ export async function requireAuth(
   const adminLookup = await supabase.auth.admin.getUserById(session.authUserId!);
 
   if (adminLookup.error) {
-    console.warn(
-      `[Auth] Failed to check ban status for ${session.authUserId}: ${adminLookup.error.message}`,
+    logger.warn(
+      { authUserId: session.authUserId, error: adminLookup.error.message },
+      "Failed to check ban status",
     );
   } else {
     const adminUser = adminLookup.data.user as AdminUserWithBan | null;

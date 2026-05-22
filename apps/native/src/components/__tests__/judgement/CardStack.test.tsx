@@ -1,19 +1,22 @@
 import React from "react";
-import { View } from "react-native";
+import { View, Alert } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
+import { fireEvent } from "@testing-library/react-native";
 import { CardStack } from "../../judgement/CardStack";
 
 // Mock variables for jest.mock factories (must be prefixed with "mock")
 const mockReact = React;
 
+let mockUseJudgementReturn = {
+  currentSubmission: null,
+  nextSubmission: null,
+  reviewCurrent: jest.fn(),
+  isReviewing: false,
+  challengeScoringCategory: "JUDGED_STAFF",
+};
+
 jest.mock("~/stores/judgement", () => ({
-  useJudgement: jest.fn().mockReturnValue({
-    currentSubmission: null,
-    nextSubmission: null,
-    reviewCurrent: jest.fn(),
-    isReviewing: false,
-    challengeScoringCategory: "JUDGED_STAFF",
-  }),
+  useJudgement: jest.fn().mockImplementation(() => mockUseJudgementReturn),
 }));
 
 jest.mock("~/stores/judgement/judgementStores", () => ({
@@ -90,17 +93,43 @@ jest.mock("~/components/judgement/EmptyStateCard", () => {
 });
 
 jest.mock("~/components/judgement/ActionBar", () => {
-  const { View } = require("react-native");
+  const { Pressable, Text } = require("react-native");
   return {
-    ActionBar: () => <View testID="action-bar" />,
+    ActionBar: ({ onReject, onApprove, disabled }: { onReject: () => void; onApprove: () => void; disabled: boolean }) => (
+      <>
+        <Pressable testID="reject-button" onPress={onReject} disabled={disabled}>
+          <Text>Reject</Text>
+        </Pressable>
+        <Pressable testID="approve-button" onPress={onApprove} disabled={disabled}>
+          <Text>Approve</Text>
+        </Pressable>
+      </>
+    ),
   };
 });
+
+
 
 describe("CardStack", () => {
   const defaultProps = {
     tripId: "trip-1",
     challengeId: "challenge-1",
   };
+
+  beforeEach(() => {
+    mockUseJudgementReturn = {
+      currentSubmission: null,
+      nextSubmission: null,
+      reviewCurrent: jest.fn(),
+      isReviewing: false,
+      challengeScoringCategory: "JUDGED_STAFF",
+    };
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   it("should render empty state when no submissions", () => {
     const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
@@ -111,7 +140,8 @@ describe("CardStack", () => {
   it("should render action bar", () => {
     const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
 
-    expect(getByTestId("action-bar")).toBeTruthy();
+    expect(getByTestId("reject-button")).toBeTruthy();
+    expect(getByTestId("approve-button")).toBeTruthy();
   });
 
   it("should render with provided tripId and challengeId", () => {
@@ -120,6 +150,122 @@ describe("CardStack", () => {
     );
 
     expect(getByTestId("empty-card")).toBeTruthy();
-    expect(getByTestId("action-bar")).toBeTruthy();
+  });
+
+  it("should render current submission card when submission exists", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    expect(getByTestId("current-card")).toBeTruthy();
+    expect(queryByTestId("empty-card")).toBeNull();
+  });
+
+  it("should render queued submission card when next submission exists", () => {
+    mockUseJudgementReturn.nextSubmission = { id: "sub-2" };
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
+
+    expect(getByTestId("queued-card")).toBeTruthy();
+  });
+
+  it("should open reject modal when reject button pressed", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    const { getByTestId, getByText } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    fireEvent.press(getByTestId("reject-button"));
+
+    expect(getByText("Reject submission")).toBeTruthy();
+    expect(getByText("Add a short reason for the team.")).toBeTruthy();
+  });
+
+  it("should not open reject modal when reviewing", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    mockUseJudgementReturn.isReviewing = true;
+    const { getByTestId, queryByText } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    fireEvent.press(getByTestId("reject-button"));
+
+    expect(queryByText("Reject submission")).toBeNull();
+  });
+
+  it("should show approve alert for judged staff challenges", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    mockUseJudgementReturn.challengeScoringCategory = "JUDGED_STAFF";
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
+
+    fireEvent.press(getByTestId("approve-button"));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      "Approve submission",
+      "Select podium place",
+      expect.any(Array),
+    );
+  });
+
+  it("should directly approve for non-staff judged challenges", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    mockUseJudgementReturn.challengeScoringCategory = "AUTO_APPROVED";
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
+
+    fireEvent.press(getByTestId("approve-button"));
+
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it("should not open approve selection when reviewing", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    mockUseJudgementReturn.isReviewing = true;
+    const { getByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
+
+    fireEvent.press(getByTestId("approve-button"));
+
+    expect(Alert.alert).not.toHaveBeenCalled();
+  });
+
+  it("should close reject modal when cancel pressed", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    const { getByTestId, getByText, queryByText } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    fireEvent.press(getByTestId("reject-button"));
+    expect(getByText("Reject submission")).toBeTruthy();
+
+    fireEvent.press(getByTestId("reject-cancel-button"));
+    expect(queryByText("Reject submission")).toBeNull();
+  });
+
+  it("should confirm reject with reason and close modal", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    const { getByTestId, getByText, queryByText, getByPlaceholderText } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    fireEvent.press(getByTestId("reject-button"));
+    expect(getByText("Reject submission")).toBeTruthy();
+
+    const input = getByPlaceholderText("Why was this rejected?");
+    fireEvent.changeText(input, "Not valid");
+
+    fireEvent.press(getByTestId("reject-confirm-button"));
+    expect(queryByText("Reject submission")).toBeNull();
+  });
+
+  it("should not confirm reject when reason is empty", () => {
+    mockUseJudgementReturn.currentSubmission = { id: "sub-1" };
+    const { getByTestId, getByText } = renderWithProviders(
+      <CardStack {...defaultProps} />,
+    );
+
+    fireEvent.press(getByTestId("reject-button"));
+    expect(getByText("Reject submission")).toBeTruthy();
+
+    fireEvent.press(getByTestId("reject-confirm-button"));
+    expect(getByText("Reject submission")).toBeTruthy();
   });
 });

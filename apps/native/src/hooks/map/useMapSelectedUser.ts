@@ -34,8 +34,7 @@ export function useMapSelectedUser({
     const newIds = sharingUserIds.filter((id) => id !== selectedUser.id);
     try {
       await updateSharing(newIds);
-    } catch (err) {
-      console.error("Failed to stop sharing:", err);
+    } catch {
       // Error handling is now done in useMapSharing hook
     }
   };

@@ -9,16 +9,17 @@ import { useAutoPushSubscription } from "~/hooks/notifications";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
 import { LocationStoreProvider } from "~/stores/location";
 
-// Global handler for notifications (module-level)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+function initNotifications(): void {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 import {
   IBMPlexSans_100Thin,
@@ -34,8 +35,9 @@ import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { QueryProvider, orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName } from "@mirai-app/shared";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
-import "~/services/background/backgroundLocationTask";
+import { initBackgroundLocationTask } from "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
 import "../global.css";
@@ -56,6 +58,8 @@ function AutoPushSubscription() {
 }
 
 function App() {
+  initNotifications();
+  initBackgroundLocationTask();
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
   const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =
@@ -142,15 +146,12 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        name:
-          user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.firstName || user.lastName || null,
+        name: formatDisplayName(user.firstName, user.lastName),
         emailVerified: null, // TODO: Add email verification logic when available
         role: user.role,
       };
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
+    } catch {
+      // TODO: Add Sentry crash reporting for production errors
       return null;
     }
   };

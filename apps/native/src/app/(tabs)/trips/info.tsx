@@ -62,11 +62,15 @@ export default function TripInfoScreen() {
       const mapBgResource = getResource("MAP_BG_IMAGE");
 
       if (heroResource?.storagePath) {
-        downloadHero({ storagePath: heroResource.storagePath }).catch(console.error);
+        downloadHero({ storagePath: heroResource.storagePath }).catch(() => {
+          /* no-op */
+        });
       }
 
       if (mapBgResource?.storagePath) {
-        downloadMapBg({ storagePath: mapBgResource.storagePath }).catch(console.error);
+        downloadMapBg({ storagePath: mapBgResource.storagePath }).catch(() => {
+          /* no-op */
+        });
       }
     }
   }, [tripId, isLoading, getResource, downloadHero, downloadMapBg]);
@@ -78,8 +82,6 @@ export default function TripInfoScreen() {
       const infopackResource = getResource("INFOPACK");
 
       // Note: File existence checking will be handled by the download hook's cache mechanism
-      console.log("PDF Map resource:", pdfMapResource ? "available" : "not found");
-      console.log("Infopack resource:", infopackResource ? "available" : "not found");
     }
   }, [isLoading, getResource]);
 
@@ -99,7 +101,7 @@ export default function TripInfoScreen() {
     const whatsappResource = getResource("WHATSAPP");
     if (whatsappResource?.url) {
       Linking.openURL(whatsappResource.url).catch(() => {
-        console.error("Failed to open WhatsApp");
+        /* no-op */
       });
     }
   };
@@ -114,8 +116,7 @@ export default function TripInfoScreen() {
         setPdfModalTitle("Infopack");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
-      } catch (error) {
-        console.error("Error handling Infopack PDF:", error);
+      } catch {
         Alert.alert("Error", "Could not open the infopack. Please try again later.");
       }
     }
@@ -144,8 +145,7 @@ export default function TripInfoScreen() {
         setPdfModalTitle("PDF Map");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
-      } catch (error) {
-        console.error("Error handling PDF:", error);
+      } catch {
         Alert.alert("Error", "Could not open the map. Please try again later.");
       }
     }
@@ -433,11 +433,10 @@ export default function TripInfoScreen() {
               trustAllCerts={false}
               minScale={1}
               maxScale={8}
-              onLoadComplete={(numberOfPages) => {
-                console.log(`PDF loaded with ${numberOfPages} pages`);
+              onLoadComplete={() => {
+                /* no-op */
               }}
               onError={(error) => {
-                console.error("PDF Error:", error);
                 Alert.alert("Error", "Could not load PDF");
               }}
               enablePaging={false}

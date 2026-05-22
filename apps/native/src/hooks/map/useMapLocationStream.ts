@@ -2,6 +2,96 @@ import { useState, useMemo, useEffect } from "react";
 import { orpc } from "@mirai-app/orpc/client";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
+import { formatDisplayName } from "@mirai-app/shared";
+
+export function buildLocationUpdateData(location: {
+  coords: { latitude: number; longitude: number };
+  timestamp: string | number | Date;
+}) {
+  return {
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+    updatedAt: location.timestamp,
+  };
+}
+
+export function buildUserDataFromLocationUser(user: {
+  firstName?: string | null;
+  lastName?: string | null;
+  image?: string | null;
+}) {
+  return {
+    name: formatDisplayName(user.firstName, user.lastName) ?? undefined,
+    image: user.image ?? undefined,
+  };
+}
+
+export function removeUserFromLocations(
+  prev: Record<string, unknown>,
+  userId: string,
+): Record<string, unknown> {
+  const next = { ...prev };
+  delete next[userId];
+  return next;
+}
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("UNAUTHORIZED");
+}
+
+export function isValidLocationEvent(event: {
+  type: string;
+  location?: unknown;
+  userId?: string;
+}): boolean {
+  return (
+    (event.type === "upsert" && !!event.location) ||
+    (event.type === "delete" && !!event.userId)
+  );
+}
+
+export function processLocationStreamEvent(
+  event: {
+    type: string;
+    location?: {
+      user?: { id?: string; firstName?: string | null; lastName?: string | null; image?: string | null };
+      coords?: { latitude: number; longitude: number };
+      timestamp?: string | number | Date;
+    };
+    userId?: string;
+  },
+  setLocationsByUserId: React.Dispatch<
+    React.SetStateAction<
+      Record<string, { latitude: number; longitude: number; updatedAt: string | number | Date }>
+    >
+  >,
+  setUsersData: React.Dispatch<
+    React.SetStateAction<
+      Record<string, { name?: string; email?: string; image?: string; houseNumber?: string }>
+    >
+  >,
+): void {
+  if (event.type === "upsert" && event.location) {
+    const { location } = event;
+    const userId = location?.user?.id ?? "";
+    setLocationsByUserId((prev) => ({
+      ...prev,
+      [userId]: buildLocationUpdateData(location as { coords: { latitude: number; longitude: number }; timestamp: string | number | Date }),
+    }));
+    if (location?.user) {
+      setUsersData((prev) => ({
+        ...prev,
+        [userId]: buildUserDataFromLocationUser(location.user),
+      }));
+    }
+  }
+
+  if (event.type === "delete" && event.userId) {
+    const userId = event.userId;
+    setLocationsByUserId((prev) => removeUserFromLocations(prev, userId) as typeof prev);
+    setUsersData((prev) => removeUserFromLocations(prev, userId) as typeof prev);
+  }
+}
 
 export function useMapLocationStream(enabled: boolean) {
   const { canViewOthersLocations } = useLocationContext();
@@ -31,48 +121,11 @@ export function useMapLocationStream(enabled: boolean) {
 
         for await (const data of stream) {
           if (controller.signal.aborted) break;
-          const event = data;
-          if (event.type === "upsert" && event.location) {
-            const { location } = event;
-            const userId = location?.user?.id ?? "";
-            setLocationsByUserId((prev) => ({
-              ...prev,
-              [userId]: {
-                latitude: location?.coords.latitude,
-                longitude: location?.coords.longitude,
-                updatedAt: location?.timestamp,
-              },
-            }));
-            if (location?.user) {
-              setUsersData((prev) => ({
-                ...prev,
-                [userId]: {
-                  name: `${location.user?.firstName ?? ""} ${location.user?.lastName ?? ""}`.trim(),
-                  image: location.user?.image ?? undefined,
-                },
-              }));
-            }
-          }
-
-          if (event.type === "delete" && "userId" in event && event.userId) {
-            const userId = event.userId;
-            setLocationsByUserId((prev) => {
-              const next = { ...prev };
-              delete next[userId];
-              return next;
-            });
-            setUsersData((prev) => {
-              const next = { ...prev };
-              delete next[userId];
-              return next;
-            });
-          }
+          processLocationStreamEvent(data, setLocationsByUserId, setUsersData);
         }
       } catch (error: unknown) {
-        if (error instanceof Error && error.message.includes("UNAUTHORIZED")) {
-          console.warn("Location subscription unauthorized - user may not be logged in");
-        } else {
-          console.error("Location subscription error:", error);
+        if (!isUnauthorizedError(error)) {
+          // TODO: Add Sentry crash reporting for production errors
         }
       }
     };

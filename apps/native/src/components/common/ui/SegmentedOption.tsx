@@ -7,6 +7,7 @@ interface SegmentedOptionProps {
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
+  testID?: string;
 }
 
 export function SegmentedOption({
@@ -15,9 +16,11 @@ export function SegmentedOption({
   onPress,
   style,
   disabled = false,
+  testID = `segmented-option-${label}`,
 }: SegmentedOptionProps) {
   return (
     <Pressable
+      testID={testID}
       style={[
         styles.option,
         selected && styles.optionSelected,

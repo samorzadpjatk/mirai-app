@@ -182,8 +182,6 @@ describe("useMapSelectedUser", () => {
       await result.current.stopSharing();
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to stop sharing:", expect.any(Error));
-
     consoleErrorSpy.mockRestore();
   });
 

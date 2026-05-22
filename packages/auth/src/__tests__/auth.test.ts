@@ -12,8 +12,22 @@ import {
   hasRequiredRole,
   syncUserToDatabase,
 } from "../authServer";
+import { logger } from "@mirai-app/shared";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 import type { User, DB } from "@mirai-app/db";
+
+vi.mock("@mirai-app/shared", () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+  formatDisplayName: (firstName?: string | null, lastName?: string | null, fallback?: string | null) => {
+    const parts = [firstName, lastName].filter(Boolean);
+    return parts.length > 0 ? parts.join(" ") : (fallback ?? null);
+  },
+}));
 
 describe("authServer", () => {
   let mockSupabase: SupabaseClient;
@@ -237,16 +251,13 @@ describe("authServer", () => {
         error: { message: "Admin lookup failed" },
       } as never);
 
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-
       const result = await requireAuth(mockDb, mockSupabase, "token");
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "[Auth] Failed to check ban status for auth-123: Admin lookup failed",
+      expect(logger.warn).toHaveBeenCalledWith(
+        { authUserId: "auth-123", error: "Admin lookup failed" },
+        "Failed to check ban status",
       );
       expect(result.dbUser).toEqual(mockDbUser);
-
-      consoleSpy.mockRestore();
     });
 
     it("should throw AuthenticationError when db user not found after auth", async () => {

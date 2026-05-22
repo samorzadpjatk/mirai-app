@@ -1,4 +1,5 @@
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
+import { logger } from "./logger";
 
 interface SupabaseAdminMetadata {
   ban_reason?: string | null;
@@ -24,7 +25,8 @@ export const buildAuthEmailLookup = async (
     uniqueIds.map(async (authUserId) => {
       const { data, error } = await supabase.auth.admin.getUserById(authUserId);
       if (error) {
-        console.warn(`[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`);
+        const warnMsg = `[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`;
+        logger.warn({ authUserId, error: error.message }, warnMsg);
         return [authUserId, null] as const;
       }
 
@@ -58,7 +60,8 @@ export const buildAuthUserSummaryLookup = async (
     uniqueIds.map(async (authUserId) => {
       const { data, error } = await supabase.auth.admin.getUserById(authUserId);
       if (error) {
-        console.warn(`[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`);
+        const warnMsg = `[Auth] Failed to fetch auth user ${authUserId}: ${error.message}`;
+        logger.warn({ authUserId, error: error.message }, warnMsg);
         return [
           authUserId,
           {

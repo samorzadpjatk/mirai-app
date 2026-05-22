@@ -12,12 +12,12 @@ import { eq, and, or, count, sql, lte, gt, isNull } from "drizzle-orm";
 import type { DB, TransactionDB } from "@mirai-app/db";
 
 const HOUR_MS = 60 * 60 * 1000;
-const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;
+export const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;
 
-const resolvePeerVotingDurationHours = (
+export function resolvePeerVotingDurationHours(
   votingStartTime?: Date | null,
   votingEndTime?: Date | null,
-) => {
+): number {
   if (!votingStartTime || !votingEndTime) {
     return DEFAULT_PEER_VOTING_DURATION_HOURS;
   }
@@ -28,7 +28,7 @@ const resolvePeerVotingDurationHours = (
   }
 
   return Math.max(1, Math.ceil(durationMs / HOUR_MS));
-};
+}
 
 type ChallengeEventType = "challenge_started" | "voting_started" | "completed";
 
@@ -76,7 +76,7 @@ const loadChallengeForFeed = async (
   return challenge ?? null;
 };
 
-const formatSubmissionDeadline = (value: Date | null) => {
+export function formatSubmissionDeadline(value: Date | null): string {
   if (!value) {
     return "zakończenia etapu zgłoszeń";
   }
@@ -88,7 +88,7 @@ const formatSubmissionDeadline = (value: Date | null) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(value);
-};
+}
 
 const createChallengeEventActivity = async (params: {
   tx: DB | TransactionDB;
@@ -154,13 +154,13 @@ const createChallengeEventActivity = async (params: {
   }
 };
 
-const resolvePodiumPoints = (
+export function resolvePodiumPoints(
   challenge: Pick<
     ChallengeForFeed,
     "basePoints" | "firstPlacePoints" | "secondPlacePoints" | "thirdPlacePoints"
   >,
   ranking: number,
-) => {
+): number {
   switch (ranking) {
     case 1:
       return challenge.firstPlacePoints ?? challenge.basePoints;
@@ -171,7 +171,7 @@ const resolvePodiumPoints = (
     default:
       return challenge.basePoints;
   }
-};
+}
 
 const resolveCoinTransactionActorId = async (params: {
   tx: DB | TransactionDB;

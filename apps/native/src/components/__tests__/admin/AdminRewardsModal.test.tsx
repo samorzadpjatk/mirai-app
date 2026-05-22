@@ -15,92 +15,9 @@ jest.mock("~/hooks/files", () => ({
   useFileUpload: () => ({ upload: mockUpload, status: "idle", progress: { percent: null } }),
 }));
 
-interface AppModalShellProps {
-  children: React.ReactNode;
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-}
 
-interface AppModalFooterProps {
-  primaryLabel: string;
-  onPrimary: () => void;
-  secondaryLabel: string;
-  onSecondary: () => void;
-  isPrimaryLoading?: boolean;
-}
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
 
-interface ThemedTextInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
-  multiline?: boolean;
-}
-
-jest.mock("~/components/common/ui", () => {
-  const React = jest.requireActual("react");
-  const { View, Text, TouchableOpacity, TextInput } = jest.requireActual("react-native");
-
-  return {
-    AppModalShell: ({ children, visible, title, onClose }: AppModalShellProps) =>
-      visible ? (
-        <View>
-          <Text>{title}</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text>Close</Text>
-          </TouchableOpacity>
-          {children}
-        </View>
-      ) : null,
-    AppModalFooter: ({
-      primaryLabel,
-      onPrimary,
-      secondaryLabel,
-      onSecondary,
-      isPrimaryLoading,
-    }: AppModalFooterProps) => (
-      <View>
-        <TouchableOpacity onPress={onPrimary} disabled={isPrimaryLoading}>
-          <Text>{primaryLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onSecondary}>
-          <Text>{secondaryLabel}</Text>
-        </TouchableOpacity>
-      </View>
-    ),
-    FormField: ({ children, label, required }: FormFieldProps) => (
-      <View>
-        <Text>
-          {label}
-          {required ? "*" : ""}
-        </Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      keyboardType,
-      multiline,
-    }: ThemedTextInputProps) => (
-      <TextInput
-        value={value}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        onChangeText={onChangeText}
-      />
-    ),
-  };
-});
 
 describe("AdminRewardsModal", () => {
   beforeEach(() => {

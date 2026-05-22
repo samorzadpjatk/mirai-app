@@ -36,8 +36,8 @@ export function useSelectedTrip() {
         onSuccess: () => {
           // Query cache will be updated automatically through the mutation
         },
-        onError: (error: unknown) => {
-          console.warn("Failed to persist selected trip in storage:", error);
+        onError: () => {
+          // Silently ignore storage persistence errors
         },
       });
     },

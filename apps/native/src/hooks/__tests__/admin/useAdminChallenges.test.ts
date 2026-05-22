@@ -497,3 +497,148 @@ describe("useAdminChallenges", () => {
     );
   });
 });
+
+import {
+  transformRawChallenge,
+  buildCreateChallengeInput,
+  buildChallengeStats,
+} from "../../admin/useAdminChallenges";
+import type { AdminChallengeUI } from "../../admin/useAdminChallenges";
+
+describe("transformRawChallenge", () => {
+  it("should transform a complete raw challenge", () => {
+    const raw = {
+      id: "c1",
+      tripId: "trip-1",
+      name: "Photo Challenge",
+      title: "Photo",
+      description: "Take a photo",
+      points: 100,
+      category: "standard",
+      icon: "camera",
+      status: "active",
+    };
+
+    const result = transformRawChallenge(raw);
+
+    expect(result.id).toBe("c1");
+    expect(result.title).toBe("Photo Challenge");
+    expect(result.description).toBe("Take a photo");
+    expect(result.points).toBe(100);
+    expect(result.category).toBe("standard");
+    expect(result.icon).toBe("camera");
+    expect(result.status).toBe("active");
+    expect(result.submissionType).toBe("IMAGE");
+    expect(result.scoringCategory).toBe("JUDGED_STAFF");
+  });
+
+  it("should use title when name is null", () => {
+    const raw = {
+      id: "c1",
+      tripId: "trip-1",
+      name: null,
+      title: "Photo",
+      description: null,
+      points: null,
+      category: null,
+      icon: null,
+      status: null,
+    };
+
+    const result = transformRawChallenge(raw);
+
+    expect(result.title).toBe("Photo");
+    expect(result.description).toBe("");
+    expect(result.points).toBe(0);
+    expect(result.category).toBe("standard");
+    expect(result.icon).toBe("star");
+    expect(result.status).toBe("active");
+  });
+
+  it("should use defaults when all optional fields are null", () => {
+    const raw = {
+      id: "c1",
+      tripId: "trip-1",
+      name: null,
+      title: null,
+      description: null,
+      points: null,
+      category: null,
+      icon: null,
+      status: null,
+    };
+
+    const result = transformRawChallenge(raw);
+
+    expect(result.title).toBe("");
+    expect(result.points).toBe(0);
+  });
+});
+
+describe("buildCreateChallengeInput", () => {
+  it("should build input with all fields", () => {
+    const payload = {
+      tripId: "trip-1",
+      title: "Challenge",
+      description: "Desc",
+      submissionType: "IMAGE" as const,
+      scoringCategory: "JUDGED_STAFF" as const,
+      targetLatitude: 52.0,
+      targetLongitude: 21.0,
+    };
+
+    const result = buildCreateChallengeInput(payload);
+
+    expect(result).toEqual({
+      tripId: "trip-1",
+      name: "Challenge",
+      description: "Desc",
+      submissionType: "IMAGE",
+      scoringCategory: "JUDGED_STAFF",
+      targetLatitude: 52.0,
+      targetLongitude: 21.0,
+    });
+  });
+
+  it("should convert MULTI_IMAGE to IMAGE", () => {
+    const result = buildCreateChallengeInput({
+      tripId: "trip-1",
+      submissionType: "MULTI_IMAGE",
+    });
+
+    expect(result.submissionType).toBe("IMAGE");
+  });
+
+  it("should use defaults when optional fields are missing", () => {
+    const result = buildCreateChallengeInput({ tripId: "trip-1" });
+
+    expect(result.name).toBe("");
+    expect(result.description).toBe("");
+    expect(result.submissionType).toBe("IMAGE");
+    expect(result.scoringCategory).toBe("JUDGED_STAFF");
+    expect(result.targetLatitude).toBeUndefined();
+    expect(result.targetLongitude).toBeUndefined();
+  });
+});
+
+describe("buildChallengeStats", () => {
+  it("should count active and wintegral challenges", () => {
+    const challenges: AdminChallengeUI[] = [
+      { id: "1", title: "C1", status: "active", category: "wintegral" } as AdminChallengeUI,
+      { id: "2", title: "C2", status: "active", category: "standard" } as AdminChallengeUI,
+      { id: "3", title: "C3", status: "inactive", category: "wintegral" } as AdminChallengeUI,
+    ];
+
+    const result = buildChallengeStats(challenges);
+
+    expect(result.activeChallenges).toBe(2);
+    expect(result.wintegralChallenges).toBe(2);
+  });
+
+  it("should return zeros for empty array", () => {
+    const result = buildChallengeStats([]);
+
+    expect(result.activeChallenges).toBe(0);
+    expect(result.wintegralChallenges).toBe(0);
+  });
+});

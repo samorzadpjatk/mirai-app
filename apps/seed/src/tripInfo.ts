@@ -10,6 +10,7 @@ import { readFile } from "./utils/fs";
 import { assetsRoot } from "./constants";
 import { tripResources, tripInsurances, tripInsuranceSteps } from "@mirai-app/db";
 import { eq, inArray } from "drizzle-orm";
+import { logger } from "@mirai-app/shared";
 
 function isTripResourceConfig(value: unknown): value is TripResourceConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -43,10 +44,10 @@ export const seedTripInfo = async (
   seedEnv: SeedEnv,
   infoConfig: TripInfoConfig,
 ): Promise<void> => {
-  console.log("Seeding trip info...");
+  logger.info("Seeding trip info...");
 
   if (!infoConfig || infoConfig.resources.length === 0) {
-    console.log("No trip info configured, skipping...");
+    logger.info("No trip info configured, skipping...");
     return;
   }
 
@@ -73,7 +74,7 @@ export const seedTripInfo = async (
             bucketName = env.videoBucket;
             objectPath = resourceConfig.storagePath.replace("videos/", "");
           } else {
-            console.warn(`✗ Unknown storage path format: ${resourceConfig.storagePath}`);
+            logger.warn(`✗ Unknown storage path format: ${resourceConfig.storagePath}`);
             bucketName = env.publicBucket;
             objectPath = resourceConfig.storagePath;
           }
@@ -84,11 +85,11 @@ export const seedTripInfo = async (
           });
 
           if (uploadResult.error) {
-            console.warn(
+            logger.warn(
               `✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadResult.error.message}`,
             );
           } else {
-            console.log(`✓ Uploaded file: ${resourceConfig.storagePath}`);
+            logger.info(`✓ Uploaded file: ${resourceConfig.storagePath}`);
 
             if (bucketName === env.publicBucket) {
               const publicUrlResult = supabase.storage.from(bucketName).getPublicUrl(objectPath);
@@ -97,7 +98,7 @@ export const seedTripInfo = async (
           }
         } catch (fileError: unknown) {
           const error = fileError instanceof Error ? fileError : new Error(String(fileError));
-          console.warn(`✗ Failed to process file ${resourceConfig.storagePath}:`, error);
+          logger.warn(error, `✗ Failed to process file ${resourceConfig.storagePath}`);
         }
       }
 
@@ -117,7 +118,7 @@ export const seedTripInfo = async (
 
       await db.insert(tripResources).values(resource);
 
-      console.log(`✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`);
+      logger.info(`✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`);
     }
 
     if (infoConfig.insurance) {
@@ -155,7 +156,7 @@ export const seedTripInfo = async (
         throw new Error("Failed to create trip insurance");
       }
 
-      console.log(`✓ Seeded insurance: ${infoConfig.insurance.label}`);
+      logger.info(`✓ Seeded insurance: ${infoConfig.insurance.label}`);
 
       for (const stepConfig of infoConfig.insurance.steps) {
         const step: Omit<TripInsuranceStep, "id" | "createdAt" | "updatedAt"> = {
@@ -170,13 +171,13 @@ export const seedTripInfo = async (
 
         await db.insert(tripInsuranceSteps).values(step);
 
-        console.log(`✓ Seeded insurance step: ${stepConfig.title}`);
+        logger.info(`✓ Seeded insurance step: ${stepConfig.title}`);
       }
     }
 
-    console.log("✓ Trip info seeding completed");
+    logger.info("✓ Trip info seeding completed");
   } catch (error) {
-    console.error("✗ Failed to seed trip info:", error);
+    logger.error(error, "✗ Failed to seed trip info");
     throw error;
   }
 };

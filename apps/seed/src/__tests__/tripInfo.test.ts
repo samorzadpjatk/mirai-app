@@ -389,8 +389,8 @@ describe("tripInfo", () => {
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to process file"),
         expect.any(Error),
+        expect.stringContaining("✗ Failed to process file"),
       );
 
       consoleSpy.mockRestore();
@@ -524,7 +524,7 @@ describe("tripInfo", () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
       await expect(seedTripInfo("db-url", "trip-1", "dev", infoConfig)).rejects.toThrow("DB Error");
-      expect(consoleSpy).toHaveBeenCalledWith("✗ Failed to seed trip info:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.any(Error), "✗ Failed to seed trip info");
 
       consoleSpy.mockRestore();
     });

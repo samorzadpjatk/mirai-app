@@ -104,6 +104,65 @@ Specs now describe new behavior
 
 ---
 
+## Code Quality Standards
+
+### File Size Limits
+
+- **Rule**: Router/service files >1000 lines violate SRP and are hard to review/test safely.
+- **Action**: Split into `*Queries.ts`, `*Mutations.ts`, `*Enrichment.ts` files.
+- **Current debt**: `activityFeed.ts` (1579), `group.ts` (1427), `location.ts` (1281), `challengeSubmission.ts` (1164), `reward.ts` (1152).
+
+### Module-Level Side Effects
+
+- **Anti-pattern**: Import-time side effects make testing and deterministic initialization impossible.
+- **Rule**: Move setup into explicit `init()` functions called from app entry points.
+- **Current offenders**:
+  - `apps/native/src/app/_layout.tsx` — sets global notification handler at module import
+  - `apps/native/src/services/background/backgroundLocationTask.ts` — registers background task at module load
+  - `packages/orpc/src/api/trpc.ts` — writes user-agent telemetry on every request via fire-and-forget
+
+### Console Logging as Error Handling
+
+- **Rule**: `console.error` / `console.warn` in production code is not error handling. Use structured logging (Pino backend, Sentry native).
+- **Current offenders**: 73 console calls in native app, 28 in backend routers.
+
+### "Half-Effect" Trap
+
+- **Warning**: Partial FP library adoption creates the highest-cost state.
+- **Rule**: If adopting an FP library (e.g., neverthrow for typed errors), commit fully to a bounded context. Never sprinkle it into imperative code.
+- **Verdict for this codebase**: Effect is a **net-negative refactor** — by both architectural redundancy **and** total lines of code. Analysis of 164 async functions shows Effect would add ~5,400–7,400 lines (~4–5% increase), not reduce them. The existing architecture (oRPC + React Query + Drizzle) already solves what Effect offers.
+
+## Mechanical Refactoring Verification
+
+When agents split files or move code (e.g., router → directory module):
+
+**Critical**: Verify regexes, string literals, and escape sequences character-by-character after the move.
+
+**Example bug caught**: During `storage.ts` → `storage/` split, the regex `/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_./-]+$/` lost the `/` character in the character class, becoming `/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/`. This broke nested directory edge cases in storage tests.
+
+**Checklist after any file split**:
+- [ ] Compare all regexes between original and new files (use `diff` or manual check)
+- [ ] Run the specific test file for the moved module
+- [ ] Look for `no-useless-escape` lint errors that might indicate character class corruption
+
+## Parallel Execution Pattern for Mass Refactoring
+
+For splitting many routers (or similar mass file operations):
+
+1. **Group by complexity**: ~4 simple routers per wave, ~3 complex routers per wave
+2. **Execute in parallel**: Launch one agent per router using `run_in_background=true`
+3. **Gate with typecheck**: Run `tsc --noEmit` after each wave before starting the next
+4. **Final verification**: Run full test suite (`bun run test`) after all waves complete
+
+## Anti-Patterns and Pitfalls
+
+| Pitfall | Why It Happens | Prevention |
+|---------|---------------|------------|
+| Using `bun test` on vitest projects | Bun's native runner looks like it should work | Always check `package.json` scripts; use `bun run test` |
+| Regex corruption during file moves | Agents copy-paste code; escape sequences can be mangled | Verify regexes with `git diff` or manual comparison |
+| False test failure panic | Seeing many failures after refactoring triggers alarm | Run the correct test runner before diagnosing |
+| Import path depth errors | Moving files one level deeper changes relative paths | Systematic mapping: `../../X` → `../../../X` for each level |
+
 ## Related Documentation
 
 - [AI-Driven Change Workflow](../workflows/ai-change-workflow.md) - Complete workflow phases

@@ -58,6 +58,16 @@ When using `/sdd:implement-task`, TDD is automatically applied:
 - ❌ "Deleting X hours is wasteful" - Sunk cost. Unverified code = technical debt.
 - ❌ "TDD is dogmatic" - TDD IS pragmatic: finds bugs before commit.
 
+### Test Quality Anti-Patterns (Specific to This Codebase)
+
+| Anti-Pattern | The Problem | The Fix |
+|--------------|-------------|---------|
+| **Mock verification** | Mock `useQuery`, return fake data, assert hook returns it | Test real behavior with MSW or integration tests |
+| **Testing the framework** | Verifying React Query's `isLoading` propagates correctly | Don't test React Query — test your logic |
+| **"It didn't crash" tests** | `expect(element).toBeOnTheScreen()` as sole assertion | Test actual user-facing behavior |
+| **Runtime type tests** | `expect(user.role).toBe(role)` after assignment | Remove — TypeScript already verifies this |
+| **No rollback tests** | Transaction mock is pass-through, no failure paths | Add `MockTransactionDB` with simulated rollback |
+
 ## TDD Checklist
 
 Before marking complete:

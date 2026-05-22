@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
-import { useStaffVoting, type VotingSubmission } from "../../admin/useStaffVoting";
+import { useStaffVoting, type VotingSubmission, toPairKey, rankByRating, pickNextPair } from "../../admin/useStaffVoting";
 
 describe("useStaffVoting", () => {
   const mockSubmissions: VotingSubmission[] = [
@@ -405,5 +405,66 @@ describe("useStaffVoting", () => {
     }
 
     expect(result.current.comparisonCount).toBe(3);
+  });
+});
+
+describe("toPairKey", () => {
+  it("should create consistent key regardless of order", () => {
+    expect(toPairKey("a", "b")).toBe("a|b");
+    expect(toPairKey("b", "a")).toBe("a|b");
+  });
+
+  it("should handle same ids", () => {
+    expect(toPairKey("a", "a")).toBe("a|a");
+  });
+});
+
+describe("rankByRating", () => {
+  it("should sort by rating descending", () => {
+    const submissions: VotingSubmission[] = [
+      { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+      { id: "2", groupId: "g2", groupName: "B", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+    ];
+    const ratings = { "1": 1600, "2": 1500 };
+    const result = rankByRating(submissions, ratings);
+    expect(result[0].id).toBe("1");
+    expect(result[1].id).toBe("2");
+  });
+
+  it("should use base rating when not found", () => {
+    const submissions: VotingSubmission[] = [
+      { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+    ];
+    const result = rankByRating(submissions, {});
+    expect(result[0].id).toBe("1");
+  });
+});
+
+describe("pickNextPair", () => {
+  it("should return null when no candidates", () => {
+    const submissions: VotingSubmission[] = [
+      { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+    ];
+    const result = pickNextPair(submissions, {}, new Set());
+    expect(result).toBeNull();
+  });
+
+  it("should skip already compared pairs", () => {
+    const submissions: VotingSubmission[] = [
+      { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+      { id: "2", groupId: "g2", groupName: "B", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+    ];
+    const comparedPairs = new Set(["1|2"]);
+    const result = pickNextPair(submissions, {}, comparedPairs);
+    expect(result).toBeNull();
+  });
+
+  it("should skip same group pairs", () => {
+    const submissions: VotingSubmission[] = [
+      { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+      { id: "2", groupId: "g1", groupName: "B", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
+    ];
+    const result = pickNextPair(submissions, {}, new Set());
+    expect(result).toBeNull();
   });
 });

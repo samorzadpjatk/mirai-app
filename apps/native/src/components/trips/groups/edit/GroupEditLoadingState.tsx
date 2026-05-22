@@ -4,7 +4,7 @@ import { colors } from "~/styles";
 export function GroupEditLoadingState() {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.primary} />
+      <ActivityIndicator testID="group-edit-loading-indicator" size="large" color={colors.primary} />
     </View>
   );
 }

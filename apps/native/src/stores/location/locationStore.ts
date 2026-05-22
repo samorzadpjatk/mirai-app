@@ -10,16 +10,12 @@ import {
   stopBackgroundLocationTask,
 } from "~/services/location/backgroundLocation";
 import { LOCATION_SHARING_SETTINGS_KEY } from "~/services/location/constants";
-
 export type LocationPermissionStatus = "granted" | "denied" | "undetermined";
-
 export type ServerSharingUpdater = (input: {
   isSharingLocation: boolean;
   userIdsToShareWith: string[];
 }) => Promise<unknown>;
-
 let _updateSharingOnServer: ServerSharingUpdater | null = null;
-
 /**
  * Inject the oRPC mutation function so the store can call the server
  * without depending on React hooks.
@@ -27,7 +23,6 @@ let _updateSharingOnServer: ServerSharingUpdater | null = null;
 export function setLocationServerUpdater(fn: ServerSharingUpdater | null) {
   _updateSharingOnServer = fn;
 }
-
 export interface LocationState {
   isLocationSharingEnabled: boolean;
   permissionStatus: LocationPermissionStatus;
@@ -38,7 +33,6 @@ export interface LocationState {
   isUpdatingSharing: boolean;
   isUpdatingBackgroundLocation: boolean;
 }
-
 export interface LocationActions {
   /**
    * Initialize location state from local storage and system permissions.
@@ -54,9 +48,7 @@ export interface LocationActions {
   toggleBackgroundLocationUpdates: () => Promise<void>;
   openSystemLocationSettings: () => Promise<void>;
 }
-
 export type LocationStore = LocationState & LocationActions;
-
 export const locationStore = createStore<LocationStore>()((set, get) => ({
   // State
   isLocationSharingEnabled: false,
@@ -67,7 +59,6 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
   isLoading: true,
   isUpdatingSharing: false,
   isUpdatingBackgroundLocation: false,
-
   // Actions
   hydrate: async (serverSharingEnabled) => {
     try {
@@ -84,7 +75,6 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         Location.getBackgroundPermissionsAsync(),
         hasBackgroundLocationTaskStarted(),
       ]);
-
       const localSharingEnabled = savedSharing === "true";
       set({
         isLocationSharingEnabled: serverSharingEnabled ?? localSharingEnabled,
@@ -93,13 +83,12 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         isBackgroundLocationEnabled: savedBackgroundEnabled,
         isBackgroundLocationActive: taskStarted,
       });
-    } catch (error) {
-      console.warn("Failed to load location settings:", error);
+    } catch {
+      /* no-op */
     } finally {
       set({ isLoading: false });
     }
   },
-
   syncBackgroundTask: async () => {
     const state = get();
     try {
@@ -113,39 +102,31 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         set({ isBackgroundLocationActive: false });
         return;
       }
-
       await startBackgroundLocationTask();
       set({ isBackgroundLocationActive: true });
-    } catch (error) {
-      console.error("Failed to synchronize background location updates:", error);
+    } catch {
       set({ isBackgroundLocationActive: false });
     }
   },
-
   openSystemLocationSettings: async () => {
     try {
       await Linking.openSettings();
-    } catch (error) {
-      console.error("Failed to open system settings:", error);
+    } catch {
       Alert.alert("Settings Unavailable", "Unable to open system settings on this device.");
     }
   },
-
   requestLocationPermissions: async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       set({ permissionStatus: status as LocationPermissionStatus });
-
       if (status !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
           "Location Permission Required",
           "Please enable location permissions in your device settings to use location features.",
         );
       }
-
       return status;
-    } catch (error) {
-      console.error("Failed to request location permissions:", error);
+    } catch {
       set({ permissionStatus: "denied" });
       Alert.alert(
         "Location Permission Required",
@@ -154,13 +135,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       return "denied";
     }
   },
-
   toggleBackgroundLocationUpdates: async () => {
     const state = get();
     const nextEnabled = !state.isBackgroundLocationEnabled;
-
     set({ isUpdatingBackgroundLocation: true });
-
     try {
       if (!nextEnabled) {
         await setBackgroundLocationPreference(false);
@@ -169,7 +147,6 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         set({ isBackgroundLocationActive: false });
         return;
       }
-
       if (!state.isLocationSharingEnabled) {
         Alert.alert(
           "Enable Location Sharing",
@@ -177,15 +154,12 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         );
         return;
       }
-
       const foregroundPermissions = await Location.getForegroundPermissionsAsync();
       set({ permissionStatus: foregroundPermissions.status as LocationPermissionStatus });
-
       const foregroundStatus =
         foregroundPermissions.status === Location.PermissionStatus.GRANTED
           ? (foregroundPermissions.status as LocationPermissionStatus)
           : await get().requestLocationPermissions();
-
       if (foregroundStatus !== "granted") {
         Alert.alert(
           "Background Location Permission Required",
@@ -202,17 +176,14 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         );
         return;
       }
-
       const currentBackground = await Location.getBackgroundPermissionsAsync();
       set({ backgroundPermissionStatus: currentBackground.status as LocationPermissionStatus });
-
       let backgroundStatus = currentBackground.status;
       if (backgroundStatus !== Location.PermissionStatus.GRANTED) {
         const requestedBackground = await Location.requestBackgroundPermissionsAsync();
         backgroundStatus = requestedBackground.status;
         set({ backgroundPermissionStatus: requestedBackground.status as LocationPermissionStatus });
       }
-
       if (backgroundStatus !== Location.PermissionStatus.GRANTED) {
         Alert.alert(
           "Always Location Access Needed",
@@ -229,13 +200,10 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
         );
         return;
       }
-
       await startBackgroundLocationTask();
       await setBackgroundLocationPreference(true);
-
       set({ isBackgroundLocationEnabled: true, isBackgroundLocationActive: true });
     } catch (error) {
-      console.error("Failed to toggle background location updates:", error);
       Alert.alert(
         "Background Updates Error",
         "Failed to change background location updates. Please try again.",
@@ -244,34 +212,27 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       set({ isUpdatingBackgroundLocation: false });
     }
   },
-
   toggleLocationSharing: async () => {
     const state = get();
     try {
       const newEnabled = !state.isLocationSharingEnabled;
-
       set({ isUpdatingSharing: true });
-
       if (_updateSharingOnServer) {
         await _updateSharingOnServer({
           isSharingLocation: newEnabled,
           userIdsToShareWith: [],
         });
       }
-
       set({ isLocationSharingEnabled: newEnabled });
       await AsyncStorage.setItem(LOCATION_SHARING_SETTINGS_KEY, newEnabled.toString());
-
       if (newEnabled && state.permissionStatus === "undetermined") {
         await get().requestLocationPermissions();
       }
-
       if (!newEnabled) {
         await stopBackgroundLocationTask();
         set({ isBackgroundLocationActive: false });
       }
     } catch (error) {
-      console.error("Failed to toggle location sharing:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to update location settings";
       Alert.alert("Location Sharing Error", errorMessage);

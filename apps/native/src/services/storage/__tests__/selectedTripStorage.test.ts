@@ -123,10 +123,6 @@ describe("Selected Trip Storage", () => {
       const result = await getCachedTrips();
 
       expect(result).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to read cache key "trips.cache.v1":',
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
 
@@ -165,10 +161,6 @@ describe("Selected Trip Storage", () => {
 
       await setCachedTrips([createMockTrip("trip-1", "Trip 1")]);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to write cache key "trips.cache.v1":',
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
   });
@@ -336,10 +328,6 @@ describe("Selected Trip Storage", () => {
 
       await setCachedTripById("trip-1", { id: "trip-1", name: "Trip 1" });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to write cache key "trip.details.cache.v1":',
-        expect.any(Error),
-      );
       consoleSpy.mockRestore();
     });
   });

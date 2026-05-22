@@ -161,8 +161,8 @@ describe("runSeed", () => {
     await runSeed();
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to seed sponsors"),
       expect.any(Error),
+      expect.stringContaining("Failed to seed sponsors"),
     );
   });
 
@@ -177,8 +177,8 @@ describe("runSeed", () => {
     await runSeed();
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to seed rewards"),
       expect.any(Error),
+      expect.stringContaining("Failed to seed rewards"),
     );
   });
 
@@ -193,8 +193,8 @@ describe("runSeed", () => {
     await runSeed();
 
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to seed trip info"),
       expect.any(Error),
+      expect.stringContaining("Failed to seed trip info"),
     );
   });
 

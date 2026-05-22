@@ -86,7 +86,7 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed:", error);
+      expect(consoleSpy).toHaveBeenCalledWith("Scheduler task failed", expect.objectContaining({ message: "Task failed" }));
 
       consoleSpy.mockRestore();
     });
@@ -157,8 +157,8 @@ describe("createInactivityScheduler", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalledWith("Running inactivity check...");
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed:", { inactiveUsers: 5 });
+    expect(consoleSpy).toHaveBeenCalledWith("Running inactivity check");
+    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: { inactiveUsers: 5 } });
 
     consoleSpy.mockRestore();
   });

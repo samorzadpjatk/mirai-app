@@ -38,7 +38,7 @@ interface AdminChallengeListCardProps {
   tripId: string;
 }
 
-const statusColors: Record<string, string> = {
+export const statusColors: Record<string, string> = {
   HIDDEN: "#64748b",
   VISIBLE: "#0ea5e9",
   ACTIVE: "#22c55e",
@@ -46,7 +46,7 @@ const statusColors: Record<string, string> = {
   COMPLETED: "#10b981",
 };
 
-const getSubmissionTypeMeta = (submissionType: ChallengeItem["submissionType"]) => {
+export function getSubmissionTypeMeta(submissionType: ChallengeItem["submissionType"]) {
   switch (submissionType) {
     case "MULTI_IMAGE":
       return { label: "Multi", icon: "images-outline" as const };
@@ -68,9 +68,9 @@ const getSubmissionTypeMeta = (submissionType: ChallengeItem["submissionType"]) 
     default:
       return { label: "Photo", icon: "image-outline" as const };
   }
-};
+}
 
-const getScoringMeta = (scoringCategory: ChallengeItem["scoringCategory"]) => {
+export function getScoringMeta(scoringCategory: ChallengeItem["scoringCategory"]) {
   switch (scoringCategory) {
     case "SPEED":
       return { label: "Speed", icon: "flash-outline" as const };
@@ -82,7 +82,7 @@ const getScoringMeta = (scoringCategory: ChallengeItem["scoringCategory"]) => {
     default:
       return { label: "Staff", icon: "shield-checkmark-outline" as const };
   }
-};
+}
 
 const styles = {
   card: {

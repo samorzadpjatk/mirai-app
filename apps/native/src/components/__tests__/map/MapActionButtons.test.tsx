@@ -60,13 +60,13 @@ describe("MapActionButtons", () => {
   it("should render theme toggle button", () => {
     renderWithProviders(<MapActionButtons />);
 
-    expect(screen.getByTestId("icon-sunny")).toBeOnTheScreen();
+    expect(screen.getByText("sunny")).toBeOnTheScreen();
   });
 
   it("should render recenter button when location sharing is enabled", () => {
     renderWithProviders(<MapActionButtons />);
 
-    expect(screen.getByTestId("icon-locate")).toBeOnTheScreen();
+    expect(screen.getByText("locate")).toBeOnTheScreen();
   });
 
   it("should render background toggle with correct status", () => {

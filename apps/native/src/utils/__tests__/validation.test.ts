@@ -1,5 +1,12 @@
 import { describe, it, expect } from "@jest/globals";
-import { formatDate, getInitials } from "../validation";
+import {
+  formatDate,
+  getInitials,
+  isNonEmptyString,
+  isNameValid,
+  isBanReady,
+  formatBanLabel,
+} from "../validation";
 
 describe("Validation Utilities", () => {
   describe("formatDate", () => {
@@ -73,6 +80,66 @@ describe("Validation Utilities", () => {
 
     it("should handle mixed case names", () => {
       expect(getInitials("JoHn DoE")).toBe("JD");
+    });
+  });
+
+  describe("isNonEmptyString", () => {
+    it("should return true for non-empty string", () => {
+      expect(isNonEmptyString("hello")).toBe(true);
+    });
+
+    it("should return false for empty string", () => {
+      expect(isNonEmptyString("")).toBe(false);
+    });
+
+    it("should return false for whitespace-only string", () => {
+      expect(isNonEmptyString("   ")).toBe(false);
+    });
+  });
+
+  describe("isNameValid", () => {
+    it("should return true when both names are non-empty", () => {
+      expect(isNameValid("John", "Doe")).toBe(true);
+    });
+
+    it("should return false when firstName is empty", () => {
+      expect(isNameValid("", "Doe")).toBe(false);
+    });
+
+    it("should return false when lastName is empty", () => {
+      expect(isNameValid("John", "")).toBe(false);
+    });
+
+    it("should return false for whitespace-only names", () => {
+      expect(isNameValid("  ", "Doe")).toBe(false);
+      expect(isNameValid("John", "  ")).toBe(false);
+    });
+  });
+
+  describe("isBanReady", () => {
+    it("should return true for future date", () => {
+      expect(isBanReady(new Date(Date.now() + 86400000))).toBe(true);
+    });
+
+    it("should return false for past date", () => {
+      expect(isBanReady(new Date(Date.now() - 86400000))).toBe(false);
+    });
+
+    it("should return false for null", () => {
+      expect(isBanReady(null)).toBe(false);
+    });
+  });
+
+  describe("formatBanLabel", () => {
+    it("should return formatted label when banUntil exists", () => {
+      const date = new Date("2024-12-25T15:30:00");
+      const result = formatBanLabel(date);
+      expect(result).toContain("•");
+      expect(result).not.toBe("Select date & time");
+    });
+
+    it("should return placeholder when banUntil is null", () => {
+      expect(formatBanLabel(null)).toBe("Select date & time");
     });
   });
 });

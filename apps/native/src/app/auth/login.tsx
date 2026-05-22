@@ -223,10 +223,9 @@ export default function LoginScreen() {
         publicUrl: privacyPolicyPublicUrl,
       });
       setPolicyPdfUri(result.uri);
-    } catch (err) {
+    } catch {
       setIsPolicyModalVisible(false);
       Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
-      console.error("[PrivacyPolicy] download error:", err);
     } finally {
       setIsPolicyLoading(false);
     }
@@ -437,8 +436,7 @@ export default function LoginScreen() {
             trustAllCerts={false}
             minScale={1}
             maxScale={8}
-            onError={(err) => {
-              console.error("[PrivacyPolicy] PDF error:", err);
+            onError={() => {
               Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
             }}
           />

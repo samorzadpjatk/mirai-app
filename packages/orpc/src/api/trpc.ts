@@ -18,6 +18,7 @@ import {
 } from "@mirai-app/auth";
 import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
 import { createDb, type DB, userAgents } from "@mirai-app/db";
+import { logger } from "../utils/logger";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization = headers.get("authorization") ?? headers.get("Authorization");
@@ -131,8 +132,18 @@ export const createORPCContext = (opts: {
  */
 const base = os.$context<ORPCContext>();
 
+let _telemetryEnabled = false;
+
+export function enableUserAgentTelemetry(): void {
+  _telemetryEnabled = true;
+}
+
 // Global middleware for request telemetry
 const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
+  if (!_telemetryEnabled) {
+    return next();
+  }
+
   const userAgent = context.headers.get("user-agent") ?? context.headers.get("User-Agent");
 
   const platform = getPlatformFromUserAgent(userAgent);
@@ -150,11 +161,11 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
           endpoint: path.join("/"),
         })
         .catch((error: unknown) => {
-          console.error("[UserAgent Logging] Failed to log user agent:", error);
+          logger.error(error, "[UserAgent Logging] Failed to log user agent");
         });
     }
   } catch (error) {
-    console.error("[UserAgent Logging] Unexpected error:", error);
+    logger.error(error, "[UserAgent Logging] Unexpected error");
   }
 
   return next();

@@ -19,6 +19,15 @@ interface Props {
 
 type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
 
+export function shouldFetchNextPage(
+  contentOffsetY: number,
+  layoutMeasurementHeight: number,
+  contentSizeHeight: number,
+  threshold = 280,
+): boolean {
+  return contentOffsetY + layoutMeasurementHeight >= contentSizeHeight - threshold;
+}
+
 const statusMeta: Record<
   PurchaseStatus,
   { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
@@ -51,9 +60,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
     }
 
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
-
-    if (nearBottom) {
+    if (shouldFetchNextPage(contentOffset.y, layoutMeasurement.height, contentSize.height)) {
       void fetchNextPage();
     }
   };

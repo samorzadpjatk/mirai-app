@@ -62,44 +62,6 @@ jest.mock("~/components/admin/AdminHeader", () => {
   };
 });
 
-interface FormFieldProps {
-  children: React.ReactNode;
-  label: string;
-  required?: boolean;
-}
-
-interface ThemedTextInputProps extends React.ComponentProps<typeof TextInput> {
-  value?: string;
-  onChangeText?: (text: string) => void;
-}
-
-jest.mock("~/components/common/ui", () => {
-  const { View, Text, TextInput } = require("react-native");
-  return {
-    FormField: ({ children, label, required }: FormFieldProps) => (
-      <View>
-        <Text>{`${label}${required ? "*" : ""}`}</Text>
-        {children}
-      </View>
-    ),
-    ThemedTextInput: ({
-      value,
-      onChangeText,
-      placeholder,
-      editable,
-      ...props
-    }: ThemedTextInputProps) => (
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        editable={editable}
-        {...props}
-      />
-    ),
-  };
-});
-
 interface PrimaryLoadingButtonProps {
   label: string;
   onPress: () => void;

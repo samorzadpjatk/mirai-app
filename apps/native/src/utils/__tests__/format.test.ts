@@ -14,6 +14,14 @@ describe("Format Utilities", () => {
       const result = formatDate("2024-03-15T10:30:00");
       expect(result).toContain("2024");
     });
+
+    it("should return Unknown date for invalid string", () => {
+      expect(formatDate("invalid")).toBe("Unknown date");
+    });
+
+    it("should return Unknown date for NaN Date", () => {
+      expect(formatDate(new Date(NaN))).toBe("Unknown date");
+    });
   });
 
   describe("formatCurrency", () => {

@@ -10,13 +10,14 @@ import { dirExists } from "./utils/fs";
 import { joinPath } from "./utils/path";
 import { env } from "./config/env";
 import type { SeedEnv, SponsorConfig } from "./types";
+import { logger } from "@mirai-app/shared";
 
 export const runSeed = async () => {
   const arg = process.argv.find((a) => a === "--dev" || a === "--prod");
   const seedEnv: SeedEnv = arg === "--prod" ? "prod" : "dev";
   const envRoot = joinPath(assetsRoot, seedEnv);
 
-  console.log(`Seeding environment: ${seedEnv}`);
+  logger.info(`Seeding environment: ${seedEnv}`);
   if (!(await dirExists(envRoot))) {
     throw new Error(`Missing assets directory for environment: ${envRoot}`);
   }
@@ -33,7 +34,7 @@ export const runSeed = async () => {
     const seededTrip = await seedTrip(trip, trip.users, envRoot, authUsers);
 
     if (!seededTrip) {
-      console.warn(`✗ Failed to seed trip: ${trip.key}`);
+      logger.warn(`✗ Failed to seed trip: ${trip.key}`);
       continue;
     }
 
@@ -45,7 +46,7 @@ export const runSeed = async () => {
       }
       await seedSponsors(env.databaseUrl, seededTrip.id, seedEnv, sponsorConfigs);
     } catch (error) {
-      console.warn(`✗ Failed to seed sponsors for trip ${trip.key}:`, error);
+      logger.warn(error, `✗ Failed to seed sponsors for trip ${trip.key}`);
     }
 
     // Seed rewards if the trip has a rewards config
@@ -54,7 +55,7 @@ export const runSeed = async () => {
         const rewardConfigs = await loadRewardConfigs(envRoot, trip.rewards);
         await seedRewards(rewardConfigs, seededTrip.id, authUsers);
       } catch (error) {
-        console.warn(`✗ Failed to seed rewards for trip ${trip.key}:`, error);
+        logger.warn(error, `✗ Failed to seed rewards for trip ${trip.key}`);
       }
     }
 
@@ -64,10 +65,10 @@ export const runSeed = async () => {
         const infoConfig = await loadTripInfoConfig(envRoot, trip.info);
         await seedTripInfo(env.databaseUrl, seededTrip.id, seedEnv, infoConfig);
       } catch (error) {
-        console.warn(`✗ Failed to seed trip info for trip ${trip.key}:`, error);
+        logger.warn(error, `✗ Failed to seed trip info for trip ${trip.key}`);
       }
     }
   }
 
-  console.log("Seeding completed");
+  logger.info("Seeding completed");
 };

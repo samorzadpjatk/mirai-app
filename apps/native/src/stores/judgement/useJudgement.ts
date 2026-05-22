@@ -36,8 +36,8 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
 
   const reviewMutation = useMutation(
     orpc.challengeSubmission.review.mutationOptions({
-      onError: (error) => {
-        console.error(error);
+      onError: () => {
+        // TODO: Add Sentry crash reporting for production errors
       },
     }),
   );

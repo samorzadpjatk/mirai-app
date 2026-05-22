@@ -10,11 +10,13 @@ import { colors, spacing, borderRadius, typography } from "~/styles";
 interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   style?: StyleProp<TextStyle>;
   error?: boolean;
+  testID?: string;
 }
 
-export function ThemedTextInput({ style, error = false, ...props }: ThemedTextInputProps) {
+export function ThemedTextInput({ style, error = false, testID = "themed-text-input", ...props }: ThemedTextInputProps) {
   return (
     <TextInput
+      testID={testID}
       style={[styles.input, error && styles.inputError, style]}
       placeholderTextColor={colors.textTertiary}
       {...props}

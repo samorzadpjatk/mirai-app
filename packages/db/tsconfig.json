@@ -11,7 +11,8 @@
     "noEmit": false
   },
   "references": [
-    { "path": "../supabase" }
+    { "path": "../supabase" },
+    { "path": "../shared" }
   ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/__tests__/**/*", "src/**/*.test.*"]

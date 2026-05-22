@@ -3,19 +3,31 @@
 import { createStore } from "zustand/vanilla";
 import { useStore } from "zustand";
 import React, { createContext, useContext } from "react";
-import {
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import { Gesture } from "react-native-gesture-handler";
+import { useMapOverlayGestures } from "./hooks/useMapOverlayGestures";
 import type { UserLocation } from "~/components/map/UserMap";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapSelectedUser } from "~/hooks/map";
+import {
+  getNextMapTheme,
+  isValidCoordinate,
+  shouldCollapseList,
+  buildFocusStateFromUser,
+  removeUserFromSharingUserIds,
+  removeUserFromSharingSettings,
+  type MapTheme,
+  type SharingSettings,
+} from "./mapOverlayStoreUtils";
 
-export type MapTheme = "dark" | "light";
+export type { MapTheme, SharingSettings };
+
+export {
+  getNextMapTheme,
+  isValidCoordinate,
+  shouldCollapseList,
+  buildFocusStateFromUser,
+  removeUserFromSharingUserIds,
+  removeUserFromSharingSettings,
+};
 
 export interface ShareableUser {
   id: string;
@@ -29,10 +41,6 @@ export interface SharingUser {
   firstName?: string | null;
   lastName?: string | null;
   image?: string | null;
-}
-
-export interface SharingSettings {
-  usersToShareWith?: SharingUser[];
 }
 
 export interface MapOverlayState {
@@ -133,12 +141,12 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
 
   toggleTheme: () => {
     set((state) => ({
-      mapTheme: state.mapTheme === "dark" ? "light" : "dark",
+      mapTheme: getNextMapTheme(state.mapTheme),
     }));
   },
 
   recenter: (currentCoordinate) => {
-    if (!currentCoordinate) return;
+    if (!isValidCoordinate(currentCoordinate)) return;
     set({
       followMode: null,
       focusedCoordinate: currentCoordinate,
@@ -146,15 +154,12 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
   },
 
   handleMapUserPress: (user) => {
-    set({
-      followMode: "user",
-      focusedCoordinate: [...user.coordinate],
-    });
+    set(buildFocusStateFromUser(user));
   },
 
   handleMapPress: () => {
     const { isListExpanded } = get();
-    if (isListExpanded) {
+    if (shouldCollapseList(isListExpanded)) {
       set({ isListExpanded: false });
     }
   },
@@ -189,28 +194,16 @@ export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
     try {
       setIsRemovingUser(true);
 
-      // Note: removeUser functionality should be called from the hook, not the store
-      // This action will be handled at the hook level
-
-      // Update sharingUserIds to remove the user
-      const updatedSharingUserIds = sharingUserIds.filter((id) => id !== userId);
+      const updatedSharingUserIds = removeUserFromSharingUserIds(sharingUserIds, userId);
       setSharingUserIds(updatedSharingUserIds);
 
-      // Update sharingSettings to remove the user from usersToShareWith
       const { sharingSettings } = get();
-      if (sharingSettings?.usersToShareWith) {
-        const updatedUsersToShareWith = sharingSettings.usersToShareWith.filter(
-          (user) => user.id !== userId,
-        );
-        set({
-          sharingSettings: {
-            ...sharingSettings,
-            usersToShareWith: updatedUsersToShareWith,
-          },
-        });
+      const updatedSettings = removeUserFromSharingSettings(sharingSettings, userId);
+      if (updatedSettings) {
+        set({ sharingSettings: updatedSettings });
       }
-    } catch (error) {
-      console.error("Failed to remove user:", error);
+    } catch {
+      // TODO: Add Sentry crash reporting for production errors
     } finally {
       setIsRemovingUser(false);
     }
@@ -261,6 +254,76 @@ function useMapOverlayExternals(): MapOverlayExternals {
   return context ?? externals;
 }
 
+export interface MapOverlayHandlerDeps {
+  store: MapOverlayStore;
+  selectedUserState: {
+    selectedUser: UserLocation | null;
+    selectUser: (user: UserLocation) => void;
+    deselect: () => void;
+    stopSharing: () => Promise<void>;
+    mapUserPress: (user: UserLocation) => void;
+    canStopSharing: boolean;
+  };
+  externals: {
+    removeUser: (userId: string) => Promise<void>;
+    currentCoordinate: [number, number] | null;
+  };
+  shareModal: {
+    openModal: () => void;
+  };
+}
+
+export function buildMapOverlayHandlers(deps: MapOverlayHandlerDeps) {
+  const { store, selectedUserState, externals, shareModal } = deps;
+  const { selectUser, deselect, stopSharing, mapUserPress } = selectedUserState;
+  const { removeUser, currentCoordinate } = externals;
+
+  const handleSelectUser = (user: UserLocation) => {
+    selectUser(user);
+    store.selectUser(user);
+  };
+
+  const handleMapUserPress = (user: UserLocation) => {
+    mapUserPress(user);
+    store.handleMapUserPress(user);
+  };
+
+  const handleStopSharing = async () => {
+    await stopSharing();
+    deselect();
+    store.backToList();
+  };
+
+  const handleRecenter = () => {
+    if (!currentCoordinate) return;
+    deselect();
+    store.recenter(currentCoordinate);
+  };
+
+  const handleRemoveUser = async (userId: string) => {
+    await removeUser(userId);
+    store.handleRemoveUser(userId);
+  };
+
+  const handleBackToList = () => {
+    deselect();
+    store.backToList();
+  };
+
+  return {
+    handleSelectUser,
+    handleMapUserPress,
+    handleStopSharing,
+    handleRecenter,
+    handleRemoveUser,
+    handleBackToList,
+    onAddPress: () => shareModal.openModal(),
+    onManagePress: () => store.setShowManageModal(true),
+    onToggleExpand: store.toggleListExpansion,
+    onMapPress: store.handleMapPress,
+  };
+}
+
 // Hook that combines store with animations and external data
 export function useMapOverlayStore() {
   const store = useStore(mapOverlayStore);
@@ -290,40 +353,12 @@ export function useMapOverlayStore() {
   const { selectedUser, selectUser, deselect, stopSharing, mapUserPress, canStopSharing } =
     selectedUserState;
 
-  // Update store when selected user changes
-  const handleSelectUser = (user: UserLocation) => {
-    selectUser(user);
-    store.selectUser(user);
-  };
-
-  const handleMapUserPress = (user: UserLocation) => {
-    mapUserPress(user);
-    store.handleMapUserPress(user);
-  };
-
-  const handleStopSharing = async () => {
-    await stopSharing();
-    deselect();
-    store.backToList();
-  };
-
-  const handleRecenter = () => {
-    if (!currentCoordinate) return;
-    deselect();
-    store.recenter(currentCoordinate);
-  };
-
-  const handleRemoveUser = async (userId: string) => {
-    // Call the external removeUser function first
-    await removeUser(userId);
-    // Then update the store state
-    store.handleRemoveUser(userId);
-  };
-
-  const handleBackToList = () => {
-    deselect();
-    store.backToList();
-  };
+  const handlers = buildMapOverlayHandlers({
+    store,
+    selectedUserState: { selectedUser, selectUser, deselect, stopSharing, mapUserPress, canStopSharing },
+    externals: { removeUser, currentCoordinate },
+    shareModal,
+  });
 
   // Effects
   React.useEffect(() => {
@@ -341,42 +376,15 @@ export function useMapOverlayStore() {
     expandAnim.setOpen(store.isListExpanded);
   }, [expandAnim, store.isListExpanded]);
 
-  const listDragStart = useSharedValue(0);
-  const expandValue = expandAnim.value;
-  const panGesture = Gesture.Pan()
-    .onBegin(() => {
-      listDragStart.value = expandValue.value;
-    })
-    .onUpdate((event) => {
-      if (selectedUser || !store.showUsersList) return;
-      const dragProgress = listDragStart.value + -event.translationY / listMaxHeight;
-      expandValue.value = Math.max(0, Math.min(1, dragProgress));
-    })
-    .onEnd((event) => {
-      if (selectedUser || !store.showUsersList) return;
-      const shouldExpand = expandValue.value > 0.5 || event.velocityY < -500;
-      expandValue.value = withSpring(shouldExpand ? 1 : 0);
-      if (shouldExpand !== store.isListExpanded) {
-        runOnJS(store.toggleListExpansion)();
-      }
-    });
-
-  // Animated styles
-  const panelStyle = useAnimatedStyle(() => {
-    return {
-      opacity: interpolate(panelAnim.value.value, [0, 1], [0, 1]),
-      transform: [
-        {
-          translateY: interpolate(panelAnim.value.value, [0, 1], [220, 0]),
-        },
-      ],
-    };
-  });
-
-  const usersListStyle = useAnimatedStyle(() => {
-    const maxHeight = interpolate(expandAnim.value.value, [0, 1], [0, listMaxHeight]);
-    return { maxHeight };
-  });
+  const { panGesture, panelStyle, usersListStyle } = useMapOverlayGestures(
+    expandAnim.value,
+    panelAnim.value,
+    selectedUser,
+    store.showUsersList,
+    store.isListExpanded,
+    store.toggleListExpansion,
+    listMaxHeight,
+  );
 
   return {
     ...store,
@@ -384,17 +392,8 @@ export function useMapOverlayStore() {
     panelStyle,
     usersListStyle,
     panGesture,
-    onToggleExpand: store.toggleListExpansion,
-    onAddPress: () => shareModal.openModal(),
-    onManagePress: () => store.setShowManageModal(true),
-    onSelectUser: handleSelectUser,
-    onBackToList: handleBackToList,
-    onStopSharing: handleStopSharing,
     canStopSharing,
     shareModal,
-    onRecenter: handleRecenter,
-    onMapUserPress: handleMapUserPress,
-    onMapPress: store.handleMapPress,
-    handleRemoveUser,
+    ...handlers,
   };
 }
