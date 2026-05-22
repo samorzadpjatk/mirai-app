@@ -5,6 +5,7 @@ import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User, Challenge } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
+import { createFailingTransactionMock } from "../../../../vitest.setup";
 
 // Mock utility modules
 vi.mock("../../../utils/storage", () => ({
@@ -1649,9 +1650,12 @@ describe("challengeRouter", () => {
     });
 
     it("should handle missing supabase storage signed URL", async () => {
-      const { normalizeSupabaseStoragePath } = await import("../../../utils/storage");
-
-      normalizeSupabaseStoragePath.mockReturnValue(null);
+      mockSupabase.storage.from = vi.fn().mockReturnValue({
+        createSignedUrl: vi.fn().mockResolvedValue({
+          data: null,
+          error: new Error("Signed URL generation failed"),
+        }),
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1664,7 +1668,7 @@ describe("challengeRouter", () => {
       const result = await caller.getAll();
 
       expect(result).toHaveLength(1);
-      expect(result[0].image).toBe("challenge/test-image.jpg");
+      expect(result[0].image).toBeNull();
     });
 
     it("should handle participant without group", async () => {
@@ -1699,6 +1703,7 @@ describe("challengeRouter", () => {
       const result = await caller.getAll();
 
       expect(result[0].image).toBe("https://external.com/image.jpg");
+      expect(mockSupabase.storage.from).not.toHaveBeenCalled();
     });
 
     it("should handle challenge without image", async () => {
@@ -1719,8 +1724,12 @@ describe("challengeRouter", () => {
       expect(result[0].image).toBeNull();
     });
 
-    it("should handle transaction errors", async () => {
-      mockDb.transaction.mockRejectedValue(new Error("Test error"));
+    it("should rollback transaction when insert fails", async () => {
+      mockDb.transaction = createFailingTransactionMock(mockDb, {
+        failAfterCalls: 1,
+        failWithError: new Error("Insert failed"),
+        shouldRollback: true,
+      });
 
       const ctx: TRPCContext = {
         db: mockDb,
@@ -1738,7 +1747,9 @@ describe("challengeRouter", () => {
           submissionType: "IMAGE",
           scoringCategory: "SPEED",
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow("Insert failed");
     });
+
+
   });
 });
