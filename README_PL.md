@@ -27,7 +27,7 @@
 Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
 
 > [!IMPORTANT]
-> **Call for Mainteiners**
+> **Call for Maintainers**
 > 
 > Szukamy osób, którzy przejmą opiekę nad projektem.
 > 
@@ -52,6 +52,8 @@ Znajduje się w nim:
   - [`@mirai-app/shared`](packages/shared/) - Współdzielone utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Konfiguracja klienta Supabase
 
+📖 **Testowanie**: Zobacz [TESTING.md](TESTING.md) dla kompleksowej dokumentacji testowania. Używamy Vitest dla większości pakietów i Jest dla aplikacji natywnej.
+
 Wszystkie skrypty mogą zostać wywołane z katalogu głównego projektu za pomocą `bun run <script>`. (Możesz też wejść do konkretnego pakietu i uruchomić `bun run <script>`).
 
 Aby uruchomić skrypt przypisany danemu komponentowi używamy `bun run` (lub `cd <pakiet> && bun run <script>`):
@@ -63,7 +65,7 @@ cd apps/native && bun run dev
 
 Upewnij się, że masz zainstalowane:
 
-- **Node.js** (version 18 lub wyższa)
+- **Node.js** (wersja 24)
 - **Bun** (https://bun.sh)
 - **Docker** (dla środowiska deweloperskiego, w tym Supabase)
 
@@ -73,7 +75,7 @@ Upewnij się, że masz zainstalowane:
 
 ```bash
 git clone <repository-url>
-cd integral-app
+cd mirai-app
 ```
 
 ### 2. Zainstaluj zależności
@@ -99,9 +101,19 @@ cd packages/db && bun run db:push
 cd packages/db && bun run db:studio
 ```
 
-> 📖 **Więcej informacji o komendach bazodanowych**: Zobacz [packages/seed/README.md](packages/seed/README.md)
+> 📖 **Więcej informacji o komendach bazodanowych**: Zobacz [apps/seed/README.md](apps/seed/README.md)
 
-### 5. Uruchom wybraną aplikację
+### 5. Uruchom testy (opcjonalnie)
+
+Zweryfikuj swoją konfigurację uruchamiając zestaw testów:
+
+```bash
+bun run test
+```
+
+> 📖 Zobacz [TESTING.md](TESTING.md) dla więcej szczegółów o konfiguracji testów.
+
+### 6. Uruchom wybraną aplikację
 
 Przed uruchomieniem: 
 - spójrz na dokumentację [aplikacji natywnej](apps/native/README.md) oraz [backendu](apps/backend-server/README.md)

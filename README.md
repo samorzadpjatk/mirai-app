@@ -25,7 +25,7 @@
 Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
 > [!IMPORTANT]
-> **Call for Mainteiners**
+> **Call for Maintainers**
 > 
 > We are looking for maintainers to take over the project. 
 > If you are interested, please contact the PJAIT's Student Council.
@@ -98,7 +98,7 @@ cd packages/db && bun run db:push
 cd packages/db && bun run db:studio
 ```
 
-> 📖 **More information about database commands**: See [packages/seed/README.md](packages/seed/README.md)
+> 📖 **More information about database commands**: See [apps/seed/README.md](apps/seed/README.md)
 
 ### 5. Run tests (optional)
 
