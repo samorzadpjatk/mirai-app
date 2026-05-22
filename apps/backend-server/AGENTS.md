@@ -93,6 +93,24 @@ This replaces the previously separate `db-migrations` Docker service. Migration 
 - `@orpc/server/fetch` - oRPC fetch handler
 - `@orpc/server/bun-ws` - Bun WebSocket oRPC handler
 
+## Server-Specific Quality Rules
+
+### Structured Logging
+
+- **Rule**: Replace all `console.error` / `console.warn` / `console.log` calls with structured logging (Pino).
+- **Status**: ✅ Complete. `server.ts` uses `logger.error` / `logger.info` from `@mirai-app/orpc` consistently.
+
+### WebSocket Testing Gap
+
+- **Warning**: WebSocket connection init, auth handshake, and reconnection logic in `server.ts` and `ws-adapter.ts` have minimal automated test coverage.
+- **Action**: Add integration tests for the full WebSocket lifecycle: connection → auth → message → disconnect → reconnect.
+
+### Side Effects at Module Level
+
+- **Avoid**: Setting up global handlers or singletons at module import time.
+- **Status**: ✅ Fixed. `server.ts` `rateLimitStore` moved from module-level `Map` to factory inside `createServer()`.
+- **Rule**: Explicit initialization via `createServer()` or `main()` functions only.
+
 ## Overrides to Root Conventions
 
 1. **Uses Hono** instead of Fastify or Express

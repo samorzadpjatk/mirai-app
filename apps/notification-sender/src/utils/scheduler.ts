@@ -1,3 +1,5 @@
+import { logger } from "@mirai-app/orpc";
+
 export type SchedulerTask = () => Promise<void>;
 
 /**
@@ -17,12 +19,12 @@ export class Scheduler {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn("Scheduler is already running");
+      logger.warn("Scheduler is already running");
       return;
     }
 
     this.isRunning = true;
-    console.log(`Scheduler started. Running task every ${this.intervalMinutes} minutes.`);
+    logger.info({ intervalMinutes: this.intervalMinutes }, "Scheduler started");
 
     // Run immediately (wrap in setTimeout to avoid sync call during start)
     setTimeout(() => {
@@ -54,7 +56,7 @@ export class Scheduler {
     }
 
     this.isRunning = false;
-    console.log("Scheduler stopped.");
+    logger.info("Scheduler stopped");
   }
 
   /**
@@ -69,7 +71,7 @@ export class Scheduler {
       try {
         await this.task();
       } catch (error) {
-        console.error("Scheduler task failed:", error);
+        logger.error(error, "Scheduler task failed");
       }
     })();
   }
@@ -83,8 +85,8 @@ export function createInactivityScheduler(
   intervalMinutes = 5,
 ): Scheduler {
   return new Scheduler(async () => {
-    console.log("Running inactivity check...");
+    logger.info("Running inactivity check");
     const result = await checkFunction();
-    console.log("Inactivity check completed:", result);
+    logger.info({ result }, "Inactivity check completed");
   }, intervalMinutes);
 }

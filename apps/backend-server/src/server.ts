@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { RPCHandler } from "@orpc/server/fetch";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { ORPCError, onError } from "@orpc/server";
-import { appRouter, createORPCContext } from "@mirai-app/orpc";
+import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -22,8 +22,6 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
 function getClientIp(c: { req: { header: (name: string) => string | undefined } }): string {
   const forwarded = c.req.header("x-forwarded-for");
   if (forwarded) {
@@ -32,54 +30,62 @@ function getClientIp(c: { req: { header: (name: string) => string | undefined } 
   return c.req.header("x-real-ip") ?? "unknown";
 }
 
-function checkRateLimit(
-  ip: string,
-  path: string,
-  isAuthEndpoint: boolean,
-): { allowed: boolean; retryAfter: number } {
-  const now = Date.now();
-  const windowMs = RATE_LIMIT_WINDOW_MS;
+function createRateLimiter() {
+  const store = new Map<string, RateLimitEntry>();
 
-  const globalKey = `${ip}:global`;
-  const globalEntry = rateLimitStore.get(globalKey);
-  let globalAllowed = true;
-  let globalRetryAfter = 0;
+  function checkRateLimit(
+    ip: string,
+    path: string,
+    isAuthEndpoint: boolean,
+  ): { allowed: boolean; retryAfter: number } {
+    const now = Date.now();
+    const windowMs = RATE_LIMIT_WINDOW_MS;
 
-  if (!globalEntry || now > globalEntry.resetTime) {
-    rateLimitStore.set(globalKey, { count: 1, resetTime: now + windowMs });
-  } else if (globalEntry.count >= GLOBAL_RATE_LIMIT) {
-    globalAllowed = false;
-    globalRetryAfter = Math.ceil((globalEntry.resetTime - now) / 1000);
-  } else {
-    globalEntry.count++;
-  }
+    const globalKey = `${ip}:global`;
+    const globalEntry = store.get(globalKey);
+    let globalAllowed = true;
+    let globalRetryAfter = 0;
 
-  if (!globalAllowed) {
-    return { allowed: false, retryAfter: globalRetryAfter };
-  }
-
-  if (isAuthEndpoint) {
-    const authKey = `${ip}:auth`;
-    const authEntry = rateLimitStore.get(authKey);
-
-    if (!authEntry || now > authEntry.resetTime) {
-      rateLimitStore.set(authKey, { count: 1, resetTime: now + windowMs });
-    } else if (authEntry.count >= AUTH_RATE_LIMIT) {
-      return { allowed: false, retryAfter: Math.ceil((authEntry.resetTime - now) / 1000) };
+    if (!globalEntry || now > globalEntry.resetTime) {
+      store.set(globalKey, { count: 1, resetTime: now + windowMs });
+    } else if (globalEntry.count >= GLOBAL_RATE_LIMIT) {
+      globalAllowed = false;
+      globalRetryAfter = Math.ceil((globalEntry.resetTime - now) / 1000);
     } else {
-      authEntry.count++;
+      globalEntry.count++;
     }
+
+    if (!globalAllowed) {
+      return { allowed: false, retryAfter: globalRetryAfter };
+    }
+
+    if (isAuthEndpoint) {
+      const authKey = `${ip}:auth`;
+      const authEntry = store.get(authKey);
+
+      if (!authEntry || now > authEntry.resetTime) {
+        store.set(authKey, { count: 1, resetTime: now + windowMs });
+      } else if (authEntry.count >= AUTH_RATE_LIMIT) {
+        return { allowed: false, retryAfter: Math.ceil((authEntry.resetTime - now) / 1000) };
+      } else {
+        authEntry.count++;
+      }
+    }
+
+    return { allowed: true, retryAfter: 0 };
   }
 
-  return { allowed: true, retryAfter: 0 };
+  return { checkRateLimit };
 }
 
 export function createServer(opts: ServerOptions) {
+  enableUserAgentTelemetry();
   const dev = opts.dev ?? true;
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";
   const host = opts.host ?? "127.0.0.1";
 
+  const { checkRateLimit } = createRateLimiter();
   const app = new Hono();
 
   app.use("*", async (c, next) => {
@@ -131,73 +137,12 @@ export function createServer(opts: ServerOptions) {
   const rpcHandler = new RPCHandler(appRouter, {
     interceptors: [
       onError((error): void => {
-        console.error(error);
+        logger.error(error, "RPC HTTP handler error");
         if (!dev && !(error instanceof ORPCError)) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
         }
       }),
     ],
-  });
-
-  app.use(prefix + "/*", async (c, next) => {
-    const request =
-      c.req.method === "GET" || c.req.method === "HEAD"
-        ? c.req.raw
-        : new Proxy(c.req.raw, {
-            get(target, prop) {
-              switch (prop) {
-                case "arrayBuffer":
-                  return () => c.req.arrayBuffer();
-                case "blob":
-                  return () => c.req.blob();
-                case "formData":
-                  return () => c.req.formData();
-                case "json":
-                  return () => c.req.json();
-                case "text":
-                  return () => c.req.text();
-                default:
-                  return Reflect.get(target, prop, target) as unknown;
-              }
-            },
-          });
-
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const databaseUrl = process.env.DATABASE_URL;
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error(
-        "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-      );
-    }
-
-    if (!databaseUrl) {
-      throw new Error("Missing database credentials. Set DATABASE_URL.");
-    }
-
-    const headers = new Headers(c.req.raw.headers);
-    if (c.req.url) {
-      headers.set("x-original-url", c.req.url);
-    }
-
-    const context = createORPCContext({
-      headers,
-      databaseUrl,
-      supabaseUrl,
-      supabaseKey,
-    });
-
-    const { matched, response } = await rpcHandler.handle(request, {
-      prefix: prefix as `/${string}`,
-      context,
-    });
-
-    if (matched) {
-      return response;
-    }
-
-    await next();
   });
 
   app.get("/health", (c) => c.text("OK"));
@@ -207,7 +152,7 @@ export function createServer(opts: ServerOptions) {
   const wsRpcHandler = new BunWsRPCHandler(appRouter, {
     interceptors: [
       onError((error): void => {
-        console.error(error);
+        logger.error(error, "RPC WebSocket handler error");
         if (!dev && !(error instanceof ORPCError)) {
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
         }
@@ -300,10 +245,10 @@ export function createServer(opts: ServerOptions) {
         },
       });
 
-      console.log("listening on port", port);
-      console.log(`oRPC endpoint ready at http://${host}:${port}${prefix}`);
+      logger.info({ port }, "Server listening");
+      logger.info({ host, port, prefix }, "oRPC endpoint ready");
     } catch (err) {
-      console.error(err);
+      logger.error(err, "Server startup failed");
       process.exit(1);
     }
   };
