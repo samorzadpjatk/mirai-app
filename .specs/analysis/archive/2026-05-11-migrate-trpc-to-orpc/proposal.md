@@ -7,9 +7,9 @@ The monorepo currently uses tRPC v11 for type-safe API communication between the
 **BREAKING**: Full migration of the `@mirai-app/orpc` package from tRPC to oRPC, affecting all consuming apps and their type-safe API contracts.
 
 - **Swap dependencies**: Replace `@trpc/server`, `@trpc/client`, `@trpc/tanstack-react-query`, `@hono/trpc-server`, and `@valkyrie-resistance/trpc-ws-hono-bun-adapter` with `@orpc/server`, `@orpc/client`, `@orpc/tanstack-query`
-- **Rewrite core server package** (`packages/trpc/src/api/trpc.ts`): Replace `initTRPC` with oRPC builder (`os`), rewrite context factory, rewrite middleware chain (telemetry + auth), rewrite procedures (`publicProcedure`, `protectedProcedure`, `moderatorProcedure`, `adminProcedure`)
-- **Rewrite router definitions** (18 files in `packages/trpc/src/api/routers/`): Replace `createTRPCRouter({...})` with plain objects, replace all `.query()`/`.mutation()` with `.handler()`, replace `ctx` with `context`, replace `TRPCError` with `ORPCError`
-- **Rewrite client layer** (`packages/trpc/src/client/`): Replace `createTRPCClient` + `createWSClient` with oRPC `RPCLink` (HTTP + WebSocket), replace provider-based TanStack Query with provider-less `createTanstackQueryUtils`, remove `TRPCContext` / `useTRPC` / `useTRPCClient` hooks
+- **Rewrite core server package** (`packages/orpc/src/api/trpc.ts`): Replace `initTRPC` with oRPC builder (`os`), rewrite context factory, rewrite middleware chain (telemetry + auth), rewrite procedures (`publicProcedure`, `protectedProcedure`, `moderatorProcedure`, `adminProcedure`)
+- **Rewrite router definitions** (18 files in `packages/orpc/src/api/routers/`): Replace `createTRPCRouter({...})` with plain objects, replace all `.query()`/`.mutation()` with `.handler()`, replace `ctx` with `context`, replace `TRPCError` with `ORPCError`
+- **Rewrite client layer** (`packages/orpc/src/client/`): Replace `createTRPCClient` + `createWSClient` with oRPC `RPCLink` (HTTP + WebSocket), replace provider-based TanStack Query with provider-less `createTanstackQueryUtils`, remove `TRPCContext` / `useTRPC` / `useTRPCClient` hooks
 - **Rewrite backend server** (`apps/backend-server/src/server.ts`, `ws-adapter.ts`): Replace `@hono/trpc-server` with oRPC Hono adapter (`createMiddleware` from `@orpc/server/hono`), replace custom Bun WebSocket tRPC adapter with oRPC `@orpc/server/bun-ws` `RPCHandler`
 - **Update all native app hooks/components** (~100 files in `apps/native/src/`): Replace `useTRPC()` and `trpc.x.y.useQuery()` patterns with oRPC TanStack Query utils
 - **Update notification sender** (`apps/notification-sender/`): Replace tRPC vanilla client with oRPC client
@@ -19,8 +19,8 @@ The monorepo currently uses tRPC v11 for type-safe API communication between the
 ## Capabilities
 
 ### New Capabilities
-- `orpc-api-core`: oRPC server initialization, context, middleware, and procedure definitions in `packages/trpc`
-- `orpc-client-layer`: oRPC client setup (vanilla + TanStack Query) in `packages/trpc/src/client`
+- `orpc-api-core`: oRPC server initialization, context, middleware, and procedure definitions in `packages/orpc`
+- `orpc-client-layer`: oRPC client setup (vanilla + TanStack Query) in `packages/orpc/src/client`
 - `orpc-hono-integration`: oRPC HTTP and WebSocket integration with Hono/Bun in `apps/backend-server`
 - `orpc-native-consumption`: Native app consumption patterns using oRPC TanStack Query utils
 
@@ -31,7 +31,7 @@ The monorepo currently uses tRPC v11 for type-safe API communication between the
 
 - **Packages**: `@mirai-app/orpc` (complete rewrite of server + client exports)
 - **Apps**: `backend-server` (Hono adapter swap), `native` (all hooks/components using API), `notification-sender` (client swap)
-- **Dependencies**: Root `package.json`, `packages/trpc/package.json`, `apps/backend-server/package.json`, `apps/notification-sender/package.json`
+- **Dependencies**: Root `package.json`, `packages/orpc/package.json`, `apps/backend-server/package.json`, `apps/notification-sender/package.json`
 - **Tests**: All router tests, client tests, server tests, native hook tests, and mock files
-- **Documentation**: `packages/trpc/AGENTS.md`, `packages/trpc/README.md`, `apps/backend-server/AGENTS.md`, `apps/backend-server/README.md`, docs in `docs/packages/trpc/` and `docs/apps/backend-server/`
+- **Documentation**: `packages/orpc/AGENTS.md`, `packages/orpc/README.md`, `apps/backend-server/AGENTS.md`, `apps/backend-server/README.md`, docs in `docs/packages/orpc/` and `docs/apps/backend-server/`
 - **Lockfile**: `bun.lock` will change significantly due to dependency swap

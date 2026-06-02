@@ -256,9 +256,9 @@ export const userRouter = createORPCRouter({
     .input(
       z.object({
         tripId: z.string(),
-        firstName: z.string().trim().min(1, "Imię jest wymagane"),
-        lastName: z.string().trim().min(1, "Nazwisko jest wymagane"),
-        email: z.string().trim().email("Nieprawidłowy adres email"),
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().email("Nieprawidłowy adres email"),
       }),
     )
     .handler(handleCreateUser),

@@ -1,18 +1,8 @@
 import type { SupabaseClient } from "@mirai-app/supabase";
-import { buildAuthEmailLookup, resolveAuthEmail } from "../../../utils/authEmails";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";
 import { resolveStorageUrl } from "@mirai-app/shared";
-
-export const toUserWithEmail = <T extends { authUserId?: string | null }>(
-  user: T,
-  emailByAuthUserId: Map<string, string | null>,
-) => {
-  const { authUserId, ...rest } = user;
-  return {
-    ...rest,
-    email: resolveAuthEmail(emailByAuthUserId, authUserId),
-  };
-};
+export { toUserWithEmail } from "@mirai-app/shared/groups";
 
 export const batchEmailLookup = async (
   supabase: SupabaseClient,

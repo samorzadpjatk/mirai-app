@@ -1,11 +1,21 @@
-import { vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { vi, type Mock } from "vitest";
+import type { SupabaseClient } from "../stores/authStore";
+
+/**
+ * Mock version of SupabaseClient where all auth methods are Vitest mocks.
+ * Allows calling mockResolvedValue / mockReturnValue without type assertions.
+ */
+export type MockSupabaseClient = SupabaseClient & {
+  auth: {
+    [K in keyof SupabaseClient["auth"]]: Mock<SupabaseClient["auth"][K]>;
+  };
+};
 
 /**
  * Creates a mock Supabase client for testing.
  * Provides chainable query builder methods and mock auth methods.
  */
-export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): SupabaseClient {
+export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): MockSupabaseClient {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -47,6 +57,9 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
       data: { session: null },
       error: null,
     }),
+    signInWithOtp: vi.fn().mockResolvedValue({
+      error: null,
+    }),
     getUser: vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
@@ -69,6 +82,9 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
     }),
     refreshSession: vi.fn().mockResolvedValue({
       data: { user: null, session: null },
+      error: null,
+    }),
+    verifyOtp: vi.fn().mockResolvedValue({
       error: null,
     }),
     updateUser: vi.fn().mockResolvedValue({
@@ -115,7 +131,7 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
     },
   };
 
-  return { ...mockClient, ...overrides } as unknown as SupabaseClient;
+  return { ...mockClient, ...overrides } as MockSupabaseClient;
 }
 
 /**

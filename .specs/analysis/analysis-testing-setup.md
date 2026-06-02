@@ -71,7 +71,7 @@ This analysis identifies all changes needed to add comprehensive unit testing to
 - Add vitest dependencies
 - Create `vitest.config.ts`
 
-### 1.6 Packages - tRPC (`/Users/rafalopilowski/Projekty/migration/pjapp/packages/trpc/package.json`)
+### 1.6 Packages - tRPC (`/Users/rafalopilowski/Projekty/migration/pjapp/packages/orpc/package.json`)
 **Status:** ✅ HAS test script with vitest
 **Current:**
 ```json
@@ -276,7 +276,7 @@ export default defineConfig({
 });
 ```
 
-**File:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/trpc/vitest.config.ts`
+**File:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/orpc/vitest.config.ts`
 ```typescript
 import { defineConfig } from 'vitest/config';
 import path from 'path';
@@ -446,7 +446,7 @@ export default defineConfig({
 ```
 
 ### 3.6 tRPC Package.json
-**Path:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/trpc/package.json`
+**Path:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/orpc/package.json`
 **No changes needed** - already has test scripts
 
 ### 3.7 Auth Package.json
@@ -569,7 +569,7 @@ apps/notification-sender/
 
 ### 6.4 tRPC Package
 ```
-packages/trpc/
+packages/orpc/
 ├── src/
 │   ├── api/
 │   │   └── __tests__/
@@ -629,7 +629,7 @@ shared ────┘
 2. `packages/supabase` - No dependencies
 3. `packages/db` - Depends on supabase
 4. `packages/auth` - Depends on db, supabase, shared
-5. `packages/trpc` - Depends on auth, db, shared, supabase
+5. `packages/orpc` - Depends on auth, db, shared, supabase
 6. `apps/backend-server` - Depends on trpc
 7. `apps/notification-sender` - Depends on trpc, db, supabase
 8. `apps/native` - Depends on trpc (client), auth, shared, supabase
@@ -639,7 +639,7 @@ shared ────┘
 
 **Packages that need external mocks:**
 - `packages/auth` - Mock `@mirai-app/supabase`, `@mirai-app/db`
-- `packages/trpc` - Mock `@mirai-app/auth`, `@mirai-app/db`, `@mirai-app/supabase`
+- `packages/orpc` - Mock `@mirai-app/auth`, `@mirai-app/db`, `@mirai-app/supabase`
 - `apps/backend-server` - Mock `@mirai-app/orpc`
 - `apps/notification-sender` - Mock `@mirai-app/orpc`, `@mirai-app/db`, `@mirai-app/supabase`
 - `apps/native` - Mock `expo-*` modules, `@mirai-app/orpc`, `@mirai-app/supabase`
@@ -686,7 +686,7 @@ shared ────┘
 3. `/Users/rafalopilowski/Projekty/migration/pjapp/apps/backend-server/vitest.config.ts`
 4. `/Users/rafalopilowski/Projekty/migration/pjapp/apps/notification-sender/vitest.config.ts`
 5. `/Users/rafalopilowski/Projekty/migration/pjapp/apps/seed/vitest.config.ts`
-6. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/trpc/vitest.config.ts`
+6. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/orpc/vitest.config.ts`
 7. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/auth/vitest.config.ts`
 8. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/auth/vitest.setup.ts`
 9. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/vitest.config.ts`
@@ -717,7 +717,7 @@ shared ────┘
 ### Phase 2: Packages (Independent)
 4. packages/shared - Add vitest config
 5. packages/auth - Add vitest config + mocks
-6. packages/trpc - Add vitest config
+6. packages/orpc - Add vitest config
 
 ### Phase 3: Apps (Depend on packages)
 7. apps/backend-server - Add vitest config
@@ -744,7 +744,7 @@ bun run test:ci
 # Run tests for specific package
 cd packages/auth && bun run test
 cd packages/shared && bun run test
-cd packages/trpc && bun run test
+cd packages/orpc && bun run test
 cd packages/supabase && bun run test
 
 # Run tests for specific app

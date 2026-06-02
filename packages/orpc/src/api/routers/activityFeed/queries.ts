@@ -1,9 +1,14 @@
-import { eq, and, or, lt, count, sql } from "drizzle-orm";
+import { eq, count, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { activityFeeds, activityReactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { emptyReactionCounts, enrichActivities } from "./enrichment";
-import type { ActivityWithRelations } from "./types";
+import {
+  buildActivityWhere,
+  getActivityRelationTree,
+  getActivityColumns,
+  emptyReactionCounts,
+} from "@mirai-app/shared/feed";
+import { enrichActivities } from "./enrichment";
 
 export type ActivityContext = {
   db: DB;
@@ -22,159 +27,6 @@ export type ActivityContext = {
   };
   dbUser: { id: string };
 };
-
-export const buildActivityWhere = (
-  tripId: string,
-  includeHidden: boolean,
-  cursor?: { id: string; createdAt: Date; isPinned: boolean },
-) => {
-  const baseWhere = and(
-    eq(activityFeeds.tripId, tripId),
-    includeHidden ? undefined : eq(activityFeeds.isHidden, false),
-  );
-
-  if (!cursor) {
-    return baseWhere;
-  }
-
-  const cursorWhere = cursor.isPinned
-    ? or(
-        and(
-          eq(activityFeeds.isPinned, true),
-          or(
-            lt(activityFeeds.createdAt, cursor.createdAt),
-            and(eq(activityFeeds.createdAt, cursor.createdAt), lt(activityFeeds.id, cursor.id)),
-          ),
-        ),
-        eq(activityFeeds.isPinned, false),
-      )
-    : and(
-        eq(activityFeeds.isPinned, false),
-        or(
-          lt(activityFeeds.createdAt, cursor.createdAt),
-          and(eq(activityFeeds.createdAt, cursor.createdAt), lt(activityFeeds.id, cursor.id)),
-        ),
-      );
-
-  return and(baseWhere, cursorWhere);
-};
-
-export const getActivityRelationTree = () =>
-  ({
-    admin: { columns: { id: true, firstName: true, lastName: true } },
-    hiddenBy: { columns: { id: true, firstName: true, lastName: true } },
-    submissionActivity: {
-      columns: {
-        submissionId: true,
-        challengeId: true,
-        groupId: true,
-        hasVideo: true,
-        isWinner: true,
-        ranking: true,
-        pointsAwarded: true,
-      },
-      with: {
-        submission: {
-          columns: {
-            id: true,
-            status: true,
-            awardedPoints: true,
-            bonusPoints: true,
-            ranking: true,
-            createdAt: true,
-          },
-        },
-        challenge: {
-          columns: {
-            id: true,
-            name: true,
-            status: true,
-            submissionType: true,
-            endTime: true,
-          },
-        },
-        group: {
-          columns: { id: true, name: true, image: true, coins: true },
-        },
-      },
-    },
-    challengeActivity: {
-      columns: {
-        challengeId: true,
-        eventType: true,
-        endTime: true,
-        submissionType: true,
-        basePoints: true,
-        submissionCount: true,
-      },
-      with: {
-        challenge: {
-          columns: {
-            id: true,
-            name: true,
-            description: true,
-            image: true,
-            status: true,
-            startTime: true,
-            endTime: true,
-            votingStartTime: true,
-            votingEndTime: true,
-          },
-        },
-      },
-    },
-    rankChangeActivity: {
-      columns: {
-        groupId: true,
-        newRank: true,
-        totalCoins: true,
-        coinsGained: true,
-      },
-      with: {
-        group: {
-          columns: { id: true, name: true, image: true, coins: true },
-        },
-      },
-    },
-    userPost: {
-      columns: { authorId: true, additionalImages: true },
-      with: {
-        author: {
-          columns: { id: true, userId: true, tripId: true, groupId: true },
-          with: {
-            user: {
-              columns: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                hasAvatar: true,
-              },
-            },
-            group: {
-              columns: { id: true, name: true, image: true },
-            },
-          },
-        },
-      },
-    },
-  } as const);
-
-export const getActivityColumns = () =>
-  ({
-    id: true,
-    tripId: true,
-    activityType: true,
-    title: true,
-    description: true,
-    imageUrl: true,
-    isPinned: true,
-    isHidden: true,
-    hiddenAt: true,
-    hiddenReason: true,
-    createdByAdmin: true,
-    createdAt: true,
-    updatedAt: true,
-  } as const);
 
 export const fetchActivityWithRelationsById = async (db: DB, id: string) => {
   return db.query.activityFeeds.findFirst({

@@ -1,4 +1,13 @@
 import { ORPCError } from "@orpc/server";
+import {
+  buildUploadResponse,
+  buildDownloadResponse,
+  buildPublicUrlResponse,
+  calculateExpiresAtISO,
+  classifyStorageError,
+  isPublicBucket,
+  rewriteSignedUrlHost,
+} from "@mirai-app/shared/storage";
 import { resolveStoragePath, getResumableEndpoint, getPublicUrl } from "./utils";
 
 export const createUploadUrl = async (
@@ -33,13 +42,13 @@ export const createUploadUrl = async (
     });
   }
 
-  return {
-    resumableUrl: getResumableEndpoint(),
-    token: data.token,
-    bucket: objectInfo.bucket,
-    objectPath: objectInfo.path,
-    storagePath: objectInfo.storagePath,
-  };
+  return buildUploadResponse(
+    data.token,
+    objectInfo.bucket,
+    objectInfo.path,
+    objectInfo.storagePath,
+    getResumableEndpoint(),
+  );
 };
 
 export const createDownloadUrl = async (
@@ -70,34 +79,18 @@ export const createDownloadUrl = async (
   if (error || !data?.signedUrl) {
     const message =
       typeof error?.message === "string" ? error.message : "Unable to create signed URL";
-    const looksLikeNotFound =
-      message.toLowerCase().includes("not found") ||
-      message.toLowerCase().includes("does not exist");
+    const classified = classifyStorageError(message);
 
-    throw new ORPCError(looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR", {
-      message: looksLikeNotFound ? "Storage object not found" : "Unable to create signed URL",
+    throw new ORPCError(classified.code, {
+      message: classified.message,
     });
   }
 
-  let signedUrl = data.signedUrl;
-  const publicUrl = process.env.SUPABASE_PUBLIC_URL;
-  if (publicUrl) {
-    try {
-      const signed = new URL(signedUrl);
-      const pub = new URL(publicUrl);
-      signed.host = pub.host;
-      signed.protocol = pub.protocol;
-      signed.port = pub.port;
-      signedUrl = signed.toString();
-    } catch {
-      // If URL parsing fails, fall back to the original signed URL
-    }
-  }
+  const signedUrl = rewriteSignedUrlHost(data.signedUrl, process.env.SUPABASE_PUBLIC_URL);
 
-  return {
-    signedUrl,
-    expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
-  };
+  const expiresAt = calculateExpiresAtISO(expiresIn, Date.now());
+
+  return buildDownloadResponse(signedUrl, expiresAt);
 };
 
 export const createPublicUrl = (
@@ -108,7 +101,7 @@ export const createPublicUrl = (
 ) => {
   const objectInfo = resolveStoragePath(input.storagePath);
 
-  if (objectInfo.bucket !== "files-public") {
+  if (!isPublicBucket(objectInfo.bucket)) {
     throw new ORPCError("BAD_REQUEST", {
       message:
         "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets.",
@@ -117,7 +110,5 @@ export const createPublicUrl = (
 
   const publicUrlBase = getPublicUrl();
 
-  return {
-    publicUrl: `${publicUrlBase}/${objectInfo.bucket}/${objectInfo.path}`,
-  };
+  return buildPublicUrlResponse(`${publicUrlBase}/${objectInfo.bucket}/${objectInfo.path}`);
 };

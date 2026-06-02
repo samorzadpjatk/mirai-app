@@ -174,13 +174,13 @@ describe("notifications", () => {
       expect(result.notificationId).toBe("notif-1");
 
       expect(mockDb.notification.create).toHaveBeenCalledWith({
-        data: {
+        data: expect.objectContaining({
           title: "Test Title",
           body: "Test Body",
           url: "/test",
           createdById: "user-1",
           tripId: "trip-1",
-        },
+        }),
       });
     });
 

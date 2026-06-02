@@ -51,6 +51,10 @@ bun run db:generate
 
 # Push schema directly (development only)
 bun run db:push
+
+# Testing
+bun run test
+bun run test:coverage
 ```
 
 > **Production migrations** are handled automatically by the backend server on startup
@@ -106,7 +110,7 @@ Database commands serve as implicit integration tests:
 - `db:push` and `db:migrate` verify migrations apply correctly
 - `db:studio` provides manual verification of schema changes
 
-For detailed testing rationale and patterns for consuming packages, see the root [TESTING.md](../../TESTING.md). For general monorepo testing conventions, see the root [AGENTS.md](../../AGENTS.md).
+For detailed testing rationale and patterns for consuming packages, see [Testing Conventions](./../../docs/conventions/testing.md) and the root [TESTING.md](../../TESTING.md).
 
 ## Links
 

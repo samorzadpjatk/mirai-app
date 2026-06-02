@@ -11,6 +11,15 @@ import {
   resolveGroupImage,
 } from "./utils";
 import type { GroupContext } from "./queries";
+import {
+  canUpdateGroup,
+  canDeleteGroupAsOrganizer,
+  canRemoveUserFromGroup,
+  canViewJoinRequests,
+  isUserInGroup,
+  buildLeaveResult,
+  calculateNextOrganizer,
+} from "@mirai-app/shared/groups";
 
 export const create = async (
   context: GroupContext,
@@ -139,18 +148,16 @@ export const update = async (
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
+  const updateCheck = canUpdateGroup(
+    context.dbUser.role,
+    group.organizerId === context.dbUser.id,
+    Boolean(updateData.organizerId && updateData.organizerId !== group.organizerId),
+  );
+  if (updateCheck.error) {
+    throw new ORPCError(updateCheck.error, { message: updateCheck.message });
+  }
+
   const isAdmin = context.dbUser.role === "ADMIN";
-  const isOrganizer = group.organizerId === context.dbUser.id;
-
-  if (!isAdmin && !isOrganizer) {
-    throw new ORPCError("FORBIDDEN", {
-      message: "Only group organizer or admin can update this group",
-    });
-  }
-
-  if (!isAdmin && updateData.organizerId && updateData.organizerId !== group.organizerId) {
-    throw new ORPCError("FORBIDDEN", { message: "Only admin can change group organizer" });
-  }
 
   await context.db
     .update(groups)
@@ -228,8 +235,9 @@ export const deleteMyGroup = async (context: GroupContext, input: { groupId: str
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  if (group.organizerId !== context.dbUser.id) {
-    throw new ORPCError("FORBIDDEN", { message: "Only group organizer can delete this group" });
+  const deleteCheck = canDeleteGroupAsOrganizer(group.organizerId, context.dbUser.id);
+  if (deleteCheck.error) {
+    throw new ORPCError(deleteCheck.error, { message: deleteCheck.message });
   }
 
   await context.db.transaction(async (tx) => {
@@ -263,11 +271,7 @@ export const join = async (context: GroupContext, input: { id: string; tripId: s
     throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
   }
 
-  const existingMembership = group.participants.find(
-    (member) => member.userId === context.dbUser.id,
-  );
-
-  if (existingMembership) {
+  if (isUserInGroup(context.dbUser.id, group.participants)) {
     throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
   }
 
@@ -430,10 +434,9 @@ export const respondToJoinRequest = async (
 
     await ensureTripNotEnded(context.db, request.tripId);
 
-    if (request.group.organizerId !== context.dbUser.id) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Only group organizer can respond to join requests",
-      });
+    const respondCheck = canViewJoinRequests(request.group.organizerId, context.dbUser.id);
+    if (respondCheck.error) {
+      throw new ORPCError(respondCheck.error, { message: respondCheck.message });
     }
 
     if (request.group.isDeleted) {
@@ -498,11 +501,7 @@ export const assignUserToGroup = async (
     throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
   }
 
-  const existingMembership = group.participants.find(
-    (member) => member.userId === input.userId,
-  );
-
-  if (existingMembership) {
+  if (isUserInGroup(input.userId, group.participants)) {
     throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
   }
 
@@ -655,19 +654,14 @@ export const removeUserFromGroup = async (
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
 
-    const isAdmin = context.dbUser.role === "ADMIN";
-    const isOrganizer = Boolean(group?.organizerId && group.organizerId === context.dbUser.id);
-
-    if (!isAdmin && !isOrganizer) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Only group organizer or admin can remove members",
-      });
-    }
-
-    if (!isAdmin && participant.userId === group?.organizerId) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Group leader cannot be removed by organizer",
-      });
+    const removeCheck = canRemoveUserFromGroup(
+      context.dbUser.role,
+      group?.organizerId === context.dbUser.id,
+      participant.userId,
+      group?.organizerId ?? null,
+    );
+    if (removeCheck.error) {
+      throw new ORPCError(removeCheck.error, { message: removeCheck.message });
     }
 
     const [updated] = await tx
@@ -707,10 +701,11 @@ export const removeUserFromGroup = async (
           columns: { userId: true },
         });
 
-        if (nextOrganizer) {
+        const nextOrganizerId = calculateNextOrganizer(nextOrganizer ? [nextOrganizer] : []);
+        if (nextOrganizerId) {
           await tx
             .update(groups)
-            .set({ organizerId: nextOrganizer.userId })
+            .set({ organizerId: nextOrganizerId })
             .where(eq(groups.id, participant.groupId));
         }
       }
@@ -774,18 +769,10 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
       if (membersLeft === 0) {
         await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
         await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));
-        return {
-          left: true,
-          reassignedOrganizerId: null,
-          groupDeleted: true,
-        };
+        return buildLeaveResult(true, null, true);
       }
 
-      return {
-        left: true,
-        reassignedOrganizerId: null,
-        groupDeleted: false,
-      };
+      return buildLeaveResult(true, null, false);
     });
   }
 
@@ -803,7 +790,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
     columns: { userId: true },
   });
 
-  const nextOrganizerId = remainingParticipants[0]?.userId ?? null;
+  const nextOrganizerId = calculateNextOrganizer(remainingParticipants);
 
   await context.db.transaction(async (tx) => {
     if (nextOrganizerId) {
@@ -827,11 +814,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
       );
   });
 
-  return {
-    left: true,
-    reassignedOrganizerId: nextOrganizerId,
-    groupDeleted: !nextOrganizerId,
-  };
+  return buildLeaveResult(true, nextOrganizerId, !nextOrganizerId);
 };
 
 export const addCoins = async (

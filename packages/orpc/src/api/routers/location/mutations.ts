@@ -1,10 +1,9 @@
 import { ORPCError } from "@orpc/server";
 import { eq, and } from "drizzle-orm";
 import { locations, locationShares, locationSharingRequests } from "@mirai-app/db";
-import { locationDataSchema } from "../../../utils/location-validation";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import { toExpoLocation } from "@mirai-app/shared/locations";
 import {
-  toExpoLocation,
   mapUserWithAvatar,
   ensureUserInActiveTrip,
   assertShareableTargets,

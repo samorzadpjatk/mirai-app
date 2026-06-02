@@ -1,9 +1,3 @@
-interface NotificationTemplate {
-  title: string;
-  body: string;
-  url: string;
-}
-
 export interface RankingTemplateValues {
   groupName: string;
   rankingPosition: string;

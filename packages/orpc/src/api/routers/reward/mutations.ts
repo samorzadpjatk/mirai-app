@@ -3,13 +3,10 @@ import { ORPCError } from "@orpc/server";
 import { eq, sql, count } from "drizzle-orm";
 import { type DB, rewards, rewardPurchases, groups, coinTransactions } from "@mirai-app/db";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
-import {
-  calculateTotalAvailablePoints,
-  canTransitionPurchaseStatus,
-  normalizeRewardImagesInput,
-  serializeRewardImages,
-} from "./utils";
-import { rewardPurchaseStatusSchema, userRewardPurchaseStatusSchema, type RewardPurchaseStatus } from "./types";
+import { calculateRewardProgress } from "@mirai-app/shared";
+import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/shared";
+import { calculateTotalAvailablePoints, normalizeRewardImagesInput } from "./utils";
+import { userRewardPurchaseStatusSchema, type RewardPurchaseStatus } from "./types";
 
 export const createReward = async (
   context: { db: DB; dbUser: { id: string } },
@@ -185,7 +182,7 @@ export const purchaseReward = async (
       throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
     }
 
-    await ensureTripNotEnded(tx as unknown as DB, reward.tripId);
+    await ensureTripNotEnded(tx, reward.tripId);
 
     if (reward.isHidden) {
       throw new ORPCError("BAD_REQUEST", { message: "Reward is hidden" });
@@ -226,17 +223,18 @@ export const purchaseReward = async (
     }
 
     const totalAvailablePoints = await calculateTotalAvailablePoints(
-      tx as unknown as DB,
+      tx,
       reward.tripId,
     );
-    let dynamicCoinCost = reward.coinCost;
-
-    if (totalAvailablePoints > 0) {
-      const percentageOfTotal = reward.coinCost / 100;
-      dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-      dynamicCoinCost = Math.max(1, dynamicCoinCost);
-    }
-
+    const progress = calculateRewardProgress({
+      reward,
+      totalAvailablePoints,
+      groupCoins: userParticipant.group.coins,
+      isGroupLeader: true,
+      purchasedCount: 0,
+      isAllTrips: false,
+    });
+    const dynamicCoinCost = progress.coinCost;
     const totalCost = dynamicCoinCost * input.quantity;
 
     if (userParticipant.group.coins < totalCost) {

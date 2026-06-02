@@ -718,25 +718,6 @@ describe("locationRouter", () => {
   });
 
   describe("getAllUsersForSharing", () => {
-    it.skip("should return shareable users for trip", async () => {
-      const shareableUsers = [
-        createMockUser({ id: "user-456", firstName: "Friend", lastName: "One", hasAvatar: true }),
-        createMockUser({ id: "user-789", firstName: "Friend", lastName: "Two", hasAvatar: false }),
-      ];
-      mockDb.tripParticipant.findMany.mockResolvedValue([
-        createMockParticipant({ userId: "user-456", tripId: "trip-123" }),
-        createMockParticipant({ userId: "user-789", tripId: "trip-123" }),
-      ]);
-      mockDb.user.findMany.mockResolvedValue(shareableUsers);
-
-      const ctx = createAuthContext(mockUser);
-      const caller = createCaller(ctx);
-
-      const result = await caller.getAllUsersForSharing({ tripId: "trip-123" });
-
-      expect(result).toHaveLength(2);
-    });
-
     it("should return empty array when user has no trips", async () => {
       mockDb.tripParticipant.findMany.mockResolvedValue([]);
 

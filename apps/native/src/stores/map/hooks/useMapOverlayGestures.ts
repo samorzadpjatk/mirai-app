@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import {
   runOnJS,

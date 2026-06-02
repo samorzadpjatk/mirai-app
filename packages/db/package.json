@@ -8,6 +8,10 @@
     ".": {
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./test-helper": {
+      "import": "./src/test-helper.ts",
+      "default": "./src/test-helper.ts"
     }
   },
   "scripts": {
@@ -25,14 +29,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@mirai-app/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^3.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.4"
   }
 }

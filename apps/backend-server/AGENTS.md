@@ -104,6 +104,31 @@ This replaces the previously separate `db-migrations` Docker service. Migration 
 
 - **Warning**: WebSocket connection init, auth handshake, and reconnection logic in `server.ts` and `ws-adapter.ts` have minimal automated test coverage.
 - **Action**: Add integration tests for the full WebSocket lifecycle: connection → auth → message → disconnect → reconnect.
+- **Example**:
+  ```typescript
+  import { describe, it, expect } from 'vitest';
+  import { createServer } from '../server';
+
+  describe('WebSocket lifecycle', () => {
+    it('should connect, authenticate, and handle messages', async () => {
+      const server = createServer({ dev: true, port: 3001 });
+      await server.start();
+
+      const ws = new WebSocket('ws://localhost:3001/api/trpc');
+      await new Promise((resolve) => (ws.onopen = resolve));
+
+      // Send auth handshake
+      ws.send(JSON.stringify({ authToken: 'test-token' }));
+
+      // Verify connection established
+      expect(ws.readyState).toBe(WebSocket.OPEN);
+
+      await server.stop();
+    });
+  });
+  ```
+
+See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
 
 ### Side Effects at Module Level
 

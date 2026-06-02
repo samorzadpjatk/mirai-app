@@ -14,5 +14,3 @@ export const notificationSenderRouter = createORPCRouter({
   trackDeliveryFailure: trackDeliveryFailureMutation,
   checkInactiveUsers,
 });
-
-export type NotificationSenderRouter = typeof notificationSenderRouter;

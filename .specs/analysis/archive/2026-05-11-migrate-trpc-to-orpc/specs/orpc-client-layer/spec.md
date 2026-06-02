@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: oRPC vanilla client supports HTTP and WebSocket
-The vanilla oRPC client in `packages/trpc/src/client/vanilia.ts` SHALL use `createORPCClient` with `RPCLink` for both HTTP and WebSocket transports, supporting auth token injection, retries, and split routing (subscriptions over WS, queries/mutations over HTTP).
+The vanilla oRPC client in `packages/orpc/src/client/vanilia.ts` SHALL use `createORPCClient` with `RPCLink` for both HTTP and WebSocket transports, supporting auth token injection, retries, and split routing (subscriptions over WS, queries/mutations over HTTP).
 
 #### Scenario: Client creates with HTTP and WS links
 - **WHEN** `getORPCClient(httpUrl, wsUrl, authorizationToken)` is called
@@ -34,7 +34,7 @@ The TanStack Query integration SHALL use `createTanstackQueryUtils` from `@orpc/
 - **AND** on success, it SHALL invalidate relevant query keys automatically (via utils or manual invalidation)
 
 ### Requirement: Query invalidation utilities work with oRPC keys
-The query invalidation utilities in `packages/trpc/src/client/invalidationUtils.ts` SHALL be updated to use oRPC query key patterns.
+The query invalidation utilities in `packages/orpc/src/client/invalidationUtils.ts` SHALL be updated to use oRPC query key patterns.
 
 #### Scenario: Invalidation targets oRPC query keys
 - **WHEN** `invalidateQueries(['user', 'getMy'])` is called

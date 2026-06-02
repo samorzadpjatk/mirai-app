@@ -9,11 +9,9 @@ import {
   userPosts,
 } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import {
-  ensureTripParticipant,
-  ensureTripExists,
-  normalizeImageReference,
-} from "./utils";
+import { buildUpdateActivityData, validateActivityVisibility } from "@mirai-app/shared/feed";
+import { normalizeImageReference } from "@mirai-app/shared/storage";
+import { ensureTripParticipant, ensureTripExists } from "./utils";
 import { fetchActivityWithRelationsById, getReactionSummary } from "./queries";
 import type { ActivityContext } from "./queries";
 import { enrichActivities } from "./enrichment";
@@ -359,17 +357,7 @@ export const update = async (
     isPinned?: boolean;
   },
 ) => {
-  const updateData: Record<string, unknown> = {};
-
-  if (input.title !== undefined) {
-    updateData.title = input.title;
-  }
-  if (input.description !== undefined) {
-    updateData.description = input.description;
-  }
-  if (input.isPinned !== undefined) {
-    updateData.isPinned = input.isPinned;
-  }
+  const updateData = buildUpdateActivityData(input);
 
   if (Object.keys(updateData).length === 0) {
     throw new ORPCError("BAD_REQUEST", {
@@ -513,9 +501,10 @@ export const toggleReaction = async (
 
   await ensureTripParticipant(context, activity.tripId);
 
-  if (activity.isHidden) {
-    throw new ORPCError("FORBIDDEN", {
-      message: "This activity is hidden",
+  const visibilityError = validateActivityVisibility(activity.isHidden);
+  if (visibilityError) {
+    throw new ORPCError(visibilityError.error, {
+      message: visibilityError.message,
     });
   }
 

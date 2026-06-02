@@ -31,6 +31,6 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": ["vitest"]
   },
-  "include": ["index.ts", "vitest.config.ts", "src/**/*"],
+  "include": ["index.ts", "vitest.config.ts", "vitest.base.config.ts", "src/**/*"],
   "exclude": ["node_modules", "dist", "coverage"]
 }

@@ -8,8 +8,21 @@
   "exports": {
     ".": "./index.ts",
     "./test-utils": "./src/test-utils/index.ts",
+    "./challenges": "./src/challenges/index.ts",
     "./feed": "./src/feed/index.ts",
-    "./trips": "./src/trips/index.ts"
+    "./groups": "./src/groups/index.ts",
+    "./stores": "./src/stores/index.ts",
+    "./trips": "./src/trips/index.ts",
+    "./users": "./src/users/index.ts",
+    "./storage": "./src/storage/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./utils/location": "./src/utils/location.ts",
+    "./tripInfo": "./src/tripInfo/index.ts",
+    "./rewards": "./src/rewards/index.ts",
+    "./coins": "./src/coins/index.ts",
+    "./challengeSubmissions": "./src/challengeSubmissions/index.ts",
+    "./locations": "./src/locations/index.ts",
+    "./notifications": "./src/notifications/index.ts"
   },
   "scripts": {
     "build": "tsc -b",
@@ -21,17 +34,19 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
+    "@orpc/server": "^1.14.2",
     "@supabase/supabase-js": "^2.89.0",
-    "@types/react": "~19.1.17",
-    "@vitest/coverage-v8": "^3.0.0",
+    "@types/react": "~19.2.10",
+    "@vitest/coverage-v8": "^3.2.4",
     "react": "^19.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.4"
   },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
+
   "dependencies": {
+    "drizzle-orm": "^0.45.2",
     "pino": "^9.6.0",
     "zustand": "^5.0.11"
   }

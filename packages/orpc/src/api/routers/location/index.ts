@@ -25,13 +25,7 @@ import {
   rejectLocationSharingRequest,
 } from "./mutations";
 
-export type {
-  ExpoLocationObject,
-  LocationWithUser,
-  FriendLocationEvent,
-  SharingUser,
-  SharingSettings,
-} from "./types";
+
 
 const handleUpdateSharingSettings = async ({
   context,

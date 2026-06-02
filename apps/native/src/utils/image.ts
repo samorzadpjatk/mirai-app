@@ -1,5 +1,3 @@
-import type { ImagePickerAsset } from "expo-image-picker";
-
 /**
  * Extracts the file extension from an ImagePicker asset.
  * Handles both images and videos. Falls back to mimeType detection or defaults to 'jpg'.

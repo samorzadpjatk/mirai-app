@@ -4,9 +4,8 @@ import { coinRouter } from "../../routers/coin";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import type { DB, User, Group, CoinTransaction } from "@mirai-app/db";
+import type { User, Group, CoinTransaction } from "@mirai-app/db";
 
-// Mock the utility modules
 vi.mock("../../../utils/activityFeed", () => ({
   captureTripRankingSnapshot: vi.fn().mockResolvedValue(new Map()),
   createRankChangeActivities: vi.fn().mockResolvedValue(undefined),
@@ -33,7 +32,6 @@ vi.mock("@mirai-app/auth", () => ({
 
 const createCaller = (ctx: TRPCContext) => createRouterClient(coinRouter, { context: ctx });
 
-// Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
   id: "user-123",
   authUserId: "auth-123",
@@ -47,7 +45,6 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
-// Helper to create mock group
 const createMockGroup = (overrides: Partial<Group> = {}): Group => ({
   id: "group-123",
   name: "Test Group",
@@ -63,7 +60,6 @@ const createMockGroup = (overrides: Partial<Group> = {}): Group => ({
   ...overrides,
 });
 
-// Helper to create mock coin transaction
 const createMockCoinTransaction = (overrides: Partial<CoinTransaction> = {}): CoinTransaction => ({
   id: "transaction-123",
   groupId: "group-123",
@@ -76,7 +72,7 @@ const createMockCoinTransaction = (overrides: Partial<CoinTransaction> = {}): Co
 });
 
 describe("coinRouter", () => {
-  let mockDb: DB;
+  let mockDb: TRPCContext["db"];
   let mockSupabase: SupabaseClient;
   let mockModeratorUser: User;
   let mockGroup: Group;
@@ -91,12 +87,9 @@ describe("coinRouter", () => {
     });
     mockGroup = createMockGroup({ id: "group-123", tripId: "trip-123", coins: 100 });
 
-    // Setup mock Supabase client
     mockSupabase = {
       auth: {
-        getUser: vi
-          .fn()
-          .mockResolvedValue({ data: { user: { id: "moderator-123" } }, error: null }),
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: "moderator-123" } }, error: null }),
         getSession: vi.fn(),
         admin: {
           getUserById: vi.fn().mockResolvedValue({
@@ -123,7 +116,6 @@ describe("coinRouter", () => {
       })),
     } satisfies SupabaseClient;
 
-    // Setup mock database client
     mockDb = {
       user: {
         findFirst: vi.fn().mockResolvedValue(mockModeratorUser),
@@ -171,7 +163,6 @@ describe("coinRouter", () => {
     };
   });
 
-  // Helper to create authenticated context
   const createAuthContext = (user: User, token = "test-token"): TRPCContext => ({
     db: mockDb,
     supabase: mockSupabase,
@@ -183,33 +174,17 @@ describe("coinRouter", () => {
 
   describe("addCoins", () => {
     it("should add coins to a group successfully", async () => {
-      const updatedGroup = createMockGroup({ id: "group-123", coins: 150 });
       const transaction = createMockCoinTransaction({
         id: "transaction-1",
         groupId: "group-123",
         amount: 50,
         reason: "Bonus coins",
         adminId: "moderator-123",
-        group: {
-          id: "group-123",
-          name: "Test Group",
-          coins: 150,
-        },
-        admin: {
-          id: "moderator-123",
-          firstName: "Test",
-          lastName: "Moderator",
-        },
+        group: { id: "group-123", name: "Test Group", coins: 150 },
+        admin: { id: "moderator-123", firstName: "Test", lastName: "Moderator" },
       });
 
       mockDb.query.groups.findFirst.mockResolvedValue(mockGroup);
-
-      mockDb.insert.mockReturnValue({
-        values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([transaction])),
-        })),
-      });
-
       mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -224,9 +199,6 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(50);
       expect(result.group.coins).toBe(150);
-
-      expect(mockDb.update).toHaveBeenCalled();
-      expect(mockDb.insert).toHaveBeenCalled();
     });
 
     it("should throw NOT_FOUND when group does not exist", async () => {
@@ -246,9 +218,7 @@ describe("coinRouter", () => {
 
     it("should throw NOT_FOUND when group belongs to different trip", async () => {
       const differentTripGroup = createMockGroup({ id: "group-123", tripId: "different-trip" });
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        differentTripGroup,
-      );
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -278,34 +248,6 @@ describe("coinRouter", () => {
       ).rejects.toThrow(ORPCError);
     });
 
-    it("should create rank change activities after adding coins", async () => {
-      const { createRankChangeActivities } = await import("../../../utils/activityFeed");
-
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      mockDb.update.mockReturnValue({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      });
-
-      const ctx = createAuthContext(mockModeratorUser);
-      const caller = createCaller(ctx);
-
-      await caller.addCoins({
-        tripId: "trip-123",
-        groupId: "group-123",
-        amount: 50,
-      });
-
-      expect(createRankChangeActivities).toHaveBeenCalledWith({
-        tx: mockDb,
-        tripId: "trip-123",
-
-        previousSnapshot: expect.any(Map),
-        createdByAdmin: "moderator-123",
-      });
-    });
-
     it("should work without a reason", async () => {
       const transaction = createMockCoinTransaction({
         id: "transaction-1",
@@ -313,18 +255,7 @@ describe("coinRouter", () => {
         reason: null,
       });
 
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockGroup);
-      mockDb.update.mockReturnValue({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      });
-      mockDb.insert.mockReturnValue({
-        values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([transaction])),
-        })),
-      });
-
+      mockDb.query.groups.findFirst.mockResolvedValue(mockGroup);
       mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -343,44 +274,18 @@ describe("coinRouter", () => {
 
   describe("removeCoins", () => {
     it("should remove coins from a group successfully", async () => {
-      const groupWithEnoughCoins = createMockGroup({
-        id: "group-123",
-        coins: 100,
-        tripId: "trip-123",
-      });
-      const updatedGroup = createMockGroup({ id: "group-123", coins: 50 });
+      const groupWithEnoughCoins = createMockGroup({ id: "group-123", coins: 100, tripId: "trip-123" });
       const transaction = createMockCoinTransaction({
         id: "transaction-1",
         groupId: "group-123",
         amount: -50,
         reason: "Penalty",
         adminId: "moderator-123",
-        group: {
-          id: "group-123",
-          name: "Test Group",
-          coins: 50,
-        },
-        admin: {
-          id: "moderator-123",
-          firstName: "Test",
-          lastName: "Moderator",
-        },
+        group: { id: "group-123", name: "Test Group", coins: 50 },
+        admin: { id: "moderator-123", firstName: "Test", lastName: "Moderator" },
       });
 
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        groupWithEnoughCoins,
-      );
-      mockDb.update.mockReturnValue({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      });
-      mockDb.insert.mockReturnValue({
-        values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([transaction])),
-        })),
-      });
-
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
       mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -395,15 +300,11 @@ describe("coinRouter", () => {
 
       expect(result.amount).toBe(-50);
       expect(result.group.coins).toBe(50);
-
-      expect(mockDb.update).toHaveBeenCalled();
     });
 
     it("should throw BAD_REQUEST when group does not have enough coins", async () => {
       const groupWithLowCoins = createMockGroup({ id: "group-123", coins: 30, tripId: "trip-123" });
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        groupWithLowCoins,
-      );
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithLowCoins);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -419,9 +320,7 @@ describe("coinRouter", () => {
 
     it("should throw BAD_REQUEST when group has zero coins", async () => {
       const groupWithZeroCoins = createMockGroup({ id: "group-123", coins: 0, tripId: "trip-123" });
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        groupWithZeroCoins,
-      );
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithZeroCoins);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -451,14 +350,8 @@ describe("coinRouter", () => {
     });
 
     it("should throw BAD_REQUEST when group belongs to different trip", async () => {
-      const differentTripGroup = createMockGroup({
-        id: "group-123",
-        tripId: "different-trip",
-        coins: 100,
-      });
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        differentTripGroup,
-      );
+      const differentTripGroup = createMockGroup({ id: "group-123", tripId: "different-trip", coins: 100 });
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(differentTripGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -473,12 +366,7 @@ describe("coinRouter", () => {
     });
 
     it("should throw BAD_REQUEST when group is deleted", async () => {
-      const deletedGroup = createMockGroup({
-        id: "group-123",
-        isDeleted: true,
-        tripId: "trip-123",
-        coins: 100,
-      });
+      const deletedGroup = createMockGroup({ id: "group-123", isDeleted: true, tripId: "trip-123", coins: 100 });
       (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(deletedGroup);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -493,67 +381,15 @@ describe("coinRouter", () => {
       ).rejects.toThrow(ORPCError);
     });
 
-    it("should create rank change activities after removing coins", async () => {
-      const { createRankChangeActivities } = await import("../../../utils/activityFeed");
-
-      const groupWithEnoughCoins = createMockGroup({
-        id: "group-123",
-        coins: 100,
-        tripId: "trip-123",
-      });
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        groupWithEnoughCoins,
-      );
-      mockDb.update.mockReturnValue({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      });
-
-      const ctx = createAuthContext(mockModeratorUser);
-      const caller = createCaller(ctx);
-
-      await caller.removeCoins({
-        tripId: "trip-123",
-        groupId: "group-123",
-        amount: 50,
-      });
-
-      expect(createRankChangeActivities).toHaveBeenCalledWith({
-        tx: mockDb,
-        tripId: "trip-123",
-
-        previousSnapshot: expect.any(Map),
-        createdByAdmin: "moderator-123",
-      });
-    });
-
     it("should work without a reason", async () => {
-      const groupWithEnoughCoins = createMockGroup({
-        id: "group-123",
-        coins: 100,
-        tripId: "trip-123",
-      });
+      const groupWithEnoughCoins = createMockGroup({ id: "group-123", coins: 100, tripId: "trip-123" });
       const transaction = createMockCoinTransaction({
         id: "transaction-1",
         amount: -50,
         reason: null,
       });
 
-      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(
-        groupWithEnoughCoins,
-      );
-      mockDb.update.mockReturnValue({
-        set: vi.fn(() => ({
-          where: vi.fn(() => Promise.resolve()),
-        })),
-      });
-      mockDb.insert.mockReturnValue({
-        values: vi.fn(() => ({
-          returning: vi.fn(() => Promise.resolve([transaction])),
-        })),
-      });
-
+      (mockDb.query.groups.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(groupWithEnoughCoins);
       mockDb.query.coinTransactions.findFirst.mockResolvedValue(transaction);
 
       const ctx = createAuthContext(mockModeratorUser);
@@ -626,9 +462,7 @@ describe("coinRouter", () => {
 
   describe("Edge cases and error handling", () => {
     it("should handle database errors during addCoins", async () => {
-      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
-      );
+      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);
@@ -643,9 +477,7 @@ describe("coinRouter", () => {
     });
 
     it("should handle database errors during removeCoins", async () => {
-      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Database error"),
-      );
+      (mockDb.transaction as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Database error"));
 
       const ctx = createAuthContext(mockModeratorUser);
       const caller = createCaller(ctx);

@@ -1,7 +1,8 @@
 import { ORPCError } from "@orpc/server";
 import { challengeSubmissions, challenges, submissionReports } from "@mirai-app/db";
 import { eq, and } from "drizzle-orm";
-import { buildAuthEmailLookup, resolveAuthEmail } from "../../../utils/authEmails";
+import { buildReportWithEmail } from "@mirai-app/shared";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { ensureTripParticipant } from "./utils";
 import type { ReportContext } from "./queries";
@@ -69,16 +70,5 @@ export const createReport = async ({
     report.reporter.user.authUserId,
   ]);
 
-  const { authUserId, ...reporterUser } = report.reporter.user;
-
-  return {
-    ...report,
-    reporter: {
-      ...report.reporter,
-      user: {
-        ...reporterUser,
-        email: resolveAuthEmail(emailByAuthUserId, authUserId),
-      },
-    },
-  };
+  return buildReportWithEmail(report, emailByAuthUserId);
 };

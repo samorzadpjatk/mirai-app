@@ -1,10 +1,16 @@
 import { eq, and, inArray, count } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { groups, tripParticipants, groupJoinRequests } from "@mirai-app/db";
+import { groups, tripParticipants } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { toUserWithEmail, batchEmailLookup, resolveGroupImage } from "./utils";
+import {
+  canViewJoinRequests,
+  calculatePagination,
+  mapApprovedSubmissions,
+  buildParticipantCountMap,
+} from "@mirai-app/shared/groups";
 
 export type GroupContext = {
   db: DB;
@@ -162,12 +168,7 @@ export const getAll = async (
         })),
       })),
     ),
-    pagination: {
-      total: totalResult[0]?.count ?? 0,
-      limit,
-      offset,
-      hasMore: offset + limit < (totalResult[0]?.count ?? 0),
-    },
+    pagination: calculatePagination(limit, offset, totalResult[0]?.count ?? 0),
   };
 };
 
@@ -202,7 +203,7 @@ export const getGroupList = async (context: GroupContext, input: { tripId: strin
           .groupBy(tripParticipants.groupId)
       : [];
 
-  const countMap = new Map(participantCounts.map((c) => [c.groupId, c.count]));
+  const countMap = buildParticipantCountMap(participantCounts);
   const groupsWithCount = groupsResult.map((g) => ({
     ...g,
     _count: { participants: countMap.get(g.id) ?? 0 },
@@ -283,15 +284,7 @@ export const getById = async (context: GroupContext, input: { id: string }) => {
     ...group.participants.map((participant) => participant.user.authUserId),
   ]);
 
-  const approvedSubmissions = group.challengeSubmissions
-    .filter((submission) => Boolean(submission.imageIds[0]))
-    .map((submission) => ({
-      submissionId: submission.id,
-      challengeId: submission.challenge.id,
-      challengeTitle: submission.challenge.name,
-      imageStoragePath: submission.imageIds[0] ?? "",
-      approvedAt: submission.reviewedAt ?? submission.createdAt,
-    }));
+  const approvedSubmissions = mapApprovedSubmissions(group.challengeSubmissions);
 
   return {
     ...group,
@@ -351,10 +344,9 @@ export const getPendingJoinRequests = async (
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  if (group.organizerId !== context.dbUser.id) {
-    throw new ORPCError("FORBIDDEN", {
-      message: "Only group organizer can view join requests",
-    });
+  const viewCheck = canViewJoinRequests(group.organizerId, context.dbUser.id);
+  if (viewCheck.error) {
+    throw new ORPCError(viewCheck.error, { message: viewCheck.message });
   }
 
   const requests = await context.db.query.groupJoinRequests.findMany({

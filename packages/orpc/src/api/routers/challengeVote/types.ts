@@ -11,14 +11,6 @@ export const voteColumns = {
   votedAt: true,
 } as const;
 
-export const challengeColumns = {
-  id: true,
-  tripId: true,
-  status: true,
-  scoringCategory: true,
-  endTime: true,
-} as const;
-
 export type ChallengeForVoting = Pick<
   typeof challenges.$inferSelect,
   "id" | "tripId" | "status" | "scoringCategory" | "endTime"

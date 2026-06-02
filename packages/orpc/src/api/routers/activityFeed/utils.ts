@@ -20,15 +20,6 @@ export const imageReferenceSchema = z
 
 export const optionalImageReferenceSchema = imageReferenceSchema.optional();
 
-export const normalizeImageReference = (value: string | undefined) => {
-  if (!value) return undefined;
-  const normalized = normalizeSupabaseStoragePath(value);
-  if (normalized) {
-    return normalized.storagePath;
-  }
-  return value;
-};
-
 export const ensureTripParticipant = async (
   context: { db: DB; dbUser: { id: string } },
   tripId: string,

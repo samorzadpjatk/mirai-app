@@ -47,6 +47,7 @@ bun run lint
 
 # Test
 bun run test
+bun run test:watch
 ```
 
 ## Dependencies
@@ -71,6 +72,21 @@ Client: `import { SupabaseProvider, useSupabase } from '@mirai-app/supabase/reac
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Anonymous client key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server only) |
+
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for testing. See [Testing Conventions](./../../docs/conventions/testing.md) for repo-wide testing standards.
+
+### Client Factory Testing
+
+Tests focus on the Supabase client factory and React integration:
+
+- **Client factory** - `createClient` produces correctly configured instances for server and client environments
+- **React provider** - `SupabaseProvider` initializes context and passes client to children
+- **Environment detection** - Server vs client configuration differences (service role vs anon key)
+- **Type exports** - Database types are correctly generated and exported
+
+Mock `@supabase/supabase-js` for unit tests. Verify real client behavior in integration tests.
 
 ## Links
 

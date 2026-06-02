@@ -63,6 +63,7 @@ describe("Notification Sender - Environment Validation", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -108,6 +109,7 @@ describe("Notification Sender - Main Error Handling", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -152,6 +154,7 @@ describe("Notification Sender - Client Initialization", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -215,6 +218,7 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -286,6 +290,7 @@ describe("Notification Sender - SIGINT Handling", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -456,6 +461,7 @@ describe("Notification Sender - Notification Processing", () => {
   }
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });

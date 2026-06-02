@@ -21,14 +21,24 @@ vi.mock("@mirai-app/orpc", () => ({
 }));
 
 let createServer: typeof ServerModule.createServer;
+const servers: Array<{ stop: () => Promise<void> }> = [];
 
 beforeEach(async () => {
   vi.resetModules();
   const serverModule = await import("../server");
-  createServer = serverModule.createServer;
+  const originalCreateServer = serverModule.createServer;
+  createServer = (...args: Parameters<typeof originalCreateServer>) => {
+    const server = originalCreateServer(...args);
+    servers.push(server);
+    return server;
+  };
+  servers.length = 0;
 });
 
-afterEach(() => {
+afterEach(async () => {
+  for (const server of servers) {
+    await server.stop();
+  }
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

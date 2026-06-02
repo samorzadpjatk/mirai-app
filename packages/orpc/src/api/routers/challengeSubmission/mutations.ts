@@ -18,14 +18,16 @@ import {
 } from "../../../utils/activityFeed";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import {
+  validateSubmissionPayload,
+  shouldAutoApproveSubmission,
+  resolveAwardedPoints,
+} from "@mirai-app/shared/challengeSubmissions";
 import { submissionBaseColumns, submissionWithRelations } from "./types";
 import {
   attachReviewerEmail,
   ensureTripParticipant,
   ensureChallengeInTrip,
-  validateSubmissionPayload,
-  shouldAutoApproveSubmission,
-  resolveAwardedPoints,
   rebalanceSpeedRankings,
 } from "./utils";
 import type { SubmissionContext } from "./queries";

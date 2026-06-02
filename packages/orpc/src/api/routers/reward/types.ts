@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-export const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
-
 export const rewardPurchaseStatusSchema = z.enum([
   "BOUGHT",
   "ACCEPTED",

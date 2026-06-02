@@ -1,10 +1,16 @@
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import { type ScheduledNotificationTemplate } from "../../../utils/notificationTemplates";
+import {
+  toOptionalString,
+  getNextScheduledStartDate,
+  normalizeScheduleWindow,
+} from "@mirai-app/shared/notifications";
 
-export const toOptionalString = (value: unknown): string | undefined =>
-  typeof value === "string" ? value : undefined;
+export { toOptionalString, normalizeScheduleWindow };
 
-export const attachCreatedByEmail = <T extends { createdBy?: { authUserId?: string | null } | null }>(
+export const attachCreatedByEmail = <
+  T extends { createdBy?: { authUserId?: string | null } | null },
+>(
   schedule: T,
   emailByAuthUserId: Map<string, string | null>,
 ) => {
@@ -20,18 +26,6 @@ export const attachCreatedByEmail = <T extends { createdBy?: { authUserId?: stri
   };
 };
 
-export function getNextScheduledStartDate(hour: number, minute: number, now = new Date()): Date {
-  const startDate = new Date(now);
-  startDate.setHours(hour, minute, 0, 0);
-
-  const minimumDate = new Date(now.getTime() + 5 * 60 * 1000);
-  if (startDate < minimumDate) {
-    startDate.setDate(startDate.getDate() + 1);
-  }
-
-  return startDate;
-}
-
 export function getTemplateScheduleDates(template: ScheduledNotificationTemplate): {
   startDate: Date;
   endDate: Date;
@@ -42,24 +36,4 @@ export function getTemplateScheduleDates(template: ScheduledNotificationTemplate
   endDate.setFullYear(endDate.getFullYear() + 1);
 
   return { startDate, endDate };
-}
-
-export function normalizeScheduleWindow(params: {
-  startDate: Date;
-  endDate: Date;
-  hour: number;
-  minute: number;
-}) {
-  const normalizedStartDate = new Date(params.startDate);
-  normalizedStartDate.setUTCHours(params.hour, params.minute, 0, 0);
-
-  const durationMs = params.endDate.getTime() - params.startDate.getTime();
-  const normalizedEndDate = new Date(normalizedStartDate.getTime() + durationMs);
-
-  return {
-    startDate: normalizedStartDate,
-    endDate: normalizedEndDate,
-    hour: normalizedStartDate.getUTCHours(),
-    minute: normalizedStartDate.getUTCMinutes(),
-  };
 }

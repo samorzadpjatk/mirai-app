@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getUserAvatarPath, toExpoLocation } from "../utils";
+import { getUserAvatarPath } from "../utils";
+import { toExpoLocation } from "@mirai-app/shared/locations";
 import type { Location as DbLocation } from "@mirai-app/db";
 
 describe("location/utils pure functions", () => {

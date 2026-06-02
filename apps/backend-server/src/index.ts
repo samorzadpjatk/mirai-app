@@ -1,4 +1,5 @@
 import { runMigrations } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared";
 import { serverConfig } from "./config";
 import { createServer } from "./server";
 
@@ -10,7 +11,7 @@ async function main() {
 
   const migrationsFolder = process.env.MIGRATIONS_FOLDER;
 
-  await runMigrations(databaseUrl, migrationsFolder);
+  await runMigrations(databaseUrl, migrationsFolder, logger);
 
   const server = createServer(serverConfig);
   server.start();

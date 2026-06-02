@@ -12,23 +12,70 @@ Testing patterns and conventions for the MIRAI monorepo.
 | E2E | Playwright | Full user flows |
 | Component | React Testing Library | React components |
 | API | oRPC test client | oRPC procedures |
+| Database | bun:sqlite + Drizzle | Real transaction tests |
+| Network | MSW | Native hook API mocking |
+| Dead code | knip | Unused exports cleanup |
 
-## File Organization
+## Architecture Principles
+
+### Functional Core, Imperative Shell
+
+Extract pure business logic to `packages/shared/src/` (domain directories like `challenges/`, `trips/`, `groups/`). Hooks, routers, and components become thin shells.
+
+```typescript
+// packages/shared/src/challenges/queryBuilders.ts
+export function buildChallengeQueryInput(tripId: string | null, pageParam: number) {
+  return { tripId: tripId ?? "", pagination: { limit: 30, offset: pageParam || 0 } };
+}
+```
+
+Test with real data, no mocks:
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { buildChallengeQueryInput } from "@mirai-app/shared/challenges";
+
+describe("buildChallengeQueryInput", () => {
+  it("defaults null tripId to empty string", () => {
+    expect(buildChallengeQueryInput(null, 0)).toEqual({
+      tripId: "", pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+```
+
+### Manual Dependency Injection
+
+Pass dependencies via parameters. No singleton imports inside business logic.
+
+```typescript
+// Before: module-level client
+const supabaseClient = createSupabaseClient(process.env.SUPABASE_URL!);
+
+// After: injected
+export function createBackgroundLocationTask(deps: { supabaseClient: SupabaseClient; orpcClient: ORPCClient }) {
+  return async (taskData) => { /* use deps */ };
+}
+```
+
+### Fake over Mock
+
+Use real SQLite for backend integration tests. Use MSW for frontend API tests. Avoid mock-verification tests.
+
+## File Organization and Naming
 
 ```
 packages/orpc/
 ├── src/
 │   ├── api/
 │   │   └── routers/
-│   │       └── user.ts
+│   │       └── user/
 │   └── __tests__/
-│       ├── user.test.ts        # Test file
-│       └── setup.ts            # Test setup
+│       ├── user.test.ts
+│       └── setup.ts
 ├── vitest.config.ts
 └── package.json
 ```
-
-## Naming
 
 | Type | Naming | Example |
 |------|--------|---------|
@@ -41,33 +88,140 @@ packages/orpc/
 ### AAA Pattern
 
 ```typescript
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
-describe('calculateTotal', () => {
-  it('should sum item prices', () => {
-    // Arrange
-    const items = [
-      { price: 10 },
-      { price: 20 },
-    ];
-    
-    // Act
+describe("calculateTotal", () => {
+  it("should sum item prices", () => {
+    const items = [{ price: 10 }, { price: 20 }];
     const result = calculateTotal(items);
-    
-    // Assert
     expect(result).toBe(30);
   });
 });
 ```
+
+## Shared Test Infrastructure
+
+All packages extend `packages/shared/vitest.base.config.ts`:
+
+```typescript
+import { defineConfig } from "vitest/config";
+
+export const baseConfig = defineConfig({
+  test: {
+    globals: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      thresholds: { branches: 80, functions: 80, lines: 80, statements: 80 },
+    },
+  },
+});
+```
+
+Per-package config merges the base:
+
+```typescript
+import { mergeConfig } from "vitest/config";
+import { baseConfig } from "../shared/vitest.base.config";
+
+export default mergeConfig(baseConfig, defineConfig({
+  test: { environment: "jsdom", setupFiles: ["./vitest.setup.ts"] },
+}));
+```
+
+Shared utilities live in `packages/shared/src/test-utils/`:
+
+```typescript
+import {
+  createMockUser,
+  createMockSupabaseClient,
+  userBuilder,
+  resetMocks,
+  flushPromises,
+} from "@mirai-app/shared/test-utils";
+```
+
+## Test Data Factories
+
+Use builders from `packages/shared/src/test-utils/test-data-builders.ts`:
+
+```typescript
+import { userBuilder, tripBuilder, createBuilder } from "@mirai-app/shared/test-utils";
+
+const user = userBuilder.with("name", "Jane").withMany({ email: "jane@example.com" }).build();
+const trips = tripBuilder.buildMany(3);
+```
+
+Create domain-specific builders inline:
+
+```typescript
+const challengeBuilder = createBuilder({
+  id: "challenge-1",
+  name: "Test Challenge",
+  status: "ACTIVE" as const,
+  basePoints: 100,
+});
+```
+
+## Real SQLite Testing
+
+Use `bun:sqlite` with Drizzle ORM for integration tests needing real transaction semantics.
+
+### createTestDb Pattern
+
+```typescript
+// packages/orpc/src/api/routers/__tests__/helpers/challenge-sqlite-db.ts
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import { sqliteChallenges, sqliteGroups } from "./challenge-sqlite-schema";
+
+export function createTestDb() {
+  const db = new Database(":memory:");
+  db.exec(`CREATE TABLE challenges (id TEXT PRIMARY KEY, ...)`);
+  const drizzleDb = drizzle(db, { schema: { sqliteChallenges, sqliteGroups } });
+  return { db, drizzleDb, sqliteChallenges, sqliteGroups };
+}
+```
+
+### Testing Transactions
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { createTestDb } from "./helpers/challenge-sqlite-db";
+
+describe("challenge router — real SQLite", () => {
+  let testDb: ReturnType<typeof createTestDb>;
+
+  beforeEach(() => {
+    testDb = createTestDb();
+    testDb.db.run(`INSERT INTO users (...) VALUES (...)`, ["admin-1", ...]);
+  });
+
+  afterEach(() => testDb.db.close());
+
+  it("rolls back Drizzle transaction on failure", () => {
+    expect(() => {
+      testDb.drizzleDb.transaction((tx) => {
+        tx.update(testDb.sqliteChallenges).set({ name: "Updated" }).where(eq(testDb.sqliteChallenges.id, "c1"));
+        throw new Error("Simulated failure");
+      });
+    }).toThrow("Simulated failure");
+
+    const row = testDb.db.query("SELECT name FROM challenges WHERE id = ?").get("c1");
+    expect(row.name).toBe("Original");
+  });
+});
+```
+
+See `packages/orpc/src/api/routers/__tests__/challenge.sqlite.test.ts` for the full example.
 
 ## oRPC Testing
 
 ### Creating Test Caller
 
 ```typescript
-// packages/orpc/src/test/setup.ts
-import { appRouter } from '../routers';
-import { createContext } from './test-context';
+import { appRouter } from "../routers";
+import { createContext } from "./test-context";
 
 export const createCaller = async () => {
   const ctx = await createContext();
@@ -78,63 +232,85 @@ export const createCaller = async () => {
 ### Testing Procedures
 
 ```typescript
-import { describe, it, expect, beforeAll } from 'vitest';
-import { createCaller } from './setup';
+import { describe, it, expect, beforeAll } from "vitest";
+import { createCaller } from "./setup";
 
-describe('user router', () => {
+describe("user router", () => {
   let caller: ReturnType<typeof createCaller>;
-  
-  beforeAll(async () => {
-    caller = await createCaller();
-  });
-  
-  it('should create user', async () => {
-    const user = await caller.user.create({
-      email: 'test@example.com',
-      name: 'Test User',
-    });
-    
-    expect(user.email).toBe('test@example.com');
+
+  beforeAll(async () => { caller = await createCaller(); });
+
+  it("should create user", async () => {
+    const user = await caller.user.create({ email: "test@example.com", name: "Test User" });
+    expect(user.email).toBe("test@example.com");
     expect(user.id).toBeDefined();
   });
-  
-  it('should require email', async () => {
-    await expect(
-      caller.user.create({ email: '', name: 'Test' })
-    ).rejects.toThrow();
+});
+```
+
+## MSW for Native Tests
+
+Use Mock Service Worker to intercept oRPC HTTP requests instead of mocking internal modules.
+
+### Server Setup
+
+```typescript
+// apps/native/src/test-utils/msw/server.ts
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+
+export function createORPCHandler(path: string[], resolver: (input: unknown) => unknown) {
+  const urlPath = `http://localhost:9999/${path.join("/")}`;
+  return http.post(urlPath, async ({ request }) => {
+    const body = (await request.json()) as { json: unknown };
+    return HttpResponse.json({ json: await resolver(body.json), meta: [] });
   });
+}
+
+export const server = setupServer();
+export function resetHandlers() { server.resetHandlers(); }
+```
+
+### renderHookWithMSW
+
+See `apps/native/src/test-utils/msw/test-wrapper.tsx` for the full wrapper implementation. It creates a fresh `QueryClient`, wraps with `SafeAreaProvider`, and initializes the oRPC client against `http://localhost:9999`.
+
+### MSW Test Example
+
+```typescript
+import { server, createORPCHandler, resetHandlers } from "~/test-utils/msw/server";
+import { renderHookWithMSW } from "~/test-utils/msw/test-wrapper";
+import { useTrips } from "~/hooks/useTrips";
+
+beforeAll(() => server.listen());
+afterEach(() => resetHandlers());
+afterAll(() => server.close());
+
+it("returns trips via real oRPC client", async () => {
+  server.use(createORPCHandler(["trip", "getAll"], () => [{ id: "1", name: "Trip 1" }]));
+  const { result } = renderHookWithMSW(() => useTrips());
+  await waitFor(() => expect(result.current.data).toHaveLength(1));
 });
 ```
 
 ## React Component Testing
 
-### Setup
-
 ```typescript
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { UserCard } from './UserCard';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 const user = userEvent.setup();
-```
 
-### Test Example
-
-```typescript
-describe('UserCard', () => {
-  it('should display user name', () => {
-    render(<UserCard name="John Doe" email="john@example.com" />);
-    
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+describe("UserCard", () => {
+  it("displays user name", () => {
+    render(<UserCard name="John Doe" />);
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
-  
-  it('should call onEdit when edit clicked', async () => {
+
+  it("calls onEdit when clicked", async () => {
     const onEdit = vi.fn();
-    render(<UserCard name="John" email="john@example.com" onEdit={onEdit} />);
-    
-    await user.click(screen.getByRole('button', { name: /edit/i }));
-    
+    render(<UserCard onEdit={onEdit} />);
+    await user.click(screen.getByRole("button", { name: /edit/i }));
     expect(onEdit).toHaveBeenCalled();
   });
 });
@@ -142,29 +318,11 @@ describe('UserCard', () => {
 
 ## Async Testing
 
-### Waiting for Elements
-
 ```typescript
-it('should load data', async () => {
+it("loads data", async () => {
   render(<DataComponent />);
-  
-  // Wait for loading to finish
-  await waitFor(() => {
-    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
-  });
-  
-  // Check data is displayed
-  expect(await screen.findByText('Data loaded')).toBeInTheDocument();
-});
-```
-
-### Testing Loading States
-
-```typescript
-it('should show loading state', () => {
-  render(<DataComponent />);
-  
-  expect(screen.getByText('Loading...')).toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByText("Loading...")).not.toBeInTheDocument());
+  expect(await screen.findByText("Data loaded")).toBeInTheDocument();
 });
 ```
 
@@ -173,73 +331,40 @@ it('should show loading state', () => {
 ### Vitest Mocks
 
 ```typescript
-// Mock module
-vi.mock('@mirai-app/db', () => ({
-  createDb: vi.fn(() => ({
-    query: {
-      users: {
-        findMany: vi.fn(),
-      },
-    },
-  })),
-}));
-```
-
-### Mocking API Calls
-
-```typescript
-vi.mock('./api', () => ({
-  fetchUser: vi.fn().mockResolvedValue({ id: '1', name: 'John' }),
+vi.mock("@mirai-app/db", () => ({
+  createDb: vi.fn(() => ({ query: { users: { findMany: vi.fn() } } })),
 }));
 ```
 
 ### Manual Mocks with __mocks__ Directory
 
-For modules mocked consistently across many tests, use the `__mocks__` directory pattern:
-
-```
-├── __mocks__/
-│   ├── @tanstack/
-│   │   └── react-query.ts
-│   ├── expo-constants.js
-│   └── expo-location.js
-└── src/
-    └── services/
-        └── __mocks__/
-            └── myService.ts
-```
-
-Benefits:
-- Centralized mock implementations
-- Consistent behavior across tests
-- Reduced setup boilerplate
+For modules mocked consistently across many tests, use a `__mocks__/` directory. Benefits: centralized implementations, consistent behavior, reduced boilerplate.
 
 ## Coverage
-
-### Configuration
-
-```typescript
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.d.ts',
-      ],
-    },
-  },
-});
-```
-
-### Running Coverage
 
 ```bash
 bun run test --coverage
 ```
+
+Configure in `vitest.config.ts` with `provider: "v8"` and exclude `node_modules/`, `src/test/`, `**/*.d.ts`.
+
+## Coverage Thresholds
+
+Per-package thresholds are defined in `vitest.config.ts`:
+
+| Package | Branches | Functions | Lines | Statements |
+|---------|----------|-----------|-------|------------|
+| shared | 80 | 80 | 80 | 80 |
+| orpc | — | 55 | 78 | 78 |
+| db | 80 | 80 | 80 | 80 |
+| supabase | 80 | 80 | 80 | 80 |
+| auth | 80 | 80 | 80 | 80 |
+
+When coverage fails:
+1. Run `knip` first — check if drop is from dead code
+2. If from new untested code, add real-data tests for pure functions
+3. If from router code, add SQLite integration tests
+4. Never lower thresholds to green the build
 
 ## Test Quality Standards
 
@@ -247,13 +372,12 @@ bun run test --coverage
 
 - **Pattern**: Mock `useQuery`/`useMutation`, return fake data, assert the hook returns that exact data.
 - **Problem**: Tests the mock, not the code. Passes even if actual API, cache keys, or error handling is broken.
-- **Prevalence**: 40+ native hook test files in this monorepo.
 - **Rule**: Test behavior, not implementation. If a test passes with a dummy implementation, delete or rewrite it.
 
 ### Transaction Rollback Testing Gap
 
 - **Critical**: `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
-- **Rule**: Add at least one failure-path transaction test per router. Create `MockTransactionDB` that simulates rollback.
+- **Rule**: Add at least one failure-path transaction test per router. Use real SQLite (`bun:sqlite`) with `BEGIN...ROLLBACK`.
 
 ### Verification Checklist for All Tests
 
@@ -265,22 +389,9 @@ Before merging any test, verify:
 - [ ] Are error paths tested (timeout, retry exhaustion, partial failure)?
 - [ ] Are transactions tested for rollback on failure?
 
-### Test Value Ratings (Evidence-Based)
-
-| Area | Rating | Why |
-|------|--------|-----|
-| Router tests (`packages/orpc`) | 4/5 | Test actual router outputs via `createRouterClient` |
-| Auth logic tests (`packages/auth`) | 4/5 | Verify real auth branches (token, roles, bans) |
-| Store tests (`packages/shared`) | 3/5 | Good state transitions but has useless runtime type tests |
-| Component tests (`apps/native`) | 4/5 | Improved — mock removal completed for 14 test files, real component rendering |
-| Hook tests (`apps/native`) | 3/5 | Improving — pure function extraction ongoing; mock-verification tests being replaced |
-| Database tests (`packages/db`) | N/A | Explicitly no unit tests — needs integration tests |
-
 ### Component Mock Removal Playbook
 
 **Context**: Mocking shared UI components per test (`jest.mock("~/components/common/ui")`).
-
-**Problem**: Breaks when component API changes; tests fake behavior rather than real component rendering.
 
 **Steps**:
 1. Delete `jest.mock("~/components/common/ui")` from test file
@@ -288,11 +399,6 @@ Before merging any test, verify:
 3. Update test queries: `getByTestId("mock-id")` → `getByTestId("real-component-id")` or `getByText`
 4. Run tests. If component API changed since mock was written, fix the test to match real behavior.
 5. Verify the test still fails if the real component breaks.
-
-**Examples of descriptive testIDs**:
-- `ThemedTextInput` → `testID="themed-text-input"`
-- `SegmentedOption` → `testID="segmented-option-${label}"`
-- `AppModalFooter` → `primaryTestID="app-modal-footer-primary"`, `secondaryTestID="app-modal-footer-secondary"`
 
 ### Pure Function Extraction Playbook
 
@@ -305,14 +411,7 @@ Before merging any test, verify:
 4. Replace hook body with thin imperative shell calling the extracted function
 5. Delete or shrink hook test file if it only verified mocks
 
-**Naming conventions**:
-| Prefix | Use case |
-|--------|----------|
-| `calculateXxx` | Derived state from inputs |
-| `syncXxx` | Reconcile local and remote state |
-| `executeXxx` | Side-effectful operation with DI |
-| `buildXxx` | Factory for callbacks/closures |
-| `toXxxOrNull` | Type coercion with validation |
+**Naming conventions**: `calculateXxx` (derived state), `syncXxx` (reconcile state), `executeXxx` (side-effects with DI), `buildXxx` (factories), `toXxxOrNull` (type coercion).
 
 ### Constructor Mock Resilience
 
@@ -328,28 +427,44 @@ Object.defineProperty(mockFileConstructor, "downloadFileAsync", {
 });
 ```
 
+## Migration Strategy
+
+Move from mock tests to real tests incrementally, one router or hook at a time.
+
+1. **Keep old tests running** while writing new tests. Do not delete until new tests pass.
+2. **Extract pure functions first** — zero risk, immediate value. See `packages/shared/src/challenges/queryBuilders.ts`.
+3. **Add real SQLite tests** for transaction-heavy routers. See `packages/orpc/src/api/routers/__tests__/challenge.sqlite.test.ts`.
+4. **Replace hook mock tests with MSW** — rewrite one describe block at a time.
+5. **Coverage ratchet** — ensure coverage never drops below current level during migration.
+
+## Dead Code Detection
+
+Run `knip` to find unused exports, dependencies, and binaries:
+
+```bash
+bunx knip
+```
+
+Configuration lives in `knip.json`. Each workspace defines `entry` and `project` globs. Before adding new code, run `knip` to confirm you are not increasing dead code.
+
 ## Best Practices
 
-1. **Test behavior, not implementation** - Test what code does, not how
+1. **Test behavior, not implementation**
 2. **One assertion per test** ideally, or related assertions
-3. **Descriptive test names** - Clear about what's being tested
-4. **Keep tests simple** - No logic in tests
-5. **Test edge cases** - Empty arrays, null values, errors
+3. **Descriptive test names**
+4. **Keep tests simple** — No logic in tests
+5. **Test edge cases** — Empty arrays, null values, errors
 6. **Use factories** for test data:
    ```typescript
-   const createUser = (overrides = {}) => ({
-     id: '1',
-     email: 'test@example.com',
-     ...overrides,
-   });
+   const createUser = (overrides = {}) => ({ id: "1", email: "test@example.com", ...overrides });
    ```
 
 ### What NOT to Test
 
-- **TypeScript interface runtime tests**: `expect(user.role).toBe(role)` after assigning `role` — TypeScript compiler already verifies this.
+- **TypeScript interface runtime tests**: `expect(user.role).toBe(role)` after assigning `role`.
 - **"It didn't crash" tests**: `expect(element).toBeOnTheScreen()` after rendering with a prop.
 - **Framework plumbing**: Testing that React Query's `isLoading` flag propagates through your hook.
-- **Mock call counts**: `expect(mockFn).toHaveBeenCalledTimes(1)` — tests implementation, not behavior.
+- **Mock call counts**: `expect(mockFn).toHaveBeenCalledTimes(1)`.
 
 ## Running Tests
 
@@ -362,9 +477,6 @@ bun run test:watch
 
 # UI mode
 bun run test:ui
-
-# Specific file
-bun run test src/test/user.test.ts
 ```
 
 ## Test Runner
@@ -378,14 +490,9 @@ bun run test src/test/user.test.ts
 
 **Verification**: If you see `TypeError: vi.importActual is not a function` or `TypeError: vi.stubGlobal is not a function`, you are running `bun test` instead of `bun run test`.
 
-### Test Failure Classification
-
-When seeing many test failures after a refactoring:
-1. First run `bun run test` (vitest) to get the real picture
-2. If vitest passes but `bun test` fails → the failures are false positives from the wrong runner
-3. If both fail → investigate actual regressions
-
 ## Further Reading
 
 - [Vitest Documentation](https://vitest.dev/)
 - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
+- [MIRAI Testability Redesign Plan](../../docs/testability-redesign-plan.md)
+

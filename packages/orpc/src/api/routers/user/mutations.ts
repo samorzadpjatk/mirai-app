@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ORPCError } from "@orpc/server";
 import { eq, and, count } from "drizzle-orm";
 import { users, tripParticipants } from "@mirai-app/db";
+import { validateUserRegistration } from "@mirai-app/shared";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { roleSchema, userWithAuthSelect } from "./types";
 import { formatUserFullName, toPublicUser } from "./utils";
@@ -78,9 +79,7 @@ export const createUser = async (
   context: UserContext,
   input: { tripId: string; firstName: string; lastName: string; email: string },
 ) => {
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
-  const email = input.email.trim().toLowerCase();
+  const { firstName, lastName, email } = validateUserRegistration(input);
 
   const { data, error } = await context.supabase.auth.admin.createUser({
     email,
@@ -112,6 +111,8 @@ export const createUser = async (
           firstName,
           lastName,
           role: roleSchema.enum.USER,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         })
         .returning({
           id: users.id,
@@ -131,10 +132,11 @@ export const createUser = async (
       .values({
         userId: dbUser.id,
         tripId: input.tripId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
+      .onConflictDoNothing({
         target: [tripParticipants.userId, tripParticipants.tripId],
-        set: {},
       })
       .returning();
 

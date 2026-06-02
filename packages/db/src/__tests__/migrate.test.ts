@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { logger } from "@mirai-app/shared";
 
 const mockEnd = vi.fn().mockResolvedValue(undefined);
 const mockPostgresClient = { end: mockEnd };
 const mockDb = {};
 const mockMigrate = vi.fn().mockResolvedValue(undefined);
+
+const mockLogger = {
+  info: vi.fn(),
+  error: vi.fn(),
+};
 
 vi.mock("postgres", () => ({
   default: vi.fn(() => mockPostgresClient),
@@ -16,13 +20,6 @@ vi.mock("drizzle-orm/postgres-js", () => ({
 
 vi.mock("drizzle-orm/postgres-js/migrator", () => ({
   migrate: mockMigrate,
-}));
-
-vi.mock("@mirai-app/shared", () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-  },
 }));
 
 beforeEach(() => {
@@ -38,16 +35,16 @@ describe("migrate", () => {
       const { drizzle } = await import("drizzle-orm/postgres-js");
       const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
-      await runMigrations("postgresql://localhost/test");
+      await runMigrations("postgresql://localhost/test", undefined, mockLogger);
 
       expect(postgres).toHaveBeenCalledWith("postgresql://localhost/test", { max: 1 });
       expect(drizzle).toHaveBeenCalledWith(mockPostgresClient);
       expect(migrate).toHaveBeenCalledWith(mockDb, { migrationsFolder: "/drizzle" });
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         { folder: "/drizzle" },
         "Starting database migrations",
       );
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         expect.objectContaining({ elapsed: expect.any(Number) }),
         "Database migrations completed",
       );
@@ -58,10 +55,10 @@ describe("migrate", () => {
       const { runMigrations } = await import("../migrate");
       const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
-      await runMigrations("postgresql://localhost/test", "/custom/migrations");
+      await runMigrations("postgresql://localhost/test", "/custom/migrations", mockLogger);
 
       expect(migrate).toHaveBeenCalledWith(mockDb, { migrationsFolder: "/custom/migrations" });
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         { folder: "/custom/migrations" },
         "Starting database migrations",
       );
@@ -72,10 +69,10 @@ describe("migrate", () => {
       const { runMigrations } = await import("../migrate");
       const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
-      await runMigrations("postgresql://localhost/test");
+      await runMigrations("postgresql://localhost/test", undefined, mockLogger);
 
       expect(migrate).toHaveBeenCalledWith(mockDb, { migrationsFolder: "/env/migrations" });
-      expect(logger.info).toHaveBeenCalledWith(
+      expect(mockLogger.info).toHaveBeenCalledWith(
         { folder: "/env/migrations" },
         "Starting database migrations",
       );
@@ -97,9 +94,9 @@ describe("migrate", () => {
 
       const { runMigrations } = await import("../migrate");
 
-      await expect(runMigrations("postgresql://localhost/test")).rejects.toThrow("Migration failed");
+      await expect(runMigrations("postgresql://localhost/test", undefined, mockLogger)).rejects.toThrow("Migration failed");
 
-      expect(logger.error).toHaveBeenCalledWith(error, "Database migrations failed");
+      expect(mockLogger.error).toHaveBeenCalledWith(error, "Database migrations failed");
       expect(mockEnd).toHaveBeenCalledTimes(1);
     });
 

@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, afterEach } from "vitest";
 
 vi.mock("@mirai-app/shared", () => ({
   logger: {

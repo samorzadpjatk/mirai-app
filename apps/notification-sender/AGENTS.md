@@ -44,6 +44,7 @@ bun run typecheck
 # Testing
 bun run test
 bun run test:watch
+bun run test:coverage
 ```
 
 ## Dependencies
@@ -78,6 +79,22 @@ Notification Worker
      ├──▶ FCM ───▶ Android Devices
      └──▶ APNS ───▶ iOS Devices
 ```
+
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for testing. See [Testing Conventions](./../../docs/conventions/testing.md) for repo-wide testing standards.
+
+### Notification Delivery Patterns
+
+Tests cover the notification delivery pipeline:
+
+- **Queue processing** - Notification queue consumption and ordering
+- **Provider selection** - FCM vs APNS routing based on device platform
+- **Delivery logic** - Expo Push Notification service integration
+- **Error handling** - Retry mechanisms for failed deliveries
+- **Status updates** - Database state transitions after delivery attempts
+
+Mock Supabase Realtime for unit tests. Use integration tests for full pipeline validation.
 
 ## Links
 

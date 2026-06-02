@@ -1,9 +1,18 @@
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { logger } from "@mirai-app/shared";
 
 const DEFAULT_MIGRATIONS_FOLDER = "/drizzle";
+
+interface Logger {
+  info: (obj: unknown, msg: string) => void;
+  error: (obj: unknown, msg: string) => void;
+}
+
+const defaultLogger: Logger = {
+  info: (obj, msg) => console.log(msg, obj),
+  error: (obj, msg) => console.error(msg, obj),
+};
 
 /**
  * Runs Drizzle migrations against the given database URL.
@@ -16,11 +25,13 @@ const DEFAULT_MIGRATIONS_FOLDER = "/drizzle";
  * @param migrationsFolder  Path to the folder containing migration SQL files
  *                          and the `meta/` subdirectory (defaults to `/drizzle`).
  *                          Falls back to the `MIGRATIONS_FOLDER` env var if set.
+ * @param logger  Logger instance for structured logging. Defaults to console.
  */
-export async function runMigrations(databaseUrl: string, migrationsFolder?: string): Promise<void> {
+export async function runMigrations(databaseUrl: string, migrationsFolder?: string, logger?: Logger): Promise<void> {
+  const log = logger ?? defaultLogger;
   const folder = migrationsFolder ?? process.env.MIGRATIONS_FOLDER ?? DEFAULT_MIGRATIONS_FOLDER;
 
-  logger.info({ folder }, "Starting database migrations");
+  log.info({ folder }, "Starting database migrations");
   const start = Date.now();
 
   const client = postgres(databaseUrl, { max: 1 });
@@ -29,9 +40,9 @@ export async function runMigrations(databaseUrl: string, migrationsFolder?: stri
   try {
     await migrate(db, { migrationsFolder: folder });
     const elapsed = Date.now() - start;
-    logger.info({ elapsed }, "Database migrations completed");
+    log.info({ elapsed }, "Database migrations completed");
   } catch (error) {
-    logger.error(error, "Database migrations failed");
+    log.error(error, "Database migrations failed");
     throw error;
   } finally {
     await client.end();

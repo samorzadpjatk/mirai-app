@@ -14,9 +14,7 @@
     "noEmit": false,
     "types": ["@testing-library/jest-dom", "@testing-library/react", "vitest"]
   },
-  "references": [
-    { "path": "../shared" }
-  ],
+  "references": [],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
 }

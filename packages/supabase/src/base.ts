@@ -1,14 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { SupabaseClientOptions } from "./types";
-import { logger } from "@mirai-app/shared";
 
 export default function createBaseSupabaseClient(
   url: string,
   anonKey: string,
   options?: SupabaseClientOptions,
 ): SupabaseClient {
-  logger.debug({ url }, "Creating Supabase client");
-
   return createClient(url, anonKey, {
     auth: {
       autoRefreshToken: true,

@@ -24,8 +24,7 @@ packages/shared/
 │   │   ├── index.ts              # Barrel exports
 │   │   ├── mock-factories.ts     # Mock factories for Supabase/session/user
 │   │   ├── test-data-builders.ts # Builder pattern for test data
-│   │   ├── test-helpers.ts       # Async/mocking helpers
-│   │   └── vitest-setup.ts       # Shared setup/mocking
+│   │   └── test-helpers.ts       # Async/mocking helpers
 │   └── index.ts       # Main exports
 ├── package.json
 ├── tsconfig.json

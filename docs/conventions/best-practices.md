@@ -110,7 +110,7 @@ Specs now describe new behavior
 
 - **Rule**: Router/service files >1000 lines violate SRP and are hard to review/test safely.
 - **Action**: Split into `*Queries.ts`, `*Mutations.ts`, `*Enrichment.ts` files.
-- **Current debt**: `activityFeed.ts` (1579), `group.ts` (1427), `location.ts` (1281), `challengeSubmission.ts` (1164), `reward.ts` (1152).
+- **Completed splits**: `activityFeed.ts` → `activityFeed/`, `group.ts` → `group/`, `location.ts` → `location/`, `challengeSubmission.ts` → `challengeSubmission/`, `reward.ts` → `reward/`.
 
 ### Module-Level Side Effects
 

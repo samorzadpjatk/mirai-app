@@ -7,6 +7,7 @@ import {
   users,
 } from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
+import { tallyVotes, computeRequiredPositions, hasAllRequiredPositions } from "@mirai-app/shared";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import type { ChallengeForVoting, JudgedStaffVotingProgress } from "./types";
 
@@ -101,13 +102,7 @@ export const recomputeSubmissionVotes = async (
     columns: { submissionId: true, votePoints: true, normalizedWeight: true },
   });
 
-  const tally = new Map<string, { count: number; score: number }>();
-  for (const vote of votes) {
-    const current = tally.get(vote.submissionId) ?? { count: 0, score: 0 };
-    current.count += 1;
-    current.score += vote.votePoints * vote.normalizedWeight;
-    tally.set(vote.submissionId, current);
-  }
+  const tally = tallyVotes(votes);
 
   for (const submission of submissions) {
     const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
@@ -121,7 +116,7 @@ export const recomputeSubmissionVotes = async (
   }
 };
 
-export const resolveRequiredVotePositions = async (
+const resolveRequiredVotePositions = async (
   context: { db: DB | TransactionDB },
   challengeId: string,
 ) => {
@@ -137,16 +132,13 @@ export const resolveRequiredVotePositions = async (
 
   const eligibleSubmissionsCount = result[0]?.count ?? 0;
 
-  const requiredPositions =
-    eligibleSubmissionsCount >= 2 ? Math.min(3, eligibleSubmissionsCount) : 0;
-
   return {
-    requiredPositions,
+    requiredPositions: computeRequiredPositions(eligibleSubmissionsCount),
     eligibleSubmissionsCount,
   };
 };
 
-export const getTripAdminParticipantIds = async (context: { db: DB | TransactionDB }, tripId: string) => {
+const getTripAdminParticipantIds = async (context: { db: DB | TransactionDB }, tripId: string) => {
   const admins = await context.db
     .select({ id: tripParticipants.id })
     .from(tripParticipants)
@@ -154,18 +146,6 @@ export const getTripAdminParticipantIds = async (context: { db: DB | Transaction
     .where(and(eq(tripParticipants.tripId, tripId), eq(users.role, "ADMIN")));
 
   return admins.map((admin) => admin.id);
-};
-
-export const hasAllRequiredPositions = (positions: Set<number>, requiredPositions: number) => {
-  if (requiredPositions <= 0) return false;
-
-  for (let position = 1; position <= requiredPositions; position += 1) {
-    if (!positions.has(position)) {
-      return false;
-    }
-  }
-
-  return true;
 };
 
 export const getJudgedStaffVotingProgress = async (

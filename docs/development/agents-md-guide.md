@@ -145,7 +145,7 @@ While working on feature-X, use these additional conventions:
 Use relative links to connect AGENTS.md to detailed documentation:
 
 ```markdown
-For detailed setup instructions, see [docs/development/setup.md](../docs/development/setup.md)
+For detailed setup instructions, see [docs/development/setup.md](./setup.md)
 ```
 
 ### Remove Temporary Overrides

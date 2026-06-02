@@ -1,69 +1,16 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { ORPCError } from "@orpc/server";
-import { hasAllRequiredPositions, ensureChallengeVoting } from "../utils";
+import { ensureChallengeVoting } from "../utils";
 import type { ChallengeForVoting } from "../types";
 
 describe("challengeVote/utils pure functions", () => {
-  describe("hasAllRequiredPositions", () => {
-    it("should return false when requiredPositions is 0", () => {
-      expect(hasAllRequiredPositions(new Set([1]), 0)).toBe(false);
-    });
-
-    it("should return false when requiredPositions is negative", () => {
-      expect(hasAllRequiredPositions(new Set([1, 2, 3]), -1)).toBe(false);
-    });
-
-    it("should return true for exact match of 1 position", () => {
-      expect(hasAllRequiredPositions(new Set([1]), 1)).toBe(true);
-    });
-
-    it("should return true for exact match of 3 positions", () => {
-      expect(hasAllRequiredPositions(new Set([1, 2, 3]), 3)).toBe(true);
-    });
-
-    it("should return false when position 1 is missing", () => {
-      expect(hasAllRequiredPositions(new Set([2, 3]), 3)).toBe(false);
-    });
-
-    it("should return false when position 2 is missing", () => {
-      expect(hasAllRequiredPositions(new Set([1, 3]), 3)).toBe(false);
-    });
-
-    it("should return false when position 3 is missing", () => {
-      expect(hasAllRequiredPositions(new Set([1, 2]), 3)).toBe(false);
-    });
-
-    it("should return true when positions are a superset", () => {
-      expect(hasAllRequiredPositions(new Set([1, 2, 3, 4]), 3)).toBe(true);
-    });
-
-    it("should return false for empty set with requiredPositions > 0", () => {
-      expect(hasAllRequiredPositions(new Set(), 1)).toBe(false);
-    });
-
-    it("should return true for empty set with requiredPositions <= 0", () => {
-      expect(hasAllRequiredPositions(new Set(), 0)).toBe(false);
-    });
-  });
-
   describe("ensureChallengeVoting", () => {
-    const now = new Date("2024-06-15T12:00:00Z");
-
-    beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
     const makeChallenge = (overrides: Partial<ChallengeForVoting> = {}): ChallengeForVoting => ({
       id: "challenge-1",
       tripId: "trip-1",
       status: "ACTIVE",
       scoringCategory: "JUDGED_STAFF",
-      endTime: new Date("2024-06-15T10:00:00Z"),
+      endTime: new Date("2000-01-01T00:00:00Z"),
       ...overrides,
     });
 
@@ -144,7 +91,7 @@ describe("challengeVote/utils pure functions", () => {
 
     it("should throw BAD_REQUEST when endTime is in the future", () => {
       const challenge = makeChallenge({
-        endTime: new Date("2024-06-15T14:00:00Z"),
+        endTime: new Date("2099-12-31T23:59:59Z"),
       });
 
       expect(() => ensureChallengeVoting({ challenge, actorRole: "ADMIN" })).toThrow(ORPCError);

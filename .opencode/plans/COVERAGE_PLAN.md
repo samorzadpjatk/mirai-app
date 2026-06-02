@@ -92,7 +92,7 @@ import { join } from 'path';
 const packages = [
   'packages/auth',
   'packages/shared',
-  'packages/trpc',
+  'packages/orpc',
   'packages/supabase',
   'apps/backend-server',
   'apps/notification-sender',
@@ -637,7 +637,7 @@ bun run test:coverage
 
 ---
 
-## Phase 7: packages/trpc (37 files, 31 business logic)
+## Phase 7: packages/orpc (37 files, 31 business logic)
 
 **Duration:** 10-14 days
 **Priority:** CRITICAL - Core API layer
@@ -657,24 +657,24 @@ bun run test:coverage
 
 | Router | Lines | Complexity | Test Files |
 |--------|-------|------------|------------|
-| `routers/user.ts` | 1021 | Very Complex | 3 |
-| `routers/trip.ts` | ~400 | Complex | 2 |
-| `routers/challenge.ts` | ~350 | Complex | 2 |
-| `routers/challengeSubmission.ts` | ~300 | Complex | 2 |
-| `routers/challengeVote.ts` | ~200 | Moderate | 1 |
-| `routers/group.ts` | ~250 | Complex | 2 |
-| `routers/coin.ts` | ~200 | Moderate | 1 |
-| `routers/coinTransaction.ts` | ~250 | Complex | 1 |
-| `routers/notifications.ts` | ~300 | Complex | 2 |
-| `routers/notificationSchedule.ts` | ~200 | Moderate | 1 |
-| `routers/notificationDelivery.ts` | ~200 | Moderate | 1 |
-| `routers/notificationSender.ts` | ~150 | Moderate | 1 |
-| `routers/location.ts` | ~200 | Moderate | 1 |
-| `routers/storage.ts` | ~150 | Moderate | 1 |
-| `routers/reward.ts` | ~250 | Moderate | 1 |
-| `routers/sponsor.ts` | ~150 | Simple | 1 |
-| `routers/activityFeed.ts` | ~200 | Moderate | 1 |
-| `routers/submissionReport.ts` | ~150 | Moderate | 1 |
+| `routers/user/` | 1021 | Very Complex | 3 |
+| `routers/trip/` | ~400 | Complex | 2 |
+| `routers/challenge/` | ~350 | Complex | 2 |
+| `routers/challengeSubmission/` | ~300 | Complex | 2 |
+| `routers/challengeVote/` | ~200 | Moderate | 1 |
+| `routers/group/` | ~250 | Complex | 2 |
+| `routers/coin/` | ~200 | Moderate | 1 |
+| `routers/coinTransaction/` | ~250 | Complex | 1 |
+| `routers/notifications/` | ~300 | Complex | 2 |
+| `routers/notificationSchedule/` | ~200 | Moderate | 1 |
+| `routers/notificationDelivery/` | ~200 | Moderate | 1 |
+| `routers/notificationSender/` | ~150 | Moderate | 1 |
+| `routers/location/` | ~200 | Moderate | 1 |
+| `routers/storage/` | ~150 | Moderate | 1 |
+| `routers/reward/` | ~250 | Moderate | 1 |
+| `routers/sponsor/` | ~150 | Simple | 1 |
+| `routers/activityFeed/` | ~200 | Moderate | 1 |
+| `routers/submissionReport/` | ~150 | Moderate | 1 |
 
 **Utilities (5 test files):**
 | File | Lines | Complexity | Tests Needed |
@@ -816,20 +816,20 @@ describe('User Router', () => {
 - Client code (react.ts, query-client.tsx)
 
 **Team B (4-5 developers):** Critical routers
-- user.ts (highest priority - 1021 lines)
-- trip.ts
-- challenge.ts
-- challengeSubmission.ts
-- group.ts
+- user/ (highest priority - 1021 lines)
+- trip/
+- challenge/
+- challengeSubmission/
+- group/
 
 **Team C (3-4 developers):** Supporting routers
 - coin.ts, coinTransaction.ts
 - notifications.ts, notificationSchedule.ts, notificationDelivery.ts, notificationSender.ts
-- location.ts, storage.ts, reward.ts, sponsor.ts
+- location/, storage/, reward/, sponsor/
 
 **Team D (2-3 developers):** Utilities
 - All utility functions
-- activityFeed.ts, submissionReport.ts
+- activityFeed/, submissionReport/
 
 ### 7.4 Atomic Commits (Example Pattern)
 
@@ -849,12 +849,12 @@ test(trpc): add client - React hooks tests
 ### 7.5 Verification
 
 ```bash
-cd packages/trpc
+cd packages/orpc
 bun run test:coverage
 # Verify: lines >= 80%, functions >= 80%, branches >= 75%
 
 # Check specific router coverage
-npx vitest run --reporter=verbose --coverage 2>&1 | grep -A 5 "src/api/routers/user.ts"
+npx vitest run --reporter=verbose --coverage 2>&1 | grep -A 5 "src/api/routers/user"
 ```
 
 ---
@@ -1169,7 +1169,7 @@ jobs:
 | auth | 90% | `cd packages/auth && bun run test:coverage` | lines >= 90% |
 | supabase | 85% | `cd packages/supabase && bun run test:coverage` | lines >= 85% |
 | shared | 80% | `cd packages/shared && bun run test:coverage` | lines >= 80% |
-| trpc | 80% | `cd packages/trpc && bun run test:coverage` | lines >= 80% |
+| orpc | 80% | `cd packages/orpc && bun run test:coverage` | lines >= 80% |
 | backend-server | 85% | `cd apps/backend-server && bun run test:coverage` | lines >= 85% |
 | notification-sender | 80% | `cd apps/notification-sender && bun run test:coverage` | lines >= 80% |
 | seed | 60% | `cd apps/seed && bun run test:coverage` | lines >= 60% |

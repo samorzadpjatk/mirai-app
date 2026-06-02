@@ -44,6 +44,11 @@ bun run typecheck
 
 # Lint
 bun run lint
+
+# Testing
+bun run test
+bun run test:coverage
+bun run test:watch
 ```
 
 ## Dependencies
@@ -81,6 +86,9 @@ bun run lint
   - `groups/filters.ts` — `filterGroupsBySearch` (5 tests)
 - **Deduplication rule**: Before extracting new functions, `grep` for similar logic across `apps/` and `packages/`. If the same transformation exists in 2+ places, extract once to `packages/shared` and import everywhere.
 - **Rule**: When moving code from other packages to here, use type assertions (`as Type[]`) if types don't align exactly. Test import paths in `__tests__/` subdirectories must use `../module` not `./module` (Vite resolution rule).
+- **Coverage Target**: 100% real-data coverage for all pure functions. No mocks needed — pass real objects and assert on outputs.
+
+See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
 
 ### Store Tests
 

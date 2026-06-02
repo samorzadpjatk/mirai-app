@@ -29,7 +29,7 @@ export const userWithAuthSelect = {
   role: true,
 } as const;
 
-export interface SupabaseAdminMetadata {
+interface SupabaseAdminMetadata {
   ban_reason?: string | null;
   role?: string | null;
   [key: string]: unknown;

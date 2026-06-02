@@ -1,8 +1,8 @@
 ## Context
 
 The MIRAI monorepo uses tRPC v11 for end-to-end type-safe APIs across:
-- **Server**: `packages/trpc/src/api/` — 18 routers, custom procedures, middleware, context
-- **Client**: `packages/trpc/src/client/` — Vanilla client (WS+HTTP), React Query provider, hooks
+- **Server**: `packages/orpc/src/api/` — 18 routers, custom procedures, middleware, context
+- **Client**: `packages/orpc/src/client/` — Vanilla client (WS+HTTP), React Query provider, hooks
 - **Backend**: `apps/backend-server/` — Hono + `@hono/trpc-server` + custom Bun WebSocket adapter
 - **Native app**: `apps/native/src/` — ~100 files consuming tRPC via `useTRPC()` + TanStack Query
 - **Notification sender**: `apps/notification-sender/` — Vanilla tRPC client for service calls
@@ -99,18 +99,18 @@ oRPC is a modern RPC framework with near-identical mental model to tRPC but simp
 
 ## Migration Plan
 
-**Phase 1: Core (`packages/trpc/src/api/trpc.ts`, `root.ts`, `index.ts`)**
-- Swap dependencies in `packages/trpc/package.json`
+**Phase 1: Core (`packages/orpc/src/api/trpc.ts`, `root.ts`, `index.ts`)**
+- Swap dependencies in `packages/orpc/package.json`
 - Rewrite `trpc.ts`: `os` builder, context, middleware, procedures
 - Rewrite `root.ts`: plain object router
 - Update `index.ts` exports
-- Run `packages/trpc` typecheck
+- Run `packages/orpc` typecheck
 
-**Phase 2: Routers (18 files in `packages/trpc/src/api/routers/`)**
+**Phase 2: Routers (18 files in `packages/orpc/src/api/routers/`)**
 - Mechanical conversion: `.query()` → `.handler()`, `ctx` → `context`, `TRPCError` → `ORPCError`, `createTRPCRouter({...})` → `{...}`
 - Update router test files (20+ test files)
 
-**Phase 3: Client (`packages/trpc/src/client/`)**
+**Phase 3: Client (`packages/orpc/src/client/`)**
 - Rewrite `vanilia.ts`: `createORPCClient` with `RPCLink`
 - Rewrite `react.ts`: remove context, export nothing (or export client reference)
 - Rewrite `query-client.tsx`: remove `APIProvider`, create `createORPCUtils` export

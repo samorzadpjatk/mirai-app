@@ -1,6 +1,6 @@
 import { ORPCError } from "@orpc/server";
-import { eq, and, inArray } from "drizzle-orm";
-import { locations, locationShares } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
+import { locationShares } from "@mirai-app/db";
 import type { Location as DbLocation, DB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import {

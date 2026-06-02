@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ORPCError } from "@orpc/server";
+
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 import {
   validateDateRange,
   validateFutureDates,
@@ -49,7 +52,7 @@ describe("notificactionSchedule-validation", () => {
 
     it("should throw when start date is in the past", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       expect(() => validateFutureDates(pastDate, futureDate)).toThrow(ORPCError);
       expect(() => validateFutureDates(pastDate, futureDate)).toThrow("cannot be in the past");
@@ -57,21 +60,21 @@ describe("notificactionSchedule-validation", () => {
 
     it("should not throw for past start date when allowPastStart is true", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       expect(() => validateFutureDates(pastDate, futureDate, true)).not.toThrow();
     });
 
     it("should throw when end date is in the past", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       expect(() => validateFutureDates(pastDate, pastDate)).toThrow(ORPCError);
       expect(() => validateFutureDates(pastDate, pastDate)).toThrow("cannot be in the past");
     });
 
     it("should throw when end date is in the past even with allowPastStart", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       expect(() => validateFutureDates(pastDate, pastDate, true)).toThrow(ORPCError);
     });
   });
@@ -222,7 +225,7 @@ describe("notificactionSchedule-validation", () => {
 
     it("should throw when start date is in the past", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(ORPCError);
       expect(() => validateReasonableDateRange(pastDate, futureDate)).toThrow(
@@ -232,15 +235,15 @@ describe("notificactionSchedule-validation", () => {
 
     it("should not throw for past start date when allowPastStart is true", () => {
       const now = new Date();
-      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const pastDate = new Date(now.getTime() - MILLISECONDS_PER_DAY);
       const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       expect(() => validateReasonableDateRange(pastDate, futureDate, true)).not.toThrow();
     });
 
     it("should throw when end date is more than 1 year in the future", () => {
       const now = new Date();
-      const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      const endDate = new Date(now.getTime() + 366 * 24 * 60 * 60 * 1000);
+      const startDate = new Date(now.getTime() + MILLISECONDS_PER_DAY);
+      const endDate = new Date(now.getTime() + 366 * MILLISECONDS_PER_DAY);
       expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(ORPCError);
       expect(() => validateReasonableDateRange(startDate, endDate)).toThrow(
         "cannot be more than 1 year",

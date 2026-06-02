@@ -1,6 +1,7 @@
 import { ORPCError } from "@orpc/server";
 import { eq, and, count, inArray } from "drizzle-orm";
 import { challenges, challengeSubmissions, type DB } from "@mirai-app/db";
+import { buildChallengeFilter } from "@mirai-app/shared";
 import { ensureRecurringInstancesForTrip, resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { challengeColumns } from "./types";
 import { toClientChallenge, resolveChallengeImage, resolveChallengeImages, activateVisibleChallenges } from "./utils";
@@ -20,8 +21,9 @@ export const getAll = async (context: {
 }) => {
   await activateVisibleChallenges(context.db);
 
+  const filter = buildChallengeFilter();
   const challengeRows = await context.db.query.challenges.findMany({
-    where: (c, { eq }) => eq(c.isRecurring, false),
+    where: (c, { eq }) => eq(c.isRecurring, filter.isRecurring),
     columns: challengeColumns,
     orderBy: (c, { desc }) => [desc(c.createdAt)],
   });
@@ -62,9 +64,10 @@ export const getAllByTrip = async (
   const limit = input.pagination?.limit ?? 30;
   const offset = input.pagination?.offset ?? 0;
 
+  const filter = buildChallengeFilter(input.tripId);
   const [challengeRows, totalResult] = await Promise.all([
     context.db.query.challenges.findMany({
-      where: (c, { eq, and }) => and(eq(c.tripId, input.tripId), eq(c.isRecurring, false)),
+      where: (c, { eq, and }) => and(eq(c.tripId, filter.tripId!), eq(c.isRecurring, filter.isRecurring)),
       columns: challengeColumns,
       orderBy: (c, { desc }) => [desc(c.createdAt)],
       limit,
@@ -73,7 +76,7 @@ export const getAllByTrip = async (
     context.db
       .select({ count: count() })
       .from(challenges)
-      .where(and(eq(challenges.tripId, input.tripId), eq(challenges.isRecurring, false))),
+      .where(and(eq(challenges.tripId, filter.tripId!), eq(challenges.isRecurring, filter.isRecurring))),
   ]);
 
   const total = totalResult[0]?.count ?? 0;

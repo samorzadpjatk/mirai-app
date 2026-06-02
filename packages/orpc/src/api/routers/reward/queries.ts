@@ -1,6 +1,7 @@
 import { ORPCError } from "@orpc/server";
-import { eq, and, count, sql, inArray } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import { type DB, rewards, rewardPurchases } from "@mirai-app/db";
+import { calculateRewardProgress } from "@mirai-app/shared";
 import {
   calculateTotalAvailablePoints,
   resolveRewardImageData,
@@ -84,23 +85,15 @@ export const getByTrip = async (
   const isGroupLeader = userGroup?.group?.organizerId === context.dbUser.id;
 
   return rewardsWithSignedImages.map((reward) => {
-    let dynamicCoinCost = reward.coinCost;
-
-    if (!isAllTrips && totalAvailablePoints > 0) {
-      const percentageOfTotal = reward.coinCost / 100;
-      dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-      dynamicCoinCost = Math.max(1, dynamicCoinCost);
-    }
-
-    return {
-      ...reward,
-      coinCost: dynamicCoinCost,
-      originalCoinCost: reward.coinCost,
-      canAfford: groupCoins >= dynamicCoinCost,
-      isEligibleToBuy: isGroupLeader,
-      isOutOfStock: reward.availableQuantity <= 0,
+    const progress = calculateRewardProgress({
+      reward,
+      totalAvailablePoints,
+      groupCoins,
+      isGroupLeader,
       purchasedCount: countMap.get(reward.id) ?? 0,
-    };
+      isAllTrips,
+    });
+    return { ...reward, ...progress };
   });
 };
 
@@ -175,23 +168,15 @@ export const getByTripAdmin = async (
     : await calculateTotalAvailablePoints(context.db, input.tripId);
 
   const mappedRewards = rewardsWithSignedImages.map((reward) => {
-    let dynamicCoinCost = reward.coinCost;
-
-    if (!isAllTrips && totalAvailablePoints > 0) {
-      const percentageOfTotal = reward.coinCost / 100;
-      dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-      dynamicCoinCost = Math.max(1, dynamicCoinCost);
-    }
-
-    return {
-      ...reward,
-      coinCost: dynamicCoinCost,
-      originalCoinCost: reward.coinCost,
-      canAfford: false,
-      isEligibleToBuy: false,
-      isOutOfStock: reward.availableQuantity <= 0,
+    const progress = calculateRewardProgress({
+      reward,
+      totalAvailablePoints,
+      groupCoins: 0,
+      isGroupLeader: false,
       purchasedCount: countMap.get(reward.id) ?? 0,
-    };
+      isAllTrips,
+    });
+    return { ...reward, ...progress };
   });
 
   return {
@@ -272,28 +257,22 @@ export const getById = async (
   const imageData = await resolveRewardImageData(context.supabase, reward.image);
 
   const totalAvailablePoints = await calculateTotalAvailablePoints(context.db, reward.tripId);
-
   const [purchaseCountResult] = await context.db
     .select({ count: count() })
     .from(rewardPurchases)
     .where(eq(rewardPurchases.rewardId, input.id));
   const purchasedCount = purchaseCountResult?.count ?? 0;
 
-  let dynamicCoinCost = reward.coinCost;
-
-  if (totalAvailablePoints > 0) {
-    const percentageOfTotal = reward.coinCost / 100;
-    dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-    dynamicCoinCost = Math.max(1, dynamicCoinCost);
-  }
-
-  return {
-    ...reward,
-    ...imageData,
-    coinCost: dynamicCoinCost,
-    originalCoinCost: reward.coinCost,
+  const progress = calculateRewardProgress({
+    reward,
+    totalAvailablePoints,
+    groupCoins: 0,
+    isGroupLeader: false,
     purchasedCount,
-  };
+    isAllTrips: false,
+  });
+
+  return { ...reward, ...imageData, ...progress };
 };
 
 export const getPurchaseHistory = async (
