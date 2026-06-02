@@ -1,24 +1,5 @@
 // Export mock factories
-export { createMockSupabaseClient, createMockSession, createMockUser } from "./mock-factories";
-
-// Export DB mock factories
-export {
-  createMockSupabaseUser,
-  createMockDbUser,
-  createMockQueryBuilder,
-  createMockAuthAdmin,
-  createMockAuth,
-  createMockSupabase,
-  addDrizzleApi,
-  createFailingTransactionMock,
-  createMockDb,
-  type MockSupabaseQueryBuilder,
-  type MockSupabaseAuthAdmin,
-  type MockSupabaseAuth,
-  type MockSupabaseClient,
-  type MockDbModelMethods,
-  type MockDbClient,
-} from "./db-mock-factories";
+export { createMockSupabaseClient, createMockSession, createMockUser, createMockSupabaseUser } from "./mock-factories";
 
 // Export test helpers
 export {

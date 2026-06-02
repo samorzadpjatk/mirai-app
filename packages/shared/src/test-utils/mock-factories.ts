@@ -1,21 +1,10 @@
-import { vi, type Mock } from "vitest";
-import type { SupabaseClient } from "../stores/authStore";
-
-/**
- * Mock version of SupabaseClient where all auth methods are Vitest mocks.
- * Allows calling mockResolvedValue / mockReturnValue without type assertions.
- */
-export type MockSupabaseClient = SupabaseClient & {
-  auth: {
-    [K in keyof SupabaseClient["auth"]]: Mock<SupabaseClient["auth"][K]>;
-  };
-};
+import { vi } from "vitest";
 
 /**
  * Creates a mock Supabase client for testing.
  * Provides chainable query builder methods and mock auth methods.
  */
-export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): MockSupabaseClient {
+export function createMockSupabaseClient(overrides: Record<string, unknown> = {}) {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -95,6 +84,28 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
       data: {},
       error: null,
     }),
+    admin: {
+      getUserById: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      listUsers: vi.fn().mockResolvedValue({
+        data: { users: [] },
+        error: null,
+      }),
+      createUser: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      updateUserById: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      deleteUser: vi.fn().mockResolvedValue({
+        data: {},
+        error: null,
+      }),
+    },
   };
 
   const mockChannel = {
@@ -131,7 +142,7 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
     },
   };
 
-  return { ...mockClient, ...overrides } as MockSupabaseClient;
+  return { ...mockClient, ...overrides };
 }
 
 /**
@@ -159,6 +170,21 @@ export function createMockUser(overrides: Record<string, unknown> = {}) {
     app_metadata: {},
     aud: "authenticated",
     created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock Supabase user for testing with specific auth-related fields.
+ */
+export function createMockSupabaseUser<T>(overrides: Partial<T> = {}) {
+  return {
+    id: "test-auth-user-id",
+    aud: "authenticated",
+    email: "test@example.com",
+    email_confirmed_at: new Date().toISOString(),
+    user_metadata: { firstName: "Test", lastName: "User" },
+    app_metadata: { role: "USER" },
     ...overrides,
   };
 }

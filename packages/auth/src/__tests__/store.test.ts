@@ -11,6 +11,7 @@ import { AuthStoreProvider } from "../store/AuthStoreProvider";
 import { authStore } from "@mirai-app/shared";
 import type { AuthStore, AuthUser, SupabaseSession, SupabaseClient } from "@mirai-app/shared";
 import type { ReactNode } from "react";
+import { createMockSupabaseClient } from "@mirai-app/shared/test-utils";
 
 vi.mock("zustand", () => ({
   useStore: vi.fn((store, selector) => {
@@ -283,14 +284,7 @@ describe("store exports and hooks", () => {
     });
 
     it("should accept all required props", () => {
-      const mockClient = {
-        auth: {
-          getSession: vi.fn(),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
 
       const props = {
         children: null as ReactNode,

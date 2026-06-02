@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   AuthenticationError,
   AuthorizationError,
@@ -14,7 +14,11 @@ import {
 } from "../authServer";
 import { logger } from "@mirai-app/shared";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User, DB } from "@mirai-app/db";
+import type { User } from "@mirai-app/db";
+import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/shared/test-utils";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { users } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
 
 vi.mock("@mirai-app/shared", () => ({
   logger: {
@@ -31,28 +35,38 @@ vi.mock("@mirai-app/shared", () => ({
 
 describe("authServer", () => {
   let mockSupabase: SupabaseClient;
-  let mockDb: DB;
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    mockSupabase = {
-      auth: {
-        getUser: vi.fn(),
-        getSession: vi.fn(),
-        admin: {
-          getUserById: vi.fn(),
-        },
-      },
-    } as unknown as SupabaseClient;
-
-    mockDb = {
-      query: {
-        users: {
-          findFirst: vi.fn(),
-        },
-      },
-    } as unknown as DB;
+    mockSupabase = createMockSupabaseClient();
+    testDb = await createPgliteTestDb();
   });
+
+  afterEach(async () => {
+    await testDb.cleanup();
+  });
+
+  async function seedUser(overrides: Partial<typeof users.$inferInsert> = {}) {
+    const userData = {
+      id: "db-123",
+      authUserId: "auth-123",
+      email: "test@example.com",
+      firstName: "Test",
+      lastName: "User",
+      role: "USER",
+      hasAvatar: false,
+      wristNumber: null,
+      houseNumber: null,
+      groupId: null,
+      emailVerified: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...overrides,
+    };
+    await testDb.db.insert(users).values(userData);
+    return userData;
+  }
 
   describe("AuthenticationError", () => {
     it("should create error with default message", () => {
@@ -116,28 +130,20 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      const result = await getSession(mockDb, mockSupabase, "token");
+      const result = await getSession(testDb.db, mockSupabase, "token");
       expect(result).toBeNull();
     });
 
     it("should return session with user when found in database", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        role: "USER",
-      } as User;
+      await seedUser();
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
 
-      const result = await getSession(mockDb, mockSupabase, "token");
+      const result = await getSession(testDb.db, mockSupabase, "token");
 
       expect(result).not.toBeNull();
       expect(result?.authUserId).toBe("auth-123");
@@ -152,9 +158,8 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
-      const result = await getSession(mockDb, mockSupabase, "token");
+      const result = await getSession(testDb.db, mockSupabase, "token");
 
       expect(result).not.toBeNull();
       expect(result?.authUserId).toBe("auth-123");
@@ -169,7 +174,7 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
     });
 
     it("should throw AuthenticationError when session user is null", async () => {
@@ -179,109 +184,96 @@ describe("authServer", () => {
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(null as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow("Unauthorized");
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow("Unauthorized");
     });
 
     it("should return user and dbUser when authenticated", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        role: "USER",
-      } as User;
+      await seedUser();
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      const result = await requireAuth(mockDb, mockSupabase, "token");
+      const result = await requireAuth(testDb.db, mockSupabase, "token");
 
       expect(result.user).not.toBeNull();
-      expect(result.dbUser).toEqual(mockDbUser);
+      expect(result.dbUser).toMatchObject({
+        id: "db-123",
+        authUserId: "auth-123",
+        firstName: "Test",
+        lastName: "User",
+        role: "USER",
+      });
     });
 
     it("should throw AuthenticationError when user is banned", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "USER",
-      } as User;
+      await seedUser();
       const futureDate = new Date(Date.now() + 86400000).toISOString();
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: { banned_until: futureDate } },
         error: null,
       } as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow("User is banned");
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow("User is banned");
     });
 
     it("should handle admin lookup error gracefully", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "USER",
-      } as User;
+      await seedUser();
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: { message: "Admin lookup failed" },
       } as never);
 
-      const result = await requireAuth(mockDb, mockSupabase, "token");
+      const result = await requireAuth(testDb.db, mockSupabase, "token");
 
       expect(logger.warn).toHaveBeenCalledWith(
         { authUserId: "auth-123", error: "Admin lookup failed" },
         "Failed to check ban status",
       );
-      expect(result.dbUser).toEqual(mockDbUser);
+      expect(result.dbUser).toMatchObject({
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      });
     });
 
     it("should throw AuthenticationError when db user not found after auth", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "USER",
-      } as User;
+      await seedUser();
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst)
-        .mockResolvedValueOnce(mockDbUser as never)
-        .mockResolvedValueOnce(null as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      await expect(requireAuth(mockDb, mockSupabase, "token")).rejects.toThrow(
-        "User not found in database",
+      // Delete the user after seeding so the second lookup fails
+      await testDb.db.delete(users).where(eq(users.authUserId, "auth-123"));
+
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(
+        "Unauthorized",
       );
     });
   });
@@ -289,44 +281,34 @@ describe("authServer", () => {
   describe("requireAdmin", () => {
     it("should throw AuthorizationError when user is not admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "USER",
-      } as User;
+      await seedUser({ role: "USER" });
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      await expect(requireAdmin(mockDb, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
+      await expect(requireAdmin(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
     });
 
     it("should return dbUser when user is admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "ADMIN",
-      } as User;
+      await seedUser({ role: "ADMIN" });
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      const result = await requireAdmin(mockDb, mockSupabase, "token");
+      const result = await requireAdmin(testDb.db, mockSupabase, "token");
       expect(result.role).toBe("ADMIN");
     });
   });
@@ -334,68 +316,53 @@ describe("authServer", () => {
   describe("requireModerator", () => {
     it("should throw AuthorizationError when user is not moderator or admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "USER",
-      } as User;
+      await seedUser({ role: "USER" });
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      await expect(requireModerator(mockDb, mockSupabase, "token")).rejects.toThrow(
+      await expect(requireModerator(testDb.db, mockSupabase, "token")).rejects.toThrow(
         AuthorizationError,
       );
     });
 
     it("should return dbUser when user is moderator", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "MODERATOR",
-      } as User;
+      await seedUser({ role: "MODERATOR" });
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      const result = await requireModerator(mockDb, mockSupabase, "token");
+      const result = await requireModerator(testDb.db, mockSupabase, "token");
       expect(result.role).toBe("MODERATOR");
     });
 
     it("should return dbUser when user is admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
-      const mockDbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "ADMIN",
-      } as User;
+      await seedUser({ role: "ADMIN" });
 
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: mockSupabaseUser },
         error: null,
       } as never);
-      vi.mocked(mockDb.query.users.findFirst).mockResolvedValue(mockDbUser as never);
       vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
         data: { user: null },
         error: null,
       } as never);
 
-      const result = await requireModerator(mockDb, mockSupabase, "token");
+      const result = await requireModerator(testDb.db, mockSupabase, "token");
       expect(result.role).toBe("ADMIN");
     });
   });
@@ -613,12 +580,7 @@ describe("authServer", () => {
     });
 
     it("should handle null email by using null firstName", async () => {
-      const mockSupabaseUser = {
-        id: "auth-123",
-        email: null,
-        user_metadata: {},
-        app_metadata: {},
-      } as unknown as SupabaseUser;
+      const mockSupabaseUser = createMockSupabaseUser({ id: "auth-123", email: null });
 
       const mockUpsertUser = vi.fn().mockResolvedValue({
         id: "db-123",

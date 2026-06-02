@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSupabaseClient } from "../client";
 import createBaseSupabaseClient from "../base";
 import type { StorageAdapter, SupabaseClientOptions } from "../types";
+import { createMockSupabaseClient } from "./utils";
 
 // Mock the base module
 vi.mock("../base", () => ({
@@ -11,19 +12,11 @@ vi.mock("../base", () => ({
 describe("createSupabaseClient", () => {
   const mockUrl = "https://test.supabase.co";
   const mockKey = "test-anon-key";
-  const mockSupabaseClient = {
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-    },
-    from: vi.fn(),
-  };
+  const mockSupabaseClient = createMockSupabaseClient();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createBaseSupabaseClient).mockReturnValue(
-      mockSupabaseClient as unknown as ReturnType<typeof createBaseSupabaseClient>,
-    );
+    vi.mocked(createBaseSupabaseClient).mockReturnValue(mockSupabaseClient);
   });
 
   describe("basic client creation", () => {

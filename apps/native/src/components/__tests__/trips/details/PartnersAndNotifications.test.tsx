@@ -3,6 +3,15 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { PartnersSection, type Partner } from "../../../trips/details/PartnersSection";
 import { NotificationsHeader } from "../../../notifications/NotificationsHeader";
 
+jest.mock("~/hooks/partners/usePartnerImageDownload", () => ({
+  usePartnerImageDownload: jest.fn(() => ({
+    imageUrl: "https://example.com/partner-logo.png",
+    isLoading: false,
+    error: null,
+    status: "success",
+  })),
+}));
+
 jest.mock("expo-router", () => {
   const mockPush = jest.fn();
   return {
