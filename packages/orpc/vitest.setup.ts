@@ -1,20 +1,56 @@
 import { vi } from "vitest";
-import type { TRPCContext } from "./src/api/trpc";
-import {
-  createMockSupabaseUser,
-  createMockDbUser,
-  createMockSupabase,
-  createMockDb,
-} from "@mirai-app/shared/test-utils";
-
-export {
-  addDrizzleApi,
-  createFailingTransactionMock,
-} from "@mirai-app/shared/test-utils";
 
 vi.mock("@mirai-app/supabase", () => {
-  const mockSupabaseClient = createMockSupabase();
-  const mockUser = createMockSupabaseUser();
+  const mockSupabaseUser = {
+    id: "test-auth-user-id",
+    email: "test@example.com",
+    email_confirmed_at: new Date().toISOString(),
+    user_metadata: { firstName: "Test", lastName: "User" },
+    app_metadata: { role: "USER" },
+  };
+
+  const mockQueryBuilder = {
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+  };
+
+  const mockSupabaseClient = {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      getUser: vi.fn().mockResolvedValue({ data: { user: mockSupabaseUser }, error: null }),
+      signInWithOtp: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      signInWithPassword: vi.fn().mockResolvedValue({
+        data: { user: mockSupabaseUser, session: { access_token: "test-token" } },
+        error: null,
+      }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      verifyOtp: vi.fn().mockResolvedValue({
+        data: { user: mockSupabaseUser, session: { access_token: "test-token" } },
+        error: null,
+      }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+      admin: {
+        getUserById: vi.fn().mockResolvedValue({
+          data: { user: mockSupabaseUser },
+          error: null,
+        }),
+        listUsers: vi.fn().mockResolvedValue({ data: { users: [mockSupabaseUser] }, error: null }),
+        createUser: vi.fn().mockResolvedValue({ data: { user: mockSupabaseUser }, error: null }),
+        updateUserById: vi.fn().mockResolvedValue({
+          data: { user: mockSupabaseUser },
+          error: null,
+        }),
+        deleteUser: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      },
+    },
+    from: vi.fn().mockReturnValue(mockQueryBuilder),
+  };
 
   return {
     createClient: vi.fn(() => mockSupabaseClient),
@@ -27,19 +63,29 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-vi.mock("@mirai-app/db", async () => {
-  const actual = await vi.importActual<typeof import("@mirai-app/db")>("@mirai-app/db");
-  const mockDbClient = createMockDb();
-
-  return {
-    ...actual,
-    createDb: vi.fn(() => mockDbClient),
-  };
-});
-
 vi.mock("@mirai-app/auth", () => {
-  const mockUser = createMockDbUser();
-  const mockSupabaseUser = createMockSupabaseUser();
+  const mockUser = {
+    id: "test-db-user-id",
+    authUserId: "test-auth-user-id",
+    firstName: "Test",
+    lastName: "User",
+    hasAvatar: false,
+    wristNumber: null,
+    houseNumber: null,
+    role: "USER",
+    groupId: null,
+    emailVerified: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockSupabaseUser = {
+    id: "test-auth-user-id",
+    email: "test@example.com",
+    email_confirmed_at: new Date().toISOString(),
+    user_metadata: { firstName: "Test", lastName: "User" },
+    app_metadata: { role: "USER" },
+  };
 
   return {
     requireAuth: vi.fn().mockResolvedValue({

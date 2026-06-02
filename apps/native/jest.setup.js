@@ -16,9 +16,17 @@ class MockWebSocket {
   });
   removeEventListener = jest.fn();
   send = jest.fn();
-  close = jest.fn();
+  close = jest.fn(() => {
+    if (this._openTimer) {
+      clearTimeout(this._openTimer);
+      this._openTimer = null;
+    }
+    this.readyState = 3;
+    if (this.onclose) this.onclose();
+  });
   constructor() {
-    setTimeout(() => {
+    this._openTimer = setTimeout(() => {
+      this._openTimer = null;
       this.readyState = 1;
       if (this.onopen) this.onopen();
     }, 0);

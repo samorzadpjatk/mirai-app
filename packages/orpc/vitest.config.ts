@@ -8,7 +8,7 @@ export default mergeConfig(baseConfig, defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.tsx"],
-    exclude: ["src/**/__tests__/**/*.sqlite.test.ts"],
+    hookTimeout: 30000,
     coverage: {
       thresholds: { functions: 55, lines: 78, statements: 78 },
       exclude: [

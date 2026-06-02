@@ -28,11 +28,7 @@
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "vitest run --config vitest.unit.config.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:unit": "vitest run --coverage --config vitest.unit.config.ts",
-    "test:coverage:integration": "vitest run --coverage --config vitest.integration.config.ts",
     "test:sqlite": "bunx --bun vitest run --config vitest.sqlite.config.ts",
     "test:watch": "vitest",
     "clean": "rm -rf node_modules"

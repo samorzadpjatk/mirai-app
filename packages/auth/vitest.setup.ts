@@ -60,49 +60,6 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-// Mock @mirai-app/db
-vi.mock("@mirai-app/db", () => {
-  const mockUser = {
-    id: "test-db-user-id",
-    authUserId: "test-auth-user-id",
-    email: "test@example.com",
-    name: "Test User",
-    firstName: "Test",
-    lastName: "User",
-    hasAvatar: false,
-    wristNumber: null,
-    houseNumber: null,
-    role: "USER",
-    groupId: null,
-    emailVerified: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const mockDbClient = {
-    query: {
-      users: {
-        findFirst: vi.fn().mockResolvedValue(mockUser),
-        findMany: vi.fn().mockResolvedValue([mockUser]),
-      },
-    },
-    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue([mockUser]) })),
-    update: vi.fn(() => ({
-      set: vi.fn().mockResolvedValue([mockUser]),
-      where: vi.fn().mockResolvedValue([mockUser]),
-    })),
-    delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue([mockUser]) })),
-  };
-
-  return {
-    createDb: vi.fn(() => mockDbClient),
-    db: mockDbClient,
-    users: { __table: "users" },
-    User: mockUser,
-    Role: ["USER", "ADMIN", "MODERATOR", "SERVICE"],
-  };
-});
-
 // Mock @mirai-app/shared
 vi.mock("@mirai-app/shared", () => {
   const mockAuthStore = {

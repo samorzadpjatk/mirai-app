@@ -102,7 +102,7 @@ Client: `import { orpc } from '@mirai-app/orpc/client'`
 
 - **Critical**: The `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
 - **Rule**: Add at least one failure-path transaction test per router. Create `MockTransactionDB` that simulates rollback.
-- **Real SQLite Tests**: Router tests use an actual SQLite database for integration testing. Avoid mocking Drizzle operations where possible.
+- **Real PGLite Tests**: Router tests use an actual PGLite database for integration testing. Avoid mocking Drizzle operations where possible.
 - **Failure-Path Coverage**: Every router must have a test that verifies rollback behavior when an inner operation fails.
 
 See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.

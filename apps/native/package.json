@@ -31,9 +31,9 @@
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check '**/*.{ts,tsx,js,jsx}'",
     "format:write": "prettier --write '**/*.{ts,tsx,js,jsx}'",
-    "test": "jest --coverage",
-    "test:ci": "jest --passWithNoTests --ci --coverage",
-    "test:watch": "jest --watch",
+    "test": "jest --coverage --detectOpenHandles",
+    "test:ci": "jest --passWithNoTests --ci --coverage --detectOpenHandles",
+    "test:watch": "jest --watch --detectOpenHandles",
     "clean": "rm -rf .expo .nx node_modules dist coverage"
   },
   "dependencies": {
