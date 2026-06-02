@@ -12,7 +12,7 @@ Testing patterns and conventions for the MIRAI monorepo.
 | E2E | Playwright | Full user flows |
 | Component | React Testing Library | React components |
 | API | oRPC test client | oRPC procedures |
-| Database | bun:sqlite + Drizzle | Real transaction tests |
+| Database | PGLite + Drizzle | Real transaction tests |
 | Network | MSW | Native hook API mocking |
 | Dead code | knip | Unused exports cleanup |
 
@@ -60,7 +60,7 @@ export function createBackgroundLocationTask(deps: { supabaseClient: SupabaseCli
 
 ### Fake over Mock
 
-Use real SQLite for backend integration tests. Use MSW for frontend API tests. Avoid mock-verification tests.
+Use real PGLite for backend integration tests. Use MSW for frontend API tests. Avoid mock-verification tests.
 
 ## File Organization and Naming
 
@@ -163,57 +163,148 @@ const challengeBuilder = createBuilder({
 });
 ```
 
-## Real SQLite Testing
+## Real PGLite Testing
 
-Use `bun:sqlite` with Drizzle ORM for integration tests needing real transaction semantics.
+Use `@electric-sql/pglite` with Drizzle ORM for integration tests needing real PostgreSQL transaction semantics.
 
-### createTestDb Pattern
+### createPgliteTestDb Pattern
 
 ```typescript
-// packages/orpc/src/api/routers/__tests__/helpers/challenge-sqlite-db.ts
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { sqliteChallenges, sqliteGroups } from "./challenge-sqlite-schema";
+// packages/db/src/test-helper.ts
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import * as schema from "./schema";
 
-export function createTestDb() {
-  const db = new Database(":memory:");
-  db.exec(`CREATE TABLE challenges (id TEXT PRIMARY KEY, ...)`);
-  const drizzleDb = drizzle(db, { schema: { sqliteChallenges, sqliteGroups } });
-  return { db, drizzleDb, sqliteChallenges, sqliteGroups };
+export async function createPgliteTestDb() {
+  const client = new PGlite();
+  const db = drizzle(client, { schema });
+  await pushSchema(client); // Uses drizzle-kit API or manual fallback
+
+  return {
+    db,
+    client,
+    cleanup: async () => { await client.close(); },
+    reset: async () => {
+      for (const table of schemaTables) {
+        await db.execute(sql`TRUNCATE TABLE ${sql.raw(getTableName(table))} RESTART IDENTITY CASCADE`);
+      }
+    },
+  };
 }
 ```
 
-### Testing Transactions
+### Test Lifecycle Pattern
+
+For optimal performance, create the database once per file and reset state between tests:
 
 ```typescript
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createTestDb } from "./helpers/challenge-sqlite-db";
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { users, trips } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
 
-describe("challenge router — real SQLite", () => {
-  let testDb: ReturnType<typeof createTestDb>;
+describe("trip router — PGLite integration", () => {
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 
-  beforeEach(() => {
-    testDb = createTestDb();
-    testDb.db.run(`INSERT INTO users (...) VALUES (...)`, ["admin-1", ...]);
+  beforeAll(async () => {
+    testDb = await createPgliteTestDb();
   });
 
-  afterEach(() => testDb.db.close());
+  beforeEach(async () => {
+    await testDb.reset();
+  });
 
-  it("rolls back Drizzle transaction on failure", () => {
-    expect(() => {
-      testDb.drizzleDb.transaction((tx) => {
-        tx.update(testDb.sqliteChallenges).set({ name: "Updated" }).where(eq(testDb.sqliteChallenges.id, "c1"));
-        throw new Error("Simulated failure");
-      });
-    }).toThrow("Simulated failure");
+  afterAll(async () => {
+    await testDb.cleanup();
+  });
 
-    const row = testDb.db.query("SELECT name FROM challenges WHERE id = ?").get("c1");
-    expect(row.name).toBe("Original");
+  it("inserts and queries data", async () => {
+    await testDb.db.insert(users).values({
+      id: "user-1", authUserId: "auth-1", firstName: "Test", lastName: "User",
+      role: "USER", createdAt: new Date(), updatedAt: new Date(),
+    });
+
+    const result = await testDb.db.select().from(users).where(eq(users.id, "user-1"));
+    expect(result).toHaveLength(1);
   });
 });
 ```
 
-See `packages/orpc/src/api/routers/__tests__/challenge.sqlite.test.ts` for the full example.
+**Key points:**
+- `beforeAll` creates the database once (~1000ms)
+- `beforeEach` calls `reset()` to truncate all tables (~20ms)
+- `afterAll` closes the connection once
+- This pattern is ~5x faster than creating a DB per test
+
+### Testing Transactions
+
+```typescript
+import { sql } from "drizzle-orm";
+
+describe("challenge router — transaction rollback", () => {
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+  const now = () => new Date();
+
+  beforeAll(async () => { testDb = await createPgliteTestDb(); });
+  beforeEach(async () => { await testDb.reset(); });
+  afterAll(async () => { await testDb.cleanup(); });
+
+  it("rolls back on failure", async () => {
+    await testDb.db.insert(users).values({
+      id: "admin-1", authUserId: "auth-1", firstName: "Admin", lastName: "User",
+      createdAt: now(), updatedAt: now(),
+    });
+
+    await expect(
+      testDb.db.transaction(async (tx) => {
+        await tx.insert(users).values({
+          id: "user-2", authUserId: "auth-2", firstName: "Test", lastName: "User",
+          createdAt: now(), updatedAt: now(),
+        });
+        throw new Error("Simulated failure");
+      }),
+    ).rejects.toThrow("Simulated failure");
+
+    const result = await testDb.db.select().from(users);
+    expect(result).toHaveLength(1); // user-2 was rolled back
+  });
+});
+```
+
+### Multi-Describe Files
+
+For files with multiple `describe` blocks, move `testDb` and hooks to file level so all describes share one database:
+
+```typescript
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+
+let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+
+beforeAll(async () => { testDb = await createPgliteTestDb(); });
+beforeEach(async () => { await testDb.reset(); });
+afterAll(async () => { await testDb.cleanup(); });
+
+describe("router — transaction rollback", () => {
+  // seeding-only beforeEach
+  beforeEach(async () => {
+    await testDb.db.insert(users).values({...});
+  });
+
+  it("tests rollback", async () => { ... });
+});
+
+describe("router — Drizzle integration", () => {
+  // different seeding
+  beforeEach(async () => {
+    await testDb.db.insert(users).values({...});
+    await testDb.db.insert(trips).values({...});
+  });
+
+  it("tests queries", async () => { ... });
+});
+```
+
+See `packages/orpc/src/api/routers/__tests__/trip.pglite.test.ts` for a complete example.
 
 ## oRPC Testing
 
@@ -363,7 +454,7 @@ Per-package thresholds are defined in `vitest.config.ts`:
 When coverage fails:
 1. Run `knip` first — check if drop is from dead code
 2. If from new untested code, add real-data tests for pure functions
-3. If from router code, add SQLite integration tests
+3. If from router code, add PGLite integration tests
 4. Never lower thresholds to green the build
 
 ## Test Quality Standards
@@ -377,7 +468,7 @@ When coverage fails:
 ### Transaction Rollback Testing Gap
 
 - **Critical**: `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
-- **Rule**: Add at least one failure-path transaction test per router. Use real SQLite (`bun:sqlite`) with `BEGIN...ROLLBACK`.
+- **Rule**: Add at least one failure-path transaction test per router. Use real PGLite with `BEGIN...ROLLBACK`.
 
 ### Verification Checklist for All Tests
 
@@ -433,7 +524,7 @@ Move from mock tests to real tests incrementally, one router or hook at a time.
 
 1. **Keep old tests running** while writing new tests. Do not delete until new tests pass.
 2. **Extract pure functions first** — zero risk, immediate value. See `packages/shared/src/challenges/queryBuilders.ts`.
-3. **Add real SQLite tests** for transaction-heavy routers. See `packages/orpc/src/api/routers/__tests__/challenge.sqlite.test.ts`.
+3. **Add real PGLite tests** for transaction-heavy routers. See `packages/orpc/src/api/routers/__tests__/challenge.pglite.test.ts`.
 4. **Replace hook mock tests with MSW** — rewrite one describe block at a time.
 5. **Coverage ratchet** — ensure coverage never drops below current level during migration.
 

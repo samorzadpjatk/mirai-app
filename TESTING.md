@@ -647,6 +647,23 @@ env: {
 - Mock external dependencies (database, APIs)
 - Use `nx run-many -t test` for parallelization
 
+#### PGLite test setup is slow
+
+**Cause**: Creating a new PGLite database per test (~1000ms per test).
+
+**Solution**: Use file-level `beforeAll` to create the database once, then `beforeEach` to call `testDb.reset()` for table truncation:
+
+```typescript
+// Optimized pattern
+beforeAll(async () => { testDb = await createPgliteTestDb(); });
+beforeEach(async () => { await testDb.reset(); });
+afterAll(async () => { await testDb.cleanup(); });
+```
+
+This reduces setup time from ~1000ms per test to ~1000ms per file + ~20ms per test for reset.
+
+**Result**: 165 PGLite tests run in ~29s instead of ~150s+.
+
 #### Coverage not generated
 
 **Cause**: Coverage provider not configured.
