@@ -11,6 +11,7 @@ export default mergeConfig(
     },
     ssr: {
       external: ["bun:sqlite"],
+      noExternal: ["zod"],
     },
   }),
 );
