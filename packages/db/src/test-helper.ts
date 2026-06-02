@@ -1,21 +1,22 @@
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema";
+import { schemaTables } from "./schema";
 import type { PGlite as PGliteType } from "@electric-sql/pglite";
-import { sql } from "drizzle-orm";
+import { sql, getTableName } from "drizzle-orm";
 
 export type TestDB = ReturnType<typeof createPgliteTestDb>;
 
 /**
  * Creates an in-memory PostgreSQL database using PGLite for testing.
  * Uses the production schema to avoid schema drift.
- * 
+ *
  * Benefits over SQLite:
  * - Same pg-core schema as production (no separate sqlite schemas)
  * - Same type hierarchy as PostgresJsDatabase (no need for as unknown as DB)
  * - Real PostgreSQL behavior in-memory
  * - No Docker required
- * 
+ *
  * @example
  * ```ts
  * const { db, cleanup } = createPgliteTestDb();
@@ -40,18 +41,10 @@ export async function createPgliteTestDb() {
     },
     reset: async () => {
       // Reset all tables for clean state between tests
-      const tables = [
-        "users", "trips", "trip_resources", "trip_insurances", "trip_insurance_steps",
-        "trip_participants", "events", "user_events", "groups", "group_join_requests",
-        "challenges", "challenge_submissions", "challenge_votes", "submission_reports",
-        "activity_feeds", "activity_reactions", "challenge_activities", "rank_change_activities",
-        "submission_activities", "user_posts", "notifications", "notification_pushes",
-        "notification_deliveries", "notification_schedules", "notification_schedule_executions",
-        "push_subscriptions", "locations", "location_sharing_requests", "location_shares",
-        "rewards", "reward_purchases", "coin_transactions", "sponsors", "trip_sponsors", "user_agents",
-      ];
-      for (const table of tables) {
-        await db.execute(sql`TRUNCATE TABLE ${sql.raw(table)} CASCADE`);
+      for (const table of schemaTables) {
+        await db.execute(
+          sql`TRUNCATE TABLE ${sql.raw(getTableName(table))} RESTART IDENTITY CASCADE`,
+        );
       }
     },
   };
@@ -65,11 +58,11 @@ async function pushSchema(client: PGliteType) {
   // Import drizzle-kit API dynamically to avoid issues
   const { createRequire } = await import("node:module");
   const require = createRequire(import.meta.url);
-  
+
   try {
     const { pushSchema: pushSchemaApi } = require("drizzle-kit/api");
     const db = drizzle(client, { schema });
-    
+
     const { apply } = await pushSchemaApi(schema, db, undefined, undefined, undefined);
     await apply();
   } catch (error) {
@@ -83,7 +76,7 @@ async function applySchemaManually(client: PGliteType) {
   // In production, we rely on drizzle-kit's generate and push
   // For tests, we just need the tables to exist
   const { getTableConfig } = await import("drizzle-orm/pg-core");
-  
+
   // Create tables for each schema definition
   const tables = [
     schema.users,
@@ -122,18 +115,20 @@ async function applySchemaManually(client: PGliteType) {
     schema.tripSponsors,
     schema.userAgents,
   ];
-  
+
   for (const table of tables) {
     if (table) {
       const config = getTableConfig(table);
-      const columns = config.columns.map(col => {
-        const type = col.getSQLType();
-        const notNull = col.notNull ? " NOT NULL" : "";
-        const defaultValue = col.hasDefault ? ` DEFAULT ${col.defaultValue}` : "";
-        const primaryKey = col.primaryKey ? " PRIMARY KEY" : "";
-        return `${col.name} ${type}${notNull}${defaultValue}${primaryKey}`;
-      }).join(", ");
-      
+      const columns = config.columns
+        .map((col) => {
+          const type = col.getSQLType();
+          const notNull = col.notNull ? " NOT NULL" : "";
+          const defaultValue = col.hasDefault ? ` DEFAULT ${col.default}` : "";
+          const primaryKey = col.primary ? " PRIMARY KEY" : "";
+          return `${col.name} ${type}${notNull}${defaultValue}${primaryKey}`;
+        })
+        .join(", ");
+
       const sql = `CREATE TABLE IF NOT EXISTS "${config.name}" (${columns})`;
       await client.query(sql);
     }
