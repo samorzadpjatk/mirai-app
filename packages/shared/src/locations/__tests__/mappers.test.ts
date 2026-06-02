@@ -1,0 +1,152 @@
+import { describe, it, expect } from "vitest";
+import { toExpoLocation } from "../mappers";
+import type { Location as DbLocation } from "@mirai-app/db";
+
+describe("toExpoLocation", () => {
+  it("should convert a full DbLocation to ExpoLocationObject", () => {
+    const dbLocation: DbLocation = {
+      id: "loc-1",
+      userId: "user-1",
+      timestamp: new Date("2024-06-15T12:30:45Z"),
+      isSharingLocation: true,
+      latitude: 52.2297,
+      longitude: 21.0122,
+      altitude: 100.5,
+      accuracy: 10.0,
+      altitudeAccuracy: 5.0,
+      heading: 90.0,
+      speed: 2.5,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+
+    expect(result).toEqual({
+      coords: {
+        latitude: 52.2297,
+        longitude: 21.0122,
+        altitude: 100.5,
+        accuracy: 10.0,
+        altitudeAccuracy: 5.0,
+        heading: 90.0,
+        speed: 2.5,
+      },
+      timestamp: dbLocation.timestamp.getTime(),
+    });
+  });
+
+  it("should default latitude and longitude to 0 when null", () => {
+    const dbLocation: DbLocation = {
+      id: "loc-2",
+      userId: "user-2",
+      timestamp: new Date("2024-06-15T12:00:00Z"),
+      isSharingLocation: false,
+      latitude: null,
+      longitude: null,
+      altitude: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+
+    expect(result.coords.latitude).toBe(0);
+    expect(result.coords.longitude).toBe(0);
+  });
+
+  it("should default all optional coords to null when missing", () => {
+    const dbLocation: DbLocation = {
+      id: "loc-3",
+      userId: "user-3",
+      timestamp: new Date("2024-06-15T12:00:00Z"),
+      isSharingLocation: true,
+      latitude: 0,
+      longitude: 0,
+      altitude: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+
+    expect(result.coords.altitude).toBeNull();
+    expect(result.coords.accuracy).toBeNull();
+    expect(result.coords.altitudeAccuracy).toBeNull();
+    expect(result.coords.heading).toBeNull();
+    expect(result.coords.speed).toBeNull();
+  });
+
+  it("should use numeric timestamp in milliseconds", () => {
+    const timestamp = new Date("2024-06-15T12:00:00.123Z");
+    const dbLocation: DbLocation = {
+      id: "loc-4",
+      userId: "user-4",
+      timestamp,
+      isSharingLocation: true,
+      latitude: 1.0,
+      longitude: 1.0,
+      altitude: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+    expect(result.timestamp).toBe(timestamp.getTime());
+  });
+
+  it("should preserve zero values for altitude, accuracy, etc.", () => {
+    const dbLocation: DbLocation = {
+      id: "loc-5",
+      userId: "user-5",
+      timestamp: new Date("2024-06-15T12:00:00Z"),
+      isSharingLocation: true,
+      latitude: 1.0,
+      longitude: 1.0,
+      altitude: 0,
+      accuracy: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      speed: 0,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+
+    expect(result.coords.altitude).toBe(0);
+    expect(result.coords.accuracy).toBe(0);
+    expect(result.coords.altitudeAccuracy).toBe(0);
+    expect(result.coords.heading).toBe(0);
+    expect(result.coords.speed).toBe(0);
+  });
+
+  it("should preserve negative latitude and longitude", () => {
+    const dbLocation: DbLocation = {
+      id: "loc-6",
+      userId: "user-6",
+      timestamp: new Date("2024-06-15T12:00:00Z"),
+      isSharingLocation: true,
+      latitude: -33.8688,
+      longitude: -151.2093,
+      altitude: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+      lastInactivityNotification: null,
+    };
+
+    const result = toExpoLocation(dbLocation);
+
+    expect(result.coords.latitude).toBe(-33.8688);
+    expect(result.coords.longitude).toBe(-151.2093);
+  });
+});

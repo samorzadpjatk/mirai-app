@@ -46,7 +46,7 @@ export const calculateLeaderboardInfo = (
   };
 };
 
-export const findUserGroup = <T extends { user: { id: string } }>(
+export const findUserGroup = <T extends { user: { id: string }; group?: Group | null }>(
   currentUserId: string,
   participants: T[] | undefined,
 ): T | null => {

@@ -9,20 +9,26 @@ export interface ReactionSummary {
   myReactions: string[];
 }
 
+export const emptyReactionCounts = () => ({
+  heart: 0,
+  fire: 0,
+  clap: 0,
+  star: 0,
+});
+
 export const emptyReactionSummary = (): ReactionSummary => ({
   total: 0,
-  counts: {
-    heart: 0,
-    fire: 0,
-    clap: 0,
-    star: 0,
-  },
+  counts: emptyReactionCounts(),
   myReactions: [],
 });
 
-export const toggleHeartSummary = (summary: ReactionSummary | undefined): ReactionSummary => {
+export const toggleHeartSummary = (
+  summary: (Partial<ReactionSummary> & { total: number }) | undefined,
+): ReactionSummary => {
   const normalized = summary ?? emptyReactionSummary();
-  const myReactions = new Set(normalized.myReactions ?? []);
+  const counts = normalized.counts ?? emptyReactionCounts();
+  const myReactionsList = normalized.myReactions ?? [];
+  const myReactions = new Set(myReactionsList);
   const hadHeart = myReactions.has("heart");
 
   if (hadHeart) {
@@ -35,8 +41,8 @@ export const toggleHeartSummary = (summary: ReactionSummary | undefined): Reacti
     ...normalized,
     total: Math.max(0, normalized.total + (hadHeart ? -1 : 1)),
     counts: {
-      ...normalized.counts,
-      heart: Math.max(0, normalized.counts.heart + (hadHeart ? -1 : 1)),
+      ...counts,
+      heart: Math.max(0, counts.heart + (hadHeart ? -1 : 1)),
     },
     myReactions: Array.from(myReactions),
   };
