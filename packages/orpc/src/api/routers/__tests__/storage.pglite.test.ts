@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { ORPCError } from "@orpc/server";
 import { storageRouter } from "../../routers/storage";
 import { createRouterClient } from "@orpc/server";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { seedUser, createMockSupabase, createContext } from "../../../test-helpers";
 import type { TRPCContext } from "../../trpc";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import type { DB, User } from "@mirai-app/db";
@@ -64,13 +66,18 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 describe("storageRouter", () => {
-  let mockDb: DB;
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
   const originalEnv = process.env;
 
-  beforeEach(() => {
+  beforeAll(async () => {
+    testDb = await createPgliteTestDb();
+  });
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await testDb.reset();
 
     // Reset environment variables
     process.env = {
@@ -80,6 +87,9 @@ describe("storageRouter", () => {
     };
 
     mockUser = createMockUser({ id: "user-123" });
+
+    // Seed user for auth (the router uses protectedProcedure)
+    await seedUser(testDb.db, mockUser.id, mockUser.authUserId, mockUser.firstName, mockUser.lastName);
 
     // Setup mock Supabase client
     mockSupabase = {
@@ -114,23 +124,19 @@ describe("storageRouter", () => {
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
     } satisfies SupabaseClient;
-
-    // Setup mock database client
-    mockDb = {
-      user: {
-        findUnique: vi.fn().mockResolvedValue(mockUser),
-        findFirst: vi.fn().mockResolvedValue(mockUser),
-      },
-    };
   });
 
   afterEach(() => {
     process.env = originalEnv;
   });
 
+  afterAll(async () => {
+    await testDb.cleanup();
+  });
+
   // Helper to create authenticated context
   const createAuthContext = (user: User, token = "test-token"): TRPCContext => ({
-    db: mockDb,
+    db: testDb.db,
     supabase: mockSupabase,
     headers: new Headers({ Authorization: `Bearer ${token}` }),
     accessToken: token,

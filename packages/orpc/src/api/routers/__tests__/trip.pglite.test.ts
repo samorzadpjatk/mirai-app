@@ -15,27 +15,13 @@ import {
   tripInsuranceSteps,
 } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-
-function createMockSupabase(emails: Record<string, string> = {}) {
-  return {
-    auth: {
-      admin: {
-        getUserById: async (authUserId: string) => ({
-          data: { user: emails[authUserId] ? { email: emails[authUserId] } : null },
-          error: null,
-        }),
-      },
-    },
-    storage: {
-      from: () => ({
-        createSignedUrl: async () => ({
-          data: { signedUrl: "https://signed-url.example.com/image.jpg" },
-          error: null,
-        }),
-      }),
-    },
-  };
-}
+import {
+  createMockSupabase,
+  seedUser,
+  seedTrip,
+  seedGroup,
+  seedParticipant,
+} from "../../../test-helpers";
 
 describe("trip router — PGLite integration", () => {
   let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
@@ -52,42 +38,6 @@ describe("trip router — PGLite integration", () => {
   afterAll(async () => {
     await testDb.cleanup();
   });
-
-  async function seedUser(id: string, authUserId: string, firstName: string, lastName: string) {
-    await testDb.db
-      .insert(users)
-      .values({ id, authUserId, firstName, lastName, createdAt: now(), updatedAt: now() });
-  }
-
-  async function seedTrip(id: string, name: string, description?: string) {
-    await testDb.db.insert(trips).values({
-      id,
-      name,
-      description,
-      startDate: new Date("2025-06-01"),
-      endDate: new Date("2025-06-07"),
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedGroup(
-    id: string,
-    tripId: string,
-    name: string,
-    organizerId: string,
-    code: string,
-  ) {
-    await testDb.db
-      .insert(groups)
-      .values({ id, tripId, name, organizerId, code, createdAt: now(), updatedAt: now() });
-  }
-
-  async function seedParticipant(id: string, userId: string, tripId: string, groupId?: string) {
-    await testDb.db
-      .insert(tripParticipants)
-      .values({ id, userId, tripId, groupId, createdAt: now(), updatedAt: now() });
-  }
 
   async function seedSponsor(id: string, name: string, isActive: boolean) {
     await testDb.db
@@ -108,10 +58,10 @@ describe("trip router — PGLite integration", () => {
   }
 
   it("getAll returns paginated trips with groups and active sponsors", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedTrip("trip-1", "Summer Camp", "Fun in the sun");
-    await seedParticipant("tp-1", "user-1", "trip-1");
-    await seedGroup("group-1", "trip-1", "Team A", "user-1", "TEAMA");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, "trip-1", "Summer Camp", "Fun in the sun");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Team A", "user-1", "TEAMA");
     await seedSponsor("sponsor-1", "Active Sponsor", true);
     await seedSponsor("sponsor-2", "Inactive Sponsor", false);
     await seedTripSponsor("ts-1", "trip-1", "sponsor-1");
@@ -134,12 +84,12 @@ describe("trip router — PGLite integration", () => {
   });
 
   it("getById enforces participant check and returns shaped data", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedUser("user-2", "auth-2", "Bob", "Jones");
-    await seedTrip("trip-1", "Winter Retreat", "Snow and cocoa");
-    await seedGroup("group-1", "trip-1", "Ski Team", "user-1", "SKI01");
-    await seedParticipant("tp-1", "user-1", "trip-1", "group-1");
-    await seedParticipant("tp-2", "user-2", "trip-1", "group-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedUser(testDb.db, "user-2", "auth-2", "Bob", "Jones");
+    await seedTrip(testDb.db, "trip-1", "Winter Retreat", "Snow and cocoa");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Ski Team", "user-1", "SKI01");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1", "group-1");
 
     const result = await getById(
       {
@@ -162,8 +112,8 @@ describe("trip router — PGLite integration", () => {
   });
 
   it("getById throws FORBIDDEN for non-participants", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedTrip("trip-1", "Secret Trip");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, "trip-1", "Secret Trip");
 
     await expect(
       getById(
@@ -174,10 +124,10 @@ describe("trip router — PGLite integration", () => {
   });
 
   it("getByIdAdmin skips participant check and produces identical shaping to getById", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedTrip("trip-1", "Admin View Trip", "Visible to admins");
-    await seedGroup("group-1", "trip-1", "Admin Group", "user-1", "ADMIN01");
-    await seedParticipant("tp-1", "user-1", "trip-1", "group-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, "trip-1", "Admin View Trip", "Visible to admins");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Admin Group", "user-1", "ADMIN01");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
 
     const supabase = createMockSupabase({ "auth-1": "alice@example.com" });
     const adminResult = await getByIdAdmin({ db: testDb.db, supabase }, { id: "trip-1" });
@@ -219,7 +169,7 @@ describe("trip router — PGLite integration", () => {
   });
 
   it("updateTrip modifies existing trip fields", async () => {
-    await seedTrip("trip-1", "Old Name", "Old description");
+    await seedTrip(testDb.db, "trip-1", "Old Name", "Old description");
 
     const result = await updateTrip(
       { db: testDb.db },
@@ -235,9 +185,9 @@ describe("trip router — PGLite integration", () => {
   });
 
   it("getResources returns sorted resources and insurance steps", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedTrip("trip-1", "Resource Trip");
-    await seedParticipant("tp-1", "user-1", "trip-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, "trip-1", "Resource Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
     await testDb.db.insert(tripResources).values([
       {
         id: "res-3",

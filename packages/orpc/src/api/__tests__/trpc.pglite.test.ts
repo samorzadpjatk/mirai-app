@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import {
   createORPCContext,
   publicProcedure,
@@ -6,6 +6,8 @@ import {
   createORPCRouter,
 } from "../trpc";
 import { createRouterClient } from "@orpc/server";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { userAgents } from "@mirai-app/db";
 import type { TRPCContext } from "../trpc";
 
 describe("createORPCContext token extraction", () => {
@@ -141,8 +143,19 @@ describe("createORPCContext token extraction", () => {
 });
 
 describe("getPlatformFromUserAgent via telemetry middleware", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+
+  beforeAll(async () => {
+    testDb = await createPgliteTestDb();
+    enableUserAgentTelemetry();
+  });
+
+  beforeEach(async () => {
+    await testDb.reset();
+  });
+
+  afterAll(async () => {
+    await testDb.cleanup();
   });
 
   const createTestRouter = () =>
@@ -150,142 +163,83 @@ describe("getPlatformFromUserAgent via telemetry middleware", () => {
       test: publicProcedure.handler(() => "ok"),
     });
 
+  const createTestContext = (headers: Headers): TRPCContext => ({
+    db: testDb.db,
+    supabase: {} as unknown as TRPCContext["supabase"],
+    headers,
+    accessToken: null,
+  });
+
   it("should detect iOS user agent", async () => {
-    enableUserAgentTelemetry();
-
     const router = createTestRouter();
-    const mockDb = {
-      user: {
-        findFirst: vi.fn().mockResolvedValue(null),
-        findMany: vi.fn().mockResolvedValue([]),
-      },
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-          onConflictDoNothing: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-      $transaction: vi.fn((cb: (db: unknown) => Promise<unknown>) => cb(mockDb)),
-    };
-
-    const ctx: TRPCContext = {
-      db: mockDb as unknown as TRPCContext["db"],
-      supabase: {} as unknown as TRPCContext["supabase"],
-      headers: new Headers({
+    const ctx = createTestContext(
+      new Headers({
         "user-agent": "MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0",
       }),
-      accessToken: null,
-    };
+    );
 
     const caller = createRouterClient(router, { context: ctx });
     await caller.test();
 
-    expect(mockDb.insert).toHaveBeenCalled();
+    // Wait for fire-and-forget insert to complete
+    await new Promise((r) => setTimeout(r, 100));
+
+    const rows = await testDb.db.select().from(userAgents);
+    expect(rows.length).toBe(1);
+    expect(rows[0].userAgent).toBe("MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0");
+    expect(rows[0].platform).toBe("ios");
   });
 
   it("should detect Android user agent", async () => {
-    enableUserAgentTelemetry();
-
     const router = createTestRouter();
-    const mockDb = {
-      user: {
-        findFirst: vi.fn().mockResolvedValue(null),
-        findMany: vi.fn().mockResolvedValue([]),
-      },
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-          onConflictDoNothing: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-      $transaction: vi.fn((cb: (db: unknown) => Promise<unknown>) => cb(mockDb)),
-    };
-
-    const ctx: TRPCContext = {
-      db: mockDb as unknown as TRPCContext["db"],
-      supabase: {} as unknown as TRPCContext["supabase"],
-      headers: new Headers({
+    const ctx = createTestContext(
+      new Headers({
         "user-agent": "okhttp/4.12.0",
       }),
-      accessToken: null,
-    };
+    );
 
     const caller = createRouterClient(router, { context: ctx });
     await caller.test();
 
-    expect(mockDb.insert).toHaveBeenCalled();
+    // Wait for fire-and-forget insert to complete
+    await new Promise((r) => setTimeout(r, 100));
+
+    const rows = await testDb.db.select().from(userAgents);
+    expect(rows.length).toBe(1);
+    expect(rows[0].userAgent).toBe("okhttp/4.12.0");
+    expect(rows[0].platform).toBe("android");
   });
 
   it("should not log for unknown user agent", async () => {
-    enableUserAgentTelemetry();
-
     const router = createTestRouter();
-    const mockDb = {
-      user: {
-        findFirst: vi.fn().mockResolvedValue(null),
-        findMany: vi.fn().mockResolvedValue([]),
-      },
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-        })),
-      })),
-      $transaction: vi.fn((cb: (db: unknown) => Promise<unknown>) => cb(mockDb)),
-    };
-
-    const ctx: TRPCContext = {
-      db: mockDb as unknown as TRPCContext["db"],
-      supabase: {} as unknown as TRPCContext["supabase"],
-      headers: new Headers({
+    const ctx = createTestContext(
+      new Headers({
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       }),
-      accessToken: null,
-    };
+    );
 
     const caller = createRouterClient(router, { context: ctx });
     await caller.test();
 
-    expect(mockDb.insert).not.toHaveBeenCalled();
+    // Wait for any potential fire-and-forget insert to complete
+    await new Promise((r) => setTimeout(r, 100));
+
+    const rows = await testDb.db.select().from(userAgents);
+    expect(rows.length).toBe(0);
   });
 
   it("should handle null user agent", async () => {
-    enableUserAgentTelemetry();
-
     const router = createTestRouter();
-    const mockDb = {
-      user: {
-        findFirst: vi.fn().mockResolvedValue(null),
-        findMany: vi.fn().mockResolvedValue([]),
-      },
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([]),
-        })),
-      })),
-      $transaction: vi.fn((cb: (db: unknown) => Promise<unknown>) => cb(mockDb)),
-    };
-
-    const ctx: TRPCContext = {
-      db: mockDb as unknown as TRPCContext["db"],
-      supabase: {} as unknown as TRPCContext["supabase"],
-      headers: new Headers(),
-      accessToken: null,
-    };
+    const ctx = createTestContext(new Headers());
 
     const caller = createRouterClient(router, { context: ctx });
     await caller.test();
 
-    expect(mockDb.insert).not.toHaveBeenCalled();
+    // Wait for any potential fire-and-forget insert to complete
+    await new Promise((r) => setTimeout(r, 100));
+
+    const rows = await testDb.db.select().from(userAgents);
+    expect(rows.length).toBe(0);
   });
 });
 

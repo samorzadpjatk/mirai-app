@@ -1,4 +1,2 @@
-export * from "./user-sqlite-schema";
-export * from "./user-sqlite-db";
-export * from "./trip-sqlite-schema";
-export * from "./trip-sqlite-db";
+// Test helpers barrel file - no sqlite exports remaining
+// All router tests now use PGLite via @mirai-app/db/test-helper

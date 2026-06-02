@@ -35,7 +35,7 @@ describe("recurringChallenges", () => {
           }),
         })),
       })),
-    } as unknown as TransactionDB;
+    } as TransactionDB;
   });
 
   const createMockTemplate = (overrides: Partial<RecurringTemplate> = {}): RecurringTemplate => ({

@@ -14,6 +14,13 @@ import { notificationRouter } from "../../routers/notifications";
 import { createRouterClient } from "@orpc/server";
 import type { TRPCContext } from "../../trpc";
 import type { DB } from "@mirai-app/db";
+import {
+  createMockSupabase,
+  seedUser,
+  seedTrip,
+  seedGroup,
+  seedParticipant,
+} from "../../../test-helpers";
 
 // ── Mocks ──────────────────────────────────────────────────────────────
 
@@ -87,35 +94,6 @@ vi.mock("../../../services/notificationService", () => ({
   }),
 }));
 
-function createMockSupabase() {
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: { id: "auth-123" } }, error: null }),
-      getSession: vi.fn(),
-      admin: {
-        getUserById: vi
-          .fn()
-          .mockResolvedValue({ data: { user: { email: "test@example.com" } }, error: null }),
-      },
-    },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-    storage: {
-      from: vi.fn(() => ({
-        createSignedUrl: vi
-          .fn()
-          .mockResolvedValue({ data: { signedUrl: "https://example.com" }, error: null }),
-      })),
-    },
-  };
-}
-
 function createAuthContext(
   db: DB,
   overrides: { userId?: string; role?: string; firstName?: string; lastName?: string } = {},
@@ -160,32 +138,10 @@ afterAll(async () => {
 // ── PGLite transaction rollback ────────────────────────────────────────
 
 describe("notifications router — PGLite transaction rollback", () => {
-  async function seedUser(id: string) {
-    await testDb.db.insert(users).values({
-      id,
-      authUserId: `auth-${id}`,
-      firstName: "Test",
-      lastName: "User",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }
-
-  async function seedTrip(id: string) {
-    await testDb.db.insert(trips).values({
-      id,
-      name: "Test Trip",
-      startDate: new Date("2025-06-01"),
-      endDate: new Date("2025-06-07"),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }
-
   it("rolls back notification and pushes insert on failure", async () => {
-    await seedUser("user-1");
-    await seedUser("user-2");
-    await seedTrip("trip-1");
+    await seedUser(testDb.db, "user-1");
+    await seedUser(testDb.db, "user-2");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
 
     const notifCountBefore = await testDb.db.$count(notifications);
     expect(notifCountBefore).toBe(0);
@@ -227,8 +183,8 @@ describe("notifications router — PGLite transaction rollback", () => {
   });
 
   it("commits notification and pushes insert when no failure", async () => {
-    await seedUser("user-1");
-    await seedTrip("trip-1");
+    await seedUser(testDb.db, "user-1");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
 
     const notifId = "notif-tx-1";
     await testDb.db.transaction(async (tx) => {
@@ -257,7 +213,7 @@ describe("notifications router — PGLite transaction rollback", () => {
   });
 
   it("rolls back subscription insert on failure", async () => {
-    await seedUser("user-1");
+    await seedUser(testDb.db, "user-1");
 
     const subCountBefore = await testDb.db.$count(pushSubscriptions);
     expect(subCountBefore).toBe(0);
@@ -287,57 +243,6 @@ describe("notifications router — PGLite transaction rollback", () => {
 describe("notifications router — Drizzle ORM PGLite integration", () => {
   function createCaller(ctx: TRPCContext) {
     return createRouterClient(notificationRouter, { context: ctx });
-  }
-
-  async function seedUser(id: string, authUserId?: string, firstName?: string, lastName?: string) {
-    await testDb.db.insert(users).values({
-      id,
-      authUserId: authUserId ?? `auth-${id}`,
-      firstName: firstName ?? "Test",
-      lastName: lastName ?? "User",
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedTrip(id: string) {
-    await testDb.db.insert(trips).values({
-      id,
-      name: "Test Trip",
-      startDate: new Date("2025-06-01"),
-      endDate: new Date("2025-06-07"),
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedGroup(
-    id: string,
-    tripId: string,
-    name: string,
-    organizerId: string,
-    code: string,
-  ) {
-    await testDb.db.insert(groups).values({
-      id,
-      tripId,
-      name,
-      organizerId,
-      code,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedTripParticipant(id: string, userId: string, tripId: string, groupId?: string) {
-    await testDb.db.insert(tripParticipants).values({
-      id,
-      userId,
-      tripId,
-      groupId,
-      createdAt: now(),
-      updatedAt: now(),
-    });
   }
 
   async function seedNotification(id: string, createdById: string, tripId?: string) {
@@ -391,7 +296,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("subscribe", () => {
     it("inserts push subscription for authenticated user", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
 
       const ctx = createAuthContext(testDb.db);
       const caller = createCaller(ctx);
@@ -410,7 +315,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("updates existing subscription timestamp on conflict", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
       await seedPushSubscription("sub-1", "user-123", "expo-push-token-1");
 
       const ctx = createAuthContext(testDb.db);
@@ -431,7 +336,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("unsubscribe", () => {
     it("deletes subscription matching token and user", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
       await seedPushSubscription("sub-1", "user-123", "token-abc");
 
       const ctx = createAuthContext(testDb.db);
@@ -447,7 +352,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("throws NOT_FOUND when subscription does not exist", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
 
       const ctx = createAuthContext(testDb.db);
       const caller = createCaller(ctx);
@@ -460,8 +365,8 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("unsubscribeAll", () => {
     it("deletes all subscriptions for the authenticated user", async () => {
-      await seedUser("user-123");
-      await seedUser("user-456");
+      await seedUser(testDb.db, "user-123");
+      await seedUser(testDb.db, "user-456");
       await seedPushSubscription("sub-1", "user-123", "token-a");
       await seedPushSubscription("sub-2", "user-123", "token-b");
       await seedPushSubscription("sub-3", "user-456", "token-c");
@@ -482,7 +387,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("getSubscriptionStatus", () => {
     it("returns mapped status when user has subscriptions", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
       await seedPushSubscription("sub-1", "user-123", "token-a");
       await seedPushSubscription("sub-2", "user-123", "token-b");
 
@@ -498,7 +403,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("returns not subscribed when no subscriptions exist", async () => {
-      await seedUser("user-123");
+      await seedUser(testDb.db, "user-123");
 
       const ctx = createAuthContext(testDb.db);
       const caller = createCaller(ctx);
@@ -512,9 +417,9 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("getAllMy", () => {
     it("returns notifications with pagination for the user", async () => {
-      await seedUser("user-123");
-      await seedUser("creator-1");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "user-123");
+      await seedUser(testDb.db, "creator-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       const notif = await seedNotification("notif-1", "creator-1", "trip-1");
       await seedNotificationPush(notif.id, "user-123", "pending");
 
@@ -531,9 +436,9 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("throws BAD_REQUEST when page exceeds total pages", async () => {
-      await seedUser("user-123");
-      await seedUser("creator-1");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "user-123");
+      await seedUser(testDb.db, "creator-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       const notif = await seedNotification("notif-1", "creator-1", "trip-1");
       await seedNotificationPush(notif.id, "user-123", "pending");
 
@@ -548,9 +453,9 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("getAll", () => {
     it("returns all notifications with pagination for admin", async () => {
-      await seedUser("admin-123");
-      await seedUser("creator-1");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "admin-123");
+      await seedUser(testDb.db, "creator-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       await seedNotification("notif-1", "creator-1", "trip-1");
       await seedNotification("notif-2", "creator-1", "trip-1");
 
@@ -571,10 +476,10 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("filters notifications by tripId", async () => {
-      await seedUser("admin-123");
-      await seedUser("creator-1");
-      await seedTrip("trip-1");
-      await seedTrip("trip-2");
+      await seedUser(testDb.db, "admin-123");
+      await seedUser(testDb.db, "creator-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
+      await seedTrip(testDb.db, "trip-2", "Test Trip");
       await seedNotification("notif-1", "creator-1", "trip-1");
       await seedNotification("notif-2", "creator-1", "trip-2");
 
@@ -593,13 +498,13 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("sendToGroup", () => {
     it("inserts notification and pushes for group members", async () => {
-      await seedUser("moderator-123");
-      await seedUser("user-1");
-      await seedUser("user-2");
-      await seedTrip("trip-1");
-      await seedGroup("group-1", "trip-1", "Test Group", "moderator-123", "GRP01");
-      await seedTripParticipant("tp-1", "user-1", "trip-1", "group-1");
-      await seedTripParticipant("tp-2", "user-2", "trip-1", "group-1");
+      await seedUser(testDb.db, "moderator-123");
+      await seedUser(testDb.db, "user-1");
+      await seedUser(testDb.db, "user-2");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
+      await seedGroup(testDb.db, "group-1", "trip-1", "Test Group", "moderator-123", "GRP01");
+      await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+      await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1", "group-1");
 
       const ctx = createAuthContext(testDb.db, {
         userId: "moderator-123",
@@ -633,9 +538,9 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("throws NOT_FOUND when group belongs to different trip", async () => {
-      await seedUser("moderator-123");
-      await seedTrip("trip-2");
-      await seedGroup("group-1", "trip-2", "Test Group", "moderator-123", "GRP01");
+      await seedUser(testDb.db, "moderator-123");
+      await seedTrip(testDb.db, "trip-2", "Test Trip");
+      await seedGroup(testDb.db, "group-1", "trip-2", "Test Group", "moderator-123", "GRP01");
 
       const ctx = createAuthContext(testDb.db, {
         userId: "moderator-123",
@@ -657,11 +562,11 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("sendToGroup transaction rollback", () => {
     it("rolls back notification and pushes insert on failure via Drizzle transaction", async () => {
-      await seedUser("moderator-123");
-      await seedUser("user-1");
-      await seedTrip("trip-1");
-      await seedGroup("group-1", "trip-1", "Test Group", "moderator-123", "GRP01");
-      await seedTripParticipant("tp-1", "user-1", "trip-1", "group-1");
+      await seedUser(testDb.db, "moderator-123");
+      await seedUser(testDb.db, "user-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
+      await seedGroup(testDb.db, "group-1", "trip-1", "Test Group", "moderator-123", "GRP01");
+      await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
 
       const notifId = "notif-tx-1";
 
@@ -702,10 +607,10 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("retryNotification", () => {
     it("updates failed pushes to pending and returns retry result", async () => {
-      await seedUser("moderator-123");
-      await seedUser("user-1");
-      await seedUser("user-2");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "moderator-123");
+      await seedUser(testDb.db, "user-1");
+      await seedUser(testDb.db, "user-2");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       const notif = await seedNotification("notif-1", "moderator-123", "trip-1");
       await seedNotificationPush(notif.id, "user-1", "failed", "expo_error");
       await seedNotificationPush(notif.id, "user-2", "failed", "network_error");
@@ -732,7 +637,7 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("throws NOT_FOUND when notification does not exist", async () => {
-      await seedUser("moderator-123");
+      await seedUser(testDb.db, "moderator-123");
 
       const ctx = createAuthContext(testDb.db, {
         userId: "moderator-123",
@@ -746,9 +651,9 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
     });
 
     it("throws BAD_REQUEST when no failed pushes exist", async () => {
-      await seedUser("moderator-123");
-      await seedUser("user-1");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "moderator-123");
+      await seedUser(testDb.db, "user-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       const notif = await seedNotification("notif-1", "moderator-123", "trip-1");
       await seedNotificationPush(notif.id, "user-1", "sent");
 
@@ -766,8 +671,8 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("deleteNotification", () => {
     it("deletes notification by id", async () => {
-      await seedUser("admin-123");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "admin-123");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
       await seedNotification("notif-1", "admin-123", "trip-1");
 
       const ctx = createAuthContext(testDb.db, {
@@ -790,8 +695,8 @@ describe("notifications router — Drizzle ORM PGLite integration", () => {
 
   describe("Drizzle ORM transaction rollback", () => {
     it("rolls back Drizzle ORM transaction on failure for notification operations", async () => {
-      await seedUser("user-1");
-      await seedTrip("trip-1");
+      await seedUser(testDb.db, "user-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
 
       await expect(
         testDb.db.transaction(async (tx) => {

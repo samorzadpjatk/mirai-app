@@ -5,6 +5,14 @@ import { getById, getTripParticipant, getAll, searchWithPagination } from "../us
 import { createUser, deleteUser, updateWristNumber, banUserUntil } from "../user/mutations";
 import { users, tripParticipants, groups, trips } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import {
+  createMockSupabase,
+  createContext,
+  seedUser,
+  seedTrip,
+  seedGroup,
+  seedParticipant,
+} from "../../../test-helpers";
 
 vi.mock("@mirai-app/auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({
@@ -38,105 +46,6 @@ vi.mock("@mirai-app/auth", () => ({
   AuthorizationError: class AuthorizationError extends Error {},
 }));
 
-function createMockSupabase(emails: Record<string, string> = {}) {
-  const users: Record<
-    string,
-    {
-      id: string;
-      email: string;
-      banned_until?: string;
-      app_metadata?: Record<string, unknown>;
-    }
-  > = {};
-
-  for (const [authUserId, email] of Object.entries(emails)) {
-    users[authUserId] = { id: authUserId, email };
-  }
-
-  return {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      admin: {
-        getUserById: vi.fn().mockImplementation(async (id: string) => {
-          const user = users[id];
-          return {
-            data: {
-              user: user
-                ? {
-                    id: user.id,
-                    email: user.email,
-                    banned_until: user.banned_until,
-                    app_metadata: user.app_metadata ?? {},
-                  }
-                : null,
-            },
-            error: null,
-          };
-        }),
-        listUsers: vi.fn().mockResolvedValue({
-          data: { users: Object.values(users) },
-          error: null,
-        }),
-        createUser: vi.fn().mockImplementation(async ({ email }: { email: string }) => {
-          const id = crypto.randomUUID();
-          users[id] = { id, email };
-          return { data: { user: { id, email } }, error: null };
-        }),
-        updateUserById: vi.fn().mockImplementation(
-          async (
-            id: string,
-            updates: {
-              ban_duration?: string;
-              app_metadata?: Record<string, unknown>;
-            },
-          ) => {
-            if (users[id]) {
-              users[id] = {
-                ...users[id],
-                ...updates,
-                app_metadata: {
-                  ...(users[id].app_metadata ?? {}),
-                  ...(updates.app_metadata ?? {}),
-                },
-              };
-            }
-            return { data: { user: users[id] }, error: null };
-          },
-        ),
-        deleteUser: vi.fn().mockImplementation(async (id: string) => {
-          delete users[id];
-          return { data: null, error: null };
-        }),
-      },
-    },
-    storage: {
-      from: () => ({
-        createSignedUrl: async () => ({
-          data: { signedUrl: "https://signed-url.example.com/image.jpg" },
-          error: null,
-        }),
-      }),
-    },
-  };
-}
-
-function createContext(
-  testDb: Awaited<ReturnType<typeof createPgliteTestDb>>,
-  overrides: Partial<{
-    dbUser: { id: string; role: string };
-    emails: Record<string, string>;
-  }> = {},
-) {
-  const dbUser = overrides.dbUser ?? { id: "mod-1", role: "MODERATOR" };
-  const supabase = createMockSupabase(overrides.emails ?? {});
-  return {
-    db: testDb.db,
-    supabase,
-    dbUser,
-    accessToken: "test-token",
-  };
-}
-
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();
 
@@ -152,7 +61,7 @@ afterAll(async () => {
   await testDb.cleanup();
 });
 
-describe("raw SQLite transaction rollback", () => {
+describe("raw PGLite transaction rollback", () => {
   it("rolls back createUser transaction on failure", async () => {
     const now = new Date();
 
@@ -314,69 +223,9 @@ describe("raw SQLite transaction rollback", () => {
   });
 });
 
-describe("Drizzle ORM SQLite integration", () => {
-  async function seedUser(id: string, authUserId: string, firstName: string, lastName: string) {
-    await testDb.db.insert(users).values({
-      id,
-      authUserId,
-      firstName,
-      lastName,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedTrip(id: string, name: string) {
-    await testDb.db.insert(trips).values({
-      id,
-      name,
-      startDate: new Date("2025-06-01"),
-      endDate: new Date("2025-06-07"),
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedGroup(
-    id: string,
-    tripId: string,
-    name: string,
-    organizerId: string,
-    code: string,
-  ) {
-    await testDb.db.insert(groups).values({
-      id,
-      tripId,
-      name,
-      organizerId,
-      code,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
-  async function seedParticipant(
-    id: string,
-    userId: string,
-    tripId: string,
-    groupId?: string,
-    wristNumber?: string,
-    houseNumber?: string,
-  ) {
-    await testDb.db.insert(tripParticipants).values({
-      id,
-      userId,
-      tripId,
-      groupId,
-      wristNumber,
-      houseNumber,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  }
-
+describe("Drizzle ORM PGLite integration", () => {
   it("getById returns user with correct fields", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "mod-1", role: "MODERATOR" },
@@ -393,9 +242,9 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("getTripParticipant returns participant details", async () => {
-    await seedUser("user-1", "auth-1", "Test", "User");
-    await seedTrip("trip-1", "Test Trip");
-    await seedParticipant("tp-1", "user-1", "trip-1", undefined, "W001", "H101");
+    await seedUser(testDb.db, "user-1", "auth-1", "Test", "User");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", undefined, "W001", "H101");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "mod-1", role: "MODERATOR" },
@@ -413,12 +262,12 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("getAll returns all participants with groups", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedUser("user-2", "auth-2", "Bob", "Jones");
-    await seedTrip("trip-1", "Test Trip");
-    await seedGroup("group-1", "trip-1", "Team A", "user-1", "TEAMA");
-    await seedParticipant("tp-1", "user-1", "trip-1", "group-1");
-    await seedParticipant("tp-2", "user-2", "trip-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedUser(testDb.db, "user-2", "auth-2", "Bob", "Jones");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Team A", "user-1", "TEAMA");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "mod-1", role: "MODERATOR" },
@@ -434,11 +283,11 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("searchWithPagination paginated search with filtering", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedUser("user-2", "auth-2", "Bob", "Jones");
-    await seedTrip("trip-1", "Test Trip");
-    await seedParticipant("tp-1", "user-1", "trip-1");
-    await seedParticipant("tp-2", "user-2", "trip-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedUser(testDb.db, "user-2", "auth-2", "Bob", "Jones");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
+    await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "mod-1", role: "MODERATOR" },
@@ -458,7 +307,7 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("createUser inserts user and participant", async () => {
-    await seedTrip("trip-1", "Test Trip");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "admin-1", role: "ADMIN" },
@@ -526,9 +375,9 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("deleteUser removes participant and user when no remaining trips", async () => {
-    await seedUser("user-1", "auth-1", "Test", "User");
-    await seedTrip("trip-1", "Test Trip");
-    await seedParticipant("tp-1", "user-1", "trip-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Test", "User");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "admin-1", role: "ADMIN" },
@@ -553,11 +402,11 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("rolls back deleteUser-like Drizzle transaction on failure", async () => {
-    await seedUser("user-1", "auth-1", "Test", "User");
-    await seedTrip("trip-1", "Test Trip");
-    await seedTrip("trip-2", "Test Trip 2");
-    await seedParticipant("tp-1", "user-1", "trip-1");
-    await seedParticipant("tp-2", "user-1", "trip-2");
+    await seedUser(testDb.db, "user-1", "auth-1", "Test", "User");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedTrip(testDb.db, "trip-2", "Test Trip 2");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
+    await seedParticipant(testDb.db, "tp-2", "user-1", "trip-2");
 
     try {
       await testDb.db.transaction(async (tx) => {
@@ -588,11 +437,11 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("updateWristNumber detects conflict when wrist number already assigned", async () => {
-    await seedUser("user-1", "auth-1", "Alice", "Smith");
-    await seedUser("user-2", "auth-2", "Bob", "Jones");
-    await seedTrip("trip-1", "Test Trip");
-    await seedParticipant("tp-1", "user-1", "trip-1", undefined, "W001");
-    await seedParticipant("tp-2", "user-2", "trip-1");
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedUser(testDb.db, "user-2", "auth-2", "Bob", "Jones");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", undefined, "W001");
+    await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "admin-1", role: "ADMIN" },
@@ -609,7 +458,7 @@ describe("Drizzle ORM SQLite integration", () => {
   });
 
   it("banUserUntil calculates ban duration correctly", async () => {
-    await seedUser("user-1", "auth-1", "Test", "User");
+    await seedUser(testDb.db, "user-1", "auth-1", "Test", "User");
 
     const ctx = createContext(testDb, {
       dbUser: { id: "admin-1", role: "ADMIN" },
