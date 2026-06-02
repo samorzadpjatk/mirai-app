@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardDetailsModal from "../../rewards/RewardDetailsModal";
@@ -22,7 +21,6 @@ const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => 
   isEligibleToBuy: true,
   isOutOfStock: false,
   purchasedCount: 0,
-  originalCoinCost: null,
   ...overrides,
 });
 

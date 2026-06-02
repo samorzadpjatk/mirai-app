@@ -20,13 +20,13 @@ interface CommunityFeedActivity {
   createdAt: Date | string;
   reactionsSummary?: {
     total: number;
-    counts?: {
+    counts: {
       heart: number;
       fire: number;
       clap: number;
       star: number;
     };
-    myReactions?: string[];
+    myReactions: string[];
   };
   admin?: {
     id: string;

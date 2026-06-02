@@ -12,35 +12,6 @@ const mockDefineTask =
       }) => Promise<void>,
     ) => void
   >();
-const mockGetItem = jest.fn<(key: string) => Promise<string | null>>();
-const mockGetSession =
-  jest.fn<
-    () => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>
-  >();
-const mockMutate =
-  jest.fn<
-    (input: {
-      tripId: string;
-      latitude: number;
-      longitude: number;
-    }) => Promise<{ success: boolean }>
-  >();
-const mockCleanup = jest.fn<() => Promise<void>>();
-const mockGetTRPCClient = jest.fn<
-  (
-    url: string,
-    key: string,
-    wsUrl: string,
-  ) => {
-    client: { location: { updateLocation: { mutate: typeof mockMutate } } };
-    cleanup: typeof mockCleanup;
-  }
->();
-
-// Require helper for the module under test (using require for Jest compatibility)
-function loadBackgroundLocationTask(): unknown {
-  return require("~/services/background/backgroundLocationTask");
-}
 
 jest.mock("expo-task-manager", () => ({
   defineTask: (
@@ -52,59 +23,30 @@ jest.mock("expo-task-manager", () => ({
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
-  getItem: (...args: [string]) => mockGetItem(...args),
+  getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
 }));
 
-jest.mock("@mirai-app/supabase", () => ({
-  createSupabaseClient: jest.fn(() => ({
-    auth: {
-      getSession: (...args: []) => mockGetSession(...args),
-    },
-  })),
-}));
-
 jest.mock("@mirai-app/orpc/client", () => ({
-  getTRPCClient: (...args: [string, string, string]) => mockGetTRPCClient(...args),
+  getORPCClient: jest.fn(),
   orpc: {
     location: {
       updateLocation: {
-        mutate: mockMutate,
+        mutate: jest.fn(),
       },
     },
   },
 }));
 
-jest.mock("~/services/storage/storage", () => ({
-  authStorage: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-  },
-}));
-
-jest.mock("~/config/runtimeEnv", () => ({
-  SUPABASE_URL: "https://test.supabase.co",
-  SUPABASE_ANON_KEY: "test-key",
-  TRPC_HTTP_URL: "http://localhost:2022",
-  TRPC_WS_URL: "ws://localhost:2022",
-}));
+import {
+  initBackgroundLocationTask,
+  type BackgroundTaskDeps,
+} from "~/services/background/backgroundLocationTask";
 
 describe("Background Location Task", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockCleanup.mockResolvedValue(undefined);
-    mockGetTRPCClient.mockReturnValue({
-      client: {
-        location: {
-          updateLocation: {
-            mutate: mockMutate,
-          },
-        },
-      },
-      cleanup: mockCleanup,
-    });
   });
 
   describe("Task Definition", () => {
@@ -112,10 +54,12 @@ describe("Background Location Task", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      const { initBackgroundLocationTask } = require("~/services/background/backgroundLocationTask") as {
-        initBackgroundLocationTask: () => void;
+      const mockDeps: BackgroundTaskDeps = {
+        shouldSend: jest.fn(() => Promise.resolve(true)),
+        sendUpdate: jest.fn(() => Promise.resolve()),
       };
-      initBackgroundLocationTask();
+
+      initBackgroundLocationTask(mockDeps);
 
       expect(mockDefineTask).toHaveBeenCalledWith(
         "integral.background-location-updates",
@@ -134,10 +78,12 @@ describe("Background Location Task", () => {
       jest.resetModules();
       mockDefineTask.mockClear();
 
-      const { initBackgroundLocationTask } = require("~/services/background/backgroundLocationTask") as {
-        initBackgroundLocationTask: () => void;
+      const mockDeps: BackgroundTaskDeps = {
+        shouldSend: jest.fn(() => Promise.resolve(true)),
+        sendUpdate: jest.fn(() => Promise.resolve()),
       };
-      initBackgroundLocationTask();
+
+      initBackgroundLocationTask(mockDeps);
 
       const calls = mockDefineTask.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
@@ -152,20 +98,28 @@ describe("Background Location Task", () => {
     });
 
     it("should skip when location sharing is disabled", async () => {
-      mockGetItem.mockImplementation((key: string) => {
-        if (key === "location_sharing_enabled") return Promise.resolve("false");
-        if (key === "selected_trip_id") return Promise.resolve("trip-123");
-        return Promise.resolve(null);
-      });
+      jest.resetModules();
+      mockDefineTask.mockClear();
 
-      await taskHandler({
+      const mockDeps: BackgroundTaskDeps = {
+        shouldSend: jest.fn(() => Promise.resolve(false)),
+        sendUpdate: jest.fn(() => Promise.resolve()),
+      };
+
+      initBackgroundLocationTask(mockDeps);
+
+      const calls = mockDefineTask.mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      const handler = calls[0]![1]!;
+
+      await handler({
         data: {
           locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[],
         },
         error: null,
       });
 
-      expect(mockGetSession).not.toHaveBeenCalled();
+      expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
     });
   });
 });

@@ -47,7 +47,7 @@ export function buildUploadConfig(
   asset: ChallengeUploadAsset,
   storagePath: string,
   extension: string,
-  type: "image" | "video" = "image",
+  _type: "image" | "video" = "image",
 ) {
   const fileName = getUploadFileName(asset, extension, "challenge");
   const contentType = asset.mimeType ?? getFileContentType(extension);
@@ -92,7 +92,7 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   const showSuccessAlert = useCallback(
-    (challengeName?: string, points?: number, destinationTripId?: string | null) => {
+    (_challengeName?: string, _points?: number, destinationTripId?: string | null) => {
       const resolvedTripId = destinationTripId ?? tripId;
       Alert.alert(
         "Submission sent",

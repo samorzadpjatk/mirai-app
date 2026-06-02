@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -31,7 +31,14 @@ export function extractSafeRewards(rewards: unknown): RewardListItem[] {
   return [];
 }
 
-export function getRewardImages(reward: RewardListItem): string[] {
+export interface RewardImageSource {
+  signedImageUrls?: string[] | null;
+  images?: string[] | null;
+  signedImageUrl?: string | null;
+  image?: string | null;
+}
+
+export function getRewardImages(reward: RewardImageSource): string[] {
   if (reward.signedImageUrls && reward.signedImageUrls.length > 0) {
     return reward.signedImageUrls;
   }

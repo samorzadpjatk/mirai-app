@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeActionButton } from "../../../trips/challenges/ChallengeActionButton";

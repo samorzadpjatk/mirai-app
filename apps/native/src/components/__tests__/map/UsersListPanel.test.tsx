@@ -7,7 +7,7 @@ import { UsersListPanel } from "../../map/panels/UsersListPanel";
 const mockOnToggleExpand = jest.fn();
 const mockOnAddPress = jest.fn();
 const mockOnManagePress = jest.fn();
-const mockOnSelectUser = jest.fn();
+const mockHandleSelectUser = jest.fn();
 
 const mockGetMapOverlayStore = jest.fn(() => ({
   users: [
@@ -31,7 +31,7 @@ const mockGetMapOverlayStore = jest.fn(() => ({
   onToggleExpand: mockOnToggleExpand,
   onAddPress: mockOnAddPress,
   onManagePress: mockOnManagePress,
-  onSelectUser: mockOnSelectUser,
+  handleSelectUser: mockHandleSelectUser,
 }));
 
 jest.mock("~/stores/map", () => ({
@@ -109,7 +109,7 @@ describe("UsersListPanel", () => {
       onToggleExpand: mockOnToggleExpand,
       onAddPress: mockOnAddPress,
       onManagePress: mockOnManagePress,
-      onSelectUser: mockOnSelectUser,
+      handleSelectUser: mockHandleSelectUser,
     });
   });
 
@@ -188,7 +188,7 @@ describe("UsersListPanel", () => {
     }
 
     fireEvent.press(otherUserRow);
-    expect(mockOnSelectUser).toHaveBeenCalledWith(
+    expect(mockHandleSelectUser).toHaveBeenCalledWith(
       expect.objectContaining({ id: "user-2", name: "Jane Smith" }),
     );
 
@@ -199,7 +199,7 @@ describe("UsersListPanel", () => {
     }
 
     fireEvent.press(currentUserRow);
-    expect(mockOnSelectUser).toHaveBeenCalledTimes(1);
+    expect(mockHandleSelectUser).toHaveBeenCalledTimes(1);
   });
 
   it("applies the animated style override", () => {
@@ -210,7 +210,7 @@ describe("UsersListPanel", () => {
       onToggleExpand: mockOnToggleExpand,
       onAddPress: mockOnAddPress,
       onManagePress: mockOnManagePress,
-      onSelectUser: mockOnSelectUser,
+      handleSelectUser: mockHandleSelectUser,
     });
 
     const { getByTestId } = renderWithProviders(<UsersListPanel />);

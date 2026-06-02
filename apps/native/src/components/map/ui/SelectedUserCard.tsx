@@ -4,7 +4,7 @@ import { useMapOverlayStore } from "~/stores/map";
 import { formatRelativeTime } from "~/utils/format";
 
 export function SelectedUserCard() {
-  const { selectedUser, sharingUserIds, canStopSharing, onBackToList, onStopSharing } =
+  const { selectedUser, sharingUserIds, canStopSharing, handleBackToList, handleStopSharing } =
     useMapOverlayStore();
 
   if (!selectedUser) return null;
@@ -18,7 +18,7 @@ export function SelectedUserCard() {
   return (
     <>
       <View style={styles.cardHeader}>
-        <Pressable onPress={onBackToList} style={styles.backToListButton}>
+        <Pressable onPress={handleBackToList} style={styles.backToListButton}>
           <Text style={styles.backToListText}>←</Text>
         </Pressable>
         <View style={styles.userHeader}>
@@ -54,7 +54,7 @@ export function SelectedUserCard() {
       </View>
 
       {canStopSharing && (
-        <Pressable style={styles.removeButton} onPress={onStopSharing}>
+        <Pressable style={styles.removeButton} onPress={handleStopSharing}>
           <Text style={styles.removeButtonText}>Stop Sharing My Location</Text>
         </Pressable>
       )}

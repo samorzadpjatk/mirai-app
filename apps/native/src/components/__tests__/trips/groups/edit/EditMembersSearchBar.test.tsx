@@ -1,4 +1,3 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditMembersSearchBar } from "../../../../trips/groups/edit/EditMembersSearchBar";

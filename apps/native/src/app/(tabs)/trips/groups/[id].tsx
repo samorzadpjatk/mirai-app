@@ -1,4 +1,3 @@
-import React from "react";
 import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

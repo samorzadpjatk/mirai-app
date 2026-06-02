@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,

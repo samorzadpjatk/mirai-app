@@ -4,7 +4,6 @@ import { Alert, Linking } from "react-native";
 import {
   shouldRequestNotificationPermission,
   buildNotificationPermissionResult,
-  buildPermissionAlertButtons,
 } from "./useNotifications";
 
 export interface UseNotificationPermissionReturn {
@@ -20,11 +19,11 @@ export function useNotificationPermission(): UseNotificationPermissionReturn {
 
   const requestPermission = useCallback(async () => {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    let finalStatus: Notifications.PermissionStatus = existingStatus;
 
     if (shouldRequestNotificationPermission(existingStatus)) {
       const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = buildNotificationPermissionResult(existingStatus, status);
+      finalStatus = buildNotificationPermissionResult(existingStatus, status) as Notifications.PermissionStatus;
     }
 
     setPermission(finalStatus);

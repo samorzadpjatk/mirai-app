@@ -1,4 +1,3 @@
-import React from "react";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { JudgementContent } from "../../judgement/JudgementContent";
 

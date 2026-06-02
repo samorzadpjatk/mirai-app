@@ -20,7 +20,7 @@ interface AdminNewsItem {
   createdAt: Date | string;
   admin?: {
     firstName: string;
-    lastName: string;
+    lastName?: string;
   } | null;
 }
 
@@ -71,7 +71,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
       createdAt: Date | string;
       admin?: {
         firstName: string;
-        lastName: string;
+        lastName?: string;
       } | null;
     }[];
 

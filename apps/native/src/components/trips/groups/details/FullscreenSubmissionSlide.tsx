@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, View, Text } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, View, Text, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
@@ -68,7 +68,7 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   fullscreenSlide: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
@@ -105,4 +105,4 @@ const styles = {
     color: colors.textMuted,
     fontSize: typography.xs,
   },
-};
+});

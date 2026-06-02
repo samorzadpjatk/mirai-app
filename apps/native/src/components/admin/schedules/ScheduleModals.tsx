@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { colors, spacing, typography } from "~/styles";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { isNameValid, isNonEmptyString } from "~/utils/validation";

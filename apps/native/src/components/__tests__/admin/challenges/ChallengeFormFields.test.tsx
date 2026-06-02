@@ -1,54 +1,97 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeFormFields } from "../../../admin/challenges/ChallengeFormFields";
+import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import type { VotingDurationUnit } from "~/components/admin/challenges/challengeFormConstants";
 
-const baseFormState = (overrides = {}) => ({
-  form: {
-    title: "Test Challenge",
-    description: "Test description",
-    image: "",
-    submissionType: "IMAGE",
-    scoringCategory: "SPEED",
-    isRecurring: false,
-    dailyStartTime: null,
-    dailyEndTime: null,
-    recurringDays: "",
-    basePoints: "10",
-    firstPlacePoints: "",
-    secondPlacePoints: "",
-    thirdPlacePoints: "",
-    status: "HIDDEN",
-    startTime: null,
-    endTime: null,
-    votingDurationValue: "",
-    votingDurationUnit: "HOURS",
-    targetLocation: null,
-    qrCodeValue: "",
-    textExpectedPhrase: "",
-    autoApprove: false,
-  },
-  imagePreviewUri: null,
-  isPeerVoting: false,
-  showPodiumPoints: true,
-  isAutoApproveForced: false,
-  isAutoApproveDisabled: true,
-  needsLocation: false,
-  isUploadingImage: false,
-  imageUploadPercent: null,
-  submissionTypeLabel: "Image",
-  scoringCategoryLabel: "Speed",
-  statusLabel: "Hidden",
-  updateForm: jest.fn(),
-  handlePickImage: jest.fn(),
-  openDatePicker: jest.fn(),
-  setActiveSelect: jest.fn(),
-  setShowLocationPicker: jest.fn(),
-  formatTime: (time: string | null) => time ?? "--:--",
-  setImagePreviewUri: jest.fn(),
-  openQrScanner: jest.fn(),
-  ...overrides,
-});
+type FormState = ReturnType<typeof useChallengeForm>;
+
+const baseFormState = (overrides: Partial<FormState> = {}): FormState => {
+  const mockUpdateForm = jest.fn();
+  const mockHandlePickImage = jest.fn();
+  const mockOpenDatePicker = jest.fn();
+  const mockSetActiveSelect = jest.fn();
+  const mockSetShowLocationPicker = jest.fn();
+  const mockSetActivePicker = jest.fn();
+  const mockSetIsQrScannerOpen = jest.fn();
+  const mockSetInitializedChallengeId = jest.fn();
+  const mockSetImagePreviewUri = jest.fn();
+  const mockOpenQrScanner = jest.fn();
+  const mockHandleScoringChange = jest.fn();
+  const mockHandleSubmissionTypeChange = jest.fn();
+  const mockValidateForm = jest.fn(() => true);
+  const mockInitializeFormFromChallenge = jest.fn();
+
+  const state: FormState = {
+    form: {
+      title: "Test Challenge",
+      description: "Test description",
+      image: "",
+      submissionType: "IMAGE",
+      scoringCategory: "SPEED",
+      isRecurring: false,
+      dailyStartTime: null,
+      dailyEndTime: null,
+      recurringDays: "",
+      basePoints: "10",
+      firstPlacePoints: "",
+      secondPlacePoints: "",
+      thirdPlacePoints: "",
+      status: "HIDDEN",
+      startTime: null,
+      endTime: null,
+      votingDurationValue: "",
+      votingDurationUnit: "HOURS",
+      targetLocation: null,
+      qrCodeValue: "",
+      textExpectedPhrase: "",
+      autoApprove: false,
+    },
+    imagePreviewUri: null,
+    isPeerVoting: false,
+    showPodiumPoints: true,
+    isAutoApproveForced: false,
+    isAutoApproveDisabled: true,
+    needsLocation: false,
+    isUploadingImage: false,
+    imageUploadPercent: null,
+    submissionTypeLabel: "Image",
+    scoringCategoryLabel: "Speed",
+    statusLabel: "Hidden",
+    activePicker: null,
+    activeSelect: null,
+    showLocationPicker: false,
+    isQrScannerOpen: false,
+    initialImage: null,
+    initializedChallengeId: null,
+    uploadStatus: "idle",
+    uploadProgress: { percent: null, bytesTotal: null, bytesUploaded: 0 },
+    uploadError: null,
+    canUsePeerVoting: true,
+    activeSelectOptions: [],
+    updateForm: (field, value) => mockUpdateForm(field, value),
+    handlePickImage: () => mockHandlePickImage(),
+    openDatePicker: (field) => mockOpenDatePicker(field),
+    setActiveSelect: (value) => mockSetActiveSelect(value),
+    setShowLocationPicker: (value) => mockSetShowLocationPicker(value),
+    setActivePicker: (value) => mockSetActivePicker(value),
+    setIsQrScannerOpen: (value) => mockSetIsQrScannerOpen(value),
+    setInitializedChallengeId: (value) => mockSetInitializedChallengeId(value),
+    formatTime: (time: Date | null) => (time ? time.toISOString() : "--:--"),
+    formatIso: (date) => (date ? date.toISOString() : ""),
+    setImagePreviewUri: (value) => mockSetImagePreviewUri(value),
+    openQrScanner: () => mockOpenQrScanner(),
+    handleScoringChange: (value) => mockHandleScoringChange(value),
+    handleSubmissionTypeChange: (value) => mockHandleSubmissionTypeChange(value),
+    validateForm: () => mockValidateForm(),
+    initializeFormFromChallenge: (challenge) => mockInitializeFormFromChallenge(challenge),
+    toOptionalInt: (value) => (value ? parseInt(value, 10) : undefined),
+    toVotingDurationHours: (value, unit) => 1,
+    ...overrides,
+  };
+
+  return state;
+};
 
 describe("ChallengeFormFields", () => {
   it("renders form fields", () => {
@@ -410,8 +453,10 @@ describe("ChallengeFormFields", () => {
       />,
     );
 
-    const switches = getAllByRole("switch");
-    fireEvent(switches[0], "valueChange", true);
+    const switchEls = getAllByRole("switch");
+    const firstSwitch = switchEls[0];
+    if (!firstSwitch) throw new Error("Switch not found");
+    fireEvent(firstSwitch, "valueChange", true);
     expect(updateForm).toHaveBeenCalledWith("isRecurring", true);
   });
 
@@ -430,8 +475,10 @@ describe("ChallengeFormFields", () => {
       />,
     );
 
-    const switches = getAllByRole("switch");
-    fireEvent(switches[1], "valueChange", true);
+    const switchEls = getAllByRole("switch");
+    const secondSwitch = switchEls[1];
+    if (!secondSwitch) throw new Error("Switch not found");
+    fireEvent(secondSwitch, "valueChange", true);
     expect(updateForm).toHaveBeenCalledWith("autoApprove", true);
   });
 });

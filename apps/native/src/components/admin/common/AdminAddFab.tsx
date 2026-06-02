@@ -1,4 +1,3 @@
-import React from "react";
 import { type StyleProp, type ViewStyle } from "react-native";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 

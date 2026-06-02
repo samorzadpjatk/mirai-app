@@ -27,14 +27,14 @@ function MapScreenContent({
   currentUserName?: string;
   currentUserAvatarUrl?: string | null;
 }) {
-  const { users, onMapUserPress, onMapPress, mapTheme, focusedCoordinate } = useMapOverlayStore();
+  const { users, handleMapUserPress, onMapPress, mapTheme, focusedCoordinate } = useMapOverlayStore();
 
   return (
     <View style={{ flex: 1 }}>
       <UserMap
         users={users}
         initialZoomLevel={14}
-        onUserPress={onMapUserPress}
+        onUserPress={handleMapUserPress}
         onLocationUpdate={onLocationUpdate}
         onMapPress={onMapPress}
         focusedCoordinate={focusedCoordinate}

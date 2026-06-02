@@ -1,4 +1,3 @@
-import React from "react";
 import { useTripStore } from "~/stores/tripStore";
 import { TripEndedBanner } from "./TripEndedBanner";
 

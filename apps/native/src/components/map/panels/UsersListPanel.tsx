@@ -13,7 +13,7 @@ export function UsersListPanel() {
     onToggleExpand,
     onAddPress,
     onManagePress,
-    onSelectUser,
+    handleSelectUser,
   } = useMapOverlayStore();
 
   return (
@@ -52,7 +52,7 @@ export function UsersListPanel() {
                 style={styles.userListItem}
                 onPress={() => {
                   if (isMe) return;
-                  onSelectUser(user);
+                  handleSelectUser(user);
                 }}
               >
                 <View style={[styles.avatarWrapperSmall, isMe && styles.avatarWrapperMe]}>

@@ -1,4 +1,3 @@
-import React from "react";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { QueuedSubmissionCard } from "../../judgement/QueuedSubmissionCard";
 import { type Submission } from "~/stores/judgement";

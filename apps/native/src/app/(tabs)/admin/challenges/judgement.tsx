@@ -1,4 +1,3 @@
-import React from "react";
 import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";

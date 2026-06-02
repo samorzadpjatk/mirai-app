@@ -1,6 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
+import { waitFor, act } from "@testing-library/react-native";
 import { useFileDownload, deleteCachedDownload } from "../../files/useFileDownload";
+import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
+import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
 interface DownloadResult {
   uri: string;
@@ -60,41 +62,21 @@ jest.mock("expo-crypto", () => {
   };
 });
 
-interface DownloadUrlResult {
-  signedUrl: string;
-}
-
-const mockCreateDownloadUrl = jest.fn<(...args: unknown[]) => Promise<DownloadUrlResult>>();
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  orpc: {
-    storage: {
-      createDownloadUrl: {
-        call: (...args: unknown[]) => mockCreateDownloadUrl(...args),
-      },
-    },
-  },
-}));
-
-describe("useFileDownload", () => {
+describe("useFileDownload (MSW)", () => {
   beforeEach(() => {
-    mockDownloadFileAsync.mockClear();
+    resetHandlers();
+    jest.clearAllMocks();
     mockDownloadFileAsync.mockResolvedValue({
       uri: "file:///cache/downloads/test-file.jpg",
       type: "image/jpeg",
       size: 1024,
     });
-    mockDirectoryExists.mockClear();
     mockDirectoryExists.mockReturnValue(true);
-    mockFileExists.mockClear();
     mockFileExists.mockReturnValue(false);
-    mockFileDelete.mockClear();
-    mockDirectoryCreate.mockClear();
-    mockCreateDownloadUrl.mockClear();
   });
 
   it("should initialize with idle status", () => {
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     expect(result.current.status).toBe("idle");
     expect(result.current.error).toBeNull();
@@ -102,7 +84,7 @@ describe("useFileDownload", () => {
   });
 
   it("should reset state when reset is called", () => {
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     act(() => {
       result.current.reset();
@@ -114,7 +96,7 @@ describe("useFileDownload", () => {
   });
 
   it("should abort download when abort is called", () => {
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     act(() => {
       result.current.abort();
@@ -124,13 +106,12 @@ describe("useFileDownload", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("should set loading status when download starts", () => {
-    mockFileExists.mockReturnValue(false);
-    mockCreateDownloadUrl.mockResolvedValue({
-      signedUrl: "https://example.com/signed-file.jpg",
-    });
+  it("should set loading status when download starts", async () => {
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => new Promise(() => {})),
+    );
 
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     act(() => {
       result.current
@@ -143,13 +124,15 @@ describe("useFileDownload", () => {
         });
     });
 
-    expect(result.current.status).toBe("loading");
+    await waitFor(() => {
+      expect(result.current.status).toBe("loading");
+    });
   });
 
   it("should return cached file when available", async () => {
     mockFileExists.mockReturnValue(true);
 
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     await act(async () => {
       await result.current.download({
@@ -163,9 +146,14 @@ describe("useFileDownload", () => {
 
   it("should handle download errors", async () => {
     mockFileExists.mockReturnValue(false);
-    mockCreateDownloadUrl.mockRejectedValue(new Error("Download failed"));
 
-    const { result } = renderHook(() => useFileDownload());
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => {
+        throw new Error("Download failed");
+      }),
+    );
+
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     await expect(
       result.current.download({
@@ -176,16 +164,13 @@ describe("useFileDownload", () => {
 
   it("should use publicUrl when provided", async () => {
     mockFileExists.mockReturnValue(false);
-    mockCreateDownloadUrl.mockResolvedValue({
-      signedUrl: "https://example.com/signed-file.jpg",
-    });
     mockDownloadFileAsync.mockResolvedValue({
       uri: "file:///cache/downloads/test-file.jpg",
       type: "image/jpeg",
       size: 1024,
     });
 
-    const { result } = renderHook(() => useFileDownload());
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     await act(async () => {
       await result.current.download({
@@ -195,21 +180,23 @@ describe("useFileDownload", () => {
     });
 
     expect(result.current.status).toBe("success");
-    expect(mockCreateDownloadUrl).not.toHaveBeenCalled();
   });
 
   it("should skip cache when skipCache is true", async () => {
     mockFileExists.mockReturnValue(true);
-    mockCreateDownloadUrl.mockResolvedValue({
-      signedUrl: "https://example.com/signed-file.jpg",
-    });
     mockDownloadFileAsync.mockResolvedValue({
       uri: "file:///cache/downloads/test-file.jpg",
       type: "image/jpeg",
       size: 1024,
     });
 
-    const { result } = renderHook(() => useFileDownload());
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: "https://example.com/signed-file.jpg",
+      })),
+    );
+
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     await act(async () => {
       await result.current.download({
@@ -224,9 +211,6 @@ describe("useFileDownload", () => {
 
   it("should retry when destination already exists", async () => {
     mockFileExists.mockReturnValue(false);
-    mockCreateDownloadUrl.mockResolvedValue({
-      signedUrl: "https://example.com/signed-file.jpg",
-    });
     mockDownloadFileAsync
       .mockRejectedValueOnce(new Error("destination already exists"))
       .mockResolvedValueOnce({
@@ -235,7 +219,13 @@ describe("useFileDownload", () => {
         size: 1024,
       });
 
-    const { result } = renderHook(() => useFileDownload());
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: "https://example.com/signed-file.jpg",
+      })),
+    );
+
+    const { result } = renderHookWithMSW(() => useFileDownload());
 
     await act(async () => {
       await result.current.download({
@@ -283,7 +273,22 @@ describe("toDownloadResult", () => {
       uri: "file:///test/image.jpg",
       type: "image/jpeg",
       size: 2048,
-    } as unknown as File;
+      parentDirectory: null,
+      extension: "jpg",
+      readableStream: null,
+      writableStream: null,
+      delete: jest.fn(),
+      exists: true,
+      md5: null,
+      copy: jest.fn(),
+      move: jest.fn(),
+      rename: jest.fn(),
+      create: jest.fn(),
+      write: jest.fn(),
+      read: jest.fn(),
+      readInfoAsync: jest.fn(),
+      downloadFileAsync: jest.fn(),
+    } as unknown as Parameters<typeof toDownloadResult>[0];
 
     const result = toDownloadResult(mockFile, "image.jpg");
 

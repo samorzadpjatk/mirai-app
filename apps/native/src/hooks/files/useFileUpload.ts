@@ -66,7 +66,7 @@ export function shouldRetryUpload(
 
 export function buildTusUploadOptions(
   ticket: { resumableUrl: string; token: string; bucket: string; objectPath: string },
-  fileBlob: Blob,
+  _fileBlob: Blob,
   bytesTotal: number | null,
   accessToken: string,
   contentType: string,
@@ -286,4 +286,4 @@ export const useFileUpload = () => {
     result,
   } as const;
 };
-export type { UploadInput, UploadResult, UploadProgress, UploadStatus };
+

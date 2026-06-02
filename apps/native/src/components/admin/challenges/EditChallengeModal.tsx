@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useTrips } from "~/hooks/trips";
 import { useAdminChallenges } from "~/hooks/admin";

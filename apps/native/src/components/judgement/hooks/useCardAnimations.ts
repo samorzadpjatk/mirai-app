@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { runOnJS, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import type { ReviewStatus } from "~/stores/judgement";
 import { calculateSwipeToValue } from "../cardStackUtils";

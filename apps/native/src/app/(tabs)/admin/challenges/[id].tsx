@@ -1,4 +1,3 @@
-import React from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";

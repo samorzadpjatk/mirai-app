@@ -45,7 +45,6 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const {
     translateX,
     translateY,
-    resetCardPosition,
     springBack,
     animateDecision,
     animateApproveSwipe,

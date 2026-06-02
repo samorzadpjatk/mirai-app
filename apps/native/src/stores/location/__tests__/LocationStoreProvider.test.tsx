@@ -1,5 +1,4 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import React from "react";
 import { Alert, Text } from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 import { LocationStoreProvider } from "../LocationStoreProvider";

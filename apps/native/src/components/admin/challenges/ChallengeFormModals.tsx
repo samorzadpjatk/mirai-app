@@ -1,4 +1,3 @@
-import React from "react";
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { DateTimePickerModal } from "~/components/common/ui/DateTimePickerModal";

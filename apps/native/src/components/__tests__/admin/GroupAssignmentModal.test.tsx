@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { Text, TouchableOpacity, View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";

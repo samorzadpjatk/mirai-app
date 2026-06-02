@@ -1,4 +1,3 @@
-import React from "react";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";

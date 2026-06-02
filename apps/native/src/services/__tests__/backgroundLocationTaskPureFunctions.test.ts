@@ -121,8 +121,21 @@ import {
   type BackgroundTaskDeps,
 } from "~/services/background/backgroundLocationTask";
 
+const makeLocation = (latitude: number, longitude: number): LocationObject => ({
+  coords: {
+    latitude,
+    longitude,
+    altitude: null,
+    accuracy: null,
+    altitudeAccuracy: null,
+    heading: null,
+    speed: null,
+  },
+  timestamp: Date.now(),
+});
+
 describe("handleBackgroundLocationTask", () => {
-  const createMockDeps = (): BackgroundTaskDeps => ({
+  const createMockDeps = () => ({
     shouldSend: jest.fn<() => Promise<boolean>>(),
     sendUpdate: jest.fn<(location: LocationObject) => Promise<void>>(),
   });
@@ -142,7 +155,7 @@ describe("handleBackgroundLocationTask", () => {
     const deps = createMockDeps();
 
     await handleBackgroundLocationTask(
-      { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+      { locations: [makeLocation(52.23, 21.01)] },
       null,
       state,
       deps,
@@ -158,7 +171,7 @@ describe("handleBackgroundLocationTask", () => {
     deps.shouldSend.mockResolvedValue(false);
 
     await handleBackgroundLocationTask(
-      { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+      { locations: [makeLocation(52.23, 21.01)] },
       null,
       state,
       deps,
@@ -197,10 +210,10 @@ describe("handleBackgroundLocationTask", () => {
     deps.shouldSend.mockResolvedValue(true);
     deps.sendUpdate.mockResolvedValue(undefined);
 
-    const locations = [
-      { coords: { latitude: 52.0, longitude: 21.0 } },
-      { coords: { latitude: 52.23, longitude: 21.01 } },
-    ] as LocationObject[];
+    const locations: [LocationObject, LocationObject] = [
+      makeLocation(52.0, 21.0),
+      makeLocation(52.23, 21.01),
+    ];
 
     await handleBackgroundLocationTask({ locations }, null, state, deps);
 
@@ -215,7 +228,7 @@ describe("handleBackgroundLocationTask", () => {
     deps.sendUpdate.mockRejectedValue(new Error("Network error"));
 
     await handleBackgroundLocationTask(
-      { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+      { locations: [makeLocation(52.23, 21.01)] },
       null,
       state,
       deps,
@@ -231,7 +244,7 @@ describe("handleBackgroundLocationTask", () => {
     deps.shouldSend.mockRejectedValue(new Error("Storage error"));
 
     await handleBackgroundLocationTask(
-      { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+      { locations: [makeLocation(52.23, 21.01)] },
       null,
       state,
       deps,

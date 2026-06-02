@@ -6,7 +6,7 @@ import {
 
 describe("syncLocationSharingState", () => {
   it("should use server state when available", async () => {
-    const getItem = jest.fn<(key: string) => Promise<string | null>>();
+    const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockResolvedValue("false");
 
     const result = await syncLocationSharingState(
@@ -19,7 +19,7 @@ describe("syncLocationSharingState", () => {
   });
 
   it("should fall back to local state when server state is undefined", async () => {
-    const getItem = jest.fn<(key: string) => Promise<string | null>>();
+    const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockResolvedValue("true");
 
     const result = await syncLocationSharingState(undefined, getItem);
@@ -30,7 +30,7 @@ describe("syncLocationSharingState", () => {
   });
 
   it("should return false when local state is not 'true'", async () => {
-    const getItem = jest.fn<(key: string) => Promise<string | null>>();
+    const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockResolvedValue("false");
 
     const result = await syncLocationSharingState(undefined, getItem);
@@ -40,7 +40,7 @@ describe("syncLocationSharingState", () => {
   });
 
   it("should return false when local state is null", async () => {
-    const getItem = jest.fn<(key: string) => Promise<string | null>>();
+    const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockResolvedValue(null);
 
     const result = await syncLocationSharingState(undefined, getItem);
@@ -50,7 +50,7 @@ describe("syncLocationSharingState", () => {
   });
 
   it("should handle storage errors gracefully", async () => {
-    const getItem = jest.fn<(key: string) => Promise<string | null>>();
+    const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockRejectedValue(new Error("Storage error"));
 
     const result = await syncLocationSharingState(undefined, getItem);

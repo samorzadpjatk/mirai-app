@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
@@ -40,8 +39,10 @@ describe("EditUserModal", () => {
     firstName: "John",
     lastName: "Doe",
     email: "john@example.com",
-    wristNumber: 123,
-    houseNumber: 456,
+    role: "USER" as const,
+    wristNumber: "123",
+    houseNumber: "456",
+    tripId: "trip-1",
   };
 
   it("should render with user data", () => {

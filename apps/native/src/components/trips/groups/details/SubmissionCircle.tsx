@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, TouchableOpacity, View, Text } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
@@ -50,7 +50,7 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   item: {
     width: "22%",
     alignItems: "center",
@@ -81,4 +81,4 @@ const styles = {
     fontWeight: "500",
     lineHeight: 14,
   },
-};
+});

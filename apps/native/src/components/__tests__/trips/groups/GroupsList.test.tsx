@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsList } from "../../../trips/groups/GroupsList";

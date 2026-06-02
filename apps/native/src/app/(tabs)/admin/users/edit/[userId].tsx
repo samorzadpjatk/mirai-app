@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -31,7 +31,7 @@ export default function AdminEditUserScreen() {
     }),
   );
 
-  const { data: groupsResponse, error: groupsError } = useQuery(
+  const { data: groupsResponse } = useQuery(
     orpc.group.getAll.queryOptions({
       input: { tripId, pagination: { limit: 100, offset: 0 } },
       enabled: Boolean(tripId),
@@ -193,7 +193,7 @@ export default function AdminEditUserScreen() {
     }
   };
 
-  const handleBan = () => {
+  const handleBanUser = () => {
     if (!user || !userId || !banUntil) return;
 
     Alert.alert("Ban user", "Ban this user until the selected date and time?", [

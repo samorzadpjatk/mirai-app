@@ -7,6 +7,8 @@ import type {
   ActivityFilter,
 } from "~/components/community/CommunityActivityCard";
 
+export type { CommunityFeedActivity };
+
 export type FeedCursor = {
   id: string;
   createdAt: Date | string;
@@ -109,62 +111,6 @@ export function buildCommunityFeedQueryFn(
   };
 }
 
-export interface ToggleHeartMutationConfig {
-  trpcClient: typeof orpc;
-  queryClient: ReturnType<typeof useQueryClient>;
-  feedQueryKey: readonly [string, string, number] | null;
-  selectedTripId: string | null;
-}
-
-export function buildToggleHeartMutation(
-  config: ToggleHeartMutationConfig,
-) {
-  const { trpcClient, queryClient, feedQueryKey, selectedTripId } = config;
-
-  return {
-    mutationFn: async ({ activityId }: { activityId: string }) => {
-      return await trpcClient.activityFeed.toggleReaction.call({
-        activityId,
-        reactionType: "heart",
-      });
-    },
-    onMutate: async ({ activityId }: { activityId: string }) => {
-      const queryKey = feedQueryKey;
-      if (!selectedTripId || !queryKey) {
-        return undefined;
-      }
-
-      await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData(feedQueryKey);
-      applyReactionSummaryToFeed(
-        queryClient,
-        queryKey,
-        activityId,
-        toggleHeartSummary as (current: unknown) => ReturnType<typeof toggleHeartSummary>,
-      );
-      return { queryKey, previousData };
-    },
-    onError: (_error: unknown, _variables: { activityId: string }, context: { queryKey?: readonly unknown[]; previousData?: unknown }) => {
-      if (!context?.queryKey || !context.previousData) return;
-      queryClient.setQueryData(context.queryKey, context.previousData);
-    },
-    onSuccess: (
-      result: { activityId: string; reactionsSummary: CommunityFeedActivity["reactionsSummary"] },
-      _variables: { activityId: string },
-      context: { queryKey?: readonly unknown[] },
-    ) => {
-      if (context?.queryKey) {
-        applyReactionSummaryToFeed(
-          queryClient,
-          context.queryKey,
-          result.activityId,
-          result.reactionsSummary,
-        );
-      }
-    },
-  };
-}
-
 export function buildCommunityFeedQueryKey(
   selectedTripId: string | null,
 ): readonly [string, string, number] | null {
@@ -212,18 +158,44 @@ export const useCommunityFeed = ({
     getNextPageParam: (lastPage) => getNextCommunityFeedPageParam(lastPage),
   });
 
-  const toggleHeartMutationConfig = useMemo(
-    () =>
-      buildToggleHeartMutation({
-        trpcClient,
-        queryClient,
-        feedQueryKey,
-        selectedTripId,
-      }),
-    [trpcClient, queryClient, feedQueryKey, selectedTripId],
-  );
+  const { mutateAsync: toggleHeart } = useMutation({
+    mutationFn: async ({ activityId }: { activityId: string }) => {
+      return await trpcClient.activityFeed.toggleReaction.call({
+        activityId,
+        reactionType: "heart",
+      });
+    },
+    onMutate: async ({ activityId }: { activityId: string }) => {
+      const queryKey = feedQueryKey;
+      if (!selectedTripId || !queryKey) {
+        return undefined;
+      }
 
-  const { mutateAsync: toggleHeart } = useMutation(toggleHeartMutationConfig);
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData(queryKey);
+      applyReactionSummaryToFeed(
+        queryClient,
+        queryKey,
+        activityId,
+        toggleHeartSummary,
+      );
+      return { queryKey, previousData };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context?.queryKey || !context.previousData) return;
+      queryClient.setQueryData(context.queryKey, context.previousData);
+    },
+    onSuccess: (result, _variables, context) => {
+      if (context?.queryKey) {
+        applyReactionSummaryToFeed(
+          queryClient,
+          context.queryKey,
+          result.activityId,
+          result.reactionsSummary,
+        );
+      }
+    },
+  });
 
   const handleToggleHeart = useCallback(
     buildHandleToggleHeart(toggleHeart),
@@ -247,4 +219,4 @@ export const useCommunityFeed = ({
   };
 };
 
-export type { FeedCursor, FeedPageData };
+

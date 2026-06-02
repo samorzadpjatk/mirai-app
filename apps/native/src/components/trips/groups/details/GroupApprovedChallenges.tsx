@@ -17,7 +17,7 @@ import FullscreenSubmissionSlide, { formatDateTime } from "./FullscreenSubmissio
 
 export { formatDateTime };
 
-interface ApprovedSubmissionItem {
+export interface ApprovedSubmissionItem {
   submissionId: string;
   challengeId: string;
   challengeTitle: string;

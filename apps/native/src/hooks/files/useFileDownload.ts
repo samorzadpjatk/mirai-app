@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
 import { orpc } from "@mirai-app/orpc/client";
+
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 interface DownloadInput {
   storagePath: string;
@@ -20,20 +22,23 @@ interface DownloadResult {
   fileName: string | null;
   totalBytes: number;
 }
+
 // Deduplicate concurrent requests for the same storage path to avoid
 // hitting the backend rate limit when multiple images load simultaneously.
 const inFlightUrlRequests = new Map<string, Promise<{ signedUrl: string }>>();
-const getSignedUrl = async (storagePath: string, expiresInSeconds?: number): Promise<string> => {
+
+const getSignedUrl = async (
+  callFn: (input: { storagePath: string; expiresInSeconds?: number }) => Promise<{ signedUrl: string }>,
+  storagePath: string,
+  expiresInSeconds?: number,
+): Promise<string> => {
   const cacheKey = `${storagePath}:${expiresInSeconds ?? "default"}`;
   const existing = inFlightUrlRequests.get(cacheKey);
   if (existing) {
     const response = await existing;
     return response.signedUrl;
   }
-  const promise = orpc.storage.createDownloadUrl.call({
-    storagePath,
-    expiresInSeconds,
-  });
+  const promise = callFn({ storagePath, expiresInSeconds });
   inFlightUrlRequests.set(cacheKey, promise);
   try {
     const response = await promise;
@@ -100,6 +105,11 @@ export const useFileDownload = () => {
   const [file, setFile] = useState<DownloadResult | null>(null);
   const mountedRef = useRef(true);
   const abortRequestedRef = useRef(false);
+
+  const createDownloadUrlMutation = useMutation(
+    orpc.storage.createDownloadUrl.mutationOptions()
+  );
+
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -155,7 +165,11 @@ export const useFileDownload = () => {
       if (input.publicUrl) {
         signedUrl = input.publicUrl;
       } else {
-        signedUrl = await getSignedUrl(input.storagePath, input.expiresInSeconds);
+        signedUrl = await getSignedUrl(
+          createDownloadUrlMutation.mutateAsync,
+          input.storagePath,
+          input.expiresInSeconds,
+        );
       }
       const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
       const targetFile = new File(destinationDir, cachedFileName);
@@ -228,7 +242,7 @@ export const useFileDownload = () => {
       }
       throw errorObject;
     }
-  }, []);
+  }, [createDownloadUrlMutation]);
   return {
     download,
     abort,

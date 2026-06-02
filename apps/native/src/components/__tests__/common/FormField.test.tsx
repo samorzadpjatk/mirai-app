@@ -1,4 +1,3 @@
-import React from "react";
 import { Text, TextInput, View, type TextProps } from "react-native";
 import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";

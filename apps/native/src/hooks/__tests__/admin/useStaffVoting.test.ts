@@ -427,8 +427,8 @@ describe("rankByRating", () => {
     ];
     const ratings = { "1": 1600, "2": 1500 };
     const result = rankByRating(submissions, ratings);
-    expect(result[0].id).toBe("1");
-    expect(result[1].id).toBe("2");
+    expect(result[0]!.id).toBe("1");
+    expect(result[1]!.id).toBe("2");
   });
 
   it("should use base rating when not found", () => {
@@ -436,7 +436,7 @@ describe("rankByRating", () => {
       { id: "1", groupId: "g1", groupName: "A", imagePath: "", createdAt: "2024-01-01T10:00:00Z" },
     ];
     const result = rankByRating(submissions, {});
-    expect(result[0].id).toBe("1");
+    expect(result[0]!.id).toBe("1");
   });
 });
 

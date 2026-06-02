@@ -212,7 +212,7 @@ export default function ChallengesScreen() {
         {/* Group Info Card */}
         {userGroup && (
           <GroupInfoCard
-            groupName={userGroup.name}
+            groupName={userGroup.name ?? "No group"}
             position={leaderboardInfo?.position}
             totalGroups={leaderboardInfo?.totalGroups}
             pointsDifference={leaderboardInfo?.pointsDifference}

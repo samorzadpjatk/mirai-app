@@ -1,6 +1,6 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@mirai-app/auth/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
@@ -79,7 +79,7 @@ export default function TripDetailsScreen() {
           <TripBanner />
 
           {/* Partners */}
-          <PartnersSection sponsors={trip.tripSponsors?.map((ts) => ts.sponsor).filter(Boolean)} />
+          <PartnersSection sponsors={trip.tripSponsors?.map((ts: { sponsor: string | null }) => ts.sponsor).filter(Boolean)} />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid

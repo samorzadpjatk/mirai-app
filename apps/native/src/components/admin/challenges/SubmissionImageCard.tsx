@@ -1,4 +1,3 @@
-import React from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";

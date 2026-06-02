@@ -30,7 +30,7 @@ export function MapActionButtons() {
     isUpdatingBackgroundLocation,
     toggleBackgroundLocationUpdates,
   } = useLocationContext();
-  const { mapTheme, onRecenter, toggleTheme } = useMapOverlayStore();
+  const { mapTheme, handleRecenter, toggleTheme } = useMapOverlayStore();
 
   const isBackgroundDisplayedOn = calculateBackgroundDisplayState(
     isLocationSharingEnabled,
@@ -128,7 +128,7 @@ export function MapActionButtons() {
           <Ionicons name={getThemeIconName(mapTheme)} size={22} color="#00ced1" />
         </Pressable>
         {isLocationSharingEnabled && (
-          <Pressable testID="recenter-button" style={styles.recenterButton} onPress={onRecenter}>
+          <Pressable testID="recenter-button" style={styles.recenterButton} onPress={handleRecenter}>
             <Ionicons name="locate" size={20} color="#00ced1" />
           </Pressable>
         )}

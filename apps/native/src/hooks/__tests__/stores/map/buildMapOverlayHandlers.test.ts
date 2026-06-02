@@ -1,37 +1,92 @@
 import { describe, it, expect, jest } from "@jest/globals";
-import { buildMapOverlayHandlers } from "~/stores/map/mapOverlayStore";
+import {
+  buildMapOverlayHandlers,
+  type MapOverlayStore,
+  type MapOverlayHandlerDeps,
+  type MapTheme,
+  type ShareableUser,
+  type SharingSettings,
+} from "~/stores/map/mapOverlayStore";
+import type { UserLocation } from "~/components/map/UserMap";
 
 describe("buildMapOverlayHandlers", () => {
-  const createMockStore = () => ({
-    selectUser: jest.fn(),
-    handleMapUserPress: jest.fn(),
-    backToList: jest.fn(),
-    recenter: jest.fn(),
-    handleRemoveUser: jest.fn(),
-    setShowManageModal: jest.fn(),
-    toggleListExpansion: jest.fn(),
-    handleMapPress: jest.fn(),
+  const mockFn = <T extends (...args: any[]) => any>() => jest.fn<T>();
+
+  const baseUser = (overrides?: Partial<UserLocation>): UserLocation => ({
+    id: "user-1",
+    name: "Alice",
+    coordinate: [21, 52],
+    lastActiveAt: "2024-01-01",
+    ...overrides,
+  });
+
+  const createMockStore = (): MapOverlayStore => ({
+    users: [],
+    currentUserId: undefined,
+    showUsersList: true,
+    isListExpanded: false,
+    showManageModal: false,
+    followMode: null,
+    focusedCoordinate: null,
+    mapTheme: "dark" as MapTheme,
+    sharingUserIds: [],
+    allAvailableUsers: undefined,
+    sharingSettings: undefined,
+    isRemovingUser: false,
+    selectUser: mockFn<(user: UserLocation) => void>(),
+    deselectUser: mockFn<() => void>(),
+    backToList: mockFn<() => void>(),
+    toggleListExpansion: mockFn<() => void>(),
+    collapseList: mockFn<() => void>(),
+    setShowManageModal: mockFn<(open: boolean) => void>(),
+    setFollowMode: mockFn<(mode: "user" | null) => void>(),
+    setFocusedCoordinate: mockFn<(coordinate: [number, number] | null) => void>(),
+    toggleTheme: mockFn<() => void>(),
+    recenter: mockFn<(currentCoordinate: [number, number] | null) => void>(),
+    handleMapUserPress: mockFn<(user: UserLocation) => void>(),
+    handleMapPress: mockFn<() => void>(),
+    setUsers: mockFn<(users: UserLocation[]) => void>(),
+    setCurrentUserId: mockFn<(userId?: string) => void>(),
+    setSharingUserIds: mockFn<(ids: string[]) => void>(),
+    setAllAvailableUsers: mockFn<(users?: ShareableUser[]) => void>(),
+    setSharingSettings: mockFn<(settings?: SharingSettings | null) => void>(),
+    setIsRemovingUser: mockFn<(isRemoving: boolean) => void>(),
+    handleRemoveUser: mockFn<(userId: string) => void>(),
+  });
+
+  const createMockDeps = (
+    store: MapOverlayStore,
+    overrides?: {
+      selectedUserState?: Partial<MapOverlayHandlerDeps["selectedUserState"]>;
+      externals?: Partial<MapOverlayHandlerDeps["externals"]>;
+      shareModal?: Partial<MapOverlayHandlerDeps["shareModal"]>;
+    },
+  ): MapOverlayHandlerDeps => ({
+    store,
+    selectedUserState: {
+      selectedUser: null,
+      selectUser: mockFn<(user: UserLocation) => void>(),
+      deselect: mockFn<() => void>(),
+      stopSharing: mockFn<() => Promise<void>>().mockResolvedValue(undefined),
+      mapUserPress: mockFn<(user: UserLocation) => void>(),
+      canStopSharing: false,
+      ...overrides?.selectedUserState,
+    },
+    externals: {
+      removeUser: mockFn<(userId: string) => Promise<void>>().mockResolvedValue(undefined),
+      currentCoordinate: [21, 52] as [number, number],
+      ...overrides?.externals,
+    },
+    shareModal: {
+      openModal: mockFn<() => void>(),
+      ...overrides?.shareModal,
+    },
   });
 
   it("should build handleSelectUser that calls store and state", () => {
     const store = createMockStore();
-    const user = { id: "user-1", name: "Alice", coordinate: [21, 52] as [number, number] };
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: [21, 52] as [number, number],
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const user = baseUser();
+    const deps = createMockDeps(store);
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.handleSelectUser(user);
@@ -42,22 +97,7 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build handleBackToList that calls deselect and store", () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: [21, 52] as [number, number],
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store);
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.handleBackToList();
@@ -68,22 +108,7 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build handleStopSharing that calls stopSharing and backToList", async () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: [21, 52] as [number, number],
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store);
 
     const handlers = buildMapOverlayHandlers(deps);
     await handlers.handleStopSharing();
@@ -95,22 +120,7 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build handleRecenter that calls store recenter", () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: [21, 52] as [number, number],
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store);
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.handleRecenter();
@@ -121,22 +131,9 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should not recenter when no current coordinate", () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: null,
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store, {
+      externals: { currentCoordinate: null },
+    });
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.handleRecenter();
@@ -147,22 +144,9 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build handleRemoveUser that calls external removeUser and store", async () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: null,
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store, {
+      externals: { currentCoordinate: null },
+    });
 
     const handlers = buildMapOverlayHandlers(deps);
     await handlers.handleRemoveUser("user-1");
@@ -173,23 +157,11 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build onAddPress that opens share modal", () => {
     const store = createMockStore();
-    const shareModal = { openModal: jest.fn() };
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: null,
-      },
+    const shareModal = { openModal: mockFn<() => void>() };
+    const deps = createMockDeps(store, {
+      externals: { currentCoordinate: null },
       shareModal,
-    };
+    });
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.onAddPress();
@@ -199,22 +171,9 @@ describe("buildMapOverlayHandlers", () => {
 
   it("should build onManagePress that opens manage modal", () => {
     const store = createMockStore();
-    const deps = {
-      store: store as unknown as import("../../stores/map/mapOverlayStore").MapOverlayStore,
-      selectedUserState: {
-        selectedUser: null,
-        selectUser: jest.fn(),
-        deselect: jest.fn(),
-        stopSharing: jest.fn().mockResolvedValue(undefined),
-        mapUserPress: jest.fn(),
-        canStopSharing: false,
-      },
-      externals: {
-        removeUser: jest.fn().mockResolvedValue(undefined),
-        currentCoordinate: null,
-      },
-      shareModal: { openModal: jest.fn() },
-    };
+    const deps = createMockDeps(store, {
+      externals: { currentCoordinate: null },
+    });
 
     const handlers = buildMapOverlayHandlers(deps);
     handlers.onManagePress();

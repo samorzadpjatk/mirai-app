@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupManagementCard } from "../../admin/groups/GroupManagementCard";

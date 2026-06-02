@@ -78,8 +78,8 @@ export default function TripInfoScreen() {
   // Check if PDFs are downloaded on component mount
   useEffect(() => {
     if (!isLoading) {
-      const pdfMapResource = getResource("PDF_MAP");
-      const infopackResource = getResource("INFOPACK");
+      getResource("PDF_MAP");
+      getResource("INFOPACK");
 
       // Note: File existence checking will be handled by the download hook's cache mechanism
     }
@@ -436,7 +436,7 @@ export default function TripInfoScreen() {
               onLoadComplete={() => {
                 /* no-op */
               }}
-              onError={(error) => {
+              onError={(_error) => {
                 Alert.alert("Error", "Could not load PDF");
               }}
               enablePaging={false}

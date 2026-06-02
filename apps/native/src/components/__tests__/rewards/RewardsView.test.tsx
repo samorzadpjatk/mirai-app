@@ -1,16 +1,44 @@
-import React from "react";
 import { View } from "react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardsView from "../../rewards/RewardsView";
+import type { RewardListItem } from "../../rewards/types";
 
-let mockUseRewardsReturn = {
+const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
+  id: "reward-1",
+  name: "Reward 1",
+  description: "A test reward",
+  availableQuantity: 10,
+  image: null,
+  images: [],
+  signedImageUrls: [],
+  signedImageUrl: null,
+  coinCost: 50,
+  createdBy: { id: "user-1", firstName: "John", lastName: "Doe" },
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  tripId: "trip-1",
+  canAfford: true,
+  isEligibleToBuy: true,
+  isOutOfStock: false,
+  purchasedCount: 0,
+  ...overrides,
+});
+
+let mockUseRewardsReturn: {
+  data: RewardListItem[] | null;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: jest.Mock;
+} = {
   data: null,
   isLoading: false,
   error: null,
   refetch: jest.fn(),
 };
 
-let mockUseMyGroupReturn = {
+let mockUseMyGroupReturn: {
+  group: { name: string; coins: number } | null;
+} = {
   group: null,
 };
 
@@ -18,7 +46,10 @@ let mockUseTripDetailsReturn = {
   isTripPast: false,
 };
 
-let mockUsePurchaseRewardReturn = {
+let mockUsePurchaseRewardReturn: {
+  mutateAsync: jest.Mock;
+  isPending: boolean;
+} = {
   mutateAsync: jest.fn(),
   isPending: false,
 };
@@ -117,8 +148,8 @@ describe("RewardsView", () => {
 
   it("should render rewards list when data exists", () => {
     mockUseRewardsReturn.data = [
-      { id: "reward-1", name: "Reward 1" },
-      { id: "reward-2", name: "Reward 2" },
+      baseReward({ id: "reward-1", name: "Reward 1" }),
+      baseReward({ id: "reward-2", name: "Reward 2" }),
     ];
     const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
@@ -127,7 +158,7 @@ describe("RewardsView", () => {
   });
 
   it("should render group coins info when user has a group", () => {
-    mockUseRewardsReturn.data = [{ id: "reward-1", name: "Reward 1" }];
+    mockUseRewardsReturn.data = [baseReward({ id: "reward-1", name: "Reward 1" })];
     mockUseMyGroupReturn.group = { name: "Group A", coins: 500 };
     const { getByText } = renderWithProviders(<RewardsView {...defaultProps} />);
 
@@ -136,7 +167,7 @@ describe("RewardsView", () => {
   });
 
   it("should render modals", () => {
-    mockUseRewardsReturn.data = [{ id: "reward-1", name: "Reward 1" }];
+    mockUseRewardsReturn.data = [baseReward({ id: "reward-1", name: "Reward 1" })];
     const { getByTestId } = renderWithProviders(<RewardsView {...defaultProps} />);
 
     expect(getByTestId("purchase-modal")).toBeTruthy();

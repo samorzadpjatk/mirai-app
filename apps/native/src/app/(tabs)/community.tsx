@@ -130,7 +130,7 @@ export default function CommunityScreen() {
   const keyExtractor = useCallback((item: CommunityFeedActivity) => item.id, []);
 
   const getItemLayout = useCallback(
-    (data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
+    (_data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
       length: 200, // Approximate height of CommunityActivityCard
       offset: 200 * index,
       index,

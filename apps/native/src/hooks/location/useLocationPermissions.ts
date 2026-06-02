@@ -141,7 +141,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
   // Load saved location sharing preference and sync with server
   useEffect(() => {
     void (async () => {
-      const { enabled, error } = await syncLocationSharingState(
+      const { enabled } = await syncLocationSharingState(
         sharingSettings,
         AsyncStorage.getItem,
       );

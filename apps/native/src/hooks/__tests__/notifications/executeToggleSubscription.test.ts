@@ -6,12 +6,12 @@ describe("executeToggleSubscription", () => {
     subscriptionStatus: undefined as { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> } | undefined,
     permissionDeps: {
       permission: "undetermined",
-      requestPermission: jest.fn().mockResolvedValue("granted"),
+      requestPermission: jest.fn(async () => "granted"),
       openAppSettings: jest.fn(),
     },
     mutations: {
-      subscribeMutation: { mutateAsync: jest.fn() },
-      unsubscribeMutation: { mutateAsync: jest.fn() },
+      subscribeMutation: { mutateAsync: jest.fn(async (_data: { token: string }) => ({})) },
+      unsubscribeMutation: { mutateAsync: jest.fn(async (_data: { token: string }) => ({})) },
     },
   });
 
@@ -31,7 +31,7 @@ describe("executeToggleSubscription", () => {
 
   it("should show alert when permission not granted", async () => {
     const deps = createMockDeps();
-    deps.permissionDeps.requestPermission = jest.fn().mockResolvedValue("denied");
+    deps.permissionDeps.requestPermission = jest.fn(async () => "denied");
 
     await executeToggleSubscription(deps.subscriptionStatus, deps.permissionDeps, deps.mutations);
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, type ViewStyle } from "react-native";
 import { screen } from "@testing-library/react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

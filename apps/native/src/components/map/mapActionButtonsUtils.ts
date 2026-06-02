@@ -19,15 +19,15 @@ export function calculateBackgroundControlDisabled(
   return !isLocationSharingEnabled || isLoading || isUpdatingBackgroundLocation;
 }
 
-export function getBackgroundIconName(isBackgroundDisplayedOn: boolean): string {
+export function getBackgroundIconName(isBackgroundDisplayedOn: boolean): "navigate" | "navigate-outline" {
   return isBackgroundDisplayedOn ? "navigate" : "navigate-outline";
 }
 
-export function getLocationIconName(isLocationSharingEnabled: boolean): string {
+export function getLocationIconName(isLocationSharingEnabled: boolean): "location" | "locate" {
   return isLocationSharingEnabled ? "location" : "locate";
 }
 
-export function getThemeIconName(mapTheme: string): string {
+export function getThemeIconName(mapTheme: string): "sunny" | "moon" {
   return mapTheme === "dark" ? "sunny" : "moon";
 }
 

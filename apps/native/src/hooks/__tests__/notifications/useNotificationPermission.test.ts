@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act, waitFor } from "@testing-library/react-native";
 
-const mockGetPermissionsAsync = jest.fn();
-const mockRequestPermissionsAsync = jest.fn();
+const mockGetPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));
+const mockRequestPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));
 
 jest.mock("expo-notifications", () => ({
   PermissionStatus: {

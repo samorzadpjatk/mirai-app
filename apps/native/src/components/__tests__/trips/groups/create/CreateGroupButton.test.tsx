@@ -1,4 +1,3 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { CreateGroupButton } from "../../../../trips/groups/create/CreateGroupButton";

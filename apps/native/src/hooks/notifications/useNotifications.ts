@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import * as Notifications from "expo-notifications";
 import { Alert } from "react-native";
 import { resolveProjectId } from "./notificationProjectId";

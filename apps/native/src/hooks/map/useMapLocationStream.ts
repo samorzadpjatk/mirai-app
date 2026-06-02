@@ -16,9 +16,10 @@ export function buildLocationUpdateData(location: {
 }
 
 export function buildUserDataFromLocationUser(user: {
-  firstName?: string | null;
-  lastName?: string | null;
-  image?: string | null;
+  id?: string | undefined;
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  image?: string | null | undefined;
 }) {
   return {
     name: formatDisplayName(user.firstName, user.lastName) ?? undefined,
@@ -81,7 +82,7 @@ export function processLocationStreamEvent(
     if (location?.user) {
       setUsersData((prev) => ({
         ...prev,
-        [userId]: buildUserDataFromLocationUser(location.user),
+        [userId]: buildUserDataFromLocationUser(location.user as Parameters<typeof buildUserDataFromLocationUser>[0]),
       }));
     }
   }

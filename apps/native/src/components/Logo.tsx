@@ -1,5 +1,4 @@
 import { Image } from "expo-image";
-import React from "react";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import miraiLogo from "../../assets/mirai_logo.png";
 

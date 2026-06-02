@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";

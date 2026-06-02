@@ -64,102 +64,111 @@ describe("getNextCommunityFeedPageParam", () => {
   });
 });
 
+const baseActivity = {
+  tripId: "trip-1",
+  activityType: "custom" as const,
+  description: null,
+  imageUrl: null,
+  createdAt: "2024-01-01",
+};
+
 describe("updateActivityReactionsInPages", () => {
   it("should update the target activity's reactions summary", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
-          { id: "a2", title: "Activity 2", reactionsSummary: { heart: 3 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
+          { id: "a2", title: "Activity 2", ...baseActivity, reactionsSummary: { total: 3, counts: { heart: 3, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 2, page: 1, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const result = updateActivityReactionsInPages(pages, "a1", { heart: 6 });
+    const result = updateActivityReactionsInPages(pages, "a1", { total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
-    expect(result[0].activities[0].reactionsSummary).toEqual({ heart: 6 });
-    expect(result[0].activities[1].reactionsSummary).toEqual({ heart: 3 });
+    expect(result[0]!.activities[0]!.reactionsSummary).toEqual({ total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
+    expect(result[0]!.activities[1]!.reactionsSummary).toEqual({ total: 3, counts: { heart: 3, fire: 0, clap: 0, star: 0 }, myReactions: [] });
   });
 
   it("should not modify other activities", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
-          { id: "a2", title: "Activity 2", reactionsSummary: { heart: 3 } },
-          { id: "a3", title: "Activity 3", reactionsSummary: { heart: 1 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
+          { id: "a2", title: "Activity 2", ...baseActivity, reactionsSummary: { total: 3, counts: { heart: 3, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
+          { id: "a3", title: "Activity 3", ...baseActivity, reactionsSummary: { total: 1, counts: { heart: 1, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 3, page: 1, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const result = updateActivityReactionsInPages(pages, "a2", { heart: 10 });
+    const result = updateActivityReactionsInPages(pages, "a2", { total: 10, counts: { heart: 10, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
-    expect(result[0].activities[0]).toEqual(pages[0].activities[0]);
-    expect(result[0].activities[2]).toEqual(pages[0].activities[2]);
-    expect(result[0].activities[1].reactionsSummary).toEqual({ heart: 10 });
+    expect(result[0]!.activities[0]).toEqual(pages[0]!.activities[0]);
+    expect(result[0]!.activities[2]).toEqual(pages[0]!.activities[2]);
+    expect(result[0]!.activities[1]!.reactionsSummary).toEqual({ total: 10, counts: { heart: 10, fire: 0, clap: 0, star: 0 }, myReactions: [] });
   });
 
   it("should handle activity not found in any page", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const result = updateActivityReactionsInPages(pages, "nonexistent", { heart: 99 });
+    const result = updateActivityReactionsInPages(pages, "nonexistent", { total: 99, counts: { heart: 99, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
-    expect(result[0].activities[0]).toEqual(pages[0].activities[0]);
+    expect(result[0]!.activities[0]).toEqual(pages[0]!.activities[0]);
   });
 
   it("should handle multiple pages and update only the target activity", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 2, page: 1, pageSize: 30, totalPages: 1 },
       },
       {
         activities: [
-          { id: "a2", title: "Activity 2", reactionsSummary: { heart: 3 } },
+          { id: "a2", title: "Activity 2", ...baseActivity, reactionsSummary: { total: 3, counts: { heart: 3, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 2, page: 2, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const result = updateActivityReactionsInPages(pages, "a2", { heart: 7 });
+    const result = updateActivityReactionsInPages(pages, "a2", { total: 7, counts: { heart: 7, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
-    expect(result[0].activities[0]).toEqual(pages[0].activities[0]);
-    expect(result[1].activities[0].reactionsSummary).toEqual({ heart: 7 });
+    expect(result[0]!.activities[0]).toEqual(pages[0]!.activities[0]);
+    expect(result[1]!.activities[0]!.reactionsSummary).toEqual({ total: 7, counts: { heart: 7, fire: 0, clap: 0, star: 0 }, myReactions: [] });
   });
 
   it("should accept a function updater and apply it to the activity's current summary", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const updater = (current: Record<string, number> | undefined) => ({
-      ...current,
-      heart: (current?.heart ?? 0) + 1,
+    const updater = (current: { total: number; counts: { heart: number; fire: number; clap: number; star: number }; myReactions: string[] } | undefined) => ({
+      total: (current?.total ?? 0) + 1,
+      counts: current?.counts ?? { heart: 0, fire: 0, clap: 0, star: 0 },
+      myReactions: current?.myReactions ?? [],
     });
 
     const result = updateActivityReactionsInPages(pages, "a1", updater);
 
-    expect(result[0].activities[0].reactionsSummary).toEqual({ heart: 6 });
+    expect(result[0]!.activities[0]!.reactionsSummary).toEqual({ total: 6, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] });
   });
 
   it("should handle empty pages array", () => {
-    const result = updateActivityReactionsInPages([], "a1", { heart: 1 });
+    const result = updateActivityReactionsInPages([], "a1", { total: 1, counts: { heart: 1, fire: 0, clap: 0, star: 0 }, myReactions: [] });
     expect(result).toEqual([]);
   });
 
@@ -167,16 +176,16 @@ describe("updateActivityReactionsInPages", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1 },
       },
     ];
 
-    const result = updateActivityReactionsInPages(pages, "a1", { heart: 6 });
+    const result = updateActivityReactionsInPages(pages, "a1", { total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
-    expect(pages[0].activities[0].reactionsSummary).toEqual({ heart: 5 });
-    expect(result[0].activities[0].reactionsSummary).toEqual({ heart: 6 });
+    expect(pages[0]!.activities[0]!.reactionsSummary).toEqual({ total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] });
+    expect(result[0]!.activities[0]!.reactionsSummary).toEqual({ total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
   });
 });
 
@@ -190,7 +199,7 @@ describe("applyReactionSummaryToFeed", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", reactionsSummary: { heart: 5 } },
+          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { total: 5, counts: { heart: 5, fire: 0, clap: 0, star: 0 }, myReactions: [] } },
         ],
         pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1 },
       },
@@ -203,7 +212,7 @@ describe("applyReactionSummaryToFeed", () => {
       return updater;
     });
 
-    applyReactionSummaryToFeed(queryClient, queryKey, "a1", { heart: 6 });
+    applyReactionSummaryToFeed(queryClient, queryKey, "a1", { total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
     expect(mockSetQueryData).toHaveBeenCalledWith(queryKey, expect.any(Function));
   });
@@ -222,7 +231,7 @@ describe("applyReactionSummaryToFeed", () => {
       return updater;
     });
 
-    applyReactionSummaryToFeed(queryClient, queryKey, "a1", { heart: 6 });
+    applyReactionSummaryToFeed(queryClient, queryKey, "a1", { total: 6, counts: { heart: 6, fire: 0, clap: 0, star: 0 }, myReactions: [] });
 
     expect(mockSetQueryData).toHaveBeenCalledWith(queryKey, expect.any(Function));
   });

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams } from "expo-router";
