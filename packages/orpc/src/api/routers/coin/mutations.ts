@@ -47,8 +47,10 @@ export const addCoins = async (
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
     }
 
+    const insertedId = inserted[0].id;
+
     const transaction = await tx.query.coinTransactions.findFirst({
-      where: (ct, { eq }) => eq(ct.id, inserted[0]?.id),
+      where: (ct, { eq }) => eq(ct.id, insertedId),
       with: {
         group: {
           columns: { id: true, name: true, coins: true },
@@ -116,8 +118,10 @@ export const removeCoins = async (
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
     }
 
+    const insertedId = inserted[0].id;
+
     const transaction = await tx.query.coinTransactions.findFirst({
-      where: (ct, { eq }) => eq(ct.id, inserted[0]?.id),
+      where: (ct, { eq }) => eq(ct.id, insertedId),
       with: {
         group: {
           columns: { id: true, name: true, coins: true },
@@ -133,13 +137,6 @@ export const removeCoins = async (
         message: "Failed to retrieve created transaction",
       });
     }
-
-    await createRankChangeActivities({
-      tx,
-      tripId: input.tripId,
-      previousSnapshot: previousRankingSnapshot,
-      createdByAdmin: context.dbUser.id,
-    });
 
     return transaction;
   });

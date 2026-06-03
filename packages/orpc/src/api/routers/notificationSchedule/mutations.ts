@@ -143,7 +143,6 @@ export const upsertTemplate = adminProcedure
       where: (ns, { and, eq }) => and(eq(ns.tripId, input.tripId), eq(ns.name, template.name)),
     });
 
-    let schedule: typeof notificationSchedules.$inferSelect | undefined;
     if (existingSchedule) {
       await context.db
         .update(notificationSchedules)
@@ -160,7 +159,7 @@ export const upsertTemplate = adminProcedure
         })
         .where(eq(notificationSchedules.id, existingSchedule.id));
 
-      schedule = await context.db.query.notificationSchedules.findFirst({
+      const schedule = await context.db.query.notificationSchedules.findFirst({
         where: (ns, { eq }) => eq(ns.id, existingSchedule.id),
         with: {
           createdBy: {
@@ -179,49 +178,62 @@ export const upsertTemplate = adminProcedure
           },
         },
       });
-    } else {
-      const [scheduleRow] = await context.db
-        .insert(notificationSchedules)
-        .values({
-          tripId: input.tripId,
-          name: template.name,
-          notificationType: template.notificationType,
-          notificationTitle: template.notificationTitle,
-          notificationBody: template.notificationBody,
-          notificationUrl: template.notificationUrl,
-          startDate: normalized.startDate,
-          endDate: normalized.endDate,
-          hour: normalized.hour,
-          minute: template.minute,
-          isActive: true,
-          createdById: context.dbUser.id,
-        })
-        .returning();
 
-      if (!scheduleRow) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create schedule" });
+      if (!schedule) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
       }
 
-      schedule = await context.db.query.notificationSchedules.findFirst({
-        where: (ns, { eq }) => eq(ns.id, scheduleRow.id),
-        with: {
-          createdBy: {
-            columns: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              authUserId: true,
-            },
-          },
-          trip: {
-            columns: {
-              id: true,
-              name: true,
-            },
+      const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
+        schedule.createdBy?.authUserId,
+      ]);
+
+      return {
+        action: "updated",
+        schedule: attachCreatedByEmail(schedule, emailByAuthUserId),
+      };
+    }
+
+    const [scheduleRow] = await context.db
+      .insert(notificationSchedules)
+      .values({
+        tripId: input.tripId,
+        name: template.name,
+        notificationType: template.notificationType,
+        notificationTitle: template.notificationTitle,
+        notificationBody: template.notificationBody,
+        notificationUrl: template.notificationUrl,
+        startDate: normalized.startDate,
+        endDate: normalized.endDate,
+        hour: normalized.hour,
+        minute: template.minute,
+        isActive: true,
+        createdById: context.dbUser.id,
+      })
+      .returning();
+
+    if (!scheduleRow) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create schedule" });
+    }
+
+    const schedule = await context.db.query.notificationSchedules.findFirst({
+      where: (ns, { eq }) => eq(ns.id, scheduleRow.id),
+      with: {
+        createdBy: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            authUserId: true,
           },
         },
-      });
-    }
+        trip: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     if (!schedule) {
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to fetch schedule" });
@@ -232,7 +244,7 @@ export const upsertTemplate = adminProcedure
     ]);
 
     return {
-      action: existingSchedule ? "updated" : "created",
+      action: "created",
       schedule: attachCreatedByEmail(schedule, emailByAuthUserId),
     };
   });

@@ -103,12 +103,12 @@ export const updateSharingSettings = async (
   }
 
   // Update shares if userIdsToShareWith provided
-  if ((userIdsToShareWith?.length ?? 0) > 0) {
+  if (userIdsToShareWith && userIdsToShareWith.length > 0) {
     await context.db.delete(locationShares).where(eq(locationShares.locationId, locationRow.id));
 
     await context.db
       .insert(locationShares)
-      .values(userIdsToShareWith?.map((id) => ({ locationId: locationRow.id, userId: id })));
+      .values(userIdsToShareWith.map((id) => ({ locationId: locationRow.id, userId: id })));
   }
 
   // Query users to share with
