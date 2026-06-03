@@ -5,7 +5,7 @@ import { ORPCError } from "@orpc/server";
  * Prevents SSRF, XSS via javascript: URLs, and local file access.
  */
 export function validateUrlProtocol(
-  value: string,
+  value: string | undefined,
   allowedProtocols: string[] = ["http:", "https:"],
 ): void {
   if (!value?.trim()) {
@@ -33,7 +33,7 @@ export function validateUrlProtocol(
  * Safe URL validator for Zod refinements.
  * Returns true if the URL is valid and uses an allowed protocol.
  */
-export function isValidHttpUrl(value: string): boolean {
+export function isValidHttpUrl(value: string | undefined): boolean {
   if (!value?.trim()) {
     return false;
   }

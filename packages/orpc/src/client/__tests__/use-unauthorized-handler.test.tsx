@@ -51,8 +51,8 @@ describe("useUnauthorizedHandler", () => {
       query: {
         queryHash: "test",
         state: { error: unauthorizedError },
-      } as unknown as Parameters<typeof queryClient.getQueryCache>["subscribe"],
-    });
+      },
+    } as Parameters<ReturnType<typeof queryClient.getQueryCache>["notify"]>[0]);
 
     await waitFor(() => {
       expect(refreshSession).toHaveBeenCalled();
@@ -73,8 +73,8 @@ describe("useUnauthorizedHandler", () => {
       query: {
         queryHash: "test2",
         state: { error: unauthorizedError },
-      } as unknown as Parameters<typeof queryClient.getQueryCache>["subscribe"],
-    });
+      },
+    } as Parameters<ReturnType<typeof queryClient.getQueryCache>["notify"]>[0]);
 
     await waitFor(() => {
       expect(signOut).toHaveBeenCalled();
@@ -94,8 +94,8 @@ describe("useUnauthorizedHandler", () => {
       query: {
         queryHash: "test3",
         state: { error: notFoundError },
-      } as unknown as Parameters<typeof queryClient.getQueryCache>["subscribe"],
-    });
+      },
+    } as Parameters<ReturnType<typeof queryClient.getQueryCache>["notify"]>[0]);
 
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(refreshSession).not.toHaveBeenCalled();
@@ -115,8 +115,8 @@ describe("useUnauthorizedHandler", () => {
       query: {
         queryHash: "test4",
         state: { error: unauthorizedError },
-      } as unknown as Parameters<typeof queryClient.getQueryCache>["subscribe"],
-    });
+      },
+    } as Parameters<ReturnType<typeof queryClient.getQueryCache>["notify"]>[0]);
 
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(refreshSession).not.toHaveBeenCalled();

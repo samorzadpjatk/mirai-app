@@ -1,10 +1,31 @@
 import { vi } from "vitest";
+import type { SupabaseClient } from "../stores/authStore";
+
+type MockFn = {
+  (...args: any[]): any;
+  mockResolvedValue(value: any): MockFn;
+  mockReturnValue(value: any): MockFn;
+  mockImplementation(fn: (...args: any[]) => any): MockFn;
+  mockRejectedValue(value: any): MockFn;
+};
+
+type Mockify<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? MockFn
+    : T[K] extends object
+      ? Mockify<T[K]>
+      : T[K];
+};
+
+export type MockSupabaseClient = Mockify<SupabaseClient> & Record<string, unknown>;
 
 /**
  * Creates a mock Supabase client for testing.
  * Provides chainable query builder methods and mock auth methods.
  */
-export function createMockSupabaseClient(overrides: Record<string, unknown> = {}) {
+export function createMockSupabaseClient(
+  overrides: Record<string, unknown> = {},
+): MockSupabaseClient {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),

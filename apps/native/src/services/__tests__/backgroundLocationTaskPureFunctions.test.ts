@@ -63,8 +63,8 @@ describe("toFiniteNumberOrNull", () => {
   });
 
   it("should return null for non-number types", () => {
-    expect(toFiniteNumberOrNull("42" as unknown as number)).toBeNull();
-    expect(toFiniteNumberOrNull({} as unknown as number)).toBeNull();
+    expect(toFiniteNumberOrNull("42")).toBeNull();
+    expect(toFiniteNumberOrNull({})).toBeNull();
   });
 });
 

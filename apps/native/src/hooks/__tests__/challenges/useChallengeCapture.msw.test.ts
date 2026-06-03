@@ -77,22 +77,16 @@ const mockUserWithoutGroup = {
   trips: [{ tripId: "trip-123" }],
 };
 
-function setupUserHandler(user = mockUserWithGroup) {
-  server.use(
-    createORPCHandler(["user", "getMyWithGroup"], () => user),
-  );
+function setupUserHandler(user: typeof mockUserWithGroup | null = mockUserWithGroup) {
+  server.use(createORPCHandler(["user", "getMyWithGroup"], () => user));
 }
 
 function setupCreateSubmissionHandler(response = { id: "submission-123" }) {
-  server.use(
-    createORPCHandler(["challengeSubmission", "create"], () => response),
-  );
+  server.use(createORPCHandler(["challengeSubmission", "create"], () => response));
 }
 
 function setupDeleteSubmissionHandler(response = { success: true }) {
-  server.use(
-    createORPCHandler(["challengeSubmission", "deleteMine"], () => response),
-  );
+  server.use(createORPCHandler(["challengeSubmission", "deleteMine"], () => response));
 }
 
 describe("useChallengeCapture (MSW)", () => {
@@ -246,7 +240,7 @@ describe("useChallengeCapture (MSW)", () => {
 
   it("should show error when user is not part of trip", async () => {
     // Return null user data to simulate user not part of trip
-    setupUserHandler(null as unknown as typeof mockUserWithGroup);
+    setupUserHandler(null);
 
     const { result } = renderHookWithMSW(() =>
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),
@@ -266,7 +260,7 @@ describe("useChallengeCapture (MSW)", () => {
   });
 
   it("should show error when group info is missing", async () => {
-    setupUserHandler(mockUserWithoutGroup);
+    setupUserHandler(mockUserWithoutGroup as typeof mockUserWithGroup);
 
     const { result } = renderHookWithMSW(() =>
       useChallengeCapture({ tripId: "trip-123", challengeId: "challenge-123" }),

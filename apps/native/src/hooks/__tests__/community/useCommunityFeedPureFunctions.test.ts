@@ -4,7 +4,7 @@ import {
   buildCommunityFeedActivities,
   buildHandleToggleHeart,
 } from "../../community/useCommunityFeed";
-import type { FeedPageData, CommunityFeedActivity } from "../../community/useCommunityFeed";
+import type { FeedPageData } from "../../community/useCommunityFeed";
 
 const baseActivity = {
   tripId: "trip-1",
@@ -43,14 +43,41 @@ describe("buildCommunityFeedActivities", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { ...baseReactionsSummary, total: 1, counts: { ...baseReactionsSummary.counts, heart: 1 } } },
-          { id: "a2", title: "Activity 2", ...baseActivity, reactionsSummary: { ...baseReactionsSummary, total: 2, counts: { ...baseReactionsSummary.counts, heart: 2 } } },
+          {
+            id: "a1",
+            title: "Activity 1",
+            ...baseActivity,
+            reactionsSummary: {
+              ...baseReactionsSummary,
+              total: 1,
+              counts: { ...baseReactionsSummary.counts, heart: 1 },
+            },
+          },
+          {
+            id: "a2",
+            title: "Activity 2",
+            ...baseActivity,
+            reactionsSummary: {
+              ...baseReactionsSummary,
+              total: 2,
+              counts: { ...baseReactionsSummary.counts, heart: 2 },
+            },
+          },
         ],
         pagination: { total: 2, page: 1, pageSize: 30, totalPages: 1 },
       },
       {
         activities: [
-          { id: "a3", title: "Activity 3", ...baseActivity, reactionsSummary: { ...baseReactionsSummary, total: 3, counts: { ...baseReactionsSummary.counts, heart: 3 } } },
+          {
+            id: "a3",
+            title: "Activity 3",
+            ...baseActivity,
+            reactionsSummary: {
+              ...baseReactionsSummary,
+              total: 3,
+              counts: { ...baseReactionsSummary.counts, heart: 3 },
+            },
+          },
         ],
         pagination: { total: 3, page: 2, pageSize: 30, totalPages: 1 },
       },
@@ -67,7 +94,16 @@ describe("buildCommunityFeedActivities", () => {
     const pages: FeedPageData[] = [
       {
         activities: [
-          { id: "a1", title: "Activity 1", ...baseActivity, reactionsSummary: { ...baseReactionsSummary, total: 1, counts: { ...baseReactionsSummary.counts, heart: 1 } } },
+          {
+            id: "a1",
+            title: "Activity 1",
+            ...baseActivity,
+            reactionsSummary: {
+              ...baseReactionsSummary,
+              total: 1,
+              counts: { ...baseReactionsSummary.counts, heart: 1 },
+            },
+          },
         ],
         pagination: { total: 1, page: 1, pageSize: 30, totalPages: 1 },
       },
@@ -86,7 +122,9 @@ describe("buildCommunityFeedActivities", () => {
 
 describe("buildHandleToggleHeart", () => {
   it("should return function that calls toggleHeart", () => {
-    const toggleHeart = jest.fn<(args: { activityId: string }) => Promise<unknown>>().mockResolvedValue(undefined);
+    const toggleHeart = jest
+      .fn<(args: { activityId: string }) => Promise<unknown>>()
+      .mockResolvedValue(undefined);
     const handler = buildHandleToggleHeart(toggleHeart);
 
     handler("activity-1");

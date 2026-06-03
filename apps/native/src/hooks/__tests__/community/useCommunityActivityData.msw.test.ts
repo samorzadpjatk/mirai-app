@@ -4,14 +4,6 @@ import { useCommunityActivityData } from "../../community/useCommunityActivityDa
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
-const baseActivity = {
-  tripId: "trip-1",
-  activityType: "custom" as const,
-  description: null,
-  imageUrl: null,
-  createdAt: "2024-01-01",
-};
-
 describe("useCommunityActivityData (MSW)", () => {
   beforeEach(() => {
     resetHandlers();
@@ -30,38 +22,53 @@ describe("useCommunityActivityData (MSW)", () => {
     const activities = [
       {
         id: "activity-1",
-        activityType: "rank_change",
+        activityType: "rank_change" as const,
         tripId: "trip-1",
+        title: "Rank Change",
+        description: null,
+        imageUrl: null,
+        createdAt: "2024-01-01",
       },
     ];
 
     server.use(
       createORPCHandler(["group", "ranking"], () => ({
-        data: [
-          { id: "group-1", name: "Group 1", coins: 100, participants: [{ id: "p1" }] },
-        ],
+        data: [{ id: "group-1", name: "Group 1", coins: 100, participants: [{ id: "p1" }] }],
       })),
     );
 
-    const { result } = renderHookWithMSW(() => useCommunityActivityData({ activities: activities as unknown as Parameters<typeof useCommunityActivityData>[0]["activities"] }));
+    const { result } = renderHookWithMSW(() =>
+      useCommunityActivityData({
+        activities,
+      }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.rankingData["trip-1"]).toHaveLength(1);
-    expect(result.current.rankingData["trip-1"][0]!.id).toBe("group-1");
+    expect(result.current.rankingData["trip-1"]).toBeDefined();
+    expect(result.current.rankingData["trip-1"]?.[0]).toBeDefined();
+    expect(result.current.rankingData["trip-1"]?.[0]?.id).toBe("group-1");
   });
 
   it("should fetch avatar URLs for user_post activities", async () => {
     const activities = [
       {
         id: "activity-1",
-        activityType: "user_post",
+        activityType: "user_post" as const,
+        tripId: "trip-1",
+        title: "User Post",
+        description: null,
+        imageUrl: null,
+        createdAt: "2024-01-01",
         userPost: {
+          additionalImages: [],
           author: {
             user: {
               id: "user-1",
+              firstName: "User",
+              lastName: "One",
             },
           },
         },
@@ -74,7 +81,11 @@ describe("useCommunityActivityData (MSW)", () => {
       })),
     );
 
-    const { result } = renderHookWithMSW(() => useCommunityActivityData({ activities: activities as unknown as Parameters<typeof useCommunityActivityData>[0]["activities"] }));
+    const { result } = renderHookWithMSW(() =>
+      useCommunityActivityData({
+        activities,
+      }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -87,9 +98,16 @@ describe("useCommunityActivityData (MSW)", () => {
     const activities = [
       {
         id: "activity-1",
-        activityType: "admin_announcement",
+        activityType: "custom" as const,
+        tripId: "trip-1",
+        title: "Admin Announcement",
+        description: null,
+        imageUrl: null,
+        createdAt: "2024-01-01",
         admin: {
           id: "admin-1",
+          firstName: "Admin",
+          lastName: "User",
         },
       },
     ];
@@ -100,7 +118,11 @@ describe("useCommunityActivityData (MSW)", () => {
       })),
     );
 
-    const { result } = renderHookWithMSW(() => useCommunityActivityData({ activities: activities as unknown as Parameters<typeof useCommunityActivityData>[0]["activities"] }));
+    const { result } = renderHookWithMSW(() =>
+      useCommunityActivityData({
+        activities,
+      }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -113,8 +135,12 @@ describe("useCommunityActivityData (MSW)", () => {
     const activities = [
       {
         id: "activity-1",
-        activityType: "rank_change",
+        activityType: "rank_change" as const,
         tripId: "trip-1",
+        title: "Rank Change",
+        description: null,
+        imageUrl: null,
+        createdAt: "2024-01-01",
       },
     ];
 
@@ -124,7 +150,11 @@ describe("useCommunityActivityData (MSW)", () => {
       }),
     );
 
-    const { result } = renderHookWithMSW(() => useCommunityActivityData({ activities: activities as unknown as Parameters<typeof useCommunityActivityData>[0]["activities"] }));
+    const { result } = renderHookWithMSW(() =>
+      useCommunityActivityData({
+        activities,
+      }),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -137,12 +167,21 @@ describe("useCommunityActivityData (MSW)", () => {
     const activities = [
       {
         id: "activity-1",
-        activityType: "user_post",
+        activityType: "user_post" as const,
+        tripId: "trip-1",
+        title: "User Post",
+        description: null,
+        imageUrl: null,
+        createdAt: "2024-01-01",
         userPost: null,
       },
     ];
 
-    const { result } = renderHookWithMSW(() => useCommunityActivityData({ activities: activities as unknown as Parameters<typeof useCommunityActivityData>[0]["activities"] }));
+    const { result } = renderHookWithMSW(() =>
+      useCommunityActivityData({
+        activities,
+      }),
+    );
 
     expect(result.current.rankingData).toEqual({});
     expect(result.current.avatarUrls).toEqual({});

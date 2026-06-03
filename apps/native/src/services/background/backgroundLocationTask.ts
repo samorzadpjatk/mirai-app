@@ -23,16 +23,34 @@ export interface BackgroundTaskState {
 
 export interface BackgroundTaskDeps {
   shouldSend: () => Promise<boolean>;
-  sendUpdate: (location: LocationObject) => Promise<void>;
+  sendUpdate: (location: {
+    coords: {
+      latitude: unknown;
+      longitude: unknown;
+      altitude?: unknown;
+      accuracy?: unknown;
+      altitudeAccuracy?: unknown;
+      heading?: unknown;
+      speed?: unknown;
+    };
+    timestamp: number;
+  }) => Promise<void>;
 }
 
 export interface BackgroundTaskFactoryDeps {
   supabaseClient: {
     auth: {
-      getSession: () => Promise<{ data: { session: { access_token: string } | null }; error: Error | null }>;
+      getSession: () => Promise<{
+        data: { session: { access_token: string } | null };
+        error: Error | null;
+      }>;
     };
   };
-  getORPCClient: (httpUrl: string, wsUrl: string, authorizationToken?: string) => {
+  getORPCClient: (
+    httpUrl: string,
+    wsUrl: string,
+    authorizationToken?: string,
+  ) => {
     client: {
       location: {
         updateLocation: (input: {
@@ -75,7 +93,18 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
     return sharingEnabled === "true" && backgroundEnabled === "true";
   }
 
-  async function sendUpdate(location: LocationObject): Promise<void> {
+  async function sendUpdate(location: {
+    coords: {
+      latitude: unknown;
+      longitude: unknown;
+      altitude?: unknown;
+      accuracy?: unknown;
+      altitudeAccuracy?: unknown;
+      heading?: unknown;
+      speed?: unknown;
+    };
+    timestamp: number;
+  }): Promise<void> {
     const accessToken = await getAccessToken();
     if (!accessToken) {
       return;

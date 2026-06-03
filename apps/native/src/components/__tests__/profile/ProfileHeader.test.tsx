@@ -1,12 +1,9 @@
 import React from "react";
 import { View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { waitFor } from "@testing-library/react-native";
+import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
+import { server, createORPCHandler } from "../../../test-utils/msw/server";
 import { ProfileHeader } from "../../profile/ProfileHeader";
-
-const mockUseQuery = jest.fn(() => ({
-  data: null as Record<string, unknown> | null,
-  isLoading: false,
-}));
 
 // Mock download function that returns a resolved promise
 const mockDownload = jest.fn(() => Promise.resolve({ uri: "file://avatar.jpg" }));
@@ -19,33 +16,6 @@ const mockUseFileDownload = jest.fn(() => ({
   file: null as { uri: string } | null,
   reset: mockReset,
   abort: mockAbort,
-}));
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  useTRPC: () => ({
-    user: {
-      getMy: {
-        queryOptions: () => ({
-          queryKey: ["user", "getMy"],
-        }),
-      },
-    },
-  }),
-  orpc: {
-    user: {
-      getMy: {
-        queryOptions: () => ({
-          queryKey: ["user", "getMy"],
-        }),
-      },
-    },
-  },
-}));
-
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: () => mockUseQuery(),
-  QueryClient: jest.fn(),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 jest.mock("expo-router", () => ({
@@ -66,10 +36,6 @@ jest.mock("expo-image", () => ({
 describe("ProfileHeader", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-    });
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
       status: "idle",
@@ -80,132 +46,127 @@ describe("ProfileHeader", () => {
   });
 
   it("should render with default state when no user data", () => {
-    const { getByTestId } = renderWithProviders(<ProfileHeader />);
+    server.use(createORPCHandler(["user", "getMy"], () => null));
+
+    const { getByTestId } = renderWithMSW(<ProfileHeader />);
 
     const container = getByTestId("profile-header");
     expect(container).toBeTruthy();
   });
 
-  it("should render user initials when no avatar", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render user initials when no avatar", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("JD")).toBeTruthy();
+    await waitFor(() => expect(getByText("JD")).toBeTruthy());
   });
 
-  it("should render user name", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render user name", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("John Doe")).toBeTruthy();
+    await waitFor(() => expect(getByText("John Doe")).toBeTruthy());
   });
 
-  it("should render role badge for USER role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render role badge for USER role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("User")).toBeTruthy();
+    await waitFor(() => expect(getByText("User")).toBeTruthy());
   });
 
-  it("should render role badge for ADMIN role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render role badge for ADMIN role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "Admin",
         lastName: "User",
         hasAvatar: false,
         role: "ADMIN",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Administrator")).toBeTruthy();
+    await waitFor(() => expect(getByText("Administrator")).toBeTruthy());
   });
 
-  it("should render role badge for MODERATOR role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render role badge for MODERATOR role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "Mod",
         lastName: "User",
         hasAvatar: false,
         role: "MODERATOR",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Moderator")).toBeTruthy();
+    await waitFor(() => expect(getByText("Moderator")).toBeTruthy());
   });
 
-  it("should render role badge for SERVICE role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render role badge for SERVICE role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "Service",
         lastName: "Account",
         hasAvatar: false,
         role: "SERVICE",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Service")).toBeTruthy();
+    await waitFor(() => expect(getByText("Service")).toBeTruthy());
   });
 
-  it("should render avatar image when user has avatar", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render avatar image when user has avatar", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: true,
         role: "USER",
         updatedAt: new Date("2024-01-01"),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
@@ -215,24 +176,22 @@ describe("ProfileHeader", () => {
       abort: mockAbort,
     });
 
-    const { getByTestId } = renderWithProviders(<ProfileHeader />);
+    const { getByTestId } = renderWithMSW(<ProfileHeader />);
 
-    const image = getByTestId("profile-image");
-    expect(image).toBeTruthy();
+    await waitFor(() => expect(getByTestId("profile-image")).toBeTruthy());
   });
 
-  it("should show loading text when avatar is downloading", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should show loading text when avatar is downloading", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: true,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
     mockUseFileDownload.mockReturnValue({
       download: mockDownload,
@@ -242,99 +201,96 @@ describe("ProfileHeader", () => {
       abort: mockAbort,
     });
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Loading...")).toBeTruthy();
+    await waitFor(() => expect(getByText("Loading...")).toBeTruthy());
   });
 
-  it("should handle single name", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle single name", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "Single",
         lastName: null,
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
+      })),
+    );
+
+    const { getByText } = renderWithMSW(<ProfileHeader />);
+
+    await waitFor(() => {
+      expect(getByText("Single")).toBeTruthy();
+      expect(getByText("S")).toBeTruthy();
     });
-
-    const { getByText } = renderWithProviders(<ProfileHeader />);
-
-    expect(getByText("Single")).toBeTruthy();
-    expect(getByText("S")).toBeTruthy();
   });
 
-  it("should handle missing first name", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle missing first name", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: null,
         lastName: "Doe",
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Doe")).toBeTruthy();
+    await waitFor(() => expect(getByText("Doe")).toBeTruthy());
   });
 
-  it("should handle missing last name", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle missing last name", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: null,
         hasAvatar: false,
         role: "USER",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("John")).toBeTruthy();
+    await waitFor(() => expect(getByText("John")).toBeTruthy());
   });
 
-  it("should handle lowercase role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle lowercase role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: false,
         role: "admin",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("Administrator")).toBeTruthy();
+    await waitFor(() => expect(getByText("Administrator")).toBeTruthy());
   });
 
-  it("should handle unknown role", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle unknown role", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         firstName: "John",
         lastName: "Doe",
         hasAvatar: false,
         role: "UNKNOWN_ROLE",
         updatedAt: new Date(),
-      },
-      isLoading: false,
-    });
+      })),
+    );
 
-    const { getByText } = renderWithProviders(<ProfileHeader />);
+    const { getByText } = renderWithMSW(<ProfileHeader />);
 
-    expect(getByText("UNKNOWN_ROLE")).toBeTruthy();
+    await waitFor(() => expect(getByText("UNKNOWN_ROLE")).toBeTruthy());
   });
 });

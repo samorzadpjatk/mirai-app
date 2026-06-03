@@ -34,7 +34,7 @@ describe("validateUrlProtocol", () => {
   });
 
   it("should not throw for undefined", () => {
-    expect(() => validateUrlProtocol(undefined as unknown as string)).not.toThrow();
+    expect(() => validateUrlProtocol(undefined)).not.toThrow();
   });
 
   it("should allow custom protocols when specified", () => {
@@ -78,6 +78,6 @@ describe("isValidHttpUrl", () => {
   });
 
   it("should return false for undefined", () => {
-    expect(isValidHttpUrl(undefined as unknown as string)).toBe(false);
+    expect(isValidHttpUrl(undefined)).toBe(false);
   });
 });

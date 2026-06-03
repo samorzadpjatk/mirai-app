@@ -28,7 +28,10 @@ interface DownloadResult {
 const inFlightUrlRequests = new Map<string, Promise<{ signedUrl: string }>>();
 
 const getSignedUrl = async (
-  callFn: (input: { storagePath: string; expiresInSeconds?: number }) => Promise<{ signedUrl: string }>,
+  callFn: (input: {
+    storagePath: string;
+    expiresInSeconds?: number;
+  }) => Promise<{ signedUrl: string }>,
   storagePath: string,
   expiresInSeconds?: number,
 ): Promise<string> => {
@@ -47,7 +50,13 @@ const getSignedUrl = async (
     inFlightUrlRequests.delete(cacheKey);
   }
 };
-export function toDownloadResult(file: File, fileName: string): DownloadResult {
+interface FileLike {
+  uri: string;
+  type: string | null;
+  size: number;
+}
+
+export function toDownloadResult(file: FileLike, fileName: string): DownloadResult {
   return {
     uri: file.uri,
     contentType: file.type,
@@ -106,9 +115,7 @@ export const useFileDownload = () => {
   const mountedRef = useRef(true);
   const abortRequestedRef = useRef(false);
 
-  const createDownloadUrlMutation = useMutation(
-    orpc.storage.createDownloadUrl.mutationOptions()
-  );
+  const createDownloadUrlMutation = useMutation(orpc.storage.createDownloadUrl.mutationOptions());
 
   useEffect(() => {
     return () => {
@@ -128,121 +135,123 @@ export const useFileDownload = () => {
     setError(null);
     setFile(null);
   }, []);
-  const download = useCallback(async (input: DownloadInput): Promise<DownloadResult> => {
-    // Reset abort state and set to loading
-    abortRequestedRef.current = false;
-    if (!mountedRef.current) {
-      throw new Error("Download aborted: component unmounted");
-    }
-    setStatus("loading");
-    setError(null);
-    setFile(null);
-    try {
-      const destinationDir = new Directory(Paths.cache, "downloads");
-      if (!destinationDir.exists) {
-        destinationDir.create();
+  const download = useCallback(
+    async (input: DownloadInput): Promise<DownloadResult> => {
+      // Reset abort state and set to loading
+      abortRequestedRef.current = false;
+      if (!mountedRef.current) {
+        throw new Error("Download aborted: component unmounted");
       }
-      const stableCachedFileName = await buildCacheFileNameFromStoragePath(input.storagePath);
-      const stableCachedFile = new File(destinationDir, stableCachedFileName);
-      // Try local cache first so offline users can still see previously downloaded files.
-      if (stableCachedFile.exists && !input.skipCache) {
-        const cachedResult = toDownloadResult(stableCachedFile, stableCachedFileName);
-        if (mountedRef.current) {
-          setFile(cachedResult);
-          setStatus("success");
+      setStatus("loading");
+      setError(null);
+      setFile(null);
+      try {
+        const destinationDir = new Directory(Paths.cache, "downloads");
+        if (!destinationDir.exists) {
+          destinationDir.create();
         }
-        return cachedResult;
-      }
-      if (stableCachedFile.exists && input.skipCache) {
-        try {
-          stableCachedFile.delete();
-        } catch {
-          // Silently ignore cache cleanup errors
-        }
-      }
-      // Use public URL if available, otherwise get signed URL (deduplicated)
-      let signedUrl: string;
-      if (input.publicUrl) {
-        signedUrl = input.publicUrl;
-      } else {
-        signedUrl = await getSignedUrl(
-          createDownloadUrlMutation.mutateAsync,
-          input.storagePath,
-          input.expiresInSeconds,
-        );
-      }
-      const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
-      const targetFile = new File(destinationDir, cachedFileName);
-      // Backward compatibility: older cache entries can use URL-derived extension.
-      if (targetFile.exists && !input.skipCache) {
-        const cachedResult = toDownloadResult(targetFile, cachedFileName);
-        if (mountedRef.current) {
-          setFile(cachedResult);
-          setStatus("success");
-        }
-        return cachedResult;
-      }
-      if (targetFile.exists && input.skipCache) {
-        try {
-          targetFile.delete();
-        } catch {
-          // Silently ignore cache cleanup errors
-        }
-      }
-      // Download the file to the target file; if destination already exists, clear it once and retry
-      const performDownload = async () => {
-        try {
-          if (targetFile.exists) targetFile.delete();
-          return await File.downloadFileAsync(signedUrl, targetFile);
-        } catch (err) {
-          if (isDestinationAlreadyExistsError(err)) {
-            try {
-              if (targetFile.exists) targetFile.delete();
-            } catch {
-              // Silently ignore cleanup errors
-            }
-            try {
-              return await File.downloadFileAsync(signedUrl, targetFile);
-            } catch (retryErr) {
-              if (isDestinationAlreadyExistsError(retryErr) && targetFile.exists) {
-                // Another parallel download already wrote the same file.
-                // Reuse it instead of crashing with a race-condition error.
-                return targetFile;
-              }
-              throw retryErr;
-            }
+        const stableCachedFileName = await buildCacheFileNameFromStoragePath(input.storagePath);
+        const stableCachedFile = new File(destinationDir, stableCachedFileName);
+        // Try local cache first so offline users can still see previously downloaded files.
+        if (stableCachedFile.exists && !input.skipCache) {
+          const cachedResult = toDownloadResult(stableCachedFile, stableCachedFileName);
+          if (mountedRef.current) {
+            setFile(cachedResult);
+            setStatus("success");
           }
-          throw err;
+          return cachedResult;
         }
-      };
-      const downloadResult = await performDownload();
-      const totalBytes = downloadResult.size;
-      const contentType = downloadResult.type;
-      const fileName = cachedFileName;
-      const result: DownloadResult = {
-        uri: downloadResult.uri,
-        contentType,
-        fileName,
-        totalBytes,
-      };
-      if (mountedRef.current) {
-        setFile(result);
-        setStatus("success");
-      }
-      return result;
-    } catch (downloadError) {
-      const errorObject = downloadError as Error;
-      const isAbortErrorResult =
-        abortRequestedRef.current || isAbortError(errorObject);
-      if (mountedRef.current) {
-        setStatus(isAbortErrorResult ? "idle" : "error");
-        if (!isAbortErrorResult) {
-          setError(errorObject);
+        if (stableCachedFile.exists && input.skipCache) {
+          try {
+            stableCachedFile.delete();
+          } catch {
+            // Silently ignore cache cleanup errors
+          }
         }
+        // Use public URL if available, otherwise get signed URL (deduplicated)
+        let signedUrl: string;
+        if (input.publicUrl) {
+          signedUrl = input.publicUrl;
+        } else {
+          signedUrl = await getSignedUrl(
+            createDownloadUrlMutation.mutateAsync,
+            input.storagePath,
+            input.expiresInSeconds,
+          );
+        }
+        const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
+        const targetFile = new File(destinationDir, cachedFileName);
+        // Backward compatibility: older cache entries can use URL-derived extension.
+        if (targetFile.exists && !input.skipCache) {
+          const cachedResult = toDownloadResult(targetFile, cachedFileName);
+          if (mountedRef.current) {
+            setFile(cachedResult);
+            setStatus("success");
+          }
+          return cachedResult;
+        }
+        if (targetFile.exists && input.skipCache) {
+          try {
+            targetFile.delete();
+          } catch {
+            // Silently ignore cache cleanup errors
+          }
+        }
+        // Download the file to the target file; if destination already exists, clear it once and retry
+        const performDownload = async () => {
+          try {
+            if (targetFile.exists) targetFile.delete();
+            return await File.downloadFileAsync(signedUrl, targetFile);
+          } catch (err) {
+            if (isDestinationAlreadyExistsError(err)) {
+              try {
+                if (targetFile.exists) targetFile.delete();
+              } catch {
+                // Silently ignore cleanup errors
+              }
+              try {
+                return await File.downloadFileAsync(signedUrl, targetFile);
+              } catch (retryErr) {
+                if (isDestinationAlreadyExistsError(retryErr) && targetFile.exists) {
+                  // Another parallel download already wrote the same file.
+                  // Reuse it instead of crashing with a race-condition error.
+                  return targetFile;
+                }
+                throw retryErr;
+              }
+            }
+            throw err;
+          }
+        };
+        const downloadResult = await performDownload();
+        const totalBytes = downloadResult.size;
+        const contentType = downloadResult.type;
+        const fileName = cachedFileName;
+        const result: DownloadResult = {
+          uri: downloadResult.uri,
+          contentType,
+          fileName,
+          totalBytes,
+        };
+        if (mountedRef.current) {
+          setFile(result);
+          setStatus("success");
+        }
+        return result;
+      } catch (downloadError) {
+        const errorObject = downloadError as Error;
+        const isAbortErrorResult = abortRequestedRef.current || isAbortError(errorObject);
+        if (mountedRef.current) {
+          setStatus(isAbortErrorResult ? "idle" : "error");
+          if (!isAbortErrorResult) {
+            setError(errorObject);
+          }
+        }
+        throw errorObject;
       }
-      throw errorObject;
-    }
-  }, [createDownloadUrlMutation]);
+    },
+    [createDownloadUrlMutation],
+  );
   return {
     download,
     abort,

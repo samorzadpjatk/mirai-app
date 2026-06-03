@@ -69,7 +69,7 @@ export function useTripDetails(tripId?: string | null) {
   const trip = tripQuery.data ?? localCachedTrip ?? null;
   const isLoadingTrip = Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 
-  const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
+  const isTripPastValue = trip ? isTripPast(trip.endDate) : undefined;
 
   return {
     currentUser,

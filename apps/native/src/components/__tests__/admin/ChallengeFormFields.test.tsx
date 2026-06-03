@@ -44,6 +44,7 @@ const mockFormState = {
   isAutoApproveForced: false,
   isAutoApproveDisabled: false,
   needsLocation: false,
+  showLocationPicker: false,
   isUploadingImage: false,
   imageUploadPercent: null,
   submissionTypeLabel: "Text",
@@ -77,7 +78,7 @@ const mockFormState = {
   formatIso: jest.fn(),
   toOptionalInt: jest.fn(),
   toVotingDurationHours: jest.fn(),
-} as unknown as ReturnType<typeof useChallengeForm>;
+} as ReturnType<typeof useChallengeForm>;
 
 interface FormFieldProps {
   children: React.ReactNode;

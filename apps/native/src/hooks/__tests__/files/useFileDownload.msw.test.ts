@@ -37,7 +37,9 @@ jest.mock("expo-file-system", () => {
     return createMockFile();
   }
   Object.defineProperty(MockFile, "downloadFileAsync", {
-    get() { return mockDownloadFileAsync; },
+    get() {
+      return mockDownloadFileAsync;
+    },
     configurable: true,
   });
   return {
@@ -108,7 +110,13 @@ describe("useFileDownload (MSW)", () => {
 
   it("should set loading status when download starts", async () => {
     server.use(
-      createORPCHandler(["storage", "createDownloadUrl"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["storage", "createDownloadUrl"],
+        () =>
+          new Promise(() => {
+            /* intentionally never resolves */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useFileDownload());
@@ -288,7 +296,15 @@ describe("toDownloadResult", () => {
       read: jest.fn(),
       readInfoAsync: jest.fn(),
       downloadFileAsync: jest.fn(),
-    } as unknown as Parameters<typeof toDownloadResult>[0];
+      lastModified: Date.now(),
+      name: "image.jpg",
+      webkitRelativePath: "",
+      arrayBuffer: jest.fn(),
+      bytes: jest.fn(),
+      slice: jest.fn(),
+      stream: jest.fn(),
+      text: jest.fn(),
+    };
 
     const result = toDownloadResult(mockFile, "image.jpg");
 

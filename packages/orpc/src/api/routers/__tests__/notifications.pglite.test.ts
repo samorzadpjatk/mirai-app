@@ -102,7 +102,7 @@ function createAuthContext(
   const role = overrides.role ?? "USER";
   return {
     db,
-    supabase: createMockSupabase() as unknown as TRPCContext["supabase"],
+    supabase: createMockSupabase() as TRPCContext["supabase"],
     headers: new Headers({ Authorization: "Bearer test-token" }),
     accessToken: "test-token",
     user: { id: "auth-123" },

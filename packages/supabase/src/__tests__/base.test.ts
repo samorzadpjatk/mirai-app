@@ -12,7 +12,7 @@ vi.mock("@supabase/supabase-js", () => ({
 describe("createBaseSupabaseClient", () => {
   const mockUrl = "https://test.supabase.co";
   const mockAnonKey = "test-anon-key";
-  const mockSupabaseClient = createMockSupabaseClient() as unknown as ReturnType<typeof createClient>;
+  const mockSupabaseClient = createMockSupabaseClient() as ReturnType<typeof createClient>;
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -75,7 +75,12 @@ export function updateActivityReactionsInPages(
 }
 
 export function applyReactionSummaryToFeed(
-  queryClient: ReturnType<typeof useQueryClient>,
+  queryClient: {
+    setQueryData: <T>(
+      queryKey: readonly unknown[],
+      updater: ((old: T | undefined) => T | undefined) | T | undefined,
+    ) => unknown;
+  },
   queryKey: readonly unknown[],
   activityId: string,
   updater:
@@ -93,10 +98,7 @@ export function applyReactionSummaryToFeed(
   });
 }
 
-export function buildCommunityFeedQueryFn(
-  selectedTripId: string | null,
-  trpcClient: typeof orpc,
-) {
+export function buildCommunityFeedQueryFn(selectedTripId: string | null, trpcClient: typeof orpc) {
   return async ({ pageParam }: { pageParam: FeedCursor }): Promise<FeedPageData> => {
     if (!selectedTripId) {
       return buildEmptyFeedPageData();
@@ -140,10 +142,7 @@ export const useCommunityFeed = ({
   const queryClient = useQueryClient();
   const trpcClient = orpc;
 
-  const feedQueryKey = useMemo(
-    () => buildCommunityFeedQueryKey(selectedTripId),
-    [selectedTripId],
-  );
+  const feedQueryKey = useMemo(() => buildCommunityFeedQueryKey(selectedTripId), [selectedTripId]);
 
   const queryFn = useMemo(
     () => buildCommunityFeedQueryFn(selectedTripId, trpcClient),
@@ -173,12 +172,7 @@ export const useCommunityFeed = ({
 
       await queryClient.cancelQueries({ queryKey });
       const previousData = queryClient.getQueryData(queryKey);
-      applyReactionSummaryToFeed(
-        queryClient,
-        queryKey,
-        activityId,
-        toggleHeartSummary,
-      );
+      applyReactionSummaryToFeed(queryClient, queryKey, activityId, toggleHeartSummary);
       return { queryKey, previousData };
     },
     onError: (_error, _variables, context) => {
@@ -197,10 +191,7 @@ export const useCommunityFeed = ({
     },
   });
 
-  const handleToggleHeart = useCallback(
-    buildHandleToggleHeart(toggleHeart),
-    [toggleHeart],
-  );
+  const handleToggleHeart = useCallback(buildHandleToggleHeart(toggleHeart), [toggleHeart]);
 
   const activities = useMemo(
     () => buildCommunityFeedActivities(feedQuery.data?.pages),
@@ -218,5 +209,3 @@ export const useCommunityFeed = ({
     handleToggleHeart,
   };
 };
-
-

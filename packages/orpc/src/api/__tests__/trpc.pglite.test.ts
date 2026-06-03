@@ -9,6 +9,7 @@ import { createRouterClient } from "@orpc/server";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { userAgents } from "@mirai-app/db";
 import type { TRPCContext } from "../trpc";
+import { createMockSupabase } from "../../test-helpers";
 
 describe("createORPCContext token extraction", () => {
   const baseOpts = {
@@ -165,7 +166,7 @@ describe("getPlatformFromUserAgent via telemetry middleware", () => {
 
   const createTestContext = (headers: Headers): TRPCContext => ({
     db: testDb.db,
-    supabase: {} as unknown as TRPCContext["supabase"],
+    supabase: createMockSupabase() as TRPCContext["supabase"],
     headers,
     accessToken: null,
   });

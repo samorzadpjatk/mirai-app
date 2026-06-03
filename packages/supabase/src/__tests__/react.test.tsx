@@ -3,9 +3,10 @@ import { render, renderHook } from "@testing-library/react";
 import { SupabaseProvider, useSupabaseClient } from "../react";
 import type { ReactNode } from "react";
 import { createMockSupabaseClient } from "./utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 describe("SupabaseProvider", () => {
-  const mockClient = createMockSupabaseClient();
+  const mockClient = createMockSupabaseClient() as SupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -87,7 +88,7 @@ describe("SupabaseProvider", () => {
 });
 
 describe("useSupabaseClient", () => {
-  const mockClient = createMockSupabaseClient();
+  const mockClient = createMockSupabaseClient() as SupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -166,7 +167,7 @@ describe("useSupabaseClient", () => {
   });
 
   it("should work with multiple nested providers (different clients)", () => {
-    const mockClient2 = createMockSupabaseClient();
+    const mockClient2 = createMockSupabaseClient() as SupabaseClient;
 
     const InnerComponent = () => {
       const client = useSupabaseClient();

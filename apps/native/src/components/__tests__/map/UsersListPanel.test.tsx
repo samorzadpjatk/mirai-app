@@ -215,11 +215,12 @@ describe("UsersListPanel", () => {
 
     const { getByTestId } = renderWithProviders(<UsersListPanel />);
 
-    const animatedView = getByTestId("animated-view") as unknown as {
-      props: { style: [StyleProp<ViewStyle>, StyleProp<ViewStyle>] };
-    };
+    const animatedView = getByTestId("animated-view");
+    const animatedViewStyle = (
+      animatedView.props as { style: [StyleProp<ViewStyle>, StyleProp<ViewStyle>] }
+    ).style;
 
-    expect(animatedView.props.style[0]).toEqual(expect.objectContaining({ overflow: "hidden" }));
-    expect(animatedView.props.style[1]).toEqual({ opacity: 0.5 });
+    expect(animatedViewStyle[0]).toEqual(expect.objectContaining({ overflow: "hidden" }));
+    expect(animatedViewStyle[1]).toEqual({ opacity: 0.5 });
   });
 });

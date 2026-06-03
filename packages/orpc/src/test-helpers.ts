@@ -4,10 +4,31 @@ import { users, trips, groups, tripParticipants } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import type { TRPCContext } from "./api/trpc";
 
+export type MockSupabase = {
+  auth: {
+    getUser: ReturnType<typeof vi.fn>;
+    admin: {
+      getUserById: ReturnType<typeof vi.fn>;
+      listUsers: ReturnType<typeof vi.fn>;
+      createUser: ReturnType<typeof vi.fn>;
+      updateUserById: ReturnType<typeof vi.fn>;
+      deleteUser: ReturnType<typeof vi.fn>;
+    };
+  };
+  storage: {
+    from: () => {
+      createSignedUrl: () => Promise<{
+        data: { signedUrl: string };
+        error: null;
+      }>;
+    };
+  };
+};
+
 export function createMockSupabase(
   emails: Record<string, string> = {},
   options: { withAdmin?: boolean; withStorage?: boolean } = {},
-) {
+): MockSupabase {
   const userMap: Record<
     string,
     {
@@ -104,7 +125,7 @@ export function createContext(
     dbUser,
     accessToken: "test-token",
     headers: new Headers(),
-  } as unknown as TRPCContext;
+  };
 }
 
 export async function seedUser(
@@ -124,12 +145,7 @@ export async function seedUser(
   });
 }
 
-export async function seedTrip(
-  db: DB,
-  id: string,
-  name: string,
-  description?: string,
-) {
+export async function seedTrip(db: DB, id: string, name: string, description?: string) {
   await db.insert(trips).values({
     id,
     name,

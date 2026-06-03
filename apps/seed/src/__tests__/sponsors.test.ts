@@ -53,7 +53,7 @@ describe("sponsors", () => {
       () =>
         ({
           text: () => mockBunFileText(),
-        }) as unknown as BunFile,
+        }) as BunFile,
     );
 
     vi.clearAllMocks();

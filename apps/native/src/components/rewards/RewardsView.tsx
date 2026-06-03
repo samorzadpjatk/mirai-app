@@ -84,10 +84,7 @@ export function getRewardButtonState(
   };
 }
 
-export function getRewardBorderColor(
-  justRefreshed: boolean,
-  isOutOfStock: boolean,
-): string {
+export function getRewardBorderColor(justRefreshed: boolean, isOutOfStock: boolean): string {
   if (justRefreshed && !isOutOfStock) return "#10b981";
   if (isOutOfStock) return "#ef4444";
   return "#273a3a";
@@ -346,7 +343,7 @@ export default function RewardsView({ tripId }: Props) {
               key={reward.id}
               reward={reward}
               justRefreshed={justRefreshed}
-              isTripPast={isTripPast}
+              isTripPast={isTripPast ?? false}
               onPress={openRewardDetailsModal}
               onPurchasePress={openPurchaseModal}
             />
@@ -373,7 +370,7 @@ export default function RewardsView({ tripId }: Props) {
         onClose={() => setShowRewardDetailsModal(false)}
         onPurchase={openPurchaseModal}
         onImageIndexChange={setPreviewImageIndex}
-        isTripPast={isTripPast}
+        isTripPast={isTripPast ?? false}
       />
     </View>
   );

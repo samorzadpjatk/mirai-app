@@ -54,10 +54,7 @@ describe("GroupsSearchBar", () => {
     renderWithProviders(<GroupsSearchBar value="" onChangeText={mockOnChangeText} />);
 
     const input = screen.getByPlaceholderText("Search groups by name...");
-    interface InputElement {
-      props: { value: string };
-    }
-    expect((input as unknown as InputElement).props.value).toBe("");
+    expect((input.props as { value: string }).value).toBe("");
   });
 
   it("should handle search icon", () => {

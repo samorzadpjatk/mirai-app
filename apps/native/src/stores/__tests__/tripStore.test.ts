@@ -275,7 +275,7 @@ describe("tripStore", () => {
         setSelectedTripId: jest.fn(),
       });
       mockUseTripDetails.mockReturnValue({
-        isTripPast: undefined as unknown as boolean,
+        isTripPast: undefined,
         isLoadingTrip: false,
         currentUser: null,
         isLoadingUser: false,
@@ -299,7 +299,7 @@ describe("tripStore", () => {
         setSelectedTripId: jest.fn(),
       });
       mockUseTripDetails.mockReturnValue({
-        isTripPast: undefined as unknown as boolean,
+        isTripPast: undefined,
         isLoadingTrip: false,
         currentUser: null,
         isLoadingUser: false,

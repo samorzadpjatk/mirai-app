@@ -15,7 +15,7 @@ describe("toFiniteNumberOrNull", () => {
   it("should return null for non-number values", () => {
     expect(toFiniteNumberOrNull(null)).toBeNull();
     expect(toFiniteNumberOrNull(undefined)).toBeNull();
-    expect(toFiniteNumberOrNull("string" as unknown as number)).toBeNull();
+    expect(toFiniteNumberOrNull("string")).toBeNull();
   });
 
   it("should return null for non-finite numbers", () => {

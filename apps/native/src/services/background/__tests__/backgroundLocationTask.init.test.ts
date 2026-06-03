@@ -61,7 +61,6 @@ describe("initBackgroundLocationTask", () => {
     await handler({
       data: { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
       error: null,
-
     });
 
     expect(mockDeps.shouldSend).toHaveBeenCalled();
@@ -85,7 +84,6 @@ describe("initBackgroundLocationTask", () => {
     await handler({
       data: { locations },
       error: null,
-
     });
 
     expect(mockDeps.sendUpdate).toHaveBeenCalledWith(locations[1]!);
@@ -104,7 +102,6 @@ describe("initBackgroundLocationTask", () => {
     await handler({
       data: { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
       error: null,
-
     });
 
     expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
@@ -123,7 +120,6 @@ describe("initBackgroundLocationTask", () => {
     await handler({
       data: { locations: [] },
       error: null,
-
     });
 
     expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
@@ -141,9 +137,10 @@ describe("initBackgroundLocationTask", () => {
 
     await expect(
       handler({
-        data: { locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[] },
+        data: {
+          locations: [{ coords: { latitude: 52.23, longitude: 21.01 } }] as LocationObject[],
+        },
         error: null,
-  
       }),
     ).resolves.toBeUndefined();
   });
@@ -230,7 +227,18 @@ describe("createBackgroundTaskDeps", () => {
 
     const deps = createBackgroundTaskDeps(factoryDeps);
 
-    const location = { coords: { latitude: null, longitude: 21.01 } } as unknown as LocationObject;
+    const location = {
+      coords: {
+        latitude: null,
+        longitude: 21.01,
+        altitude: null,
+        accuracy: null,
+        altitudeAccuracy: null,
+        heading: null,
+        speed: null,
+      },
+      timestamp: Date.now(),
+    };
     await deps.sendUpdate(location);
 
     expect(factoryDeps.getORPCClient).not.toHaveBeenCalled();

@@ -299,19 +299,17 @@ describe("useMapUsers", () => {
   });
 
   it("should handle null avatarUrl in usersData", () => {
-    const args = {
+    const args: Parameters<typeof useMapUsers>[0] = {
       ...defaultArgs,
       locationsByUserId: {
         "user-2": { latitude: 52.23, longitude: 21.01, updatedAt: Date.now() },
       },
       usersData: {
-        "user-2": { name: "Jane Doe", image: null },
+        "user-2": { name: "Jane Doe", image: undefined },
       },
     };
 
-    const { result } = renderHook(() =>
-      useMapUsers(args as unknown as Parameters<typeof useMapUsers>[0]),
-    );
+    const { result } = renderHook(() => useMapUsers(args));
 
     expect(result.current[0]!.avatarUrl).toBeNull();
   });

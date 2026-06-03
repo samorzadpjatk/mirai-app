@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx",
     "paths": {
       "~/*": ["./src/*"]
@@ -11,7 +12,7 @@
     "emitDeclarationOnly": true,
     "composite": true,
     "noEmit": false,
-    "types": ["@testing-library/jest-dom", "@testing-library/react", "vitest"]
+    "types": ["@testing-library/jest-dom", "@testing-library/react", "vitest", "bun"]
   },
   "references": [],
   "include": ["src/**/*"],

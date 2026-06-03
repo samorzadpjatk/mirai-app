@@ -128,7 +128,8 @@ describe("PGLite Test Helper", () => {
 
     // Add to schemaTables so reset() will truncate it and restart its sequence
     const { schemaTables } = await import("../schema");
-    (schemaTables as unknown as any[]).push(testSerialTable);
+    const mutableSchemaTables = Array.from(schemaTables);
+    mutableSchemaTables.push(testSerialTable);
 
     try {
       // Insert rows — serial should auto-increment
@@ -148,9 +149,10 @@ describe("PGLite Test Helper", () => {
       expect(afterReset.rows[0].id).toBe(1);
     } finally {
       // Clean up: remove from schemaTables and drop the table
-      const arr = schemaTables as unknown as any[];
-      const idx = arr.indexOf(testSerialTable);
-      if (idx > -1) arr.splice(idx, 1);
+      const idx = mutableSchemaTables.indexOf(testSerialTable);
+      if (idx > -1) {
+        mutableSchemaTables.splice(idx, 1);
+      }
       await db.execute(sql`DROP TABLE IF EXISTS "test_serial_table"`);
     }
   });

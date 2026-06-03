@@ -81,10 +81,7 @@ describe("GroupCard", () => {
     renderWithProviders(<GroupCard group={groupWithImage} onPress={mockOnPress} />);
     const image = screen.getByTestId("group-image");
     expect(image).toBeTruthy();
-    interface ImageElement {
-      props: { source: { uri: string } };
-    }
-    expect((image as unknown as ImageElement).props.source.uri).toBe(
+    expect((image.props as { source: { uri: string } }).source.uri).toBe(
       "https://example.com/image.jpg",
     );
   });

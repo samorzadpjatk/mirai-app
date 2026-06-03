@@ -5,7 +5,7 @@ import type { SupabaseClient } from "../types";
  * Minimal mock Supabase client for internal supabase package tests.
  * Avoids the circular dev-dependency shared <-> supabase.
  */
-export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): SupabaseClient {
+export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): unknown {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -143,5 +143,5 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
     },
   };
 
-  return { ...mockClient, ...overrides } as unknown as SupabaseClient;
+  return { ...mockClient, ...overrides };
 }
