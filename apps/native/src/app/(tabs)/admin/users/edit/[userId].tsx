@@ -39,7 +39,6 @@ export default function AdminEditUserScreen() {
   );
   const groups = groupsResponse?.groups ?? [];
 
-
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [wristNumber, setWristNumber] = useState(participant?.trips?.[0]?.wristNumber ?? "");
@@ -372,10 +371,10 @@ export default function AdminEditUserScreen() {
           <TouchableOpacity
             style={[
               styles.banButton,
-                (!banReady || banUserMutation.isPending) && styles.dangerButtonDisabled,
-              ]}
-              onPress={handleBanUser}
-              disabled={!banReady || banUserMutation.isPending}
+              (!banReady || banUserMutation.isPending) && styles.dangerButtonDisabled,
+            ]}
+            onPress={handleBanUser}
+            disabled={!banReady || banUserMutation.isPending}
           >
             <Text style={styles.banButtonText}>
               {banUserMutation.isPending ? "Banning..." : "Ban user"}

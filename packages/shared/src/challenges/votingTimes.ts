@@ -25,7 +25,11 @@ export const resolveVotingTimes = (input: VotingTimesInput): VotingTimesResult =
   const useInputTimes = input.status === "VOTING_PHASE" || input.status === "COMPLETED";
 
   return {
-    votingStartTime: useInputTimes ? input.votingStartTime : input.peerVotingTemplateWindow?.votingStartTime,
-    votingEndTime: useInputTimes ? input.votingEndTime : input.peerVotingTemplateWindow?.votingEndTime,
+    votingStartTime: useInputTimes
+      ? input.votingStartTime
+      : input.peerVotingTemplateWindow?.votingStartTime,
+    votingEndTime: useInputTimes
+      ? input.votingEndTime
+      : input.peerVotingTemplateWindow?.votingEndTime,
   };
 };

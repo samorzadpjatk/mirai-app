@@ -8,10 +8,7 @@ describe("buildCoinTransactionWhereExpr", () => {
   });
 
   it("returns an inArray expression when groupIdList is non-empty", () => {
-    const result = buildCoinTransactionWhereExpr(undefined, [
-      "group-1",
-      "group-2",
-    ]);
+    const result = buildCoinTransactionWhereExpr(undefined, ["group-1", "group-2"]);
     expect(result).toBeDefined();
   });
 
@@ -21,10 +18,7 @@ describe("buildCoinTransactionWhereExpr", () => {
   });
 
   it("prefers groupId over groupIdList when both are provided", () => {
-    const result = buildCoinTransactionWhereExpr("group-123", [
-      "group-1",
-      "group-2",
-    ]);
+    const result = buildCoinTransactionWhereExpr("group-123", ["group-1", "group-2"]);
     expect(result).toBeDefined();
   });
 

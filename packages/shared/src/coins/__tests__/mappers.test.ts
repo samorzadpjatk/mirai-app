@@ -11,9 +11,7 @@ const createMockRow = (
   ...overrides,
 });
 
-const createMockTransaction = (
-  overrides: Partial<RecentTransaction> = {},
-): RecentTransaction => ({
+const createMockTransaction = (overrides: Partial<RecentTransaction> = {}): RecentTransaction => ({
   id: "tx-123",
   amount: 50,
   reason: "Bonus",
@@ -55,9 +53,7 @@ describe("mapToMostActiveAdminStats", () => {
   it("maps rows with zero amounts and counts", () => {
     const rows = [createMockRow({ totalAmount: 0, count: 0 })];
     const result = mapToMostActiveAdminStats(rows);
-    expect(result).toEqual([
-      { adminId: "admin-123", _sum: { amount: 0 }, _count: { id: 0 } },
-    ]);
+    expect(result).toEqual([{ adminId: "admin-123", _sum: { amount: 0 }, _count: { id: 0 } }]);
   });
 });
 
@@ -89,9 +85,7 @@ describe("buildAdditionalInsights", () => {
   });
 
   it("builds insights with null transaction reason and group", () => {
-    const transactions = [
-      createMockTransaction({ reason: null, group: null }),
-    ];
+    const transactions = [createMockTransaction({ reason: null, group: null })];
     const result = buildAdditionalInsights(transactions, "Admin Three", 3);
     expect(result).toEqual({
       mostActiveAdmin: {

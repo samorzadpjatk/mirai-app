@@ -46,8 +46,7 @@ export function isValidLocationEvent(event: {
   userId?: string;
 }): boolean {
   return (
-    (event.type === "upsert" && !!event.location) ||
-    (event.type === "delete" && !!event.userId)
+    (event.type === "upsert" && !!event.location) || (event.type === "delete" && !!event.userId)
   );
 }
 
@@ -55,7 +54,12 @@ export function processLocationStreamEvent(
   event: {
     type: string;
     location?: {
-      user?: { id?: string; firstName?: string | null; lastName?: string | null; image?: string | null };
+      user?: {
+        id?: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        image?: string | null;
+      };
       coords?: { latitude: number; longitude: number };
       timestamp?: string | number | Date;
     };
@@ -77,12 +81,19 @@ export function processLocationStreamEvent(
     const userId = location?.user?.id ?? "";
     setLocationsByUserId((prev) => ({
       ...prev,
-      [userId]: buildLocationUpdateData(location as { coords: { latitude: number; longitude: number }; timestamp: string | number | Date }),
+      [userId]: buildLocationUpdateData(
+        location as {
+          coords: { latitude: number; longitude: number };
+          timestamp: string | number | Date;
+        },
+      ),
     }));
     if (location?.user) {
       setUsersData((prev) => ({
         ...prev,
-        [userId]: buildUserDataFromLocationUser(location.user as Parameters<typeof buildUserDataFromLocationUser>[0]),
+        [userId]: buildUserDataFromLocationUser(
+          location.user as Parameters<typeof buildUserDataFromLocationUser>[0],
+        ),
       }));
     }
   }

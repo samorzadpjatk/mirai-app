@@ -174,7 +174,15 @@ export const useFileUpload = () => {
               onError: (uploadError) => {
                 const errorObject = toErrorObject(uploadError, "Upload failed");
 
-                if (shouldRetryUpload(attempt, maxAttempts, retrying, errorObject.message, retryPredicate)) {
+                if (
+                  shouldRetryUpload(
+                    attempt,
+                    maxAttempts,
+                    retrying,
+                    errorObject.message,
+                    retryPredicate,
+                  )
+                ) {
                   retrying = true;
                   attempt += 1;
                   void tusUpload.abort().then(async () => {
@@ -182,8 +190,11 @@ export const useFileUpload = () => {
                       const refreshedTicket = await trpcClient.storage.createUploadUrl.call({
                         storagePath: input.storagePath,
                       });
-                      void ({ // retry metadata available in context
-                      });
+                      void (
+                        {
+                          // retry metadata available in context
+                        }
+                      );
                       retrying = false;
                       startUpload(refreshedTicket);
                     } catch (refreshError) {
@@ -229,7 +240,6 @@ export const useFileUpload = () => {
                       urlStorage.removeUpload(previousUpload.urlStorageKey),
                     ),
                   );
-
                 }
                 tusUpload.start();
               })
@@ -237,10 +247,7 @@ export const useFileUpload = () => {
                 tusUpload
                   .abort()
                   .then(() => {
-                    const errorObject = toErrorObject(
-                      resumeError,
-                      "Failed to prepare upload",
-                    );
+                    const errorObject = toErrorObject(resumeError, "Failed to prepare upload");
                     if (mountedRef.current) {
                       setStatus("error");
                       setError(errorObject);
@@ -248,10 +255,7 @@ export const useFileUpload = () => {
                     reject(errorObject);
                   })
                   .catch((abortError) => {
-                    const errorObject = toErrorObject(
-                      abortError,
-                      "Failed to abort upload",
-                    );
+                    const errorObject = toErrorObject(abortError, "Failed to abort upload");
                     if (mountedRef.current) {
                       setStatus("error");
                       setError(errorObject);
@@ -286,4 +290,3 @@ export const useFileUpload = () => {
     result,
   } as const;
 };
-

@@ -115,16 +115,7 @@ describe("buildFilteredUsers", () => {
   });
 
   it("should not prepend current user when missing required fields", () => {
-    const result = buildFilteredUsers(
-      [activeUser],
-      now,
-      "me",
-      null,
-      "Me",
-      null,
-      true,
-      true,
-    );
+    const result = buildFilteredUsers([activeUser], now, "me", null, "Me", null, true, true);
     expect(result).toEqual([activeUser]);
   });
 });

@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  resolveTripIdForUpdate,
-  resolveTripIdForRemove,
-} from "../../groups/useGroupEditor";
+import { resolveTripIdForUpdate, resolveTripIdForRemove } from "../../groups/useGroupEditor";
 
 describe("resolveTripIdForUpdate", () => {
   it("should return provided tripId when available", () => {

@@ -54,10 +54,7 @@ export const getBanStatus = async (context: UserBaseContext) => {
   return parseBanStatus(adminUser?.banned_until, adminUser?.app_metadata?.ban_reason);
 };
 
-export const getBanStatusByEmail = async (
-  context: UserBaseContext,
-  input: { email: string },
-) => {
+export const getBanStatusByEmail = async (context: UserBaseContext, input: { email: string }) => {
   const normalizedEmail = normalizeEmail(input.email);
   const perPage = 1000;
   let page = 1;
@@ -160,10 +157,7 @@ export const getByIdWithGroup = async (
   });
 };
 
-export const getMyWithGroup = async (
-  context: UserContext,
-  input: { tripId: string },
-) => {
+export const getMyWithGroup = async (context: UserContext, input: { tripId: string }) => {
   return await context.db.query.users.findFirst({
     where: (u, { eq }) => eq(u.id, context.dbUser.id),
     columns: {
@@ -247,13 +241,7 @@ export const searchWithPagination = async (
   context: UserContext,
   input: {
     tripId: string;
-    field:
-      | "firstName"
-      | "lastName"
-      | "email"
-      | "wristNumber"
-      | "houseNumber"
-      | "groupName";
+    field: "firstName" | "lastName" | "email" | "wristNumber" | "houseNumber" | "groupName";
     searchTerm?: string;
     pagination?: {
       limit: number;
@@ -356,7 +344,7 @@ export const searchWithPagination = async (
     field === "houseNumber" && searchTerm
       ? and(
           eq(tripParticipants.tripId, tripId),
-          sql`LOWER(${tripParticipants.houseNumber}) LIKE LOWER(${'%' + searchTerm + '%'})`,
+          sql`LOWER(${tripParticipants.houseNumber}) LIKE LOWER(${"%" + searchTerm + "%"})`,
         )
       : buildUserSearchWhere(tripId, field, searchTerm);
 

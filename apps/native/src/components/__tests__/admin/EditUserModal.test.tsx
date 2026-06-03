@@ -51,8 +51,6 @@ jest.mock("../../admin/AdminModal", () => {
   };
 });
 
-
-
 describe("EditUserModal", () => {
   const mockUser = {
     id: "user-1",

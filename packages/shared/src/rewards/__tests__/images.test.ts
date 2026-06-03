@@ -23,11 +23,17 @@ describe("parseRewardImages", () => {
   });
 
   it("filters non-string values from JSON array", () => {
-    expect(parseRewardImages('["img1.jpg", 123, null, "img2.jpg"]')).toEqual(["img1.jpg", "img2.jpg"]);
+    expect(parseRewardImages('["img1.jpg", 123, null, "img2.jpg"]')).toEqual([
+      "img1.jpg",
+      "img2.jpg",
+    ]);
   });
 
   it("trims and filters empty strings from JSON array", () => {
-    expect(parseRewardImages('["img1.jpg", "  ", "", "img2.jpg"]')).toEqual(["img1.jpg", "img2.jpg"]);
+    expect(parseRewardImages('["img1.jpg", "  ", "", "img2.jpg"]')).toEqual([
+      "img1.jpg",
+      "img2.jpg",
+    ]);
   });
 
   it("returns single-item array for legacy string format", () => {

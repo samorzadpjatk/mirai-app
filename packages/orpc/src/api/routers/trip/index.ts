@@ -74,12 +74,8 @@ export const tripRouter = createORPCRouter({
         .optional(),
     )
     .handler(handleGetAll),
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
-  getByIdAdmin: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetByIdAdmin),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
+  getByIdAdmin: adminProcedure.input(z.object({ id: z.string() })).handler(handleGetByIdAdmin),
   getResources: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .handler(handleGetResources),
@@ -106,7 +102,5 @@ export const tripRouter = createORPCRouter({
       }),
     )
     .handler(handleUpdateTrip),
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleDeleteTrip),
+  delete: adminProcedure.input(z.object({ id: z.string() })).handler(handleDeleteTrip),
 });

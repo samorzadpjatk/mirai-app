@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { toOptionalString, attachCreatedByEmail, getNextScheduledStartDate, getTemplateScheduleDates, normalizeScheduleWindow } from "../scheduleUtils";
+import {
+  toOptionalString,
+  attachCreatedByEmail,
+  getNextScheduledStartDate,
+  getTemplateScheduleDates,
+  normalizeScheduleWindow,
+} from "../scheduleUtils";
 
 describe("toOptionalString", () => {
   it("returns undefined for null", () => {

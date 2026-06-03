@@ -13,7 +13,12 @@ interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   testID?: string;
 }
 
-export function ThemedTextInput({ style, error = false, testID = "themed-text-input", ...props }: ThemedTextInputProps) {
+export function ThemedTextInput({
+  style,
+  error = false,
+  testID = "themed-text-input",
+  ...props
+}: ThemedTextInputProps) {
   return (
     <TextInput
       testID={testID}

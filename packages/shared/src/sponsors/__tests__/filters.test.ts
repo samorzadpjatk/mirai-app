@@ -36,9 +36,7 @@ describe("extractActiveSponsors", () => {
 
   it("returns active sponsors", () => {
     const activeSponsor = createMockSponsor({ id: "active-1", name: "Active Sponsor" });
-    const tripSponsors = [
-      createMockTripSponsor(activeSponsor),
-    ];
+    const tripSponsors = [createMockTripSponsor(activeSponsor)];
     const result = extractActiveSponsors(tripSponsors);
     expect(result).toHaveLength(1);
     expect(result[0]!.id).toBe("active-1");
@@ -58,10 +56,7 @@ describe("extractActiveSponsors", () => {
 
   it("filters out entries with null sponsor", () => {
     const activeSponsor = createMockSponsor({ id: "active-1" });
-    const tripSponsors = [
-      createMockTripSponsor(activeSponsor),
-      createMockTripSponsor(null),
-    ];
+    const tripSponsors = [createMockTripSponsor(activeSponsor), createMockTripSponsor(null)];
     const result = extractActiveSponsors(tripSponsors);
     expect(result).toHaveLength(1);
     expect(result[0]!.id).toBe("active-1");

@@ -60,7 +60,9 @@ describe("validatePeerVotingTimeline", () => {
       endTime: new Date(),
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain("Peer voting challenge requires voting duration in hours or days");
+    expect(result.errors).toContain(
+      "Peer voting challenge requires voting duration in hours or days",
+    );
   });
 
   it("returns valid with voting window instead of duration", () => {
@@ -82,7 +84,9 @@ describe("validatePeerVotingTimeline", () => {
       votingDurationHours: 0,
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(`Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`);
+    expect(result.errors).toContain(
+      `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    );
   });
 
   it("returns error for invalid voting duration (negative)", () => {
@@ -93,7 +97,9 @@ describe("validatePeerVotingTimeline", () => {
       votingDurationHours: -1,
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(`Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`);
+    expect(result.errors).toContain(
+      `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    );
   });
 
   it("returns error for invalid voting duration (decimal)", () => {
@@ -104,7 +110,9 @@ describe("validatePeerVotingTimeline", () => {
       votingDurationHours: 1.5,
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(`Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`);
+    expect(result.errors).toContain(
+      `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    );
   });
 
   it("returns error for voting duration exceeding max", () => {
@@ -115,7 +123,9 @@ describe("validatePeerVotingTimeline", () => {
       votingDurationHours: MAX_PEER_VOTING_DURATION_HOURS + 1,
     });
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(`Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`);
+    expect(result.errors).toContain(
+      `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    );
   });
 
   it("returns error when voting start is after end", () => {

@@ -3,11 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { locations, locationShares, locationSharingRequests } from "@mirai-app/db";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { toExpoLocation } from "@mirai-app/shared/locations";
-import {
-  mapUserWithAvatar,
-  ensureUserInActiveTrip,
-  assertShareableTargets,
-} from "./utils";
+import { mapUserWithAvatar, ensureUserInActiveTrip, assertShareableTargets } from "./utils";
 import type { LocationContext } from "./queries";
 import type { SharingUser } from "./types";
 
@@ -21,10 +17,7 @@ type LocationDataInput = {
   speed?: number | null;
 };
 
-export async function* updateLocationStream(
-  context: LocationContext,
-  input: LocationDataInput,
-) {
+export async function* updateLocationStream(context: LocationContext, input: LocationDataInput) {
   const [location] = await context.db
     .insert(locations)
     .values({
@@ -111,9 +104,7 @@ export const updateSharingSettings = async (
 
   // Update shares if userIdsToShareWith provided
   if ((userIdsToShareWith?.length ?? 0) > 0) {
-    await context.db
-      .delete(locationShares)
-      .where(eq(locationShares.locationId, locationRow.id));
+    await context.db.delete(locationShares).where(eq(locationShares.locationId, locationRow.id));
 
     await context.db
       .insert(locationShares)
@@ -149,10 +140,7 @@ export const updateSharingSettings = async (
   };
 };
 
-export const updateLocation = async (
-  context: LocationContext,
-  input: LocationDataInput,
-) => {
+export const updateLocation = async (context: LocationContext, input: LocationDataInput) => {
   const [location] = await context.db
     .insert(locations)
     .values({
@@ -184,10 +172,7 @@ export const updateLocation = async (
   return location;
 };
 
-export const addUserToSharing = async (
-  context: LocationContext,
-  input: { userId: string },
-) => {
+export const addUserToSharing = async (context: LocationContext, input: { userId: string }) => {
   await ensureUserInActiveTrip(context.db, context.dbUser.id);
   await assertShareableTargets({
     db: context.db,

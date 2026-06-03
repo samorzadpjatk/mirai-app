@@ -11,7 +11,11 @@ export function randomUUID(): string {
 
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     crypto.getRandomValues(bytes);
-  } else if (typeof crypto !== "undefined" && "webcrypto" in crypto && isCryptoWebCrypto(crypto.webcrypto)) {
+  } else if (
+    typeof crypto !== "undefined" &&
+    "webcrypto" in crypto &&
+    isCryptoWebCrypto(crypto.webcrypto)
+  ) {
     crypto.webcrypto.getRandomValues(bytes);
   } else {
     throw new Error("No secure random source available");

@@ -13,8 +13,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
+    "test": "vitest --run --changed",
+    "test:ci": "vitest run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },
   "keywords": [],

@@ -17,9 +17,7 @@ describe("useMyGroup (MSW)", () => {
       ],
     };
 
-    server.use(
-      createORPCHandler(["group", "getMy"], () => mockGroup),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => mockGroup));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 
@@ -31,9 +29,7 @@ describe("useMyGroup (MSW)", () => {
   });
 
   it("should return null when user has no group", async () => {
-    server.use(
-      createORPCHandler(["group", "getMy"], () => null),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => null));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 
@@ -78,9 +74,7 @@ describe("useMyGroup (MSW)", () => {
       participants: [],
     };
 
-    server.use(
-      createORPCHandler(["group", "getMy"], () => mockGroup),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => mockGroup));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 
@@ -128,9 +122,7 @@ describe("useMyGroup (MSW)", () => {
       participants: [],
     };
 
-    server.use(
-      createORPCHandler(["group", "getMy"], () => mockGroup),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => mockGroup));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 
@@ -158,9 +150,7 @@ describe("useMyGroup (MSW)", () => {
       ],
     };
 
-    server.use(
-      createORPCHandler(["group", "getMy"], () => mockGroup),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => mockGroup));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 
@@ -181,9 +171,7 @@ describe("useMyGroup (MSW)", () => {
       participants: [{ id: "user-1", name: "Alice" }],
     };
 
-    server.use(
-      createORPCHandler(["group", "getMy"], () => mockGroup),
-    );
+    server.use(createORPCHandler(["group", "getMy"], () => mockGroup));
 
     const { result } = renderHookWithMSW(() => useMyGroup("trip-123"));
 

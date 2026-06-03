@@ -543,10 +543,7 @@ export const toggleReaction = async (
   };
 };
 
-export const deleteActivity = async (
-  context: { db: DB },
-  input: { activityId: string },
-) => {
+export const deleteActivity = async (context: { db: DB }, input: { activityId: string }) => {
   await context.db.delete(activityFeeds).where(eq(activityFeeds.id, input.activityId));
 
   return { success: true };

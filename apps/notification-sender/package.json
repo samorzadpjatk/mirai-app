@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest --run --changed",
+    "test:ci": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "clean": "rm -rf node_modules"

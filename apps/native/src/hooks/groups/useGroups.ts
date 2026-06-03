@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { flattenGroups, filterGroupsBySearch, buildGroupQueryInput, getNextGroupPageParam } from "@mirai-app/shared";
+import {
+  flattenGroups,
+  filterGroupsBySearch,
+  buildGroupQueryInput,
+  getNextGroupPageParam,
+} from "@mirai-app/shared";
 import type { GroupListItem } from "~/components/trips/groups/types";
 
 export function useGroups(tripId?: string | null) {

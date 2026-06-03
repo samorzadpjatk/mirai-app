@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildActivityWhere,
-  getActivityRelationTree,
-  getActivityColumns,
-} from "../queryBuilders";
+import { buildActivityWhere, getActivityRelationTree, getActivityColumns } from "../queryBuilders";
 
 describe("buildActivityWhere", () => {
   it("returns SQL expression for trip filter with hidden excluded", () => {

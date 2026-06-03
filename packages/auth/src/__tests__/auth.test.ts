@@ -27,7 +27,11 @@ vi.mock("@mirai-app/shared", () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
-  formatDisplayName: (firstName?: string | null, lastName?: string | null, fallback?: string | null) => {
+  formatDisplayName: (
+    firstName?: string | null,
+    lastName?: string | null,
+    fallback?: string | null,
+  ) => {
     const parts = [firstName, lastName].filter(Boolean);
     return parts.length > 0 ? parts.join(" ") : (fallback ?? null);
   },
@@ -174,7 +178,9 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(
+        AuthenticationError,
+      );
     });
 
     it("should throw AuthenticationError when session user is null", async () => {
@@ -272,9 +278,7 @@ describe("authServer", () => {
       // Delete the user after seeding so the second lookup fails
       await testDb.db.delete(users).where(eq(users.authUserId, "auth-123"));
 
-      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(
-        "Unauthorized",
-      );
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow("Unauthorized");
     });
   });
 
@@ -292,7 +296,9 @@ describe("authServer", () => {
         error: null,
       } as never);
 
-      await expect(requireAdmin(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
+      await expect(requireAdmin(testDb.db, mockSupabase, "token")).rejects.toThrow(
+        AuthorizationError,
+      );
     });
 
     it("should return dbUser when user is admin", async () => {

@@ -39,9 +39,10 @@ export async function createPgliteTestDb() {
     cleanup: async () => {
       await client.close();
     },
-    reset: async () => {
+    reset: async (extraTables?: (typeof schemaTables)[number][]) => {
       // Reset all tables for clean state between tests
-      for (const table of schemaTables) {
+      const tablesToReset = extraTables ? [...schemaTables, ...extraTables] : schemaTables;
+      for (const table of tablesToReset) {
         await db.execute(
           sql`TRUNCATE TABLE ${sql.raw(getTableName(table))} RESTART IDENTITY CASCADE`,
         );

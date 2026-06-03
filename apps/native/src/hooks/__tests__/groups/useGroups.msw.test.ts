@@ -732,9 +732,7 @@ describe("useGroupEditor (MSW)", () => {
   });
 
   it("should assign user to group via assignUser action", async () => {
-    server.use(
-      createORPCHandler(["group", "assignUserToGroup"], () => ({ success: true })),
-    );
+    server.use(createORPCHandler(["group", "assignUserToGroup"], () => ({ success: true })));
 
     const { result } = renderHookWithMSW(() => useGroupEditor("group-123"));
 
@@ -748,9 +746,7 @@ describe("useGroupEditor (MSW)", () => {
   });
 
   it("should remove user from group via removeUser action", async () => {
-    server.use(
-      createORPCHandler(["group", "removeUserFromGroup"], () => ({ success: true })),
-    );
+    server.use(createORPCHandler(["group", "removeUserFromGroup"], () => ({ success: true })));
 
     const { result } = renderHookWithMSW(() => useGroupEditor("group-123"));
 
@@ -781,9 +777,9 @@ describe("useGroupEditor (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    await expect(
-      result.current.updateGroup({ id: "group-123", name: "Updated" }),
-    ).rejects.toThrow("Missing tripId for updateGroup");
+    await expect(result.current.updateGroup({ id: "group-123", name: "Updated" })).rejects.toThrow(
+      "Missing tripId for updateGroup",
+    );
   });
 
   it("should throw when removing user without tripId", async () => {

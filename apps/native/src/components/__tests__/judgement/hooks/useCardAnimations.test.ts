@@ -35,13 +35,7 @@ describe("useCardAnimations", () => {
     const { result } = renderHook(() => useCardAnimations());
     const reviewCurrent = jest.fn();
 
-    result.current.animateDecision(
-      "APPROVED",
-      400,
-      false,
-      false,
-      reviewCurrent,
-    );
+    result.current.animateDecision("APPROVED", 400, false, false, reviewCurrent);
 
     expect(reviewCurrent).not.toHaveBeenCalled();
   });
@@ -50,13 +44,7 @@ describe("useCardAnimations", () => {
     const { result } = renderHook(() => useCardAnimations());
     const reviewCurrent = jest.fn();
 
-    result.current.animateDecision(
-      "APPROVED",
-      400,
-      true,
-      true,
-      reviewCurrent,
-    );
+    result.current.animateDecision("APPROVED", 400, true, true, reviewCurrent);
 
     expect(reviewCurrent).not.toHaveBeenCalled();
   });
@@ -65,14 +53,7 @@ describe("useCardAnimations", () => {
     const { result } = renderHook(() => useCardAnimations());
     const reviewCurrent = jest.fn();
 
-    result.current.animateDecision(
-      "REJECTED",
-      400,
-      false,
-      true,
-      reviewCurrent,
-      "",
-    );
+    result.current.animateDecision("REJECTED", 400, false, true, reviewCurrent, "");
 
     expect(reviewCurrent).not.toHaveBeenCalled();
   });
@@ -81,14 +62,7 @@ describe("useCardAnimations", () => {
     const { result } = renderHook(() => useCardAnimations());
     const reviewCurrent = jest.fn();
 
-    result.current.animateDecision(
-      "REJECTED",
-      400,
-      false,
-      true,
-      reviewCurrent,
-      "   ",
-    );
+    result.current.animateDecision("REJECTED", 400, false, true, reviewCurrent, "   ");
 
     expect(reviewCurrent).not.toHaveBeenCalled();
   });

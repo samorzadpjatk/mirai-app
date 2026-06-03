@@ -7,9 +7,7 @@ export interface DeliveryStats {
   successRate: number;
 }
 
-export function buildDeliveryStats(
-  deliveries: Array<{ status: string }>,
-): DeliveryStats {
+export function buildDeliveryStats(deliveries: Array<{ status: string }>): DeliveryStats {
   const total = deliveries.length;
   const successful = deliveries.filter((d) => d.status === "success").length;
   const failed = deliveries.filter((d) => d.status === "failure").length;

@@ -95,7 +95,8 @@ export function useAdminUsers(tripId: string, searchTerm: string, field: UserSea
   const { data, isLoading, isRefetching, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.user.searchWithPagination.infiniteOptions({
-        input: (pageParam: number) => buildUserSearchQueryInput(tripId, field, normalizedSearchTerm, pageParam),
+        input: (pageParam: number) =>
+          buildUserSearchQueryInput(tripId, field, normalizedSearchTerm, pageParam),
         initialPageParam: 0,
         getNextPageParam: getNextUserSearchPageParam,
         enabled: Boolean(tripId),

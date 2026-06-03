@@ -55,10 +55,10 @@ export const seedTrip = async (
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
-        logger.warn(
-          error,
-          `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}`,
-        );
+      logger.warn(
+        error,
+        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}`,
+      );
     }
   }
 

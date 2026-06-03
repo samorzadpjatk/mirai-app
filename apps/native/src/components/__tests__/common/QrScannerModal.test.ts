@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  shouldDisableScanning,
-  formatScanErrorMessage,
-} from "../../common/QrScannerModal";
+import { shouldDisableScanning, formatScanErrorMessage } from "../../common/QrScannerModal";
 
 describe("shouldDisableScanning", () => {
   it("should return true when scanOncePerSession and hasScannedThisSession", () => {

@@ -352,10 +352,7 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
       const t = await executeWithRetry(
         () => expo.sendPushNotificationsAsync(chunk),
         (err, retryAttempt) => {
-          logger.error(
-            err,
-            `Error sending push notification chunk (attempt ${retryAttempt + 1})`,
-          );
+          logger.error(err, `Error sending push notification chunk (attempt ${retryAttempt + 1})`);
         },
         undefined,
         3,
@@ -455,12 +452,11 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
       .onConflictDoNothing();
   }
 
-  const { sent: sentCount, failed: failedCount, total: totalCount } = calculateDeliveryStats(
-    resultByUser,
-    explicitAudienceUserIds,
-    sentUserIds,
-    failedUserIds,
-  );
+  const {
+    sent: sentCount,
+    failed: failedCount,
+    total: totalCount,
+  } = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, sentUserIds, failedUserIds);
 
   return {
     success: failedCount === 0,

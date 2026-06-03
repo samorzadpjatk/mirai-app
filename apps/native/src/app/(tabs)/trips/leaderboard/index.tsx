@@ -27,7 +27,9 @@ export default function LeaderboardScreen() {
   const rankedGroups: RankedGroup[] = useMemo(() => {
     if (!trip?.groups) return [];
 
-    const userGroupId = trip.participants.find((p: { user: { id: string } }) => p.user.id === currentUser?.id)?.group?.id;
+    const userGroupId = trip.participants.find(
+      (p: { user: { id: string } }) => p.user.id === currentUser?.id,
+    )?.group?.id;
 
     const sorted = [...trip.groups]
       .sort((a, b) => b.coins - a.coins)

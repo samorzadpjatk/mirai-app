@@ -88,7 +88,10 @@ describe("makeQueryClient configuration", () => {
 
   it("should use longer base delay for 429 errors", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    const retryDelayFn = defaultedOptions.retryDelay as (attemptIndex: number, error: unknown) => number;
+    const retryDelayFn = defaultedOptions.retryDelay as (
+      attemptIndex: number,
+      error: unknown,
+    ) => number;
     const rateLimitError = { status: 429 };
     const serverError = { status: 500 };
 
@@ -102,7 +105,10 @@ describe("makeQueryClient configuration", () => {
 
   it("should cap retry delay at 30 seconds", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    const retryDelayFn = defaultedOptions.retryDelay as (attemptIndex: number, error: unknown) => number;
+    const retryDelayFn = defaultedOptions.retryDelay as (
+      attemptIndex: number,
+      error: unknown,
+    ) => number;
     const error = { status: 500 };
 
     const delay = retryDelayFn(10, error);
@@ -111,7 +117,10 @@ describe("makeQueryClient configuration", () => {
 
   it("should apply jitter to retry delays", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    const retryDelayFn = defaultedOptions.retryDelay as (attemptIndex: number, error: unknown) => number;
+    const retryDelayFn = defaultedOptions.retryDelay as (
+      attemptIndex: number,
+      error: unknown,
+    ) => number;
     const error = { status: 500 };
 
     const delays = Array.from({ length: 20 }, () => retryDelayFn(1, error));
@@ -132,5 +141,3 @@ describe("getQueryClient browser caching", () => {
     expect(queryClient.getMutationCache()).toBeDefined();
   });
 });
-
-

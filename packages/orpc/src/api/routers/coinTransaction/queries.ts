@@ -48,7 +48,10 @@ export const getStatistics = async (context: CoinTransactionContext, input: { tr
   return { ...stats, time: new Date() };
 };
 
-export const getMostActiveAdminStats = async (context: CoinTransactionContext, input: { tripId: string }) => {
+export const getMostActiveAdminStats = async (
+  context: CoinTransactionContext,
+  input: { tripId: string },
+) => {
   const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
   if (groupIdList.length === 0) return [];
@@ -144,12 +147,19 @@ export const getQuickStats = async (context: CoinTransactionContext, input: { tr
 
   if (!richestGroupName) return null;
 
-  const stats = calculateQuickStats(totalCoins.totalAmount, totalCoins.count, richestGroupName.name);
+  const stats = calculateQuickStats(
+    totalCoins.totalAmount,
+    totalCoins.count,
+    richestGroupName.name,
+  );
 
   return { ...stats, time: new Date() };
 };
 
-export const getAdditionalInsights = async (context: CoinTransactionContext, input: { tripId: string }) => {
+export const getAdditionalInsights = async (
+  context: CoinTransactionContext,
+  input: { tripId: string },
+) => {
   const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
   if (groupIdList.length === 0) return null;
@@ -183,7 +193,11 @@ export const getAdditionalInsights = async (context: CoinTransactionContext, inp
 
   if (!mostActiveAdmin) return null;
 
-  return buildAdditionalInsights(recentTransactions, formatUserFullName(mostActiveAdmin), firstAdminStat.count);
+  return buildAdditionalInsights(
+    recentTransactions,
+    formatUserFullName(mostActiveAdmin),
+    firstAdminStat.count,
+  );
 };
 
 export const getCoinTransactions = async (

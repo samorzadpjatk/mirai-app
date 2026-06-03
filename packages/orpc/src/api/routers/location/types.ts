@@ -49,5 +49,3 @@ export interface SharingUser {
   lastName: string | null;
   image: string | null;
 }
-
-

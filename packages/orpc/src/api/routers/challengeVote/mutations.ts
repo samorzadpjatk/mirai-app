@@ -2,10 +2,7 @@ import { ORPCError } from "@orpc/server";
 import { eq, and, inArray } from "drizzle-orm";
 import { challenges, challengeVotes } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import {
-  validateVotePayload,
-  buildVoteInsertValues,
-} from "@mirai-app/shared";
+import { validateVotePayload, buildVoteInsertValues } from "@mirai-app/shared";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { voteColumns } from "./types";
@@ -150,9 +147,9 @@ export const submitVotes = async (
   const sortByVotePosition = (cv: any, { asc }: any) => [asc(cv.votePosition)];
 
   const result = await context.db.transaction(async (tx) => {
-    await tx.insert(challengeVotes).values(
-      buildVoteInsertValues(input.votes, input.challengeId, participant.id),
-    );
+    await tx
+      .insert(challengeVotes)
+      .values(buildVoteInsertValues(input.votes, input.challengeId, participant.id));
 
     await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
@@ -247,13 +244,7 @@ export const submitVote = async (
     const result = await context.db.transaction(async (tx) => {
       const [createdVote] = await tx
         .insert(challengeVotes)
-        .values(
-          buildVoteInsertValues(
-            [input],
-            input.challengeId,
-            participant.id,
-          ),
-        )
+        .values(buildVoteInsertValues([input], input.challengeId, participant.id))
         .returning();
 
       await recomputeSubmissionVotes({ db: tx }, input.challengeId);

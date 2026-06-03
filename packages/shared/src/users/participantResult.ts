@@ -34,10 +34,7 @@ export const buildWristNumberConflictMessage = (
   wristNumber: string,
   existingUser: { firstName: string | null; lastName: string | null },
 ): string => {
-  const displayName = formatDisplayName(
-    existingUser.firstName,
-    existingUser.lastName,
-  );
+  const displayName = formatDisplayName(existingUser.firstName, existingUser.lastName);
   return `Numer opaski ${wristNumber} jest już przypisany do użytkownika: ${displayName ?? "Nieznany użytkownik"}`;
 };
 

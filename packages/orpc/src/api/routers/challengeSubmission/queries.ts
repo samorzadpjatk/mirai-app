@@ -108,8 +108,7 @@ export const fetchSubmissionById = async (params: {
   }
 
   const challengeCheck = await params.context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) =>
-      and(eq(c.id, submission.challengeId), eq(c.tripId, params.tripId)),
+    where: (c, { eq, and }) => and(eq(c.id, submission.challengeId), eq(c.tripId, params.tripId)),
     columns: { id: true },
   });
   if (!challengeCheck) {

@@ -83,7 +83,7 @@ export function shapeTripParticipant(
     group: shapedGroup,
     user: {
       ...userRest,
-      email: authUserId ? emailByAuthUserId.get(authUserId) ?? null : null,
+      email: authUserId ? (emailByAuthUserId.get(authUserId) ?? null) : null,
     },
   } as ShapedTripParticipant;
 }
@@ -96,7 +96,9 @@ export interface TripWithDetailRelations {
 
 export interface TripDetailResponse {
   tripSponsors: TripSponsorEntry[];
-  groups: Array<TripGroupInput & { _count: { participants: number }; image: string | null | undefined }>;
+  groups: Array<
+    TripGroupInput & { _count: { participants: number }; image: string | null | undefined }
+  >;
   participants: ShapedTripParticipant[];
 }
 

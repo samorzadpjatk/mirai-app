@@ -48,10 +48,7 @@ export const update = async (
 };
 
 export const deleteSponsor = async (context: SponsorContext, input: { id: string }) => {
-  const [sponsor] = await context.db
-    .delete(sponsors)
-    .where(eq(sponsors.id, input.id))
-    .returning();
+  const [sponsor] = await context.db.delete(sponsors).where(eq(sponsors.id, input.id)).returning();
   return sponsor;
 };
 
@@ -74,8 +71,7 @@ export const addToTrip = async (
   }
 
   const existing = await context.db.query.tripSponsors.findFirst({
-    where: (ts, { eq, and }) =>
-      and(eq(ts.tripId, input.tripId), eq(ts.sponsorId, input.sponsorId)),
+    where: (ts, { eq, and }) => and(eq(ts.tripId, input.tripId), eq(ts.sponsorId, input.sponsorId)),
   });
 
   if (existing) {
@@ -100,9 +96,7 @@ export const removeFromTrip = async (
 ) => {
   const [tripSponsor] = await context.db
     .delete(tripSponsors)
-    .where(
-      and(eq(tripSponsors.tripId, input.tripId), eq(tripSponsors.sponsorId, input.sponsorId)),
-    )
+    .where(and(eq(tripSponsors.tripId, input.tripId), eq(tripSponsors.sponsorId, input.sponsorId)))
     .returning();
   return tripSponsor;
 };

@@ -22,15 +22,21 @@ describe("buildChallengeQueryInput", () => {
 
 describe("getNextChallengePageParam", () => {
   it("should return next offset when hasMore is true", () => {
-    const result = getNextChallengePageParam({ pagination: { hasMore: true, offset: 0, limit: 30 } });
+    const result = getNextChallengePageParam({
+      pagination: { hasMore: true, offset: 0, limit: 30 },
+    });
     expect(result).toBe(30);
   });
   it("should return undefined when hasMore is false", () => {
-    const result = getNextChallengePageParam({ pagination: { hasMore: false, offset: 30, limit: 30 } });
+    const result = getNextChallengePageParam({
+      pagination: { hasMore: false, offset: 30, limit: 30 },
+    });
     expect(result).toBeUndefined();
   });
   it("should handle different offset and limit values", () => {
-    const result = getNextChallengePageParam({ pagination: { hasMore: true, offset: 60, limit: 20 } });
+    const result = getNextChallengePageParam({
+      pagination: { hasMore: true, offset: 60, limit: 20 },
+    });
     expect(result).toBe(80);
   });
 });

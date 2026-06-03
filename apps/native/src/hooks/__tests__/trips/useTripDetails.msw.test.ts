@@ -45,9 +45,7 @@ describe("useTripDetails (MSW)", () => {
   });
 
   it("should return null when no tripId provided", async () => {
-    server.use(
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
+    server.use(createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })));
 
     const { result } = renderHookWithMSW(() => useTripDetails(null));
 
@@ -61,9 +59,7 @@ describe("useTripDetails (MSW)", () => {
   });
 
   it("should handle empty string tripId", async () => {
-    server.use(
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
+    server.use(createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })));
 
     const { result } = renderHookWithMSW(() => useTripDetails(""));
 

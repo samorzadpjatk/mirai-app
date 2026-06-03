@@ -397,7 +397,9 @@ describe("createInactivityScheduler", () => {
     expect(consoleSpy).toHaveBeenCalledTimes(3);
     expect(consoleSpy).toHaveBeenNthCalledWith(1, "Scheduler started", { intervalMinutes: 5 });
     expect(consoleSpy).toHaveBeenNthCalledWith(2, "Running inactivity check");
-    expect(consoleSpy).toHaveBeenNthCalledWith(3, "Inactivity check completed", { result: { inactiveUsers: 5 } });
+    expect(consoleSpy).toHaveBeenNthCalledWith(3, "Inactivity check completed", {
+      result: { inactiveUsers: 5 },
+    });
 
     scheduler.stop();
     consoleSpy.mockRestore();

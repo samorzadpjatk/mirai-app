@@ -73,10 +73,13 @@ describe("URL Builders", () => {
 
   describe("rewriteSignedUrlHost", () => {
     it("should rewrite signed URL host with public URL base", () => {
-      const signedUrl = "https://abc123.supabase.co/storage/v1/object/sign/images/photo.jpg?token=xyz";
+      const signedUrl =
+        "https://abc123.supabase.co/storage/v1/object/sign/images/photo.jpg?token=xyz";
       const publicUrlBase = "https://cdn.example.com";
       const result = rewriteSignedUrlHost(signedUrl, publicUrlBase);
-      expect(result).toBe("https://cdn.example.com/storage/v1/object/sign/images/photo.jpg?token=xyz");
+      expect(result).toBe(
+        "https://cdn.example.com/storage/v1/object/sign/images/photo.jpg?token=xyz",
+      );
     });
 
     it("should rewrite protocol and port", () => {
@@ -113,10 +116,13 @@ describe("URL Builders", () => {
     });
 
     it("should preserve query parameters and path", () => {
-      const signedUrl = "https://old.host.com/storage/v1/object/sign/bucket/file.png?token=abc&expires=123";
+      const signedUrl =
+        "https://old.host.com/storage/v1/object/sign/bucket/file.png?token=abc&expires=123";
       const publicUrlBase = "https://new.host.com";
       const result = rewriteSignedUrlHost(signedUrl, publicUrlBase);
-      expect(result).toBe("https://new.host.com/storage/v1/object/sign/bucket/file.png?token=abc&expires=123");
+      expect(result).toBe(
+        "https://new.host.com/storage/v1/object/sign/bucket/file.png?token=abc&expires=123",
+      );
     });
   });
 

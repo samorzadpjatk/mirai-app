@@ -146,10 +146,7 @@ export const setRewardHidden = async (
   });
 };
 
-export const deleteReward = async (
-  context: { db: DB },
-  input: { id: string },
-) => {
+export const deleteReward = async (context: { db: DB }, input: { id: string }) => {
   const [purchaseCountResult] = await context.db
     .select({ count: count() })
     .from(rewardPurchases)
@@ -222,10 +219,7 @@ export const purchaseReward = async (
       });
     }
 
-    const totalAvailablePoints = await calculateTotalAvailablePoints(
-      tx,
-      reward.tripId,
-    );
+    const totalAvailablePoints = await calculateTotalAvailablePoints(tx, reward.tripId);
     const progress = calculateRewardProgress({
       reward,
       totalAvailablePoints,
@@ -610,5 +604,3 @@ export const updatePurchaseStatus = async (
     });
   });
 };
-
-

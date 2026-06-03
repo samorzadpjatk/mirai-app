@@ -59,11 +59,21 @@ describe("filterParticipantsByEmail", () => {
 
 describe("sortParticipants", () => {
   const participants = [
-    { user: { firstName: "Charlie", lastName: "Brown", authSummary: { email: "charlie@example.com" } } },
-    { user: { firstName: "Alice", lastName: "Smith", authSummary: { email: "alice@example.com" } } },
+    {
+      user: {
+        firstName: "Charlie",
+        lastName: "Brown",
+        authSummary: { email: "charlie@example.com" },
+      },
+    },
+    {
+      user: { firstName: "Alice", lastName: "Smith", authSummary: { email: "alice@example.com" } },
+    },
     { user: { firstName: "Bob", lastName: "Anderson", authSummary: { email: "bob@example.com" } } },
     { user: { firstName: null, lastName: "Doe", authSummary: { email: "nullfirst@example.com" } } },
-    { user: { firstName: "Alice", lastName: null, authSummary: { email: "alicenull@example.com" } } },
+    {
+      user: { firstName: "Alice", lastName: null, authSummary: { email: "alicenull@example.com" } },
+    },
     { user: { firstName: "Alice", lastName: "Smith", authSummary: { email: null } } },
   ];
 
@@ -154,7 +164,9 @@ describe("sortParticipants", () => {
   });
 
   it("handles single element array", () => {
-    const single = [{ user: { firstName: "Only", lastName: "One", authSummary: { email: "only@example.com" } } }];
+    const single = [
+      { user: { firstName: "Only", lastName: "One", authSummary: { email: "only@example.com" } } },
+    ];
     expect(sortParticipants(single, "firstName")).toEqual(single);
   });
 

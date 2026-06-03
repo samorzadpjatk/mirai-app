@@ -164,8 +164,6 @@ export default function GroupDetailsScreen() {
     return <GroupNotFoundState onGoBack={() => router.back()} />;
   }
 
-
-
   const organizerId = group.organizer?.id;
   const isGroupMember = group.participants.some(
     (participant) => participant.user.id === currentUser?.id,
@@ -361,7 +359,8 @@ export default function GroupDetailsScreen() {
                   </View>
                   <View style={styles.joinRequestUser}>
                     <Text style={styles.joinRequestName}>
-                      {formatDisplayName(request.user.firstName, request.user.lastName) ?? "Unknown User"}
+                      {formatDisplayName(request.user.firstName, request.user.lastName) ??
+                        "Unknown User"}
                     </Text>
                     <Text style={styles.joinRequestEmail}>{request.user.email ?? "No email"}</Text>
                   </View>

@@ -38,9 +38,7 @@ describe("randomUUID", () => {
 
     expect(mockGetRandomValues).toHaveBeenCalledTimes(1);
     expect(mockGetRandomValues).toHaveBeenCalledWith(expect.any(Uint8Array));
-    expect(result).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-    );
+    expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it("should fall back to crypto.webcrypto.getRandomValues when getRandomValues is unavailable", () => {
@@ -60,9 +58,7 @@ describe("randomUUID", () => {
     const result = randomUUID();
 
     expect(mockWebCryptoGetRandomValues).toHaveBeenCalledTimes(1);
-    expect(result).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-    );
+    expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it("should throw when no secure random source is available", () => {
@@ -86,9 +82,7 @@ describe("randomUUID", () => {
 
     const result = randomUUID();
 
-    expect(result).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-    );
+    expect(result).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it("should set correct version and variant bits", () => {

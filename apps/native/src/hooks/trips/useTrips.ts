@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { flattenTrips, buildTripQueryInput, getNextTripPageParam, calculateAllTrips } from "@mirai-app/shared";
+import {
+  flattenTrips,
+  buildTripQueryInput,
+  getNextTripPageParam,
+  calculateAllTrips,
+} from "@mirai-app/shared";
 import type { TripListItem } from "~/components/trips/list/types";
 import { getCachedTrips, setCachedTrips } from "~/services/storage/selectedTripStorage";
 
@@ -50,7 +55,10 @@ export function useTrips() {
     void setCachedTrips(normalizedTrips);
   }, [tripsData]);
 
-  const allTrips: TripListItem[] = useMemo(() => calculateAllTrips(tripsData as TripListItem[] | null, cachedTrips), [tripsData, cachedTrips]);
+  const allTrips: TripListItem[] = useMemo(
+    () => calculateAllTrips(tripsData as TripListItem[] | null, cachedTrips),
+    [tripsData, cachedTrips],
+  );
 
   const isLoadingTrips = (isLoading || !isCacheHydrated) && allTrips.length === 0;
 

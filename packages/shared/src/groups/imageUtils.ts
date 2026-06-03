@@ -9,7 +9,7 @@ export function toUserWithEmail<T extends { authUserId?: string | null }>(
   const { authUserId, ...rest } = user;
   return {
     ...rest,
-    email: authUserId ? emailByAuthUserId.get(authUserId) ?? null : null,
+    email: authUserId ? (emailByAuthUserId.get(authUserId) ?? null) : null,
   };
 }
 

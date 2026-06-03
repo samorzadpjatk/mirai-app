@@ -32,7 +32,12 @@ describe("shapeTripParticipant", () => {
     const emailMap = new Map([["u1", "alice@example.com"]]);
     const result = shapeTripParticipant(participant, countMap, emailMap);
     expect(result.user).toEqual({ name: "Alice", email: "alice@example.com" });
-    expect(result.group).toEqual({ id: "g1", isDeleted: false, image: "group.jpg", _count: { participants: 3 } });
+    expect(result.group).toEqual({
+      id: "g1",
+      isDeleted: false,
+      image: "group.jpg",
+      _count: { participants: 3 },
+    });
   });
 
   it("returns null user when participant has no user", () => {
@@ -73,13 +78,19 @@ describe("buildTripDetailResponse", () => {
   it("builds full detail response with all relations", () => {
     const trip = {
       tripSponsors: [{ sponsor: { isActive: true } }, { sponsor: { isActive: false } }],
-      groups: [{ id: "g1", image: "g1.jpg" }, { id: "g2", image: null }],
+      groups: [
+        { id: "g1", image: "g1.jpg" },
+        { id: "g2", image: null },
+      ],
       participants: [
         { user: { authUserId: "u1", name: "Alice" }, group: { id: "g1", isDeleted: false } },
         { user: null, group: { id: "g2", isDeleted: false } },
       ],
     };
-    const countMap = new Map([["g1", 2], ["g2", 4]]);
+    const countMap = new Map([
+      ["g1", 2],
+      ["g2", 4],
+    ]);
     const emailMap = new Map([["u1", "alice@example.com"]]);
     const resolvedImages = new Map([["g1", "resolved-g1.jpg"]]);
 
@@ -92,7 +103,12 @@ describe("buildTripDetailResponse", () => {
     ]);
     expect(result.participants).toHaveLength(2);
     expect(result.participants[0]!.user).toEqual({ name: "Alice", email: "alice@example.com" });
-    expect(result.participants[0]!.group).toEqual({ id: "g1", isDeleted: false, image: undefined, _count: { participants: 2 } });
+    expect(result.participants[0]!.group).toEqual({
+      id: "g1",
+      isDeleted: false,
+      image: undefined,
+      _count: { participants: 2 },
+    });
     expect(result.participants[1]!.user).toBeNull();
   });
 

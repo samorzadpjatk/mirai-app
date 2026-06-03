@@ -77,7 +77,12 @@ describe("validateSubmissionPayload", () => {
   });
 
   it("passes for IMAGE_LOCATION with both", () => {
-    const input = createMockInput({ submissionType: "IMAGE_LOCATION", imageIds: ["img-1"], latitude: 1, longitude: 1 });
+    const input = createMockInput({
+      submissionType: "IMAGE_LOCATION",
+      imageIds: ["img-1"],
+      latitude: 1,
+      longitude: 1,
+    });
     expect(() => validateSubmissionPayload(input)).not.toThrow();
   });
 
@@ -93,7 +98,9 @@ describe("validateSubmissionPayload", () => {
 
   it("throws for QR_CODE with no text and no images", () => {
     const input = createMockInput({ submissionType: "QR_CODE" });
-    expect(() => validateSubmissionPayload(input)).toThrow("Wymagany jest kod QR (tekst lub obraz)");
+    expect(() => validateSubmissionPayload(input)).toThrow(
+      "Wymagany jest kod QR (tekst lub obraz)",
+    );
   });
 
   it("passes for QR_CODE with text", () => {
@@ -121,44 +128,84 @@ describe("shouldAutoApproveSubmission", () => {
 
   it("throws for QR_CODE with non-matching expected value", () => {
     const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET" });
-    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow("Invalid QR code");
+    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow(
+      "Invalid QR code",
+    );
   });
 
   it("throws for QR_CODE without expected value configured", () => {
     const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: null });
-    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "SECRET" })).toThrow("QR challenge is not configured with expected code");
+    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "SECRET" })).toThrow(
+      "QR challenge is not configured with expected code",
+    );
   });
 
   it("throws for QR_CODE with empty submitted text", () => {
     const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET" });
-    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "" })).toThrow("Invalid QR code");
+    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "" })).toThrow(
+      "Invalid QR code",
+    );
   });
 
   it("returns true for LOCATION with valid coordinates", () => {
-    const challenge = createMockChallenge({ submissionType: "LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 });
-    const result = shouldAutoApproveSubmission({ challenge, latitude: 52.2297, longitude: 21.0122 });
+    const challenge = createMockChallenge({
+      submissionType: "LOCATION",
+      targetLatitude: 52.2297,
+      targetLongitude: 21.0122,
+    });
+    const result = shouldAutoApproveSubmission({
+      challenge,
+      latitude: 52.2297,
+      longitude: 21.0122,
+    });
     expect(result).toBe(true);
   });
 
   it("throws for LOCATION with missing coordinates", () => {
-    const challenge = createMockChallenge({ submissionType: "LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 });
-    expect(() => shouldAutoApproveSubmission({ challenge })).toThrow("Location challenge is missing required coordinates");
+    const challenge = createMockChallenge({
+      submissionType: "LOCATION",
+      targetLatitude: 52.2297,
+      targetLongitude: 21.0122,
+    });
+    expect(() => shouldAutoApproveSubmission({ challenge })).toThrow(
+      "Location challenge is missing required coordinates",
+    );
   });
 
   it("throws for LOCATION with coordinates too far from target", () => {
-    const challenge = createMockChallenge({ submissionType: "LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 });
-    expect(() => shouldAutoApproveSubmission({ challenge, latitude: 50.0, longitude: 20.0 })).toThrow("You are too far from target location");
+    const challenge = createMockChallenge({
+      submissionType: "LOCATION",
+      targetLatitude: 52.2297,
+      targetLongitude: 21.0122,
+    });
+    expect(() =>
+      shouldAutoApproveSubmission({ challenge, latitude: 50.0, longitude: 20.0 }),
+    ).toThrow("You are too far from target location");
   });
 
   it("returns false for IMAGE_LOCATION with valid coordinates", () => {
-    const challenge = createMockChallenge({ submissionType: "IMAGE_LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 });
-    const result = shouldAutoApproveSubmission({ challenge, latitude: 52.2297, longitude: 21.0122 });
+    const challenge = createMockChallenge({
+      submissionType: "IMAGE_LOCATION",
+      targetLatitude: 52.2297,
+      targetLongitude: 21.0122,
+    });
+    const result = shouldAutoApproveSubmission({
+      challenge,
+      latitude: 52.2297,
+      longitude: 21.0122,
+    });
     expect(result).toBe(false);
   });
 
   it("throws for IMAGE_LOCATION with missing coordinates", () => {
-    const challenge = createMockChallenge({ submissionType: "IMAGE_LOCATION", targetLatitude: 52.2297, targetLongitude: 21.0122 });
-    expect(() => shouldAutoApproveSubmission({ challenge })).toThrow("Location challenge is missing required coordinates");
+    const challenge = createMockChallenge({
+      submissionType: "IMAGE_LOCATION",
+      targetLatitude: 52.2297,
+      targetLongitude: 21.0122,
+    });
+    expect(() => shouldAutoApproveSubmission({ challenge })).toThrow(
+      "Location challenge is missing required coordinates",
+    );
   });
 
   it("returns true for TEXT with matching expected value", () => {
@@ -169,7 +216,9 @@ describe("shouldAutoApproveSubmission", () => {
 
   it("throws for TEXT with non-matching expected value", () => {
     const challenge = createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER" });
-    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow("Incorrect phrase");
+    expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow(
+      "Incorrect phrase",
+    );
   });
 
   it("returns false for TEXT without expected value configured", () => {
@@ -201,16 +250,16 @@ describe("assertSubmissionWithinTargetLocation", () => {
 
   it("throws when missing latitude", () => {
     const challenge = { targetLatitude: 52.2297, targetLongitude: 21.0122 };
-    expect(() =>
-      assertSubmissionWithinTargetLocation({ challenge, longitude: 21.0122 }),
-    ).toThrow("Location challenge is missing required coordinates");
+    expect(() => assertSubmissionWithinTargetLocation({ challenge, longitude: 21.0122 })).toThrow(
+      "Location challenge is missing required coordinates",
+    );
   });
 
   it("throws when missing longitude", () => {
     const challenge = { targetLatitude: 52.2297, targetLongitude: 21.0122 };
-    expect(() =>
-      assertSubmissionWithinTargetLocation({ challenge, latitude: 52.2297 }),
-    ).toThrow("Location challenge is missing required coordinates");
+    expect(() => assertSubmissionWithinTargetLocation({ challenge, latitude: 52.2297 })).toThrow(
+      "Location challenge is missing required coordinates",
+    );
   });
 
   it("throws when missing target latitude", () => {

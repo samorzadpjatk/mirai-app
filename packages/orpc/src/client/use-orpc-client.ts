@@ -8,7 +8,15 @@ import { logger } from "../utils/logger";
 
 export let orpc: RouterUtils<RouterClient<AppRouter>>;
 
-export function useORPCClient({ httpUrl, wsUrl, authToken }: { httpUrl: string; wsUrl: string; authToken?: string }) {
+export function useORPCClient({
+  httpUrl,
+  wsUrl,
+  authToken,
+}: {
+  httpUrl: string;
+  wsUrl: string;
+  authToken?: string;
+}) {
   const { client, cleanup } = useMemo(
     () => getORPCClient(httpUrl, wsUrl, authToken),
     [authToken, httpUrl, wsUrl],

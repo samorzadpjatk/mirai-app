@@ -83,7 +83,10 @@ describe("groups/transforms", () => {
         image: "storage-path.jpg",
         organizer: { id: "u1", authUserId: "auth1", name: "Org" },
         participants: [
-          { joinedAt: new Date("2024-01-01"), user: { id: "u2", authUserId: "auth2", name: "User" } },
+          {
+            joinedAt: new Date("2024-01-01"),
+            user: { id: "u2", authUserId: "auth2", name: "User" },
+          },
         ],
       };
       const imageUrl = "https://example.com/storage-path.jpg";
@@ -106,7 +109,10 @@ describe("groups/transforms", () => {
         _count: { participants: 42 },
         organizer: { id: "u1", name: "Org", email: "org@example.com" },
         participants: [
-          { joinedAt: new Date("2024-01-01"), user: { id: "u2", name: "User", email: "user@example.com" } },
+          {
+            joinedAt: new Date("2024-01-01"),
+            user: { id: "u2", name: "User", email: "user@example.com" },
+          },
         ],
         approvedSubmissions,
       });
@@ -131,9 +137,24 @@ describe("groups/transforms", () => {
 
   describe("calculatePagination", () => {
     it("returns correct pagination metadata", () => {
-      expect(calculatePagination(10, 0, 25)).toEqual({ total: 25, limit: 10, offset: 0, hasMore: true });
-      expect(calculatePagination(10, 20, 25)).toEqual({ total: 25, limit: 10, offset: 20, hasMore: false });
-      expect(calculatePagination(10, 30, 25)).toEqual({ total: 25, limit: 10, offset: 30, hasMore: false });
+      expect(calculatePagination(10, 0, 25)).toEqual({
+        total: 25,
+        limit: 10,
+        offset: 0,
+        hasMore: true,
+      });
+      expect(calculatePagination(10, 20, 25)).toEqual({
+        total: 25,
+        limit: 10,
+        offset: 20,
+        hasMore: false,
+      });
+      expect(calculatePagination(10, 30, 25)).toEqual({
+        total: 25,
+        limit: 10,
+        offset: 30,
+        hasMore: false,
+      });
     });
   });
 

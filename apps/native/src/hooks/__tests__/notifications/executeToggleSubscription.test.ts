@@ -3,7 +3,9 @@ import { executeToggleSubscription } from "../../notifications/useNotifications"
 
 describe("executeToggleSubscription", () => {
   const createMockDeps = () => ({
-    subscriptionStatus: undefined as { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> } | undefined,
+    subscriptionStatus: undefined as
+      | { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> }
+      | undefined,
     permissionDeps: {
       permission: "undetermined",
       requestPermission: jest.fn(async () => "granted"),
@@ -25,8 +27,12 @@ describe("executeToggleSubscription", () => {
     await executeToggleSubscription(deps.subscriptionStatus, deps.permissionDeps, deps.mutations);
 
     expect(deps.mutations.unsubscribeMutation.mutateAsync).toHaveBeenCalledTimes(2);
-    expect(deps.mutations.unsubscribeMutation.mutateAsync).toHaveBeenNthCalledWith(1, { token: "token-1" });
-    expect(deps.mutations.unsubscribeMutation.mutateAsync).toHaveBeenNthCalledWith(2, { token: "token-2" });
+    expect(deps.mutations.unsubscribeMutation.mutateAsync).toHaveBeenNthCalledWith(1, {
+      token: "token-1",
+    });
+    expect(deps.mutations.unsubscribeMutation.mutateAsync).toHaveBeenNthCalledWith(2, {
+      token: "token-2",
+    });
   });
 
   it("should show alert when permission not granted", async () => {

@@ -9,10 +9,7 @@ describe("syncLocationSharingState", () => {
     const getItem = jest.fn(async (_key: string): Promise<string | null> => null);
     getItem.mockResolvedValue("false");
 
-    const result = await syncLocationSharingState(
-      { isSharingLocation: true },
-      getItem,
-    );
+    const result = await syncLocationSharingState({ isSharingLocation: true }, getItem);
 
     expect(result.enabled).toBe(true);
     expect(result.error).toBe(false);

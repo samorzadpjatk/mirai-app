@@ -3,8 +3,6 @@ import { screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalShell } from "../../map/modals/MapModalShell";
 
-
-
 const noop = (): void => undefined;
 
 describe("MapModalShell", () => {

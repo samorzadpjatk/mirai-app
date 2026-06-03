@@ -12,7 +12,10 @@ export function validateVotePayload(
 ): ValidationError | null {
   const uniqueSubmissionIds = new Set(votes.map((vote) => vote.submissionId));
   if (uniqueSubmissionIds.size !== votes.length) {
-    return { error: "BAD_REQUEST", message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie" };
+    return {
+      error: "BAD_REQUEST",
+      message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie",
+    };
   }
 
   const uniquePositions = new Set(votes.map((vote) => vote.votePosition));
@@ -33,9 +36,7 @@ export function validateNoSelfVoting(
 ): ValidationError | null {
   if (!participantGroupId) return null;
 
-  const ownSubmission = submissions.find(
-    (submission) => submission.groupId === participantGroupId,
-  );
+  const ownSubmission = submissions.find((submission) => submission.groupId === participantGroupId);
   if (ownSubmission) {
     return { error: "FORBIDDEN", message: "Nie mozna glosowac na wlasna grupe" };
   }
@@ -64,9 +65,7 @@ export function validateVotePositionConflict(
     };
   }
 
-  const existingByPosition = existingVotes.find(
-    (vote) => vote.votePosition === votePosition,
-  );
+  const existingByPosition = existingVotes.find((vote) => vote.votePosition === votePosition);
 
   if (existingByPosition) {
     if (existingByPosition.submissionId === submissionId) {

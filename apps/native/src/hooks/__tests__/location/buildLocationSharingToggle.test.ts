@@ -11,7 +11,11 @@ describe("executeToggleLocationSharing", () => {
       permissionStatus: "granted",
       requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
       updateSharingMutation: {
-        mutateAsync: jest.fn<(data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>>().mockResolvedValue(undefined),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
       },
     };
 
@@ -28,7 +32,11 @@ describe("executeToggleLocationSharing", () => {
       permissionStatus: "undetermined",
       requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
       updateSharingMutation: {
-        mutateAsync: jest.fn<(data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>>().mockResolvedValue(undefined),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
       },
     };
 
@@ -42,7 +50,11 @@ describe("executeToggleLocationSharing", () => {
       permissionStatus: "undetermined",
       requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
       updateSharingMutation: {
-        mutateAsync: jest.fn<(data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>>().mockResolvedValue(undefined),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
       },
     };
 
@@ -59,7 +71,11 @@ describe("buildLocationSharingToggle", () => {
       permissionStatus: "granted",
       requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
       updateSharingMutation: {
-        mutateAsync: jest.fn<(data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>>().mockResolvedValue(undefined),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
       },
     };
 
@@ -75,7 +91,11 @@ describe("buildLocationSharingToggle", () => {
       permissionStatus: "granted",
       requestLocationPermissions: jest.fn<() => Promise<string>>(),
       updateSharingMutation: {
-        mutateAsync: jest.fn<(data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>>().mockRejectedValue(new Error("Network error")),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockRejectedValue(new Error("Network error")),
       },
     };
 

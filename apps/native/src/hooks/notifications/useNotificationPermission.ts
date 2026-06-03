@@ -23,7 +23,10 @@ export function useNotificationPermission(): UseNotificationPermissionReturn {
 
     if (shouldRequestNotificationPermission(existingStatus)) {
       const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = buildNotificationPermissionResult(existingStatus, status) as Notifications.PermissionStatus;
+      finalStatus = buildNotificationPermissionResult(
+        existingStatus,
+        status,
+      ) as Notifications.PermissionStatus;
     }
 
     setPermission(finalStatus);

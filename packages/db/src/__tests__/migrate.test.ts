@@ -94,7 +94,9 @@ describe("migrate", () => {
 
       const { runMigrations } = await import("../migrate");
 
-      await expect(runMigrations("postgresql://localhost/test", undefined, mockLogger)).rejects.toThrow("Migration failed");
+      await expect(
+        runMigrations("postgresql://localhost/test", undefined, mockLogger),
+      ).rejects.toThrow("Migration failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith(error, "Database migrations failed");
       expect(mockEnd).toHaveBeenCalledTimes(1);

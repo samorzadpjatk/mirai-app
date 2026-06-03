@@ -53,7 +53,10 @@ export function computeRequiredPositions(eligibleSubmissionsCount: number): numb
 /**
  * Checks if all required positions (1..requiredPositions) are present in the set.
  */
-export function hasAllRequiredPositions(positions: Set<number>, requiredPositions: number): boolean {
+export function hasAllRequiredPositions(
+  positions: Set<number>,
+  requiredPositions: number,
+): boolean {
   if (requiredPositions <= 0) return false;
 
   for (let position = 1; position <= requiredPositions; position += 1) {

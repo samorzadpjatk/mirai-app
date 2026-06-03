@@ -2,10 +2,7 @@ import { ORPCError } from "@orpc/server";
 import { eq, and, count, inArray } from "drizzle-orm";
 import { type DB, rewards, rewardPurchases } from "@mirai-app/db";
 import { calculateRewardProgress } from "@mirai-app/shared";
-import {
-  calculateTotalAvailablePoints,
-  resolveRewardImageData,
-} from "./utils";
+import { calculateTotalAvailablePoints, resolveRewardImageData } from "./utils";
 
 export const getByTrip = async (
   context: {
@@ -28,9 +25,7 @@ export const getByTrip = async (
 
   const rewardRows = await context.db.query.rewards.findMany({
     where: (r, { eq, and }) =>
-      isAllTrips
-        ? eq(r.isHidden, false)
-        : and(eq(r.tripId, input.tripId), eq(r.isHidden, false)),
+      isAllTrips ? eq(r.isHidden, false) : and(eq(r.tripId, input.tripId), eq(r.isHidden, false)),
     with: {
       createdBy: {
         columns: {

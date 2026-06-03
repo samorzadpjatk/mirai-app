@@ -78,9 +78,6 @@ export function canViewJoinRequests(
   return { error: null };
 }
 
-export function isUserInGroup(
-  userId: string,
-  participants: Array<{ userId: string }>,
-): boolean {
+export function isUserInGroup(userId: string, participants: Array<{ userId: string }>): boolean {
   return participants.some((member) => member.userId === userId);
 }

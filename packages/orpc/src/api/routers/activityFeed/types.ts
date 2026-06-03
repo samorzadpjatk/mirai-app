@@ -2,11 +2,7 @@ import { z } from "zod";
 
 export const REACTION_TYPES = ["heart", "fire", "clap", "star"] as const;
 
-export const CHALLENGE_EVENT_TYPES = [
-  "challenge_started",
-  "voting_started",
-  "completed",
-] as const;
+export const CHALLENGE_EVENT_TYPES = ["challenge_started", "voting_started", "completed"] as const;
 
 export const activityCursorSchema = z.object({
   id: z.string(),

@@ -12,7 +12,10 @@ interface Props {
   challenge: AdminChallengeUI;
 }
 
-export function filterTripsByName(trips: { name: string }[], searchTerm: string): { name: string }[] {
+export function filterTripsByName(
+  trips: { name: string }[],
+  searchTerm: string,
+): { name: string }[] {
   const q = searchTerm.trim().toLowerCase();
   if (!q) return [];
   return trips.filter((t) => t.name.toLowerCase().includes(q)).slice(0, 6);

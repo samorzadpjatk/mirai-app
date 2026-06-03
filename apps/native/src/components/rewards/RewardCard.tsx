@@ -19,7 +19,13 @@ interface Props {
   onPurchasePress: (reward: RewardListItem) => void;
 }
 
-export default function RewardCard({ reward, justRefreshed, isTripPast, onPress, onPurchasePress }: Props) {
+export default function RewardCard({
+  reward,
+  justRefreshed,
+  isTripPast,
+  onPress,
+  onPurchasePress,
+}: Props) {
   const rewardImages = getRewardImages(reward);
   const rewardPrimaryImage = rewardImages[0] ?? null;
   const buttonState = getRewardButtonState(

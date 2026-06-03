@@ -65,9 +65,7 @@ describe("GroupEditPermissionState", () => {
     const onGoBack = jest.fn();
     const user = userEvent.setup();
 
-    renderWithProviders(
-      <GroupEditPermissionState message="Access denied" onGoBack={onGoBack} />,
-    );
+    renderWithProviders(<GroupEditPermissionState message="Access denied" onGoBack={onGoBack} />);
 
     await user.press(screen.getByText("Go Back"));
     expect(onGoBack).toHaveBeenCalled();

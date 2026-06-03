@@ -1,7 +1,8 @@
-export const classifyStorageError = (message: string): { code: "NOT_FOUND" | "INTERNAL_SERVER_ERROR"; message: string } => {
+export const classifyStorageError = (
+  message: string,
+): { code: "NOT_FOUND" | "INTERNAL_SERVER_ERROR"; message: string } => {
   const looksLikeNotFound =
-    message.toLowerCase().includes("not found") ||
-    message.toLowerCase().includes("does not exist");
+    message.toLowerCase().includes("not found") || message.toLowerCase().includes("does not exist");
 
   return {
     code: looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR",

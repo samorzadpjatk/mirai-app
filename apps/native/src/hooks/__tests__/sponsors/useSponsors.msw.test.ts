@@ -24,7 +24,9 @@ describe("useSponsors (MSW)", () => {
   });
 
   it("should show loading state while fetching", async () => {
-    const mockSponsors = [{ id: "sponsor-1", name: "Sponsor One", logoPath: "https://example.com/logo1.png" }];
+    const mockSponsors = [
+      { id: "sponsor-1", name: "Sponsor One", logoPath: "https://example.com/logo1.png" },
+    ];
 
     server.use(createORPCHandler(["sponsor", "getAll"], () => mockSponsors));
 
@@ -55,9 +57,7 @@ describe("useSponsors (MSW)", () => {
   });
 
   it("should handle sponsors with minimal data", async () => {
-    const mockSponsors = [
-      { id: "sponsor-min", name: "Minimal Sponsor", logoPath: null },
-    ];
+    const mockSponsors = [{ id: "sponsor-min", name: "Minimal Sponsor", logoPath: null }];
 
     server.use(createORPCHandler(["sponsor", "getAll"], () => mockSponsors));
 

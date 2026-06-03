@@ -49,7 +49,8 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
               }}
             >
               Organizer:{" "}
-              {formatDisplayName(group.organizer.firstName, group.organizer.lastName) ?? "Unknown User"}
+              {formatDisplayName(group.organizer.firstName, group.organizer.lastName) ??
+                "Unknown User"}
             </Text>
           )}
         </View>

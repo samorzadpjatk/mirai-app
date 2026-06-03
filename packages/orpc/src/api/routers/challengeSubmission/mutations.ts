@@ -249,9 +249,7 @@ export const updateMineSubmission = async (
         const activation = await tx
           .update(challenges)
           .set({ status: "ACTIVE" })
-          .where(
-            and(eq(challenges.id, submission.challenge.id), eq(challenges.status, "VISIBLE")),
-          )
+          .where(and(eq(challenges.id, submission.challenge.id), eq(challenges.status, "VISIBLE")))
           .returning({ id: challenges.id });
 
         if (activation.length > 0) {
@@ -294,8 +292,7 @@ export const updateMineSubmission = async (
         }
         submission.challenge.status = "VOTING_PHASE";
       } else if (
-        (submission.challenge.status === "VISIBLE" ||
-          submission.challenge.status === "ACTIVE") &&
+        (submission.challenge.status === "VISIBLE" || submission.challenge.status === "ACTIVE") &&
         submission.challenge.scoringCategory !== "PEER_VOTING" &&
         submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
         submission.challenge.endTime &&
@@ -478,8 +475,7 @@ export const reviewSubmission = async (
 
   if (submission.challenge.scoringCategory === "JUDGED_STAFF") {
     throw new ORPCError("BAD_REQUEST", {
-      message:
-        "For judged staff challenges use staff voting flow instead of manual approve/reject",
+      message: "For judged staff challenges use staff voting flow instead of manual approve/reject",
     });
   }
 
@@ -650,10 +646,7 @@ export const reviewSubmission = async (
   };
 };
 
-export const adminDeleteSubmission = async (
-  context: { db: DB },
-  input: { id: string },
-) => {
+export const adminDeleteSubmission = async (context: { db: DB }, input: { id: string }) => {
   await context.db.delete(challengeSubmissions).where(eq(challengeSubmissions.id, input.id));
   return { success: true };
 };

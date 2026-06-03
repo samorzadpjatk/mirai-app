@@ -79,8 +79,6 @@ interface ThemedTextInputProps {
   multiline?: boolean;
 }
 
-
-
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();

@@ -22,7 +22,8 @@ jest.mock("~/hooks/files", () => ({
   useFileDownload: () => mockFileDownloadReturn,
 }));
 
-const FullscreenSubmissionSlide = require("../../../trips/groups/details/FullscreenSubmissionSlide").default;
+const FullscreenSubmissionSlide =
+  require("../../../trips/groups/details/FullscreenSubmissionSlide").default;
 const { formatDateTime } = require("../../../trips/groups/details/FullscreenSubmissionSlide");
 
 const baseSubmission = (overrides = {}) => ({

@@ -5,20 +5,10 @@ import {
   type NotificationData,
 } from "../notificationService";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import {
-  notifications,
-  notificationPushes,
-  pushSubscriptions,
-  challenges,
-} from "@mirai-app/db";
+import { notifications, notificationPushes, pushSubscriptions, challenges } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
-import {
-  seedUser,
-  seedTrip,
-  seedGroup,
-  seedParticipant,
-} from "../../test-helpers";
+import { seedUser, seedTrip, seedGroup, seedParticipant } from "../../test-helpers";
 import { Expo } from "expo-server-sdk";
 import { executeWithRetry } from "../../utils/resilience";
 import { applyRankingTemplate } from "../../utils/notificationTemplates";

@@ -76,7 +76,12 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
               <View style={styles.transactionMeta}>
                 <Text style={styles.date}>{formatDate(transaction.createdAt)}</Text>
                 <Text style={styles.admin}>
-                  by {formatDisplayName(transaction.admin.firstName, transaction.admin.lastName, "Unknown Admin")}
+                  by{" "}
+                  {formatDisplayName(
+                    transaction.admin.firstName,
+                    transaction.admin.lastName,
+                    "Unknown Admin",
+                  )}
                 </Text>
               </View>
             </View>

@@ -126,11 +126,6 @@ describe("PGLite Test Helper", () => {
       name: text("name").notNull(),
     });
 
-    // Add to schemaTables so reset() will truncate it and restart its sequence
-    const { schemaTables } = await import("../schema");
-    const mutableSchemaTables = Array.from(schemaTables);
-    mutableSchemaTables.push(testSerialTable);
-
     try {
       // Insert rows — serial should auto-increment
       await db.execute(sql`INSERT INTO "test_serial_table" (name) VALUES ('first')`);
@@ -139,8 +134,8 @@ describe("PGLite Test Helper", () => {
       const beforeReset = await db.execute(sql`SELECT MAX(id) as max_id FROM "test_serial_table"`);
       expect(beforeReset.rows[0].max_id).toBe(2);
 
-      // Reset — this should truncate the table and restart the sequence
-      await reset();
+      // Reset — this should truncate the table and restart its sequence
+      await reset([testSerialTable]);
 
       // Insert after reset — sequence should restart at 1
       const afterReset = await db.execute(sql`
@@ -148,11 +143,7 @@ describe("PGLite Test Helper", () => {
       `);
       expect(afterReset.rows[0].id).toBe(1);
     } finally {
-      // Clean up: remove from schemaTables and drop the table
-      const idx = mutableSchemaTables.indexOf(testSerialTable);
-      if (idx > -1) {
-        mutableSchemaTables.splice(idx, 1);
-      }
+      // Clean up: drop the test table
       await db.execute(sql`DROP TABLE IF EXISTS "test_serial_table"`);
     }
   });

@@ -16,7 +16,9 @@ jest.mock("expo-notifications", () => ({
 
 describe("buildNotificationActions", () => {
   const createMockDeps = () => ({
-    subscriptionStatus: undefined as { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> } | undefined,
+    subscriptionStatus: undefined as
+      | { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> }
+      | undefined,
     permissionDeps: {
       permission: "undetermined",
       requestPermission: jest.fn(async () => "granted"),
@@ -44,7 +46,9 @@ describe("buildNotificationActions", () => {
 
     expect(deps.permissionDeps.requestPermission).toHaveBeenCalled();
     expect(mockGetExpoPushTokenAsync).toHaveBeenCalled();
-    expect(deps.mutations.subscribeMutation.mutateAsync).toHaveBeenCalledWith({ token: "test-token" });
+    expect(deps.mutations.subscribeMutation.mutateAsync).toHaveBeenCalledWith({
+      token: "test-token",
+    });
   });
 
   it("should build testNotification that returns void", () => {

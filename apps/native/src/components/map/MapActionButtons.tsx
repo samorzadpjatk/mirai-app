@@ -128,7 +128,11 @@ export function MapActionButtons() {
           <Ionicons name={getThemeIconName(mapTheme)} size={22} color="#00ced1" />
         </Pressable>
         {isLocationSharingEnabled && (
-          <Pressable testID="recenter-button" style={styles.recenterButton} onPress={handleRecenter}>
+          <Pressable
+            testID="recenter-button"
+            style={styles.recenterButton}
+            onPress={handleRecenter}
+          >
             <Ionicons name="locate" size={20} color="#00ced1" />
           </Pressable>
         )}

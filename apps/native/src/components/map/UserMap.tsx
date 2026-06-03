@@ -172,12 +172,22 @@ export function processUserLocationUpdate(
   shouldNotify: boolean;
 } {
   if (!loc.coords) {
-    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+    return {
+      shouldUpdateLocation: false,
+      coordinate: null,
+      shouldCenter: false,
+      shouldNotify: false,
+    };
   }
 
   const { longitude, latitude } = loc.coords;
   if (longitude == null || latitude == null) {
-    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+    return {
+      shouldUpdateLocation: false,
+      coordinate: null,
+      shouldCenter: false,
+      shouldNotify: false,
+    };
   }
 
   const shouldUpdateLocation = Boolean(currentUserId && canShareOwnLocation);
@@ -302,7 +312,12 @@ export const UserMap: React.FC<UserMapProps> = ({
   const handleUserLocationUpdate = (loc: {
     coords?: { longitude?: number | null; latitude?: number | null };
   }) => {
-    const result = processUserLocationUpdate(loc, currentUserId, canShareOwnLocation, hasCenteredRef.current);
+    const result = processUserLocationUpdate(
+      loc,
+      currentUserId,
+      canShareOwnLocation,
+      hasCenteredRef.current,
+    );
 
     if (!result.coordinate) return;
 

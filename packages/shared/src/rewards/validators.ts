@@ -1,6 +1,14 @@
-export type RewardPurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
+export type RewardPurchaseStatus =
+  | "BOUGHT"
+  | "ACCEPTED"
+  | "IN_DELIVERY"
+  | "CANCELLED"
+  | "DELIVERED";
 
-export const canTransitionPurchaseStatus = (from: RewardPurchaseStatus, to: RewardPurchaseStatus) => {
+export const canTransitionPurchaseStatus = (
+  from: RewardPurchaseStatus,
+  to: RewardPurchaseStatus,
+) => {
   if (from === to) return true;
 
   const transitions: Record<RewardPurchaseStatus, RewardPurchaseStatus[]> = {

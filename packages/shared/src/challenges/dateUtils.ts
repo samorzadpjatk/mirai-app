@@ -45,7 +45,10 @@ export const resolveRecurringDays = (params: {
   return value;
 };
 
-export const resolveRecurringTemplateWindow = (params: { anchorDate: Date; recurringDays: number }) => {
+export const resolveRecurringTemplateWindow = (params: {
+  anchorDate: Date;
+  recurringDays: number;
+}) => {
   const anchorDay = startOfDay(params.anchorDate);
   const endDay = addDays(anchorDay, params.recurringDays - 1);
   return {

@@ -2,7 +2,10 @@ import { ORPCError } from "@orpc/server";
 import { eq, and, inArray, count } from "drizzle-orm";
 import { groups, tripParticipants, groupJoinRequests, coinTransactions } from "@mirai-app/db";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
-import { captureTripRankingSnapshot, createRankChangeActivities } from "../../../utils/activityFeed";
+import {
+  captureTripRankingSnapshot,
+  createRankChangeActivities,
+} from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import {
   toUserWithEmail,
@@ -367,10 +370,7 @@ export const requestToJoin = async (context: GroupContext, input: { groupId: str
   return request;
 };
 
-export const cancelMyJoinRequest = async (
-  context: GroupContext,
-  input: { groupId: string },
-) => {
+export const cancelMyJoinRequest = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
   const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
@@ -385,11 +385,7 @@ export const cancelMyJoinRequest = async (
   }
 
   const matchGroupTripUser = (gjr: any, { and, eq }: any) =>
-    and(
-      eq(gjr.groupId, group.id),
-      eq(gjr.tripId, group.tripId),
-      eq(gjr.userId, context.dbUser.id),
-    );
+    and(eq(gjr.groupId, group.id), eq(gjr.tripId, group.tripId), eq(gjr.userId, context.dbUser.id));
 
   const existingRequest = await context.db.query.groupJoinRequests.findFirst({
     where: matchGroupTripUser,
@@ -400,9 +396,7 @@ export const cancelMyJoinRequest = async (
     throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
   }
 
-  await context.db
-    .delete(groupJoinRequests)
-    .where(eq(groupJoinRequests.id, existingRequest.id));
+  await context.db.delete(groupJoinRequests).where(eq(groupJoinRequests.id, existingRequest.id));
 
   return { success: true };
 };
@@ -522,10 +516,7 @@ export const assignUserToGroup = async (
     await tx
       .delete(groupJoinRequests)
       .where(
-        and(
-          eq(groupJoinRequests.tripId, input.tripId),
-          eq(groupJoinRequests.userId, input.userId),
-        ),
+        and(eq(groupJoinRequests.tripId, input.tripId), eq(groupJoinRequests.userId, input.userId)),
       );
 
     return [upsertedParticipant];
@@ -686,10 +677,7 @@ export const removeUserFromGroup = async (
         await tx
           .delete(groupJoinRequests)
           .where(eq(groupJoinRequests.groupId, participant.groupId));
-        await tx
-          .update(groups)
-          .set({ isDeleted: true })
-          .where(eq(groups.id, participant.groupId));
+        await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, participant.groupId));
       } else if (group?.organizerId && participant.userId === group.organizerId) {
         const matchTripAndGroup = (tp: any, { and, eq }: any) =>
           and(eq(tp.tripId, input.tripId), eq(tp.groupId, participant.groupId!));
@@ -759,10 +747,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
         .select({ count: count() })
         .from(tripParticipants)
         .where(
-          and(
-            eq(tripParticipants.tripId, group.tripId),
-            eq(tripParticipants.groupId, group.id),
-          ),
+          and(eq(tripParticipants.tripId, group.tripId), eq(tripParticipants.groupId, group.id)),
         );
       const membersLeft = membersLeftResult[0]?.count ?? 0;
 
@@ -777,11 +762,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
   }
 
   const matchOtherMembers = (tp: any, { and, eq, ne }: any) =>
-    and(
-      eq(tp.tripId, group.tripId),
-      eq(tp.groupId, group.id),
-      ne(tp.userId, context.dbUser.id),
-    );
+    and(eq(tp.tripId, group.tripId), eq(tp.groupId, group.id), ne(tp.userId, context.dbUser.id));
   const sortByCreatedAt = (tp: any, { asc }: any) => [asc(tp.createdAt)];
 
   const remainingParticipants = await context.db.query.tripParticipants.findMany({
@@ -794,10 +775,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
 
   await context.db.transaction(async (tx) => {
     if (nextOrganizerId) {
-      await tx
-        .update(groups)
-        .set({ organizerId: nextOrganizerId })
-        .where(eq(groups.id, group.id));
+      await tx.update(groups).set({ organizerId: nextOrganizerId }).where(eq(groups.id, group.id));
     } else {
       await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
       await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));

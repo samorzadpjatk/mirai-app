@@ -15,22 +15,12 @@ export interface CardAnimationState {
     width: number,
     isReviewing: boolean,
     hasCurrentSubmission: boolean,
-    reviewCurrent: (
-      status: ReviewStatus,
-      reason?: string,
-      ranking?: 1 | 2 | 3,
-    ) => void,
+    reviewCurrent: (status: ReviewStatus, reason?: string, ranking?: 1 | 2 | 3) => void,
     customRejectionReason?: string,
     ranking?: 1 | 2 | 3,
   ) => void;
-  animateApproveSwipe: (
-    targetWidth: number,
-    reviewCurrent: (status: ReviewStatus) => void,
-  ) => void;
-  animateRejectSwipe: (
-    targetWidth: number,
-    openRejectModal: () => void,
-  ) => void;
+  animateApproveSwipe: (targetWidth: number, reviewCurrent: (status: ReviewStatus) => void) => void;
+  animateRejectSwipe: (targetWidth: number, openRejectModal: () => void) => void;
 }
 
 export function useCardAnimations(): CardAnimationState {
@@ -68,11 +58,7 @@ export function useCardAnimations(): CardAnimationState {
       width: number,
       isReviewing: boolean,
       hasCurrentSubmission: boolean,
-      reviewCurrent: (
-        status: ReviewStatus,
-        reason?: string,
-        ranking?: 1 | 2 | 3,
-      ) => void,
+      reviewCurrent: (status: ReviewStatus, reason?: string, ranking?: 1 | 2 | 3) => void,
       customRejectionReason?: string,
       ranking?: 1 | 2 | 3,
     ) => {

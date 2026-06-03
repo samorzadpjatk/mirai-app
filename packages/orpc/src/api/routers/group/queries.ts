@@ -30,8 +30,7 @@ export const getAllNames = async (context: GroupContext, input: { tripId: string
 
 export const getMy = async (context: GroupContext, input: { tripId: string }) => {
   const participant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { and, eq }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+    where: (tp, { and, eq }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
     columns: { groupId: true },
   });
   if (!participant?.groupId) return null;
@@ -301,10 +300,7 @@ export const getById = async (context: GroupContext, input: { id: string }) => {
   };
 };
 
-export const getByIdWithOrganizer = async (
-  context: GroupContext,
-  input: { groupId: string },
-) => {
+export const getByIdWithOrganizer = async (context: GroupContext, input: { groupId: string }) => {
   const group = await context.db.query.groups.findFirst({
     where: (g, { and, eq }) => and(eq(g.id, input.groupId), eq(g.isDeleted, false)),
     columns: {
@@ -331,10 +327,7 @@ export const getByIdWithOrganizer = async (
   };
 };
 
-export const getPendingJoinRequests = async (
-  context: GroupContext,
-  input: { groupId: string },
-) => {
+export const getPendingJoinRequests = async (context: GroupContext, input: { groupId: string }) => {
   const group = await context.db.query.groups.findFirst({
     where: (g, { eq }) => eq(g.id, input.groupId),
     columns: { id: true, organizerId: true, isDeleted: true },

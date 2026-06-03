@@ -3,17 +3,11 @@ import { eq } from "drizzle-orm";
 import { locationShares } from "@mirai-app/db";
 import type { Location as DbLocation, DB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import {
-  type RealtimeChannel,
-  REALTIME_CHANNEL_STATES,
-} from "@mirai-app/supabase";
+import { type RealtimeChannel, REALTIME_CHANNEL_STATES } from "@mirai-app/supabase";
 import { tracked } from "~/api/trpc";
 import { calculateDistance } from "../../../utils/location-validation";
 import { logger } from "../../../utils/logger";
-import {
-  toLocationWithUser,
-  mapUserWithAvatar,
-} from "./utils";
+import { toLocationWithUser, mapUserWithAvatar } from "./utils";
 import type { FriendLocationEvent, LocationWithUser, SharingUser } from "./types";
 
 export type LocationContext = {

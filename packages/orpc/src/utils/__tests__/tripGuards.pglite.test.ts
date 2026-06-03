@@ -41,12 +41,7 @@ describe("tripGuards", () => {
     });
   }
 
-  async function seedGroup(
-    id: string,
-    tripId: string,
-    organizerId: string,
-    isDeleted = false,
-  ) {
+  async function seedGroup(id: string, tripId: string, organizerId: string, isDeleted = false) {
     await testDb.db.insert(groups).values({
       id,
       tripId,

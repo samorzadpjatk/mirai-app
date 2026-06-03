@@ -29,13 +29,21 @@ describe("validateUserRegistration", () => {
 
   it("throws when firstName contains digits", () => {
     expect(() =>
-      validateUserRegistration({ firstName: "J4n", lastName: "Kowalski", email: "jan@example.com" }),
+      validateUserRegistration({
+        firstName: "J4n",
+        lastName: "Kowalski",
+        email: "jan@example.com",
+      }),
     ).toThrow("Imię nie może zawierać cyfr");
   });
 
   it("throws when lastName contains digits", () => {
     expect(() =>
-      validateUserRegistration({ firstName: "Jan", lastName: "K0walski", email: "jan@example.com" }),
+      validateUserRegistration({
+        firstName: "Jan",
+        lastName: "K0walski",
+        email: "jan@example.com",
+      }),
     ).toThrow("Nazwisko nie może zawierać cyfr");
   });
 

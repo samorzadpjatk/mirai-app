@@ -28,10 +28,7 @@ export function sortParticipants(
   };
 }> {
   return [...participants].sort((a, b) => {
-    const getValue = (
-      p: typeof a,
-      field: "firstName" | "lastName" | "email",
-    ) => {
+    const getValue = (p: typeof a, field: "firstName" | "lastName" | "email") => {
       if (field === "email") {
         return p.user.authSummary?.email ?? "";
       }
@@ -41,11 +38,7 @@ export function sortParticipants(
     const primary = getValue(a, sortBy).localeCompare(getValue(b, sortBy));
     if (primary !== 0) return primary;
 
-    const fields: Array<"firstName" | "lastName" | "email"> = [
-      "firstName",
-      "lastName",
-      "email",
-    ];
+    const fields: Array<"firstName" | "lastName" | "email"> = ["firstName", "lastName", "email"];
     for (const field of fields) {
       if (field === sortBy) continue;
       const cmp = getValue(a, field).localeCompare(getValue(b, field));

@@ -37,9 +37,15 @@ export const trackDeliveryStartMutation = publicProcedure
         })
         .returning();
 
-      logger.info({ notificationId: input.notificationId }, "[Delivery Tracker] Started tracking delivery");
+      logger.info(
+        { notificationId: input.notificationId },
+        "[Delivery Tracker] Started tracking delivery",
+      );
     } catch (error) {
-      logger.error({ notificationId: input.notificationId, error }, "[Delivery Tracker] Failed to track delivery start");
+      logger.error(
+        { notificationId: input.notificationId, error },
+        "[Delivery Tracker] Failed to track delivery start",
+      );
     }
   });
 
@@ -63,11 +69,18 @@ export const trackDeliveryCompleteMutation = publicProcedure
         .returning();
 
       logger.info(
-        { notificationId: input.notificationId, successCount: input.successCount, totalRecipients: input.totalRecipients },
+        {
+          notificationId: input.notificationId,
+          successCount: input.successCount,
+          totalRecipients: input.totalRecipients,
+        },
         "[Delivery Tracker] Completed tracking delivery",
       );
     } catch (error) {
-      logger.error({ notificationId: input.notificationId, error }, "[Delivery Tracker] Failed to track delivery completion");
+      logger.error(
+        { notificationId: input.notificationId, error },
+        "[Delivery Tracker] Failed to track delivery completion",
+      );
     }
   });
 
@@ -91,12 +104,10 @@ export const trackDeliveryFailureMutation = publicProcedure
           })
           .where(eq(notificationDeliveries.notificationId, input.notificationId));
       } else {
-        const scheduleExecution = await context.db.query.notificationScheduleExecutions.findFirst(
-          {
-            where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
-            with: { schedule: true },
-          },
-        );
+        const scheduleExecution = await context.db.query.notificationScheduleExecutions.findFirst({
+          where: (nse, { eq }) => eq(nse.notificationId, input.notificationId),
+          with: { schedule: true },
+        });
 
         await context.db.insert(notificationDeliveries).values({
           notificationId: input.notificationId,
@@ -111,6 +122,9 @@ export const trackDeliveryFailureMutation = publicProcedure
 
       logger.info({ notificationId: input.notificationId }, "[Delivery Tracker] Tracked failure");
     } catch (err) {
-      logger.error({ notificationId: input.notificationId, error: err }, "[Delivery Tracker] Failed to track delivery failure");
+      logger.error(
+        { notificationId: input.notificationId, error: err },
+        "[Delivery Tracker] Failed to track delivery failure",
+      );
     }
   });

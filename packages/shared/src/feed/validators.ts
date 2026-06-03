@@ -33,9 +33,7 @@ export interface ActivityVisibilityError {
  * Returns null if valid, or an ActivityVisibilityError if hidden.
  * Pure: no side effects, no async, no DB calls.
  */
-export function validateActivityVisibility(
-  isHidden: boolean,
-): ActivityVisibilityError | null {
+export function validateActivityVisibility(isHidden: boolean): ActivityVisibilityError | null {
   if (isHidden) {
     return { error: "FORBIDDEN", message: "This activity is hidden" };
   }

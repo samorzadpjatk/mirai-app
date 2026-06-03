@@ -5,12 +5,7 @@ import { sendNotification, sendRankingUpdate } from "../notifications";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { notifications, notificationPushes, groups, tripParticipants } from "@mirai-app/db";
 import { eq, and, count } from "drizzle-orm";
-import {
-  seedUser,
-  seedTrip,
-  seedGroup,
-  seedParticipant,
-} from "../../test-helpers";
+import { seedUser, seedTrip, seedGroup, seedParticipant } from "../../test-helpers";
 
 const noop = (): void => undefined;
 

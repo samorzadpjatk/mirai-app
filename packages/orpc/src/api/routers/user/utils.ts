@@ -8,7 +8,10 @@ export const formatUserFullName = (user?: {
   lastName?: string | null;
   email?: string | null;
 }) => {
-  return formatDisplayName(user?.firstName, user?.lastName, user?.email ?? "Unknown user") ?? "Unknown user";
+  return (
+    formatDisplayName(user?.firstName, user?.lastName, user?.email ?? "Unknown user") ??
+    "Unknown user"
+  );
 };
 
 export const toPublicUser = (

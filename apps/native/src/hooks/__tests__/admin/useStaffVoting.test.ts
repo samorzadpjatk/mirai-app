@@ -1,6 +1,12 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { renderHook, act } from "@testing-library/react-native";
-import { useStaffVoting, type VotingSubmission, toPairKey, rankByRating, pickNextPair } from "../../admin/useStaffVoting";
+import {
+  useStaffVoting,
+  type VotingSubmission,
+  toPairKey,
+  rankByRating,
+  pickNextPair,
+} from "../../admin/useStaffVoting";
 
 describe("useStaffVoting", () => {
   const mockSubmissions: VotingSubmission[] = [

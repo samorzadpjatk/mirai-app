@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  extractSafeRewards,
-  getRewardImages,
-} from "~/components/rewards/RewardsView";
+import { extractSafeRewards, getRewardImages } from "~/components/rewards/RewardsView";
 
 describe("RewardsView pure functions", () => {
   it("extractSafeRewards should return array when input is array", () => {

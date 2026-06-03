@@ -29,14 +29,24 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <TouchableOpacity testID="submission-circle" style={styles.item} activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity
+      testID="submission-circle"
+      style={styles.item}
+      activeOpacity={0.85}
+      onPress={onPress}
+    >
       <View style={styles.imageWrap}>
         {status === "loading" ? (
           <View testID="loading-indicator" style={styles.imageFallback}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image testID="submission-image" source={{ uri: file.uri }} style={styles.image} contentFit="cover" />
+          <Image
+            testID="submission-image"
+            source={{ uri: file.uri }}
+            style={styles.image}
+            contentFit="cover"
+          />
         ) : (
           <View testID="image-fallback" style={styles.imageFallback}>
             <Ionicons name="image-outline" size={18} color={colors.textMuted} />

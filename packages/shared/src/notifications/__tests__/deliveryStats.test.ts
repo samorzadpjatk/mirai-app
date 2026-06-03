@@ -61,7 +61,7 @@ describe("buildDeliveryStats", () => {
 
   it("handles large arrays", () => {
     const deliveries = Array.from({ length: 100 }, (_, i) => ({
-      status: i < 80 ? "success" as const : "failure" as const,
+      status: i < 80 ? ("success" as const) : ("failure" as const),
     }));
     const result = buildDeliveryStats(deliveries);
     expect(result.total).toBe(100);

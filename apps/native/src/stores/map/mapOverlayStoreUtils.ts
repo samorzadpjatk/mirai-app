@@ -23,7 +23,12 @@ export function buildFocusStateFromUser(user: { coordinate: [number, number] }):
 }
 
 export interface SharingSettings {
-  usersToShareWith?: { id: string; firstName?: string | null; lastName?: string | null; image?: string | null }[];
+  usersToShareWith?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    image?: string | null;
+  }[];
 }
 
 export function removeUserFromSharingUserIds(sharingUserIds: string[], userId: string): string[] {

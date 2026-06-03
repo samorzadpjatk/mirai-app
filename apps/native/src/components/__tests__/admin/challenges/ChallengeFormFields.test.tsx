@@ -372,7 +372,11 @@ describe("ChallengeFormFields", () => {
     const updateForm = jest.fn();
     const { getByText } = renderWithProviders(
       <ChallengeFormFields
-        formState={baseFormState({ setImagePreviewUri, updateForm, imagePreviewUri: "https://example.com/image.jpg" })}
+        formState={baseFormState({
+          setImagePreviewUri,
+          updateForm,
+          imagePreviewUri: "https://example.com/image.jpg",
+        })}
         onSave={jest.fn()}
         saveButtonText="Save"
         isSaving={false}

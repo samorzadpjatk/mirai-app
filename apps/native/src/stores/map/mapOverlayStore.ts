@@ -355,7 +355,14 @@ export function useMapOverlayStore() {
 
   const handlers = buildMapOverlayHandlers({
     store,
-    selectedUserState: { selectedUser, selectUser, deselect, stopSharing, mapUserPress, canStopSharing },
+    selectedUserState: {
+      selectedUser,
+      selectUser,
+      deselect,
+      stopSharing,
+      mapUserPress,
+      canStopSharing,
+    },
     externals: { removeUser, currentCoordinate },
     shareModal,
   });

@@ -14,9 +14,7 @@ export interface MostActiveAdminStat {
  * Maps raw DB aggregate rows to the MostActiveAdminStat shape.
  * Pure: no side effects, no async, no DB calls.
  */
-export function mapToMostActiveAdminStats(
-  rows: MostActiveAdminStatRow[],
-): MostActiveAdminStat[] {
+export function mapToMostActiveAdminStats(rows: MostActiveAdminStatRow[]): MostActiveAdminStat[] {
   return rows.map((row) => ({
     adminId: row.adminId,
     _sum: { amount: row.totalAmount },

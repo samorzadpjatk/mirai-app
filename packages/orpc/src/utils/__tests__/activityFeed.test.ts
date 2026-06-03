@@ -27,9 +27,7 @@ describe("activityFeed pure functions", () => {
     });
 
     it("should return default when both are null", () => {
-      expect(resolvePeerVotingDurationHours(null, null)).toBe(
-        DEFAULT_PEER_VOTING_DURATION_HOURS,
-      );
+      expect(resolvePeerVotingDurationHours(null, null)).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
     });
 
     it("should return default when both are undefined", () => {
@@ -40,17 +38,13 @@ describe("activityFeed pure functions", () => {
 
     it("should return default when duration is zero", () => {
       const now = new Date("2024-01-01T12:00:00Z");
-      expect(resolvePeerVotingDurationHours(now, now)).toBe(
-        DEFAULT_PEER_VOTING_DURATION_HOURS,
-      );
+      expect(resolvePeerVotingDurationHours(now, now)).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
     });
 
     it("should return default when duration is negative", () => {
       const start = new Date("2024-01-01T14:00:00Z");
       const end = new Date("2024-01-01T12:00:00Z");
-      expect(resolvePeerVotingDurationHours(start, end)).toBe(
-        DEFAULT_PEER_VOTING_DURATION_HOURS,
-      );
+      expect(resolvePeerVotingDurationHours(start, end)).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
     });
 
     it("should return 1 hour for sub-1-hour positive duration", () => {
@@ -79,7 +73,7 @@ describe("activityFeed pure functions", () => {
   });
 
   describe("formatSubmissionDeadline", () => {
-    it('should return fallback string when value is null', () => {
+    it("should return fallback string when value is null", () => {
       expect(formatSubmissionDeadline(null)).toBe("zakończenia etapu zgłoszeń");
     });
 

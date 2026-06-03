@@ -105,10 +105,7 @@ export function ChallengeCommunitySubmissionsCard({
   const galleryListRef = useRef<FlatList<CommunitySubmission>>(null);
   const { width, height } = useWindowDimensions();
 
-  const imageSubmissions = useMemo(
-    () => filterImageSubmissions(submissions),
-    [submissions],
-  );
+  const imageSubmissions = useMemo(() => filterImageSubmissions(submissions), [submissions]);
 
   const podiumSubmissions = useMemo(
     () => getPodiumSubmissions(imageSubmissions, showPodium),
@@ -129,7 +126,8 @@ export function ChallengeCommunitySubmissionsCard({
   const previewRegularSubmissions = regularSubmissions.slice(0, previewRegularLimit);
 
   const gallerySubmissions = useMemo(
-    () => buildGallerySubmissions(showPodium, podiumSubmissions, regularSubmissions, imageSubmissions),
+    () =>
+      buildGallerySubmissions(showPodium, podiumSubmissions, regularSubmissions, imageSubmissions),
     [imageSubmissions, podiumSubmissions, regularSubmissions, showPodium],
   );
 

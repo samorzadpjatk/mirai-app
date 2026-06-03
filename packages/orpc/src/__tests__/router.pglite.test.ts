@@ -192,10 +192,7 @@ describe("oRPC Router Testing Patterns", () => {
       }
 
       // Verify the update operation is available on the real db
-      const result = await testDb.db
-        .select()
-        .from(users)
-        .where(eq(users.id, "test-db-user-id"));
+      const result = await testDb.db.select().from(users).where(eq(users.id, "test-db-user-id"));
       expect(result).toBeDefined();
     });
   });

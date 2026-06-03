@@ -3,8 +3,6 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapModalUserItem } from "../../map/modals/MapModalUserItem";
 
-
-
 describe("MapModalUserItem", () => {
   it("should render with name", () => {
     renderWithProviders(<MapModalUserItem name="John Doe" />);

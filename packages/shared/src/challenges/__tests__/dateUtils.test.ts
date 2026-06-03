@@ -124,11 +124,15 @@ describe("resolveRecurringDays", () => {
     expect(resolveRecurringDays({ isRecurring: true, recurringDays: 0 })).toBeNull();
     expect(resolveRecurringDays({ isRecurring: true, recurringDays: -1 })).toBeNull();
     expect(resolveRecurringDays({ isRecurring: true, recurringDays: 1.5 })).toBeNull();
-    expect(resolveRecurringDays({ isRecurring: true, recurringDays: MAX_RECURRING_DAYS + 1 })).toBeNull();
+    expect(
+      resolveRecurringDays({ isRecurring: true, recurringDays: MAX_RECURRING_DAYS + 1 }),
+    ).toBeNull();
   });
 
   it("returns null when both recurringDays and fallbackDays are invalid", () => {
-    expect(resolveRecurringDays({ isRecurring: true, recurringDays: 0, fallbackDays: -1 })).toBeNull();
+    expect(
+      resolveRecurringDays({ isRecurring: true, recurringDays: 0, fallbackDays: -1 }),
+    ).toBeNull();
   });
 });
 

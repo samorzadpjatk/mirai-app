@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildUpdateActivityData,
-  validateActivityVisibility,
-} from "../validators";
+import { buildUpdateActivityData, validateActivityVisibility } from "../validators";
 
 describe("buildUpdateActivityData", () => {
   it("returns empty object for empty input", () => {

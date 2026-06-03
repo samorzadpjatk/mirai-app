@@ -5,7 +5,10 @@ export interface InitialStatusInput {
   endTime?: Date;
 }
 
-export const computeInitialStatus = (input: InitialStatusInput, now: Date): "HIDDEN" | "VISIBLE" | "ACTIVE" => {
+export const computeInitialStatus = (
+  input: InitialStatusInput,
+  now: Date,
+): "HIDDEN" | "VISIBLE" | "ACTIVE" => {
   const requestedStatus = input.status ?? "HIDDEN";
   const shouldActivateImmediately =
     !input.isRecurring &&
@@ -14,5 +17,7 @@ export const computeInitialStatus = (input: InitialStatusInput, now: Date): "HID
     input.startTime! <= now &&
     (!input.endTime || input.endTime > now);
 
-  return shouldActivateImmediately ? "ACTIVE" : (requestedStatus as "HIDDEN" | "VISIBLE" | "ACTIVE");
+  return shouldActivateImmediately
+    ? "ACTIVE"
+    : (requestedStatus as "HIDDEN" | "VISIBLE" | "ACTIVE");
 };

@@ -37,7 +37,10 @@ import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { QueryProvider, orpc, getORPCClient } from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
-import { initBackgroundLocationTask, createBackgroundTaskDeps } from "~/services/background/backgroundLocationTask";
+import {
+  initBackgroundLocationTask,
+  createBackgroundTaskDeps,
+} from "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
 import "../global.css";

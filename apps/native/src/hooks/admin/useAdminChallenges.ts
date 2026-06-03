@@ -51,9 +51,7 @@ export function transformRawChallenge(rawChallenge: DBChallenge): AdminChallenge
   };
 }
 
-export function buildCreateChallengeInput(
-  payload: { tripId: string } & Partial<AdminChallengeUI>,
-) {
+export function buildCreateChallengeInput(payload: { tripId: string } & Partial<AdminChallengeUI>) {
   const submissionType =
     payload.submissionType === "MULTI_IMAGE" ? "IMAGE" : (payload.submissionType ?? "IMAGE");
 

@@ -165,7 +165,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     expect(mockCreateSupabaseClient).toHaveBeenCalledWith(
@@ -182,7 +182,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     expect(mockGetORPCClient).toHaveBeenCalledWith(
@@ -198,7 +198,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     expect(mockChannelOn).toBeDefined();
@@ -237,12 +237,14 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     if (subscribeCallback) {
       subscribeCallback("SUBSCRIBED");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "SUBSCRIBED" });
+      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", {
+        status: "SUBSCRIBED",
+      });
     }
 
     consoleLogSpy.mockRestore();
@@ -262,7 +264,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     if (subscribeCallback) {
@@ -270,7 +272,9 @@ describe("Notification Sender - Subscribe Callback", () => {
       expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CLOSED" });
 
       subscribeCallback("CHANNEL_ERROR");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CHANNEL_ERROR" });
+      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", {
+        status: "CHANNEL_ERROR",
+      });
     }
 
     consoleLogSpy.mockRestore();
@@ -301,7 +305,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     expect(mockChannelSubscribe).toBeDefined();
@@ -347,7 +351,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     expect(sigintHandler).toBeDefined();
@@ -389,7 +393,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     if (sigintHandler) {
@@ -445,7 +449,7 @@ describe("Notification Sender - Notification Processing", () => {
     mockTrackDeliveryFailure.mockResolvedValue(undefined);
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+     
     await main();
 
     type PayloadHandler = (payload: { new: { id: string | number } }) => Promise<void> | void;

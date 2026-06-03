@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Modal, Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
-import {
-  Extrapolation,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-} from "react-native-reanimated";
+import { Extrapolation, interpolate, runOnJS, useAnimatedStyle } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { colors } from "~/styles";
 import { useJudgement } from "~/stores/judgement";
@@ -80,22 +75,52 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       {
         text: "Without place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+          ),
       },
       {
         text: "3rd place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 3),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            3,
+          ),
       },
       {
         text: "2nd place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 2),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            2,
+          ),
       },
       {
         text: "1st place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 1),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            1,
+          ),
       },
     ]);
   }, [animateDecision, currentSubmission, isJudgedStaff, isReviewing, reviewCurrent, width]);
@@ -228,7 +253,11 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
               editable={!isReviewing}
             />
             <View style={viewStyles.rejectReasonActions}>
-              <Pressable testID="reject-cancel-button" style={viewStyles.rejectReasonCancelButton} onPress={closeRejectModal}>
+              <Pressable
+                testID="reject-cancel-button"
+                style={viewStyles.rejectReasonCancelButton}
+                onPress={closeRejectModal}
+              >
                 <Text style={textStyles.rejectReasonCancelText}>Cancel</Text>
               </Pressable>
               <Pressable

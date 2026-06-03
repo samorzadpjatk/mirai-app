@@ -9,8 +9,6 @@ export function validateGroupBelongsToTrip(
   }
 }
 
-export function extractUserIdsFromParticipants(
-  participants: Array<{ userId: string }>,
-): string[] {
+export function extractUserIdsFromParticipants(participants: Array<{ userId: string }>): string[] {
   return participants.map((p) => p.userId);
 }

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  classifyStorageError,
-  isPublicBucket,
-  validateKnownBucket,
-} from "../../storage/errors";
+import { classifyStorageError, isPublicBucket, validateKnownBucket } from "../../storage/errors";
 
 describe("Error Utilities", () => {
   describe("classifyStorageError", () => {

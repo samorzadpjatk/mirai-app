@@ -53,10 +53,7 @@ describe("challengeFormConstants", () => {
 
   describe("newChallengeStatusOptions", () => {
     it("should only contain HIDDEN and VISIBLE", () => {
-      expect(newChallengeStatusOptions.map((s) => s.value)).toEqual([
-        "HIDDEN",
-        "VISIBLE",
-      ]);
+      expect(newChallengeStatusOptions.map((s) => s.value)).toEqual(["HIDDEN", "VISIBLE"]);
     });
   });
 

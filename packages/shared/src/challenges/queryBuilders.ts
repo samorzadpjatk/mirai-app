@@ -7,7 +7,9 @@ export function buildChallengeQueryInput(tripId: string | null | undefined, page
   return { tripId: tripId ?? "", pagination: { limit: 30, offset } };
 }
 
-export function getNextChallengePageParam(lastPage: ChallengePaginationResponse): number | undefined {
+export function getNextChallengePageParam(
+  lastPage: ChallengePaginationResponse,
+): number | undefined {
   if (!lastPage.pagination.hasMore) return undefined;
   return lastPage.pagination.offset + lastPage.pagination.limit;
 }

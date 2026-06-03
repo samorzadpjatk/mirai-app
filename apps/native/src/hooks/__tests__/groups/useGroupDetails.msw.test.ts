@@ -35,9 +35,7 @@ describe("useGroupDetails (MSW)", () => {
   it("should return undefined group when groupId is null", async () => {
     const mockUser = { id: "user-1", name: "John" };
 
-    server.use(
-      createORPCHandler(["user", "getMy"], () => mockUser),
-    );
+    server.use(createORPCHandler(["user", "getMy"], () => mockUser));
 
     const { result } = renderHookWithMSW(() => useGroupDetails(null));
 
@@ -53,9 +51,7 @@ describe("useGroupDetails (MSW)", () => {
   it("should return undefined group when groupId is undefined", async () => {
     const mockUser = { id: "user-1", name: "John" };
 
-    server.use(
-      createORPCHandler(["user", "getMy"], () => mockUser),
-    );
+    server.use(createORPCHandler(["user", "getMy"], () => mockUser));
 
     const { result } = renderHookWithMSW(() => useGroupDetails(undefined));
 
@@ -70,9 +66,7 @@ describe("useGroupDetails (MSW)", () => {
   it("should return undefined group when groupId is empty string", async () => {
     const mockUser = { id: "user-1", name: "John" };
 
-    server.use(
-      createORPCHandler(["user", "getMy"], () => mockUser),
-    );
+    server.use(createORPCHandler(["user", "getMy"], () => mockUser));
 
     const { result } = renderHookWithMSW(() => useGroupDetails(""));
 

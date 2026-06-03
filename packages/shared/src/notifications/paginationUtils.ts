@@ -9,9 +9,7 @@ export interface SubscriptionStatus {
   subscriptions: Subscription[];
 }
 
-export function mapSubscriptionStatus(
-  subscriptions: Subscription[],
-): SubscriptionStatus {
+export function mapSubscriptionStatus(subscriptions: Subscription[]): SubscriptionStatus {
   return {
     isSubscribed: subscriptions.length > 0,
     subscriptions: subscriptions.map((s) => ({
@@ -26,10 +24,7 @@ export interface PaginationBounds {
   totalPages: number;
 }
 
-export function buildPaginationBounds(
-  count: number,
-  pageSize: number,
-): PaginationBounds {
+export function buildPaginationBounds(count: number, pageSize: number): PaginationBounds {
   return {
     totalPages: Math.ceil(count / pageSize),
   };

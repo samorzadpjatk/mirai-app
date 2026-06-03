@@ -59,7 +59,10 @@ export const createDownloadUrl = async (
           createSignedUrl: (
             path: string,
             expiresIn: number,
-          ) => Promise<{ data: { signedUrl?: string | null } | null; error: { message?: string } | null }>;
+          ) => Promise<{
+            data: { signedUrl?: string | null } | null;
+            error: { message?: string } | null;
+          }>;
         };
       };
     };

@@ -43,14 +43,22 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <View testID="fullscreen-slide" style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
+    <View
+      testID="fullscreen-slide"
+      style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}
+    >
       <View style={styles.fullscreenImageWrap}>
         {status === "loading" ? (
           <View testID="loading-indicator" style={styles.fullscreenFallback}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image testID="fullscreen-image" source={{ uri: file.uri }} style={styles.fullscreenImage} contentFit="contain" />
+          <Image
+            testID="fullscreen-image"
+            source={{ uri: file.uri }}
+            style={styles.fullscreenImage}
+            contentFit="contain"
+          />
         ) : (
           <View testID="image-fallback" style={styles.fullscreenFallback}>
             <Ionicons name="image-outline" size={28} color={colors.textMuted} />

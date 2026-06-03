@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  formatRelativeTime,
-  formatAdminName,
-} from "../trips/details/TripNewsSection";
+import { formatRelativeTime, formatAdminName } from "../trips/details/TripNewsSection";
 
 describe("formatRelativeTime", () => {
   it("should return 'just now' for very recent dates", () => {

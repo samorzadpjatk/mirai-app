@@ -148,10 +148,7 @@ export const buildPublicObjectUrl = (baseUrl: string): string => {
   }
 };
 
-export const rewriteSignedUrlHost = (
-  signedUrl: string,
-  publicUrlBase?: string,
-): string => {
+export const rewriteSignedUrlHost = (signedUrl: string, publicUrlBase?: string): string => {
   if (!publicUrlBase) return signedUrl;
 
   try {

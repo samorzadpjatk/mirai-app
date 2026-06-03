@@ -24,6 +24,7 @@
     "test": "nx run-many -t test --exclude=@mirai-app/monorepo",
     "test:watch": "nx run-many -t test:watch --exclude=@mirai-app/monorepo",
     "test:coverage": "nx run-many -t test:coverage --exclude=@mirai-app/monorepo",
+    "test:ci": "nx run-many -t test:ci --exclude=@mirai-app/monorepo",
     "clean": "nx run-many -t clean --exclude=@mirai-app/monorepo && rm -rf node_modules",
     "postinstall": "cd packages/db && bun run db:generate",
     "prepare": "husky",
@@ -73,6 +74,9 @@
     "*.{ts,tsx,js,jsx}": [
       "bunx prettier --write",
       "bunx eslint --fix"
+    ],
+    "apps/native/src/**/*.{ts,tsx}": [
+      "cd apps/native && jest --findRelatedTests --passWithNoTests --onlyChanged"
     ]
   }
 }

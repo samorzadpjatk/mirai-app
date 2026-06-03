@@ -26,13 +26,16 @@ const baseConfig = defineConfig({
   },
 });
 
-export default mergeConfig(baseConfig, defineConfig({
-  test: {
-    environment: "jsdom",
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
-  },
-  resolve: {
-    alias: { "~": path.resolve(__dirname, "./src") },
-  },
-}));
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      environment: "jsdom",
+      setupFiles: ["./vitest.setup.ts"],
+      include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
+    },
+    resolve: {
+      alias: { "~": path.resolve(__dirname, "./src") },
+    },
+  }),
+);

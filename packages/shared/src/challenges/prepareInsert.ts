@@ -145,6 +145,6 @@ export const prepareChallengeInsert = (
         ? true
         : input.submissionType === "IMAGE_LOCATION"
           ? false
-          : input.autoApprove ?? false,
+          : (input.autoApprove ?? false),
   };
 };

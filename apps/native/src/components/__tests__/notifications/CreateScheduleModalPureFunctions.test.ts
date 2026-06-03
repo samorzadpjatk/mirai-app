@@ -7,21 +7,17 @@ import {
 describe("CreateScheduleModal pure functions", () => {
   describe("isScheduleSubmitDisabled", () => {
     it("returns true when name is empty", () => {
-      expect(
-        isScheduleSubmitDisabled("", "2024-01-01", "2024-01-02", "custom", null, false),
-      ).toBe(true);
+      expect(isScheduleSubmitDisabled("", "2024-01-01", "2024-01-02", "custom", null, false)).toBe(
+        true,
+      );
     });
 
     it("returns true when start date is empty", () => {
-      expect(
-        isScheduleSubmitDisabled("Name", "", "2024-01-02", "custom", null, false),
-      ).toBe(true);
+      expect(isScheduleSubmitDisabled("Name", "", "2024-01-02", "custom", null, false)).toBe(true);
     });
 
     it("returns true when end date is empty", () => {
-      expect(
-        isScheduleSubmitDisabled("Name", "2024-01-01", "", "custom", null, false),
-      ).toBe(true);
+      expect(isScheduleSubmitDisabled("Name", "2024-01-01", "", "custom", null, false)).toBe(true);
     });
 
     it("returns true when ranking type has no trip", () => {
@@ -51,33 +47,23 @@ describe("CreateScheduleModal pure functions", () => {
 
   describe("canSubmitSchedule", () => {
     it("returns false when name is empty", () => {
-      expect(
-        canSubmitSchedule("", "2024-01-01", "2024-01-02", "custom", null),
-      ).toBe(false);
+      expect(canSubmitSchedule("", "2024-01-01", "2024-01-02", "custom", null)).toBe(false);
     });
 
     it("returns false when start date is empty", () => {
-      expect(
-        canSubmitSchedule("Name", "", "2024-01-02", "custom", null),
-      ).toBe(false);
+      expect(canSubmitSchedule("Name", "", "2024-01-02", "custom", null)).toBe(false);
     });
 
     it("returns false when ranking type has no trip", () => {
-      expect(
-        canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", null),
-      ).toBe(false);
+      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", null)).toBe(false);
     });
 
     it("returns true for valid custom schedule", () => {
-      expect(
-        canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "custom", null),
-      ).toBe(true);
+      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "custom", null)).toBe(true);
     });
 
     it("returns true for valid ranking schedule", () => {
-      expect(
-        canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", "trip-1"),
-      ).toBe(true);
+      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", "trip-1")).toBe(true);
     });
   });
 

@@ -63,7 +63,8 @@ jest.mock("expo-file-system", () => ({
 }));
 
 // Mock Supabase
-const mockGetSession = jest.fn<() => Promise<{ data: { session: { access_token: string } | null } }>>();
+const mockGetSession =
+  jest.fn<() => Promise<{ data: { session: { access_token: string } | null } }>>();
 
 jest.mock("@mirai-app/supabase/react", () => ({
   useSupabaseClient: jest.fn(() => ({
@@ -243,9 +244,7 @@ describe("useFileUpload (MSW)", () => {
       storagePath: "test/file.jpg",
     };
 
-    server.use(
-      createORPCHandler(["storage", "createUploadUrl"], () => uploadTicket),
-    );
+    server.use(createORPCHandler(["storage", "createUploadUrl"], () => uploadTicket));
 
     const { result } = renderHookWithMSW(() => useFileUpload());
 
@@ -579,10 +578,7 @@ describe("useFileUpload (MSW)", () => {
   });
 });
 
-import {
-  shouldRetryErrorMessage,
-  calculateUploadProgress,
-} from "../../files/useFileUpload";
+import { shouldRetryErrorMessage, calculateUploadProgress } from "../../files/useFileUpload";
 
 describe("shouldRetryErrorMessage", () => {
   it("should retry on 400 error", () => {

@@ -6,7 +6,10 @@ import {
   pushSubscriptions,
   tripParticipants,
 } from "@mirai-app/db";
-import { NotificationService, sendMobileNotifications } from "../../../services/notificationService";
+import {
+  NotificationService,
+  sendMobileNotifications,
+} from "../../../services/notificationService";
 import { sendNotification, sendRankingUpdate } from "../../../utils/notifications";
 import type { SendNotificationResult } from "../../../utils/notifications";
 import {
@@ -103,10 +106,7 @@ export const sendToGroup = async (
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
     const userIds = extractUserIdsFromParticipants(participants);
     const result = await sendNotification({
@@ -199,10 +199,7 @@ export const sendCoinAddedToGroup = async (
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
     const userIds = extractUserIdsFromParticipants(participants);
     const notificationData = NotificationService.createCoinsAddedNotification(
@@ -246,10 +243,7 @@ export const sendCoinRemovedFromGroup = async (
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
     const userIds = extractUserIdsFromParticipants(participants);
     const notificationData = NotificationService.createCoinsRemovedNotification(
@@ -347,10 +341,7 @@ export const sendCustomToGroup = async (
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
     const userIds = extractUserIdsFromParticipants(participants);
     return await sendNotification({

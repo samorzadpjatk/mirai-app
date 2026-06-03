@@ -29,12 +29,20 @@ describe("filterActiveSponsors", () => {
   });
 
   it("filters out entries with null sponsor", () => {
-    const sponsors = [{ sponsor: { isActive: true } }, { sponsor: null }, { sponsor: { isActive: false } }];
+    const sponsors = [
+      { sponsor: { isActive: true } },
+      { sponsor: null },
+      { sponsor: { isActive: false } },
+    ];
     expect(filterActiveSponsors(sponsors)).toEqual([{ sponsor: { isActive: true } }]);
   });
 
   it("filters out entries with undefined sponsor", () => {
-    const sponsors = [{ sponsor: { isActive: true } }, { sponsor: undefined }, { sponsor: { isActive: false } }];
+    const sponsors = [
+      { sponsor: { isActive: true } },
+      { sponsor: undefined },
+      { sponsor: { isActive: false } },
+    ];
     expect(filterActiveSponsors(sponsors)).toEqual([{ sponsor: { isActive: true } }]);
   });
 });

@@ -57,7 +57,11 @@ export const validatePeerVotingTimeline = (input: {
     errors.push(`Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`);
   }
 
-  if (input.votingStartTime && input.votingEndTime && input.votingStartTime >= input.votingEndTime) {
+  if (
+    input.votingStartTime &&
+    input.votingEndTime &&
+    input.votingStartTime >= input.votingEndTime
+  ) {
     errors.push("Voting start time must be before voting end time");
   }
 

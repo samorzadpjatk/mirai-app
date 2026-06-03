@@ -7,7 +7,13 @@ jest.mock("~/components/trips/groups/details/SubmissionCircle", () => {
   const { Pressable, Text } = require("react-native");
   return {
     __esModule: true,
-    default: ({ submission, onPress }: { submission: { submissionId: string }; onPress: () => void }) => (
+    default: ({
+      submission,
+      onPress,
+    }: {
+      submission: { submissionId: string };
+      onPress: () => void;
+    }) => (
       <Pressable testID={`submission-circle-${submission.submissionId}`} onPress={onPress}>
         <Text>Circle</Text>
       </Pressable>

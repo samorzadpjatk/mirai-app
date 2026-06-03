@@ -121,7 +121,15 @@ jest.mock("~/components/judgement/EmptyStateCard", () => {
 jest.mock("~/components/judgement/ActionBar", () => {
   const { Pressable, Text } = require("react-native");
   return {
-    ActionBar: ({ onReject, onApprove, disabled }: { onReject: () => void; onApprove: () => void; disabled: boolean }) => (
+    ActionBar: ({
+      onReject,
+      onApprove,
+      disabled,
+    }: {
+      onReject: () => void;
+      onApprove: () => void;
+      disabled: boolean;
+    }) => (
       <>
         <Pressable testID="reject-button" onPress={onReject} disabled={disabled}>
           <Text>Reject</Text>
@@ -133,8 +141,6 @@ jest.mock("~/components/judgement/ActionBar", () => {
     ),
   };
 });
-
-
 
 describe("CardStack", () => {
   const defaultProps = {
@@ -180,9 +186,7 @@ describe("CardStack", () => {
 
   it("should render current submission card when submission exists", () => {
     mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
-    const { getByTestId, queryByTestId } = renderWithProviders(
-      <CardStack {...defaultProps} />,
-    );
+    const { getByTestId, queryByTestId } = renderWithProviders(<CardStack {...defaultProps} />);
 
     expect(getByTestId("current-card")).toBeTruthy();
     expect(queryByTestId("empty-card")).toBeNull();
@@ -197,9 +201,7 @@ describe("CardStack", () => {
 
   it("should open reject modal when reject button pressed", () => {
     mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
-    const { getByTestId, getByText } = renderWithProviders(
-      <CardStack {...defaultProps} />,
-    );
+    const { getByTestId, getByText } = renderWithProviders(<CardStack {...defaultProps} />);
 
     fireEvent.press(getByTestId("reject-button"));
 
@@ -210,9 +212,7 @@ describe("CardStack", () => {
   it("should not open reject modal when reviewing", () => {
     mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
     mockUseJudgementReturn.isReviewing = true;
-    const { getByTestId, queryByText } = renderWithProviders(
-      <CardStack {...defaultProps} />,
-    );
+    const { getByTestId, queryByText } = renderWithProviders(<CardStack {...defaultProps} />);
 
     fireEvent.press(getByTestId("reject-button"));
 
@@ -284,9 +284,7 @@ describe("CardStack", () => {
 
   it("should not confirm reject when reason is empty", () => {
     mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
-    const { getByTestId, getByText } = renderWithProviders(
-      <CardStack {...defaultProps} />,
-    );
+    const { getByTestId, getByText } = renderWithProviders(<CardStack {...defaultProps} />);
 
     fireEvent.press(getByTestId("reject-button"));
     expect(getByText("Reject submission")).toBeTruthy();

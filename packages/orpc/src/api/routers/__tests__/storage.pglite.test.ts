@@ -89,7 +89,13 @@ describe("storageRouter", () => {
     mockUser = createMockUser({ id: "user-123" });
 
     // Seed user for auth (the router uses protectedProcedure)
-    await seedUser(testDb.db, mockUser.id, mockUser.authUserId, mockUser.firstName, mockUser.lastName);
+    await seedUser(
+      testDb.db,
+      mockUser.id,
+      mockUser.authUserId,
+      mockUser.firstName,
+      mockUser.lastName,
+    );
 
     // Setup mock Supabase client
     mockSupabase = {

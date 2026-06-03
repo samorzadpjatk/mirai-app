@@ -68,10 +68,12 @@ export interface NotificationPermissionDeps {
 }
 
 export async function executeToggleSubscription(
-  subscriptionStatus: {
-    isSubscribed?: boolean;
-    subscriptions?: Array<{ token: string }>;
-  } | undefined,
+  subscriptionStatus:
+    | {
+        isSubscribed?: boolean;
+        subscriptions?: Array<{ token: string }>;
+      }
+    | undefined,
   permissionDeps: NotificationPermissionDeps,
   mutations: NotificationMutations,
 ): Promise<void> {
@@ -101,10 +103,12 @@ export async function executeToggleSubscription(
 }
 
 export function buildNotificationActions(
-  subscriptionStatus: {
-    isSubscribed?: boolean;
-    subscriptions?: Array<{ token: string }>;
-  } | undefined,
+  subscriptionStatus:
+    | {
+        isSubscribed?: boolean;
+        subscriptions?: Array<{ token: string }>;
+      }
+    | undefined,
   permissionDeps: NotificationPermissionDeps,
   mutations: NotificationMutations,
 ) {

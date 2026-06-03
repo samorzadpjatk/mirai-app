@@ -19,7 +19,9 @@ export function calculateBackgroundControlDisabled(
   return !isLocationSharingEnabled || isLoading || isUpdatingBackgroundLocation;
 }
 
-export function getBackgroundIconName(isBackgroundDisplayedOn: boolean): "navigate" | "navigate-outline" {
+export function getBackgroundIconName(
+  isBackgroundDisplayedOn: boolean,
+): "navigate" | "navigate-outline" {
   return isBackgroundDisplayedOn ? "navigate" : "navigate-outline";
 }
 

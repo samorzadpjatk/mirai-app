@@ -24,9 +24,7 @@ describe("mapSubscriptionStatus", () => {
 
   it("returns isSubscribed true for single subscription", () => {
     const now = new Date("2024-06-01T12:00:00Z");
-    const result = mapSubscriptionStatus([
-      { id: "sub-1", token: "token-a", createdAt: now },
-    ]);
+    const result = mapSubscriptionStatus([{ id: "sub-1", token: "token-a", createdAt: now }]);
     expect(result.isSubscribed).toBe(true);
     expect(result.subscriptions).toHaveLength(1);
     expect(result.subscriptions[0]).toEqual({
@@ -38,9 +36,7 @@ describe("mapSubscriptionStatus", () => {
 
   it("preserves createdAt Date instances in output", () => {
     const now = new Date();
-    const result = mapSubscriptionStatus([
-      { id: "sub-1", token: "token-a", createdAt: now },
-    ]);
+    const result = mapSubscriptionStatus([{ id: "sub-1", token: "token-a", createdAt: now }]);
     const sub = result.subscriptions[0]!;
     expect(sub.createdAt).toBeInstanceOf(Date);
     expect(sub.createdAt.getTime()).toBe(now.getTime());

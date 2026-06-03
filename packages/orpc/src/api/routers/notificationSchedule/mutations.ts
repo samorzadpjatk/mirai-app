@@ -11,9 +11,19 @@ import {
 } from "../../../utils/notificactionSchedule-validation";
 import { getDailyRankingScheduleTemplate } from "../../../utils/notificationTemplates";
 import { eq, count, inArray } from "drizzle-orm";
-import { notificationSchedules, notificationScheduleExecutions, type DB, type User } from "@mirai-app/db";
+import {
+  notificationSchedules,
+  notificationScheduleExecutions,
+  type DB,
+  type User,
+} from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import { toOptionalString, attachCreatedByEmail, getTemplateScheduleDates, normalizeScheduleWindow } from "./utils";
+import {
+  toOptionalString,
+  attachCreatedByEmail,
+  getTemplateScheduleDates,
+  normalizeScheduleWindow,
+} from "./utils";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { notificationScheduleCreateSchema, notificationScheduleUpdateSchema } from "./types";
 

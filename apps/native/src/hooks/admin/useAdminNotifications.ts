@@ -57,7 +57,8 @@ export function useAdminNotifications(tripId?: string) {
   const { data, isLoading, isFetchingNextPage, isRefetching, hasNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.notifications.getAll.infiniteOptions({
-        input: (pageParam: number) => buildNotificationQueryInput(notificationsQueryInput, pageParam),
+        input: (pageParam: number) =>
+          buildNotificationQueryInput(notificationsQueryInput, pageParam),
         initialPageParam: 0,
         getNextPageParam: getNextNotificationPageParam,
       }),

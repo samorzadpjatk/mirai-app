@@ -41,7 +41,10 @@ export function isScheduleSubmitDisabled(
   createTripId: string | null,
   isPending: boolean,
 ): boolean {
-  return !canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId) || isPending;
+  return (
+    !canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId) ||
+    isPending
+  );
 }
 
 export function buildScheduleInput(
@@ -142,9 +145,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
   };
 
   const handleSubmit = () => {
-    if (
-      canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId)
-    ) {
+    if (canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId)) {
       createScheduleMutation.mutate(
         buildScheduleInput(
           createName,

@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { buildVoteInsertValues, tallyVotes, computeRequiredPositions, hasAllRequiredPositions } from "../builders";
+import {
+  buildVoteInsertValues,
+  tallyVotes,
+  computeRequiredPositions,
+  hasAllRequiredPositions,
+} from "../builders";
 
 describe("buildVoteInsertValues", () => {
   it("builds insert values with default normalized weight", () => {
-    const votes = [
-      { submissionId: "sub-1", votePosition: 1, votePoints: 10 },
-    ];
+    const votes = [{ submissionId: "sub-1", votePosition: 1, votePoints: 10 }];
     const result = buildVoteInsertValues(votes, "challenge-1", "voter-1");
     expect(result).toEqual([
       {
@@ -61,9 +64,7 @@ describe("tallyVotes", () => {
   });
 
   it("tallies weighted votes", () => {
-    const votes = [
-      { submissionId: "sub-1", votePoints: 10, normalizedWeight: 1.5 },
-    ];
+    const votes = [{ submissionId: "sub-1", votePoints: 10, normalizedWeight: 1.5 }];
     const result = tallyVotes(votes);
     expect(result.get("sub-1")).toEqual({ count: 1, score: 15 });
   });

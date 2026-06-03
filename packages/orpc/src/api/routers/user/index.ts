@@ -33,11 +33,8 @@ import {
   removeHouseNumber,
 } from "./mutations";
 
-const handleGetBanStatus = async ({
-  context,
-}: {
-  context: Parameters<typeof getBanStatus>[0];
-}) => getBanStatus(context);
+const handleGetBanStatus = async ({ context }: { context: Parameters<typeof getBanStatus>[0] }) =>
+  getBanStatus(context);
 
 const handleGetBanStatusByEmail = async ({
   context,
@@ -79,11 +76,7 @@ const handleGetMyWithGroup = async ({
   input: Parameters<typeof getMyWithGroup>[1];
 }) => getMyWithGroup(context, input);
 
-const handleGetMy = async ({
-  context,
-}: {
-  context: Parameters<typeof getMy>[0];
-}) => getMy(context);
+const handleGetMy = async ({ context }: { context: Parameters<typeof getMy>[0] }) => getMy(context);
 
 const handleUpdateAvatar = async ({
   context,
@@ -206,9 +199,7 @@ export const userRouter = createORPCRouter({
     )
     .handler(handleGetBanStatusByEmail),
 
-  getById: moderatorProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: moderatorProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   getTripParticipant: moderatorProcedure
     .input(z.object({ userId: z.string(), tripId: z.string() }))
@@ -237,9 +228,7 @@ export const userRouter = createORPCRouter({
     )
     .handler(handleUpdateMyProfile),
 
-  getAll: moderatorProcedure
-    .input(z.object({ tripId: z.string() }))
-    .handler(handleGetAll),
+  getAll: moderatorProcedure.input(z.object({ tripId: z.string() })).handler(handleGetAll),
 
   getAllAdminsNames: moderatorProcedure.handler(handleGetAllAdminsNames),
 

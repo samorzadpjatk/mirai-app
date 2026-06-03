@@ -19,11 +19,7 @@ const handleRemoveCoins = async ({
 }) => removeCoins(context, input);
 
 export const coinRouter = createORPCRouter({
-  addCoins: moderatorProcedure
-    .input(coinTransactionInputSchema)
-    .handler(handleAddCoins),
+  addCoins: moderatorProcedure.input(coinTransactionInputSchema).handler(handleAddCoins),
 
-  removeCoins: moderatorProcedure
-    .input(coinTransactionInputSchema)
-    .handler(handleRemoveCoins),
+  removeCoins: moderatorProcedure.input(coinTransactionInputSchema).handler(handleRemoveCoins),
 });

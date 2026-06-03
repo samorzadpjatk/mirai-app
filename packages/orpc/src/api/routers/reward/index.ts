@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  createORPCRouter,
-  protectedProcedure,
-  moderatorProcedure,
-} from "../../trpc";
+import { createORPCRouter, protectedProcedure, moderatorProcedure } from "../../trpc";
 import { rewardPurchaseStatusSchema, userRewardPurchaseStatusSchema } from "./types";
 import type { DB } from "@mirai-app/db";
 import {
@@ -120,9 +116,7 @@ const handleGetTotalAvailablePoints = async ({
 }) => getTotalAvailablePoints(context.db, input.tripId);
 
 export const rewardRouter = createORPCRouter({
-  getByTrip: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
-    .handler(handleGetByTrip),
+  getByTrip: protectedProcedure.input(z.object({ tripId: z.string() })).handler(handleGetByTrip),
 
   getByTripAdmin: moderatorProcedure
     .input(
@@ -138,9 +132,7 @@ export const rewardRouter = createORPCRouter({
     )
     .handler(handleGetByTripAdmin),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   create: moderatorProcedure
     .input(
@@ -180,9 +172,7 @@ export const rewardRouter = createORPCRouter({
     )
     .handler(handleSetRewardHidden),
 
-  delete: moderatorProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleDeleteReward),
+  delete: moderatorProcedure.input(z.object({ id: z.string() })).handler(handleDeleteReward),
 
   purchase: protectedProcedure
     .input(

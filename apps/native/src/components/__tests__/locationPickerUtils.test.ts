@@ -1,8 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import {
-  isPointFeature,
-  extractCoordinateFromFeature,
-} from "../map/LocationPicker";
+import { isPointFeature, extractCoordinateFromFeature } from "../map/LocationPicker";
 
 describe("isPointFeature", () => {
   it("should return true for Point geometry", () => {

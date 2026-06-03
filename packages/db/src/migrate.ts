@@ -27,7 +27,11 @@ const defaultLogger: Logger = {
  *                          Falls back to the `MIGRATIONS_FOLDER` env var if set.
  * @param logger  Logger instance for structured logging. Defaults to console.
  */
-export async function runMigrations(databaseUrl: string, migrationsFolder?: string, logger?: Logger): Promise<void> {
+export async function runMigrations(
+  databaseUrl: string,
+  migrationsFolder?: string,
+  logger?: Logger,
+): Promise<void> {
   const log = logger ?? defaultLogger;
   const folder = migrationsFolder ?? process.env.MIGRATIONS_FOLDER ?? DEFAULT_MIGRATIONS_FOLDER;
 

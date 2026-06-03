@@ -1,11 +1,6 @@
 import { ORPCError } from "@orpc/server";
 import { eq, and, count, inArray, ne } from "drizzle-orm";
-import {
-  challenges,
-  challengeSubmissions,
-  tripParticipants,
-  users,
-} from "@mirai-app/db";
+import { challenges, challengeSubmissions, tripParticipants, users } from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
 import { tallyVotes, computeRequiredPositions, hasAllRequiredPositions } from "@mirai-app/shared";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
@@ -47,7 +42,10 @@ export const getChallengeInTrip = async (
   return challenge;
 };
 
-export const ensureChallengeVoting = (params: { challenge: ChallengeForVoting; actorRole: string }) => {
+export const ensureChallengeVoting = (params: {
+  challenge: ChallengeForVoting;
+  actorRole: string;
+}) => {
   const { challenge, actorRole } = params;
 
   if (challenge.scoringCategory === "PEER_VOTING") {

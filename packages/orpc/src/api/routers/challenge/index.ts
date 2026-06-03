@@ -1,31 +1,11 @@
 import { z } from "zod";
-import {
-  createORPCRouter,
-  adminProcedure,
-  protectedProcedure,
-} from "../../trpc";
-import {
-  challengeImageSchema,
-  MAX_RECURRING_DAYS,
-  MAX_PEER_VOTING_DURATION_HOURS,
-} from "./types";
-import {
-  getAll,
-  getAllByTrip,
-  getById,
-} from "./queries";
-import {
-  createChallenge,
-  updateChallenge,
-  deleteChallenge,
-  forceCloseVoting,
-} from "./mutations";
+import { createORPCRouter, adminProcedure, protectedProcedure } from "../../trpc";
+import { challengeImageSchema, MAX_RECURRING_DAYS, MAX_PEER_VOTING_DURATION_HOURS } from "./types";
+import { getAll, getAllByTrip, getById } from "./queries";
+import { createChallenge, updateChallenge, deleteChallenge, forceCloseVoting } from "./mutations";
 
-const handleGetAll = async ({
-  context,
-}: {
-  context: Parameters<typeof getAll>[0];
-}) => getAll(context);
+const handleGetAll = async ({ context }: { context: Parameters<typeof getAll>[0] }) =>
+  getAll(context);
 
 const handleGetAllByTrip = async ({
   context,

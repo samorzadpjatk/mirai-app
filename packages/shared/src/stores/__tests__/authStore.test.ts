@@ -145,7 +145,7 @@ describe("Auth Store", () => {
 
       await flushPromises();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.getSession).toHaveBeenCalled();
       expect(onUserFetch).toHaveBeenCalledWith("auth-1");
 
@@ -181,13 +181,11 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       const onUserFetch = vi.fn().mockRejectedValue(new Error("Fetch failed"));
 
@@ -211,14 +209,14 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: unsubscribeMock } },
-          });
+        data: { subscription: { unsubscribe: unsubscribeMock } },
+      });
 
       const cleanup = authStore.getState().initialize({
         client: mockClient,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.onAuthStateChange).toHaveBeenCalled();
 
       // Test cleanup function
@@ -318,13 +316,11 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       authStore.getState().initialize({
         client: mockClient,
@@ -352,8 +348,8 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signInWithOtp.mockResolvedValue({ error: null });
 
@@ -362,7 +358,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithOtp("test@example.com");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.signInWithOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         options: { shouldCreateUser: false },
@@ -376,8 +372,8 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signInWithOtp.mockResolvedValue({ error: mockError });
 
@@ -416,19 +412,16 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
-
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signInWithPassword.mockResolvedValue({
-            data: { session: mockSession },
-            error: null,
-          });
+        data: { session: mockSession },
+        error: null,
+      });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -437,7 +430,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithPassword("test@example.com", "password");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "password",
@@ -453,12 +446,12 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signInWithPassword.mockResolvedValue({
-            error: mockError,
-          });
+        error: mockError,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -474,13 +467,13 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signInWithPassword.mockResolvedValue({
-            data: {},
-            error: null,
-          });
+        data: {},
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -517,14 +510,11 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
-
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.verifyOtp.mockResolvedValue({ error: null });
 
@@ -535,7 +525,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().verifyOtp("test@example.com", "123456");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.verifyOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         token: "123456",
@@ -551,8 +541,8 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.verifyOtp.mockResolvedValue({ error: mockError });
 
@@ -591,14 +581,11 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
-
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signOut.mockResolvedValue({ error: null });
 
@@ -612,7 +599,7 @@ describe("Auth Store", () => {
 
       await authStore.getState().signOut();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.signOut).toHaveBeenCalled();
       const state = authStore.getState();
       expect(state.user).toBeNull();
@@ -627,8 +614,8 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.signOut.mockResolvedValue({ error: mockError });
 
@@ -654,26 +641,23 @@ describe("Auth Store", () => {
 
       const mockClient = createMockSupabaseClient();
 
-
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
-
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
-
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.refreshSession.mockResolvedValue({
-            data: { session: newSession },
-            error: null,
-          });
+        data: { session: newSession },
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
 
       await authStore.getState().refreshSession();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+       
       expect(mockClient.auth.refreshSession).toHaveBeenCalled();
       expect(authStore.getState().session).toEqual(newSession);
     });
@@ -685,12 +669,12 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.refreshSession.mockResolvedValue({
-            error: mockError,
-          });
+        error: mockError,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -704,13 +688,13 @@ describe("Auth Store", () => {
       mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       mockClient.auth.onAuthStateChange.mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          });
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       mockClient.auth.refreshSession.mockResolvedValue({
-            data: {},
-            error: null,
-          });
+        data: {},
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();

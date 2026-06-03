@@ -128,7 +128,11 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
               <Text style={styles.fullscreenCounter}>
                 {`${activeIndex + 1}/${submissions.length}`}
               </Text>
-              <TouchableOpacity testID="fullscreen-close-button" style={styles.fullscreenClose} onPress={closeFullscreen}>
+              <TouchableOpacity
+                testID="fullscreen-close-button"
+                style={styles.fullscreenClose}
+                onPress={closeFullscreen}
+              >
                 <Ionicons name="close" size={20} color={colors.white} />
               </TouchableOpacity>
             </View>

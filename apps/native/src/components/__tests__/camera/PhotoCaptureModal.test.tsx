@@ -66,8 +66,6 @@ jest.mock("expo-camera", () => {
   };
 });
 
-
-
 describe("PhotoCaptureModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();

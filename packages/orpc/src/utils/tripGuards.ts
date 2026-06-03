@@ -19,7 +19,10 @@ export async function ensureTripNotEnded(db: DB | TransactionDB, tripId: string)
   }
 }
 
-export async function ensureTripNotEndedByGroupId(db: DB | TransactionDB, groupId: string): Promise<string> {
+export async function ensureTripNotEndedByGroupId(
+  db: DB | TransactionDB,
+  groupId: string,
+): Promise<string> {
   const group = await db.query.groups.findFirst({
     where: (g, { eq }) => eq(g.id, groupId),
   });

@@ -25,8 +25,6 @@ import {
   rejectLocationSharingRequest,
 } from "./mutations";
 
-
-
 const handleUpdateSharingSettings = async ({
   context,
   input,
@@ -43,11 +41,8 @@ const handleUpdateLocation = async ({
   input: Parameters<typeof updateLocation>[1];
 }) => updateLocation(context, input);
 
-const handleGetMyLocation = async ({
-  context,
-}: {
-  context: Parameters<typeof getMyLocation>[0];
-}) => getMyLocation(context);
+const handleGetMyLocation = async ({ context }: { context: Parameters<typeof getMyLocation>[0] }) =>
+  getMyLocation(context);
 
 const handleGetFriendsLocations = async ({
   context,
@@ -167,9 +162,7 @@ export const locationRouter = createORPCRouter({
   /**
    * Mutation variant for updating current user's location (non-stream)
    */
-  updateLocation: protectedProcedure
-    .input(locationDataSchema)
-    .handler(handleUpdateLocation),
+  updateLocation: protectedProcedure.input(locationDataSchema).handler(handleUpdateLocation),
 
   /**
    * Query variant to get current user's location (non-stream)
@@ -179,9 +172,7 @@ export const locationRouter = createORPCRouter({
   /**
    * Query to get friends' last known locations (non-stream)
    */
-  getFriendsLocations: protectedProcedure.handler(
-    handleGetFriendsLocations,
-  ),
+  getFriendsLocations: protectedProcedure.handler(handleGetFriendsLocations),
 
   /**
    * Get sharing settings for current user
@@ -246,7 +237,5 @@ export const locationRouter = createORPCRouter({
   /**
    * Get all location sharing requests (sent and received)
    */
-  getMyLocationSharingRequests: protectedProcedure.handler(
-    handleGetMyLocationSharingRequests,
-  ),
+  getMyLocationSharingRequests: protectedProcedure.handler(handleGetMyLocationSharingRequests),
 });

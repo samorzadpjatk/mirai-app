@@ -37,7 +37,10 @@ const handleGetByChallenge = async ({
   input,
 }: {
   context: Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0]["context"];
-  input: Pick<Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0], "challengeId" | "tripId">;
+  input: Pick<
+    Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0],
+    "challengeId" | "tripId"
+  >;
 }) =>
   fetchSubmissionsByChallengeForParticipant({
     context,

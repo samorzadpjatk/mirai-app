@@ -517,7 +517,9 @@ describe("server exports with database", () => {
         error: null,
       } as never);
 
-      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthenticationError);
+      await expect(requireAuth(testDb.db, mockSupabase, "token")).rejects.toThrow(
+        AuthenticationError,
+      );
     });
 
     it("should throw AuthenticationError when session user is null", async () => {
@@ -592,7 +594,9 @@ describe("server exports with database", () => {
         error: null,
       } as never);
 
-      await expect(requireAdmin(testDb.db, mockSupabase, "token")).rejects.toThrow(AuthorizationError);
+      await expect(requireAdmin(testDb.db, mockSupabase, "token")).rejects.toThrow(
+        AuthorizationError,
+      );
     });
 
     it("should return dbUser when user is admin", async () => {

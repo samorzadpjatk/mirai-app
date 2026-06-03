@@ -6,11 +6,7 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from "../../trpc";
-import {
-  activityCursorSchema,
-  REACTION_TYPES,
-  CHALLENGE_EVENT_TYPES,
-} from "./types";
+import { activityCursorSchema, REACTION_TYPES, CHALLENGE_EVENT_TYPES } from "./types";
 import {
   ensureTripParticipant,
   ensureTripExists,
@@ -224,9 +220,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleGetByTripModeration),
 
-  getById: moderatorProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: moderatorProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   createCustom: moderatorProcedure
     .input(
@@ -334,9 +328,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleHide),
 
-  unhide: moderatorProcedure
-    .input(z.object({ activityId: z.string() }))
-    .handler(handleUnhide),
+  unhide: moderatorProcedure.input(z.object({ activityId: z.string() })).handler(handleUnhide),
 
   toggleReaction: protectedProcedure
     .input(
@@ -347,7 +339,5 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleToggleReaction),
 
-  delete: adminProcedure
-    .input(z.object({ activityId: z.string() }))
-    .handler(handleDeleteActivity),
+  delete: adminProcedure.input(z.object({ activityId: z.string() })).handler(handleDeleteActivity),
 });

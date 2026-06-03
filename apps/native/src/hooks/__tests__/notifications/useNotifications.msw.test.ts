@@ -196,7 +196,10 @@ describe("useNotifications (MSW)", () => {
     });
 
     await waitFor(() => {
-      expect(Alert.alert).not.toHaveBeenCalledWith("Error", "Failed to update notification settings");
+      expect(Alert.alert).not.toHaveBeenCalledWith(
+        "Error",
+        "Failed to update notification settings",
+      );
     });
   });
 

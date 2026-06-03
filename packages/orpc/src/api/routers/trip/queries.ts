@@ -1,14 +1,7 @@
 import { ORPCError } from "@orpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
-import {
-  trips,
-  tripParticipants,
-  type DB,
-} from "@mirai-app/db";
-import {
-  buildTripListItem,
-  buildTripDetailResponse,
-} from "@mirai-app/shared/trips";
+import { trips, tripParticipants, type DB } from "@mirai-app/db";
+import { buildTripListItem, buildTripDetailResponse } from "@mirai-app/shared/trips";
 import { calculatePagination, buildParticipantCountMap } from "@mirai-app/shared/groups";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveGroupImage } from "./utils";
@@ -126,10 +119,13 @@ async function buildTripDetail(
 
   const resolvedGroupImages = new Map<string, string | null | undefined>(
     await Promise.all(
-      trip.groups.map(async (group: any) => [
-        group.id as string,
-        await resolveGroupImage(supabase, group.image),
-      ] as [string, string | null | undefined]),
+      trip.groups.map(
+        async (group: any) =>
+          [group.id as string, await resolveGroupImage(supabase, group.image)] as [
+            string,
+            string | null | undefined,
+          ],
+      ),
     ),
   );
 
@@ -191,8 +187,7 @@ export const getResources = async (
   input: { tripId: string },
 ) => {
   const isParticipant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { eq, and }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
   });
 
   if (!isParticipant) {

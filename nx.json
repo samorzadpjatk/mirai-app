@@ -26,7 +26,6 @@
       "plugin": "@nx/vitest",
       "options": {
         "targetName": "test",
-        "ciTargetName": "test:ci",
         "configName": "vitest.config.ts"
       }
     },

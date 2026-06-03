@@ -40,17 +40,15 @@ describe("trip router — PGLite integration", () => {
   });
 
   async function seedSponsor(id: string, name: string, isActive: boolean) {
-    await testDb.db
-      .insert(sponsors)
-      .values({
-        id,
-        name,
-        description: "desc",
-        logoPath: "logo.png",
-        isActive,
-        createdAt: now(),
-        updatedAt: now(),
-      });
+    await testDb.db.insert(sponsors).values({
+      id,
+      name,
+      description: "desc",
+      logoPath: "logo.png",
+      isActive,
+      createdAt: now(),
+      updatedAt: now(),
+    });
   }
 
   async function seedTripSponsor(id: string, tripId: string, sponsorId: string) {

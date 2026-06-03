@@ -101,7 +101,12 @@ describe("calculateDeliveryStats", () => {
     const resultByUser = new Map<string, { hasSuccess: boolean; hasFailure: boolean }>();
     const explicitAudienceUserIds = new Set<string>();
 
-    const result = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, ["user1", "user2"], ["user3"]);
+    const result = calculateDeliveryStats(
+      resultByUser,
+      explicitAudienceUserIds,
+      ["user1", "user2"],
+      ["user3"],
+    );
 
     expect(result).toEqual({ sent: 2, failed: 1, total: 3, success: false });
   });
@@ -110,7 +115,12 @@ describe("calculateDeliveryStats", () => {
     const resultByUser = new Map<string, { hasSuccess: boolean; hasFailure: boolean }>();
     const explicitAudienceUserIds = new Set<string>();
 
-    const result = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, ["user1", "user2"], []);
+    const result = calculateDeliveryStats(
+      resultByUser,
+      explicitAudienceUserIds,
+      ["user1", "user2"],
+      [],
+    );
 
     expect(result).toEqual({ sent: 2, failed: 0, total: 2, success: true });
   });

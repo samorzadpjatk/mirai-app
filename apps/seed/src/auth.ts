@@ -39,7 +39,7 @@ export const createAuthUserByEmail = async (
     );
     return null;
   }
-    logger.info(`Created Supabase Auth user for ${email}`);
+  logger.info(`Created Supabase Auth user for ${email}`);
   return data.user;
 };
 
@@ -65,7 +65,7 @@ export const ensureGhostAuthUser = async (authUsers: AuthUserByEmail) => {
     logger.warn(`Failed to create ghost auth user ${email}: ${error?.message ?? "unknown error"}`);
     return null;
   }
-    logger.info(`Created ghost auth user ${email}`);
+  logger.info(`Created ghost auth user ${email}`);
   authUsers.set(email.toLowerCase(), data.user);
   return data.user;
 };

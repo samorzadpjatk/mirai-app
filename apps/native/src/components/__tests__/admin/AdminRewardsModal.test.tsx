@@ -15,10 +15,6 @@ jest.mock("~/hooks/files", () => ({
   useFileUpload: () => ({ upload: mockUpload, status: "idle", progress: { percent: null } }),
 }));
 
-
-
-
-
 describe("AdminRewardsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();

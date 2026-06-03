@@ -18,7 +18,10 @@ describe("statusColors", () => {
 describe("getSubmissionTypeMeta", () => {
   it("should map known submission types", () => {
     expect(getSubmissionTypeMeta("IMAGE")).toEqual({ label: "Photo", icon: "image-outline" });
-    expect(getSubmissionTypeMeta("MULTI_IMAGE")).toEqual({ label: "Multi", icon: "images-outline" });
+    expect(getSubmissionTypeMeta("MULTI_IMAGE")).toEqual({
+      label: "Multi",
+      icon: "images-outline",
+    });
     expect(getSubmissionTypeMeta("VIDEO")).toEqual({ label: "Video", icon: "videocam-outline" });
     expect(getSubmissionTypeMeta("TEXT")).toEqual({ label: "Text", icon: "document-text-outline" });
     expect(getSubmissionTypeMeta("LOCATION")).toEqual({ label: "GPS", icon: "location-outline" });
@@ -34,7 +37,10 @@ describe("getSubmissionTypeMeta", () => {
   });
 
   it("should default to Photo for unknown types", () => {
-    expect(getSubmissionTypeMeta("UNKNOWN" as never)).toEqual({ label: "Photo", icon: "image-outline" });
+    expect(getSubmissionTypeMeta("UNKNOWN" as never)).toEqual({
+      label: "Photo",
+      icon: "image-outline",
+    });
   });
 });
 
@@ -43,10 +49,16 @@ describe("getScoringMeta", () => {
     expect(getScoringMeta("SPEED")).toEqual({ label: "Speed", icon: "flash-outline" });
     expect(getScoringMeta("UNLIMITED")).toEqual({ label: "Unlimited", icon: "infinite-outline" });
     expect(getScoringMeta("PEER_VOTING")).toEqual({ label: "Voting", icon: "people-outline" });
-    expect(getScoringMeta("JUDGED_STAFF")).toEqual({ label: "Staff", icon: "shield-checkmark-outline" });
+    expect(getScoringMeta("JUDGED_STAFF")).toEqual({
+      label: "Staff",
+      icon: "shield-checkmark-outline",
+    });
   });
 
   it("should default to Staff for unknown categories", () => {
-    expect(getScoringMeta("UNKNOWN" as never)).toEqual({ label: "Staff", icon: "shield-checkmark-outline" });
+    expect(getScoringMeta("UNKNOWN" as never)).toEqual({
+      label: "Staff",
+      icon: "shield-checkmark-outline",
+    });
   });
 });

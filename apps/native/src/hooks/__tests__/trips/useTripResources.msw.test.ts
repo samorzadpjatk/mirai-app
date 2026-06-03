@@ -28,9 +28,7 @@ describe("useTripResources (MSW)", () => {
   });
 
   it("should return empty resources when data is null", async () => {
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => null),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => null));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -56,9 +54,7 @@ describe("useTripResources (MSW)", () => {
       },
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -111,7 +107,13 @@ describe("useTripResources (MSW)", () => {
       createORPCHandler(["trip", "getResources"], () => {
         callCount++;
         return {
-          resources: [{ id: "res-1", type: TRIP_RESOURCE_TYPES.HERO_IMAGE, url: "https://example.com/hero.jpg" }],
+          resources: [
+            {
+              id: "res-1",
+              type: TRIP_RESOURCE_TYPES.HERO_IMAGE,
+              url: "https://example.com/hero.jpg",
+            },
+          ],
           insurance: null,
         };
       }),
@@ -143,9 +145,7 @@ describe("useTripResources (MSW)", () => {
       insurance: null,
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -170,9 +170,7 @@ describe("useTripResources (MSW)", () => {
       insurance: null,
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -185,9 +183,7 @@ describe("useTripResources (MSW)", () => {
   });
 
   it("should return null from getResource when no resources data", async () => {
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => null),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => null));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -229,9 +225,7 @@ describe("useTripResources (MSW)", () => {
       },
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -267,13 +261,13 @@ describe("useTripResources (MSW)", () => {
 
   it("should enable query when tripId is provided", async () => {
     const resourcesData = {
-      resources: [{ id: "res-1", type: TRIP_RESOURCE_TYPES.HERO_IMAGE, url: "https://example.com/hero.jpg" }],
+      resources: [
+        { id: "res-1", type: TRIP_RESOURCE_TYPES.HERO_IMAGE, url: "https://example.com/hero.jpg" },
+      ],
       insurance: null,
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -295,9 +289,7 @@ describe("useTripResources (MSW)", () => {
       insurance: null,
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 
@@ -315,9 +307,7 @@ describe("useTripResources (MSW)", () => {
       insurance: null,
     };
 
-    server.use(
-      createORPCHandler(["trip", "getResources"], () => resourcesData),
-    );
+    server.use(createORPCHandler(["trip", "getResources"], () => resourcesData));
 
     const { result } = renderHookWithMSW(() => useTripResources("trip-1"));
 

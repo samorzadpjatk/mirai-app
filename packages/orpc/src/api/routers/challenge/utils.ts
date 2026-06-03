@@ -9,7 +9,9 @@ import {
 
 // expectedValue holds the QR code value or the required text phrase.
 // It is stored directly in the dedicated DB column — no encoding needed.
-export const toClientChallenge = <T extends { description: string | null; expectedValue: string | null }>(
+export const toClientChallenge = <
+  T extends { description: string | null; expectedValue: string | null },
+>(
   challenge: T,
 ) => ({
   ...challenge,
@@ -26,7 +28,10 @@ export const resolveChallengeImages = async <T extends { image: string | null }>
 ): Promise<(T & { image: string | null })[]> =>
   resolveStorageUrls(supabase, challengeRows, seconds);
 
-export const activateVisibleChallenges = async (db: DB, where?: { id?: string; tripId?: string }) => {
+export const activateVisibleChallenges = async (
+  db: DB,
+  where?: { id?: string; tripId?: string },
+) => {
   const now = new Date();
 
   const visibleConditions = [

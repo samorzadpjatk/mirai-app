@@ -27,7 +27,8 @@ function MapScreenContent({
   currentUserName?: string;
   currentUserAvatarUrl?: string | null;
 }) {
-  const { users, handleMapUserPress, onMapPress, mapTheme, focusedCoordinate } = useMapOverlayStore();
+  const { users, handleMapUserPress, onMapPress, mapTheme, focusedCoordinate } =
+    useMapOverlayStore();
 
   return (
     <View style={{ flex: 1 }}>
@@ -86,7 +87,8 @@ export default function MapScreen() {
     abort: abortAvatar,
   } = useFileDownload();
   const avatarStoragePath = currentUser?.id ? `avatar/${currentUser.id}.jpg` : null;
-  const currentUserName = formatDisplayName(currentUser?.firstName, currentUser?.lastName) ?? undefined;
+  const currentUserName =
+    formatDisplayName(currentUser?.firstName, currentUser?.lastName) ?? undefined;
 
   useEffect(() => {
     if (!currentUser?.hasAvatar || !avatarStoragePath) {

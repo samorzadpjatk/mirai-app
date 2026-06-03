@@ -36,10 +36,7 @@ export function useMapSharing(enabledForAllUsersQuery: boolean, tripId?: string 
     }),
   );
 
-  const sharingUserIds = useMemo(
-    () => extractSharingUserIds(sharingSettings),
-    [sharingSettings],
-  );
+  const sharingUserIds = useMemo(() => extractSharingUserIds(sharingSettings), [sharingSettings]);
 
   const updateSharing = async (userIdsToShareWith: string[]) => {
     await updateSharingMutation.mutateAsync({

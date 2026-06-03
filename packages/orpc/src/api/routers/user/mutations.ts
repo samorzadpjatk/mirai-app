@@ -239,7 +239,8 @@ export const banUserUntil = async (
   }
 
   const existingMetadata =
-    (adminUser.data.user as { app_metadata?: { ban_reason?: string | null } } | null)?.app_metadata ?? {};
+    (adminUser.data.user as { app_metadata?: { ban_reason?: string | null } } | null)
+      ?.app_metadata ?? {};
   const reason = input.reason?.trim();
   const nextMetadata = {
     ...existingMetadata,
@@ -284,10 +285,7 @@ export const deleteUser = async (
     await tx
       .delete(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.userId, input.userId),
-          eq(tripParticipants.tripId, input.tripId),
-        ),
+        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId)),
       );
 
     const [remainingResult] = await tx

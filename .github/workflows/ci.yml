@@ -135,9 +135,9 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bunx nx affected -t test --base=origin/${{ github.base_ref }}
+            bunx nx affected -t test:ci --base=origin/${{ github.base_ref }}
           else
-            bunx nx run-many -t test --exclude=@mirai-app/monorepo
+            bunx nx run-many -t test:ci --exclude=@mirai-app/monorepo
           fi
 
       - name: Upload coverage reports

@@ -47,11 +47,7 @@ export const updateTrip = async (
   if (!trip) {
     throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
   }
-  const [updated] = await context.db
-    .update(trips)
-    .set(data)
-    .where(eq(trips.id, id))
-    .returning();
+  const [updated] = await context.db.update(trips).set(data).where(eq(trips.id, id)).returning();
   return updated;
 };
 

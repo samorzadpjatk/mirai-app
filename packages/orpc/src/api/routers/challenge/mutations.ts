@@ -5,9 +5,7 @@ import {
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
 } from "../../../utils/activityFeed";
-import {
-  precreateRecurringInstancesForTemplate,
-} from "../../../utils/recurringChallenges";
+import { precreateRecurringInstancesForTemplate } from "../../../utils/recurringChallenges";
 import { normalizeChallengeImageInput } from "./types";
 import { toClientChallenge, resolveChallengeImage } from "./utils";
 import {
@@ -125,11 +123,7 @@ export const createChallenge = async (
     });
   }
 
-  if (
-    input.submissionType === "TEXT" &&
-    input.autoApprove &&
-    !input.textExpectedPhrase?.trim()
-  ) {
+  if (input.submissionType === "TEXT" && input.autoApprove && !input.textExpectedPhrase?.trim()) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Text auto-approve requires an expected phrase, or disable auto-approve",
     });
@@ -138,10 +132,7 @@ export const createChallenge = async (
   const insertValues = prepareChallengeInsert(input, now);
 
   const challenge = await context.db.transaction(async (tx) => {
-    const [createdChallenge] = await tx
-      .insert(challenges)
-      .values(insertValues)
-      .returning();
+    const [createdChallenge] = await tx.insert(challenges).values(insertValues).returning();
 
     if (!createdChallenge) {
       throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -265,10 +256,7 @@ export const updateChallenge = async (
   }
 
   const nextIsRecurring = input.isRecurring ?? existing.isRecurring;
-  const inferredRecurringDays = inferRecurringDaysFromWindow(
-    existing.startTime,
-    existing.endTime,
-  );
+  const inferredRecurringDays = inferRecurringDaysFromWindow(existing.startTime, existing.endTime);
   const recurringDays = resolveRecurringDays({
     isRecurring: nextIsRecurring,
     recurringDays: input.recurringDays,

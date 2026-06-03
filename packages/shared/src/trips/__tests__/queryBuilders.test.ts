@@ -33,7 +33,10 @@ describe("getNextTripPageParam", () => {
 
 describe("calculateAllTrips", () => {
   it("should return tripsData when available", () => {
-    const trips = [{ id: "1", name: "Trip 1" }, { id: "2", name: "Trip 2" }];
+    const trips = [
+      { id: "1", name: "Trip 1" },
+      { id: "2", name: "Trip 2" },
+    ];
     expect(calculateAllTrips(trips, null)).toEqual(trips);
   });
   it("should return cachedTrips when tripsData is null", () => {

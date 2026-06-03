@@ -83,11 +83,7 @@ describe("NotificationsHeader", () => {
 
   it("renders custom title and button label", () => {
     renderWithProviders(
-      <NotificationsHeader
-        title="Custom Title"
-        buttonLabel="Add"
-        onCreate={jest.fn()}
-      />,
+      <NotificationsHeader title="Custom Title" buttonLabel="Add" onCreate={jest.fn()} />,
     );
 
     expect(screen.getByText("Custom Title")).toBeOnTheScreen();

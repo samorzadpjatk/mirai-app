@@ -51,8 +51,14 @@ export function ThemedListItem({
           </View>
         )}
         <View style={styles.textContainer}>
-          <Text testID="item-title" style={styles.title}>{title}</Text>
-          {subtitle && <Text testID="item-subtitle" style={styles.subtitle}>{subtitle}</Text>}
+          <Text testID="item-title" style={styles.title}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text testID="item-subtitle" style={styles.subtitle}>
+              {subtitle}
+            </Text>
+          )}
         </View>
         {rightElement}
       </View>

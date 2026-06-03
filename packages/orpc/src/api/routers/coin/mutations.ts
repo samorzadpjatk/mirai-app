@@ -1,8 +1,15 @@
 import { ORPCError } from "@orpc/server";
 import { eq, sql } from "drizzle-orm";
 import { type DB, coinTransactions, groups } from "@mirai-app/db";
-import { validateCoinTransaction, checkCoinBalance, buildCoinTransactionValues } from "@mirai-app/shared";
-import { captureTripRankingSnapshot, createRankChangeActivities } from "../../../utils/activityFeed";
+import {
+  validateCoinTransaction,
+  checkCoinBalance,
+  buildCoinTransactionValues,
+} from "@mirai-app/shared";
+import {
+  captureTripRankingSnapshot,
+  createRankChangeActivities,
+} from "../../../utils/activityFeed";
 import { type CoinTransactionInput } from "./types";
 
 export const addCoins = async (

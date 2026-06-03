@@ -27,15 +27,33 @@ vi.mock("@orpc/tanstack-query", () => ({
 import { getORPCClient } from "../vanilia";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 
-function TestComponent({ httpUrl, wsUrl, authToken }: { httpUrl: string; wsUrl: string; authToken?: string }) {
+function TestComponent({
+  httpUrl,
+  wsUrl,
+  authToken,
+}: {
+  httpUrl: string;
+  wsUrl: string;
+  authToken?: string;
+}) {
   useORPCClient({ httpUrl, wsUrl, authToken });
   return <div>Test</div>;
 }
 
 describe("useORPCClient", () => {
   it("should call getORPCClient with correct args", () => {
-    render(<TestComponent httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000" authToken="test-token" />);
-    expect(vi.mocked(getORPCClient)).toHaveBeenCalledWith("http://localhost:3000", "ws://localhost:3000", "test-token");
+    render(
+      <TestComponent
+        httpUrl="http://localhost:3000"
+        wsUrl="ws://localhost:3000"
+        authToken="test-token"
+      />,
+    );
+    expect(vi.mocked(getORPCClient)).toHaveBeenCalledWith(
+      "http://localhost:3000",
+      "ws://localhost:3000",
+      "test-token",
+    );
   });
 
   it("should call createTanstackQueryUtils with client", () => {

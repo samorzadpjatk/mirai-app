@@ -378,6 +378,57 @@ beforeEach(() => {
 });
 ```
 
+## Test Optimization
+
+### Why Nx `affected` is preferred over Jest `--changedSince`
+
+The monorepo uses **Nx affected graph analysis** for change-based testing rather than Jest's built-in `--changedSince` or `--onlyChanged` flags. Here's why:
+
+| Strategy | Scope | Cross-package awareness | Best for |
+|----------|-------|------------------------|----------|
+| `nx affected` | Entire monorepo | ✅ Understands workspace dependency graph | CI/CD pipelines |
+| Jest `--changedSince` | Single Jest project | ❌ Only sees files within one project | Single-package repos |
+| Jest `--onlyChanged` | Single Jest project | ❌ Same limitation | Local quick checks |
+
+**Example:** Changing `packages/shared/src/trips/flattenTrips.ts` requires re-running tests in `apps/native` (which depends on `packages/shared`). Nx `affected` detects this automatically. Jest `--changedSince` would miss it entirely because it only tracks files within the `apps/native` Jest project.
+
+### Default `test` Scripts: Optimized for Local Development
+
+All default `test` scripts use **change-based testing** for fast local feedback:
+
+| Project | `test` script | What it does |
+|---------|--------------|-------------|
+| `apps/native` | `jest --onlyChanged --coverage` | Runs only Jest tests related to files modified since last commit |
+| All Vitest packages | `vitest --run --changed` | Runs only Vitest tests related to changed files |
+
+This means `bun run test` in any package skips the full suite and runs only what's relevant to your current changes.
+
+### CI: Full Suite via `test:ci`
+
+The CI pipeline uses **`test:ci`** targets which run the **complete test suite** for affected packages:
+
+```bash
+# CI runs this (full suite)
+bunx nx affected -t test:ci --base=origin/main
+```
+
+| Project | `test:ci` script | What it does |
+|---------|-----------------|-------------|
+| `apps/native` | `jest --passWithNoTests --ci --coverage` | Full Jest suite with CI flags |
+| All Vitest packages | `vitest run` | Full Vitest suite |
+
+### Pre-commit Test Safety
+
+`lint-staged` is configured to run related tests when staging files in `apps/native/src/`:
+```bash
+# Runs automatically on git commit for staged native files
+jest --findRelatedTests --passWithNoTests --onlyChanged
+```
+
+This catches test regressions before they reach CI without running the full 3,000+ test suite.
+
+---
+
 ## Nx Pipeline
 
 Tests are integrated into the Nx pipeline via `targetDefaults` in `nx.json`:

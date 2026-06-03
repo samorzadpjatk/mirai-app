@@ -48,7 +48,10 @@ export function calculateHasMoreThanPreview(members: GroupMember[]): boolean {
   return members.length > 3;
 }
 
-export function calculateVisibleMembers(members: GroupMember[], isExpanded: boolean): GroupMember[] {
+export function calculateVisibleMembers(
+  members: GroupMember[],
+  isExpanded: boolean,
+): GroupMember[] {
   return isExpanded ? members : members.slice(0, 3);
 }
 

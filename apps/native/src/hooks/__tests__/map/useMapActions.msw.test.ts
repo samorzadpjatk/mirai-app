@@ -124,9 +124,7 @@ describe("useMapActions (MSW)", () => {
   it("should return mutation result", async () => {
     const mockResult = { id: "location-1", timestamp: 1234567890 };
 
-    server.use(
-      createORPCHandler(["location", "updateLocation"], () => mockResult),
-    );
+    server.use(createORPCHandler(["location", "updateLocation"], () => mockResult));
 
     const { result } = renderHookWithMSW(() => useMapActions());
 

@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Modal,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { commonStyles } from "~/styles/commonStyles";
 import {
@@ -80,9 +73,7 @@ export default function RewardDetailsModal({
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={(event) => {
-                  const nextIndex = Math.round(
-                    event.nativeEvent.contentOffset.x / carouselWidth,
-                  );
+                  const nextIndex = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
                   onImageIndexChange(nextIndex);
                 }}
               >

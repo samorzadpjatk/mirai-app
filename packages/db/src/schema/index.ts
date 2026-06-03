@@ -22,12 +22,7 @@ import {
 } from "./trips";
 import { events, userEvents } from "./events";
 import { groups, groupJoinRequests } from "./groups";
-import {
-  challenges,
-  challengeSubmissions,
-  challengeVotes,
-  submissionReports,
-} from "./challenges";
+import { challenges, challengeSubmissions, challengeVotes, submissionReports } from "./challenges";
 import {
   activityFeeds,
   activityReactions,

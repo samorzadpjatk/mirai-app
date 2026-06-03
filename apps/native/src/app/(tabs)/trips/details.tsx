@@ -79,7 +79,11 @@ export default function TripDetailsScreen() {
           <TripBanner />
 
           {/* Partners */}
-          <PartnersSection sponsors={trip.tripSponsors?.map((ts: { sponsor: string | null }) => ts.sponsor).filter(Boolean)} />
+          <PartnersSection
+            sponsors={trip.tripSponsors
+              ?.map((ts: { sponsor: string | null }) => ts.sponsor)
+              .filter(Boolean)}
+          />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid

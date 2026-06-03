@@ -19,7 +19,7 @@ export function calculateRewardProgress({
   if (isAllTrips || totalAvailablePoints === 0) {
     coinCost = originalCoinCost;
   } else {
-    coinCost = Math.max(1, Math.floor(totalAvailablePoints * originalCoinCost / 100));
+    coinCost = Math.max(1, Math.floor((totalAvailablePoints * originalCoinCost) / 100));
   }
 
   const canAfford = groupCoins >= coinCost;

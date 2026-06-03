@@ -36,17 +36,15 @@ export function isAutoPushBlocked(
   );
 }
 
-export async function getExpoPushToken(
-  projectId?: string,
-): Promise<Notifications.ExpoPushToken> {
+export async function getExpoPushToken(projectId?: string): Promise<Notifications.ExpoPushToken> {
   return projectId
     ? await Notifications.getExpoPushTokenAsync({ projectId })
     : await Notifications.getExpoPushTokenAsync();
 }
 
-export async function runAutoPushSubscriptionFlow(
-  subscribeMutation: { mutateAsync: (data: { token: string }) => Promise<unknown> },
-): Promise<void> {
+export async function runAutoPushSubscriptionFlow(subscribeMutation: {
+  mutateAsync: (data: { token: string }) => Promise<unknown>;
+}): Promise<void> {
   try {
     const currentPermission = await Notifications.getPermissionsAsync();
     let finalStatus = currentPermission.status;

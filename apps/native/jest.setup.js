@@ -70,7 +70,8 @@ jest.mock("@maplibre/maplibre-react-native", () => {
   const React = require("react");
   const { View } = require("react-native");
   return {
-    MapView: ({ children, testID, ...props }) => React.createElement(View, { testID: testID || "map-view", ...props }, children),
+    MapView: ({ children, testID, ...props }) =>
+      React.createElement(View, { testID: testID || "map-view", ...props }, children),
     Camera: "Camera",
     UserLocation: "UserLocation",
     PointAnnotation: "PointAnnotation",

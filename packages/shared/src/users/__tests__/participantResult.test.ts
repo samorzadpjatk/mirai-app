@@ -11,9 +11,7 @@ describe("buildWristNumberConflictMessage", () => {
       firstName: "Jan",
       lastName: "Kowalski",
     });
-    expect(message).toBe(
-      "Numer opaski 123 jest już przypisany do użytkownika: Jan Kowalski",
-    );
+    expect(message).toBe("Numer opaski 123 jest już przypisany do użytkownika: Jan Kowalski");
   });
 
   it("formats conflict message with only first name", () => {
@@ -21,9 +19,7 @@ describe("buildWristNumberConflictMessage", () => {
       firstName: "Anna",
       lastName: null,
     });
-    expect(message).toBe(
-      "Numer opaski 456 jest już przypisany do użytkownika: Anna",
-    );
+    expect(message).toBe("Numer opaski 456 jest już przypisany do użytkownika: Anna");
   });
 
   it("formats conflict message with only last name", () => {
@@ -31,9 +27,7 @@ describe("buildWristNumberConflictMessage", () => {
       firstName: null,
       lastName: "Nowak",
     });
-    expect(message).toBe(
-      "Numer opaski 789 jest już przypisany do użytkownika: Nowak",
-    );
+    expect(message).toBe("Numer opaski 789 jest już przypisany do użytkownika: Nowak");
   });
 
   it("uses fallback for unknown user when both names are null", () => {
