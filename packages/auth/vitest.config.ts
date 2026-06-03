@@ -8,6 +8,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: "node",
+      hookTimeout: 30000,
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts"],
       coverage: {

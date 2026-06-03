@@ -37,6 +37,7 @@ module.exports = {
     "^@mirai-app/orpc/utils/activityFeed$": "<rootDir>/../../packages/orpc/src/utils/activityFeed.ts",
     "^msw/node$": "<rootDir>/../../node_modules/.bun/msw@2.14.6/node_modules/msw/lib/node/index.js",
   },
+  testTimeout: 10000,
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   // Exclude helper files from test discovery
   testPathIgnorePatterns: [

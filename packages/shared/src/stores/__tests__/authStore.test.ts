@@ -145,7 +145,6 @@ describe("Auth Store", () => {
 
       await flushPromises();
 
-       
       expect(mockClient.auth.getSession).toHaveBeenCalled();
       expect(onUserFetch).toHaveBeenCalledWith("auth-1");
 
@@ -216,7 +215,6 @@ describe("Auth Store", () => {
         client: mockClient,
       });
 
-       
       expect(mockClient.auth.onAuthStateChange).toHaveBeenCalled();
 
       // Test cleanup function
@@ -358,7 +356,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithOtp("test@example.com");
 
-       
       expect(mockClient.auth.signInWithOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         options: { shouldCreateUser: false },
@@ -430,7 +427,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithPassword("test@example.com", "password");
 
-       
       expect(mockClient.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "password",
@@ -525,7 +521,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().verifyOtp("test@example.com", "123456");
 
-       
       expect(mockClient.auth.verifyOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         token: "123456",
@@ -599,7 +594,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().signOut();
 
-       
       expect(mockClient.auth.signOut).toHaveBeenCalled();
       const state = authStore.getState();
       expect(state.user).toBeNull();
@@ -657,7 +651,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().refreshSession();
 
-       
       expect(mockClient.auth.refreshSession).toHaveBeenCalled();
       expect(authStore.getState().session).toEqual(newSession);
     });

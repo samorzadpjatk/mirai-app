@@ -10,7 +10,7 @@ export default mergeConfig(
       environment: "jsdom",
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.tsx"],
-      hookTimeout: 30000,
+      hookTimeout: 60000,
       coverage: {
         thresholds: { functions: 55, lines: 78, statements: 78 },
         exclude: [

@@ -68,12 +68,12 @@ jobs:
           node-version: 24
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: "1.3.14"
 
       - name: Restore Bun dependency cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             node_modules
@@ -88,7 +88,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Restore NX cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5.0.5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.event_name }}-${{ github.sha }}

@@ -165,7 +165,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     expect(mockCreateSupabaseClient).toHaveBeenCalledWith(
@@ -182,7 +182,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     expect(mockGetORPCClient).toHaveBeenCalledWith(
@@ -198,7 +198,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     expect(mockChannelOn).toBeDefined();
@@ -237,7 +237,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     if (subscribeCallback) {
@@ -264,7 +264,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     if (subscribeCallback) {
@@ -305,7 +305,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     expect(mockChannelSubscribe).toBeDefined();
@@ -351,7 +351,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     expect(sigintHandler).toBeDefined();
@@ -393,7 +393,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-     
+
     await main();
 
     if (sigintHandler) {
@@ -449,7 +449,7 @@ describe("Notification Sender - Notification Processing", () => {
     mockTrackDeliveryFailure.mockResolvedValue(undefined);
 
     const { main } = await import("../index");
-     
+
     await main();
 
     type PayloadHandler = (payload: { new: { id: string | number } }) => Promise<void> | void;

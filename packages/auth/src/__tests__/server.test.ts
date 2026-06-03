@@ -427,13 +427,17 @@ describe("server exports with database", () => {
   let mockSupabase: SupabaseClient;
   let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    mockSupabase = createMockSupabaseClient();
+  beforeAll(async () => {
     testDb = await createPgliteTestDb();
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockSupabase = createMockSupabaseClient();
+    await testDb.reset();
+  });
+
+  afterAll(async () => {
     await testDb.cleanup();
   });
 
