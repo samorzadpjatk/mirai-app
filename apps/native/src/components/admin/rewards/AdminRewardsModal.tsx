@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useCreateReward } from "~/hooks/rewards";
 import { useFileUpload } from "~/hooks/files";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AppModalShell, AppModalFooter, FormField, ThemedTextInput } from "~/components/common/ui";
 
@@ -32,7 +32,7 @@ interface NewRewardState {
 }
 
 const buildUniqueRewardImageName = (asset: ImagePicker.ImagePickerAsset, index: number) => {
-  const extension = getImageExtension(asset);
+  const extension = getFileExtension(asset);
   const baseName = (asset.fileName?.split(".").slice(0, -1).join(".") ?? "reward-image")
     .replace(/[^a-zA-Z0-9_-]/g, "-")
     .replace(/-+/g, "-")
@@ -128,7 +128,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
       for (const [index, asset] of result.assets.entries()) {
         const fileName = buildUniqueRewardImageName(asset, index);
         const storagePath = `rewards/${fileName}`;
-        const contentType = getImageContentType(getImageExtension(asset));
+        const contentType = getFileContentType(getFileExtension(asset));
 
         await upload({
           storagePath,

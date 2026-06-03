@@ -39,8 +39,8 @@ jest.mock("~/hooks/files", () => {
 });
 
 jest.mock("~/utils/image", () => ({
-  getImageExtension: () => "jpg",
-  getImageContentType: () => "image/jpeg",
+  getFileExtension: () => "jpg",
+  getFileContentType: () => "image/jpeg",
 }));
 
 jest.mock("expo-image-picker", () => ({

@@ -26,7 +26,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run",
+    "test": "vitest --run --changed",
+    "test:ci": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -35,9 +36,7 @@
   },
   "devDependencies": {
     "@mirai-app/db": "workspace:*",
-    "@mirai-app/supabase": "workspace:*",
     "@orpc/server": "^1.14.2",
-    "@supabase/supabase-js": "^2.89.0",
     "@types/react": "~19.2.10",
     "@vitest/coverage-v8": "^4.1.8",
     "react": "^19.2.0",

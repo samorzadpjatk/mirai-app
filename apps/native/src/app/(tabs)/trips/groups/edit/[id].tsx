@@ -16,10 +16,8 @@ import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEdit
 import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEditPermissionState";
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 import { formatDisplayName, getInitials } from "@mirai-app/shared";
-
-
 
 export default function EditGroupScreen() {
   const router = useRouter();
@@ -107,7 +105,7 @@ export default function EditGroupScreen() {
 
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const extension = getImageExtension(asset);
+    const extension = getFileExtension(asset);
     const storagePath = `group/${group.trip.id}/${groupId}-${Date.now()}.${extension}`;
 
     try {
@@ -115,7 +113,7 @@ export default function EditGroupScreen() {
         storagePath,
         fileUri: asset.uri,
         fileName: asset.fileName ?? `group-cover-${Date.now()}.${extension}`,
-        contentType: asset.mimeType ?? getImageContentType(extension),
+        contentType: asset.mimeType ?? getFileContentType(extension),
         upsert: true,
       });
       setGroupImagePath(storagePath);
@@ -239,7 +237,8 @@ export default function EditGroupScreen() {
 
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>
-                        {formatDisplayName(participant.user.firstName, participant.user.lastName) ?? "Unknown user"}
+                        {formatDisplayName(participant.user.firstName, participant.user.lastName) ??
+                          "Unknown user"}
                       </Text>
                       <Text style={styles.memberMeta}>
                         {participant.user.email ?? "No email"}

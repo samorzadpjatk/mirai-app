@@ -11,7 +11,7 @@ import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 
 export default function AdminEditRewardScreen() {
@@ -119,10 +119,10 @@ export default function AdminEditRewardScreen() {
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-      const extension = getImageExtension(asset);
+      const extension = getFileExtension(asset);
       const fileName = asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
       const storagePath = `rewards/${tripId}/reward-${Date.now()}.${extension}`;
-      const contentType = asset.mimeType ?? getImageContentType(extension);
+      const contentType = asset.mimeType ?? getFileContentType(extension);
 
       await upload({
         storagePath,

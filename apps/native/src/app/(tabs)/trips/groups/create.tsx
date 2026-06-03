@@ -11,7 +11,7 @@ import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupB
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
@@ -76,7 +76,7 @@ export default function CreateGroupScreen() {
 
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const extension = getImageExtension(asset);
+    const extension = getFileExtension(asset);
     const storagePath = `group/${tripId}/cover-${Date.now()}.${extension}`;
 
     try {
@@ -84,7 +84,7 @@ export default function CreateGroupScreen() {
         storagePath,
         fileUri: asset.uri,
         fileName: asset.fileName ?? `group-cover-${Date.now()}.${extension}`,
-        contentType: asset.mimeType ?? getImageContentType(extension),
+        contentType: asset.mimeType ?? getFileContentType(extension),
         upsert: true,
       });
       setGroupImagePath(storagePath);

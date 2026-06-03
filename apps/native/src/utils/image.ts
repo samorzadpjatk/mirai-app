@@ -22,9 +22,6 @@ export const getFileExtension = (asset: { fileName?: string | null; mimeType?: s
   return "jpg";
 };
 
-/** @deprecated Use getFileExtension instead. */
-export const getImageExtension = getFileExtension;
-
 /**
  * Returns the appropriate MIME content type for a given file extension.
  * Handles both images and videos.
@@ -50,9 +47,6 @@ export const getFileContentType = (extension: string) => {
       return "image/jpeg";
   }
 };
-
-/** @deprecated Use getFileContentType instead. */
-export const getImageContentType = getFileContentType;
 
 /**
  * Determines a stable file name for an upload asset.

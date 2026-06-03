@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { orpc } from "@mirai-app/orpc/client";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
@@ -79,10 +79,10 @@ export default function AdminCreateActivityScreen() {
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-      const extension = getImageExtension(asset);
+      const extension = getFileExtension(asset);
       const fileName = asset.fileName?.trim() ?? `custom-activity-${Date.now()}.${extension}`;
       const storagePath = `activity/${tripId}/custom-${Date.now()}.${extension}`;
-      const contentType = asset.mimeType ?? getImageContentType(extension);
+      const contentType = asset.mimeType ?? getFileContentType(extension);
 
       await upload({
         storagePath,

@@ -31,7 +31,7 @@
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check '**/*.{ts,tsx,js,jsx}'",
     "format:write": "prettier --write '**/*.{ts,tsx,js,jsx}'",
-    "test": "jest --coverage",
+    "test": "jest --onlyChanged --coverage",
     "test:ci": "jest --passWithNoTests --ci --coverage",
     "test:watch": "jest --watch",
     "clean": "rm -rf .expo .nx node_modules dist coverage"

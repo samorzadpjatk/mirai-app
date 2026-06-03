@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useFileUpload } from "~/hooks/files";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { getFileExtension, getFileContentType } from "~/utils/image";
 import {
   submissionTypes,
   scoringCategories,
@@ -224,9 +224,9 @@ export function useChallengeForm({
 
       if (result.canceled || !result.assets[0]) return;
       const asset = result.assets[0];
-      const extension = getImageExtension(asset);
+      const extension = getFileExtension(asset);
       const storagePath = `challenge/${tripId}/cover-${Date.now()}.${extension}`;
-      const contentType = asset.mimeType ?? getImageContentType(extension);
+      const contentType = asset.mimeType ?? getFileContentType(extension);
       const fileName = asset.fileName?.trim() ?? `challenge-cover-${Date.now()}.${extension}`;
 
       await upload({

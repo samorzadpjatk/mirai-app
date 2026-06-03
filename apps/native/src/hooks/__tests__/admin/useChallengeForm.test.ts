@@ -45,8 +45,8 @@ jest.mock("~/hooks/files", () => ({
 
 // Mock image utilities
 jest.mock("~/utils/image", () => ({
-  getImageExtension: jest.fn(() => "jpg"),
-  getImageContentType: jest.fn(() => "image/jpeg"),
+  getFileExtension: jest.fn(() => "jpg"),
+  getFileContentType: jest.fn(() => "image/jpeg"),
 }));
 
 // Mock challenge form constants
