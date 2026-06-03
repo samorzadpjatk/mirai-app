@@ -229,16 +229,16 @@ describe("createBackgroundTaskDeps", () => {
 
     const location = {
       coords: {
-        latitude: null,
+        latitude: null as unknown as number,
         longitude: 21.01,
-        altitude: null,
-        accuracy: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
+        altitude: null as unknown as number,
+        accuracy: null as unknown as number,
+        altitudeAccuracy: null as unknown as number,
+        heading: null as unknown as number,
+        speed: null as unknown as number,
       },
       timestamp: Date.now(),
-    };
+    } as LocationObject;
     await deps.sendUpdate(location);
 
     expect(factoryDeps.getORPCClient).not.toHaveBeenCalled();

@@ -11,7 +11,7 @@ import { setupServer } from "msw/node";
  */
 export function createORPCHandler(
   path: string[],
-  resolver: (input: unknown) => unknown | Promise<unknown>,
+  resolver: (input: any) => unknown | Promise<unknown>,
 ) {
   const urlPath = `http://localhost:9999/${path.join("/")}`;
 
@@ -26,16 +26,19 @@ export function createORPCHandler(
       return HttpResponse.json({ json: output, meta: [] });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      return HttpResponse.json({
-        json: {
-          defined: true,
-          code: "BAD_REQUEST",
-          status: 400,
-          message,
-          data: null,
+      return HttpResponse.json(
+        {
+          json: {
+            defined: true,
+            code: "BAD_REQUEST",
+            status: 400,
+            message,
+            data: null,
+          },
+          meta: [],
         },
-        meta: [],
-      }, { status: 400 });
+        { status: 400 },
+      );
     }
   });
 }

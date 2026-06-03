@@ -10,6 +10,12 @@ describe("useJudgement", () => {
     jest.clearAllMocks();
     server.resetHandlers();
     judgementStore.setState({ tripId: "", challengeId: "", dismissedIds: [] });
+    // Provide default handlers so the first 3 param-only tests don’t trigger
+    // unhandled-request MSW console errors.
+    server.use(
+      createORPCHandler(["challengeSubmission", "getByChallenge"], () => []),
+      createORPCHandler(["challenge", "getById"], () => null),
+    );
   });
 
   it("should return explicit ids in result", () => {
@@ -255,7 +261,7 @@ describe("useJudgement", () => {
 
   it("should trim rejection reason", async () => {
     const mockSubmissions = [{ id: "sub-1", status: "PENDING" }];
-    const reviewHandler = jest.fn((input) => ({ ...input, id: "sub-1" }));
+    const reviewHandler = jest.fn((input: Record<string, unknown>) => ({ ...input, id: "sub-1" }));
     server.use(
       createORPCHandler(["challengeSubmission", "getByChallenge"], () => mockSubmissions),
       createORPCHandler(["challenge", "getById"], () => null),

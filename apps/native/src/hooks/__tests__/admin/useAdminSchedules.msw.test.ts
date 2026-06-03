@@ -97,7 +97,7 @@ describe("useAdminSchedules (MSW)", () => {
         expect(data).toMatchObject({
           tripId: "trip-123",
           name: "New Schedule",
-          notificationType: "REMINDER",
+          notificationType: "custom",
           hour: 10,
           minute: 0,
         });
@@ -114,7 +114,7 @@ describe("useAdminSchedules (MSW)", () => {
     const createData = {
       tripId: "trip-123",
       name: "New Schedule",
-      notificationType: "REMINDER",
+      notificationType: "custom" as const,
       hour: 10,
       minute: 0,
       startDate: new Date(),
@@ -288,7 +288,7 @@ describe("useAdminSchedules (MSW)", () => {
       .createSchedule({
         tripId: "trip-123",
         name: "Test",
-        notificationType: "REMINDER",
+        notificationType: "custom",
         hour: 10,
         minute: 0,
         startDate: new Date(),

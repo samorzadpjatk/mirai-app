@@ -23,18 +23,7 @@ export interface BackgroundTaskState {
 
 export interface BackgroundTaskDeps {
   shouldSend: () => Promise<boolean>;
-  sendUpdate: (location: {
-    coords: {
-      latitude: unknown;
-      longitude: unknown;
-      altitude?: unknown;
-      accuracy?: unknown;
-      altitudeAccuracy?: unknown;
-      heading?: unknown;
-      speed?: unknown;
-    };
-    timestamp: number;
-  }) => Promise<void>;
+  sendUpdate: (location: LocationObject) => Promise<void>;
 }
 
 export interface BackgroundTaskFactoryDeps {
@@ -93,18 +82,7 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
     return sharingEnabled === "true" && backgroundEnabled === "true";
   }
 
-  async function sendUpdate(location: {
-    coords: {
-      latitude: unknown;
-      longitude: unknown;
-      altitude?: unknown;
-      accuracy?: unknown;
-      altitudeAccuracy?: unknown;
-      heading?: unknown;
-      speed?: unknown;
-    };
-    timestamp: number;
-  }): Promise<void> {
+  async function sendUpdate(location: LocationObject): Promise<void> {
     const accessToken = await getAccessToken();
     if (!accessToken) {
       return;

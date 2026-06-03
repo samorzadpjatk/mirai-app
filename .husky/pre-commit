@@ -27,4 +27,11 @@ bunx lint-staged
 
 nx affected -t lint --uncommitted
 nx affected -t typecheck --uncommitted
-nx affected -t test --uncommitted
+
+# Run tests only for projects that have changed test files.
+# Compares staged changes against HEAD to find affected tests.
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+if echo "$STAGED_FILES" | grep -qE '\.(test|spec)\.(ts|tsx|js|jsx)$'; then
+  echo "[pre-commit] Running tests for changed test files..."
+  nx affected -t test --uncommitted
+fi
