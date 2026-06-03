@@ -48,6 +48,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    env:
+      NX_BAIL: true
 
     steps:
       - uses: actions/checkout@v6
