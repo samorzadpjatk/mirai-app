@@ -1,4 +1,4 @@
-import { ORPCError, createORPCClient } from "@orpc/client";
+import { DynamicLink, ORPCError, createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WSLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
@@ -62,11 +62,14 @@ const isRetryableError = (error: unknown): boolean => {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const STREAMING_PROCEDURES = new Set([
+  "location/getFriendsLocationsStream",
+  "location/updateLocationStream",
+]);
+
 const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: string) => {
   const ws = wsUrl ? createWsConnection(wsUrl, authorizationToken) : null;
-  if (ws) {
-    new WSLink({ websocket: ws });
-  }
+  const wsLink = ws ? new WSLink({ websocket: ws }) : null;
 
   const httpLink = new RPCLink({
     url: httpUrl,
@@ -93,7 +96,17 @@ const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: str
     ],
   });
 
-  const client: RouterClient<AppRouter> = createORPCClient(httpLink);
+  const link = wsLink
+    ? new DynamicLink((_options, path) => {
+        const pathKey = path.join("/");
+        if (STREAMING_PROCEDURES.has(pathKey)) {
+          return wsLink;
+        }
+        return httpLink;
+      })
+    : httpLink;
+
+  const client: RouterClient<AppRouter> = createORPCClient(link);
 
   return {
     client,
