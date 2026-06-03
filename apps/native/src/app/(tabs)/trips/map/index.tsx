@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
-import { View } from "react-native";
-import { UserMap } from "~/components/map/UserMap";
-import { useMapUsers } from "~/hooks/map";
-import { useMapOverlayStore, mapOverlayStore, setMapOverlayExternals } from "~/stores/map";
-import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@mirai-app/auth/client";
 import { orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName } from "@mirai-app/shared";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
+import { UserMap } from "~/components/map/UserMap";
+import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
+import { useFileDownload } from "~/hooks/files";
+import { useMapUsers } from "~/hooks/map";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
 import { useMapActions } from "~/hooks/map";
-import { useFileDownload } from "~/hooks/files";
-import { useLocationContext } from "~/stores/location";
 import { useSelectedTrip } from "~/hooks/trips";
 import { useTripDetails } from "~/hooks/trips";
-import { formatDisplayName } from "@mirai-app/shared";
+import { useLocationContext } from "~/stores/location";
+import { mapOverlayStore, setMapOverlayExternals, useMapOverlayStore } from "~/stores/map";
 
 function MapScreenContent({
   onLocationUpdate,

@@ -1,7 +1,7 @@
 import { colors as colorsImport } from "./colors";
-import { spacing as spacingImport, borderRadius as borderRadiusImport } from "./spacing";
-import { typography as typographyImport } from "./typography";
 import { shadows as shadowsImport } from "./shadows";
+import { borderRadius as borderRadiusImport, spacing as spacingImport } from "./spacing";
+import { typography as typographyImport } from "./typography";
 
 export { colors } from "./colors";
 export { spacing, borderRadius } from "./spacing";

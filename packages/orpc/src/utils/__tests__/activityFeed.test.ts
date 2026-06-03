@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  resolvePeerVotingDurationHours,
-  formatSubmissionDeadline,
-  resolvePodiumPoints,
   DEFAULT_PEER_VOTING_DURATION_HOURS,
+  formatSubmissionDeadline,
+  resolvePeerVotingDurationHours,
+  resolvePodiumPoints,
 } from "../activityFeed";
 
 describe("activityFeed pure functions", () => {

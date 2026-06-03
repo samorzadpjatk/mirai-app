@@ -1,8 +1,8 @@
 import { StyleSheet } from "react-native";
 import { colors } from "./colors";
-import { spacing, borderRadius } from "./spacing";
-import { typography } from "./typography";
 import { shadows } from "./shadows";
+import { borderRadius, spacing } from "./spacing";
+import { typography } from "./typography";
 
 export const commonStyles = StyleSheet.create({
   // Container styles

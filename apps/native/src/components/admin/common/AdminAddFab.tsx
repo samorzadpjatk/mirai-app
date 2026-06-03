@@ -1,4 +1,4 @@
-import { type StyleProp, type ViewStyle } from "react-native";
+import type { StyleProp, ViewStyle } from "react-native";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 
 interface AdminAddFabProps {

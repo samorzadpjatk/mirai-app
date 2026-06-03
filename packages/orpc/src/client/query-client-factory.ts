@@ -23,7 +23,7 @@ export function makeQueryClient() {
           const statusCode = (error as { status?: number })?.status;
           // For 429 rate limit errors, use longer delays
           const baseDelay = statusCode === 429 ? 5000 : 1000;
-          const exponential = baseDelay * Math.pow(2, attemptIndex);
+          const exponential = baseDelay * 2 ** attemptIndex;
           const jitter = exponential * (0.5 + Math.random() * 0.5);
           return Math.min(jitter, 30000);
         },
@@ -37,10 +37,9 @@ let browserQueryClient: QueryClient | undefined = undefined;
 export function getQueryClient() {
   if (typeof globalThis === "undefined" || !("window" in globalThis)) {
     return makeQueryClient();
-  } else {
-    browserQueryClient ??= makeQueryClient();
-    return browserQueryClient;
   }
+  browserQueryClient ??= makeQueryClient();
+  return browserQueryClient;
 }
 
 export const queryClient = getQueryClient();

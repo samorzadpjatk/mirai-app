@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { toUserWithEmail, normalizeGroupImageInput } from "../imageUtils";
+import { describe, expect, it } from "vitest";
+import { normalizeGroupImageInput, toUserWithEmail } from "../imageUtils";
 
 describe("toUserWithEmail", () => {
   it("adds email from lookup map", () => {

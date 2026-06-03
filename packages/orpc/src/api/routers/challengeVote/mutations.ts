@@ -1,18 +1,18 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, inArray } from "drizzle-orm";
-import { challenges, challengeVotes } from "@mirai-app/db";
+import { challengeVotes, challenges } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { validateVotePayload, buildVoteInsertValues } from "@mirai-app/shared";
+import { buildVoteInsertValues, validateVotePayload } from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { and, eq, inArray } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { voteColumns } from "./types";
 import {
+  ensureChallengeVoting,
   ensureTripParticipant,
   getChallengeInTrip,
-  ensureChallengeVoting,
-  recomputeSubmissionVotes,
   getJudgedStaffVotingProgress,
   maybeFinalizeJudgedStaffVoting,
+  recomputeSubmissionVotes,
   validateJudgedStaffVotePayload,
 } from "./utils";
 

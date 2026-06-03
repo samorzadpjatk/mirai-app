@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { waitFor } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTripDetails } from "../../trips/useTripDetails";
+import { waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useTripDetails } from "../../trips/useTripDetails";
 
 describe("useTripDetails (MSW)", () => {
   beforeEach(async () => {

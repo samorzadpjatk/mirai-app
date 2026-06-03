@@ -1,8 +1,8 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, count, inArray, ne } from "drizzle-orm";
-import { challenges, challengeSubmissions, tripParticipants, users } from "@mirai-app/db";
+import { challengeSubmissions, challenges, tripParticipants, users } from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
-import { tallyVotes, computeRequiredPositions, hasAllRequiredPositions } from "@mirai-app/shared";
+import { computeRequiredPositions, hasAllRequiredPositions, tallyVotes } from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { and, count, eq, inArray, ne } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import type { ChallengeForVoting, JudgedStaffVotingProgress } from "./types";
 

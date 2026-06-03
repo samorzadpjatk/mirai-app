@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
 import * as Notifications from "expo-notifications";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Linking } from "react-native";
 import {
-  shouldRequestNotificationPermission,
   buildNotificationPermissionResult,
+  shouldRequestNotificationPermission,
 } from "./useNotifications";
 
 export interface UseNotificationPermissionReturn {

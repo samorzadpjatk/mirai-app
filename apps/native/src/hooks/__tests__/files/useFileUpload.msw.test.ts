@@ -1,13 +1,13 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
-import {
-  useFileUpload,
-  toErrorObject,
-  shouldRetryUpload,
-  buildTusUploadOptions,
-} from "../../files/useFileUpload";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
+import {
+  buildTusUploadOptions,
+  shouldRetryUpload,
+  toErrorObject,
+  useFileUpload,
+} from "../../files/useFileUpload";
 
 // Mock tus-js-client
 const mockUploadStart = jest.fn<() => void>();
@@ -578,7 +578,7 @@ describe("useFileUpload (MSW)", () => {
   });
 });
 
-import { shouldRetryErrorMessage, calculateUploadProgress } from "../../files/useFileUpload";
+import { calculateUploadProgress, shouldRetryErrorMessage } from "../../files/useFileUpload";
 
 describe("shouldRetryErrorMessage", () => {
   it("should retry on 400 error", () => {

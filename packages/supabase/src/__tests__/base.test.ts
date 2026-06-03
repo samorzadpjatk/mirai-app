@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import createBaseSupabaseClient from "../base";
 import { createClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import createBaseSupabaseClient from "../base";
 import type { SupabaseClientOptions } from "../types";
 import { createMockSupabaseClient } from "./utils";
 

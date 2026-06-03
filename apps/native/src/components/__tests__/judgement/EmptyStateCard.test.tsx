@@ -1,5 +1,5 @@
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { EmptyStateCard } from "../../judgement/EmptyStateCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");

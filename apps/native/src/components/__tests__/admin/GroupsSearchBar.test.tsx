@@ -1,6 +1,6 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupsSearchBar } from "../../admin/groups/GroupsSearchBar";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("GroupsSearchBar", () => {
   const mockOnSearchChange = jest.fn();

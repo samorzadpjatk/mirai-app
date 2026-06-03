@@ -1,4 +1,4 @@
-import type { ExpoPushMessage, ExpoPushTicket, ExpoPushReceipt } from "expo-server-sdk";
+import type { ExpoPushMessage, ExpoPushReceipt, ExpoPushTicket } from "expo-server-sdk";
 
 export class Expo {
   constructor(_options?: { accessToken?: string }) {

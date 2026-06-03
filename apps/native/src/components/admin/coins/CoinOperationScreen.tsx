@@ -1,13 +1,13 @@
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
-import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
+import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
+import { borderRadius, colors, spacing } from "~/styles";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";
@@ -48,7 +48,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
 
   const submit = async () => {
-    const numericAmount = parseInt(amount, 10);
+    const numericAmount = Number.parseInt(amount, 10);
     if (!tripId || !groupId) {
       Alert.alert("Error", "Trip and group are required.");
       return;
@@ -124,7 +124,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
           </View>
         </View>
 
-        <FormField label="Amount" required>
+        <FormField label="Amount" required={true}>
           <ThemedTextInput
             value={amount}
             onChangeText={setAmount}
@@ -133,12 +133,12 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
           />
         </FormField>
 
-        <FormField label="Reason" required>
+        <FormField label="Reason" required={true}>
           <ThemedTextInput
             value={reason}
             onChangeText={setReason}
             placeholder={reasonPlaceholder}
-            multiline
+            multiline={true}
             numberOfLines={3}
             style={styles.textArea}
           />

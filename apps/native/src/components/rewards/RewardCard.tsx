@@ -1,13 +1,13 @@
-import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { commonStyles } from "~/styles/commonStyles";
 import {
-  getRewardImages,
-  getRewardBorderColor,
-  getRewardShadowProps,
-  getRewardButtonState,
-  getRewardAvailabilityText,
   getRewardAvailabilityColor,
+  getRewardAvailabilityText,
+  getRewardBorderColor,
+  getRewardButtonState,
+  getRewardImages,
+  getRewardShadowProps,
 } from "./RewardsView";
 import type { RewardListItem } from "./types";
 

@@ -1,10 +1,10 @@
-import yaml from "yaml";
-import { readTextFile } from "./utils/fs";
-import { joinPath } from "./utils/path";
-import { db } from "./config/db";
-import type { RewardConfig, AuthUserByEmail } from "./types";
 import { rewards } from "@mirai-app/db";
 import { logger } from "@mirai-app/shared";
+import yaml from "yaml";
+import { db } from "./config/db";
+import type { AuthUserByEmail, RewardConfig } from "./types";
+import { readTextFile } from "./utils/fs";
+import { joinPath } from "./utils/path";
 
 function isRewardConfig(value: unknown): value is RewardConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -52,9 +52,7 @@ export const seedRewards = async (
         }
         dbUser ??= user;
       }
-    } catch {
-      continue;
-    }
+    } catch {}
   }
 
   if (!dbUser) {

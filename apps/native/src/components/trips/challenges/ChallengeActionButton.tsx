@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeActionButtonProps {

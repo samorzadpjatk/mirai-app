@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity, Image, type ViewStyle, type TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { Image, Text, type TextStyle, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type Challenge, ChallengeStatus } from "../../types/challenges";
 
 interface ChallengeCardProps {
@@ -46,7 +46,6 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
         return "Completed";
       case ChallengeStatus.LOCKED:
         return "Locked";
-      case ChallengeStatus.INCOMPLETE:
       default:
         return "Incomplete";
     }
@@ -69,21 +68,21 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
         backgroundColor: colors.primary,
         color: colors.backgroundDark,
       };
-    } else if (isLocked) {
+    }
+    if (isLocked) {
       return {
         ...baseStyle,
-        backgroundColor: colors.gray500 + "20",
+        backgroundColor: `${colors.gray500}20`,
         color: colors.textSecondary,
       };
-    } else {
-      return {
-        ...baseStyle,
-        backgroundColor: colors.primaryOpacity20,
-        color: colors.primary,
-        borderWidth: 1,
-        borderColor: colors.primaryOpacity30,
-      };
     }
+    return {
+      ...baseStyle,
+      backgroundColor: colors.primaryOpacity20,
+      color: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primaryOpacity30,
+    };
   };
 
   return (

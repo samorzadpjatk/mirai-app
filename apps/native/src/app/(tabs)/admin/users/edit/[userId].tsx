@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography, borderRadius } from "~/styles";
-import { isBanReady, formatBanLabel } from "~/utils/validation";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
+import { DateTimePickerModal, FormField, ThemedTextInput } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatBanLabel, isBanReady } from "~/utils/validation";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
@@ -281,7 +281,7 @@ export default function AdminEditUserScreen() {
           <Text style={styles.userEmail}>{user.email ?? "No email"}</Text>
         </View>
 
-        <FormField label="First name" required>
+        <FormField label="First name" required={true}>
           <ThemedTextInput
             value={firstName}
             onChangeText={setFirstName}
@@ -290,7 +290,7 @@ export default function AdminEditUserScreen() {
           />
         </FormField>
 
-        <FormField label="Last name" required>
+        <FormField label="Last name" required={true}>
           <ThemedTextInput
             value={lastName}
             onChangeText={setLastName}
@@ -364,7 +364,7 @@ export default function AdminEditUserScreen() {
               value={banReason}
               onChangeText={setBanReason}
               placeholder="Optional reason for the ban"
-              multiline
+              multiline={true}
             />
           </FormField>
 

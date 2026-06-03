@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupCard } from "../../../trips/groups/GroupCard";
 import type { GroupListItem } from "../../../trips/groups/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupCard", () => {
   const mockGroup: GroupListItem = {

@@ -1,12 +1,12 @@
-import { z } from "zod";
-import { ORPCError } from "@orpc/server";
-import { eq, sql, count } from "drizzle-orm";
-import { type DB, rewards, rewardPurchases, groups, coinTransactions } from "@mirai-app/db";
-import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import { type DB, coinTransactions, groups, rewardPurchases, rewards } from "@mirai-app/db";
 import { calculateRewardProgress } from "@mirai-app/shared";
 import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { count, eq, sql } from "drizzle-orm";
+import type { z } from "zod";
+import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { RewardPurchaseStatus, userRewardPurchaseStatusSchema } from "./types";
 import { calculateTotalAvailablePoints, normalizeRewardImagesInput } from "./utils";
-import { userRewardPurchaseStatusSchema, type RewardPurchaseStatus } from "./types";
 
 export const createReward = async (
   context: { db: DB; dbUser: { id: string } },

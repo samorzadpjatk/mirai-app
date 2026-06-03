@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditGroupFormFields } from "../../../../trips/groups/edit/EditGroupFormFields";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("EditGroupFormFields", () => {
   it("should render group name label", () => {

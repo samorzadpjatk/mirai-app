@@ -1,4 +1,4 @@
-import { challenges } from "@mirai-app/db";
+import type { challenges } from "@mirai-app/db";
 
 export const voteColumns = {
   id: true,

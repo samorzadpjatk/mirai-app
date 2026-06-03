@@ -1,7 +1,7 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import ChallengeCard from "../../admin/challenges/ChallengeCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");

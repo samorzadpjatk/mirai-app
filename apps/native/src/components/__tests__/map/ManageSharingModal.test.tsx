@@ -1,8 +1,8 @@
+import { screen, userEvent } from "@testing-library/react-native";
 import React from "react";
 import { ActivityIndicator } from "react-native";
-import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ManageSharingModal } from "../../map/modals/ManageSharingModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockSetShowManageModal = jest.fn();
 const mockHandleRemoveUser = jest.fn();

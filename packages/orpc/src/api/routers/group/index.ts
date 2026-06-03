@@ -1,37 +1,37 @@
 import { z } from "zod";
 import {
-  createORPCRouter,
-  protectedProcedure,
   adminProcedure,
+  createORPCRouter,
   moderatorProcedure,
+  protectedProcedure,
 } from "../../trpc";
-import { groupImageSchema, joinRequestDecisionSchema } from "./types";
 import {
-  getAllNames,
-  getMy,
-  getAll,
-  getGroupList,
-  getById,
-  getByIdWithOrganizer,
-  getPendingJoinRequests,
-  getMyJoinRequestForGroup,
-  ranking,
-} from "./queries";
-import {
+  addCoins,
+  assignUserToGroup,
+  bulkAssignUsersToGroup,
+  cancelMyJoinRequest,
   create,
-  update,
   deleteGroup,
   deleteMyGroup,
   join,
-  requestToJoin,
-  cancelMyJoinRequest,
-  respondToJoinRequest,
-  assignUserToGroup,
-  bulkAssignUsersToGroup,
-  removeUserFromGroup,
   leaveMyGroup,
-  addCoins,
+  removeUserFromGroup,
+  requestToJoin,
+  respondToJoinRequest,
+  update,
 } from "./mutations";
+import {
+  getAll,
+  getAllNames,
+  getById,
+  getByIdWithOrganizer,
+  getGroupList,
+  getMy,
+  getMyJoinRequestForGroup,
+  getPendingJoinRequests,
+  ranking,
+} from "./queries";
+import { groupImageSchema, joinRequestDecisionSchema } from "./types";
 
 const handleGetAllNames = async ({
   context,

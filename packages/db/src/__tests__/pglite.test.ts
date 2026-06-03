@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
 import { eq, sql } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { trips, users } from "../schema";
 import { createPgliteTestDb } from "../test-helper";
-import { users, trips } from "../schema";
 
 describe("PGLite Test Helper", () => {
   let db: Awaited<ReturnType<typeof createPgliteTestDb>>["db"];

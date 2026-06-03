@@ -1,8 +1,8 @@
-import type React from "react";
-import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import type React from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import EditChallengeModal from "../../admin/challenges/EditChallengeModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockUpdateChallenge = jest.fn();
 

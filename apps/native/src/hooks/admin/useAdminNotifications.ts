@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 export interface Notification {
   id: string;

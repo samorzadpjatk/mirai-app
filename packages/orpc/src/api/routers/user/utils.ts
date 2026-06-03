@@ -1,7 +1,7 @@
 import { formatDisplayName } from "@mirai-app/shared";
+import type { z } from "zod";
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import type { PublicUser, roleSchema } from "./types";
-import type { z } from "zod";
 
 export const formatUserFullName = (user?: {
   firstName?: string | null;

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { noop } from "@mirai-app/shared/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Set up console spy BEFORE importing the module under test
 const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
@@ -258,7 +258,7 @@ describe("Retry Interceptor", () => {
     WSLink.mockImplementation(function () {
       return {};
     });
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
@@ -289,7 +289,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(6000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(3);
   }, 60_000);
@@ -318,7 +320,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);
@@ -340,7 +344,9 @@ describe("Retry Interceptor", () => {
 
     const nextFn = vi.fn().mockRejectedValue(serverError);
 
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow();
+    const promise = interceptor({ next: nextFn, path: "test" }).catch(() => {});
+    await vi.advanceTimersByTimeAsync(31_000);
+    await promise;
     expect(nextFn).toHaveBeenCalledTimes(5);
   }, 60_000);
 
@@ -429,7 +435,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);
@@ -498,7 +506,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);

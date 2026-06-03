@@ -1,37 +1,37 @@
 import { z } from "zod";
 import {
+  adminProcedure,
   createORPCRouter,
   moderatorProcedure,
-  adminProcedure,
   protectedProcedure,
   publicProcedure,
 } from "../../trpc";
-import { roleSchema, nameSchema } from "./types";
 import {
+  banUserUntil,
+  createUser,
+  deleteUser,
+  removeHouseNumber,
+  removeWristNumber,
+  updateAvatar,
+  updateHouseNumber,
+  updateMyProfile,
+  updateName,
+  updateUserAdminStatus,
+  updateWristNumber,
+} from "./mutations";
+import {
+  getAll,
+  getAllAdminsNames,
   getBanStatus,
   getBanStatusByEmail,
   getById,
-  getTripParticipant,
   getByIdWithGroup,
-  getMyWithGroup,
   getMy,
-  getAll,
-  getAllAdminsNames,
+  getMyWithGroup,
+  getTripParticipant,
   searchWithPagination,
 } from "./queries";
-import {
-  updateAvatar,
-  updateMyProfile,
-  updateUserAdminStatus,
-  createUser,
-  updateName,
-  banUserUntil,
-  deleteUser,
-  updateWristNumber,
-  removeWristNumber,
-  updateHouseNumber,
-  removeHouseNumber,
-} from "./mutations";
+import { nameSchema, roleSchema } from "./types";
 
 const handleGetBanStatus = async ({ context }: { context: Parameters<typeof getBanStatus>[0] }) =>
   getBanStatus(context);

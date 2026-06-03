@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  getDailyRankingScheduleTemplate,
-  applyRankingTemplate,
-  containsRankingTemplate,
   DAILY_RANKING_SCHEDULE_TEMPLATES,
   RANKING_TEMPLATE_PLACEHOLDERS,
   type RankingTemplateValues,
+  applyRankingTemplate,
+  containsRankingTemplate,
+  getDailyRankingScheduleTemplate,
 } from "../notificationTemplates";
 
 describe("notificationTemplates", () => {

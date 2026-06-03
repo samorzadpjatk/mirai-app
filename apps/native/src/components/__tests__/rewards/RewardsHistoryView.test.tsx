@@ -1,7 +1,7 @@
-import { Alert } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Alert } from "react-native";
 import RewardsHistoryView from "../../rewards/RewardsHistoryView";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockMutateAsync = jest.fn(() => Promise.resolve());
 const mockFetchNextPage = jest.fn();

@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  authStore,
-  _resetAuthStoreForTests,
-  type AuthUser,
   type AuthChangeEvent,
+  type AuthUser,
   type SupabaseClient,
   type SupabaseSession,
+  _resetAuthStoreForTests,
+  authStore,
 } from "../authStore";
 
-import { mockConsole, flushPromises } from "../../test-utils/test-helpers";
 import { createMockSupabaseClient } from "../../test-utils/mock-factories";
+import { flushPromises, mockConsole } from "../../test-utils/test-helpers";
 
 describe("Auth Store", () => {
   let consoleMock: { restore: () => void };

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "files": {
+    "maxSize": 3145728,
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.expo/**",
+      "**/.nx/**",
+      "**/.nx/cache/**",
+      "**/coverage/**",
+      "**/drizzle/**",
+      "**/reports/**",
+      "**/scripts/**",
+      "**/__mocks__/**",
+      "**/vitest.setup.ts",
+      "**/jest.setup.*",
+      "**/bun.lock",
+      "**/*.json"
+    ]
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "attributePosition": "auto",
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.expo/**",
+      "**/.nx/**",
+      "**/.nx/cache/**",
+      "**/coverage/**",
+      "**/drizzle/**",
+      "**/bun.lock",
+      "**/*.json"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "warn",
+        "noStaticOnlyClass": "warn",
+        "noUselessTernary": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "warn",
+        "noUnusedImports": "warn",
+        "noUnusedPrivateClassMembers": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "a11y": {
+        "useSemanticElements": "warn"
+      },
+      "performance": {
+        "noReExportAll": "error"
+      },
+      "style": {
+        "noDefaultExport": "off",
+        "noImplicitBoolean": "warn",
+        "noNegationElse": "warn",
+        "noNonNullAssertion": "warn",
+        "useCollapsedElseIf": "warn",
+        "useForOf": "warn",
+        "useShorthandArrayType": "warn",
+        "useNodejsImportProtocol": "warn"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noConsoleLog": "warn",
+        "noDoubleEquals": "warn",
+        "noEmptyBlockStatements": "warn",
+        "noExplicitAny": "warn",
+        "noExtraNonNullAssertion": "warn",
+        "noGlobalIsNan": "warn",
+        "noRedundantUseStrict": "warn"
+      }
+    },
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.expo/**",
+      "**/.nx/**",
+      "**/.nx/cache/**",
+      "**/coverage/**",
+      "**/drizzle/**",
+      "**/*.config.*",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/jest.config.*",
+      "**/vitest.config.*"
+    ]
+  },
+  "overrides": [
+    {
+      "include": ["scripts/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsoleLog": "off"
+          }
+        }
+      }
+    }
+  ],
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "quoteStyle": "double",
+      "attributePosition": "auto"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "trailingCommas": "none"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 100
+    }
+  }
+}

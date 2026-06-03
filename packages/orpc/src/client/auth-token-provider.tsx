@@ -1,8 +1,8 @@
 /** @jsxImportSource react */
 "use client";
 
+import { authStore, useSession } from "@mirai-app/auth/client";
 import { useEffect } from "react";
-import { useSession, authStore } from "@mirai-app/auth/client";
 
 export function AuthTokenProvider({ children }: { children: React.ReactNode }) {
   const session = useSession();

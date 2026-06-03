@@ -1,17 +1,18 @@
-import React, { useMemo, useRef, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { UserAvatar } from "./ui/UserAvatar";
 import {
-  MapView,
   Camera,
   UserLocation as MapLibreUserLocation,
+  MapView,
   PointAnnotation,
-  VectorSource,
-  RasterSource,
   RasterLayer,
+  RasterSource,
+  VectorSource,
 } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useLocationContext } from "~/stores/location";
+import { UserAvatar } from "./ui/UserAvatar";
 
 export interface UserLocation {
   id: string;
@@ -350,11 +351,11 @@ export const UserMap: React.FC<UserMapProps> = ({
         mapStyle={currentMapStyle}
         style={styles.map}
         logoEnabled={false}
-        compassEnabled
-        rotateEnabled
-        pitchEnabled
-        scrollEnabled
-        zoomEnabled
+        compassEnabled={true}
+        rotateEnabled={true}
+        pitchEnabled={true}
+        scrollEnabled={true}
+        zoomEnabled={true}
         onPress={onMapPress}
       >
         <Camera

@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  toOptionalString,
   attachCreatedByEmail,
   getNextScheduledStartDate,
   getTemplateScheduleDates,
   normalizeScheduleWindow,
+  toOptionalString,
 } from "../scheduleUtils";
 
 describe("toOptionalString", () => {

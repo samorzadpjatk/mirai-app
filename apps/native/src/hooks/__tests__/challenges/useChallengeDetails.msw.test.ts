@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useChallengeDetails } from "../../challenges/useChallengeDetails";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useChallengeDetails } from "../../challenges/useChallengeDetails";
 
 describe("useChallengeDetails (MSW)", () => {
   it("should return challenge details when loaded", async () => {

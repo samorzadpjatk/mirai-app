@@ -1,12 +1,12 @@
-import { z } from "zod";
-import { ORPCError } from "@orpc/server";
-import { eq, and, count } from "drizzle-orm";
-import { users, tripParticipants } from "@mirai-app/db";
+import { tripParticipants, users } from "@mirai-app/db";
 import { validateUserRegistration } from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { and, count, eq } from "drizzle-orm";
+import type { z } from "zod";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import type { UserContext } from "./queries";
 import { roleSchema, userWithAuthSelect } from "./types";
 import { formatUserFullName, toPublicUser } from "./utils";
-import type { UserContext } from "./queries";
 
 export const updateAvatar = async (context: UserContext, input: { hasAvatar: boolean }) => {
   const [updatedUser] = await context.db

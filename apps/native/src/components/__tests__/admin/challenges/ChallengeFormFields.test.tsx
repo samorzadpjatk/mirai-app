@@ -1,8 +1,8 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import { ChallengeFormFields } from "../../../admin/challenges/ChallengeFormFields";
-import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import type { VotingDurationUnit } from "~/components/admin/challenges/challengeFormConstants";
+import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { ChallengeFormFields } from "../../../admin/challenges/ChallengeFormFields";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 type FormState = ReturnType<typeof useChallengeForm>;
 

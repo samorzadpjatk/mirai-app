@@ -1,17 +1,17 @@
-import { useCallback, useMemo } from "react";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import {
-  mapChallengeToListItem,
-  countCompletedChallenges,
-  calculateLeaderboardInfo,
-  findUserGroup,
-  buildChallengeQueryInput,
-  getNextChallengePageParam,
   type DBChallenge,
+  buildChallengeQueryInput,
+  calculateLeaderboardInfo,
+  countCompletedChallenges,
+  findUserGroup,
+  getNextChallengePageParam,
+  mapChallengeToListItem,
 } from "@mirai-app/shared";
-import { colors } from "~/styles";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
+import { colors } from "~/styles";
 
 export function useChallenges(tripId?: string | null) {
   const tripQuery = useQuery({

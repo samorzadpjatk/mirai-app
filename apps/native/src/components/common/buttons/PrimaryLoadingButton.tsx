@@ -1,10 +1,10 @@
 import {
   ActivityIndicator,
+  type StyleProp,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  type StyleProp,
   type TextStyle,
+  TouchableOpacity,
   type ViewStyle,
 } from "react-native";
 import { borderRadius, colors, shadows, spacing, typography } from "~/styles";

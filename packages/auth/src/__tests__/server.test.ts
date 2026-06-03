@@ -1,22 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { User } from "@mirai-app/db";
+import { users } from "@mirai-app/db";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/shared/test-utils";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  getServerUser,
-  mapDatabaseUserToAuthUser,
-  parseRolesFromToken,
-  hasRequiredRole,
   AuthenticationError,
   AuthorizationError,
+  getServerUser,
   getSession,
-  requireAuth,
+  hasRequiredRole,
+  mapDatabaseUserToAuthUser,
+  parseRolesFromToken,
   requireAdmin,
+  requireAuth,
   requireModerator,
   syncUserToDatabase,
 } from "../server";
-import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User } from "@mirai-app/db";
-import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/shared/test-utils";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { users } from "@mirai-app/db";
 
 // Mock the actual implementations from authServer
 vi.mock("../authServer", async (importOriginal) => {

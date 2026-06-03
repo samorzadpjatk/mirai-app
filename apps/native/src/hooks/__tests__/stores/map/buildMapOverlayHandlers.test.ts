@@ -1,13 +1,13 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
+import type { UserLocation } from "~/components/map/UserMap";
 import {
-  buildMapOverlayHandlers,
-  type MapOverlayStore,
   type MapOverlayHandlerDeps,
+  type MapOverlayStore,
   type MapTheme,
   type ShareableUser,
   type SharingSettings,
+  buildMapOverlayHandlers,
 } from "~/stores/map/mapOverlayStore";
-import type { UserLocation } from "~/components/map/UserMap";
 
 describe("buildMapOverlayHandlers", () => {
   const mockFn = <T extends (...args: any[]) => any>() => jest.fn<T>();

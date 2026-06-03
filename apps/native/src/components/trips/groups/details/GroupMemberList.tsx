@@ -1,8 +1,8 @@
+import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
-import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export interface GroupMember {

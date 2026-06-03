@@ -1,7 +1,7 @@
-import { mapReportsWithEmails } from "@mirai-app/shared";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import type { DB } from "@mirai-app/db";
+import { mapReportsWithEmails } from "@mirai-app/shared";
 import type { SupabaseClient } from "@mirai-app/supabase";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 
 export type ReportContext = {
   db: DB;

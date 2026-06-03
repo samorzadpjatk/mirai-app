@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { validatePeerVotingTimeline, validateRecurringTimeline } from "../validators";
+import { describe, expect, it } from "vitest";
 import { MAX_PEER_VOTING_DURATION_HOURS } from "../dateUtils";
+import { validatePeerVotingTimeline, validateRecurringTimeline } from "../validators";
 
 describe("validatePeerVotingTimeline", () => {
   it("returns valid for non-peer-voting challenges", () => {

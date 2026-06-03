@@ -1,7 +1,7 @@
-import { Alert, Pressable, Text, type TextInput, View } from "react-native";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Alert, Pressable, Text, type TextInput, View } from "react-native";
 import { CoinOperationScreen } from "../../admin/coins/CoinOperationScreen";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockAlert = jest.spyOn(Alert, "alert");
 const mockBack = jest.fn();

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeDetailsCard } from "../../../trips/challenges/ChallengeDetailsCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeDetailsCard", () => {
   const baseChallenge = { submissionType: "IMAGE", scoringCategory: "SPEED", isRecurring: false };

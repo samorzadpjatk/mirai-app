@@ -1,8 +1,8 @@
+import { fireEvent, screen } from "@testing-library/react-native";
 import React from "react";
 import { Text, View } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsSearchBar } from "../../../trips/groups/GroupsSearchBar";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 interface IoniconsProps {
   name: string;

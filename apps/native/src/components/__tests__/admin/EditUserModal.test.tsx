@@ -1,7 +1,7 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import { EditUserModal } from "../../admin/users/EditUserModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockOnSave = jest.fn();
 const mockOnDelete = jest.fn();

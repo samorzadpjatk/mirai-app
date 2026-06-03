@@ -1,6 +1,6 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, waitFor } from "@testing-library/react-native";
+import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { useSelectedTrip } from "../../trips/useSelectedTrip";
 
 const mockGetSelectedTripIdFromStorage = jest.fn<() => Promise<string | null>>();

@@ -1,12 +1,12 @@
-import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useCallback, useEffect, useMemo } from "react";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 const getRoleColor = (role: string) => {
   switch (role) {

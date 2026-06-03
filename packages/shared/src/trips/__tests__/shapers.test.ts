@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  shapeTripGroup,
-  shapeTripParticipant,
   buildTripDetailResponse,
   buildTripListItem,
+  shapeTripGroup,
+  shapeTripParticipant,
 } from "../shapers";
 
 describe("shapeTripGroup", () => {

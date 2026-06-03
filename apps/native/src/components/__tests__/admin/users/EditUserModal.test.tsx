@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { Text, TouchableOpacity, View } from "react-native";
 import { EditUserModal } from "../../../admin/users/EditUserModal";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("~/components/common/ui/DateTimePickerModal", () => {
   const { Pressable, Text } = require("react-native");

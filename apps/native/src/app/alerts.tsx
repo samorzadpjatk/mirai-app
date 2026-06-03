@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { View, Text, ScrollView, StyleSheet, RefreshControl } from "react-native";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
 import { AlertsPagination } from "~/components/alerts/AlertsPagination";
 import { NotificationCard } from "~/components/alerts/NotificationCard";
-import { colors, spacing, typography } from "../styles";
 import type { NotificationItem } from "~/types/notifications";
+import { colors, spacing, typography } from "../styles";
 
 export default function AlertsScreen() {
   const insets = useSafeAreaInsets();

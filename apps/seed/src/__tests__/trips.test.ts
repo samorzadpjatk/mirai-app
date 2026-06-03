@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { tripParticipants } from "@mirai-app/db";
+import type { SupabaseUser } from "@mirai-app/supabase";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { seedTrip } from "../trips";
 import type { AuthUserByEmail, CsvUser } from "../types";
-import type { SupabaseUser } from "@mirai-app/supabase";
-import { tripParticipants } from "@mirai-app/db";
 
 const mockReadTextFile = vi.fn();
 const mockReadFile = vi.fn();

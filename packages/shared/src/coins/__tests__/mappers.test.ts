@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mapToMostActiveAdminStats, buildAdditionalInsights } from "../mappers";
+import { describe, expect, it } from "vitest";
+import { buildAdditionalInsights, mapToMostActiveAdminStats } from "../mappers";
 import type { MostActiveAdminStatRow, RecentTransaction } from "../mappers";
 
 const createMockRow = (

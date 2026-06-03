@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripCard } from "../../../trips/list/TripCard";
 import type { TripListItem } from "../../../trips/list/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 const noop = (): void => void 0;
 

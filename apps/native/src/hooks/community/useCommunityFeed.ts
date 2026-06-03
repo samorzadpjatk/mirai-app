@@ -1,10 +1,10 @@
-import { useCallback, useMemo } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { toggleHeartSummary, filterActivities } from "@mirai-app/shared";
+import { filterActivities, toggleHeartSummary } from "@mirai-app/shared";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import type {
-  CommunityFeedActivity,
   ActivityFilter,
+  CommunityFeedActivity,
 } from "~/components/community/CommunityActivityCard";
 
 export type { CommunityFeedActivity };

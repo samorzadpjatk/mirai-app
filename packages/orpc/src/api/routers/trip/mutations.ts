@@ -1,6 +1,6 @@
+import { type DB, trips } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import { trips, type DB } from "@mirai-app/db";
 
 export const createTrip = async (
   context: {

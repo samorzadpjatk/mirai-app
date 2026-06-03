@@ -1,6 +1,6 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import type { LocationObject } from "expo-location";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 
 jest.mock("expo-task-manager", () => ({ defineTask: jest.fn() }));
@@ -13,15 +13,15 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 
 import { getORPCClient } from "@mirai-app/orpc/client";
 import {
-  initBackgroundLocationTask,
-  createBackgroundTaskDeps,
   type BackgroundTaskDeps,
   type BackgroundTaskFactoryDeps,
+  createBackgroundTaskDeps,
+  initBackgroundLocationTask,
 } from "~/services/background/backgroundLocationTask";
 import {
+  BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LOCATION_SHARING_SETTINGS_KEY,
-  BACKGROUND_LOCATION_SETTINGS_KEY,
 } from "~/services/location/constants";
 
 type LocationTaskHandler = (body: {

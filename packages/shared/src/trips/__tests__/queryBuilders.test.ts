@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { buildTripQueryInput, getNextTripPageParam, calculateAllTrips } from "../queryBuilders";
+import { describe, expect, it } from "vitest";
+import { buildTripQueryInput, calculateAllTrips, getNextTripPageParam } from "../queryBuilders";
 
 describe("buildTripQueryInput", () => {
   it("should build query with pageParam 0", () => {

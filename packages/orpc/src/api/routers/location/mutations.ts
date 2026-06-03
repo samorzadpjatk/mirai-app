@@ -1,11 +1,11 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and } from "drizzle-orm";
-import { locations, locationShares, locationSharingRequests } from "@mirai-app/db";
-import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import { locationShares, locationSharingRequests, locations } from "@mirai-app/db";
 import { toExpoLocation } from "@mirai-app/shared/locations";
-import { mapUserWithAvatar, ensureUserInActiveTrip, assertShareableTargets } from "./utils";
+import { ORPCError } from "@orpc/server";
+import { and, eq } from "drizzle-orm";
+import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import type { LocationContext } from "./queries";
 import type { SharingUser } from "./types";
+import { assertShareableTargets, ensureUserInActiveTrip, mapUserWithAvatar } from "./utils";
 
 type LocationDataInput = {
   latitude?: number | null;
@@ -108,7 +108,7 @@ export const updateSharingSettings = async (
 
     await context.db
       .insert(locationShares)
-      .values(userIdsToShareWith!.map((id) => ({ locationId: locationRow.id, userId: id })));
+      .values(userIdsToShareWith?.map((id) => ({ locationId: locationRow.id, userId: id })));
   }
 
   // Query users to share with

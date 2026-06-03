@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LoginFormData, LoginFormState, UseLoginFormResult } from "../hooks/useLoginForm";
 
 describe("useLoginForm hook types and structure", () => {

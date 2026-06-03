@@ -11,6 +11,14 @@ export const baseCoverageExcludes = [
 export const baseConfig = defineConfig({
   test: {
     globals: true,
+    deps: {
+      optimizer: {
+        ssr: {
+          enabled: true,
+          include: ["drizzle-orm"],
+        },
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

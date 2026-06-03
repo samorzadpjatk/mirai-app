@@ -1,13 +1,13 @@
 import {
-  pgTable,
-  varchar,
-  timestamp,
-  text,
-  integer,
   boolean,
   index,
-  uniqueIndex,
+  integer,
+  pgTable,
   primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
 import { trips } from "./trips";

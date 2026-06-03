@@ -34,7 +34,8 @@ module.exports = {
     "^@mirai-app/db$": "<rootDir>/../../packages/db/src/index.ts",
     "^@mirai-app/orpc/client/query$": "<rootDir>/../../packages/orpc/src/client/query/index.ts",
     "^@mirai-app/orpc/client$": "<rootDir>/../../packages/orpc/src/client/index.ts",
-    "^@mirai-app/orpc/utils/activityFeed$": "<rootDir>/../../packages/orpc/src/utils/activityFeed.ts",
+    "^@mirai-app/orpc/utils/activityFeed$":
+      "<rootDir>/../../packages/orpc/src/utils/activityFeed.ts",
     "^msw/node$": "<rootDir>/../../node_modules/.bun/msw@2.14.6/node_modules/msw/lib/node/index.js",
   },
   testTimeout: 10000,

@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersPicker } from "../../../trips/groups/create/MembersPicker";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 interface ParticipantUser {
   id: string;

@@ -1,6 +1,6 @@
-import type React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import * as ImagePicker from "expo-image-picker";
+import type React from "react";
 import type * as ReactNative from "react-native";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 

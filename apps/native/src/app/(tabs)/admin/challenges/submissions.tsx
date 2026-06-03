@@ -1,3 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,23 +13,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  type SubmissionItem,
+  SubmissionReviewCard,
+} from "~/components/admin/challenges/SubmissionReviewCard";
+import {
+  AppModalFooter,
+  AppModalShell,
+  EmptyState,
   FilterChip,
   FilterChipRow,
-  EmptyState,
-  AppModalShell,
-  AppModalFooter,
   ThemedTextInput,
 } from "~/components/common/ui";
-import {
-  SubmissionReviewCard,
-  type SubmissionItem,
-} from "~/components/admin/challenges/SubmissionReviewCard";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
@@ -276,7 +276,7 @@ export default function ChallengeSubmissionsScreen() {
           onChangeText={setRejectionReason}
           placeholder="Reason for rejection"
           placeholderTextColor={colors.textTertiary}
-          multiline
+          multiline={true}
           numberOfLines={4}
           editable={!reviewMutation.isPending}
         />

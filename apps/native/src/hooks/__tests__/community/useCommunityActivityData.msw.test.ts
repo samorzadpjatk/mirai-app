@@ -1,8 +1,8 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useCommunityActivityData } from "../../community/useCommunityActivityData";
+import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
+import { useCommunityActivityData } from "../../community/useCommunityActivityData";
 
 describe("useCommunityActivityData (MSW)", () => {
   beforeEach(() => {

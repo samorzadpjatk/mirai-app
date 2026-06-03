@@ -1,6 +1,6 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UpdatePopup } from "../../updates/UpdatePopup";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("UpdatePopup", () => {
   it("renders update popup when visible", () => {

@@ -1,35 +1,35 @@
 import { relations } from "drizzle-orm";
-import { users } from "./users";
-import {
-  trips,
-  tripResources,
-  tripInsurances,
-  tripInsuranceSteps,
-  tripParticipants,
-} from "./trips";
-import { events, userEvents } from "./events";
-import { groups, groupJoinRequests } from "./groups";
-import { challenges, challengeSubmissions, challengeVotes, submissionReports } from "./challenges";
 import {
   activityFeeds,
   activityReactions,
-  submissionActivities,
   challengeActivities,
   rankChangeActivities,
+  submissionActivities,
   userPosts,
 } from "./activities";
+import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
+import { events, userEvents } from "./events";
+import { groupJoinRequests, groups } from "./groups";
+import { locationShares, locationSharingRequests, locations } from "./locations";
 import {
+  notificationDeliveries,
+  notificationPushes,
+  notificationScheduleExecutions,
   notificationSchedules,
   notifications,
-  notificationScheduleExecutions,
-  notificationPushes,
-  notificationDeliveries,
   pushSubscriptions,
 } from "./notifications";
-import { locations, locationSharingRequests, locationShares } from "./locations";
-import { rewards, rewardPurchases, coinTransactions } from "./rewards";
+import { coinTransactions, rewardPurchases, rewards } from "./rewards";
 import { sponsors, tripSponsors } from "./sponsors";
+import {
+  tripInsuranceSteps,
+  tripInsurances,
+  tripParticipants,
+  tripResources,
+  trips,
+} from "./trips";
 import { userAgents } from "./userAgents";
+import { users } from "./users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   organizerGroup: many(groups),

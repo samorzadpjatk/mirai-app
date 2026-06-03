@@ -1,19 +1,19 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { useAuth } from "@mirai-app/auth/client";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { useAuth } from "@mirai-app/auth/client";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
-import LoadingScreen from "../../../components/LoadingScreen";
-import { colors, spacing } from "../../../styles";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TripBanner } from "~/components/trips/TripBanner";
+import { PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
-import { PartnersSection } from "~/components/trips/details/PartnersSection";
-import { TripBanner } from "~/components/trips/TripBanner";
+import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { useTripSync } from "~/stores/tripStore";
+import LoadingScreen from "../../../components/LoadingScreen";
+import { colors, spacing } from "../../../styles";
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();

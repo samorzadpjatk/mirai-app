@@ -1,7 +1,7 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  calculateNextIndexFromScroll,
   calculateBoundedIndex,
+  calculateNextIndexFromScroll,
   canOpenFullscreen,
   needsFullscreenClose,
 } from "~/components/trips/groups/details/GroupApprovedChallenges";

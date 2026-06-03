@@ -1,7 +1,7 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
 import { CreateScheduleModal } from "../../notifications/CreateScheduleModal";
 
 const mockOnClose = jest.fn();

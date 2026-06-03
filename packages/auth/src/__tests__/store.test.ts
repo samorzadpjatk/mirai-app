@@ -1,17 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { authStore } from "@mirai-app/shared";
+import type { AuthStore, AuthUser, SupabaseClient, SupabaseSession } from "@mirai-app/shared";
+import { createMockSupabaseClient } from "@mirai-app/shared/test-utils";
+import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthStoreProvider } from "../store/AuthStoreProvider";
 import {
   useAuth,
-  useUser,
-  useSession,
-  useIsAuthenticated,
   useAuthLoading,
   useAuthStore,
+  useIsAuthenticated,
+  useSession,
+  useUser,
 } from "../store/authHooks";
-import { AuthStoreProvider } from "../store/AuthStoreProvider";
-import { authStore } from "@mirai-app/shared";
-import type { AuthStore, AuthUser, SupabaseSession, SupabaseClient } from "@mirai-app/shared";
-import type { ReactNode } from "react";
-import { createMockSupabaseClient } from "@mirai-app/shared/test-utils";
 
 vi.mock("zustand", () => ({
   useStore: vi.fn((store, selector) => {

@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapActionButtons } from "../../map/MapActionButtons";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockToggleLocationSharing = jest.fn();
 const mockToggleBackgroundLocation = jest.fn();

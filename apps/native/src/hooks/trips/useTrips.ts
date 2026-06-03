@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import {
-  flattenTrips,
   buildTripQueryInput,
-  getNextTripPageParam,
   calculateAllTrips,
+  flattenTrips,
+  getNextTripPageParam,
 } from "@mirai-app/shared";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import type { TripListItem } from "~/components/trips/list/types";
 import { getCachedTrips, setCachedTrips } from "~/services/storage/selectedTripStorage";
 

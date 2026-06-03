@@ -1,12 +1,11 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { useAdminTrips } from "../../admin/useAdminTrips";
 
 jest.mock("~/hooks/trips", () => ({
   useTrips: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 const mockUseTrips = (jest.requireMock("~/hooks/trips") as { useTrips: jest.Mock }).useTrips;
 
 describe("useAdminTrips", () => {

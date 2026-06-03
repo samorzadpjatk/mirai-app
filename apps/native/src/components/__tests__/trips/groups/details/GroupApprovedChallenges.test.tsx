@@ -1,7 +1,7 @@
-import { View } from "react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
 import { GroupApprovedChallenges } from "../../../../trips/groups/details/GroupApprovedChallenges";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 jest.mock("~/components/trips/groups/details/SubmissionCircle", () => {
   const { Pressable, Text } = require("react-native");

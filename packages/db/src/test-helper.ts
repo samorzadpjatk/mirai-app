@@ -1,9 +1,9 @@
 import { PGlite } from "@electric-sql/pglite";
+import type { PGlite as PGliteType } from "@electric-sql/pglite";
+import { getTableName, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema";
 import { schemaTables } from "./schema";
-import type { PGlite as PGliteType } from "@electric-sql/pglite";
-import { sql, getTableName } from "drizzle-orm";
 
 export type TestDB = ReturnType<typeof createPgliteTestDb>;
 

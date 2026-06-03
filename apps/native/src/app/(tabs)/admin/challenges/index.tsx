@@ -1,24 +1,24 @@
+import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useInfiniteQuery, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useInfiniteQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
-import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeItem {
   id: string;
@@ -489,7 +489,7 @@ export default function AdminChallengesScreen() {
         </FilterChipRow>
 
         <ScrollView
-          horizontal
+          horizontal={true}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 8, marginBottom: 8, paddingRight: 16 }}
         >

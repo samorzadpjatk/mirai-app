@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  statusColors,
-  getSubmissionTypeMeta,
   getScoringMeta,
+  getSubmissionTypeMeta,
+  statusColors,
 } from "../admin/challenges/AdminChallengeListCard";
 
 describe("statusColors", () => {

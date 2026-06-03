@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  mapApprovedSubmissions,
-  buildParticipantCountMap,
-  toGroupDetail,
-  calculatePagination,
-  calculateNextOrganizer,
-  calculateCoinsAfterTransaction,
   buildLeaveResult,
+  buildParticipantCountMap,
+  calculateCoinsAfterTransaction,
+  calculateNextOrganizer,
+  calculatePagination,
+  mapApprovedSubmissions,
+  toGroupDetail,
 } from "../transforms";
 
 describe("groups/transforms", () => {

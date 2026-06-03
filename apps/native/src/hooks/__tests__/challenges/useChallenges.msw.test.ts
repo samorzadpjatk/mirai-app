@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
-import { waitFor, act } from "@testing-library/react-native";
-import { useChallenges } from "../../challenges/useChallenges";
+import { describe, expect, it } from "@jest/globals";
+import { act, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useChallenges } from "../../challenges/useChallenges";
 
 describe("useChallenges (MSW)", () => {
   const mockTrip = {

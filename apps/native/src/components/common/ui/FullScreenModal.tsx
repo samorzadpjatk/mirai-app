@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
-import { SafeAreaTop } from "~/components/SafeAreaWrapper";
-import { colors, spacing, borderRadius, typography } from "~/styles";
 import { Ionicons } from "@expo/vector-icons";
+import type React from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaTop } from "~/components/SafeAreaWrapper";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface FullScreenModalProps {
   visible: boolean;
@@ -18,7 +18,7 @@ export function FullScreenModal({ visible, title, onClose, children }: FullScree
       animationType="slide"
       transparent={false}
       presentationStyle="fullScreen"
-      statusBarTranslucent
+      statusBarTranslucent={true}
       onRequestClose={onClose}
       testID="fullscreen-modal"
     >

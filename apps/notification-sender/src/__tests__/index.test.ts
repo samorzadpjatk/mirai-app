@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create mock functions at module level
 const mockTrackDeliveryStart = vi.fn();
@@ -63,7 +63,6 @@ describe("Notification Sender - Environment Validation", () => {
   });
 
   afterEach(() => {
-    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });

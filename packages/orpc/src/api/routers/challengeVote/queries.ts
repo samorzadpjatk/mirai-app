@@ -1,5 +1,5 @@
-import { ORPCError } from "@orpc/server";
 import type { DB } from "@mirai-app/db";
+import { ORPCError } from "@orpc/server";
 import { voteColumns } from "./types";
 import { ensureTripParticipant, getChallengeInTrip, getJudgedStaffVotingProgress } from "./utils";
 

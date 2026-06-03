@@ -1,4 +1,4 @@
-import type { TripSponsor, Sponsor } from "@mirai-app/db";
+import type { Sponsor, TripSponsor } from "@mirai-app/db";
 
 /**
  * Extracts active sponsors from a list of trip sponsors.

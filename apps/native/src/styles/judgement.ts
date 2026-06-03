@@ -1,8 +1,8 @@
 import { StyleSheet } from "react-native";
 import { colors } from "~/styles/colors";
-import { spacing, borderRadius } from "~/styles/spacing";
-import { typography } from "~/styles/typography";
 import { shadows } from "~/styles/shadows";
+import { borderRadius, spacing } from "~/styles/spacing";
+import { typography } from "~/styles/typography";
 
 const viewStyles = StyleSheet.create({
   container: {

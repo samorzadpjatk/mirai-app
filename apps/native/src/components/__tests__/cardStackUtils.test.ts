@@ -1,5 +1,5 @@
-import { describe, it, expect } from "@jest/globals";
-import { canSubmitReject, calculateSwipeToValue } from "../../components/judgement/CardStack";
+import { describe, expect, it } from "@jest/globals";
+import { calculateSwipeToValue, canSubmitReject } from "../../components/judgement/CardStack";
 
 describe("canSubmitReject", () => {
   it("should return true when reason is non-empty and not reviewing", () => {

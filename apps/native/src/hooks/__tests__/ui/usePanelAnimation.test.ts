@@ -1,5 +1,5 @@
-import { describe, it, expect, jest } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
+import { describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook } from "@testing-library/react-native";
 import { usePanelAnimation } from "../../ui/usePanelAnimation";
 
 // Mock react-native-reanimated
@@ -84,7 +84,6 @@ describe("usePanelAnimation", () => {
   it("should use default duration of 240ms", () => {
     renderHook(() => usePanelAnimation());
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const reanimatedMock = jest.requireMock("react-native-reanimated") as { withTiming: jest.Mock };
     expect(reanimatedMock.withTiming).toBeDefined();
   });

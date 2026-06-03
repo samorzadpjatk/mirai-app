@@ -1,5 +1,5 @@
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { ChallengeListItem } from "./types";
 
@@ -189,7 +189,6 @@ const getSubmissionTypeMeta = (submissionType: ChallengeListItem["submissionType
       return { label: "GPS", icon: "location-outline" };
     case "QR_CODE":
       return { label: "QR", icon: "qr-code-outline" };
-    case "IMAGE":
     default:
       return { label: "Photo", icon: "image-outline" };
   }

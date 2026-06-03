@@ -1,8 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import type { SupabaseClient } from "@mirai-app/supabase";
-import { getORPCClient } from "@mirai-app/orpc/client";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
@@ -11,8 +9,8 @@ import {
 
 import {
   toFiniteNumberOrNull,
-  toNonNegativeOrNull,
   toHeadingOrNull,
+  toNonNegativeOrNull,
 } from "./backgroundLocationTaskUtils";
 
 export { toFiniteNumberOrNull, toNonNegativeOrNull, toHeadingOrNull };

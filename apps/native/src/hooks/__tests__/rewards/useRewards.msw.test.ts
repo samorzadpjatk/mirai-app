@@ -1,20 +1,20 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
+import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import {
-  useRewards,
   useAdminRewards,
-  useReward,
   useCreateReward,
-  useUpdateReward,
-  useSetRewardHidden,
   useDeleteReward,
   usePurchaseReward,
+  useReward,
   useRewardPurchaseHistory,
-  useUpdateRewardPurchaseStatus,
+  useRewards,
+  useSetRewardHidden,
   useUpdateMyRewardPurchaseStatus,
+  useUpdateReward,
+  useUpdateRewardPurchaseStatus,
 } from "../../rewards";
-import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
 
 describe("useRewards (MSW)", () => {
   it("should return rewards for a trip", async () => {

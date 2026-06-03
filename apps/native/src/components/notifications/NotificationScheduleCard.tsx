@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { formatRelativeTime, formatDate } from "~/utils/format";
-import type { NotificationScheduleItem } from "~/types/notifications";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import type { NotificationScheduleItem } from "~/types/notifications";
+import { formatDate, formatRelativeTime } from "~/utils/format";
 
 interface NotificationScheduleCardProps {
   schedule: NotificationScheduleItem;

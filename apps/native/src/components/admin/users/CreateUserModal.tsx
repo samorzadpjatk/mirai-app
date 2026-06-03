@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { isNameValid, isNonEmptyString } from "~/utils/validation";
+import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface CreateUserModalProps {
   visible: boolean;
@@ -50,7 +50,7 @@ export function CreateUserModal({ visible, onClose, onCreate, isCreating }: Crea
         </>
       }
     >
-      <FormField label="First name" required>
+      <FormField label="First name" required={true}>
         <ThemedTextInput
           value={firstName}
           onChangeText={setFirstName}
@@ -58,7 +58,7 @@ export function CreateUserModal({ visible, onClose, onCreate, isCreating }: Crea
           autoCapitalize="words"
         />
       </FormField>
-      <FormField label="Last name" required>
+      <FormField label="Last name" required={true}>
         <ThemedTextInput
           value={lastName}
           onChangeText={setLastName}
@@ -66,7 +66,7 @@ export function CreateUserModal({ visible, onClose, onCreate, isCreating }: Crea
           autoCapitalize="words"
         />
       </FormField>
-      <FormField label="Email" required>
+      <FormField label="Email" required={true}>
         <ThemedTextInput
           value={email}
           onChangeText={setEmail}

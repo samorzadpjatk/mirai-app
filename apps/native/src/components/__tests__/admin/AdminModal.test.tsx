@@ -1,8 +1,8 @@
-import type React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import type React from "react";
 import { Text } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminModal, AdminModalButton } from "../../admin/AdminModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 // Rendering real AppModalShell - pure presentational component, no native modules
 

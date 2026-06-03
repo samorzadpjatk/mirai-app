@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import type { RankedGroup } from "./types";
 import { LeaderboardListItem } from "./LeaderboardListItem";
+import type { RankedGroup } from "./types";
 
 interface LeaderboardRankingsSectionProps {
   groups: RankedGroup[];

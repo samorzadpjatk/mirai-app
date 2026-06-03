@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useMapActions } from "../../map/useMapActions";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useMapActions } from "../../map/useMapActions";
 
 describe("useMapActions (MSW)", () => {
   it("should return sendLocation function", async () => {

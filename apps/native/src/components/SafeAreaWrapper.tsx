@@ -1,5 +1,5 @@
-import React from "react";
-import { View, type ViewStyle, StyleSheet } from "react-native";
+import type React from "react";
+import { StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface SafeAreaTopProps {

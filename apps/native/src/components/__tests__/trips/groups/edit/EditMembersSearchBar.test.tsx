@@ -1,6 +1,6 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditMembersSearchBar } from "../../../../trips/groups/edit/EditMembersSearchBar";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("EditMembersSearchBar", () => {
   it("renders search input with placeholder", () => {

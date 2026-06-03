@@ -62,7 +62,7 @@ export function MembersPicker({
                 </View>
                 <View style={styles.memberInfo}>
                   <Text style={styles.memberName}>
-                    {(participant.user.firstName ?? "") + " " + (participant.user.lastName ?? "")}
+                    {`${participant.user.firstName ?? ""} ${participant.user.lastName ?? ""}`}
                   </Text>
                   <Text style={styles.memberEmail}>{participant.user.email}</Text>
                 </View>

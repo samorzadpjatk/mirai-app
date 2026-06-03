@@ -1,5 +1,5 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act, waitFor } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 const mockGetPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));
 const mockRequestPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));

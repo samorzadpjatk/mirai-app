@@ -1,10 +1,10 @@
 import {
-  toDate,
   clamp,
-  parseClockToMinutes,
-  getNextRecurringDeadline,
   formatCountdown,
   formatDeadlineDate,
+  getNextRecurringDeadline,
+  parseClockToMinutes,
+  toDate,
 } from "../../../trips/challenges/ChallengeTimeLeftCard";
 
 describe("ChallengeTimeLeftCard pure functions", () => {

@@ -1,20 +1,20 @@
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Text } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName, getInitials } from "@mirai-app/shared";
-import { borderRadius, colors, spacing, typography } from "../../../../styles";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { orpc } from "@mirai-app/orpc/client";
-import { useTripDetails } from "~/hooks/trips";
+import { formatDisplayName, getInitials } from "@mirai-app/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
+import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
 import { GroupDetailsLoadingState } from "~/components/trips/groups/details/GroupDetailsLoadingState";
 import { GroupMemberList } from "~/components/trips/groups/details/GroupMemberList";
 import { GroupNotFoundState } from "~/components/trips/groups/details/GroupNotFoundState";
-import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
 import { GroupStatsGrid } from "~/components/trips/groups/details/GroupStatsGrid";
 import { TransactionHistory } from "~/components/trips/groups/details/TransactionHistory";
+import { useTripDetails } from "~/hooks/trips";
+import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 export default function GroupDetailsScreen() {
   const router = useRouter();

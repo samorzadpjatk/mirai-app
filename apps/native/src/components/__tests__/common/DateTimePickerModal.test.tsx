@@ -1,7 +1,7 @@
-import { Platform } from "react-native";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Platform } from "react-native";
 import { DateTimePickerModal } from "../../common/ui/DateTimePickerModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@react-native-community/datetimepicker", () => "RNDateTimePicker");
 

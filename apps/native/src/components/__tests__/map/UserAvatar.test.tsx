@@ -1,6 +1,6 @@
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { UserAvatar } from "../../map/ui/UserAvatar";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("UserAvatar", () => {
   it("should render image when imageUrl is provided", () => {

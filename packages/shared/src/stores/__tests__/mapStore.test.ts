@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { mapStore, type MapUserLocation, type MapTheme } from "../mapStore";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type MapTheme, type MapUserLocation, mapStore } from "../mapStore";
 
 describe("Map Store", () => {
   beforeEach(() => {

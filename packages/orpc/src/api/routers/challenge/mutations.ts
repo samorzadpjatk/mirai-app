@@ -1,25 +1,25 @@
+import { type DB, challengeSubmissions, challenges } from "@mirai-app/db";
+import {
+  computeEffectiveChallengeValues,
+  inferPeerVotingDurationHours,
+  inferRecurringDaysFromWindow,
+  prepareChallengeInsert,
+  resolvePeerVotingTemplateWindow,
+  resolveRecurringDays,
+  resolveRecurringTemplateWindow,
+  resolveVotingTimes,
+  validatePeerVotingTimeline,
+  validateRecurringTimeline,
+} from "@mirai-app/shared/challenges";
 import { ORPCError } from "@orpc/server";
-import { eq, and, count } from "drizzle-orm";
-import { challenges, challengeSubmissions, type DB } from "@mirai-app/db";
+import { and, count, eq } from "drizzle-orm";
 import {
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
 } from "../../../utils/activityFeed";
 import { precreateRecurringInstancesForTemplate } from "../../../utils/recurringChallenges";
 import { normalizeChallengeImageInput } from "./types";
-import { toClientChallenge, resolveChallengeImage } from "./utils";
-import {
-  prepareChallengeInsert,
-  computeEffectiveChallengeValues,
-  resolveVotingTimes,
-  validatePeerVotingTimeline,
-  validateRecurringTimeline,
-  inferPeerVotingDurationHours,
-  resolvePeerVotingTemplateWindow,
-  inferRecurringDaysFromWindow,
-  resolveRecurringDays,
-  resolveRecurringTemplateWindow,
-} from "@mirai-app/shared/challenges";
+import { resolveChallengeImage, toClientChallenge } from "./utils";
 
 export const createChallenge = async (
   context: {

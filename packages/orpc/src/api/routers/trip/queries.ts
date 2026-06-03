@@ -1,8 +1,8 @@
+import { type DB, tripParticipants, trips } from "@mirai-app/db";
+import { buildParticipantCountMap, calculatePagination } from "@mirai-app/shared/groups";
+import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/shared/trips";
 import { ORPCError } from "@orpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
-import { trips, tripParticipants, type DB } from "@mirai-app/db";
-import { buildTripListItem, buildTripDetailResponse } from "@mirai-app/shared/trips";
-import { calculatePagination, buildParticipantCountMap } from "@mirai-app/shared/groups";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveGroupImage } from "./utils";
 

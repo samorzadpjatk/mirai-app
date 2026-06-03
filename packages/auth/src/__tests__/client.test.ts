@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  useAuth,
-  useUser,
-  useSession,
-  useIsAuthenticated,
-  useAuthLoading,
-  useLoginForm,
-  authStore,
-  AuthStoreProvider,
-} from "../client";
 import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared";
 import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  AuthStoreProvider,
+  authStore,
+  useAuth,
+  useAuthLoading,
+  useIsAuthenticated,
+  useLoginForm,
+  useSession,
+  useUser,
+} from "../client";
 
 vi.mock("zustand", () => ({
   useStore: vi.fn(),
@@ -33,8 +33,8 @@ vi.mock("react", async () => {
   };
 });
 
-import { useStore } from "zustand";
 import { useState } from "react";
+import { useStore } from "zustand";
 
 describe("client exports", () => {
   beforeEach(() => {

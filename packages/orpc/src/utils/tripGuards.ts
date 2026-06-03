@@ -1,5 +1,5 @@
-import { ORPCError } from "@orpc/server";
 import type { DB, TransactionDB } from "@mirai-app/db";
+import { ORPCError } from "@orpc/server";
 
 export async function ensureTripNotEnded(db: DB | TransactionDB, tripId: string): Promise<void> {
   const trip = await db.query.trips.findFirst({

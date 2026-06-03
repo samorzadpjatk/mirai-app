@@ -1,8 +1,8 @@
+import { waitFor } from "@testing-library/react-native";
 import React from "react";
 import { View } from "react-native";
-import { waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
 import { ProfileHeader } from "../../profile/ProfileHeader";
 
 // Mock download function that returns a resolved promise

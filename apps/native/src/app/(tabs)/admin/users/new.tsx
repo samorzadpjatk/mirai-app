@@ -1,15 +1,15 @@
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "~/styles";
-import { isNameValid, isNonEmptyString } from "~/utils/validation";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { colors, spacing } from "~/styles";
+import { isNameValid, isNonEmptyString } from "~/utils/validation";
 
 export default function AdminCreateUserScreen() {
   const router = useRouter();
@@ -78,7 +78,7 @@ export default function AdminCreateUserScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <FormField label="First name" required>
+        <FormField label="First name" required={true}>
           <ThemedTextInput
             value={firstName}
             onChangeText={setFirstName}
@@ -87,7 +87,7 @@ export default function AdminCreateUserScreen() {
           />
         </FormField>
 
-        <FormField label="Last name" required>
+        <FormField label="Last name" required={true}>
           <ThemedTextInput
             value={lastName}
             onChangeText={setLastName}
@@ -96,7 +96,7 @@ export default function AdminCreateUserScreen() {
           />
         </FormField>
 
-        <FormField label="Email" required>
+        <FormField label="Email" required={true}>
           <ThemedTextInput
             value={email}
             onChangeText={setEmail}

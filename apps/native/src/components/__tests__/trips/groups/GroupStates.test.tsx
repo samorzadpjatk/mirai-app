@@ -1,8 +1,8 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { GroupsCreateButton } from "../../../trips/groups/GroupsCreateButton";
 import { GroupsNoTripState } from "../../../trips/groups/GroupsNoTripState";
 import { GroupCreateNoTripState } from "../../../trips/groups/create/GroupCreateNoTripState";
-import { GroupsCreateButton } from "../../../trips/groups/GroupsCreateButton";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupsNoTripState", () => {
   it("renders no trip message", () => {

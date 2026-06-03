@@ -1,6 +1,6 @@
 import { createORPCRouter, moderatorProcedure } from "../../trpc";
-import { coinTransactionInputSchema } from "./types";
 import { addCoins, removeCoins } from "./mutations";
+import { coinTransactionInputSchema } from "./types";
 
 const handleAddCoins = async ({
   context,

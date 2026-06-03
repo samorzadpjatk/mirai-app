@@ -1,7 +1,7 @@
-import { Pressable, Text, View, type PressableProps, type ViewStyle } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Pressable, type PressableProps, Text, View, type ViewStyle } from "react-native";
 import { ThemedListItem } from "../../common/ui/ThemedListItem";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface PressableStyle extends ViewStyle {
   backgroundColor?: string;

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
-import { useMapStore, useMapActions } from "../mapHooks";
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { act, renderHook } from "@testing-library/react-native";
+import { useMapActions, useMapStore } from "../mapHooks";
 import { mapStore } from "../mapStore";
 
 describe("mapHooks", () => {

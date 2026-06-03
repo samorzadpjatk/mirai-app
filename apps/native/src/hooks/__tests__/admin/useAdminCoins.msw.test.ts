@@ -1,8 +1,8 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { waitFor, act } from "@testing-library/react-native";
-import { useAdminCoins } from "../../admin/useAdminCoins";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
+import { useAdminCoins } from "../../admin/useAdminCoins";
 
 describe("useAdminCoins (MSW)", () => {
   const tripId = "trip-123";

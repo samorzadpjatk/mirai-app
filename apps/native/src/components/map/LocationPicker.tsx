@@ -1,25 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import {
-  MapView,
   Camera,
+  MapView,
   MarkerView,
-  RasterSource,
   RasterLayer,
+  RasterSource,
 } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography, borderRadius } from "~/styles";
-import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export interface LocationCoordinate {
   latitude: number;
@@ -84,7 +85,7 @@ const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
   },
 };
 
-import { isPointFeature, extractCoordinateFromFeature } from "./locationPickerUtils";
+import { extractCoordinateFromFeature, isPointFeature } from "./locationPickerUtils";
 
 export { isPointFeature, extractCoordinateFromFeature };
 
@@ -252,11 +253,11 @@ export const LocationPicker: React.FC<Props> = ({
             style={styles.map}
             mapStyle={currentMapStyle}
             logoEnabled={false}
-            compassEnabled
-            rotateEnabled
-            pitchEnabled
-            scrollEnabled
-            zoomEnabled
+            compassEnabled={true}
+            rotateEnabled={true}
+            pitchEnabled={true}
+            scrollEnabled={true}
+            zoomEnabled={true}
             onPress={handleMapPress}
             onDidFinishLoadingMap={handleMapLoadComplete}
             onDidFailLoadingMap={handleMapLoadError}

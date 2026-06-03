@@ -1,8 +1,8 @@
+import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ShareLocationModal } from "../../map/modals/ShareLocationModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockSetSearchQuery = jest.fn();
 const mockToggleSelectedUser = jest.fn();

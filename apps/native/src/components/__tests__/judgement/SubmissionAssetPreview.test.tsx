@@ -1,9 +1,9 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { SubmissionAssetPreview } from "../../judgement/SubmissionAssetPreview";
 import { useFileDownload } from "~/hooks/files";
 import { type Submission } from "~/stores/judgement";
+import { SubmissionAssetPreview } from "../../judgement/SubmissionAssetPreview";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface IconProps {
   name: string;

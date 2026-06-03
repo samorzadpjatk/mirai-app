@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { useUnauthorizedHandler, isUnauthorizedError } from "../use-unauthorized-handler";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "../query-client-factory";
+import { isUnauthorizedError, useUnauthorizedHandler } from "../use-unauthorized-handler";
 
 vi.mock("@mirai-app/auth/client", () => {
   const mockSignOut = vi.fn().mockResolvedValue(undefined);

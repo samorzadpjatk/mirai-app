@@ -1,26 +1,26 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  ImageBackground,
-  Linking,
-  Alert,
-  Dimensions,
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { WebView } from "react-native-webview";
+import {
+  Alert,
+  Dimensions,
+  ImageBackground,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Pdf from "react-native-pdf";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 import { FullScreenModal } from "~/components/common/ui";
 import { useFileDownload } from "~/hooks/files";
-import { useTripResources, useSelectedTrip } from "~/hooks/trips";
-import { useLocalSearchParams } from "expo-router";
+import { useSelectedTrip, useTripResources } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
+import { borderRadius, colors, spacing, typography } from "../../../styles";
 
 // Type-safe icon name helper
 const getIconName = (

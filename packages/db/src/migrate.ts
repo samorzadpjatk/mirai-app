@@ -1,5 +1,5 @@
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 const DEFAULT_MIGRATIONS_FOLDER = "/drizzle";
@@ -10,7 +10,7 @@ interface Logger {
 }
 
 const defaultLogger: Logger = {
-  info: (obj, msg) => console.log(msg, obj),
+  info: () => {},
   error: (obj, msg) => console.error(msg, obj),
 };
 

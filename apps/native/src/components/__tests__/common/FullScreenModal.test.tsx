@@ -1,7 +1,7 @@
-import { Text, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text, View } from "react-native";
 import { FullScreenModal } from "../../common/ui/FullScreenModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("FullScreenModal", () => {
   it("should render when visible is true", () => {

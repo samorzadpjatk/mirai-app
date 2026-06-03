@@ -1,9 +1,9 @@
-import { pgTable, varchar, timestamp, text, integer, boolean, index } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
-import { trips } from "./trips";
-import { groups } from "./groups";
-import { users } from "./users";
 import { rewardPurchaseStatusEnum } from "./enums";
+import { groups } from "./groups";
+import { trips } from "./trips";
+import { users } from "./users";
 
 export const rewards = pgTable(
   "rewards",

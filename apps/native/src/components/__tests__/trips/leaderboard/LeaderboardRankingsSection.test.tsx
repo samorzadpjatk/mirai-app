@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardRankingsSection } from "../../../trips/leaderboard/LeaderboardRankingsSection";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("LeaderboardRankingsSection", () => {
   const mockGroups: RankedGroup[] = [

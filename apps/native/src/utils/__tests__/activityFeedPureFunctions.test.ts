@@ -1,9 +1,9 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  resolvePeerVotingDurationHours,
-  formatSubmissionDeadline,
-  resolvePodiumPoints,
   DEFAULT_PEER_VOTING_DURATION_HOURS,
+  formatSubmissionDeadline,
+  resolvePeerVotingDurationHours,
+  resolvePodiumPoints,
 } from "@mirai-app/orpc/utils/activityFeed";
 
 describe("resolvePeerVotingDurationHours", () => {

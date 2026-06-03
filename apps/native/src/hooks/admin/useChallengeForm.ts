@@ -1,21 +1,21 @@
+import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { Alert } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { useFileUpload } from "~/hooks/files";
-import { getFileExtension, getFileContentType } from "~/utils/image";
 import {
-  submissionTypes,
+  type ChallengeFormState,
+  formatIso,
+  formatTime,
+  inferRecurringDaysFromWindow,
+  newChallengeStatusOptions,
   scoringCategories,
   statusOptions,
-  newChallengeStatusOptions,
-  type ChallengeFormState,
-  toVotingDurationHours,
-  toVotingDurationDraft,
-  formatTime,
-  formatIso,
-  inferRecurringDaysFromWindow,
+  submissionTypes,
   toOptionalInt,
+  toVotingDurationDraft,
+  toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
+import { useFileUpload } from "~/hooks/files";
+import { getFileContentType, getFileExtension } from "~/utils/image";
 
 interface ChallengeData {
   id?: string;

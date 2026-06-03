@@ -1,28 +1,29 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { waitFor, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, waitFor } from "@testing-library/react-native";
+import { Alert } from "react-native";
+import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
+import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import {
-  useChallengeCapture,
-  validateChallengeSubmission,
   buildStoragePath,
   buildUploadConfig,
+  useChallengeCapture,
+  validateChallengeSubmission,
 } from "../../challenges/useChallengeCapture";
-import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
-import { Alert } from "react-native";
 
 // Mock expo-image-picker
-const mockLaunchImageLibraryAsync = jest.fn<
-  (options?: {
-    mediaTypes?: string;
-    allowsEditing?: boolean;
-    aspect?: number[];
-    quality?: number;
-    exif?: boolean;
-  }) => Promise<{
-    canceled: boolean;
-    assets?: { uri: string; fileName?: string | null; mimeType?: string }[];
-  }>
->();
+const mockLaunchImageLibraryAsync =
+  jest.fn<
+    (options?: {
+      mediaTypes?: string;
+      allowsEditing?: boolean;
+      aspect?: number[];
+      quality?: number;
+      exif?: boolean;
+    }) => Promise<{
+      canceled: boolean;
+      assets?: { uri: string; fileName?: string | null; mimeType?: string }[];
+    }>
+  >();
 
 jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: (...args: unknown[]) =>

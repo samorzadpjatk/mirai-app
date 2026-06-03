@@ -1,7 +1,7 @@
-import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text, View } from "react-native";
 import { colors } from "~/styles";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import { textStyles, viewStyles } from "~/styles/judgement";
 
 const EmptyStateCard = ({ maxCardHeight }: { maxCardHeight: number }) => {
   return (

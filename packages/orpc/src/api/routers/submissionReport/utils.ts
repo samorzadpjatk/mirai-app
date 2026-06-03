@@ -1,5 +1,5 @@
-import { ORPCError } from "@orpc/server";
 import type { DB } from "@mirai-app/db";
+import { ORPCError } from "@orpc/server";
 
 export const ensureTripParticipant = async (
   context: { db: DB; dbUser: { id: string } },

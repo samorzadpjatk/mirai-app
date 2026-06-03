@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeCommunitySubmissionsCard } from "../../../trips/challenges/ChallengeCommunitySubmissionsCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("~/hooks/files", () => ({
   useFileDownload: () => ({

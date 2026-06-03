@@ -1,4 +1,4 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 
 jest.mock("~/config/runtimeEnv", () => ({
   SUPABASE_URL: "https://test.supabase.co",
@@ -39,8 +39,8 @@ jest.mock("~/services/storage/storage", () => ({
 
 import {
   toFiniteNumberOrNull,
-  toNonNegativeOrNull,
   toHeadingOrNull,
+  toNonNegativeOrNull,
 } from "~/services/background/backgroundLocationTask";
 
 describe("toFiniteNumberOrNull", () => {
@@ -116,9 +116,9 @@ describe("toHeadingOrNull", () => {
 
 import type { LocationObject } from "expo-location";
 import {
-  handleBackgroundLocationTask,
-  type BackgroundTaskState,
   type BackgroundTaskDeps,
+  type BackgroundTaskState,
+  handleBackgroundLocationTask,
 } from "~/services/background/backgroundLocationTask";
 
 const makeLocation = (latitude: number, longitude: number): LocationObject => ({

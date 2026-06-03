@@ -1,7 +1,7 @@
-import { type ViewStyle } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { type ViewStyle } from "react-native";
 import { FilterChip } from "../../common/ui/FilterChip";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface ChipStyle extends ViewStyle {
   borderColor?: string;

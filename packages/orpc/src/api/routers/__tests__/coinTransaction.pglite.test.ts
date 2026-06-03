@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { coinTransactions, groups, tripParticipants, trips, users } from "@mirai-app/db";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { eq, and, inArray, count, sql, gt, lt } from "drizzle-orm";
-import { groups, coinTransactions, users, trips, tripParticipants } from "@mirai-app/db";
+import { and, count, eq, gt, inArray, lt, sql } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  getStatistics,
+  getAdditionalInsights,
   getAll,
   getCoinTransactions,
   getMostActiveAdminStats,
   getQuickStats,
-  getAdditionalInsights,
+  getStatistics,
 } from "../coinTransaction/queries";
 
 describe("coinTransaction router — PGLite integration", () => {

@@ -1,7 +1,7 @@
-import { Text } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { AlertsEmptyState } from "../../alerts/AlertsEmptyState";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AlertsEmptyState", () => {
   it("should render with title and message", () => {

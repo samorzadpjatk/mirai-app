@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { commonStyles } from "~/styles/commonStyles";
 import { getTotalCost } from "./RewardsView";
 import type { RewardListItem } from "./types";

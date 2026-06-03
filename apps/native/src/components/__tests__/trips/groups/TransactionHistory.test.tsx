@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TransactionHistory } from "../../../trips/groups/details/TransactionHistory";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("TransactionHistory", () => {
   const mockTransactions = [

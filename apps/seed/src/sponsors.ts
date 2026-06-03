@@ -1,11 +1,11 @@
-import { db } from "./config/db";
 import type { Sponsor, TripSponsor } from "@mirai-app/db";
-import type { SeedEnv, SponsorConfig } from "./types";
-import yaml from "yaml";
-import { readTextFile } from "./utils/fs";
-import { joinPath } from "./utils/path";
 import { sponsors, tripSponsors } from "@mirai-app/db";
 import { logger } from "@mirai-app/shared";
+import yaml from "yaml";
+import { db } from "./config/db";
+import type { SeedEnv, SponsorConfig } from "./types";
+import { readTextFile } from "./utils/fs";
+import { joinPath } from "./utils/path";
 
 function isSponsorConfig(value: unknown): value is SponsorConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -30,9 +30,9 @@ export const loadSponsorConfigs = async (
 };
 
 export const seedSponsors = async (
-  databaseUrl: string,
+  _databaseUrl: string,
   tripId: string,
-  seedEnv: SeedEnv,
+  _seedEnv: SeedEnv,
   sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
   logger.info("Seeding sponsors...");

@@ -1,7 +1,7 @@
+import { logger } from "@mirai-app/shared";
 import { env } from "./config/env";
 import { supabase } from "./config/supabase";
 import type { AuthUserByEmail } from "./types";
-import { logger } from "@mirai-app/shared";
 
 export const loadAuthUsers = async (): Promise<AuthUserByEmail> => {
   const perPage = 1000;

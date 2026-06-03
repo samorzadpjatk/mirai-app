@@ -1,16 +1,16 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  submissionTypes,
+  DAY_MS,
+  formatIso,
+  formatTime,
+  inferRecurringDaysFromWindow,
+  newChallengeStatusOptions,
   scoringCategories,
   statusOptions,
-  newChallengeStatusOptions,
-  toVotingDurationHours,
-  toVotingDurationDraft,
-  formatTime,
-  formatIso,
-  DAY_MS,
-  inferRecurringDaysFromWindow,
+  submissionTypes,
   toOptionalInt,
+  toVotingDurationDraft,
+  toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
 
 describe("challengeFormConstants", () => {

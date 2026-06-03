@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
-import { spacing, typography, colors } from "~/styles";
-import type { ChallengeListItem } from "./types";
+import { colors, spacing, typography } from "~/styles";
 import { ChallengesGridItem } from "./ChallengesGridItem";
+import type { ChallengeListItem } from "./types";
 
 interface ChallengesGridProps {
   challenges: ChallengeListItem[];

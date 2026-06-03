@@ -1,13 +1,13 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { Alert, Linking } from "react-native";
-import {
-  locationStore,
-  setLocationServerUpdater,
-  type ServerSharingUpdater,
-} from "../locationStore";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import { Alert, Linking } from "react-native";
 import * as backgroundLocation from "~/services/location/backgroundLocation";
+import {
+  type ServerSharingUpdater,
+  locationStore,
+  setLocationServerUpdater,
+} from "../locationStore";
 
 jest.mock("~/services/location/backgroundLocation");
 jest.mock("@react-native-async-storage/async-storage", () => ({

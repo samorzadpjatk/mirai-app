@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ChallengeListItem } from "../../admin/challenges/ChallengeListItem";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("ChallengeListItem", () => {
   const mockChallenge = {

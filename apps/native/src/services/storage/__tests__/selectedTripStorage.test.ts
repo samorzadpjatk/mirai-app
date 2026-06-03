@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import type { TripListItem } from "~/components/trips/list/types";
 
 const mockSecureGetItemAsync = jest.fn<(key: string) => Promise<string | null>>();
@@ -22,14 +22,14 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 }));
 
 import {
-  getSelectedTripIdFromStorage,
-  setSelectedTripIdInStorage,
   clearSelectedTripIdInStorage,
-  getCachedTrips,
-  setCachedTrips,
-  upsertCachedTripListItem,
   getCachedTripById,
+  getCachedTrips,
+  getSelectedTripIdFromStorage,
   setCachedTripById,
+  setCachedTrips,
+  setSelectedTripIdInStorage,
+  upsertCachedTripListItem,
 } from "~/services/storage/selectedTripStorage";
 
 describe("Selected Trip Storage", () => {

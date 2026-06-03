@@ -1,5 +1,5 @@
-import { type Ionicons } from "@expo/vector-icons";
-import { type ComponentProps } from "react";
+import type { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 
 export enum ChallengeStatus {
   LOCKED = "locked",

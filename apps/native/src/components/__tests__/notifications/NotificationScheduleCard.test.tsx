@@ -1,8 +1,8 @@
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 import { Alert } from "react-native";
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
 import { NotificationScheduleCard } from "../../notifications/NotificationScheduleCard";
 
 jest.mock("~/utils/format", () => ({

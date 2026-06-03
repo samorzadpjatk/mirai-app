@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
 import { type DB, type TransactionDB, challenges } from "@mirai-app/db";
 import { parseRewardImages, resolveStorageUrl } from "@mirai-app/shared";
+import { eq } from "drizzle-orm";
 
 export const calculateTotalAvailablePoints = async (db: DB | TransactionDB, tripId: string) => {
   const challengeRows = await db

@@ -1,6 +1,6 @@
 import { View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UserMap } from "../../map/UserMap";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("~/stores/location", () => ({
   useLocationContext: jest.fn().mockReturnValue({

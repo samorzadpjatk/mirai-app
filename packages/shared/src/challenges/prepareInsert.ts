@@ -1,8 +1,8 @@
 import {
-  resolveRecurringDays,
-  resolveRecurringTemplateWindow,
   inferPeerVotingDurationHours,
   resolvePeerVotingTemplateWindow,
+  resolveRecurringDays,
+  resolveRecurringTemplateWindow,
 } from "./dateUtils";
 import { computeInitialStatus } from "./initialStatus";
 

@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  getStatusMeta,
   formatDateTime,
   formatPersonName,
+  getStatusMeta,
 } from "../admin/challenges/SubmissionReviewCard";
 
 describe("getStatusMeta", () => {

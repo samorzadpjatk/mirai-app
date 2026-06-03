@@ -1,36 +1,36 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, sql, lte } from "drizzle-orm";
 import {
-  challenges,
-  challengeSubmissions,
-  groups,
-  coinTransactions,
   activityFeeds,
+  challengeSubmissions,
+  challenges,
+  coinTransactions,
+  groups,
   submissionActivities,
 } from "@mirai-app/db";
-import type { DB, ChallengeSubmission } from "@mirai-app/db";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import type { ChallengeSubmission, DB } from "@mirai-app/db";
+import {
+  resolveAwardedPoints,
+  shouldAutoApproveSubmission,
+  validateSubmissionPayload,
+} from "@mirai-app/shared/challengeSubmissions";
+import { ORPCError } from "@orpc/server";
+import { and, eq, lte, sql } from "drizzle-orm";
 import {
   captureTripRankingSnapshot,
   createChallengeStatusActivityById,
   createRankChangeActivities,
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
 } from "../../../utils/activityFeed";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
-import {
-  validateSubmissionPayload,
-  shouldAutoApproveSubmission,
-  resolveAwardedPoints,
-} from "@mirai-app/shared/challengeSubmissions";
+import type { SubmissionContext } from "./queries";
 import { submissionBaseColumns, submissionWithRelations } from "./types";
 import {
   attachReviewerEmail,
-  ensureTripParticipant,
   ensureChallengeInTrip,
+  ensureTripParticipant,
   rebalanceSpeedRankings,
 } from "./utils";
-import type { SubmissionContext } from "./queries";
 
 export const createSubmission = async (
   context: SubmissionContext,

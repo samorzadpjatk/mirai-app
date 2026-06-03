@@ -99,7 +99,7 @@ export function toGroupDetail<
   _count: { participants: number };
   image: string | null | undefined;
   organizer: any | null;
-  participants: Array<any>;
+  participants: any[];
   approvedSubmissions: ApprovedSubmissionOutput[];
 } {
   const { organizer, participants, ...rest } = group;

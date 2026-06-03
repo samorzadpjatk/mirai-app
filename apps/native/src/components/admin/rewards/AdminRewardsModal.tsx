@@ -1,20 +1,20 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Image,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useCreateReward } from "~/hooks/rewards";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/components/common/ui";
 import { useFileUpload } from "~/hooks/files";
-import { getFileExtension, getFileContentType } from "~/utils/image";
-import { colors, spacing, typography, borderRadius } from "~/styles";
-import { AppModalShell, AppModalFooter, FormField, ThemedTextInput } from "~/components/common/ui";
+import { useCreateReward } from "~/hooks/rewards";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { getFileContentType, getFileExtension } from "~/utils/image";
 
 interface Props {
   visible: boolean;
@@ -78,8 +78,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
       return;
     }
 
-    const coinCostPercentage = parseInt(newReward.coinCost, 10);
-    if (isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
+    const coinCostPercentage = Number.parseInt(newReward.coinCost, 10);
+    if (Number.isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
       Alert.alert("Error", "Cost must be between 1% and 100%");
       return;
     }
@@ -88,7 +88,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
       await createReward.mutateAsync({
         name: newReward.name,
         description: newReward.description,
-        availableQuantity: parseInt(newReward.availableQuantity, 10),
+        availableQuantity: Number.parseInt(newReward.availableQuantity, 10),
         coinCost: coinCostPercentage, // Store as percentage
         images: newReward.images,
         isHidden: newReward.isHidden,
@@ -164,7 +164,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
   return (
     <AppModalShell visible={visible} title="New Reward" onClose={onClose} variant="pageSheet">
       <ScrollView style={{ padding: spacing.lg }}>
-        <FormField label="Reward name" required>
+        <FormField label="Reward name" required={true}>
           <ThemedTextInput
             placeholder="e.g. Branded T-shirt"
             value={newReward.name}
@@ -172,16 +172,16 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
           />
         </FormField>
 
-        <FormField label="Description" required>
+        <FormField label="Description" required={true}>
           <ThemedTextInput
             value={newReward.description}
             onChangeText={(text) => setNewReward({ ...newReward, description: text })}
-            multiline
+            multiline={true}
           />
         </FormField>
 
         <View style={{ flexDirection: "row", gap: spacing.md }}>
-          <FormField label="Available quantity" required style={{ flex: 1 }}>
+          <FormField label="Available quantity" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="0"
               value={newReward.availableQuantity}
@@ -189,7 +189,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               keyboardType="numeric"
             />
           </FormField>
-          <FormField label="Cost (% of total points)" required style={{ flex: 1 }}>
+          <FormField label="Cost (% of total points)" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="5"
               value={newReward.coinCost}
@@ -215,8 +215,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               style={{
                 flex: 1,
                 borderWidth: 1,
-                borderColor: !newReward.isHidden ? colors.success : colors.borderDark,
-                backgroundColor: !newReward.isHidden ? colors.primaryOpacity10 : colors.cardDark,
+                borderColor: newReward.isHidden ? colors.borderDark : colors.success,
+                backgroundColor: newReward.isHidden ? colors.cardDark : colors.primaryOpacity10,
                 borderRadius: borderRadius.md,
                 paddingVertical: spacing.sm,
                 alignItems: "center",
@@ -224,7 +224,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               <Text
                 style={{
-                  color: !newReward.isHidden ? colors.success : colors.textSecondary,
+                  color: newReward.isHidden ? colors.textSecondary : colors.success,
                   letterSpacing: 0.8,
                   fontWeight: typography.semibold,
                 }}
@@ -261,7 +261,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
           {newReward.images.length > 0 ? (
             <View style={{ gap: spacing.sm }}>
               <ScrollView
-                horizontal
+                horizontal={true}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ gap: spacing.sm }}
               >

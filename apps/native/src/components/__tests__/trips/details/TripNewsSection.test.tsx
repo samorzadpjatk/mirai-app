@@ -1,7 +1,7 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../../test-utils/msw/server";
 import { renderWithMSW } from "../../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../../test-utils/msw/server";
 import { TripNewsSection } from "../../../trips/details/TripNewsSection";
 
 const mockPush = jest.fn();

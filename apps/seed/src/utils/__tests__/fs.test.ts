@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fileExists, dirExists, readFile, readTextFile, listFilesRecursive } from "../fs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { dirExists, fileExists, listFilesRecursive, readFile, readTextFile } from "../fs";
 
 // Mock Bun global
 

@@ -1,20 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  invalidateCascadingQueries,
-  invalidateWithPredicate,
-  QUERY_GROUPS,
-  invalidateRewardQueries,
-  invalidateChallengeQueries,
-  invalidateUserQueries,
-  invalidateGroupQueries,
-  invalidateAdminQueries,
-  invalidateTransactionQueries,
-  invalidateNotificationQueries,
-  invalidateLocationQueries,
-  invalidateTripQueries,
-  invalidateFileQueries,
-} from "../invalidationUtils";
 import type { QueryClient } from "@tanstack/react-query";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  QUERY_GROUPS,
+  invalidateAdminQueries,
+  invalidateCascadingQueries,
+  invalidateChallengeQueries,
+  invalidateFileQueries,
+  invalidateGroupQueries,
+  invalidateLocationQueries,
+  invalidateNotificationQueries,
+  invalidateRewardQueries,
+  invalidateTransactionQueries,
+  invalidateTripQueries,
+  invalidateUserQueries,
+  invalidateWithPredicate,
+} from "../invalidationUtils";
 
 interface MockQueryClient {
   invalidateQueries: ReturnType<typeof vi.fn>;

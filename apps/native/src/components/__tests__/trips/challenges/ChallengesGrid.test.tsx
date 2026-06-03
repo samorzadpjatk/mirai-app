@@ -1,6 +1,6 @@
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { ChallengesGrid } from "../../../trips/challenges/ChallengesGrid";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengesGrid", () => {
   it("should render empty state when no challenges", () => {

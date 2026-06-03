@@ -1,6 +1,6 @@
+import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
 import { baseConfig, baseCoverageExcludes } from "./vitest.base.config";
-import path from "path";
 
 export default mergeConfig(
   baseConfig,

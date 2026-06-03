@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { SupabaseUser } from "@mirai-app/supabase";
+import { z } from "zod";
 
 export const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 

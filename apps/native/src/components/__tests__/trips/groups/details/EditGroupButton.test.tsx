@@ -1,7 +1,7 @@
-import { TouchableOpacity } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
+import { TouchableOpacity } from "react-native";
 import { EditGroupButton } from "../../../../trips/groups/details/EditGroupButton";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("EditGroupButton", () => {
   it("should render floating action button", () => {

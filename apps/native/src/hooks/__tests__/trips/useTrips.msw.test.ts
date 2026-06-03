@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useTrips } from "../../trips/useTrips";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useTrips } from "../../trips/useTrips";
 
 describe("useTrips (MSW)", () => {
   it("should return trips from API", async () => {

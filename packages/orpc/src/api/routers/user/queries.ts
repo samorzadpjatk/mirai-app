@@ -1,26 +1,26 @@
-import { z } from "zod";
-import { ORPCError } from "@orpc/server";
-import { eq, and, count, asc, sql } from "drizzle-orm";
-import { users, tripParticipants, groups } from "@mirai-app/db";
+import { groups, tripParticipants, users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
 import {
-  parseBanStatus,
-  normalizeEmail,
   buildPagination,
-  filterParticipantsByEmail,
-  sortParticipants,
-  mapParticipantRow,
   buildUserSearchWhere,
+  filterParticipantsByEmail,
+  mapParticipantRow,
+  normalizeEmail,
+  parseBanStatus,
+  sortParticipants,
 } from "@mirai-app/shared";
+import type { SupabaseClient } from "@mirai-app/supabase";
+import { ORPCError } from "@orpc/server";
+import { and, asc, count, eq, sql } from "drizzle-orm";
+import type { z } from "zod";
 import {
   buildAuthEmailLookup,
   buildAuthUserSummaryLookup,
   resolveAuthEmail,
 } from "../../../utils/authEmails";
+import { logger } from "../../../utils/logger";
 import type { SupabaseAdminUser, roleSchema } from "./types";
 import { toPublicUser, toPublicUserWithAuthSummary } from "./utils";
-import { logger } from "../../../utils/logger";
 
 export type UserBaseContext = {
   db: DB;
@@ -344,7 +344,7 @@ export const searchWithPagination = async (
     field === "houseNumber" && searchTerm
       ? and(
           eq(tripParticipants.tripId, tripId),
-          sql`LOWER(${tripParticipants.houseNumber}) LIKE LOWER(${"%" + searchTerm + "%"})`,
+          sql`LOWER(${tripParticipants.houseNumber}) LIKE LOWER(${`%${searchTerm}%`})`,
         )
       : buildUserSearchWhere(tripId, field, searchTerm);
 

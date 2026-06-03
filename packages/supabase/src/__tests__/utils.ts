@@ -1,5 +1,4 @@
 import { vi } from "vitest";
-import type { SupabaseClient } from "../types";
 
 /**
  * Minimal mock Supabase client for internal supabase package tests.

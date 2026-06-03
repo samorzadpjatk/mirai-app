@@ -1,15 +1,15 @@
 import {
-  pgTable,
-  varchar,
-  timestamp,
-  text,
-  integer,
   index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
   uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
-import { users } from "./users";
 import { groups } from "./groups";
+import { users } from "./users";
 
 export const trips = pgTable("trips", {
   id: varchar("id", { length: 36 })

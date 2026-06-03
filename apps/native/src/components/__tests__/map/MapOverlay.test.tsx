@@ -1,7 +1,7 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import { MapOverlay } from "../../map/overlays/MapOverlay";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("expo-linear-gradient", () => {
   const { createElement } = jest.requireActual("react");

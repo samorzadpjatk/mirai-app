@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
 
 export function useGroupDetails(groupId?: string | null) {
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));

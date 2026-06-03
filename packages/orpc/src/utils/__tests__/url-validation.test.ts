@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { validateUrlProtocol, isValidHttpUrl } from "../url-validation";
 import { ORPCError } from "@orpc/server";
+import { describe, expect, it } from "vitest";
+import { isValidHttpUrl, validateUrlProtocol } from "../url-validation";
 
 describe("validateUrlProtocol", () => {
   it("should allow HTTP URLs", () => {

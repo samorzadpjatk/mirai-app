@@ -1,24 +1,24 @@
-import { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert, Text } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { colors, spacing } from "../../../../styles";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { QrScannerModal } from "~/components/common";
-import { AppModalShell, AppModalFooter } from "~/components/common/ui";
-import { ThemedTextInput } from "~/components/common/ui";
-import { useCameraPermissions } from "expo-camera";
 import {
-  MapView,
   Camera,
   UserLocation as MapLibreUserLocation,
+  MapView,
   PointAnnotation,
-  RasterSource,
   RasterLayer,
+  RasterSource,
 } from "@maplibre/maplibre-react-native";
-import { deleteCachedDownload } from "~/hooks/files";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCameraPermissions } from "expo-camera";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
+import { QrScannerModal } from "~/components/common";
+import { AppModalFooter, AppModalShell } from "~/components/common/ui";
+import { ThemedTextInput } from "~/components/common/ui";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
+import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges/ChallengeCommunitySubmissionsCard";
 import { ChallengeDescriptionCard } from "~/components/trips/challenges/ChallengeDescriptionCard";
 import { ChallengeHeroCard } from "~/components/trips/challenges/ChallengeHeroCard";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
@@ -26,11 +26,11 @@ import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeN
 import { ChallengeTimeLeftCard } from "~/components/trips/challenges/ChallengeTimeLeftCard";
 import { ChallengeUploadProgressCard } from "~/components/trips/challenges/ChallengeUploadProgressCard";
 import { ExistingSubmissionCard } from "~/components/trips/challenges/ExistingSubmissionCard";
-import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges/ChallengeCommunitySubmissionsCard";
-import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
+import { deleteCachedDownload } from "~/hooks/files";
 import { useTripDetails } from "~/hooks/trips";
+import { colors, spacing } from "../../../../styles";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
 const IMAGE_LOCATION_RADIUS_METERS = 50;
@@ -575,7 +575,7 @@ export default function ChallengeDetailScreen() {
                   <View style={styles.targetLocationMarker} />
                 </PointAnnotation>
                 <MapLibreUserLocation
-                  visible
+                  visible={true}
                   minDisplacement={0}
                   onUpdate={(location) => {
                     const longitude = location.coords?.longitude;
@@ -660,7 +660,7 @@ export default function ChallengeDetailScreen() {
           placeholder="Type your answer here..."
           value={textInputValue}
           onChangeText={setTextInputValue}
-          autoFocus
+          autoFocus={true}
           autoCapitalize="none"
           autoCorrect={false}
           multiline={false}

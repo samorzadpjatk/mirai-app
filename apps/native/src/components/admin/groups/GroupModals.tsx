@@ -1,10 +1,10 @@
-import { useCallback, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
-import { AdminModal, AdminModalButton } from "../AdminModal";
+import { useCallback, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface CreateGroupModalProps {
   visible: boolean;
@@ -49,7 +49,7 @@ export function CreateGroupModal({
         </>
       }
     >
-      <FormField label="Group Name" required>
+      <FormField label="Group Name" required={true}>
         <ThemedTextInput
           value={groupName}
           onChangeText={setGroupName}
@@ -105,7 +105,7 @@ export function EditGroupModal({
         </>
       }
     >
-      <FormField label="Group Name" required>
+      <FormField label="Group Name" required={true}>
         <ThemedTextInput
           value={groupName}
           onChangeText={setGroupName}

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { validateCoinTransaction, checkCoinBalance } from "../validators";
 import type { Group } from "@mirai-app/db";
+import { describe, expect, it } from "vitest";
+import { checkCoinBalance, validateCoinTransaction } from "../validators";
 
 const createMockGroup = (overrides: Partial<Group> = {}): Group => ({
   id: "group-123",

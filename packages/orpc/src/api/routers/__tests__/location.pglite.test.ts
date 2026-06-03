@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { locationShares, locationSharingRequests, locations, users } from "@mirai-app/db";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { eq } from "drizzle-orm";
 import { toExpoLocation } from "@mirai-app/shared/locations";
-import { locations, locationSharingRequests, locationShares, users } from "@mirai-app/db";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();

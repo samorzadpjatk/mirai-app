@@ -1,5 +1,5 @@
-import { View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { View } from "react-native";
 import RewardsHistoryView from "~/components/rewards/RewardsHistoryView";
 
 export default function RewardsHistoryPage() {

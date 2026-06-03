@@ -1,24 +1,24 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and } from "drizzle-orm";
 import {
-  notifications,
   notificationPushes,
+  notifications,
   pushSubscriptions,
   tripParticipants,
 } from "@mirai-app/db";
 import {
+  buildRetryResult,
+  extractUserIdsFromParticipants,
+  formatDisplayName,
+  validateGroupBelongsToTrip,
+} from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { and, eq } from "drizzle-orm";
+import {
   NotificationService,
   sendMobileNotifications,
 } from "../../../services/notificationService";
+import { logger } from "../../../utils/logger";
 import { sendNotification, sendRankingUpdate } from "../../../utils/notifications";
 import type { SendNotificationResult } from "../../../utils/notifications";
-import {
-  formatDisplayName,
-  validateGroupBelongsToTrip,
-  extractUserIdsFromParticipants,
-  buildRetryResult,
-} from "@mirai-app/shared";
-import { logger } from "../../../utils/logger";
 import type { NotificationContext } from "./queries";
 
 export const subscribe = async (context: NotificationContext, input: { token: string }) => {
@@ -36,7 +36,7 @@ export const subscribe = async (context: NotificationContext, input: { token: st
         set: { updatedAt: new Date() },
       })
       .returning();
-    return { success: true, id: subscription!.id };
+    return { success: true, id: subscription?.id };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     logger.error({ error: err }, "Error saving push subscription");

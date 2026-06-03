@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { Pressable, type StyleProp, StyleSheet, Text, type ViewStyle } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface SegmentedOptionProps {
   label: string;

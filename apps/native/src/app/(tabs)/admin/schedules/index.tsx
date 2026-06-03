@@ -1,32 +1,32 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { colors, spacing, borderRadius, typography } from "../../../../styles";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { ScheduleCard } from "~/components/admin/schedules/ScheduleCard";
 import {
   CreateScheduleModal,
-  EditScheduleModal,
   DeleteScheduleModal,
+  EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
+import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
   const [hoursRaw, minutesRaw] = triggerTime.split(":");
-  const hour = parseInt(hoursRaw ?? "", 10);
-  const minute = parseInt(minutesRaw ?? "", 10);
+  const hour = Number.parseInt(hoursRaw ?? "", 10);
+  const minute = Number.parseInt(minutesRaw ?? "", 10);
 
   if (
     Number.isNaN(hour) ||

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  syncLocationSharingState,
   LOCATION_SETTINGS_KEY,
+  syncLocationSharingState,
 } from "~/hooks/location/useLocationPermissions";
 
 describe("syncLocationSharingState", () => {

@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
-import { Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateLocationQueries } from "@mirai-app/orpc/client/query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
+import { Alert } from "react-native";
 import { useLocationPermission } from "./useLocationPermission";
 
 export const LOCATION_SETTINGS_KEY = "location_sharing_enabled";

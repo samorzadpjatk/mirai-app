@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { formatDisplayName } from "@mirai-app/shared";
+import { useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import type { Group, User } from "~/hooks/admin/useAdminUsers";
 import { colors, spacing, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
-import type { User, Group } from "~/hooks/admin/useAdminUsers";
 
 interface GroupAssignmentModalProps {
   visible: boolean;

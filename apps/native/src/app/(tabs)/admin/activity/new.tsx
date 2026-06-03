@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { orpc } from "@mirai-app/orpc/client";
-import { getFileExtension, getFileContentType } from "~/utils/image";
-import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { useFileUpload } from "~/hooks/files";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { getFileContentType, getFileExtension } from "~/utils/image";
 
 export default function AdminCreateActivityScreen() {
   const router = useRouter();
@@ -146,7 +146,7 @@ export default function AdminCreateActivityScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <FormField label="Title" required>
+        <FormField label="Title" required={true}>
           <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
         </FormField>
 
@@ -155,7 +155,7 @@ export default function AdminCreateActivityScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Description"
-            multiline
+            multiline={true}
             numberOfLines={4}
             style={styles.textArea}
           />

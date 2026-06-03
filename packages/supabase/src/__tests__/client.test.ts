@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSupabaseClient } from "../client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import createBaseSupabaseClient from "../base";
+import { createSupabaseClient } from "../client";
 import type { StorageAdapter, SupabaseClientOptions } from "../types";
 import { createMockSupabaseClient } from "./utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Mock the base module
 vi.mock("../base", () => ({

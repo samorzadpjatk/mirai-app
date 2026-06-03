@@ -1,8 +1,8 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import React from "react";
 import { Text as MockText, View as MockView, type StyleProp, type ViewStyle } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UsersListPanel } from "../../map/panels/UsersListPanel";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockOnToggleExpand = jest.fn();
 const mockOnAddPress = jest.fn();

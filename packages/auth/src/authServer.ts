@@ -1,9 +1,7 @@
-import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User, Role, DB } from "@mirai-app/db";
-import { users } from "@mirai-app/db";
-import { eq } from "drizzle-orm";
+import type { DB, Role, User } from "@mirai-app/db";
 import type { AuthUser } from "@mirai-app/shared";
 import { formatDisplayName, logger } from "@mirai-app/shared";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 
 interface MinimalBuffer {
   from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };

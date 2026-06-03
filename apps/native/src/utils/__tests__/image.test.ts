@@ -1,6 +1,6 @@
-import { describe, it, expect } from "@jest/globals";
-import { getFileExtension, getFileContentType, getUploadFileName } from "../image";
+import { describe, expect, it } from "@jest/globals";
 import type { ImagePickerAsset } from "expo-image-picker";
+import { getFileContentType, getFileExtension, getUploadFileName } from "../image";
 
 describe("File Utilities", () => {
   describe("getFileExtension", () => {

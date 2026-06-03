@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { useORPCClient, orpc } from "../use-orpc-client";
+import { describe, expect, it, vi } from "vitest";
+import { orpc, useORPCClient } from "../use-orpc-client";
 
 vi.mock("../vanilia", () => ({
   getORPCClient: vi.fn(() => ({
@@ -24,8 +24,8 @@ vi.mock("@orpc/tanstack-query", () => ({
   })),
 }));
 
-import { getORPCClient } from "../vanilia";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { getORPCClient } from "../vanilia";
 
 function TestComponent({
   httpUrl,

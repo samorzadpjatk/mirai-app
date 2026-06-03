@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   buildVoteInsertValues,
-  tallyVotes,
   computeRequiredPositions,
   hasAllRequiredPositions,
+  tallyVotes,
 } from "../builders";
 
 describe("buildVoteInsertValues", () => {

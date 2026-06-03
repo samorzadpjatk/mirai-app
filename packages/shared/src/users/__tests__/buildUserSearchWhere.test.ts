@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildUserSearchWhere } from "../buildUserSearchWhere";
 import type { UserSearchField } from "../buildUserSearchWhere";
 

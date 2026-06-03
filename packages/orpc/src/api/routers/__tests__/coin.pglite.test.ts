@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { coinTransactions, groups, trips, users } from "@mirai-app/db";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { checkCoinBalance, validateCoinTransaction } from "@mirai-app/shared";
 import { eq, sql } from "drizzle-orm";
-import { groups, coinTransactions, users, trips } from "@mirai-app/db";
-import { validateCoinTransaction, checkCoinBalance } from "@mirai-app/shared";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();

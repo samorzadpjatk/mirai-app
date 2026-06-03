@@ -1,31 +1,25 @@
-import { z } from "zod";
+import { notificationScheduleExecutions, notificationSchedules } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
-import { adminProcedure } from "../../trpc";
+import { count, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import {
   validateDateRange,
   validateFutureDates,
-  validateScheduleTime,
   validateMinimumDuration,
   validateNotificationContent,
   validateReasonableDateRange,
+  validateScheduleTime,
 } from "../../../utils/notificactionSchedule-validation";
 import { getDailyRankingScheduleTemplate } from "../../../utils/notificationTemplates";
-import { eq, count, inArray } from "drizzle-orm";
+import { adminProcedure } from "../../trpc";
+import { notificationScheduleCreateSchema, notificationScheduleUpdateSchema } from "./types";
 import {
-  notificationSchedules,
-  notificationScheduleExecutions,
-  type DB,
-  type User,
-} from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
-import {
-  toOptionalString,
   attachCreatedByEmail,
   getTemplateScheduleDates,
   normalizeScheduleWindow,
+  toOptionalString,
 } from "./utils";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
-import { notificationScheduleCreateSchema, notificationScheduleUpdateSchema } from "./types";
 
 export const create = adminProcedure
   .input(notificationScheduleCreateSchema)
@@ -149,7 +143,7 @@ export const upsertTemplate = adminProcedure
       where: (ns, { and, eq }) => and(eq(ns.tripId, input.tripId), eq(ns.name, template.name)),
     });
 
-    let schedule;
+    let schedule: typeof notificationSchedules.$inferSelect | undefined;
     if (existingSchedule) {
       await context.db
         .update(notificationSchedules)

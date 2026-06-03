@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { EmptyState } from "../../common/ui/EmptyState";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("EmptyState", () => {
   it("should render with title", () => {

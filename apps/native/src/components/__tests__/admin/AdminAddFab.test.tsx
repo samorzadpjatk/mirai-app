@@ -1,6 +1,6 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminAddFab } from "../../admin/common/AdminAddFab";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("~/components/common/FloatingActionButton", () => ({
   FloatingActionButton: ({

@@ -1,10 +1,10 @@
-import { resolveAuthEmail } from "../../../utils/authEmails";
-import { type ScheduledNotificationTemplate } from "../../../utils/notificationTemplates";
 import {
-  toOptionalString,
   getNextScheduledStartDate,
   normalizeScheduleWindow,
+  toOptionalString,
 } from "@mirai-app/shared/notifications";
+import { resolveAuthEmail } from "../../../utils/authEmails";
+import type { ScheduledNotificationTemplate } from "../../../utils/notificationTemplates";
 
 export { toOptionalString, normalizeScheduleWindow };
 

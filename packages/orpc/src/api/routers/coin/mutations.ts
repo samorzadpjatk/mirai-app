@@ -1,16 +1,16 @@
-import { ORPCError } from "@orpc/server";
-import { eq, sql } from "drizzle-orm";
 import { type DB, coinTransactions, groups } from "@mirai-app/db";
 import {
-  validateCoinTransaction,
-  checkCoinBalance,
   buildCoinTransactionValues,
+  checkCoinBalance,
+  validateCoinTransaction,
 } from "@mirai-app/shared";
+import { ORPCError } from "@orpc/server";
+import { eq, sql } from "drizzle-orm";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
-import { type CoinTransactionInput } from "./types";
+import type { CoinTransactionInput } from "./types";
 
 export const addCoins = async (
   context: { db: DB; dbUser: { id: string } },
@@ -48,7 +48,7 @@ export const addCoins = async (
     }
 
     const transaction = await tx.query.coinTransactions.findFirst({
-      where: (ct, { eq }) => eq(ct.id, inserted[0]!.id),
+      where: (ct, { eq }) => eq(ct.id, inserted[0]?.id),
       with: {
         group: {
           columns: { id: true, name: true, coins: true },
@@ -117,7 +117,7 @@ export const removeCoins = async (
     }
 
     const transaction = await tx.query.coinTransactions.findFirst({
-      where: (ct, { eq }) => eq(ct.id, inserted[0]!.id),
+      where: (ct, { eq }) => eq(ct.id, inserted[0]?.id),
       with: {
         group: {
           columns: { id: true, name: true, coins: true },

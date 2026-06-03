@@ -1,11 +1,11 @@
+import type { DB, Location as DbLocation } from "@mirai-app/db";
+import { tripParticipants } from "@mirai-app/db";
+import { toExpoLocation } from "@mirai-app/shared/locations";
+import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, inArray, ne } from "drizzle-orm";
-import type { Location as DbLocation, DB } from "@mirai-app/db";
-import { tripParticipants } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
-import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { IMAGE_BUCKET } from "../../../utils/storage";
-import { toExpoLocation } from "@mirai-app/shared/locations";
+import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import type { LocationWithUser } from "./types";
 import { AVATAR_FILE_EXTENSION, AVATAR_SIGNED_URL_SECONDS } from "./types";
 
@@ -99,10 +99,7 @@ export async function ensureUserInActiveTrip(db: DB, userId: string): Promise<vo
       await ensureTripNotEnded(db, membership.trip.id);
       // If we find any active trip, allow the operation
       return;
-    } catch {
-      // Trip has ended, continue checking others
-      continue;
-    }
+    } catch {}
   }
 
   // All trips have ended

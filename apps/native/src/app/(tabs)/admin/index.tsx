@@ -1,22 +1,23 @@
-import React, { useMemo, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import type React from "react";
+import { useMemo, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { colors, spacing, borderRadius, typography } from "../../../styles";
-import { TripPickerModal } from "~/components/common/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TripPickerModal } from "~/components/common/ui";
 import type { TripListItem } from "~/components/trips/list/types";
+import { borderRadius, colors, spacing, typography } from "../../../styles";
 
 const PAGE_SIZE = 20;
 

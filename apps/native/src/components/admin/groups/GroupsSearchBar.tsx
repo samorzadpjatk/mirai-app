@@ -1,6 +1,6 @@
-import { View, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { StyleSheet, TextInput, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupsSearchBarProps {
   searchTerm: string;

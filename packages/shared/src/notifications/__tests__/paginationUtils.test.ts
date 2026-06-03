@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mapSubscriptionStatus, buildPaginationBounds } from "../paginationUtils";
+import { describe, expect, it } from "vitest";
+import { buildPaginationBounds, mapSubscriptionStatus } from "../paginationUtils";
 
 describe("mapSubscriptionStatus", () => {
   it("returns isSubscribed false and empty subscriptions for empty array", () => {

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { validateGroupBelongsToTrip, extractUserIdsFromParticipants } from "../groupValidation";
+import { describe, expect, it } from "vitest";
+import { extractUserIdsFromParticipants, validateGroupBelongsToTrip } from "../groupValidation";
 
 describe("validateGroupBelongsToTrip", () => {
   it("throws NOT_FOUND when group is null", () => {

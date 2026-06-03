@@ -1,7 +1,7 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardPurchaseModal from "../../rewards/RewardPurchaseModal";
 import type { RewardListItem } from "../../rewards/types";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
   id: "reward-1",

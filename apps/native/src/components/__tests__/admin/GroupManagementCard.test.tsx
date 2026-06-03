@@ -1,6 +1,6 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { GroupManagementCard } from "../../admin/groups/GroupManagementCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name }: { name: string }) => name,

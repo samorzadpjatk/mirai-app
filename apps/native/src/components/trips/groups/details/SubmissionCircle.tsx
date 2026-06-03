@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { ActivityIndicator, TouchableOpacity, View, Text, StyleSheet } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
 import { colors } from "~/styles";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";

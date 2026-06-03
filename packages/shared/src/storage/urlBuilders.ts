@@ -1,4 +1,4 @@
-import { parseStoragePath, normalizeStoragePath, normalizeBucketName } from "./standard";
+import { normalizeBucketName, normalizeStoragePath, parseStoragePath } from "./standard";
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 

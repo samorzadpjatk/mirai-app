@@ -1,22 +1,21 @@
-import { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  Alert,
-  ActivityIndicator,
-  Image,
-  TextInput,
-} from "react-native";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { commonStyles } from "~/styles/commonStyles";
-import { spacing } from "~/styles";
+import { StatusBar } from "expo-status-bar";
+import { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
@@ -25,7 +24,8 @@ import {
   useRewardPurchaseHistory,
   useUpdateRewardPurchaseStatus,
 } from "~/hooks/rewards";
-import { useQuery } from "@tanstack/react-query";
+import { spacing } from "~/styles";
+import { commonStyles } from "~/styles/commonStyles";
 
 type ViewMode = "PURCHASES" | "REWARDS";
 type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
@@ -310,346 +310,366 @@ export default function AdminRewardsPage() {
             />
           }
         >
-          {!tripIdParam ? (
+          {tripIdParam ? (
+            purchasesError ? (
+              <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+                <Ionicons name="warning" size={48} color="#ef4444" />
+                <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+                  Failed to load purchases
+                </Text>
+                <Text
+                  style={[
+                    commonStyles.textSecondary,
+                    { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" },
+                  ]}
+                >
+                  {purchasesError instanceof Error ? purchasesError.message : "Try again"}
+                </Text>
+              </View>
+            ) : purchasesLoading ? (
+              <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+                <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
+                  Loading purchases...
+                </Text>
+              </View>
+            ) : (
+              <View style={{ gap: 12, paddingBottom: 20 }}>
+                <ScrollView
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8, paddingBottom: 8 }}
+                >
+                  {statusOptions.map((option) => {
+                    const active = purchaseStatusFilter === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        onPress={() => setPurchaseStatusFilter(option.value)}
+                        style={{
+                          borderRadius: 999,
+                          borderWidth: 1,
+                          borderColor: active ? "#00ced1" : "#273a3a",
+                          backgroundColor: active ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
+                          paddingHorizontal: 12,
+                          paddingVertical: 7,
+                        }}
+                      >
+                        <Text
+                          style={[
+                            commonStyles.label,
+                            { color: active ? "#00ced1" : "#9ca3af", letterSpacing: 0.8 },
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                {filteredPurchases.length > 0 ? (
+                  filteredPurchases.map((purchase) => {
+                    const statusInfo = statusMeta[purchase.status] ?? statusMeta.BOUGHT;
+                    const purchaserName =
+                      `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
+                    const canEditCollectionMethod =
+                      purchase.status === "BOUGHT" || purchase.status === "ACCEPTED";
+                    return (
+                      <View
+                        key={purchase.id}
+                        style={{
+                          backgroundColor: "#0f2323",
+                          borderWidth: 1,
+                          borderColor: purchase.status === "BOUGHT" ? "#fbbf24" : "#273a3a",
+                          borderRadius: 12,
+                          padding: 14,
+                          gap: 10,
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={[commonStyles.h4, { marginBottom: 3 }]} numberOfLines={1}>
+                              {purchase.reward?.name ?? "Unknown reward"}
+                            </Text>
+                            <Text style={[commonStyles.textSecondary]}>
+                              Group: {purchase.group?.name ?? "Unknown"}
+                            </Text>
+                          </View>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                              borderWidth: 1,
+                              borderColor: statusInfo.color,
+                              borderRadius: 999,
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                              backgroundColor: `${statusInfo.color}20`,
+                            }}
+                          >
+                            <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
+                            <Text
+                              style={[
+                                commonStyles.label,
+                                { color: statusInfo.color, letterSpacing: 0.6 },
+                              ]}
+                            >
+                              {statusInfo.label}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
+                            {purchase.quantity} pcs. • {purchase.totalCost} coins
+                          </Text>
+                          <Text style={[commonStyles.textSecondary]}>
+                            {new Date(purchase.purchasedAt).toLocaleDateString()} •{" "}
+                            {new Date(purchase.purchasedAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Text>
+                        </View>
+
+                        {purchaserName ? (
+                          <Text style={[commonStyles.textSecondary]}>
+                            Claimed by: {purchaserName}
+                          </Text>
+                        ) : null}
+
+                        {purchase.collectionMethod ? (
+                          <Text style={[commonStyles.textSecondary, { color: "#93c5fd" }]}>
+                            Pickup: {purchase.collectionMethod}
+                          </Text>
+                        ) : null}
+
+                        <TextInput
+                          style={{
+                            backgroundColor: canEditCollectionMethod ? "#0b1a1a" : "#0a1414",
+                            borderWidth: 1,
+                            borderColor: canEditCollectionMethod ? "#273a3a" : "#1f2a2a",
+                            borderRadius: 10,
+                            paddingHorizontal: 10,
+                            paddingVertical: 8,
+                            color: canEditCollectionMethod ? "#fff" : "#9ca3af",
+                          }}
+                          placeholder="Collection method (how to pick up)"
+                          placeholderTextColor="#6b7280"
+                          value={
+                            collectionMethodByPurchase[purchase.id] ??
+                            purchase.collectionMethod ??
+                            ""
+                          }
+                          editable={canEditCollectionMethod}
+                          onChangeText={(text: string) =>
+                            setCollectionMethodByPurchase((prev) => ({
+                              ...prev,
+                              [purchase.id]: text,
+                            }))
+                          }
+                        />
+
+                        {purchase.status === "BOUGHT" ? (
+                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                            <TouchableOpacity
+                              onPress={() => handleAcceptPurchase(purchase.id)}
+                              disabled={updatePurchaseStatus.isPending}
+                              style={{
+                                alignSelf: "flex-start",
+                                borderRadius: 999,
+                                borderWidth: 1,
+                                borderColor: "#22c55e",
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                backgroundColor: "rgba(34, 197, 94, 0.14)",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              {updatePurchaseStatus.isPending ? (
+                                <ActivityIndicator size="small" color="#22c55e" />
+                              ) : (
+                                <Ionicons
+                                  name="checkmark-circle-outline"
+                                  size={14}
+                                  color="#22c55e"
+                                />
+                              )}
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#22c55e", letterSpacing: 0.8 },
+                                ]}
+                              >
+                                Accept purchase
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => handleCancelPurchase(purchase.id)}
+                              disabled={updatePurchaseStatus.isPending}
+                              style={{
+                                alignSelf: "flex-start",
+                                borderRadius: 999,
+                                borderWidth: 1,
+                                borderColor: "#ef4444",
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                backgroundColor: "rgba(239, 68, 68, 0.14)",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#ef4444", letterSpacing: 0.8 },
+                                ]}
+                              >
+                                Cancel purchase
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : null}
+
+                        {purchase.status === "ACCEPTED" ? (
+                          <TouchableOpacity
+                            onPress={() => handleCancelPurchase(purchase.id)}
+                            disabled={updatePurchaseStatus.isPending}
+                            style={{
+                              alignSelf: "flex-start",
+                              borderRadius: 999,
+                              borderWidth: 1,
+                              borderColor: "#ef4444",
+                              paddingHorizontal: 12,
+                              paddingVertical: 7,
+                              backgroundColor: "rgba(239, 68, 68, 0.14)",
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
+                            <Text
+                              style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
+                            >
+                              Cancel purchase
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null}
+
+                        {purchase.status === "IN_DELIVERY" ? (
+                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                            <TouchableOpacity
+                              onPress={() => handleMarkDelivered(purchase.id)}
+                              disabled={updatePurchaseStatus.isPending}
+                              style={{
+                                alignSelf: "flex-start",
+                                borderRadius: 999,
+                                borderWidth: 1,
+                                borderColor: "#10b981",
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                backgroundColor: "rgba(16, 185, 129, 0.14)",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Ionicons
+                                name="checkmark-done-circle-outline"
+                                size={14}
+                                color="#10b981"
+                              />
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#10b981", letterSpacing: 0.8 },
+                                ]}
+                              >
+                                Reward delivered
+                              </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              onPress={() => handleCancelPurchase(purchase.id)}
+                              disabled={updatePurchaseStatus.isPending}
+                              style={{
+                                alignSelf: "flex-start",
+                                borderRadius: 999,
+                                borderWidth: 1,
+                                borderColor: "#ef4444",
+                                paddingHorizontal: 12,
+                                paddingVertical: 7,
+                                backgroundColor: "rgba(239, 68, 68, 0.14)",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#ef4444", letterSpacing: 0.8 },
+                                ]}
+                              >
+                                Cancel purchase
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })
+                ) : (
+                  <View
+                    style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}
+                  >
+                    <Ionicons name="cart-outline" size={44} color="#6b7280" />
+                    <Text
+                      style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}
+                    >
+                      No purchases for this filter
+                    </Text>
+                  </View>
+                )}
+
+                {isFetchingMorePurchases ? (
+                  <View
+                    style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
+                  >
+                    <ActivityIndicator size="small" color="#00ced1" />
+                    <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                      Loading more purchases...
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            )
+          ) : (
             <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
               <Ionicons name="information-circle-outline" size={44} color="#6b7280" />
               <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
                 Select a trip in admin panel to review purchases.
               </Text>
-            </View>
-          ) : purchasesError ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
-              <Ionicons name="warning" size={48} color="#ef4444" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
-                Failed to load purchases
-              </Text>
-              <Text
-                style={[
-                  commonStyles.textSecondary,
-                  { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" },
-                ]}
-              >
-                {purchasesError instanceof Error ? purchasesError.message : "Try again"}
-              </Text>
-            </View>
-          ) : purchasesLoading ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
-              <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
-                Loading purchases...
-              </Text>
-            </View>
-          ) : (
-            <View style={{ gap: 12, paddingBottom: 20 }}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8, paddingBottom: 8 }}
-              >
-                {statusOptions.map((option) => {
-                  const active = purchaseStatusFilter === option.value;
-                  return (
-                    <TouchableOpacity
-                      key={option.value}
-                      onPress={() => setPurchaseStatusFilter(option.value)}
-                      style={{
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: active ? "#00ced1" : "#273a3a",
-                        backgroundColor: active ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
-                        paddingHorizontal: 12,
-                        paddingVertical: 7,
-                      }}
-                    >
-                      <Text
-                        style={[
-                          commonStyles.label,
-                          { color: active ? "#00ced1" : "#9ca3af", letterSpacing: 0.8 },
-                        ]}
-                      >
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              {filteredPurchases.length > 0 ? (
-                filteredPurchases.map((purchase) => {
-                  const statusInfo = statusMeta[purchase.status] ?? statusMeta.BOUGHT;
-                  const purchaserName =
-                    `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
-                  const canEditCollectionMethod =
-                    purchase.status === "BOUGHT" || purchase.status === "ACCEPTED";
-                  return (
-                    <View
-                      key={purchase.id}
-                      style={{
-                        backgroundColor: "#0f2323",
-                        borderWidth: 1,
-                        borderColor: purchase.status === "BOUGHT" ? "#fbbf24" : "#273a3a",
-                        borderRadius: 12,
-                        padding: 14,
-                        gap: 10,
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text style={[commonStyles.h4, { marginBottom: 3 }]} numberOfLines={1}>
-                            {purchase.reward?.name ?? "Unknown reward"}
-                          </Text>
-                          <Text style={[commonStyles.textSecondary]}>
-                            Group: {purchase.group?.name ?? "Unknown"}
-                          </Text>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 4,
-                            borderWidth: 1,
-                            borderColor: statusInfo.color,
-                            borderRadius: 999,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            backgroundColor: `${statusInfo.color}20`,
-                          }}
-                        >
-                          <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                          <Text
-                            style={[
-                              commonStyles.label,
-                              { color: statusInfo.color, letterSpacing: 0.6 },
-                            ]}
-                          >
-                            {statusInfo.label}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
-                          {purchase.quantity} pcs. • {purchase.totalCost} coins
-                        </Text>
-                        <Text style={[commonStyles.textSecondary]}>
-                          {new Date(purchase.purchasedAt).toLocaleDateString()} •{" "}
-                          {new Date(purchase.purchasedAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </Text>
-                      </View>
-
-                      {purchaserName ? (
-                        <Text style={[commonStyles.textSecondary]}>
-                          Claimed by: {purchaserName}
-                        </Text>
-                      ) : null}
-
-                      {purchase.collectionMethod ? (
-                        <Text style={[commonStyles.textSecondary, { color: "#93c5fd" }]}>
-                          Pickup: {purchase.collectionMethod}
-                        </Text>
-                      ) : null}
-
-                      <TextInput
-                        style={{
-                          backgroundColor: canEditCollectionMethod ? "#0b1a1a" : "#0a1414",
-                          borderWidth: 1,
-                          borderColor: canEditCollectionMethod ? "#273a3a" : "#1f2a2a",
-                          borderRadius: 10,
-                          paddingHorizontal: 10,
-                          paddingVertical: 8,
-                          color: canEditCollectionMethod ? "#fff" : "#9ca3af",
-                        }}
-                        placeholder="Collection method (how to pick up)"
-                        placeholderTextColor="#6b7280"
-                        value={
-                          collectionMethodByPurchase[purchase.id] ?? purchase.collectionMethod ?? ""
-                        }
-                        editable={canEditCollectionMethod}
-                        onChangeText={(text: string) =>
-                          setCollectionMethodByPurchase((prev) => ({
-                            ...prev,
-                            [purchase.id]: text,
-                          }))
-                        }
-                      />
-
-                      {purchase.status === "BOUGHT" ? (
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                          <TouchableOpacity
-                            onPress={() => handleAcceptPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
-                            style={{
-                              alignSelf: "flex-start",
-                              borderRadius: 999,
-                              borderWidth: 1,
-                              borderColor: "#22c55e",
-                              paddingHorizontal: 12,
-                              paddingVertical: 7,
-                              backgroundColor: "rgba(34, 197, 94, 0.14)",
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            {updatePurchaseStatus.isPending ? (
-                              <ActivityIndicator size="small" color="#22c55e" />
-                            ) : (
-                              <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
-                            )}
-                            <Text
-                              style={[commonStyles.label, { color: "#22c55e", letterSpacing: 0.8 }]}
-                            >
-                              Accept purchase
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => handleCancelPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
-                            style={{
-                              alignSelf: "flex-start",
-                              borderRadius: 999,
-                              borderWidth: 1,
-                              borderColor: "#ef4444",
-                              paddingHorizontal: 12,
-                              paddingVertical: 7,
-                              backgroundColor: "rgba(239, 68, 68, 0.14)",
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text
-                              style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
-                            >
-                              Cancel purchase
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ) : null}
-
-                      {purchase.status === "ACCEPTED" ? (
-                        <TouchableOpacity
-                          onPress={() => handleCancelPurchase(purchase.id)}
-                          disabled={updatePurchaseStatus.isPending}
-                          style={{
-                            alignSelf: "flex-start",
-                            borderRadius: 999,
-                            borderWidth: 1,
-                            borderColor: "#ef4444",
-                            paddingHorizontal: 12,
-                            paddingVertical: 7,
-                            backgroundColor: "rgba(239, 68, 68, 0.14)",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                          <Text
-                            style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
-                          >
-                            Cancel purchase
-                          </Text>
-                        </TouchableOpacity>
-                      ) : null}
-
-                      {purchase.status === "IN_DELIVERY" ? (
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                          <TouchableOpacity
-                            onPress={() => handleMarkDelivered(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
-                            style={{
-                              alignSelf: "flex-start",
-                              borderRadius: 999,
-                              borderWidth: 1,
-                              borderColor: "#10b981",
-                              paddingHorizontal: 12,
-                              paddingVertical: 7,
-                              backgroundColor: "rgba(16, 185, 129, 0.14)",
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <Ionicons
-                              name="checkmark-done-circle-outline"
-                              size={14}
-                              color="#10b981"
-                            />
-                            <Text
-                              style={[commonStyles.label, { color: "#10b981", letterSpacing: 0.8 }]}
-                            >
-                              Reward delivered
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            onPress={() => handleCancelPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
-                            style={{
-                              alignSelf: "flex-start",
-                              borderRadius: 999,
-                              borderWidth: 1,
-                              borderColor: "#ef4444",
-                              paddingHorizontal: 12,
-                              paddingVertical: 7,
-                              backgroundColor: "rgba(239, 68, 68, 0.14)",
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text
-                              style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}
-                            >
-                              Cancel purchase
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ) : null}
-                    </View>
-                  );
-                })
-              ) : (
-                <View
-                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}
-                >
-                  <Ionicons name="cart-outline" size={44} color="#6b7280" />
-                  <Text
-                    style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}
-                  >
-                    No purchases for this filter
-                  </Text>
-                </View>
-              )}
-
-              {isFetchingMorePurchases ? (
-                <View
-                  style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
-                >
-                  <ActivityIndicator size="small" color="#00ced1" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
-                    Loading more purchases...
-                  </Text>
-                </View>
-              ) : null}
             </View>
           )}
         </ScrollView>

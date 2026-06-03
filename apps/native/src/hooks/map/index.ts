@@ -1,5 +1,13 @@
-export * from "./useMapActions";
-export * from "./useMapLocationStream";
-export * from "./useMapSelectedUser";
-export * from "./useMapSharing";
-export * from "./useMapUsers";
+export { useMapActions } from "./useMapActions";
+export {
+  buildLocationUpdateData,
+  buildUserDataFromLocationUser,
+  removeUserFromLocations,
+  isUnauthorizedError,
+  isValidLocationEvent,
+  processLocationStreamEvent,
+  useMapLocationStream,
+} from "./useMapLocationStream";
+export { useMapSelectedUser } from "./useMapSelectedUser";
+export { extractSharingUserIds, useMapSharing } from "./useMapSharing";
+export { useMapUsers } from "./useMapUsers";

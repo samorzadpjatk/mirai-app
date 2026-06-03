@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
 import { ORPCError } from "@orpc/server";
-import { ensureChallengeVoting } from "../utils";
+import { describe, expect, it } from "vitest";
 import type { ChallengeForVoting } from "../types";
+import { ensureChallengeVoting } from "../utils";
 
 describe("challengeVote/utils pure functions", () => {
   describe("ensureChallengeVoting", () => {

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { sponsors, tripSponsors, trips } from "@mirai-app/db";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { eq, sql } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { addToTrip, create, deleteSponsor, removeFromTrip, update } from "../sponsor/mutations";
 import { getAll, getById, getByTripId } from "../sponsor/queries";
-import { create, update, deleteSponsor, addToTrip, removeFromTrip } from "../sponsor/mutations";
-import { sponsors, tripSponsors, trips } from "@mirai-app/db";
 
 describe("sponsor router — PGLite integration", () => {
   let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;

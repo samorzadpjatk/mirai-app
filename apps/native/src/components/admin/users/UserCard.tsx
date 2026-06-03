@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { formatDisplayName } from "@mirai-app/shared";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { User } from "~/hooks/admin/useAdminUsers";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface UserCardProps {
   user: User;

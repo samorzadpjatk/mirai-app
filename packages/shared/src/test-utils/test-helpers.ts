@@ -1,4 +1,4 @@
-import { vi, type Mock } from "vitest";
+import { type Mock, vi } from "vitest";
 
 /**
  * No-op function for use as a placeholder callback.

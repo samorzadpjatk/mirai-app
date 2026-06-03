@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import type { TripListItem } from "~/components/trips/list/types";
 import {
   getCachedTripById,
   setCachedTripById,
   upsertCachedTripListItem,
 } from "~/services/storage/selectedTripStorage";
-import type { TripListItem } from "~/components/trips/list/types";
 import { isTripPast } from "~/utils/trip";
 
 export function useTripDetails(tripId?: string | null) {

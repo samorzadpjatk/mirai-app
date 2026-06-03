@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import { useTripBackgroundImageDownload } from "../../trips/useTripBackgroundImageDownload";
 

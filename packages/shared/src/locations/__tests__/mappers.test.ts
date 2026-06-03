@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { toExpoLocation } from "../mappers";
 import type { Location as DbLocation } from "@mirai-app/db";
+import { describe, expect, it } from "vitest";
+import { toExpoLocation } from "../mappers";
 
 describe("toExpoLocation", () => {
   it("should convert a full DbLocation to ExpoLocationObject", () => {

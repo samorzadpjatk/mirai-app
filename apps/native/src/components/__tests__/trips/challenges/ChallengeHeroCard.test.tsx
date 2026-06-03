@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Alert } from "react-native";
+import { Alert, View } from "react-native";
 import type * as ReactNative from "react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeHeroCard } from "../../../trips/challenges/ChallengeHeroCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 interface ImageBackgroundMockProps {
   children?: React.ReactNode;

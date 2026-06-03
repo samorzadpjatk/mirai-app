@@ -1,5 +1,5 @@
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { JudgementContent } from "../../judgement/JudgementContent";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("~/stores/judgement", () => ({
   useJudgement: jest.fn(),

@@ -1,8 +1,8 @@
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useQuery } from "@tanstack/react-query";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface SubmissionImageCardProps {
   submission: VotingSubmission;

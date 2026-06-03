@@ -1,12 +1,12 @@
 import { z } from "zod";
 import {
-  createORPCRouter,
-  protectedProcedure,
-  moderatorProcedure,
   adminProcedure,
+  createORPCRouter,
+  moderatorProcedure,
+  protectedProcedure,
 } from "../../trpc";
-import { getMyByChallenge, getByChallenge, getJudgedStaffProgress } from "./queries";
-import { forceEndJudgedStaffVoting, submitVotes, submitVote } from "./mutations";
+import { forceEndJudgedStaffVoting, submitVote, submitVotes } from "./mutations";
+import { getByChallenge, getJudgedStaffProgress, getMyByChallenge } from "./queries";
 
 const handleGetMyByChallenge = async ({
   context,

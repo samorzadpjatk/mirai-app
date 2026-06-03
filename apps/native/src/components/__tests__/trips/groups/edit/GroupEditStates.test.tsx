@@ -1,9 +1,9 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { GroupEditLoadingState } from "../../../../trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "../../../../trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "../../../../trips/groups/edit/GroupEditNotFoundState";
 import { GroupEditPermissionState } from "../../../../trips/groups/edit/GroupEditPermissionState";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupEditLoadingState", () => {
   it("renders loading indicator", () => {

@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Alert } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { fireEvent } from "@testing-library/react-native";
+import React from "react";
+import { Alert, View } from "react-native";
 import { CardStack } from "../../judgement/CardStack";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 // Mock variables for jest.mock factories (must be prefixed with "mock")
 const mockReact = React;

@@ -1,15 +1,15 @@
-import { executeWithRetry } from "../utils/resilience";
-import { logger } from "../utils/logger";
-import { type DB } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
+import { challenges, notificationPushes, tripParticipants } from "@mirai-app/db";
+import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared";
+import { and, count, eq } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
+import { logger } from "../utils/logger";
 import {
+  type RankingTemplateValues,
   applyRankingTemplate,
   containsRankingTemplate,
-  type RankingTemplateValues,
 } from "../utils/notificationTemplates";
-import { tripParticipants, challenges, notificationPushes } from "@mirai-app/db";
-import { eq, and, count } from "drizzle-orm";
-import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared";
+import { executeWithRetry } from "../utils/resilience";
 
 export interface NotificationData {
   title: string;
@@ -174,7 +174,7 @@ export class NotificationService {
     amount: number,
     reason: string | undefined,
   ): NotificationData {
-    let body;
+    let body: string;
     if (reason) {
       body = `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
     } else {
@@ -191,7 +191,7 @@ export class NotificationService {
     amount: number,
     reason: string | undefined,
   ): NotificationData {
-    let body;
+    let body: string;
     if (reason) {
       body = `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
     } else {
@@ -214,7 +214,7 @@ export class NotificationService {
 
   static createRankingUpdateNotification(groupName: string, newPosition: number): NotificationData {
     return {
-      title: `🏆 Ranking update!`,
+      title: "🏆 Ranking update!",
       body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
       url: "/ranking",
     };

@@ -1,6 +1,6 @@
-import { eq, and, or, lt } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
 import { activityFeeds } from "@mirai-app/db";
+import { and, eq, lt, or } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 /**
  * Builds a Drizzle where expression for activity feed queries.

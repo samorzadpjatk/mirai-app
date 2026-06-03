@@ -1,8 +1,7 @@
-import { vi } from "vitest";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { users, trips, groups, tripParticipants } from "@mirai-app/db";
+import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import type { TRPCContext } from "./api/trpc";
+import type { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { vi } from "vitest";
 
 export type MockSupabase = {
   auth: {
@@ -27,7 +26,7 @@ export type MockSupabase = {
 
 export function createMockSupabase(
   emails: Record<string, string> = {},
-  options: { withAdmin?: boolean; withStorage?: boolean } = {},
+  _options: { withAdmin?: boolean; withStorage?: boolean } = {},
 ): MockSupabase {
   const userMap: Record<
     string,

@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  validateSubmissionPayload,
-  shouldAutoApproveSubmission,
-  assertSubmissionWithinTargetLocation,
   LOCATION_SUBMISSION_RADIUS_METERS,
+  assertSubmissionWithinTargetLocation,
+  shouldAutoApproveSubmission,
+  validateSubmissionPayload,
 } from "../validators";
 
 const createMockChallenge = (overrides: Record<string, unknown> = {}) => ({

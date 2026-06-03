@@ -1,7 +1,7 @@
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { AssignedGroupsCard } from "../../../trips/challenges/AssignedGroupsCard";
 import type { AssignedGroup } from "../../../trips/challenges/AssignedGroupsCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("AssignedGroupsCard", () => {
   const mockGroups: AssignedGroup[] = [

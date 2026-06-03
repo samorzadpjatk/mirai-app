@@ -1,11 +1,11 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
+  buildFocusStateFromUser,
   getNextMapTheme,
   isValidCoordinate,
-  shouldCollapseList,
-  buildFocusStateFromUser,
-  removeUserFromSharingUserIds,
   removeUserFromSharingSettings,
+  removeUserFromSharingUserIds,
+  shouldCollapseList,
 } from "~/stores/map/mapOverlayStore";
 
 describe("getNextMapTheme", () => {

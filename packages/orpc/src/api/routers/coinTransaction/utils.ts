@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
 import { groups } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { and, eq } from "drizzle-orm";
 
 /**
  * Fetches non-deleted group IDs for a given trip.

@@ -1,31 +1,31 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useLoginForm } from "@mirai-app/auth/client";
+import { useAuth } from "@mirai-app/auth/client";
+import { getORPCClient } from "@mirai-app/orpc/client";
+import { useSupabaseClient } from "@mirai-app/supabase/react";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Dimensions,
+  View,
 } from "react-native";
-import { useLoginForm } from "@mirai-app/auth/client";
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import Logo from "../../components/Logo";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@mirai-app/auth/client";
-import { useState } from "react";
-import { useSupabaseClient } from "@mirai-app/supabase/react";
-import { getORPCClient } from "@mirai-app/orpc/client";
-import { PRIVACY_POLICY_PUBLIC_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
-import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { colors } from "~/styles";
+import { PRIVACY_POLICY_PUBLIC_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import { useFileDownload } from "~/hooks/files";
+import { colors } from "~/styles";
+import Logo from "../../components/Logo";
 
 const PRIVACY_POLICY_STORAGE_PATH = "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
 
@@ -84,8 +84,7 @@ export default function LoginScreen() {
   const handleBannedLogin = async (reason: string | null, bannedUntil: string | null) => {
     await signOut();
     const formattedDate = bannedUntil ? new Date(bannedUntil).toLocaleString() : "unknown date";
-    const message =
-      `Your account is banned until ${formattedDate}.` + (reason ? ` Reason: ${reason}.` : "");
+    const message = `Your account is banned until ${formattedDate}.${reason ? ` Reason: ${reason}.` : ""}`;
     if (isGhostLogin) {
       setPasswordError(message);
     } else {
@@ -153,9 +152,7 @@ export default function LoginScreen() {
         const formattedDate = status.bannedUntil
           ? new Date(status.bannedUntil).toLocaleString()
           : "unknown date";
-        const message =
-          `Your account is banned until ${formattedDate}.` +
-          (status.reason ? ` Reason: ${status.reason}.` : "");
+        const message = `Your account is banned until ${formattedDate}.${status.reason ? ` Reason: ${status.reason}.` : ""}`;
         setPrecheckError(message);
         return;
       }
@@ -334,7 +331,7 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
-                    secureTextEntry
+                    secureTextEntry={true}
                     editable={!isBusy}
                   />
                 </View>

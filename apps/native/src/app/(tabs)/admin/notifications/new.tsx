@@ -1,3 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,16 +14,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { AdminHeader } from "~/components/admin/AdminHeader";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { AdminHeader } from "~/components/admin/AdminHeader";
+import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import {
   DateTimePickerModal,
   FilterChip,
@@ -25,6 +24,7 @@ import {
   FormField,
   ThemedTextInput,
 } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
@@ -369,15 +369,15 @@ export default function AdminCreateNotificationScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Message</Text>
-          <FormField label="Title" required>
+          <FormField label="Title" required={true}>
             <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
           </FormField>
-          <FormField label="Description" required>
+          <FormField label="Description" required={true}>
             <ThemedTextInput
               value={body}
               onChangeText={setBody}
               placeholder="Description"
-              multiline
+              multiline={true}
               numberOfLines={4}
               style={styles.textArea}
             />

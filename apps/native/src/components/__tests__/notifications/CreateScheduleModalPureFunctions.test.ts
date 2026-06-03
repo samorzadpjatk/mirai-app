@@ -1,7 +1,7 @@
 import {
-  isScheduleSubmitDisabled,
-  canSubmitSchedule,
   buildScheduleInput,
+  canSubmitSchedule,
+  isScheduleSubmitDisabled,
 } from "../../notifications/CreateScheduleModal";
 
 describe("CreateScheduleModal pure functions", () => {

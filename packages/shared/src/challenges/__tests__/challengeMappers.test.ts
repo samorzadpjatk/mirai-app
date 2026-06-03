@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { mapChallengeToListItem, countCompletedChallenges } from "../challengeMappers";
+import { describe, expect, it } from "vitest";
+import { countCompletedChallenges, mapChallengeToListItem } from "../challengeMappers";
 
 describe("mapChallengeToListItem", () => {
   it("maps basic challenge", () => {

@@ -1,7 +1,7 @@
-import { TextInput } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
+import { TextInput } from "react-native";
 import { GroupFormFields } from "../../../../trips/groups/create/GroupFormFields";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupFormFields", () => {
   it("should render group name label", () => {

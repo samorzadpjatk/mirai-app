@@ -1,8 +1,8 @@
+import { screen } from "@testing-library/react-native";
 import React from "react";
 import { Text } from "react-native";
-import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripEndedBanner } from "../../trips/TripEndedBanner";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");

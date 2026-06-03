@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors } from "~/styles";
 
 interface ChallengeItem {
@@ -63,7 +63,6 @@ export function getSubmissionTypeMeta(submissionType: ChallengeItem["submissionT
       return { label: "GPS", icon: "location-outline" as const };
     case "QR_CODE":
       return { label: "QR", icon: "qr-code-outline" as const };
-    case "IMAGE":
     default:
       return { label: "Photo", icon: "image-outline" as const };
   }
@@ -77,7 +76,6 @@ export function getScoringMeta(scoringCategory: ChallengeItem["scoringCategory"]
       return { label: "Unlimited", icon: "infinite-outline" as const };
     case "PEER_VOTING":
       return { label: "Voting", icon: "people-outline" as const };
-    case "JUDGED_STAFF":
     default:
       return { label: "Staff", icon: "shield-checkmark-outline" as const };
   }

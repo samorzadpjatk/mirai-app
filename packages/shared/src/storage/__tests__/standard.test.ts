@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   STANDARD_BUCKETS,
-  normalizeStoragePath,
-  normalizeBucketName,
   createStoragePath,
+  normalizeBucketName,
+  normalizeStoragePath,
   parseStoragePath,
 } from "../../storage/standard";
 

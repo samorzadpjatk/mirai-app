@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createORPCRouter, protectedProcedure, moderatorProcedure } from "../../trpc";
+import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../trpc";
 import { createReport } from "./mutations";
 import { fetchReportsBySubmission } from "./queries";
 

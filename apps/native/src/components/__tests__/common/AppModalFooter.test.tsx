@@ -1,7 +1,7 @@
-import { Text } from "react-native";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { AppModalFooter } from "../../common/ui/AppModalFooter";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => undefined;
 

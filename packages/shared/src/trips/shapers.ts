@@ -1,4 +1,4 @@
-import { filterActiveSponsors, type TripSponsorEntry } from "./filters";
+import { type TripSponsorEntry, filterActiveSponsors } from "./filters";
 
 export interface TripGroupInput {
   id: string;

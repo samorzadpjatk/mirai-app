@@ -1,16 +1,16 @@
 import {
-  pgTable,
-  varchar,
-  timestamp,
-  real,
   boolean,
   index,
-  uniqueIndex,
+  pgTable,
   primaryKey,
+  real,
+  timestamp,
+  uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
-import { users } from "./users";
 import { locationSharingRequestStatusEnum } from "./enums";
+import { users } from "./users";
 
 export const locations = pgTable("locations", {
   id: varchar("id", { length: 36 })

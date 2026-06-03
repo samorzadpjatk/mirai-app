@@ -1,16 +1,16 @@
-import { eq, and, inArray, count } from "drizzle-orm";
-import { ORPCError } from "@orpc/server";
 import { groups, tripParticipants } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
-import { toUserWithEmail, batchEmailLookup, resolveGroupImage } from "./utils";
 import {
-  canViewJoinRequests,
-  calculatePagination,
-  mapApprovedSubmissions,
   buildParticipantCountMap,
+  calculatePagination,
+  canViewJoinRequests,
+  mapApprovedSubmissions,
 } from "@mirai-app/shared/groups";
+import type { SupabaseClient } from "@mirai-app/supabase";
+import { ORPCError } from "@orpc/server";
+import { and, count, eq, inArray } from "drizzle-orm";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { batchEmailLookup, resolveGroupImage, toUserWithEmail } from "./utils";
 
 export type GroupContext = {
   db: DB;

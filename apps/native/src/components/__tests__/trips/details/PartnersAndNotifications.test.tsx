@@ -1,7 +1,7 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import { PartnersSection, type Partner } from "../../../trips/details/PartnersSection";
 import { NotificationsHeader } from "../../../notifications/NotificationsHeader";
+import { type Partner, PartnersSection } from "../../../trips/details/PartnersSection";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("~/hooks/partners/usePartnerImageDownload", () => ({
   usePartnerImageDownload: jest.fn(() => ({

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,9 +12,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useFileDownload } from "~/hooks/files";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFileDownload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { formatDate } from "~/utils/format";
 
@@ -192,12 +192,7 @@ export function ChallengeCommunitySubmissionsCard({
         </Text>
       </View>
 
-      {!hasAnySubmissions ? (
-        <View style={styles.emptyGallery}>
-          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
-          <Text style={styles.emptyGalleryText}>No photos yet. Submit first and set the pace.</Text>
-        </View>
-      ) : (
+      {hasAnySubmissions ? (
         <View style={styles.content}>
           {showPodium && (
             <View style={styles.section}>
@@ -244,6 +239,11 @@ export function ChallengeCommunitySubmissionsCard({
             <Ionicons name="arrow-forward-circle-outline" size={16} color={colors.primary} />
           </TouchableOpacity>
         </View>
+      ) : (
+        <View style={styles.emptyGallery}>
+          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
+          <Text style={styles.emptyGalleryText}>No photos yet. Submit first and set the pace.</Text>
+        </View>
       )}
 
       <Modal
@@ -272,8 +272,8 @@ export function ChallengeCommunitySubmissionsCard({
             data={gallerySubmissions}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
-            horizontal
-            pagingEnabled
+            horizontal={true}
+            pagingEnabled={true}
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={handleGalleryScrollEnd}
             getItemLayout={(_, index) => ({

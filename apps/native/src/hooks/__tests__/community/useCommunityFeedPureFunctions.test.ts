@@ -1,7 +1,7 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import {
-  buildCommunityFeedQueryKey,
   buildCommunityFeedActivities,
+  buildCommunityFeedQueryKey,
   buildHandleToggleHeart,
 } from "../../community/useCommunityFeed";
 import type { FeedPageData } from "../../community/useCommunityFeed";

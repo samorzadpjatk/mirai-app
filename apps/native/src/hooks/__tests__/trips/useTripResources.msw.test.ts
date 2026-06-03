@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useTripResources } from "../../trips/useTripResources";
+import { HttpResponse, createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, HttpResponse } from "../../../test-utils/msw/server";
+import { useTripResources } from "../../trips/useTripResources";
 
 const TRIP_RESOURCE_TYPES = {
   HERO_IMAGE: "hero_image",

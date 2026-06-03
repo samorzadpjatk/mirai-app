@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { calculateBanDuration, buildBanMetadata } from "../banUtils";
+import { describe, expect, it } from "vitest";
+import { buildBanMetadata, calculateBanDuration } from "../banUtils";
 
 describe("calculateBanDuration", () => {
   it("returns bannedUntil and banDuration for a valid future timestamp", () => {

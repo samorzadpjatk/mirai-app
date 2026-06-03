@@ -1,10 +1,10 @@
 import {
+  buildGalleryIndexBySubmissionId,
+  buildGallerySubmissions,
+  calculatePreviewRegularLimit,
   filterImageSubmissions,
   getPodiumSubmissions,
   getRegularSubmissions,
-  calculatePreviewRegularLimit,
-  buildGallerySubmissions,
-  buildGalleryIndexBySubmissionId,
 } from "../../../trips/challenges/ChallengeCommunitySubmissionsCard";
 
 describe("ChallengeCommunitySubmissionsCard pure functions", () => {

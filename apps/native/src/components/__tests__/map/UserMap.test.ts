@@ -1,5 +1,5 @@
-import { describe, it, expect } from "@jest/globals";
-import { getActivityOpacity, buildFilteredUsers } from "~/components/map/UserMap";
+import { describe, expect, it } from "@jest/globals";
+import { buildFilteredUsers, getActivityOpacity } from "~/components/map/UserMap";
 import type { UserLocation } from "~/components/map/UserMap";
 
 describe("getActivityOpacity", () => {

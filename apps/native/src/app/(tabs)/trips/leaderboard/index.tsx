@@ -1,14 +1,14 @@
-import { useMemo } from "react";
-import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { colors, spacing } from "../../../../styles";
+import { useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useMemo } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
+import { colors, spacing } from "../../../../styles";
 
 export default function LeaderboardScreen() {
   const params = useLocalSearchParams();

@@ -1,7 +1,7 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import { ProfileActionsSection } from "../../profile/ProfileActionsSection";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockSignOut = jest.fn(() => Promise.resolve());
 const mockReplace = jest.fn();

@@ -1,6 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography, shadows } from "~/styles";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
 
 interface GroupDetailsHeroProps {
   name: string;

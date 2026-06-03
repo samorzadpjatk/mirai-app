@@ -1,5 +1,5 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { useExpoUpdates } from "../useExpoUpdates";
 
 // Mock expo-updates with factory that doesn't reference outer scope
@@ -25,7 +25,6 @@ interface MockedExpoUpdates {
   isEnabled: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 const mockedUpdates = jest.requireMock("expo-updates") as MockedExpoUpdates;
 const mockCheckForUpdateAsync = mockedUpdates.checkForUpdateAsync;
 const mockFetchUpdateAsync = mockedUpdates.fetchUpdateAsync;

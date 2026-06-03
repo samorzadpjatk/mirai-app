@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Image,
@@ -8,12 +9,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { ThemedTextInput } from "~/components/common/ui/ThemedTextInput";
-import { FormField } from "~/components/common/ui/FormField";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { type useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { FormField } from "~/components/common/ui/FormField";
+import { ThemedTextInput } from "~/components/common/ui/ThemedTextInput";
+import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export function formatLocationText(
   targetLocation: { latitude: number; longitude: number } | null,
@@ -89,7 +89,7 @@ export function ChallengeFormFields({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basics</Text>
 
-        <FormField label="Challenge Title" required>
+        <FormField label="Challenge Title" required={true}>
           <ThemedTextInput
             placeholder="e.g. Campus Marathon"
             value={form.title}
@@ -97,13 +97,13 @@ export function ChallengeFormFields({
           />
         </FormField>
 
-        <FormField label="Description" required>
+        <FormField label="Description" required={true}>
           <ThemedTextInput
             style={styles.textArea}
             placeholder="Describe the goal of this challenge..."
             value={form.description}
             onChangeText={(value) => updateForm("description", value)}
-            multiline
+            multiline={true}
           />
         </FormField>
 

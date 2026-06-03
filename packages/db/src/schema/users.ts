@@ -1,4 +1,4 @@
-import { pgTable, varchar, boolean, timestamp, text } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
 import { roleEnum } from "./enums";
 

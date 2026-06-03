@@ -1,10 +1,10 @@
-import { useMemo, useEffect } from "react";
+import type { RouterClient } from "@orpc/server";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { RouterUtils } from "@orpc/tanstack-query";
-import type { RouterClient } from "@orpc/server";
+import { useEffect, useMemo } from "react";
 import type { AppRouter } from "../api/root";
-import { getORPCClient } from "./vanilia";
 import { logger } from "../utils/logger";
+import { getORPCClient } from "./vanilia";
 
 export let orpc: RouterUtils<RouterClient<AppRouter>>;
 

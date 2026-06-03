@@ -1,16 +1,16 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
-  View,
-  Text,
-  ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
   Alert,
   RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { commonStyles } from "~/styles/commonStyles";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
+import { commonStyles } from "~/styles/commonStyles";
 
 interface Props {
   tripId: string;

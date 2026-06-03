@@ -1,17 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  startOfDay,
-  endOfDay,
-  addDays,
-  inferRecurringDaysFromWindow,
-  resolveRecurringDays,
-  resolveRecurringTemplateWindow,
-  inferPeerVotingDurationHours,
-  resolvePeerVotingTemplateWindow,
-  HOUR_MS,
   DAY_MS,
+  HOUR_MS,
   MAX_PEER_VOTING_DURATION_HOURS,
   MAX_RECURRING_DAYS,
+  addDays,
+  endOfDay,
+  inferPeerVotingDurationHours,
+  inferRecurringDaysFromWindow,
+  resolvePeerVotingTemplateWindow,
+  resolveRecurringDays,
+  resolveRecurringTemplateWindow,
+  startOfDay,
 } from "../dateUtils";
 
 describe("startOfDay", () => {

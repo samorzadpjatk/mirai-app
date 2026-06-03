@@ -1,11 +1,11 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
+  applyReactionSummaryToFeed,
   buildEmptyFeedPageData,
   getNextCommunityFeedPageParam,
   updateActivityReactionsInPages,
-  applyReactionSummaryToFeed,
 } from "../../community/useCommunityFeed";
-import type { FeedPageData, FeedCursor } from "../../community/useCommunityFeed";
+import type { FeedCursor, FeedPageData } from "../../community/useCommunityFeed";
 
 describe("buildEmptyFeedPageData", () => {
   it("should return an empty feed page with default pagination", () => {

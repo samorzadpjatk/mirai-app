@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FlatList,
@@ -9,11 +10,10 @@ import {
   useWindowDimensions,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import SubmissionCircle from "./SubmissionCircle";
 import FullscreenSubmissionSlide, { formatDateTime } from "./FullscreenSubmissionSlide";
+import SubmissionCircle from "./SubmissionCircle";
 
 export { formatDateTime };
 
@@ -30,8 +30,8 @@ interface GroupApprovedChallengesProps {
 }
 
 import {
-  calculateNextIndexFromScroll,
   calculateBoundedIndex,
+  calculateNextIndexFromScroll,
   canOpenFullscreen,
   needsFullscreenClose,
 } from "./groupApprovedChallengesUtils";
@@ -143,8 +143,8 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
             data={submissions}
             keyExtractor={(item) => item.submissionId}
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
-            horizontal
-            pagingEnabled
+            horizontal={true}
+            pagingEnabled={true}
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={handleScrollEnd}
             getItemLayout={(_, index) => ({

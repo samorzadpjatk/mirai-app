@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import { addDays, endOfDay, startOfDay } from "../dateUtils";
 import { prepareChallengeInsert } from "../prepareInsert";
-import { startOfDay, endOfDay, addDays } from "../dateUtils";
 
 describe("prepareChallengeInsert", () => {
   const now = new Date("2024-06-15T12:00:00Z");

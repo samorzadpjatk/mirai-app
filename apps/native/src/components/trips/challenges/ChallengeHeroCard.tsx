@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { ImageBackground, StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { getIconForChallenge, getColorForPoints } from "./challengeStyles";
+import { getColorForPoints, getIconForChallenge } from "./challengeStyles";
 
 interface ChallengeHeroCardProps {
   name: string;
@@ -89,22 +89,22 @@ export function ChallengeHeroCard({
       place: "1st",
       points: firstPlacePoints ?? 0,
       iconColor: colors.yellow400,
-      borderColor: colors.yellow400 + "99",
-      backgroundColor: colors.yellow400 + "2E",
+      borderColor: `${colors.yellow400}99`,
+      backgroundColor: `${colors.yellow400}2E`,
     },
     {
       place: "2nd",
       points: secondPlacePoints ?? 0,
       iconColor: colors.gray400,
-      borderColor: colors.gray400 + "99",
-      backgroundColor: colors.gray400 + "29",
+      borderColor: `${colors.gray400}99`,
+      backgroundColor: `${colors.gray400}29`,
     },
     {
       place: "3rd",
       points: thirdPlacePoints ?? 0,
       iconColor: colors.orange400,
-      borderColor: colors.orange400 + "99",
-      backgroundColor: colors.orange400 + "29",
+      borderColor: `${colors.orange400}99`,
+      backgroundColor: `${colors.orange400}29`,
     },
   ];
   const heroFallbackColor = `${iconColor}30`;

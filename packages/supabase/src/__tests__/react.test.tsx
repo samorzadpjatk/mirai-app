@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, renderHook } from "@testing-library/react";
-import { SupabaseProvider, useSupabaseClient } from "../react";
-import type { ReactNode } from "react";
-import { createMockSupabaseClient } from "./utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { render, renderHook } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SupabaseProvider, useSupabaseClient } from "../react";
+import { createMockSupabaseClient } from "./utils";
 
 describe("SupabaseProvider", () => {
   const mockClient = createMockSupabaseClient() as SupabaseClient;

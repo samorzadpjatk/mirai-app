@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { waitFor, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { act, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
+import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import {
+  useCreateGroup,
+  useGroupDetails,
+  useGroupEditor,
   useGroups,
   useMyGroup,
-  useGroupDetails,
-  useCreateGroup,
-  useGroupEditor,
 } from "../../groups";
-import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
 
 describe("useGroups (MSW)", () => {
   it("should return groups for a trip", async () => {

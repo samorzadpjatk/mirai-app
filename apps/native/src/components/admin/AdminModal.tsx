@@ -1,14 +1,14 @@
-import React from "react";
+import type React from "react";
 import {
-  View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
+  View,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
 import { AppModalShell } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface AdminModalProps {
   visible: boolean;
@@ -18,14 +18,6 @@ interface AdminModalProps {
   actions?: React.ReactNode;
   maxWidth?: number;
   maxHeight?: number;
-}
-
-interface AdminModalButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: "primary" | "cancel" | "danger";
-  disabled?: boolean;
-  loading?: boolean;
 }
 
 export function AdminModal({

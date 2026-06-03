@@ -1,10 +1,10 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAuth } from "@mirai-app/auth/client";
 import { useRouter } from "expo-router";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNotifications } from "~/hooks/notifications";
 import { useLocationContext } from "~/stores/location";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ProfileActionsSectionProps {
   onEditProfile?: () => void;
@@ -146,7 +146,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
             Background Location
           </Text>
           <Text style={[styles.actionSubtext, isBackgroundControlDisabled && styles.disabledText]}>
-            {!isLocationSharingEnabled ? "Enable location sharing first" : permissionModeLabel}
+            {isLocationSharingEnabled ? permissionModeLabel : "Enable location sharing first"}
           </Text>
         </View>
         {isUpdatingBackgroundLocation ? (

@@ -1,7 +1,7 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import { TripNotFoundState } from "../../../trips/challenges/TripNotFoundState";
 import { GroupInfoCard } from "../../../trips/challenges/GroupInfoCard";
+import { TripNotFoundState } from "../../../trips/challenges/TripNotFoundState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");

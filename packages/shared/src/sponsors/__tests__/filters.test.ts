@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { extractActiveSponsors } from "../filters";
 import type { Sponsor, TripSponsor } from "@mirai-app/db";
+import { describe, expect, it } from "vitest";
+import { extractActiveSponsors } from "../filters";
 
 const createMockSponsor = (overrides: Partial<Sponsor> = {}): Sponsor => ({
   id: "sponsor-1",

@@ -1,11 +1,11 @@
 import {
-  TextInput,
-  StyleSheet,
-  type TextInputProps,
   type StyleProp,
+  StyleSheet,
+  TextInput,
+  type TextInputProps,
   type TextStyle,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   style?: StyleProp<TextStyle>;

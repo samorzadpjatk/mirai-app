@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { buildAuthEmailLookup, buildAuthUserSummaryLookup, resolveAuthEmail } from "../authEmails";
-import type { SupabaseClient } from "@mirai-app/supabase";
 import { noop } from "@mirai-app/shared/test-utils";
+import type { SupabaseClient } from "@mirai-app/supabase";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { buildAuthEmailLookup, buildAuthUserSummaryLookup, resolveAuthEmail } from "../authEmails";
 
 describe("authEmails", () => {
   let mockSupabase: SupabaseClient;

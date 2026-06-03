@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupMemberList } from "../../../trips/groups/details/GroupMemberList";
 import type { GroupMember } from "../../../trips/groups/details/GroupMemberList";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("@mirai-app/orpc/client", () => ({
   useTRPC: () => ({

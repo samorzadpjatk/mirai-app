@@ -1,7 +1,7 @@
-import { ActivityIndicator, View } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { ActivityIndicator, View } from "react-native";
 import { ChallengeUploadProgressCard } from "../../../trips/challenges/ChallengeUploadProgressCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeUploadProgressCard", () => {
   it("should render title", () => {

@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { StyleSheet, Text, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { NotificationItem } from "~/types/notifications";
 
 interface NotificationCardProps {

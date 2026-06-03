@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { userAgents } from "@mirai-app/db";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { createRouterClient } from "@orpc/server";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createMockSupabase } from "../../test-helpers";
 import {
   createORPCContext,
-  publicProcedure,
-  enableUserAgentTelemetry,
   createORPCRouter,
+  enableUserAgentTelemetry,
+  publicProcedure,
 } from "../trpc";
-import { createRouterClient } from "@orpc/server";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { userAgents } from "@mirai-app/db";
 import type { TRPCContext } from "../trpc";
-import { createMockSupabase } from "../../test-helpers";
 
 describe("createORPCContext token extraction", () => {
   const baseOpts = {

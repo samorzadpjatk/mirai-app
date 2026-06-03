@@ -1,1 +1,1 @@
-export * from "./useSupabase";
+export { useSupabase } from "./useSupabase";

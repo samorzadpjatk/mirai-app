@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { classifyStorageError, isPublicBucket, validateKnownBucket } from "../../storage/errors";
 
 describe("Error Utilities", () => {

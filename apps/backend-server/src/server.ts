@@ -1,8 +1,8 @@
+import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
+import { ORPCError, onError } from "@orpc/server";
+import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
-import { ORPCError, onError } from "@orpc/server";
-import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -88,7 +88,7 @@ export function createServer(opts: ServerOptions) {
 
   app.use("*", async (c, next) => {
     const contentLength = c.req.header("content-length");
-    if (contentLength && parseInt(contentLength, 10) > TEN_MB) {
+    if (contentLength && Number.parseInt(contentLength, 10) > TEN_MB) {
       return c.text("Payload Too Large", 413);
     }
     await next();

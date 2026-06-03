@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import type { LocationObject } from "expo-location";
 
 // Mock function types
@@ -40,8 +40,8 @@ jest.mock("@mirai-app/orpc/client", () => ({
 }));
 
 import {
-  initBackgroundLocationTask,
   type BackgroundTaskDeps,
+  initBackgroundLocationTask,
 } from "~/services/background/backgroundLocationTask";
 
 describe("Background Location Task", () => {

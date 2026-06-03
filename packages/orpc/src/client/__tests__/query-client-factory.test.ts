@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
-import { makeQueryClient, getQueryClient, queryClient } from "../query-client-factory";
+import { describe, expect, it } from "vitest";
+import { getQueryClient, makeQueryClient, queryClient } from "../query-client-factory";
 
 describe("makeQueryClient configuration", () => {
   it("should export a QueryClient instance", () => {

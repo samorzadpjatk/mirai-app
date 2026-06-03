@@ -1,7 +1,7 @@
+import { logger } from "@mirai-app/orpc";
+import { getORPCClient } from "@mirai-app/orpc/client";
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
-import { getORPCClient } from "@mirai-app/orpc/client";
-import { logger } from "@mirai-app/orpc";
 
 interface NotificationRow {
   id: string;
@@ -68,7 +68,7 @@ export function main() {
       { event: "INSERT", schema: "public", table: "Notification" },
       (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
         // Intentionally not awaiting - Realtime callback must be synchronous
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
         handleNotification(payload);
       },
     )

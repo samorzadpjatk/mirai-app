@@ -1,6 +1,6 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AddChallengeButton } from "../../admin/challenges/AddChallengeButton";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AddChallengeButton", () => {
   it("renders with the default label", () => {

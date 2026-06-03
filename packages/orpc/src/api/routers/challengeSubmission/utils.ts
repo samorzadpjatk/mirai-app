@@ -1,13 +1,13 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, sql, notInArray, lte } from "drizzle-orm";
-import { challenges, challengeSubmissions, groups, coinTransactions } from "@mirai-app/db";
+import { challengeSubmissions, challenges, coinTransactions, groups } from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
 import { resolveAwardedPoints } from "@mirai-app/shared/challengeSubmissions";
-import { resolveAuthEmail } from "../../../utils/authEmails";
+import { ORPCError } from "@orpc/server";
+import { and, eq, lte, notInArray, sql } from "drizzle-orm";
 import {
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
   promoteVisibleChallengesToActiveWithFeed,
 } from "../../../utils/activityFeed";
+import { resolveAuthEmail } from "../../../utils/authEmails";
 
 export const attachReviewerEmail = <T extends { authUserId?: string | null }>(
   reviewer: T | null,

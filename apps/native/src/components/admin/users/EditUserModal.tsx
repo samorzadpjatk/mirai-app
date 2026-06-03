@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { formatDisplayName } from "@mirai-app/shared";
-import { colors, spacing, borderRadius, typography } from "~/styles";
-import { isBanReady, isNameValid, formatBanLabel } from "~/utils/validation";
-import { AdminModal, AdminModalButton } from "../AdminModal";
-import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { DateTimePickerModal, FormField, ThemedTextInput } from "~/components/common/ui";
 import type { User } from "~/hooks/admin/useAdminUsers";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { formatBanLabel, isBanReady, isNameValid } from "~/utils/validation";
+import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface EditUserModalProps {
   visible: boolean;
@@ -103,7 +103,7 @@ export function EditUserModal({
             </Text>
           </View>
 
-          <FormField label="First name" required>
+          <FormField label="First name" required={true}>
             <ThemedTextInput
               value={firstName}
               onChangeText={setFirstName}
@@ -112,7 +112,7 @@ export function EditUserModal({
             />
           </FormField>
 
-          <FormField label="Last name" required>
+          <FormField label="Last name" required={true}>
             <ThemedTextInput
               value={lastName}
               onChangeText={setLastName}
@@ -150,7 +150,7 @@ export function EditUserModal({
                 value={banReason}
                 onChangeText={setBanReason}
                 placeholder="Optional reason for the ban"
-                multiline
+                multiline={true}
               />
             </FormField>
             <DateTimePickerModal

@@ -1,10 +1,10 @@
-import { eq, and, notInArray, lte } from "drizzle-orm";
-import { challenges, type DB } from "@mirai-app/db";
+import { type DB, challenges } from "@mirai-app/db";
 import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/shared";
+import { and, eq, lte, notInArray } from "drizzle-orm";
 import {
-  promoteVisibleChallengesToActiveWithFeed,
-  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
   finalizeVotingChallengesToCompletedWithFeed,
+  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
+  promoteVisibleChallengesToActiveWithFeed,
 } from "../../../utils/activityFeed";
 
 // expectedValue holds the QR code value or the required text phrase.

@@ -20,7 +20,6 @@ export const logger = pino(
           } else if (level >= 40) {
             console.warn(message, ...extras);
           } else {
-            console.log(message, ...extras);
           }
         },
       }

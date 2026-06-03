@@ -1,9 +1,9 @@
-import React from "react";
-import { Alert, type Modal, View } from "react-native";
 import { fireEvent, screen, userEvent, waitFor } from "@testing-library/react-native";
 import { useCameraPermissions } from "expo-camera";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
+import { Alert, type Modal, View } from "react-native";
 import { QrScannerModal } from "../../common/QrScannerModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface BarcodeScannedEvent {
   data: string;

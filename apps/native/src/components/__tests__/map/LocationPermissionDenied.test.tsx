@@ -1,6 +1,6 @@
 import React from "react";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { LocationPermissionDenied } from "../../map/LocationPermissionDenied";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");

@@ -1,23 +1,23 @@
-import { useMemo, useState, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName, getInitials } from "@mirai-app/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { orpc } from "@mirai-app/orpc/client";
-import { useGroupEditor } from "~/hooks/groups";
-import { useTripDetails } from "~/hooks/trips";
-import { borderRadius as radius, colors, spacing, typography } from "../../../../../styles";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFileUpload } from "~/hooks/files";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "~/components/trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEditNotFoundState";
 import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEditPermissionState";
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
-import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-import { getFileExtension, getFileContentType } from "~/utils/image";
-import { formatDisplayName, getInitials } from "@mirai-app/shared";
+import { useFileUpload } from "~/hooks/files";
+import { useGroupEditor } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
+import { getFileContentType, getFileExtension } from "~/utils/image";
+import { colors, borderRadius as radius, spacing, typography } from "../../../../../styles";
 
 export default function EditGroupScreen() {
   const router = useRouter();

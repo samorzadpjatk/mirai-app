@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { MembersSearchBar } from "../../../trips/groups/create/MembersSearchBar";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 const searchPlaceholder = "Search by name";
 

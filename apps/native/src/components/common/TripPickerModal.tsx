@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback } from "react";
 import {
   ActivityIndicator,
@@ -8,9 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, typography, borderRadius } from "../../styles";
 import type { TripListItem } from "~/components/trips/list/types";
+import { borderRadius, colors, spacing, typography } from "../../styles";
 
 interface TripPickerModalProps {
   visible: boolean;
@@ -51,7 +51,7 @@ export function TripPickerModal({
     <Modal
       visible={visible}
       animationType="fade"
-      transparent
+      transparent={true}
       onRequestClose={onClose}
       testID="trip-picker-modal"
     >

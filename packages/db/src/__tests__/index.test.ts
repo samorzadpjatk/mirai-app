@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createDb, closeDb, runMigrations } from "../index";
+import { describe, expect, it } from "vitest";
+import { closeDb, createDb, runMigrations } from "../index";
 
 describe("index exports", () => {
   it("should export createDb", () => {

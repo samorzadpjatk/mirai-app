@@ -1,24 +1,24 @@
-import { useGroups } from "~/hooks/groups";
-import { useTripDetails } from "~/hooks/trips";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Text,
-  RefreshControl,
-} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { colors, spacing } from "../../../../styles";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
-import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
-import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
 import { GroupsList } from "~/components/trips/groups/GroupsList";
+import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
 import { GroupsLoadingState } from "~/components/trips/groups/GroupsLoadingState";
 import { GroupsNoTripState } from "~/components/trips/groups/GroupsNoTripState";
+import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
+import { useGroups } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
+import { colors, spacing } from "../../../../styles";
 
 export default function GroupsListScreen() {
   const router = useRouter();

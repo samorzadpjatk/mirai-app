@@ -1,8 +1,8 @@
-import { View, Text, type ViewStyle } from "react-native";
 import { screen } from "@testing-library/react-native";
+import { Text, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { SafeAreaTop } from "../../SafeAreaWrapper";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface ViewStyleWithPadding extends ViewStyle {
   paddingTop?: number;

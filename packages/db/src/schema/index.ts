@@ -1,29 +1,29 @@
-export * from "./enums";
-export * from "./users";
-export * from "./trips";
-export * from "./events";
-export * from "./groups";
-export * from "./challenges";
-export * from "./activities";
-export * from "./notifications";
-export * from "./locations";
-export * from "./rewards";
-export * from "./sponsors";
-export * from "./userAgents";
-export * from "./relations";
-
-import { users } from "./users";
-import {
+export {
+  roleEnum,
+  submissionTypeEnum,
+  scoringCategoryEnum,
+  challengeStatusEnum,
+  submissionStatusEnum,
+  locationSharingRequestStatusEnum,
+  rewardPurchaseStatusEnum,
+} from "./enums";
+export { users } from "./users";
+export {
   trips,
   tripResources,
   tripInsurances,
   tripInsuranceSteps,
   tripParticipants,
 } from "./trips";
-import { events, userEvents } from "./events";
-import { groups, groupJoinRequests } from "./groups";
-import { challenges, challengeSubmissions, challengeVotes, submissionReports } from "./challenges";
-import {
+export { events, userEvents } from "./events";
+export { groups, groupJoinRequests } from "./groups";
+export {
+  challenges,
+  challengeSubmissions,
+  challengeVotes,
+  submissionReports,
+} from "./challenges";
+export {
   activityFeeds,
   activityReactions,
   submissionActivities,
@@ -31,7 +31,7 @@ import {
   rankChangeActivities,
   userPosts,
 } from "./activities";
-import {
+export {
   notificationSchedules,
   notifications,
   notificationScheduleExecutions,
@@ -39,10 +39,79 @@ import {
   notificationDeliveries,
   pushSubscriptions,
 } from "./notifications";
-import { locations, locationSharingRequests, locationShares } from "./locations";
-import { rewards, rewardPurchases, coinTransactions } from "./rewards";
+export { locations, locationSharingRequests, locationShares } from "./locations";
+export { rewards, rewardPurchases, coinTransactions } from "./rewards";
+export { sponsors, tripSponsors } from "./sponsors";
+export { userAgents } from "./userAgents";
+export {
+  usersRelations,
+  tripsRelations,
+  tripResourcesRelations,
+  tripInsurancesRelations,
+  tripInsuranceStepsRelations,
+  tripParticipantsRelations,
+  eventsRelations,
+  userEventsRelations,
+  groupsRelations,
+  groupJoinRequestsRelations,
+  challengesRelations,
+  challengeSubmissionsRelations,
+  challengeVotesRelations,
+  submissionReportsRelations,
+  activityFeedsRelations,
+  activityReactionsRelations,
+  submissionActivitiesRelations,
+  challengeActivitiesRelations,
+  rankChangeActivitiesRelations,
+  userPostsRelations,
+  coinTransactionsRelations,
+  notificationSchedulesRelations,
+  notificationsRelations,
+  notificationScheduleExecutionsRelations,
+  notificationPushesRelations,
+  notificationDeliveriesRelations,
+  pushSubscriptionsRelations,
+  locationsRelations,
+  locationSharingRequestsRelations,
+  locationSharesRelations,
+  rewardsRelations,
+  rewardPurchasesRelations,
+  sponsorsRelations,
+  tripSponsorsRelations,
+  userAgentsRelations,
+} from "./relations";
+
+import {
+  activityFeeds,
+  activityReactions,
+  challengeActivities,
+  rankChangeActivities,
+  submissionActivities,
+  userPosts,
+} from "./activities";
+import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
+import { events, userEvents } from "./events";
+import { groupJoinRequests, groups } from "./groups";
+import { locationShares, locationSharingRequests, locations } from "./locations";
+import {
+  notificationDeliveries,
+  notificationPushes,
+  notificationScheduleExecutions,
+  notificationSchedules,
+  notifications,
+  pushSubscriptions,
+} from "./notifications";
+import { coinTransactions, rewardPurchases, rewards } from "./rewards";
 import { sponsors, tripSponsors } from "./sponsors";
+import {
+  tripInsuranceSteps,
+  tripInsurances,
+  tripParticipants,
+  tripResources,
+  trips,
+} from "./trips";
 import { userAgents } from "./userAgents";
+import { users } from "./users";
 
 export const schemaTables = [
   users,

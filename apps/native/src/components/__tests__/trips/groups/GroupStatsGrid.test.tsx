@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupStatsGrid } from "../../../trips/groups/details/GroupStatsGrid";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupStatsGrid", () => {
   it("renders all stat labels", () => {

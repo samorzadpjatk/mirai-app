@@ -1,4 +1,4 @@
-import { type ReviewStatus } from "~/stores/judgement";
+import type { ReviewStatus } from "~/stores/judgement";
 
 export function canSubmitReject(rejectionReason: string, isReviewing: boolean): boolean {
   return rejectionReason.trim().length > 0 && !isReviewing;

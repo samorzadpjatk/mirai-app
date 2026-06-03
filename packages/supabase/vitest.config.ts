@@ -1,5 +1,5 @@
-import { defineConfig, mergeConfig } from "vitest/config";
 import path from "path";
+import { defineConfig, mergeConfig } from "vitest/config";
 
 const baseCoverageExcludes = [
   "node_modules/",

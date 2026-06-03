@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useMyGroup } from "../../groups/useMyGroup";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler } from "../../../test-utils/msw/server";
+import { useMyGroup } from "../../groups/useMyGroup";
 
 describe("useMyGroup (MSW)", () => {
   it("should return group data when API returns data", async () => {

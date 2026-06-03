@@ -1,4 +1,4 @@
-import { createORPCClient, ORPCError } from "@orpc/client";
+import { ORPCError, createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WSLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
@@ -39,7 +39,7 @@ const createWsConnection = (wsUrl: string, authorizationToken?: string) => {
     });
 
     const originalSend = ws.send.bind(ws);
-    ws.send = function (data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+    ws.send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
       if (authAcknowledged) {
         return originalSend(data);
       }

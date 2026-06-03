@@ -1,13 +1,13 @@
 import { StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import { MapActionButtons } from "~/components/map/MapActionButtons";
 import { ManageSharingModal } from "~/components/map/modals/ManageSharingModal";
-import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
 import { ShareLocationModal } from "~/components/map/modals/ShareLocationModal";
 import { UsersListPanel } from "~/components/map/panels/UsersListPanel";
-import { useMapOverlayStore } from "~/stores/map";
+import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
 import { useLocationContext } from "~/stores/location";
+import { useMapOverlayStore } from "~/stores/map";
 
 export function MapScreenOverlay() {
   const { selectedUser, showUsersList, panelStyle, panGesture } = useMapOverlayStore();

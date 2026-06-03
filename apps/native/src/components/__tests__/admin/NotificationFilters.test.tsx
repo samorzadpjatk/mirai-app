@@ -1,6 +1,6 @@
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { NotificationFilters } from "../../admin/notifications/NotificationFilters";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("NotificationFilters", () => {
   const mockOnSearchChange = jest.fn();

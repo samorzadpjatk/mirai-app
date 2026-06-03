@@ -1,8 +1,8 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
-import { useMapSharing, extractSharingUserIds } from "../../map/useMapSharing";
+import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
+import { extractSharingUserIds, useMapSharing } from "../../map/useMapSharing";
 
 describe("useMapSharing (MSW)", () => {
   beforeEach(() => {

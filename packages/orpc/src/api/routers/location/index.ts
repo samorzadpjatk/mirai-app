@@ -1,29 +1,29 @@
 import { z } from "zod";
-import { createORPCRouter, protectedProcedure } from "../../trpc";
 import {
-  locationDataSchema,
   latitudeSchema,
+  locationDataSchema,
   longitudeSchema,
 } from "../../../utils/location-validation";
+import { createORPCRouter, protectedProcedure } from "../../trpc";
 import {
-  getMyLocation,
-  getFriendsLocations,
-  getMySharingSettings,
-  getAllUsersForSharing,
-  getPendingLocationSharingRequests,
-  getMyLocationSharingRequests,
-  getFriendsLocationsStream,
-} from "./queries";
-import {
-  updateLocationStream,
-  updateSharingSettings,
-  updateLocation,
+  acceptLocationSharingRequest,
   addUserToSharing,
+  rejectLocationSharingRequest,
   removeUserFromSharing,
   requestLocationSharing,
-  acceptLocationSharingRequest,
-  rejectLocationSharingRequest,
+  updateLocation,
+  updateLocationStream,
+  updateSharingSettings,
 } from "./mutations";
+import {
+  getAllUsersForSharing,
+  getFriendsLocations,
+  getFriendsLocationsStream,
+  getMyLocation,
+  getMyLocationSharingRequests,
+  getMySharingSettings,
+  getPendingLocationSharingRequests,
+} from "./queries";
 
 const handleUpdateSharingSettings = async ({
   context,

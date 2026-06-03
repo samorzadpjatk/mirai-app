@@ -1,8 +1,8 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import {
-  executeToggleLocationSharing,
-  buildLocationSharingToggle,
   type LocationSharingToggleDeps,
+  buildLocationSharingToggle,
+  executeToggleLocationSharing,
 } from "../../location/useLocationPermissions";
 
 describe("executeToggleLocationSharing", () => {

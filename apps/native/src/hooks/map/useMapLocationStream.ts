@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
 import { orpc } from "@mirai-app/orpc/client";
-import * as Crypto from "expo-crypto";
-import { useLocationContext } from "~/stores/location";
 import { formatDisplayName } from "@mirai-app/shared";
+import * as Crypto from "expo-crypto";
+import { useEffect, useMemo, useState } from "react";
+import { useLocationContext } from "~/stores/location";
 
 export function buildLocationUpdateData(location: {
   coords: { latitude: number; longitude: number };

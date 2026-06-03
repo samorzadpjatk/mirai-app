@@ -1,28 +1,28 @@
+import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
+import {
+  buildLeaveResult,
+  calculateNextOrganizer,
+  canDeleteGroupAsOrganizer,
+  canRemoveUserFromGroup,
+  canUpdateGroup,
+  canViewJoinRequests,
+  isUserInGroup,
+} from "@mirai-app/shared/groups";
 import { ORPCError } from "@orpc/server";
-import { eq, and, inArray, count } from "drizzle-orm";
-import { groups, tripParticipants, groupJoinRequests, coinTransactions } from "@mirai-app/db";
-import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
+import { and, count, eq, inArray } from "drizzle-orm";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
+import type { GroupContext } from "./queries";
 import {
-  toUserWithEmail,
   generateFourDigitCode,
   normalizeGroupImageInput,
   resolveGroupImage,
+  toUserWithEmail,
 } from "./utils";
-import type { GroupContext } from "./queries";
-import {
-  canUpdateGroup,
-  canDeleteGroupAsOrganizer,
-  canRemoveUserFromGroup,
-  canViewJoinRequests,
-  isUserInGroup,
-  buildLeaveResult,
-  calculateNextOrganizer,
-} from "@mirai-app/shared/groups";
 
 export const create = async (
   context: GroupContext,

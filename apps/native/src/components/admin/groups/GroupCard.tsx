@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { formatDisplayName } from "@mirai-app/shared";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { Text, TouchableOpacity, View } from "react-native";
 import type { Group } from "~/hooks/admin/useAdminCoins";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupCardProps {
   group: Group;

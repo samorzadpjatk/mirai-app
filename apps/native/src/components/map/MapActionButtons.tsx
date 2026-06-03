@@ -1,23 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  Text,
-  ActivityIndicator,
 } from "react-native";
 import { useLocationContext } from "~/stores/location";
 import { useMapOverlayStore } from "~/stores/map";
 import { colors, spacing, typography } from "~/styles";
 import {
-  calculateBackgroundDisplayState,
   buildBackgroundStatusLabel,
   calculateBackgroundControlDisabled,
+  calculateBackgroundDisplayState,
+  getBackgroundIconColor,
   getBackgroundIconName,
   getLocationIconName,
   getThemeIconName,
-  getBackgroundIconColor,
 } from "./mapActionButtonsUtils";
 
 export function MapActionButtons() {

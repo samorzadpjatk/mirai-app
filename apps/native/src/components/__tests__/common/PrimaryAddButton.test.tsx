@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { PrimaryAddButton } from "../../common/buttons/PrimaryAddButton";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => undefined;
 

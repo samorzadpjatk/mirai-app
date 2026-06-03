@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export function useChallengeDetails(challengeId?: string | null, tripId?: string | null) {
   const challengeQuery = useQuery(

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
-import { useSession, useAuth } from "@mirai-app/auth/client";
-import { queryClient } from "./query-client-factory";
-import { logger } from "../utils/logger";
+import { useAuth, useSession } from "@mirai-app/auth/client";
 import { ORPCError } from "@orpc/client";
-import type { QueryCacheNotifyEvent, MutationCacheNotifyEvent } from "@tanstack/react-query";
+import type { MutationCacheNotifyEvent, QueryCacheNotifyEvent } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { logger } from "../utils/logger";
+import { queryClient } from "./query-client-factory";
 
 export const isUnauthorizedError = (error: unknown) => {
   if (error instanceof ORPCError) {
