@@ -42,6 +42,7 @@ export {
   type ReviewStatus,
   type Submission,
   authStore,
+  _resetAuthStoreForTests,
   type AuthStore,
   type AuthState,
   type AuthActions,

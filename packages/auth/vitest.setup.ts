@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import { _resetAuthStoreForTests } from "@mirai-app/shared";
 
 // Mock @mirai-app/supabase
 vi.mock("@mirai-app/supabase", () => {
@@ -60,80 +61,8 @@ vi.mock("@mirai-app/supabase", () => {
   };
 });
 
-// Mock @mirai-app/shared
-vi.mock("@mirai-app/shared", () => {
-  const mockAuthStore = {
-    getState: vi.fn().mockReturnValue({
-      user: null,
-      session: null,
-      isLoading: false,
-      isAuthenticated: false,
-      signInWithOtp: vi.fn(),
-      signInWithPassword: vi.fn(),
-      verifyOtp: vi.fn(),
-      signOut: vi.fn(),
-      refreshSession: vi.fn(),
-    }),
-    setState: vi.fn(),
-    subscribe: vi.fn().mockReturnValue(() => undefined),
-  };
-
-  return {
-    authStore: mockAuthStore,
-    AuthStoreProvider: vi.fn(({ children }: { children: React.ReactNode }) => children),
-    formatDisplayName: vi.fn(
-      (firstName?: string | null, lastName?: string | null, fallback?: string | null) => {
-        const parts = [firstName?.trim(), lastName?.trim()].filter(Boolean);
-        if (parts.length > 0) return parts.join(" ");
-        return fallback?.trim() ?? null;
-      },
-    ),
-    logger: {
-      info: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
-      debug: vi.fn(),
-    },
-  };
-});
-
-// Mock React hooks
-vi.mock("react", async () => {
-  const actual = await vi.importActual("react");
-  return {
-    ...actual,
-    useState: vi.fn((initial: unknown) => [initial, vi.fn()]),
-    useEffect: vi.fn((fn: () => void | (() => void)) => {
-      fn();
-      return undefined;
-    }),
-    useCallback: vi.fn((fn: unknown) => fn),
-    useMemo: vi.fn((fn: () => unknown) => fn()),
-    useContext: vi.fn(() => ({
-      user: null,
-      session: null,
-      isLoading: false,
-      isAuthenticated: false,
-    })),
-  };
-});
-
-// Mock zustand
-vi.mock("zustand", () => ({
-  create: vi.fn((initializer: (set: unknown, get: unknown, api: unknown) => unknown) => {
-    const store = {
-      getState: vi.fn(),
-      setState: vi.fn(),
-      subscribe: vi.fn().mockReturnValue(() => undefined),
-      destroy: vi.fn(),
-    };
-    store.getState.mockReturnValue(initializer(store.setState, store.getState, store));
-    return () => store.getState();
-  }),
-  useStore: vi.fn((store: { getState: () => unknown }) => store.getState()),
-}));
-
-// Cleanup mocks after each test
+// Cleanup after each test
 afterEach(() => {
   vi.clearAllMocks();
+  _resetAuthStoreForTests();
 });

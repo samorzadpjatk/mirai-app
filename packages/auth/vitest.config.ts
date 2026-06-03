@@ -7,7 +7,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      environment: "node",
+      environment: "jsdom",
       hookTimeout: 30000,
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts"],
