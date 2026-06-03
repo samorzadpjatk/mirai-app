@@ -42,9 +42,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  NX_BASE: origin/${{ github.base_ref }}
-
 jobs:
   build_test:
     runs-on: ubuntu-latest
@@ -64,7 +61,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          git fetch origin ${{ github.base_ref }} --depth=1
+          git fetch origin ${{ github.base_ref }}
 
       - name: Use Node.js 24
         uses: actions/setup-node@v6
