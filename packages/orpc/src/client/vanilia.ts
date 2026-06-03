@@ -62,9 +62,11 @@ const isRetryableError = (error: unknown): boolean => {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: string) => {
-  const ws = createWsConnection(wsUrl, authorizationToken);
-  new WSLink({ websocket: ws });
+const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: string) => {
+  const ws = wsUrl ? createWsConnection(wsUrl, authorizationToken) : null;
+  if (ws) {
+    new WSLink({ websocket: ws });
+  }
 
   const httpLink = new RPCLink({
     url: httpUrl,
@@ -96,7 +98,9 @@ const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: stri
   return {
     client,
     cleanup: () => {
-      ws.close();
+      if (ws) {
+        ws.close();
+      }
       return Promise.resolve();
     },
   };

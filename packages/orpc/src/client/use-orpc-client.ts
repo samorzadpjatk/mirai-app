@@ -14,7 +14,7 @@ export function useORPCClient({
   authToken,
 }: {
   httpUrl: string;
-  wsUrl: string;
+  wsUrl?: string;
   authToken?: string;
 }) {
   const { client, cleanup } = useMemo(

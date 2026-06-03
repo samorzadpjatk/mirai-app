@@ -25,6 +25,14 @@ describe("AccountInfoSection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     server.resetHandlers();
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
+        id: "user-1",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User",
+      })),
+    );
   });
 
   it("should render section title and email label", async () => {

@@ -27,7 +27,7 @@ const createTestQueryClient = () =>
  * so that hooks using `orpc` work in tests.
  */
 function ORPCClientInitializer() {
-  useORPCClient({ httpUrl: TEST_HTTP_URL, wsUrl: TEST_WS_URL });
+  useORPCClient({ httpUrl: TEST_HTTP_URL });
   return null;
 }
 

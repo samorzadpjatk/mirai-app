@@ -3,7 +3,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "lib": ["ESNext", "DOM"],
-    "lib": ["ESNext", "DOM"],
     "types": ["vitest", "node"],
     "outDir": "dist",
     "rootDir": ".",
