@@ -104,9 +104,9 @@ jobs:
       - name: Run Biome Check (lint + format)
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bunx nx affected -t lint --base=origin/${{ github.base_ref }}
+            bunx nx affected -t lint --base=origin/${{ github.base_ref }} --verbose
           else
-            bunx nx run-many -t lint --exclude=@mirai-app/monorepo
+            bunx nx run-many -t lint --exclude=@mirai-app/monorepo --verbose
           fi
 
       - name: Run Nx Module Boundaries
