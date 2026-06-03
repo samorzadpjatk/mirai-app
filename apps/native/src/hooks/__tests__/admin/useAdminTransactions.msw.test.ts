@@ -1,6 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { waitFor, act } from "@testing-library/react-native";
-import { useAdminTransactions, buildTransactionQueryInput, getNextTransactionPageParam } from "../../admin/useAdminTransactions";
+import {
+  useAdminTransactions,
+  buildTransactionQueryInput,
+  getNextTransactionPageParam,
+} from "../../admin/useAdminTransactions";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
@@ -14,8 +18,20 @@ describe("useAdminTransactions (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["coinTransaction", "getAll"], () => new Promise(() => {})),
-      createORPCHandler(["group", "getAllNames"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["coinTransaction", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["group", "getAllNames"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminTransactions(tripId));
@@ -100,14 +116,33 @@ describe("useAdminTransactions (MSW)", () => {
   it("should fetch next page", async () => {
     let callCount = 0;
     const mockTransactions = [
-      { id: "tx-1", amount: 100, reason: "Bonus", createdAt: "2024-01-01T00:00:00Z", group: { id: "group-1", name: "Group A" }, admin: { id: "user-1", firstName: "John", lastName: "Doe" } },
+      {
+        id: "tx-1",
+        amount: 100,
+        reason: "Bonus",
+        createdAt: "2024-01-01T00:00:00Z",
+        group: { id: "group-1", name: "Group A" },
+        admin: { id: "user-1", firstName: "John", lastName: "Doe" },
+      },
     ];
 
     server.use(
       createORPCHandler(["coinTransaction", "getAll"], () => {
         callCount++;
         return {
-          transactions: callCount === 1 ? mockTransactions : [{ id: "tx-2", amount: 200, reason: "Penalty", createdAt: "2024-01-02T00:00:00Z", group: { id: "group-2", name: "Group B" }, admin: { id: "user-2", firstName: "Jane", lastName: "Doe" } }],
+          transactions:
+            callCount === 1
+              ? mockTransactions
+              : [
+                  {
+                    id: "tx-2",
+                    amount: 200,
+                    reason: "Penalty",
+                    createdAt: "2024-01-02T00:00:00Z",
+                    group: { id: "group-2", name: "Group B" },
+                    admin: { id: "user-2", firstName: "Jane", lastName: "Doe" },
+                  },
+                ],
           pagination: { hasMore: callCount === 1, offset: (callCount - 1) * 50, limit: 50 },
         };
       }),
@@ -161,7 +196,9 @@ describe("useAdminTransactions (MSW)", () => {
             pagination: { hasMore: true, offset: 0, limit: 50 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
       createORPCHandler(["group", "getAllNames"], () => []),
     );
@@ -174,7 +211,9 @@ describe("useAdminTransactions (MSW)", () => {
 
     expect(result.current.isFetchingNextPage).toBe(false);
 
-    result.current.fetchNextPage().catch(() => {});
+    result.current.fetchNextPage().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isFetchingNextPage).toBe(true);
@@ -192,7 +231,9 @@ describe("useAdminTransactions (MSW)", () => {
             pagination: { hasMore: false, offset: 0, limit: 50 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
       createORPCHandler(["group", "getAllNames"], () => []),
     );
@@ -205,7 +246,9 @@ describe("useAdminTransactions (MSW)", () => {
 
     expect(result.current.isRefetching).toBe(false);
 
-    result.current.refetch().catch(() => {});
+    result.current.refetch().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isRefetching).toBe(true);
@@ -218,7 +261,19 @@ describe("useAdminTransactions (MSW)", () => {
       createORPCHandler(["coinTransaction", "getAll"], () => {
         callCount++;
         return {
-          transactions: callCount === 1 ? [] : [{ id: "tx-1", amount: 100, reason: "Bonus", createdAt: "2024-01-01T00:00:00Z", group: { id: "group-1", name: "Group A" }, admin: { id: "user-1", firstName: "John", lastName: "Doe" } }],
+          transactions:
+            callCount === 1
+              ? []
+              : [
+                  {
+                    id: "tx-1",
+                    amount: 100,
+                    reason: "Bonus",
+                    createdAt: "2024-01-01T00:00:00Z",
+                    group: { id: "group-1", name: "Group A" },
+                    admin: { id: "user-1", firstName: "John", lastName: "Doe" },
+                  },
+                ],
           pagination: { hasMore: false, offset: 0, limit: 50 },
         };
       }),
@@ -303,11 +358,15 @@ describe("useAdminTransactions (MSW)", () => {
 
 describe("getNextTransactionPageParam", () => {
   it("should return undefined when no more pages", () => {
-    expect(getNextTransactionPageParam({ pagination: { hasMore: false, offset: 0, limit: 50 } })).toBeUndefined();
+    expect(
+      getNextTransactionPageParam({ pagination: { hasMore: false, offset: 0, limit: 50 } }),
+    ).toBeUndefined();
   });
 
   it("should return next offset when more pages", () => {
-    expect(getNextTransactionPageParam({ pagination: { hasMore: true, offset: 0, limit: 50 } })).toBe(50);
+    expect(
+      getNextTransactionPageParam({ pagination: { hasMore: true, offset: 0, limit: 50 } }),
+    ).toBe(50);
   });
 });
 

@@ -1,6 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { waitFor, act } from "@testing-library/react-native";
-import { useAdminChallenges, transformRawChallenge, buildCreateChallengeInput, buildChallengeStats } from "../../admin/useAdminChallenges";
+import {
+  useAdminChallenges,
+  transformRawChallenge,
+  buildCreateChallengeInput,
+  buildChallengeStats,
+} from "../../admin/useAdminChallenges";
 import type { AdminChallengeUI } from "../../admin/useAdminChallenges";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
@@ -13,7 +18,13 @@ describe("useAdminChallenges (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["challenge", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["challenge", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
@@ -48,9 +59,7 @@ describe("useAdminChallenges (MSW)", () => {
       },
     ];
 
-    server.use(
-      createORPCHandler(["challenge", "getAll"], () => mockChallenges),
-    );
+    server.use(createORPCHandler(["challenge", "getAll"], () => mockChallenges));
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
 
@@ -79,9 +88,7 @@ describe("useAdminChallenges (MSW)", () => {
       },
     ];
 
-    server.use(
-      createORPCHandler(["challenge", "getAll"], () => mockChallenges),
-    );
+    server.use(createORPCHandler(["challenge", "getAll"], () => mockChallenges));
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
 
@@ -105,9 +112,7 @@ describe("useAdminChallenges (MSW)", () => {
       { id: "4", name: "C4", status: "active", category: "special" },
     ];
 
-    server.use(
-      createORPCHandler(["challenge", "getAll"], () => mockChallenges),
-    );
+    server.use(createORPCHandler(["challenge", "getAll"], () => mockChallenges));
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
 
@@ -232,9 +237,27 @@ describe("useAdminChallenges (MSW)", () => {
   it("should indicate loading states for mutations", async () => {
     server.use(
       createORPCHandler(["challenge", "getAll"], () => []),
-      createORPCHandler(["challenge", "create"], () => new Promise(() => {})),
-      createORPCHandler(["challenge", "update"], () => new Promise(() => {})),
-      createORPCHandler(["challenge", "delete"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["challenge", "create"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["challenge", "update"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["challenge", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
@@ -243,9 +266,17 @@ describe("useAdminChallenges (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    result.current.createChallenge({ tripId: "trip-123", title: "Test" }).catch(() => {});
-    result.current.updateChallenge("challenge-1", { tripId: "trip-123", title: "Updated" }).catch(() => {});
-    result.current.deleteChallenge("challenge-1", "trip-123").catch(() => {});
+    result.current.createChallenge({ tripId: "trip-123", title: "Test" }).catch(() => {
+      /* no-op */
+    });
+    result.current
+      .updateChallenge("challenge-1", { tripId: "trip-123", title: "Updated" })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current.deleteChallenge("challenge-1", "trip-123").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isCreating).toBe(true);
@@ -255,9 +286,7 @@ describe("useAdminChallenges (MSW)", () => {
   });
 
   it("should handle empty challenges array", async () => {
-    server.use(
-      createORPCHandler(["challenge", "getAll"], () => []),
-    );
+    server.use(createORPCHandler(["challenge", "getAll"], () => []));
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
 
@@ -271,9 +300,7 @@ describe("useAdminChallenges (MSW)", () => {
   });
 
   it("should handle non-array data", async () => {
-    server.use(
-      createORPCHandler(["challenge", "getAll"], () => null),
-    );
+    server.use(createORPCHandler(["challenge", "getAll"], () => null));
 
     const { result } = renderHookWithMSW(() => useAdminChallenges());
 

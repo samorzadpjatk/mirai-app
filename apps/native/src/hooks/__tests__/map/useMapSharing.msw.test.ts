@@ -32,9 +32,7 @@ describe("useMapSharing (MSW)", () => {
   });
 
   it("should return empty sharing user ids when no settings", async () => {
-    server.use(
-      createORPCHandler(["location", "getMySharingSettings"], () => null),
-    );
+    server.use(createORPCHandler(["location", "getMySharingSettings"], () => null));
 
     const { result } = renderHookWithMSW(() => useMapSharing(false, null));
 
@@ -50,8 +48,20 @@ describe("useMapSharing (MSW)", () => {
     server.use(
       createORPCHandler(["location", "getMySharingSettings"], () => null),
       createORPCHandler(["location", "getAllUsersForSharing"], () => []),
-      createORPCHandler(["location", "updateSharingSettings"], () => new Promise(() => {})),
-      createORPCHandler(["location", "removeUserFromSharing"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["location", "updateSharingSettings"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["location", "removeUserFromSharing"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useMapSharing(true, "trip-123"));
@@ -61,14 +71,18 @@ describe("useMapSharing (MSW)", () => {
     });
 
     // Trigger updateSharing without awaiting so we can observe pending state
-    result.current.updateSharing(["user-1"]).catch(() => {});
+    result.current.updateSharing(["user-1"]).catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isUpdatingSharing).toBe(true);
     });
 
     // Trigger removeUser without awaiting so we can observe pending state
-    result.current.removeUser("user-1").catch(() => {});
+    result.current.removeUser("user-1").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isRemovingUser).toBe(true);

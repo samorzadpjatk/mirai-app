@@ -25,8 +25,20 @@ describe("useAdminUsers (MSW)", () => {
 
   it("should return initial loading state", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], () => new Promise(() => {})),
-      createORPCHandler(["user", "searchWithPagination"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers(tripId, "", "firstName"));
@@ -379,16 +391,76 @@ describe("useAdminUsers (MSW)", () => {
         users: [],
         pagination: { hasMore: false, offset: 0, limit: 30 },
       })),
-      createORPCHandler(["group", "assignUserToGroup"], () => new Promise(() => {})),
-      createORPCHandler(["group", "removeUserFromGroup"], () => new Promise(() => {})),
-      createORPCHandler(["user", "createUser"], () => new Promise(() => {})),
-      createORPCHandler(["user", "banUserUntil"], () => new Promise(() => {})),
-      createORPCHandler(["user", "deleteUser"], () => new Promise(() => {})),
-      createORPCHandler(["user", "updateName"], () => new Promise(() => {})),
-      createORPCHandler(["user", "updateWristNumber"], () => new Promise(() => {})),
-      createORPCHandler(["user", "removeWristNumber"], () => new Promise(() => {})),
-      createORPCHandler(["user", "updateHouseNumber"], () => new Promise(() => {})),
-      createORPCHandler(["user", "removeHouseNumber"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "assignUserToGroup"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["group", "removeUserFromGroup"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "createUser"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "banUserUntil"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "deleteUser"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "updateName"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "updateWristNumber"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "removeWristNumber"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "updateHouseNumber"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "removeHouseNumber"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers(tripId, "", "firstName"));
@@ -398,16 +470,42 @@ describe("useAdminUsers (MSW)", () => {
     });
 
     // Trigger mutations without awaiting to observe pending state
-    result.current.assignToGroup("user-1", "group-1").catch(() => {});
-    result.current.removeFromGroup("user-1").catch(() => {});
-    result.current.createUser({ tripId, firstName: "New", lastName: "User", email: "new@example.com" }).catch(() => {});
-    result.current.banUserUntil({ userId: "user-1", bannedUntilMs: Date.now() + 86400000 }).catch(() => {});
-    result.current.deleteUser({ userId: "user-1", tripId }).catch(() => {});
-    result.current.updateName({ userId: "user-1", firstName: "John", lastName: "Doe" }).catch(() => {});
-    result.current.updateWristNumber("user-1", "W123").catch(() => {});
-    result.current.updateWristNumber("user-1", "   ").catch(() => {});
-    result.current.updateHouseNumber("user-1", "H456").catch(() => {});
-    result.current.updateHouseNumber("user-1", "   ").catch(() => {});
+    result.current.assignToGroup("user-1", "group-1").catch(() => {
+      /* no-op */
+    });
+    result.current.removeFromGroup("user-1").catch(() => {
+      /* no-op */
+    });
+    result.current
+      .createUser({ tripId, firstName: "New", lastName: "User", email: "new@example.com" })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current
+      .banUserUntil({ userId: "user-1", bannedUntilMs: Date.now() + 86400000 })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current.deleteUser({ userId: "user-1", tripId }).catch(() => {
+      /* no-op */
+    });
+    result.current
+      .updateName({ userId: "user-1", firstName: "John", lastName: "Doe" })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current.updateWristNumber("user-1", "W123").catch(() => {
+      /* no-op */
+    });
+    result.current.updateWristNumber("user-1", "   ").catch(() => {
+      /* no-op */
+    });
+    result.current.updateHouseNumber("user-1", "H456").catch(() => {
+      /* no-op */
+    });
+    result.current.updateHouseNumber("user-1", "   ").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isAssigningToGroup).toBe(true);
@@ -519,12 +617,18 @@ describe("useAdminUsers (MSW)", () => {
 
     // Override handler to simulate slow refetch
     server.use(
-      createORPCHandler(["user", "searchWithPagination"], () => new Promise((resolve) => {
-        resolveRefetch = resolve;
-      })),
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        () =>
+          new Promise((resolve) => {
+            resolveRefetch = resolve;
+          }),
+      ),
     );
 
-    result.current.refetchUsers().catch(() => {});
+    result.current.refetchUsers().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.usersRefetching).toBe(true);
@@ -610,7 +714,9 @@ describe("useAdminUsers (MSW)", () => {
     expect(result.current.usersFetchingNextPage).toBe(false);
 
     // Trigger fetch next page without awaiting
-    result.current.fetchMoreUsers().catch(() => {});
+    result.current.fetchMoreUsers().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.usersFetchingNextPage).toBe(true);
@@ -701,8 +807,20 @@ describe("useAdminUsers (MSW)", () => {
 
   it("should be disabled when tripId is empty", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], () => new Promise(() => {})),
-      createORPCHandler(["user", "searchWithPagination"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers("", "", "firstName"));

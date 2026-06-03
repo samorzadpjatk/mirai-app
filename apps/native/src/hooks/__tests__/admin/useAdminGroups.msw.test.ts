@@ -25,8 +25,20 @@ describe("useAdminGroups (MSW)", () => {
 
   it("should return initial loading state", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], () => new Promise(() => {})),
-      createORPCHandler(["user", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminGroups(tripId));
@@ -270,9 +282,27 @@ describe("useAdminGroups (MSW)", () => {
         pagination: { hasMore: false, offset: 0, limit: 30 },
       })),
       createORPCHandler(["user", "getAll"], () => []),
-      createORPCHandler(["group", "create"], () => new Promise(() => {})),
-      createORPCHandler(["group", "update"], () => new Promise(() => {})),
-      createORPCHandler(["group", "delete"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "create"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["group", "update"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["group", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminGroups(tripId));
@@ -282,9 +312,15 @@ describe("useAdminGroups (MSW)", () => {
     });
 
     // Trigger mutations without awaiting to observe pending state
-    result.current.createGroup("New Group").catch(() => {});
-    result.current.updateGroup("group-1", "Updated").catch(() => {});
-    result.current.deleteGroup("group-1").catch(() => {});
+    result.current.createGroup("New Group").catch(() => {
+      /* no-op */
+    });
+    result.current.updateGroup("group-1", "Updated").catch(() => {
+      /* no-op */
+    });
+    result.current.deleteGroup("group-1").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isCreatingGroup).toBe(true);
@@ -435,7 +471,9 @@ describe("useAdminGroups (MSW)", () => {
     expect(result.current.groupsFetchingNextPage).toBe(false);
 
     // Trigger fetch next page without awaiting
-    result.current.fetchMoreGroups().catch(() => {});
+    result.current.fetchMoreGroups().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.groupsFetchingNextPage).toBe(true);
@@ -530,8 +568,20 @@ describe("useAdminGroups (MSW)", () => {
 
   it("should be disabled when tripId is empty", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], () => new Promise(() => {})),
-      createORPCHandler(["user", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["user", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminGroups(""));
@@ -627,12 +677,30 @@ describe("flattenGroupPages", () => {
     const pages = [
       {
         groups: [
-          { id: "g1", name: "A", description: null, image: null, code: "A", coins: 0, organizer: null, participants: [] },
+          {
+            id: "g1",
+            name: "A",
+            description: null,
+            image: null,
+            code: "A",
+            coins: 0,
+            organizer: null,
+            participants: [],
+          },
         ],
       },
       {
         groups: [
-          { id: "g2", name: "B", description: null, image: null, code: "B", coins: 0, organizer: null, participants: [] },
+          {
+            id: "g2",
+            name: "B",
+            description: null,
+            image: null,
+            code: "B",
+            coins: 0,
+            organizer: null,
+            participants: [],
+          },
         ],
       },
     ];

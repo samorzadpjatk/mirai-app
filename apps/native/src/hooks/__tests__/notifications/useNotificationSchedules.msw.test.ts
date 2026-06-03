@@ -12,7 +12,13 @@ describe("useNotificationSchedules (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notificationSchedule", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
@@ -60,9 +66,7 @@ describe("useNotificationSchedules (MSW)", () => {
   });
 
   it("should handle empty schedules", async () => {
-    server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-    );
+    server.use(createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })));
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
 
@@ -153,7 +157,13 @@ describe("useNotificationSchedules (MSW)", () => {
   it("should indicate deleting state", async () => {
     server.use(
       createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-      createORPCHandler(["notificationSchedule", "delete"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notificationSchedule", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
@@ -173,7 +183,13 @@ describe("useNotificationSchedules (MSW)", () => {
   it("should indicate toggling state", async () => {
     server.use(
       createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-      createORPCHandler(["notificationSchedule", "toggleActive"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notificationSchedule", "toggleActive"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
@@ -193,7 +209,15 @@ describe("useNotificationSchedules (MSW)", () => {
   it("should refetch schedules", async () => {
     let callCount = 0;
     const mockSchedules = [
-      { id: "schedule-1", name: "Test", body: "Body", scheduledAt: "2024-01-01T08:00:00Z", isActive: true, tripId: "trip-123", createdBy: { id: "user-1", firstName: "John" } },
+      {
+        id: "schedule-1",
+        name: "Test",
+        body: "Body",
+        scheduledAt: "2024-01-01T08:00:00Z",
+        isActive: true,
+        tripId: "trip-123",
+        createdBy: { id: "user-1", firstName: "John" },
+      },
     ];
 
     server.use(
@@ -222,9 +246,13 @@ describe("useNotificationSchedules (MSW)", () => {
 
   it("should indicate fetching state", async () => {
     server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => new Promise((resolve) => {
-        setTimeout(() => resolve({ schedules: [] }), 100);
-      })),
+      createORPCHandler(
+        ["notificationSchedule", "getAll"],
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve({ schedules: [] }), 100);
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
@@ -237,9 +265,7 @@ describe("useNotificationSchedules (MSW)", () => {
   });
 
   it("should handle null data from query", async () => {
-    server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => null),
-    );
+    server.use(createORPCHandler(["notificationSchedule", "getAll"], () => null));
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
 
@@ -251,9 +277,7 @@ describe("useNotificationSchedules (MSW)", () => {
   });
 
   it("should handle undefined schedules in data", async () => {
-    server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => ({})),
-    );
+    server.use(createORPCHandler(["notificationSchedule", "getAll"], () => ({})));
 
     const { result } = renderHookWithMSW(() => useNotificationSchedules());
 

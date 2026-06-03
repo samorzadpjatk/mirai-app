@@ -1,6 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { waitFor, act } from "@testing-library/react-native";
-import { useAdminNotifications, getNextNotificationPageParam, buildNotificationQueryInput } from "../../admin/useAdminNotifications";
+import {
+  useAdminNotifications,
+  getNextNotificationPageParam,
+  buildNotificationQueryInput,
+} from "../../admin/useAdminNotifications";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
@@ -14,7 +18,13 @@ describe("useAdminNotifications (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["notifications", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notifications", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminNotifications(tripId));
@@ -32,7 +42,14 @@ describe("useAdminNotifications (MSW)", () => {
         url: "/trip",
         createdAt: "2024-01-01T00:00:00Z",
         createdBy: { id: "user-1", firstName: "John" },
-        pushes: [{ targetUserId: "user-1", status: "sent", sentAt: "2024-01-01T00:01:00Z", failureReason: null }],
+        pushes: [
+          {
+            targetUserId: "user-1",
+            status: "sent",
+            sentAt: "2024-01-01T00:01:00Z",
+            failureReason: null,
+          },
+        ],
       },
     ];
 
@@ -138,7 +155,13 @@ describe("useAdminNotifications (MSW)", () => {
         notifications: [],
         pagination: { hasMore: false, offset: 0, limit: 50 },
       })),
-      createORPCHandler(["notifications", "retryNotification"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notifications", "retryNotification"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminNotifications(tripId));
@@ -147,7 +170,9 @@ describe("useAdminNotifications (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    result.current.retryNotification("notif-1").catch(() => {});
+    result.current.retryNotification("notif-1").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isRetrying).toBe(true);
@@ -160,7 +185,13 @@ describe("useAdminNotifications (MSW)", () => {
         notifications: [],
         pagination: { hasMore: false, offset: 0, limit: 50 },
       })),
-      createORPCHandler(["notifications", "delete"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notifications", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminNotifications(tripId));
@@ -169,7 +200,9 @@ describe("useAdminNotifications (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    result.current.deleteNotification("notif-1").catch(() => {});
+    result.current.deleteNotification("notif-1").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isDeleting).toBe(true);
@@ -179,14 +212,35 @@ describe("useAdminNotifications (MSW)", () => {
   it("should fetch next page", async () => {
     let callCount = 0;
     const mockNotifications = [
-      { id: "notif-1", title: "First", body: "Body", url: "/", createdAt: "2024-01-01T00:00:00Z", createdBy: { id: "user-1" }, pushes: [] },
+      {
+        id: "notif-1",
+        title: "First",
+        body: "Body",
+        url: "/",
+        createdAt: "2024-01-01T00:00:00Z",
+        createdBy: { id: "user-1" },
+        pushes: [],
+      },
     ];
 
     server.use(
       createORPCHandler(["notifications", "getAll"], () => {
         callCount++;
         return {
-          notifications: callCount === 1 ? mockNotifications : [{ id: "notif-2", title: "Second", body: "Body", url: "/", createdAt: "2024-01-01T00:00:00Z", createdBy: { id: "user-1" }, pushes: [] }],
+          notifications:
+            callCount === 1
+              ? mockNotifications
+              : [
+                  {
+                    id: "notif-2",
+                    title: "Second",
+                    body: "Body",
+                    url: "/",
+                    createdAt: "2024-01-01T00:00:00Z",
+                    createdBy: { id: "user-1" },
+                    pushes: [],
+                  },
+                ],
           pagination: { hasMore: callCount === 1, offset: (callCount - 1) * 50, limit: 50 },
         };
       }),
@@ -217,7 +271,20 @@ describe("useAdminNotifications (MSW)", () => {
       createORPCHandler(["notifications", "getAll"], () => {
         callCount++;
         return {
-          notifications: callCount === 1 ? [] : [{ id: "notif-1", title: "Test", body: "Body", url: "/", createdAt: "2024-01-01T00:00:00Z", createdBy: { id: "user-1" }, pushes: [] }],
+          notifications:
+            callCount === 1
+              ? []
+              : [
+                  {
+                    id: "notif-1",
+                    title: "Test",
+                    body: "Body",
+                    url: "/",
+                    createdAt: "2024-01-01T00:00:00Z",
+                    createdBy: { id: "user-1" },
+                    pushes: [],
+                  },
+                ],
           pagination: { hasMore: false, offset: 0, limit: 50 },
         };
       }),
@@ -251,7 +318,9 @@ describe("useAdminNotifications (MSW)", () => {
             pagination: { hasMore: true, offset: 0, limit: 50 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
     );
 
@@ -263,7 +332,9 @@ describe("useAdminNotifications (MSW)", () => {
 
     expect(result.current.isFetchingNextPage).toBe(false);
 
-    result.current.fetchNextPage().catch(() => {});
+    result.current.fetchNextPage().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isFetchingNextPage).toBe(true);
@@ -281,7 +352,9 @@ describe("useAdminNotifications (MSW)", () => {
             pagination: { hasMore: false, offset: 0, limit: 50 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
     );
 
@@ -293,7 +366,9 @@ describe("useAdminNotifications (MSW)", () => {
 
     expect(result.current.isRefetching).toBe(false);
 
-    result.current.refetch().catch(() => {});
+    result.current.refetch().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isRefetching).toBe(true);
@@ -346,11 +421,15 @@ describe("useAdminNotifications (MSW)", () => {
 
 describe("getNextNotificationPageParam", () => {
   it("should return undefined when no more pages", () => {
-    expect(getNextNotificationPageParam({ pagination: { hasMore: false, offset: 0, limit: 50 } })).toBeUndefined();
+    expect(
+      getNextNotificationPageParam({ pagination: { hasMore: false, offset: 0, limit: 50 } }),
+    ).toBeUndefined();
   });
 
   it("should return next offset when more pages", () => {
-    expect(getNextNotificationPageParam({ pagination: { hasMore: true, offset: 0, limit: 50 } })).toBe(50);
+    expect(
+      getNextNotificationPageParam({ pagination: { hasMore: true, offset: 0, limit: 50 } }),
+    ).toBe(50);
   });
 });
 

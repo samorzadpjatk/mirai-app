@@ -39,7 +39,12 @@ describe("useCreateGroup (MSW)", () => {
         expect(tripId).toBe("trip-789");
         expect(name).toBe("Group With Image");
         expect(image).toBe("https://example.com/image.jpg");
-        return { id: "new-group-456", name: "Group With Image", code: "GWI001", image: "https://example.com/image.jpg" };
+        return {
+          id: "new-group-456",
+          name: "Group With Image",
+          code: "GWI001",
+          image: "https://example.com/image.jpg",
+        };
       }),
     );
 
@@ -104,13 +109,21 @@ describe("useCreateGroup (MSW)", () => {
 
   it("should return isCreating true when mutation is pending", async () => {
     server.use(
-      createORPCHandler(["group", "create"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "create"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useCreateGroup("trip-123"));
 
     // Trigger mutation without awaiting
-    result.current.createGroup({ name: "Test Group" }).catch(() => {});
+    result.current.createGroup({ name: "Test Group" }).catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isCreating).toBe(true);

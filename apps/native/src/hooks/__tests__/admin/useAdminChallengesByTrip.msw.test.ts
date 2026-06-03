@@ -1,6 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { waitFor, act } from "@testing-library/react-native";
-import { useAdminChallengesByTrip, buildAdminChallengeQueryInput, getNextAdminChallengePageParam } from "../../admin/useAdminChallengesByTrip";
+import {
+  useAdminChallengesByTrip,
+  buildAdminChallengeQueryInput,
+  getNextAdminChallengePageParam,
+} from "../../admin/useAdminChallengesByTrip";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
@@ -14,7 +18,13 @@ describe("useAdminChallengesByTrip (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["challenge", "getAllByTrip"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["challenge", "getAllByTrip"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminChallengesByTrip(tripId));
@@ -142,14 +152,33 @@ describe("useAdminChallengesByTrip (MSW)", () => {
   it("should fetch next page", async () => {
     let callCount = 0;
     const mockChallenges = [
-      { id: "challenge-1", name: "First", description: "Desc", basePoints: 100, status: "ACTIVE", tripId: "trip-123" },
+      {
+        id: "challenge-1",
+        name: "First",
+        description: "Desc",
+        basePoints: 100,
+        status: "ACTIVE",
+        tripId: "trip-123",
+      },
     ];
 
     server.use(
       createORPCHandler(["challenge", "getAllByTrip"], () => {
         callCount++;
         return {
-          challenges: callCount === 1 ? mockChallenges : [{ id: "challenge-2", name: "Second", description: "Desc", basePoints: 50, status: "ACTIVE", tripId: "trip-123" }],
+          challenges:
+            callCount === 1
+              ? mockChallenges
+              : [
+                  {
+                    id: "challenge-2",
+                    name: "Second",
+                    description: "Desc",
+                    basePoints: 50,
+                    status: "ACTIVE",
+                    tripId: "trip-123",
+                  },
+                ],
           pagination: { hasMore: callCount === 1, offset: (callCount - 1) * 30, limit: 30 },
         };
       }),
@@ -184,7 +213,9 @@ describe("useAdminChallengesByTrip (MSW)", () => {
             pagination: { hasMore: true, offset: 0, limit: 30 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
     );
 
@@ -196,7 +227,9 @@ describe("useAdminChallengesByTrip (MSW)", () => {
 
     expect(result.current.isFetchingNextPage).toBe(false);
 
-    result.current.fetchNextPage().catch(() => {});
+    result.current.fetchNextPage().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isFetchingNextPage).toBe(true);
@@ -214,7 +247,9 @@ describe("useAdminChallengesByTrip (MSW)", () => {
             pagination: { hasMore: false, offset: 0, limit: 30 },
           };
         }
-        return new Promise(() => {});
+        return new Promise(() => {
+          /* no-op */
+        });
       }),
     );
 
@@ -226,7 +261,9 @@ describe("useAdminChallengesByTrip (MSW)", () => {
 
     expect(result.current.isRefetching).toBe(false);
 
-    result.current.refetch().catch(() => {});
+    result.current.refetch().catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isRefetching).toBe(true);
@@ -263,7 +300,13 @@ describe("useAdminChallengesByTrip (MSW)", () => {
         challenges: [],
         pagination: { hasMore: false, offset: 0, limit: 30 },
       })),
-      createORPCHandler(["challenge", "delete"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["challenge", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminChallengesByTrip(tripId));
@@ -272,7 +315,9 @@ describe("useAdminChallengesByTrip (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    result.current.deleteChallenge("challenge-1").catch(() => {});
+    result.current.deleteChallenge("challenge-1").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isDeleting).toBe(true);
@@ -297,9 +342,30 @@ describe("useAdminChallengesByTrip (MSW)", () => {
 
   it("should calculate stats", async () => {
     const mockChallenges = [
-      { id: "challenge-1", name: "First", description: "Desc", basePoints: 100, status: "ACTIVE", tripId: "trip-123" },
-      { id: "challenge-2", name: "Second", description: "Desc", basePoints: 50, status: "ACTIVE", tripId: "trip-123" },
-      { id: "challenge-3", name: "Third", description: "Desc", basePoints: 25, status: "HIDDEN", tripId: "trip-123" },
+      {
+        id: "challenge-1",
+        name: "First",
+        description: "Desc",
+        basePoints: 100,
+        status: "ACTIVE",
+        tripId: "trip-123",
+      },
+      {
+        id: "challenge-2",
+        name: "Second",
+        description: "Desc",
+        basePoints: 50,
+        status: "ACTIVE",
+        tripId: "trip-123",
+      },
+      {
+        id: "challenge-3",
+        name: "Third",
+        description: "Desc",
+        basePoints: 25,
+        status: "HIDDEN",
+        tripId: "trip-123",
+      },
     ];
 
     server.use(
@@ -321,11 +387,15 @@ describe("useAdminChallengesByTrip (MSW)", () => {
 
 describe("getNextAdminChallengePageParam", () => {
   it("should return undefined when no more pages", () => {
-    expect(getNextAdminChallengePageParam({ pagination: { hasMore: false, offset: 0, limit: 30 } })).toBeUndefined();
+    expect(
+      getNextAdminChallengePageParam({ pagination: { hasMore: false, offset: 0, limit: 30 } }),
+    ).toBeUndefined();
   });
 
   it("should return next offset when more pages", () => {
-    expect(getNextAdminChallengePageParam({ pagination: { hasMore: true, offset: 0, limit: 30 } })).toBe(30);
+    expect(
+      getNextAdminChallengePageParam({ pagination: { hasMore: true, offset: 0, limit: 30 } }),
+    ).toBe(30);
   });
 });
 

@@ -1,6 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { waitFor, act } from "@testing-library/react-native";
-import { useAdminSchedules, toTriggerTime, isScheduleRecurring, buildScheduleMessage } from "../../admin/useAdminSchedules";
+import {
+  useAdminSchedules,
+  toTriggerTime,
+  isScheduleRecurring,
+  buildScheduleMessage,
+} from "../../admin/useAdminSchedules";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { server, createORPCHandler, resetHandlers } from "../../../test-utils/msw/server";
 
@@ -14,7 +19,13 @@ describe("useAdminSchedules (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notificationSchedule", "getAll"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminSchedules(tripId));
@@ -190,11 +201,14 @@ describe("useAdminSchedules (MSW)", () => {
   it("should upsert template schedule", async () => {
     server.use(
       createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-      createORPCHandler(["notificationSchedule", "upsertTemplate"], ({ tripId: t, templateKey }) => {
-        expect(t).toBe("trip-123");
-        expect(templateKey).toBe("daily_morning");
-        return { id: "schedule-template" };
-      }),
+      createORPCHandler(
+        ["notificationSchedule", "upsertTemplate"],
+        ({ tripId: t, templateKey }) => {
+          expect(t).toBe("trip-123");
+          expect(templateKey).toBe("daily_morning");
+          return { id: "schedule-template" };
+        },
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminSchedules(tripId));
@@ -209,9 +223,7 @@ describe("useAdminSchedules (MSW)", () => {
   });
 
   it("should throw error when upserting template without tripId", async () => {
-    server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-    );
+    server.use(createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })));
 
     const { result } = renderHookWithMSW(() => useAdminSchedules());
 
@@ -229,11 +241,41 @@ describe("useAdminSchedules (MSW)", () => {
   it("should indicate loading states for mutations", async () => {
     server.use(
       createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-      createORPCHandler(["notificationSchedule", "create"], () => new Promise(() => {})),
-      createORPCHandler(["notificationSchedule", "update"], () => new Promise(() => {})),
-      createORPCHandler(["notificationSchedule", "delete"], () => new Promise(() => {})),
-      createORPCHandler(["notificationSchedule", "toggleActive"], () => new Promise(() => {})),
-      createORPCHandler(["notificationSchedule", "upsertTemplate"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["notificationSchedule", "create"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["notificationSchedule", "update"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["notificationSchedule", "delete"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["notificationSchedule", "toggleActive"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
+      createORPCHandler(
+        ["notificationSchedule", "upsertTemplate"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminSchedules(tripId));
@@ -242,11 +284,33 @@ describe("useAdminSchedules (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    result.current.createSchedule({ tripId: "trip-123", name: "Test", notificationType: "REMINDER", hour: 10, minute: 0, startDate: new Date(), endDate: new Date() }).catch(() => {});
-    result.current.updateSchedule({ id: "schedule-1", name: "Updated", hour: 14, minute: 30 }).catch(() => {});
-    result.current.deleteSchedule("schedule-1").catch(() => {});
-    result.current.toggleSchedule("schedule-1").catch(() => {});
-    result.current.upsertTemplateSchedule("daily_morning").catch(() => {});
+    result.current
+      .createSchedule({
+        tripId: "trip-123",
+        name: "Test",
+        notificationType: "REMINDER",
+        hour: 10,
+        minute: 0,
+        startDate: new Date(),
+        endDate: new Date(),
+      })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current
+      .updateSchedule({ id: "schedule-1", name: "Updated", hour: 14, minute: 30 })
+      .catch(() => {
+        /* no-op */
+      });
+    result.current.deleteSchedule("schedule-1").catch(() => {
+      /* no-op */
+    });
+    result.current.toggleSchedule("schedule-1").catch(() => {
+      /* no-op */
+    });
+    result.current.upsertTemplateSchedule("daily_morning").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isCreating).toBe(true);
@@ -310,9 +374,7 @@ describe("useAdminSchedules (MSW)", () => {
   });
 
   it("should work without tripId", async () => {
-    server.use(
-      createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })),
-    );
+    server.use(createORPCHandler(["notificationSchedule", "getAll"], () => ({ schedules: [] })));
 
     const { result } = renderHookWithMSW(() => useAdminSchedules());
 
@@ -386,7 +448,9 @@ describe("buildScheduleMessage", () => {
   });
 
   it("should use default message when both are undefined", () => {
-    expect(buildScheduleMessage(undefined, undefined, "ALERT")).toBe("Scheduled notification: ALERT");
+    expect(buildScheduleMessage(undefined, undefined, "ALERT")).toBe(
+      "Scheduled notification: ALERT",
+    );
   });
 
   it("should prefer body even when title is null", () => {

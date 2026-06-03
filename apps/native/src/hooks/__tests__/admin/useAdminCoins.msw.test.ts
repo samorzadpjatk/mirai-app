@@ -14,7 +14,13 @@ describe("useAdminCoins (MSW)", () => {
 
   it("should return loading state initially", async () => {
     server.use(
-      createORPCHandler(["group", "getGroupList"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "getGroupList"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
@@ -45,9 +51,7 @@ describe("useAdminCoins (MSW)", () => {
       },
     ];
 
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => mockGroups),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => mockGroups));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
@@ -108,9 +112,7 @@ describe("useAdminCoins (MSW)", () => {
   });
 
   it("should throw error when adding non-positive amount", async () => {
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => []),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => []));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
@@ -132,9 +134,7 @@ describe("useAdminCoins (MSW)", () => {
   });
 
   it("should throw error when removing non-positive amount", async () => {
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => []),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => []));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
@@ -158,7 +158,13 @@ describe("useAdminCoins (MSW)", () => {
   it("should indicate loading state for mutations", async () => {
     server.use(
       createORPCHandler(["group", "getGroupList"], () => []),
-      createORPCHandler(["group", "addCoins"], () => new Promise(() => {})),
+      createORPCHandler(
+        ["group", "addCoins"],
+        () =>
+          new Promise(() => {
+            /* no-op */
+          }),
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
@@ -168,7 +174,9 @@ describe("useAdminCoins (MSW)", () => {
     });
 
     // Trigger mutation without awaiting to observe pending state
-    result.current.addCoins("group-1", 100, "Bonus").catch(() => {});
+    result.current.addCoins("group-1", 100, "Bonus").catch(() => {
+      /* no-op */
+    });
 
     await waitFor(() => {
       expect(result.current.isAddingCoins).toBe(true);
@@ -177,9 +185,7 @@ describe("useAdminCoins (MSW)", () => {
   });
 
   it("should handle empty groups list", async () => {
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => []),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => []));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
@@ -191,9 +197,7 @@ describe("useAdminCoins (MSW)", () => {
   });
 
   it("should handle null data from query", async () => {
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => null),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => null));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
@@ -215,9 +219,7 @@ describe("useAdminCoins (MSW)", () => {
       },
     ];
 
-    server.use(
-      createORPCHandler(["group", "getGroupList"], () => mockGroups),
-    );
+    server.use(createORPCHandler(["group", "getGroupList"], () => mockGroups));
 
     const { result } = renderHookWithMSW(() => useAdminCoins(tripId));
 
