@@ -32,7 +32,7 @@ function getInitials(name: string): string {
 
   const parts = trimmed.split(/\s+/);
   if (parts.length === 1) {
-    return parts[0]?.[0]?.toUpperCase();
+    return (parts[0]?.[0] ?? "?").toUpperCase();
   }
 
   const first = parts[0]?.[0] ?? "";

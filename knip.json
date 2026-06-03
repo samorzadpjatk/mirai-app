@@ -37,9 +37,7 @@
     "scripts/**"
   ],
   "ignoreBinaries": [
-    "dist/index.js",
-    "jest",
-    "tsc"
+    "jest"
   ],
   "ignoreDependencies": [
     "@commitlint/config-conventional",

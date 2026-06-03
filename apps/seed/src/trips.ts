@@ -73,7 +73,8 @@ export const seedTrip = async (
         backgroundImagePath,
       })
       .where(eq(trips.id, trip.id));
-    trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.id, trip?.id) });
+    const tripId = trip.id;
+    trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.id, tripId) });
   } else {
     const inserted = await db
       .insert(trips)

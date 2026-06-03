@@ -335,26 +335,33 @@ export default function AdminChallengeStaffVotingScreen() {
               </Text>
             </View>
 
-            {voting.currentLeft && voting.currentRight ? (
-              <View style={styles.pairsWrap}>
-                <SubmissionImageCard
-                  submission={voting.currentLeft}
-                  title="Pick this"
-                  subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentLeft?.id)}
-                />
-                <SubmissionImageCard
-                  submission={voting.currentRight}
-                  title="Pick this"
-                  subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentRight?.id)}
-                />
-              </View>
-            ) : (
-              <View style={styles.centerState}>
-                <ActivityIndicator size="small" color={colors.primary} />
-              </View>
-            )}
+            {(() => {
+              const currentLeft = voting.currentLeft;
+              const currentRight = voting.currentRight;
+              if (!currentLeft || !currentRight) {
+                return (
+                  <View style={styles.centerState}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                );
+              }
+              return (
+                <View style={styles.pairsWrap}>
+                  <SubmissionImageCard
+                    submission={currentLeft}
+                    title="Pick this"
+                    subtitle="Tap to select winner"
+                    onPress={() => voting.handlePickWinner(currentLeft.id)}
+                  />
+                  <SubmissionImageCard
+                    submission={currentRight}
+                    title="Pick this"
+                    subtitle="Tap to select winner"
+                    onPress={() => voting.handlePickWinner(currentRight.id)}
+                  />
+                </View>
+              );
+            })()}
 
             {voting.stableTop3Count > 0 ? (
               <Text style={styles.hintText}>

@@ -124,7 +124,9 @@ export function ChallengeTimeLeftCard({
     return null;
   }
 
-  const countdownText = showScheduleOnly ? "" : formatCountdown(activeDeadline?.getTime() - now);
+  const countdownText = showScheduleOnly
+    ? ""
+    : formatCountdown(activeDeadline ? activeDeadline.getTime() - now : 0);
   const countdownSubtext = showScheduleOnly
     ? ""
     : isRecurring
@@ -180,13 +182,13 @@ export function ChallengeTimeLeftCard({
         cycleMs = Math.max(dailyMinutes * 60 * 1000, 60 * 1000);
       }
 
-      return clamp((activeDeadline?.getTime() - now) / cycleMs, 0, 1);
+      return clamp(activeDeadline ? (activeDeadline.getTime() - now) / cycleMs : 0, 0, 1);
     }
 
     if (!start || !end) return 0;
     const totalMs = end.getTime() - start.getTime();
     if (totalMs <= 0) return 0;
-    return clamp((activeDeadline?.getTime() - now) / totalMs, 0, 1);
+    return clamp(activeDeadline ? (activeDeadline.getTime() - now) / totalMs : 0, 0, 1);
   })();
 
   const progressColor =
