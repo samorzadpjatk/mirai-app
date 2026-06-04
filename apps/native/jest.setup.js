@@ -1,4 +1,23 @@
 import "@testing-library/jest-native/extend-expect";
+
+// Mock window.addEventListener for MSW WebSocket support in jest-expo
+// MSW's WebSocketClientManager uses window.addEventListener, which is not
+// available in the jest-expo environment. This mock prevents errors when
+// MSW intercepts WebSocket connections.
+if (typeof window === 'undefined') {
+  globalThis.window = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+} else {
+  if (typeof window.addEventListener !== 'function') {
+    window.addEventListener = () => {};
+  }
+  if (typeof window.removeEventListener !== 'function') {
+    window.removeEventListener = () => {};
+  }
+}
+
 import { server } from "./src/test-utils/msw/server";
 
 // Mock WebSocket for oRPC client initialization in tests
@@ -35,7 +54,18 @@ class MockWebSocket {
 globalThis.WebSocket = MockWebSocket;
 
 // Start MSW server before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => {
+  // Ensure window.addEventListener is available before starting MSW
+  if (typeof window !== 'undefined') {
+    if (typeof window.addEventListener !== 'function') {
+      window.addEventListener = () => {};
+    }
+    if (typeof window.removeEventListener !== 'function') {
+      window.removeEventListener = () => {};
+    }
+  }
+  server.listen({ onUnhandledRequest: "error" });
+});
 
 // Reset handlers after each test
 afterEach(() => {

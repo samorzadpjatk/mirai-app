@@ -16,7 +16,7 @@ export default defineConfig({
     hookTimeout: 30000,
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"],
       thresholds: {
         branches: 80,
         functions: 80,

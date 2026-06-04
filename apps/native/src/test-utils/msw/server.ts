@@ -1,5 +1,12 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, ws } from "msw";
 import { setupServer } from "msw/node";
+
+/**
+ * WebSocket link for intercepting oRPC WebSocket connections in tests.
+ * Prevents "[MSW] Error: intercepted a WebSocket connection without a matching event handler"
+ * by providing a handler that accepts and closes the connection gracefully.
+ */
+const wsLink = ws.link("ws://localhost:9999");
 
 /**
  * Helper to create an oRPC MSW handler.
@@ -45,9 +52,17 @@ export function createORPCHandler(
 
 /**
  * MSW server instance for native tests.
+ * Includes a WebSocket handler to prevent unhandled WebSocket connection errors.
  * Start with `server.listen()` before tests and `server.close()` after.
  */
-export const server = setupServer();
+export const server = setupServer(
+  wsLink.addEventListener("connection", ({ client }) => {
+    // Accept the connection and close it immediately to prevent
+    // "unhandled WebSocket connection" errors in tests that don't
+    // explicitly mock WebSocket behavior.
+    client.close();
+  }),
+);
 
 /**
  * Reset MSW handlers to clean state.

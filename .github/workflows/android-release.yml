@@ -184,6 +184,7 @@ jobs:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
       - name: Build release artifact
+        id: build
         run: bundle exec fastlane android android_build
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
@@ -204,6 +205,7 @@ jobs:
           echo "artifact_path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
       - name: Upload internal release artifact
+        id: upload
         run: bundle exec fastlane android android_submit track:internal artifact_path:${{ steps.artifact.outputs.artifact_path }}
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
@@ -227,6 +229,32 @@ jobs:
             apps/native/dist/android/*.aab
             apps/native/dist/android/release-metadata.json
           if-no-files-found: error
+
+      - name: Generate Android build summary
+        if: always()
+        run: |
+          echo "## Android Build & Internal Upload Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Status | ${{ steps.build.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Upload Status | ${{ steps.upload.outcome == 'success' && '✅ Uploaded' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Name | ${{ steps.metadata.outputs.version_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Code | ${{ steps.metadata.outputs.version_code }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Classification | ${{ steps.track_routing.outputs.classification }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | ${{ steps.metadata.outputs.artifact_path }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Track Routing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Track | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Internal | ✅ Uploaded |" >> $GITHUB_STEP_SUMMARY
+          echo "| Beta | ${{ steps.track_routing.outputs.submit_external == 'true' && '✅ Queued' || '⬜ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ steps.track_routing.outputs.submit_production == 'true' && '✅ Queued' || '⬜ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.build.outcome }}" == "failure" ] || [ "${{ steps.upload.outcome }}" == "failure" ]; then
+            echo "::error::Android build/upload failed"
+          fi
 
   promote_to_beta:
     name: Promote internal -> beta
@@ -280,9 +308,28 @@ jobs:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
       - name: Promote exact release to beta
+        id: promote
         run: |
           VERSION_CODE=${{ needs.build_and_upload_internal.outputs.version_code }}
           bundle exec fastlane android android_promote from_track:internal to_track:beta version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
+
+      - name: Generate beta promotion summary
+        if: always()
+        run: |
+          echo "## Android Beta Promotion" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.promote.outcome == 'success' && '✅ Promoted' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Code | ${{ needs.build_and_upload_internal.outputs.version_code }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| From Track | internal |" >> $GITHUB_STEP_SUMMARY
+          echo "| To Track | beta |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.promote.outcome }}" == "success" ]; then
+            echo "::notice::Android v${{ needs.build_and_upload_internal.outputs.version_code }} promoted to beta"
+          else
+            echo "::error::Android beta promotion failed"
+          fi
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
@@ -340,9 +387,28 @@ jobs:
           path: apps/native/dist/android
 
       - name: Promote release to production
+        id: promote
         run: |
           VERSION_CODE=${{ needs.build_and_upload_internal.outputs.version_code }}
           bundle exec fastlane android android_promote from_track:internal to_track:production version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
+
+      - name: Generate production promotion summary
+        if: always()
+        run: |
+          echo "## Android Production Promotion" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.promote.outcome == 'success' && '✅ Promoted' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Code | ${{ needs.build_and_upload_internal.outputs.version_code }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| From Track | internal |" >> $GITHUB_STEP_SUMMARY
+          echo "| To Track | production |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.promote.outcome }}" == "success" ]; then
+            echo "::notice::Android v${{ needs.build_and_upload_internal.outputs.version_code }} promoted to production"
+          else
+            echo "::error::Android production promotion failed"
+          fi
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
