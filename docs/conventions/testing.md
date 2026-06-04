@@ -431,6 +431,8 @@ vi.mock("@mirai-app/db", () => ({
 
 For modules mocked consistently across many tests, use a `__mocks__/` directory. Benefits: centralized implementations, consistent behavior, reduced boilerplate.
 
+**Note**: With the testability redesign, we prefer **MSW for API mocking** and **PGLite for database testing** over manual module mocks. The `__mocks__/` directory should be used sparingly — only for native module mocks (e.g., `expo-location`, `expo-notifications`) that cannot be tested with real implementations.
+
 ## Coverage
 
 ```bash

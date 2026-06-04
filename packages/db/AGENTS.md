@@ -76,22 +76,6 @@ bun run test:coverage
 
 The Drizzle schema is at `packages/db/src/schema/`.
 
-## Usage in Apps
-
-```typescript
-import { createDb, users, eq } from "@mirai-app/db";
-import { drizzle } from "drizzle-orm/postgres-js";
-
-// Create client
-const db = createDb(databaseUrl);
-
-// Query example
-const allUsers = await db.query.users.findMany();
-
-// Insert example
-const newUser = await db.insert(users).values({ email: "user@example.com" }).returning();
-```
-
 ## Testing
 
 This package follows an **integration-only testing approach**. We don't maintain unit tests here because:
@@ -100,17 +84,20 @@ This package follows an **integration-only testing approach**. We don't maintain
 - Drizzle ORM behavior depends on actual database state and responses
 - The package contains no business logic, only schema definitions and client exports
 
-**However**, consuming packages MUST test transaction rollback:
-- The `$transaction` mock in router tests is currently a pass-through (no rollback/atomicity tested)
-- Create `MockTransactionDB` that simulates rollback on failure
-- Add at least one failure-path transaction test per router in `packages/orpc`
+### PGLite Test Helper
+
+This package provides `createPgliteTestDb()` for real database integration testing in other packages. It creates an in-memory PostgreSQL database with the production schema.
+
+**Usage pattern:** `beforeAll` create DB, `beforeEach` reset tables, `afterAll` cleanup.
+
+**Reset behavior:** `reset()` truncates all schema tables with `RESTART IDENTITY CASCADE`.
 
 Database commands serve as implicit integration tests:
 - `db:generate` validates schema syntax and generates migration SQL
 - `db:push` and `db:migrate` verify migrations apply correctly
 - `db:studio` provides manual verification of schema changes
 
-For detailed testing rationale and patterns for consuming packages, see [Testing Conventions](./../../docs/conventions/testing.md) and the root [TESTING.md](../../TESTING.md).
+For detailed testing patterns, see [Testing Conventions](./../../docs/conventions/testing.md).
 
 ## Links
 

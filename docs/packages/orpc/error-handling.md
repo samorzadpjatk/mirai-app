@@ -219,7 +219,7 @@ const rpcHandler = new RPCHandler(appRouter, {
 1. **Use appropriate error codes** - Don't use INTERNAL_SERVER_ERROR for everything
 2. **Provide helpful messages** - "User not found" not "Error"
 3. **Don't leak sensitive info** - Don't expose internal details
-4. **Use structured logging** - Replace `console.error` with Pino or similar. 28 console calls currently exist in backend routers.
+4. **Use structured logging** - Replace `console.error` with Pino or similar. All production `console.*` calls have been eliminated.
 5. **Handle errors gracefully** on the client
 
 ## Global Error Handler

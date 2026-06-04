@@ -22,27 +22,6 @@ Shared oRPC routers and utilities for the MIRAI application. Provides type-safe 
 - **Serialization**: built-in
 - **State**: Zustand 5.0.11
 
-## Key Files
-
-```
-packages/orpc/
-├── src/
-│   ├── routers/          # oRPC routers
-│   │   ├── index.ts      # Root router
-│   │   ├── user/         # User procedures
-│   │   └── ...
-│   ├── procedures/       # Shared procedures
-│   ├── middleware/       # oRPC middleware
-│   ├── client/           # Client setup
-│   │   ├── index.ts
-│   │   └── query/
-│   ├── hooks/            # React hooks
-│   ├── index.ts          # Server exports
-│   └── server.ts         # Server-only exports
-├── package.json
-└── AGENTS.md             # This file
-```
-
 ## Development Commands
 
 ```bash
@@ -71,18 +50,11 @@ bun run test:watch
 
 ### External
 
-- `@orpc/client` - oRPC client
-- `@orpc/server` - oRPC server
-- `@orpc/tanstack-query` - React Query integration
+- `@orpc/client`, `@orpc/server`, `@orpc/tanstack-query` - oRPC
 - `@tanstack/react-query` - React Query
 - `zod` - Schema validation
 - `superjson` - JSON serialization
 - `zustand` - State management
-
-### Peer Dependencies
-
-- `react` ^19.1.0
-- `react-dom` ^19.1.0
 
 ## Usage in Apps
 
@@ -100,12 +72,11 @@ Client: `import { orpc } from '@mirai-app/orpc/client'`
 
 ### Transaction Testing Requirements
 
-- **Critical**: The `$transaction` mock in router tests is a pass-through. No rollback/atomicity is ever tested.
-- **Rule**: Add at least one failure-path transaction test per router. Create `MockTransactionDB` that simulates rollback.
-- **Real PGLite Tests**: Router tests use an actual PGLite database for integration testing. Avoid mocking Drizzle operations where possible.
-- **Failure-Path Coverage**: Every router must have a test that verifies rollback behavior when an inner operation fails.
+- **Real PGLite Tests**: All router tests use `@electric-sql/pglite` for real database integration testing. Avoid mocking Drizzle operations where possible.
+- **Failure-Path Coverage**: Every router must have a test that verifies rollback behavior when an inner operation fails using real `BEGIN...ROLLBACK` transactions.
+- **Performance**: Create the database once per file (`beforeAll`), reset state between tests (`beforeEach`), and clean up once (`afterAll`). This pattern is ~5x faster than creating a DB per test.
 
-See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
+See [Testing Conventions](./../../docs/conventions/testing.md) for PGLite test patterns and examples.
 
 ### Error Handling Standards
 

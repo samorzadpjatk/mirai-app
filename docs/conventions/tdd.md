@@ -66,7 +66,7 @@ When using `/sdd:implement-task`, TDD is automatically applied:
 | **Testing the framework** | Verifying React Query's `isLoading` propagates correctly | Don't test React Query — test your logic |
 | **"It didn't crash" tests** | `expect(element).toBeOnTheScreen()` as sole assertion | Test actual user-facing behavior |
 | **Runtime type tests** | `expect(user.role).toBe(role)` after assignment | Remove — TypeScript already verifies this |
-| **No rollback tests** | Transaction mock is pass-through, no failure paths | Add `MockTransactionDB` with simulated rollback |
+| **No rollback tests** | Transaction mock is pass-through, no failure paths | Add real PGLite tests with `BEGIN...ROLLBACK` transaction testing |
 
 ## TDD Checklist
 

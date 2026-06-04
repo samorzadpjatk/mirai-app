@@ -11,30 +11,26 @@ Shared utilities and design tokens used across all apps and packages in the MIRA
 | Export | Path | Description |
 |--------|------|-------------|
 | `main` | `./index.ts` | Shared utilities |
-| `design-tokens` | `./src/design-tokens/index.ts` | Design system tokens |
-| `design-tokens/*` | `./src/design-tokens/*.ts` | Individual token files |
+| `test-utils` | `./src/test-utils/index.ts` | Test helpers, factories, builders |
+| `challenges` | `./src/challenges/index.ts` | Challenge query builders, validators |
+| `groups` | `./src/groups/index.ts` | Group flattening, filters, permissions |
+| `trips` | `./src/trips/index.ts` | Trip filters, leaderboard, query builders |
+| `users` | `./src/users/index.ts` | User pagination, ban utils, validation |
+| `coins` | `./src/coins/index.ts` | Coin builders, mappers, statistics |
+| `feed` | `./src/feed/index.ts` | Activity feed filters and reactions |
+| `notifications` | `./src/notifications/index.ts` | Notification delivery utilities |
+| `rewards` | `./src/rewards/index.ts` | Reward progress calculation |
+| `storage` | `./src/storage/index.ts` | Storage utilities |
+| `stores` | `./src/stores/index.ts` | Zustand stores |
+| `utils` | `./src/utils/index.ts` | General utilities |
+
+See `index.ts` for all available exports.
 
 ## Tech Stack
 
 - **State Management**: Jotai, Zustand
 - **Integrations**: Jotai-Tanstack-Query
 - **TypeScript**: Peer dependency
-
-## Key Files
-
-```
-packages/shared/
-├── src/
-│   ├── design-tokens/
-│   │   ├── index.ts      # All tokens export
-│   │   ├── colors.ts     # Color tokens
-│   │   ├── spacing.ts    # Spacing tokens
-│   │   └── typography.ts # Typography tokens
-│   └── utils/
-│       └── ...           # Utility functions
-├── index.ts              # Main exports
-└── AGENTS.md             # This file
-```
 
 ## Development Commands
 
@@ -71,43 +67,17 @@ bun run test:watch
 ### Pure Function Extraction
 
 - **Pattern**: Domain logic from **any monorepo package or app** gets extracted into this package as pure functions with real-data tests.
-- **Scope**: NOT limited to native hooks. Extract from:
-  - `apps/native` hooks with mocked React Query tests
-  - `packages/orpc` routers with inline data transformations
-  - Any package where the same calculation appears in multiple places
-- **Directories**: `feed/`, `trips/`, `challenges/`, `groups/` — each contains focused utilities with 100% real-data test coverage.
-- **Examples**:
-  - `feed/reactions.ts` — `toggleHeartSummary`, `emptyReactionSummary` (6 tests)
-  - `feed/filters.ts` — `filterActivities` (7 tests)
-  - `trips/flattenTrips.ts` — `flattenTrips` (6 tests)
-  - `trips/leaderboard.ts` — `calculateLeaderboardInfo`, `findUserGroup` (10 tests)
-  - `challenges/challengeMappers.ts` — `mapChallengeToListItem`, `countCompletedChallenges` (12 tests)
-  - `groups/flattenGroups.ts` — `flattenGroups` (3 tests)
-  - `groups/filters.ts` — `filterGroupsBySearch` (5 tests)
-- **Deduplication rule**: Before extracting new functions, `grep` for similar logic across `apps/` and `packages/`. If the same transformation exists in 2+ places, extract once to `packages/shared` and import everywhere.
-- **Rule**: When moving code from other packages to here, use type assertions (`as Type[]`) if types don't align exactly. Test import paths in `__tests__/` subdirectories must use `../module` not `./module` (Vite resolution rule).
+- **Scope**: NOT limited to native hooks. Extract from `apps/native` hooks, `packages/orpc` routers, and any package with duplicated logic.
+- **Directories**: `challenges/`, `coins/`, `feed/`, `groups/`, `notifications/`, `rewards/`, `storage/`, `trips/`, `users/`, `utils/` — each contains focused utilities with real-data test coverage.
+- **Examples** (see `docs/conventions/testing.md` for full list):
+  - `challenges/queryBuilders.ts` — `buildChallengeQueryInput`, `getNextChallengePageParam`
+  - `feed/reactions.ts` — `toggleHeartSummary`, `emptyReactionSummary`
+  - `trips/leaderboard.ts` — `calculateLeaderboardInfo`, `findUserGroup`
+  - `users/banUtils.ts` — `parseBanStatus`, `isUserBanned`
+- **Deduplication rule**: Before extracting, `grep` for similar logic across `apps/` and `packages/`. If the same transformation exists in 2+ places, extract once to `packages/shared` and import everywhere.
 - **Coverage Target**: 100% real-data coverage for all pure functions. No mocks needed — pass real objects and assert on outputs.
 
 See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
-
-### Store Tests
-
-- **Rating**: `authStore.test.ts` is 4/5 — solid state transition coverage (initialize, sign-in, sign-out, refresh, auth state changes).
-- **Rating**: `judgementStore.test.ts` is 1/5 — trivial state mutation tests. Confirms Zustand setters work, not domain logic.
-- **Rule**: Remove runtime TypeScript interface tests (e.g., `expect(user.role).toBe(role)` after assignment). The TypeScript compiler already verifies this.
-
-## Usage in Apps
-
-```typescript
-// Use design tokens
-import { colors, spacing } from '@mirai-app/shared/design-tokens';
-
-// Use utilities
-import { formatDate } from '@mirai-app/shared';
-
-// Use state management utilities
-import { atomWithQuery } from '@mirai-app/shared';
-```
 
 ## Links
 

@@ -20,19 +20,6 @@ Authentication utilities and state management for the MIRAI application. Provide
 - **Validation**: Zod
 - **Dependencies**: `@mirai-app/db`, `@mirai-app/supabase`, `@mirai-app/shared`
 
-## Key Files
-
-```
-packages/auth/
-├── src/
-│   ├── index.ts          # Main client exports
-│   ├── server.ts         # Server-side exports
-│   ├── client.ts         # Client initialization
-│   └── ...               # Auth logic
-├── package.json
-└── AGENTS.md             # This file
-```
-
 ## Development Commands
 
 ```bash
@@ -82,29 +69,9 @@ cd packages/auth && bun run dev
 ### Test Quality
 
 - **Rating**: Auth logic tests (`auth.test.ts`) are 4/5 — they verify real auth branches (token, roles, bans, invalid tokens).
-- **Rating**: Server smoke tests (`server.test.ts`) are 1/5 — mostly export checks. Consider pruning or expanding.
 - **Rule**: Focus tests on domain behavior ("user with banned_until is rejected") not implementation details ("mock was called").
-- **Test Quality Ratings**:
-  - 5/5: Tests verify real behavior with real data, fail if implementation breaks
-  - 4/5: Tests verify real branches but may use some mocks
-  - 3/5: Tests mix valuable and trivial assertions
-  - 2/5: Tests mostly verify mocks or TypeScript runtime behavior
-  - 1/5: Tests are export checks or "it didn't crash" assertions
 
 See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
-
-## Usage in Apps
-
-### Native App
-
-```typescript
-import { useAuth } from '@mirai-app/auth';
-
-function MyComponent() {
-  const { user, signIn } = useAuth();
-  // ...
-}
-```
 
 ## Links
 

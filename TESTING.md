@@ -4,12 +4,41 @@ This document provides comprehensive guidance for running and writing tests in t
 
 ## Overview
 
-The MIRAI monorepo uses a **dual test runner strategy**:
+The MIRAI monorepo uses a **dual test runner strategy** with a **Functional Core, Imperative Shell** architecture:
 
 | Project | Runner | Rationale |
 |---------|--------|-----------|
 | `apps/native` | **Jest** with jest-expo preset | Required for React Native/Expo compatibility |
 | All other apps & packages | **Vitest** | Fast, native TypeScript support |
+
+**Test Count**: ~2,950 tests across 267+ suites (Jest) + 850+ tests (Vitest)
+
+## Architecture
+
+We follow the **Functional Core, Imperative Shell** pattern with **Manual Dependency Injection**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Test Pyramid (Target)                      │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  10% E2E — Critical journeys (Maestro/Playwright)   │    │
+│  ├─────────────────────────────────────────────────────┤    │
+│  │  20% Integration — PGLite + Hono testClient        │    │
+│  │  Real DB transactions, rollback testing            │    │
+│  ├─────────────────────────────────────────────────────┤    │
+│  │  70% Unit — Pure functions with real data           │    │
+│  │  No mocks, no frameworks, 10-line tests            │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Layer | Responsibility | Test Strategy |
+|-------|--------------|---------------|
+| `packages/shared/src/*` | Pure functions (no side effects) | Real data unit tests (Vitest) |
+| `packages/orpc/src/api/routers/` | Thin shells: validate → pure fn → return | PGLite integration tests (Vitest) |
+| `apps/native/src/hooks/` | Thin shells: call pure functions + oRPC client | MSW + real client tests (Jest) |
+| `apps/native/src/services/background/` | Task logic with injected dependencies | Fake dependency tests (Jest) |
+| `packages/orpc/src/client/` | Decomposed React providers/hooks | Component/hook tests (Vitest) |
 
 ## Quick Start
 
@@ -233,6 +262,64 @@ describe("Auth Tests", () => {
 });
 ```
 
+### Pure Function Testing (Preferred)
+
+Extract pure business logic to `packages/shared/src/` and test with real data:
+
+```typescript
+// packages/shared/src/challenges/queryBuilders.ts
+export function buildChallengeQueryInput(tripId: string | null, pageParam: number) {
+  return { tripId: tripId ?? "", pagination: { limit: 30, offset: pageParam || 0 } };
+}
+
+// Test with real data — no mocks
+import { describe, it, expect } from "vitest";
+
+describe("buildChallengeQueryInput", () => {
+  it("defaults null tripId to empty string", () => {
+    expect(buildChallengeQueryInput(null, 0)).toEqual({
+      tripId: "", pagination: { limit: 30, offset: 0 },
+    });
+  });
+});
+```
+
+### PGLite Integration Testing
+
+Use `@electric-sql/pglite` for real database integration tests with actual transaction semantics:
+
+```typescript
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+
+let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+
+beforeAll(async () => { testDb = await createPgliteTestDb(); });
+beforeEach(async () => { await testDb.reset(); });
+afterAll(async () => { await testDb.cleanup(); });
+
+it("rolls back on failure", async () => {
+  await testDb.db.insert(users).values({ id: "user-1", ... });
+  
+  await expect(
+    testDb.db.transaction(async (tx) => {
+      await tx.insert(users).values({ id: "user-2", ... });
+      throw new Error("Simulated failure");
+    }),
+  ).rejects.toThrow("Simulated failure");
+
+  const result = await testDb.db.select().from(users);
+  expect(result).toHaveLength(1); // user-2 was rolled back
+});
+```
+
+**Key points:**
+- `beforeAll` creates the database once (~1000ms)
+- `beforeEach` calls `reset()` to truncate all tables (~20ms)
+- `afterAll` closes the connection once
+- This pattern is ~5x faster than creating a DB per test
+- 165 PGLite tests run in ~29s instead of ~150s+
+
 ### Mocking with Jest
 
 ```typescript
@@ -247,53 +334,50 @@ jest.mock("@supabase/supabase-js", () => ({
 }));
 ```
 
-### Manual Mocks with __mocks__ Directory
+### MSW for Native API Testing
 
-For modules that are mocked consistently across many tests, use Jest's `__mocks__` directory pattern. Place mock implementations in `__mocks__/` at the package root (adjacent to `node_modules/`):
-
-```
-apps/native/
-├── __mocks__/
-│   ├── @tanstack/
-│   │   └── react-query.ts    # React Query hooks mock
-│   ├── expo-constants.js    # Expo Constants mock
-│   ├── expo-location.js     # Expo Location mock
-│   └── expo-notifications.js # Expo Notifications mock
-├── src/
-│   └── services/
-│       └── location/
-│           └── __mocks__/
-│               └── backgroundLocation.ts  # Service mock
-```
-
-Mock files should export mocked versions of the module's API:
+Use Mock Service Worker (MSW) to intercept oRPC HTTP requests instead of mocking internal modules.
 
 ```typescript
-// apps/native/__mocks__/@tanstack/react-query.ts
-import { jest } from "@jest/globals";
-import React from "react";
+// apps/native/src/test-utils/msw/server.ts
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
 
-export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
-  return React.createElement(React.Fragment, null, children);
-};
-
-export class QueryClient {
-  defaultOptions: unknown;
-  constructor(options?: unknown) {
-    this.defaultOptions = options || {};
-  }
+export function createORPCHandler(path: string[], resolver: (input: unknown) => unknown) {
+  const urlPath = `http://localhost:9999/${path.join("/")}`;
+  return http.post(urlPath, async ({ request }) => {
+    const body = (await request.json()) as { json: unknown };
+    return HttpResponse.json({ json: await resolver(body.json), meta: [] });
+  });
 }
 
-export const useQuery = jest.fn();
-export const useMutation = jest.fn();
-// ... other exports
+export const server = setupServer();
+export function resetHandlers() { server.resetHandlers(); }
 ```
 
-Benefits of this pattern:
-- **Centralized mocks**: Single source of truth for module mocks
-- **Reduced duplication**: No need to repeat mock setup in each test
-- **Consistent behavior**: All tests use the same mock implementation
-- **Easier maintenance**: Update mocks in one place
+**Test Example:**
+
+```typescript
+import { server, createORPCHandler, resetHandlers } from "~/test-utils/msw/server";
+import { renderHookWithMSW } from "~/test-utils/msw/test-wrapper";
+import { useTrips } from "~/hooks/trips/useTrips";
+
+beforeAll(() => server.listen());
+afterEach(() => resetHandlers());
+afterAll(() => server.close());
+
+it("returns trips via real oRPC client", async () => {
+  server.use(createORPCHandler(["trip", "getAll"], () => [{ id: "1", name: "Trip 1" }]));
+  const { result } = renderHookWithMSW(() => useTrips());
+  await waitFor(() => expect(result.current.data).toHaveLength(1));
+});
+```
+
+**Benefits:**
+- Tests real oRPC client stack (serialization, error handling, caching)
+- No internal module mocking needed
+- Tests behave like real API calls
+- See `apps/native/src/test-utils/msw/test-wrapper.tsx` for the full wrapper
 
 ### Testing Hono Server (Backend)
 

@@ -231,6 +231,17 @@ jobs:
             bunx nx run-many -t test:ci --exclude=@mirai-app/monorepo
           fi
 
+      - name: Collect coverage reports
+        if: always()
+        run: |
+          mkdir -p ./coverage
+          find . -path ./node_modules -prune -o -path ./.bun -prune -o -name "lcov.info" -type f -print | while read file; do
+            dir=$(dirname "$file" | sed 's|^\./||' | sed 's|/coverage$||' | tr '/' '_')
+            cp "$file" "./coverage/lcov_${dir}.info"
+            echo "Collected: $file -> ./coverage/lcov_${dir}.info"
+          done
+          ls -la ./coverage/ || echo "No coverage files found"
+
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         if: always()
