@@ -1,9 +1,11 @@
+import { ORPCError } from "@orpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ServerOptions } from "../server";
 import type * as ServerModule from "../server";
 
 let captureOnError = false;
 let lastOnErrorCallback: ((error: unknown) => void) | null = null;
+let wsOnErrorCallback: ((error: unknown) => void) | null = null;
 
 const appRouterProxy = new Proxy({} as any, {
   get(target, prop) {
@@ -43,7 +45,11 @@ vi.mock("@orpc/server", () => ({
     }
   },
   onError: (fn: any) => {
-    lastOnErrorCallback = fn;
+    if (!wsOnErrorCallback) {
+      wsOnErrorCallback = fn;
+    } else {
+      lastOnErrorCallback = fn;
+    }
     return async (ctx: any) => {
       try {
         return await ctx.next();
@@ -71,6 +77,7 @@ beforeEach(async () => {
     delete appRouterProxy[key];
   }
   lastOnErrorCallback = null;
+  wsOnErrorCallback = null;
   const serverModule = await import("../server");
   const originalCreateServer = serverModule.createServer;
   createServer = (...args: Parameters<typeof originalCreateServer>) => {
@@ -362,6 +369,15 @@ describe("Backend Server (Hono)", () => {
       expect(mockServer.upgrade).toHaveBeenCalled();
       expect(result).toBeUndefined();
 
+      // Test fetch with service endpoint WebSocket upgrade
+      const mockServerService = { upgrade: vi.fn(() => true) };
+      const serviceReq = new Request(
+        "ws://localhost:3007/internal/trpc?authorization=Bearer%20token",
+      );
+      const serviceResult = await serveOptions.fetch(serviceReq, mockServerService);
+      expect(mockServerService.upgrade).toHaveBeenCalled();
+      expect(serviceResult).toBeUndefined();
+
       // Test fetch with regular HTTP request (not at prefix)
       const httpReq = new Request("http://localhost:3007/health");
       const mockServer2 = { upgrade: vi.fn(() => false) };
@@ -384,6 +400,49 @@ describe("Backend Server (Hono)", () => {
       );
 
       serveOptions.websocket.close(mockWs);
+
+      const mockWsService = {
+        data: { url: "/internal/trpc" },
+      };
+      serveOptions.websocket.close(mockWsService);
+
+      await stop();
+    });
+
+    it("should handle websocket message with service endpoint", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3046,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: {
+          connectionParams: { authorization: "Bearer test" },
+          url: "/internal/trpc",
+          authProcessed: true,
+        },
+        send: vi.fn(),
+      };
+
+      await serveOptions.websocket.message(
+        mockWs,
+        JSON.stringify({ i: 1, p: { u: "/internal/trpc/test", b: {} } }),
+      );
 
       await stop();
     });
@@ -664,6 +723,31 @@ describe("Backend Server (Hono)", () => {
       expect(res.headers.get("retry-after")).toBeTruthy();
       expect(await res.text()).toBe("Too Many Requests");
     });
+
+    it("should rate limit auth endpoints separately", async () => {
+      const { app } = createServer({
+        dev: true,
+        port: 3036,
+        prefix: "/api/trpc",
+        host: "127.0.0.1",
+      });
+
+      const ip = "192.168.1.200";
+
+      for (let i = 0; i < 31; i++) {
+        await app.request("/api/trpc", {
+          headers: { "x-forwarded-for": ip },
+        });
+      }
+
+      const res = await app.request("/api/trpc", {
+        headers: { "x-forwarded-for": ip },
+      });
+
+      expect(res.status).toBe(429);
+      expect(res.headers.get("retry-after")).toBeTruthy();
+      expect(await res.text()).toBe("Too Many Requests");
+    });
   });
 
   describe("WebSocket Error Handler", () => {
@@ -682,6 +766,40 @@ describe("Backend Server (Hono)", () => {
       const callback = lastOnErrorCallback;
       const regularError = new Error("Test error");
       expect(() => callback(regularError)).toThrow();
+    });
+
+    it("should not throw for ORPCError instance in production mode", async () => {
+      const { app } = createServer({
+        dev: false,
+        port: 3040,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      expect(lastOnErrorCallback).toBeDefined();
+      if (!lastOnErrorCallback) {
+        throw new Error("onError callback was not captured");
+      }
+      const callback = lastOnErrorCallback;
+      const orpcError = new ORPCError("INTERNAL_SERVER_ERROR", { message: "Test ORPC error" });
+      expect(() => callback(orpcError)).not.toThrow();
+    });
+
+    it("should not throw for ORPCError instance in wsRpcHandler production mode", async () => {
+      const { app } = createServer({
+        dev: false,
+        port: 3040,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      expect(wsOnErrorCallback).toBeDefined();
+      if (!wsOnErrorCallback) {
+        throw new Error("wsOnError callback was not captured");
+      }
+      const callback = wsOnErrorCallback;
+      const orpcError = new ORPCError("INTERNAL_SERVER_ERROR", { message: "Test ORPC error" });
+      expect(() => callback(orpcError)).not.toThrow();
     });
   });
 
