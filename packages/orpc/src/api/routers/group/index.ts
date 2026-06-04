@@ -337,5 +337,3 @@ export const groupRouter = createORPCRouter({
 
   ranking: protectedProcedure.input(z.object({ tripId: z.string() })).handler(handleRanking),
 });
-
-

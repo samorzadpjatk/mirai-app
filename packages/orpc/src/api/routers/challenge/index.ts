@@ -154,5 +154,3 @@ export const challengeRouter = createORPCRouter({
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .handler(handleForceCloseVoting),
 });
-
-
