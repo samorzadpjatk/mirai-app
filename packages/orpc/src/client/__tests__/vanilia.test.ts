@@ -7,6 +7,11 @@ const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
 // Mock the @orpc/client module
 vi.mock("@orpc/client", () => ({
   createORPCClient: vi.fn(() => ({})),
+  DynamicLink: class DynamicLink {
+    constructor() {
+      return {} as any;
+    }
+  },
   ORPCError: class ORPCError extends Error {
     status: number;
     code: string;
