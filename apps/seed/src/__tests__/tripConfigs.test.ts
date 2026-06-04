@@ -5,6 +5,35 @@ const mockListFilesRecursive = vi.fn();
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 
+vi.mock("yaml", () => ({
+  default: {
+    parse: (content: string): unknown => {
+      const trimmed = content.trim();
+      if (!trimmed) return null;
+
+      const openBrackets = (trimmed.match(/\[/g) || []).length;
+      const closeBrackets = (trimmed.match(/\]/g) || []).length;
+      if (openBrackets !== closeBrackets) {
+        throw new Error("YAMLException: unclosed bracket");
+      }
+
+      const lines = trimmed.split("\n");
+      const result: Record<string, unknown> = {};
+      for (const line of lines) {
+        const lineTrimmed = line.trim();
+        if (!lineTrimmed) continue;
+        const colonIdx = lineTrimmed.indexOf(":");
+        if (colonIdx > 0) {
+          const key = lineTrimmed.slice(0, colonIdx).trim();
+          const value = lineTrimmed.slice(colonIdx + 1).trim();
+          result[key] = value === "null" ? null : value;
+        }
+      }
+      return result;
+    },
+  },
+}));
+
 vi.mock("../utils/fs", () => ({
   listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args) as Promise<string[]>,
   readTextFile: (path: string) => mockReadTextFile(path) as Promise<string>,

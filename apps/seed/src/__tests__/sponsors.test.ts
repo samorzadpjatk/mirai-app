@@ -49,6 +49,8 @@ describe("sponsors", () => {
   let bunFileSpy: MockInstance<typeof Bun.file>;
 
   beforeEach(() => {
+    vi.resetModules();
+
     bunFileSpy = vi.spyOn(Bun, "file").mockImplementation(
       () =>
         ({
