@@ -80,7 +80,7 @@ export const removeCoins = async (
   input: CoinTransactionInput,
 ) => {
   return await context.db.transaction(async (tx) => {
-    const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
+    const _previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     // Lock the group row for update to prevent race conditions
     const group = await tx.query.groups.findFirst({
