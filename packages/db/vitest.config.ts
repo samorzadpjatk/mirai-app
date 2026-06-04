@@ -11,6 +11,7 @@ const baseCoverageExcludes = [
 export default defineConfig({
   test: {
     environment: "node",
+    isolate: false,
     globals: true,
     coverage: {
       provider: "v8",

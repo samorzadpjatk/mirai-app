@@ -11,7 +11,7 @@ import {
   tripSponsors,
   trips,
 } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared";
+import { logger } from "@mirai-app/shared/utils";
 import { db } from "./src/config/db";
 import { env } from "./src/config/env";
 import { supabase } from "./src/config/supabase";

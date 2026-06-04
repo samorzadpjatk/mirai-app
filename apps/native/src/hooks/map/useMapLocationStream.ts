@@ -1,5 +1,5 @@
 import { orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import * as Crypto from "expo-crypto";
 import { useEffect, useMemo, useState } from "react";
 import { useLocationContext } from "~/stores/location";

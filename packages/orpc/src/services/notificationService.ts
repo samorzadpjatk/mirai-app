@@ -1,6 +1,6 @@
 import type { DB } from "@mirai-app/db";
 import { challenges, notificationPushes, tripParticipants } from "@mirai-app/db";
-import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared";
+import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared/notifications";
 import { and, count, eq } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { logger } from "../utils/logger";

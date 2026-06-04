@@ -8,6 +8,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: "node",
+      isolate: false,
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts"],
     },

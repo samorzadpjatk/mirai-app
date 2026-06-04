@@ -11,6 +11,7 @@ export const baseCoverageExcludes = [
 export const baseConfig = defineConfig({
   test: {
     globals: true,
+    isolate: false,
     deps: {
       optimizer: {
         ssr: {

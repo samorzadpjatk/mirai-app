@@ -11,7 +11,7 @@ export { useLoginForm } from "./hooks/useLoginForm";
 export type { LoginFormData, LoginFormState, UseLoginFormResult } from "./hooks/useLoginForm";
 
 // Zustand store (moved to @mirai-app/shared)
-export { authStore } from "@mirai-app/shared";
+export { authStore } from "@mirai-app/shared/stores";
 export type {
   AuthStore,
   AuthActions,
@@ -19,7 +19,7 @@ export type {
   AuthUser,
   SupabaseClient,
   SupabaseSession,
-} from "@mirai-app/shared";
+} from "@mirai-app/shared/stores";
 export { AuthStoreProvider } from "./store/AuthStoreProvider";
 export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 

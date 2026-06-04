@@ -1,6 +1,6 @@
 export type { AuthState, AuthContextValue, SignInWithOtpOptions } from "./types";
 
-export type { AuthUser } from "@mirai-app/shared";
+export type { AuthUser } from "@mirai-app/shared/stores";
 
 export {
   getAuthServerUser as getServerUser,

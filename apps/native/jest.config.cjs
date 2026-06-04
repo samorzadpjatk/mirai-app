@@ -39,6 +39,8 @@ module.exports = {
     "^msw/node$": "<rootDir>/../../node_modules/.bun/msw@2.14.6/node_modules/msw/lib/node/index.js",
   },
   testTimeout: 10000,
+  clearMocks: true,
+  workerIdleMemoryLimit: "512MB",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   // Exclude helper files from test discovery
   testPathIgnorePatterns: [

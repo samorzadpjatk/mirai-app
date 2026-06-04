@@ -1,6 +1,6 @@
 import type { DB } from "@mirai-app/db";
 import { groups, notificationPushes, notifications, tripParticipants } from "@mirai-app/db";
-import { deduplicateIds, extractFulfilledValues } from "@mirai-app/shared";
+import { deduplicateIds, extractFulfilledValues } from "@mirai-app/shared/notifications";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { NotificationService } from "../services/notificationService";

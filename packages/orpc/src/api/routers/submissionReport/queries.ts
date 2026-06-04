@@ -1,5 +1,5 @@
 import type { DB } from "@mirai-app/db";
-import { mapReportsWithEmails } from "@mirai-app/shared";
+import { mapReportsWithEmails } from "@mirai-app/shared/reports";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 

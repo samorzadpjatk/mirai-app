@@ -38,7 +38,9 @@ globalThis.WebSocket = MockWebSocket;
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 // Reset handlers after each test
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+});
 
 // Close MSW server after all tests
 afterAll(() => server.close());
@@ -114,8 +116,9 @@ jest.mock("react-native-safe-area-context", () => ({
   SafeAreaProvider: ({ children }) => children,
 }));
 
+
 // Global test utilities
-global.beforeEach(() => {
+global.afterEach(() => {
   jest.clearAllMocks();
 });
 

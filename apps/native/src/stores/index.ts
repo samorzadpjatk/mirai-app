@@ -1,5 +1,5 @@
 // Zustand stores - now imported from @mirai-app/shared
-export { mapStore, judgementStore, useJudgementStore } from "@mirai-app/shared";
+export { mapStore, judgementStore, useJudgementStore } from "@mirai-app/shared/stores";
 export type {
   MapStore,
   MapState,
@@ -11,7 +11,7 @@ export type {
   JudgementStore,
   ReviewStatus,
   Submission,
-} from "@mirai-app/shared";
+} from "@mirai-app/shared/stores";
 
 // Location store (React Native specific - stays here)
 export { locationStore } from "./location";

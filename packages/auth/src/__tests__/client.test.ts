@@ -1,5 +1,5 @@
-import { authStore } from "@mirai-app/shared";
-import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared";
+import { authStore } from "@mirai-app/shared/stores";
+import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared/stores";
 import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

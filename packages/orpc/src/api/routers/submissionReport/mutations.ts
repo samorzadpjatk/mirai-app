@@ -1,5 +1,5 @@
 import { challengeSubmissions, challenges, submissionReports } from "@mirai-app/db";
-import { buildReportWithEmail } from "@mirai-app/shared";
+import { buildReportWithEmail } from "@mirai-app/shared/reports";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";

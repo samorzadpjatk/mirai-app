@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import { Text, TouchableOpacity, View } from "react-native";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";

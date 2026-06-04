@@ -1,5 +1,5 @@
 import { tripParticipants, users } from "@mirai-app/db";
-import { validateUserRegistration } from "@mirai-app/shared";
+import { validateUserRegistration } from "@mirai-app/shared/users";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq } from "drizzle-orm";
 import type { z } from "zod";

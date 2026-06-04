@@ -1,4 +1,4 @@
-import { STANDARD_BUCKETS } from "@mirai-app/shared";
+import { STANDARD_BUCKETS } from "@mirai-app/shared/storage";
 import {
   buildPublicObjectUrl,
   buildResumableUrl,

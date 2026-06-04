@@ -1,5 +1,5 @@
 import { orpc } from "@mirai-app/orpc/client";
-import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared";
+import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared/tripInfo";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 

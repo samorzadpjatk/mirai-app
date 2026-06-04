@@ -7,7 +7,7 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     test: {
-      environment: "jsdom",
+      environment: "node",
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts", "src/**/__tests__/**/*.test.tsx"],
       hookTimeout: 60000,
@@ -85,7 +85,18 @@ export default mergeConfig(
           find: "@mirai-app/shared/notifications",
           replacement: path.resolve(__dirname, "../shared/src/notifications/index.ts"),
         },
-        { find: "@mirai-app/shared", replacement: path.resolve(__dirname, "../shared/index.ts") },
+        {
+          find: "@mirai-app/shared/challengeVote",
+          replacement: path.resolve(__dirname, "../shared/src/challengeVote/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/reports",
+          replacement: path.resolve(__dirname, "../shared/src/reports/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/sponsors",
+          replacement: path.resolve(__dirname, "../shared/src/sponsors/index.ts"),
+        },
         { find: "@mirai-app/auth", replacement: path.resolve(__dirname, "../auth/src") },
         { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },
         { find: "@mirai-app/supabase", replacement: path.resolve(__dirname, "../supabase/src") },

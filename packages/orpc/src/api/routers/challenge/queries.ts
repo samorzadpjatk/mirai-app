@@ -1,5 +1,5 @@
 import { type DB, challengeSubmissions, challenges } from "@mirai-app/db";
-import { buildChallengeFilter } from "@mirai-app/shared";
+import { buildChallengeFilter } from "@mirai-app/shared/challenges";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";
 import {

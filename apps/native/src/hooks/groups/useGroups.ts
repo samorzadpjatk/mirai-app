@@ -4,7 +4,7 @@ import {
   filterGroupsBySearch,
   flattenGroups,
   getNextGroupPageParam,
-} from "@mirai-app/shared";
+} from "@mirai-app/shared/groups";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import type { GroupListItem } from "~/components/trips/groups/types";

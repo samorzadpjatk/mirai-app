@@ -1,4 +1,4 @@
-import { authStore } from "@mirai-app/shared";
+import { authStore } from "@mirai-app/shared/stores";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useLoginForm } from "../hooks/useLoginForm";

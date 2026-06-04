@@ -1,5 +1,5 @@
 import { orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";

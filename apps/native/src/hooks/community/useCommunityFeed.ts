@@ -1,5 +1,5 @@
 import { orpc } from "@mirai-app/orpc/client";
-import { filterActivities, toggleHeartSummary } from "@mirai-app/shared";
+import { filterActivities, toggleHeartSummary } from "@mirai-app/shared/feed";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type {
@@ -128,9 +128,9 @@ export function buildCommunityFeedActivities(
 
 export function buildHandleToggleHeart(
   toggleHeart: (args: { activityId: string }) => Promise<unknown>,
-): (activityId: string) => void {
+): (activityId: string) => Promise<unknown> {
   return (activityId: string) => {
-    void toggleHeart({ activityId });
+    return toggleHeart({ activityId });
   };
 }
 

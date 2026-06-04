@@ -4,12 +4,12 @@ import {
   pushSubscriptions,
   tripParticipants,
 } from "@mirai-app/db";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import {
   buildRetryResult,
   extractUserIdsFromParticipants,
-  formatDisplayName,
   validateGroupBelongsToTrip,
-} from "@mirai-app/shared";
+} from "@mirai-app/shared/notifications";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import {

@@ -1,6 +1,6 @@
 import { coinTransactions, groups, trips, users } from "@mirai-app/db";
 import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { checkCoinBalance, validateCoinTransaction } from "@mirai-app/shared";
+import { checkCoinBalance, validateCoinTransaction } from "@mirai-app/shared/coins";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 

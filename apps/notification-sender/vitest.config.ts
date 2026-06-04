@@ -8,6 +8,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: "node",
+      isolate: false,
       include: ["src/**/__tests__/**/*.test.ts"],
       testTimeout: 10000,
     },
@@ -80,10 +81,6 @@ export default mergeConfig(
         {
           find: "@mirai-app/shared/notifications",
           replacement: path.resolve(__dirname, "../../packages/shared/src/notifications/index.ts"),
-        },
-        {
-          find: "@mirai-app/shared",
-          replacement: path.resolve(__dirname, "../../packages/shared/index.ts"),
         },
         {
           find: "@mirai-app/auth",

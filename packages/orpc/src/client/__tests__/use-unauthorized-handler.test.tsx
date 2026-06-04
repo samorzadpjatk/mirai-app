@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "../query-client-factory";

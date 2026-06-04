@@ -1,6 +1,6 @@
 import { useAuth } from "@mirai-app/auth/client";
 import { orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { View } from "react-native";

@@ -1,9 +1,6 @@
 import { type DB, coinTransactions, groups } from "@mirai-app/db";
-import {
-  buildCoinTransactionValues,
-  checkCoinBalance,
-  validateCoinTransaction,
-} from "@mirai-app/shared";
+import { checkCoinBalance, validateCoinTransaction } from "@mirai-app/shared/coins";
+import { buildCoinTransactionValues } from "@mirai-app/shared/coins";
 import { ORPCError } from "@orpc/server";
 import { eq, sql } from "drizzle-orm";
 import {

@@ -8,7 +8,7 @@ import {
   normalizeEmail,
   parseBanStatus,
   sortParticipants,
-} from "@mirai-app/shared";
+} from "@mirai-app/shared/users";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, eq, sql } from "drizzle-orm";

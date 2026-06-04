@@ -1,4 +1,4 @@
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import type { z } from "zod";
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import type { PublicUser, roleSchema } from "./types";

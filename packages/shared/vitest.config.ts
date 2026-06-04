@@ -7,6 +7,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: "node",
+      isolate: false,
       include: ["src/**/__tests__/**/*.test.ts"],
       coverage: {
         exclude: [...baseCoverageExcludes, "src/test-utils/**"],

@@ -1,5 +1,5 @@
 import { rewards } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared";
+import { logger } from "@mirai-app/shared/utils";
 import yaml from "yaml";
 import { db } from "./config/db";
 import type { AuthUserByEmail, RewardConfig } from "./types";

@@ -1,6 +1,6 @@
 import type { TripInsurance, TripInsuranceStep, TripResource } from "@mirai-app/db";
 import { tripInsuranceSteps, tripInsurances, tripResources } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared";
+import { logger } from "@mirai-app/shared/utils";
 import { eq, inArray } from "drizzle-orm";
 import yaml from "yaml";
 import { db } from "./config/db";

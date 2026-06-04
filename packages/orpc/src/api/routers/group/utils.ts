@@ -1,4 +1,4 @@
-import { resolveStorageUrl } from "@mirai-app/shared";
+import { resolveStorageUrl } from "@mirai-app/shared/storage";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";

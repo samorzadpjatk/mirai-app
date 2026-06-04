@@ -28,7 +28,18 @@ export default mergeConfig(
           find: "@mirai-app/shared/test-utils",
           replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts"),
         },
-        { find: "@mirai-app/shared", replacement: path.resolve(__dirname, "../shared/index.ts") },
+        {
+          find: "@mirai-app/shared/stores",
+          replacement: path.resolve(__dirname, "../shared/src/stores/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/users",
+          replacement: path.resolve(__dirname, "../shared/src/users/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/utils",
+          replacement: path.resolve(__dirname, "../shared/src/utils/index.ts"),
+        },
         { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },
         { find: "@mirai-app/supabase", replacement: path.resolve(__dirname, "../supabase/src") },
         { find: "~", replacement: path.resolve(__dirname, "./src") },

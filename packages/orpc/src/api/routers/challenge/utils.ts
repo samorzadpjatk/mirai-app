@@ -1,5 +1,5 @@
 import { type DB, challenges } from "@mirai-app/db";
-import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/shared";
+import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/shared/storage";
 import { and, eq, lte, notInArray } from "drizzle-orm";
 import {
   finalizeVotingChallengesToCompletedWithFeed,
