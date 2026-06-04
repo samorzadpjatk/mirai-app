@@ -1,27 +1,27 @@
-import { userAgents } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
-import { createRouterClient } from "@orpc/server";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase } from "../../test-helpers";
-import {
-  createORPCContext,
-  createORPCRouter,
-  enableUserAgentTelemetry,
-  publicProcedure,
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-  serviceAccountProcedure,
-} from "../trpc";
-import type { TRPCContext } from "../trpc";
 import {
   AuthenticationError,
   AuthorizationError,
+  requireAdmin,
   requireAuth,
   requireModerator,
-  requireAdmin,
 } from "@mirai-app/auth";
+import { userAgents } from "@mirai-app/db";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { createRouterClient } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockSupabase } from "../../test-helpers";
+import {
+  adminProcedure,
+  createORPCContext,
+  createORPCRouter,
+  enableUserAgentTelemetry,
+  moderatorProcedure,
+  protectedProcedure,
+  publicProcedure,
+  serviceAccountProcedure,
+} from "../trpc";
+import type { TRPCContext } from "../trpc";
 
 describe("createORPCContext token extraction", () => {
   const baseOpts = {
