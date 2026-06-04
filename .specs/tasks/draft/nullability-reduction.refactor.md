@@ -1,11 +1,11 @@
 ---
 
-title: Nullability Reduction Refactor — Implement "Nulls at the Boundary" across Database, API, and Frontend
+title: Nullability Reduction Refactor — Implement "Nulls at the Boundary" with Strict DB Schema (No Defaults for User Data)
 ---
 
 ## Initial User Prompt
 
-Reduce null/undefined patterns across the MIRAI monorepo by implementing the "nulls at the boundary" rule. Target ~120+ nullable patterns across 40+ files, achieving 30-40% reduction in defensive ??/?. usage. The analysis at `docs/analysis/nullability-reduction.md` is complete and ready for execution.
+Reduce null/undefined patterns across the MIRAI monorepo by implementing the "nulls at the boundary" rule. Target ~120+ nullable patterns across 40+ files, achieving 30-40% reduction in defensive ??/?. usage. This plan serves as the analysis and execution roadmap.
 
 ## Description
 
@@ -30,7 +30,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 | Layer | Null Allowed | Normalization Strategy |
 |-------|-------------|----------------------|
-| **Database (Drizzle)** | Limited | `.notNull().default(...)` for empty states |
+| **Database (Drizzle)** | Limited | `.notNull()` without `.default()` for user data; `.default()` only for system fields |
 | **API Input (Zod)** | Limited | `.default(...)` for optional fields, `.refine()` for conditional validation |
 | **API Output (oRPC)** | **No** | Mapper functions normalize all nulls to defaults before returning |
 | **Client Hooks** | **No** | Domain-specific hooks return non-nullable defaults (`[]`, `""`, `0`) |
@@ -40,7 +40,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 1. **Nulls at the Boundary**: External data (database, storage, third-party APIs) may have nulls. All internal layers (routers, hooks, components) receive non-nullable data. This is enforced by type system, not runtime checks.
 
-2. **Database First**: Start with schema changes (`.notNull().default(...)`) because they cascade upstream. A non-nullable `description` in the DB means the router can return a `string` instead of `string | null`.
+2. **Database First — No Defaults for User Data**: Start with schema changes, but use `.notNull()` **without** `.default()` for user-data columns. System fields (booleans, timestamps, counters) keep `.default()`. A non-nullable `description` in the DB means the router can return a `string` instead of `string | null`, but the application must provide the value at insert time — the DB must not silently mask missing data.
 
 3. **Mapper Layer**: Every oRPC router that returns Drizzle query results gets a `mappers.ts` file that normalizes nulls to defaults. This is the critical boundary layer.
 
@@ -48,7 +48,9 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 5. **Split Polymorphic Tables**: `tripResources` (7 nullable columns) and `challenges` (6 sparse columns) are split into type-specific tables. This eliminates nullability at the source.
 
-6. **No Runtime Breaking Changes**: All changes are additive or type-safe. Existing `?? ""` fallbacks in components will still work (they just become unnecessary).
+6. **No `.default()` for User Data**: Database defaults must never mask missing user-provided data. `.default()` is acceptable only for system fields: timestamps (`createdAt`), boolean flags (`isActive`), status enums (`status`), counters (`coins`, `voteCount`), and array fields (`image_ids`). All user-content fields (`description`, `name`, `title`, `reason`) become `.notNull()` without `.default()` — the application layer must provide the value.
+
+7. **No Runtime Breaking Changes**: All changes are additive or type-safe. Existing `?? ""` fallbacks in components will still work (they just become unnecessary).
 
 ### Boundary Layer Matrix
 
@@ -56,11 +58,24 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 ┌─────────────────────────────────────────────────────────┐
 │  LAYER              │  NULL ALLOWED  │  NORMALIZATION   │
 ├─────────────────────────────────────────────────────────┤
-│  Database (Drizzle) │  Limited       │  .default()      │
-│  API Input (Zod)    │  Limited       │  .default()      │
+│  Database (Drizzle) │  Limited       │  .notNull() for  │
+│                     │                │  user data;      │
+│                     │                │  .default() only │
+│                     │                │  for system      │
+│                     │                │  fields          │
+│  API Input (Zod)    │  Limited       │  .default() for   │
+│                     │                │  optional;       │
+│                     │                │  .refine() for   │
+│                     │                │  conditional     │
 │  API Output (oRPC)    │  No            │  Mapper functions│
+│                     │                │  normalize nulls │
+│                     │                │  to defaults     │
 │  Client Hooks       │  No            │  Hook wrappers   │
-│  Components/Stores  │  No            │  Strict types    │
+│                     │                │  return strict   │
+│                     │                │  defaults        │
+│  Components/Stores  │  No            │  Strict types,   │
+│                     │                │  discriminated   │
+│                     │                │  unions          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -69,10 +84,10 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 **Create (20+ files)**:
 | File | Purpose |
 |------|---------|
-| `packages/orpc/src/api/routers/challenge/mappers.ts` | Normalize challenge nulls to defaults |
-| `packages/orpc/src/api/routers/group/mappers.ts` | Normalize group nulls to defaults |
-| `packages/orpc/src/api/routers/activityFeed/mappers.ts` | Normalize activity nulls to defaults |
-| `packages/orpc/src/api/routers/trip/mappers.ts` | Normalize trip nulls to defaults |
+| `packages/orpc/src/api/routers/challenge/utils.ts` | Extend with mapper functions to normalize challenge nulls to defaults |
+| `packages/orpc/src/api/routers/group/utils.ts` | Extend with mapper functions to normalize group nulls to defaults |
+| `packages/orpc/src/api/routers/activityFeed/utils.ts` | Extend with mapper functions to normalize activity nulls to defaults |
+| `packages/orpc/src/api/routers/trip/utils.ts` | Extend with mapper functions to normalize trip nulls to defaults |
 | `packages/orpc/src/api/routers/activityFeed/types.ts` | Discriminated union for ActivityWithRelations |
 | `packages/db/src/schema/tripResourceLinks.ts` | New table for LINK resources |
 | `packages/db/src/schema/tripResourceFiles.ts` | New table for FILE resources |
@@ -86,14 +101,14 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 **Modify (40+ files)**:
 | File | Changes |
 |------|---------|
-| `packages/db/src/schema/challenges.ts` | 4 columns → `.notNull().default(...)` |
-| `packages/db/src/schema/trips.ts` | `description` → `.notNull().default("")` |
-| `packages/db/src/schema/groups.ts` | `description` → `.notNull().default("")` |
-| `packages/db/src/schema/activities.ts` | `description`, `imageUrl` → `.notNull().default("")` |
-| `packages/db/src/schema/coinTransactions.ts` | `reason` → `.notNull().default("")` |
-| `packages/db/src/schema/submissionReports.ts` | `details` → `.notNull().default("")` |
+| `packages/db/src/schema/challenges.ts` | `description` → `.notNull()` (no `.default()`); point fields → `.notNull().default(0)` |
+| `packages/db/src/schema/trips.ts` | `description` → `.notNull()` (no `.default()`) |
+| `packages/db/src/schema/groups.ts` | `description` → `.notNull()` (no `.default()`) |
+| `packages/db/src/schema/activities.ts` | `description`, `imageUrl` → `.notNull()` (no `.default()`) |
+| `packages/db/src/schema/rewards.ts` (coinTransactions table) | `reason` → `.notNull()` (no `.default()`) |
+| `packages/db/src/schema/challenges.ts` (submissionReports table) | `details` → `.notNull()` (no `.default()`) |
 | `packages/db/src/schema/locations.ts` | `accuracy` → `.notNull().default(0)`, `latitude`/`longitude` → `.notNull()` |
-| `packages/db/src/schema/notificationSchedules.ts` | `notificationTitle`, `notificationBody` → `.notNull().default("")` |
+| `packages/db/src/schema/notifications.ts` | `notificationTitle`, `notificationBody` → `.notNull()` (no `.default()`) |
 | `packages/db/src/schema/sponsors.ts` | `height`, `offsetX`, `offsetY` → `.notNull().default(0)` |
 | `packages/orpc/src/utils/location-validation.ts` | Remove `.nullable()` from 7 `.optional().nullable()` chains |
 | `packages/orpc/src/api/routers/activityFeed/index.ts` | Remove `.nullable()` from `description`, use discriminated union |
@@ -116,15 +131,16 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 ### Functional Requirements
 
-- [ ] **Database Schema Hardening — Text Fields**: 8 text columns become non-nullable with `.default("")` (challenges.description, trips.description, groups.description, activityFeeds.description, activityFeeds.imageUrl, coinTransactions.reason, submissionReports.details, notificationSchedules.notificationTitle, notificationSchedules.notificationBody)
-  - Given: Schema files are updated with `.notNull().default("")`
+- [ ] **Database Schema Hardening — Text Fields (User Data)**: 8 text columns become `.notNull()` **without** `.default()` (challenges.description, trips.description, groups.description, activityFeeds.description, activityFeeds.imageUrl, coinTransactions.reason, submissionReports.details, notificationSchedules.notificationTitle, notificationSchedules.notificationBody)
+  - Given: Schema files are updated with `.notNull()` (no `.default()`)
   - When: Migration is generated and applied to dev database
-  - Then: All existing rows have defaults applied, no nullable text columns remain in these tables
+  - Then: All existing rows have valid data (backfilled via migration script or verified), no nullable text columns remain, no DB defaults mask missing user data
 
-- [ ] **Database Schema Hardening — Numeric Fields**: 7 numeric columns become non-nullable with `.default(0)` (challenges.firstPlacePoints, challenges.secondPlacePoints, challenges.thirdPlacePoints, locations.accuracy, sponsors.height, sponsors.offsetX, sponsors.offsetY)
+- [ ] **Database Schema Hardening — Numeric Fields (System/Score)**: 7 numeric columns become `.notNull().default(0)` (challenges.firstPlacePoints, challenges.secondPlacePoints, challenges.thirdPlacePoints, locations.accuracy, sponsors.height, sponsors.offsetX, sponsors.offsetY)
   - Given: Schema files are updated with `.notNull().default(0)`
   - When: Migration is generated and applied to dev database
   - Then: All existing rows have defaults applied, no nullable numeric columns remain
+  - **Note**: These are system/computed fields where `0` is semantically correct; user-data fields never get `.default()`
 
 - [ ] **Database Schema Hardening — Coordinates**: locations.latitude and locations.longitude become `.notNull()`
   - Given: Schema file is updated with `.notNull()`
@@ -316,13 +332,13 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 ### Phase 2: Database Schema Hardening (Week 2)
 
-#### Step 2.1: Add .notNull().default() to Simple Text Fields
+#### Step 2.1: Make Text Fields Non-Nullable (No Defaults for User Data)
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 2 — Schema Changes, Foundation)
 
 **Success Criteria**:
-- 8 text columns updated with `.notNull().default("")`:
+- 8 text columns updated with `.notNull()` **without** `.default()` — user data must be provided by the application:
   - `challenges.description`
   - `trips.description`
   - `groups.description`
@@ -335,45 +351,49 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 - Migration generated: `cd packages/db && bun run db:generate`
 - Migration tested in dev environment: `cd packages/db && bun run db:push`
 - `bun run typecheck` in `packages/db` passes
+- **Data backfill**: Existing `NULL` values are updated via explicit migration SQL (not DB defaults) to `''` or appropriate values
 
 **Subtasks**:
-1. Edit `packages/db/src/schema/challenges.ts`: Add `.notNull().default("")` to `description`
-2. Edit `packages/db/src/schema/trips.ts`: Add `.notNull().default("")` to `description`
-3. Edit `packages/db/src/schema/groups.ts`: Add `.notNull().default("")` to `description`
-4. Edit `packages/db/src/schema/activities.ts`: Add `.notNull().default("")` to `description` and `imageUrl`
-5. Edit `packages/db/src/schema/coinTransactions.ts`: Add `.notNull().default("")` to `reason`
-6. Edit `packages/db/src/schema/submissionReports.ts`: Add `.notNull().default("")` to `details`
-7. Edit `packages/db/src/schema/notificationSchedules.ts`: Add `.notNull().default("")` to `notificationTitle` and `notificationBody`
-8. Generate migration
-9. Test migration in dev environment
-10. Verify existing data gets defaults
+1. Edit `packages/db/src/schema/challenges.ts`: Add `.notNull()` to `description` (no `.default()`)
+2. Edit `packages/db/src/schema/trips.ts`: Add `.notNull()` to `description` (no `.default()`)
+3. Edit `packages/db/src/schema/groups.ts`: Add `.notNull()` to `description` (no `.default()`)
+4. Edit `packages/db/src/schema/activities.ts`: Add `.notNull()` to `description` and `imageUrl` (no `.default()`)
+5. Edit `packages/db/src/schema/rewards.ts` (coinTransactions table): Add `.notNull()` to `reason` (no `.default()`)
+6. Edit `packages/db/src/schema/challenges.ts` (submissionReports table): Add `.notNull()` to `details` (no `.default()`)
+7. Edit `packages/db/src/schema/notifications.ts`: Add `.notNull()` to `notificationTitle` and `notificationBody` (no `.default()`)
+8. Write explicit migration SQL to backfill existing `NULL` values with `''` (or investigate and fill real data)
+9. Generate migration
+10. Test migration in dev environment
+11. Verify existing data is properly backfilled
 
 **Blockers**: None
 
 **Risks**:
 - Risk: Existing rows with `NULL` values may conflict with `.notNull()`
-  - Mitigation: Migration must include `DEFAULT` clause or explicit data update
+  - Mitigation: Explicit migration SQL backfills `NULL` to `''` before applying `.notNull()` constraint
+- Risk: Insert paths may not provide these fields, causing DB errors
+  - Mitigation: Update all insert queries in `packages/orpc` to provide explicit values; API mapper layer handles normalization
 - Risk: Consumers may not expect empty strings
-  - Mitigation: This is the correct behavior — empty string means "no value"
+  - Mitigation: Document in migration notes; API mapper layer ensures consistent output
 
 **Verification**:
 - **Level**: Medium
 - **Threshold**: 4.0/5.0
 - **Rubrics**:
-  1. **Correctness** (35%): All 8 columns have `.notNull().default("")`, migration succeeds
-  2. **Completeness** (35%): Migration tested, existing data updated
-  3. **Quality** (20%): Schema files clean, no unnecessary changes
+  1. **Correctness** (35%): All 8 columns have `.notNull()` without `.default()`, migration succeeds
+  2. **Completeness** (35%): Migration tested, existing data explicitly backfilled
+  3. **Quality** (20%): Schema files clean, no unnecessary changes, no `.default()` on user data
   4. **Integration** (10%): TypeScript compilation passes
 
 ---
 
-#### Step 2.2: Add .notNull().default(0) to Point Fields
+#### Step 2.2: Add .notNull().default(0) to System/Score Numeric Fields
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 2 — Depends on 2.1)
 
 **Success Criteria**:
-- 7 numeric columns updated with `.notNull().default(0)`:
+- 7 numeric columns updated with `.notNull().default(0)` — these are system/computed fields where `0` is semantically correct:
   - `challenges.firstPlacePoints`
   - `challenges.secondPlacePoints`
   - `challenges.thirdPlacePoints`
@@ -454,27 +474,27 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 ### Phase 3: API Normalization (Week 3)
 
-#### Step 3.1: Create Router-Level DTO Mappers
+#### Step 3.1: Create Router-Level DTO Mappers in utils.ts
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 3 — Depends on 2.3)
 
 **Success Criteria**:
-- `packages/orpc/src/api/routers/challenge/mappers.ts`: Normalize all nullable challenge fields
-- `packages/orpc/src/api/routers/group/mappers.ts`: Normalize group description/image
-- `packages/orpc/src/api/routers/activityFeed/mappers.ts`: Normalize activity fields
-- `packages/orpc/src/api/routers/trip/mappers.ts`: Normalize trip description
-- All mappers exported from router index files
-- All queries use mappers before returning
+- `packages/orpc/src/api/routers/challenge/utils.ts`: Add mapper functions to normalize all nullable challenge fields
+- `packages/orpc/src/api/routers/group/utils.ts`: Add mapper functions to normalize group description/image
+- `packages/orpc/src/api/routers/activityFeed/utils.ts`: Add mapper functions to normalize activity fields
+- `packages/orpc/src/api/routers/trip/utils.ts`: Add mapper functions to normalize trip description
+- All mappers exported from router `index.ts` files
+- All queries in `queries.ts` use mappers before returning
 - `bun run test` in `packages/orpc` passes
 
 **Subtasks**:
-1. Create `packages/orpc/src/api/routers/challenge/mappers.ts`
-2. Create `packages/orpc/src/api/routers/group/mappers.ts`
-3. Create `packages/orpc/src/api/routers/activityFeed/mappers.ts`
-4. Create `packages/orpc/src/api/routers/trip/mappers.ts`
-5. Update queries in each router to use mappers
-6. Export mappers from router index files
+1. Add mapper functions to `packages/orpc/src/api/routers/challenge/utils.ts` (following existing `toClientChallenge` pattern)
+2. Add mapper functions to `packages/orpc/src/api/routers/group/utils.ts`
+3. Add mapper functions to `packages/orpc/src/api/routers/activityFeed/utils.ts`
+4. Add mapper functions to `packages/orpc/src/api/routers/trip/utils.ts`
+5. Update `queries.ts` in each router to use mappers before returning
+6. Export mappers from router `index.ts` files
 7. Run tests in `packages/orpc`
 8. Fix any test failures
 
@@ -483,7 +503,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 **Risks**:
 - Risk: Mappers may be missed in some query paths
-  - Mitigation: Systematically review all `findFirst`, `findMany`, `select` in each router
+  - Mitigation: Systematically review all `findFirst`, `findMany`, `select` in each router's `queries.ts`
 - Risk: Mapper overhead may affect performance
   - Mitigation: Mappers are simple object spreads — negligible overhead
 
@@ -864,7 +884,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| Existing DB rows have NULL values that conflict with `.notNull()` | High | High | Migration includes `DEFAULT` clause; verify data before applying |
+| Existing DB rows have NULL values that conflict with `.notNull()` | High | High | Explicit migration SQL backfills NULLs before applying `.notNull()`; no DB defaults used |
 | Many consumers of `PublicUser`/`AuthUser` break after type changes | Medium | High | Systematic grep-and-update; use derived booleans for conditional rendering |
 | Table split migrations fail or corrupt data | Medium | High | Test migrations with sample data; backup before applying; validate data integrity |
 | `location-validation.ts` changes break GPS tracking | Medium | High | Verify all insert paths provide lat/lng; test with background location service |
@@ -887,7 +907,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 - [ ] Database migrations tested in dev environment
 - [ ] No new `useState<X | null>(null)` patterns introduced
 - [ ] No new `.optional().nullable()` chains introduced
-- [ ] No new `| null` on string/number types without `.default()` equivalent
+- [ ] No `.default()` used on user-data columns (descriptions, titles, names, reasons); `.default()` only on system fields (timestamps, booleans, counters, status enums)
 - [ ] `docs/conventions/null-safety.md` written and reviewed
 - [ ] `AGENTS.md` updated with null-safety guidelines
 - [ ] PR checklist includes nullability review
