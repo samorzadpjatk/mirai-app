@@ -204,6 +204,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -252,13 +253,15 @@ jobs:
             ./**/coverage/**
           retention-days: 30
 
-      - name: Post coverage comment
-        uses: scttnlsn/covrs@v0
+      - name: Post diff coverage comment
+        uses: Affanmir/diff-cover-action@v2
         if: github.event_name == 'pull_request' && always()
         with:
           coverage-files: ./coverage/lcov_*.info
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fail-under: '0'
+          post-comment: true
+          create-annotations: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate test job summary
         if: always()
@@ -285,5 +288,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage artifacts uploaded to GitHub Actions" >> $GITHUB_STEP_SUMMARY
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "- PR diff coverage comment posted via covrs (local GitHub Action)" >> $GITHUB_STEP_SUMMARY
+            echo "- PR diff coverage comment posted via diff-cover-action" >> $GITHUB_STEP_SUMMARY
           fi
