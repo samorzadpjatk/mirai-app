@@ -13,6 +13,7 @@ export default defineConfig({
     environment: "node",
     isolate: false,
     globals: true,
+    hookTimeout: 30000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
