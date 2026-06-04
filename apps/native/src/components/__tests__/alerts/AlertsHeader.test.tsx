@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AlertsHeader } from "../../alerts/AlertsHeader";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AlertsHeader", () => {
   it("should render title and subtitle", () => {

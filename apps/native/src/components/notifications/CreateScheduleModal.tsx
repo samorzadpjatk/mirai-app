@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  AppModalFooter,
+  AppModalShell,
+  FormField,
+  SegmentedOption,
+  ThemedTextInput,
+} from "~/components/common/ui";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
-import {
-  AppModalShell,
-  AppModalFooter,
-  FormField,
-  ThemedTextInput,
-  SegmentedOption,
-} from "~/components/common/ui";
 
 interface CreateScheduleModalProps {
   isOpen: boolean;
@@ -41,7 +41,10 @@ export function isScheduleSubmitDisabled(
   createTripId: string | null,
   isPending: boolean,
 ): boolean {
-  return !canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId) || isPending;
+  return (
+    !canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId) ||
+    isPending
+  );
 }
 
 export function buildScheduleInput(
@@ -63,8 +66,8 @@ export function buildScheduleInput(
     notificationBody: createType === "custom" ? createBody : undefined,
     startDate: new Date(createStartDate),
     endDate: new Date(createEndDate),
-    hour: parseInt(createHour, 10),
-    minute: parseInt(createMinute, 10),
+    hour: Number.parseInt(createHour, 10),
+    minute: Number.parseInt(createMinute, 10),
     isActive: true,
   };
 }
@@ -142,9 +145,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
   };
 
   const handleSubmit = () => {
-    if (
-      canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId)
-    ) {
+    if (canSubmitSchedule(createName, createStartDate, createEndDate, createType, createTripId)) {
       createScheduleMutation.mutate(
         buildScheduleInput(
           createName,
@@ -173,7 +174,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
           Schedule a notification to be sent at specific times
         </Text>
 
-        <FormField label="Schedule Name" required>
+        <FormField label="Schedule Name" required={true}>
           <ThemedTextInput
             placeholder="E.g., Daily Ranking Update"
             value={createName}
@@ -198,7 +199,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
 
         {createType === "custom" && (
           <>
-            <FormField label="Notification Title" required>
+            <FormField label="Notification Title" required={true}>
               <ThemedTextInput
                 placeholder="Title"
                 value={createTitle}
@@ -206,7 +207,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
               />
             </FormField>
 
-            <FormField label="Notification Body" required>
+            <FormField label="Notification Body" required={true}>
               <ThemedTextInput
                 placeholder="Message content"
                 value={createBody}
@@ -217,7 +218,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         )}
 
         {createType === "ranking" && (
-          <FormField label="Trip" required>
+          <FormField label="Trip" required={true}>
             {trips.length === 0 ? (
               <Text style={{ color: colors.textSecondary }}>(No trips available)</Text>
             ) : (
@@ -268,14 +269,14 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         )}
 
         <View style={{ flexDirection: "row", gap: spacing.md }}>
-          <FormField label="Start Date" required style={{ flex: 1 }}>
+          <FormField label="Start Date" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="YYYY-MM-DD"
               value={createStartDate}
               onChangeText={setCreateStartDate}
             />
           </FormField>
-          <FormField label="End Date" required style={{ flex: 1 }}>
+          <FormField label="End Date" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="YYYY-MM-DD"
               value={createEndDate}
@@ -285,7 +286,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         </View>
 
         <View style={{ flexDirection: "row", gap: spacing.md }}>
-          <FormField label="Hour (0-23)" required style={{ flex: 1 }}>
+          <FormField label="Hour (0-23)" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="9"
               keyboardType="numeric"
@@ -293,7 +294,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
               onChangeText={setCreateHour}
             />
           </FormField>
-          <FormField label="Minute (0-59)" required style={{ flex: 1 }}>
+          <FormField label="Minute (0-59)" required={true} style={{ flex: 1 }}>
             <ThemedTextInput
               placeholder="0"
               keyboardType="numeric"

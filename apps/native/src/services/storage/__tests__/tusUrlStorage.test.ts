@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import type { PreviousUpload } from "tus-js-client";
 
 interface PreviousUploadWithUrl extends PreviousUpload {

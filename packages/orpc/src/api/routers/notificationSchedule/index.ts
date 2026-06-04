@@ -1,16 +1,16 @@
 import { createORPCRouter } from "../../trpc";
-import { getAll, getActiveSchedules, getUpcoming, getById, getExecutionHistory } from "./queries";
 import {
-  create,
-  upsertTemplate,
-  update,
-  deleteSchedule,
   bulkDelete,
+  bulkToggleActive,
+  create,
+  deleteSchedule,
   duplicate,
   toggleActive,
-  bulkToggleActive,
+  update,
   updateLastRun,
+  upsertTemplate,
 } from "./mutations";
+import { getActiveSchedules, getAll, getById, getExecutionHistory, getUpcoming } from "./queries";
 
 export const notificationScheduleRouter = createORPCRouter({
   getAll,

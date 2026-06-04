@@ -1,8 +1,8 @@
+import { fireEvent, screen } from "@testing-library/react-native";
 import React from "react";
 import { Text, View } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsSearchBar } from "../../../trips/groups/GroupsSearchBar";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 interface IoniconsProps {
   name: string;
@@ -54,10 +54,7 @@ describe("GroupsSearchBar", () => {
     renderWithProviders(<GroupsSearchBar value="" onChangeText={mockOnChangeText} />);
 
     const input = screen.getByPlaceholderText("Search groups by name...");
-    interface InputElement {
-      props: { value: string };
-    }
-    expect((input as unknown as InputElement).props.value).toBe("");
+    expect((input.props as { value: string }).value).toBe("");
   });
 
   it("should handle search icon", () => {

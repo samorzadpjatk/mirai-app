@@ -1,7 +1,7 @@
-import { useColorScheme } from "react-native";
-import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useUser } from "@mirai-app/auth/client";
-import { ThemeProvider, DarkTheme, DefaultTheme } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useColorScheme } from "react-native";
 
 const colors = {
   backgroundDark: "#17181c",
@@ -28,7 +28,7 @@ export default function TabsLayout() {
         backgroundColor={backgroundColor}
         tintColor={activeColor}
         iconColor={inactiveColor}
-        disableTransparentOnScrollEdge
+        disableTransparentOnScrollEdge={true}
         labelStyle={{
           default: { color: inactiveColor },
           selected: { color: activeColor },

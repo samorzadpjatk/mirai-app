@@ -1,35 +1,9 @@
-import React from "react";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
-
-const mockUseQuery = jest.fn();
-const mockCreateDownloadUrlQueryOptions = jest.fn(
-  (options: { input: { storagePath: string }; enabled?: boolean }) => ({
-    queryKey: ["storage", "createDownloadUrl", options.input.storagePath],
-    enabled: options.enabled,
-  }),
-);
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  orpc: {
-    storage: {
-      createDownloadUrl: {
-        queryOptions: (options: { input: { storagePath: string }; enabled?: boolean }) =>
-          mockCreateDownloadUrlQueryOptions(options),
-      },
-    },
-  },
-}));
-
-jest.mock("@tanstack/react-query", () => {
-  const actual = jest.requireActual("@tanstack/react-query");
-  return {
-    ...actual,
-    useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  };
-});
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
+import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
+import { SubmissionImageCard } from "../../admin/challenges/SubmissionImageCard";
 
 describe("SubmissionImageCard", () => {
   const mockSubmission: VotingSubmission = {
@@ -42,47 +16,46 @@ describe("SubmissionImageCard", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    server.resetHandlers();
   });
 
-  it("renders the title and group name", () => {
-    mockUseQuery.mockReturnValue({
-      data: { signedUrl: "https://example.com/image.jpg" },
-      isLoading: false,
-    });
-
-    const { getByText } = renderWithProviders(
+  it("renders the title and group name", async () => {
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: "https://example.com/image.jpg",
+      })),
+    );
+    const { getByText } = renderWithMSW(
       <SubmissionImageCard submission={mockSubmission} title="Submission" />,
     );
-
-    expect(getByText("Submission")).toBeTruthy();
-    expect(getByText("Group A")).toBeTruthy();
+    await waitFor(() => expect(getByText("Submission")).toBeTruthy());
+    await waitFor(() => expect(getByText("Group A")).toBeTruthy());
   });
 
   it("calls onPress when pressed", async () => {
-    mockUseQuery.mockReturnValue({
-      data: { signedUrl: "https://example.com/image.jpg" },
-      isLoading: false,
-    });
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: "https://example.com/image.jpg",
+      })),
+    );
     const onPress = jest.fn();
-
-    const { getByText } = renderWithProviders(
+    const { getByText } = renderWithMSW(
       <SubmissionImageCard submission={mockSubmission} title="Submission" onPress={onPress} />,
     );
-
+    await waitFor(() => expect(getByText("Submission")).toBeTruthy());
     fireEvent.press(getByText("Submission"));
     await waitFor(() => expect(onPress).toHaveBeenCalled());
   });
 
-  it("shows a fallback initial when the image is unavailable", () => {
-    mockUseQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    });
-
-    const { getByText } = renderWithProviders(
+  it("shows a fallback initial when the image is unavailable", async () => {
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: null,
+      })),
+    );
+    const { getByText } = renderWithMSW(
       <SubmissionImageCard submission={mockSubmission} title="Submission" />,
     );
-
-    expect(getByText("G")).toBeTruthy();
+    await waitFor(() => expect(getByText("G")).toBeTruthy());
   });
 });

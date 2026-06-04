@@ -1,0 +1,36 @@
+import { defineConfig } from "vitest/config";
+
+export const baseCoverageExcludes = [
+  "node_modules/",
+  "dist/",
+  "**/*.d.ts",
+  "**/*.config.*",
+  "**/vitest.setup.ts",
+  "**/__tests__/**",
+];
+
+export const baseConfig = defineConfig({
+  test: {
+    globals: true,
+
+    deps: {
+      optimizer: {
+        ssr: {
+          enabled: true,
+          include: ["drizzle-orm"],
+        },
+      },
+    },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html", "lcov"],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
+      exclude: baseCoverageExcludes,
+    },
+  },
+});

@@ -17,7 +17,7 @@ Already correctly wrapped (no action needed):
 
 ## Mutations to Fix
 
-### `group.ts`
+### `group/`
 
 | Mutation | Ops outside tx | Fix |
 |---|---|---|
@@ -26,7 +26,7 @@ Already correctly wrapped (no action needed):
 | `assignUserToGroup` | upsert `tripParticipant` + deleteMany `groupJoinRequest` | Wrap both in `db.transaction()` |
 | `bulkAssignUsersToGroup` | `db.transaction(upserts)` then **separate** deleteMany outside | Move deleteMany inside the existing `db.transaction()` callback |
 
-### `challenge.ts`
+### `challenge/`
 
 | Mutation | Ops outside tx | Fix |
 |---|---|---|
@@ -34,7 +34,7 @@ Already correctly wrapped (no action needed):
 | `update` | `challenge.update` + `precreateRecurringInstancesForTemplate` + `createChallengeStatusActivityFromTransition` | Wrap all 3 in `db.transaction()` |
 | `forceCloseVoting` | `challenge.update` + `createChallengeStatusActivityFromTransition` | Wrap both in `db.transaction()` |
 
-### `challengeVote.ts`
+### `challengeVote/`
 
 These mutations chain vote creation → `recomputeSubmissionVotes` → `maybeFinalizeJudgedStaffVoting` with no encompassing transaction.
 
@@ -53,19 +53,19 @@ Same for `maybeFinalizeJudgedStaffVoting` (calls `ctx.db.update(challenge).set(.
 - `maybeFinalizeJudgedStaffVoting(ctx, params)` → accept `db: DB | TransactionDB`
 - `getJudgedStaffVotingProgress` / `getTripAdminParticipantIds` → already use `ctx.db`; propagate the `tx`
 
-### `challengeSubmission.ts`
+### `challengeSubmission/`
 
 | Mutation | Ops outside tx | Fix |
 |---|---|---|
 | `updateMine` | Multiple sequential challenge status `updateMany` / `update` + submission `update` | Wrap all ops in a single `db.transaction()` |
 
-### `location.ts`
+### `location/`
 
 | Mutation | Ops outside tx | Fix |
 |---|---|---|
 | `acceptLocationSharingRequest` | `locationSharingRequest.update` + 2× `location.upsert` | Wrap all 3 in `db.transaction()` |
 
-### `user.ts`
+### `user/`
 
 | Mutation | Ops outside tx | Fix |
 |---|---|---|
@@ -75,9 +75,9 @@ Same for `maybeFinalizeJudgedStaffVoting` (calls `ctx.db.update(challenge).set(.
 
 ## Implementation Order
 
-1. `group.ts` — `create`, `join`, `assignUserToGroup`, `bulkAssignUsersToGroup`
-2. `challenge.ts` — `create`, `update`, `forceCloseVoting`
-3. `challengeVote.ts` — refactor helpers → wrap `submitVote`, `submitVotes`, `forceEndJudgedStaffVoting`
-4. `challengeSubmission.ts` — `updateMine`
-5. `location.ts` — `acceptLocationSharingRequest`
-6. `user.ts` — `createUser`
+1. `group/` — `create`, `join`, `assignUserToGroup`, `bulkAssignUsersToGroup`
+2. `challenge/` — `create`, `update`, `forceCloseVoting`
+3. `challengeVote/` — refactor helpers → wrap `submitVote`, `submitVotes`, `forceEndJudgedStaffVoting`
+4. `challengeSubmission/` — `updateMine`
+5. `location/` — `acceptLocationSharingRequest`
+6. `user/` — `createUser`

@@ -1,5 +1,5 @@
-import { type ComponentProps } from "react";
-import { type Ionicons } from "@expo/vector-icons";
+import type { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 
 export const getIconForChallenge = (name: string): ComponentProps<typeof Ionicons>["name"] => {
   const lowerName = name.toLowerCase();

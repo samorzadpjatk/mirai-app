@@ -11,7 +11,7 @@ We follow the following standards:
 
 ## Testing Requirements
 
-All contributions must include appropriate tests. The MIRAI monorepo uses **84+ tests** across multiple packages with coverage reporting.
+All contributions must include appropriate tests. The MIRAI monorepo uses **~2,950 tests** across 267+ suites (Jest) and **850+ tests** (Vitest) across multiple packages with coverage reporting.
 
 ### Test Runners Overview
 

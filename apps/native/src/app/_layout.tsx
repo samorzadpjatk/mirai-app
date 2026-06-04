@@ -32,12 +32,15 @@ import {
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
+import { QueryProvider, getORPCClient, orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
-import { QueryProvider, orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
-import { initBackgroundLocationTask } from "~/services/background/backgroundLocationTask";
+import {
+  createBackgroundTaskDeps,
+  initBackgroundLocationTask,
+} from "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
 import "../global.css";
@@ -59,7 +62,13 @@ function AutoPushSubscription() {
 
 function App() {
   initNotifications();
-  initBackgroundLocationTask();
+  const backgroundTaskDeps = createBackgroundTaskDeps({
+    supabaseClient,
+    getORPCClient,
+    httpUrl: TRPC_HTTP_URL,
+    wsUrl: TRPC_WS_URL,
+  });
+  initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
   const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =

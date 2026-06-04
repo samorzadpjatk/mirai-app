@@ -1,5 +1,5 @@
-import { useMutation } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation } from "@tanstack/react-query";
 
 export function useMapActions() {
   const updateLocationMutation = useMutation(orpc.location.updateLocation.mutationOptions());

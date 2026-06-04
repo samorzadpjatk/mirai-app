@@ -5,7 +5,7 @@ export const AVATAR_SIGNED_URL_SECONDS = 60 * 60 * 24;
  * Expo-compliant location object type
  * Based on https://docs.expo.dev/versions/latest/sdk/location/#locationobject
  */
-export interface ExpoLocationObject {
+interface ExpoLocationObject {
   coords: {
     latitude: number;
     longitude: number;
@@ -48,9 +48,4 @@ export interface SharingUser {
   firstName: string | null;
   lastName: string | null;
   image: string | null;
-}
-
-export interface SharingSettings {
-  isSharingLocation: boolean;
-  usersToShareWith: SharingUser[];
 }

@@ -1,8 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  resolveProjectId,
-  parseToken,
   isAutoPushBlocked,
+  parseToken,
+  resolveProjectId,
 } from "../../notifications/useAutoPushSubscription";
 
 describe("resolveProjectId", () => {

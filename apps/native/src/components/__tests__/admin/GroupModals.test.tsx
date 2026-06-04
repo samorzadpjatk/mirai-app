@@ -1,13 +1,13 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import {
-  CreateGroupModal,
-  EditGroupModal,
-  DeleteGroupModal,
-  AssignOrganizerModal,
-} from "../../admin/groups/GroupModals";
+import React from "react";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
+import {
+  AssignOrganizerModal,
+  CreateGroupModal,
+  DeleteGroupModal,
+  EditGroupModal,
+} from "../../admin/groups/GroupModals";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface AdminModalProps {
   children: React.ReactNode;

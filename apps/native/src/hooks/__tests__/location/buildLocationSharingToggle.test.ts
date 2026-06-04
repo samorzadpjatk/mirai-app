@@ -1,15 +1,22 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import {
-  executeToggleLocationSharing,
+  type LocationSharingToggleDeps,
   buildLocationSharingToggle,
+  executeToggleLocationSharing,
 } from "../../location/useLocationPermissions";
 
 describe("executeToggleLocationSharing", () => {
   it("should call mutateAsync with correct params", async () => {
-    const deps = {
+    const deps: LocationSharingToggleDeps = {
       permissionStatus: "granted",
-      requestLocationPermissions: jest.fn().mockResolvedValue("granted"),
-      updateSharingMutation: { mutateAsync: jest.fn().mockResolvedValue(undefined) },
+      requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
+      updateSharingMutation: {
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
+      },
     };
 
     await executeToggleLocationSharing(true, deps);
@@ -21,10 +28,16 @@ describe("executeToggleLocationSharing", () => {
   });
 
   it("should request permissions when enabled and undetermined", async () => {
-    const deps = {
+    const deps: LocationSharingToggleDeps = {
       permissionStatus: "undetermined",
-      requestLocationPermissions: jest.fn().mockResolvedValue("granted"),
-      updateSharingMutation: { mutateAsync: jest.fn().mockResolvedValue(undefined) },
+      requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
+      updateSharingMutation: {
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
+      },
     };
 
     await executeToggleLocationSharing(true, deps);
@@ -33,10 +46,16 @@ describe("executeToggleLocationSharing", () => {
   });
 
   it("should not request permissions when disabled", async () => {
-    const deps = {
+    const deps: LocationSharingToggleDeps = {
       permissionStatus: "undetermined",
-      requestLocationPermissions: jest.fn().mockResolvedValue("granted"),
-      updateSharingMutation: { mutateAsync: jest.fn().mockResolvedValue(undefined) },
+      requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
+      updateSharingMutation: {
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
+      },
     };
 
     await executeToggleLocationSharing(false, deps);
@@ -47,11 +66,17 @@ describe("executeToggleLocationSharing", () => {
 
 describe("buildLocationSharingToggle", () => {
   it("should build toggle that updates state and storage on success", async () => {
-    const setIsLocationSharingEnabled = jest.fn();
-    const deps = {
+    const setIsLocationSharingEnabled = jest.fn<(enabled: boolean) => void>();
+    const deps: LocationSharingToggleDeps = {
       permissionStatus: "granted",
-      requestLocationPermissions: jest.fn().mockResolvedValue("granted"),
-      updateSharingMutation: { mutateAsync: jest.fn().mockResolvedValue(undefined) },
+      requestLocationPermissions: jest.fn<() => Promise<string>>().mockResolvedValue("granted"),
+      updateSharingMutation: {
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockResolvedValue(undefined),
+      },
     };
 
     const toggle = buildLocationSharingToggle(setIsLocationSharingEnabled, deps);
@@ -61,12 +86,16 @@ describe("buildLocationSharingToggle", () => {
   });
 
   it("should handle errors without updating state", async () => {
-    const setIsLocationSharingEnabled = jest.fn();
-    const deps = {
+    const setIsLocationSharingEnabled = jest.fn<(enabled: boolean) => void>();
+    const deps: LocationSharingToggleDeps = {
       permissionStatus: "granted",
-      requestLocationPermissions: jest.fn(),
+      requestLocationPermissions: jest.fn<() => Promise<string>>(),
       updateSharingMutation: {
-        mutateAsync: jest.fn().mockRejectedValue(new Error("Network error")),
+        mutateAsync: jest
+          .fn<
+            (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>
+          >()
+          .mockRejectedValue(new Error("Network error")),
       },
     };
 

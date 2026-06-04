@@ -1,25 +1,20 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act, waitFor } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { Alert } from "react-native";
 
-const mockGetForegroundPermissionsAsync = jest.fn();
-const mockRequestForegroundPermissionsAsync = jest.fn();
+const mockGetForegroundPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));
+const mockRequestForegroundPermissionsAsync = jest.fn(async () => ({ status: "undetermined" }));
 
 jest.mock("expo-location", () => ({
   getForegroundPermissionsAsync: () => mockGetForegroundPermissionsAsync(),
   requestForegroundPermissionsAsync: () => mockRequestForegroundPermissionsAsync(),
 }));
 
-const mockAlert = jest.fn();
+jest.mock("react-native", () => ({
+  Alert: { alert: jest.fn() },
+}));
 
-jest.doMock("react-native", () => {
-  return {
-    Alert: {
-      alert: mockAlert,
-    },
-  };
-});
-
-const { useLocationPermission } = require("../../location/useLocationPermission");
+import { useLocationPermission } from "../../location/useLocationPermission";
 
 describe("useLocationPermission", () => {
   beforeEach(() => {
@@ -51,9 +46,9 @@ describe("useLocationPermission", () => {
     let returnedStatus: string;
     await act(async () => {
       returnedStatus = await result.current.requestLocationPermissions();
+      expect(returnedStatus).toBe("granted");
     });
 
-    expect(returnedStatus!).toBe("granted");
     expect(result.current.permissionStatus).toBe("granted");
   });
 
@@ -66,7 +61,7 @@ describe("useLocationPermission", () => {
       await result.current.requestLocationPermissions();
     });
 
-    expect(mockAlert).toHaveBeenCalledWith(
+    expect(Alert.alert).toHaveBeenCalledWith(
       "Location Permission Required",
       "Please enable location permissions in your device settings to use location features.",
     );
@@ -80,10 +75,10 @@ describe("useLocationPermission", () => {
     let returnedStatus: string;
     await act(async () => {
       returnedStatus = await result.current.requestLocationPermissions();
+      expect(returnedStatus).toBe("denied");
     });
 
-    expect(returnedStatus!).toBe("denied");
     expect(result.current.permissionStatus).toBe("denied");
-    expect(mockAlert).toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalled();
   });
 });

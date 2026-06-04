@@ -19,20 +19,6 @@ Hono HTTP server providing the REST and oRPC API for the MIRAI platform. Handles
 - **CORS**: `hono/cors` (built-in)
 - **Testing**: Vitest
 
-## Key Files
-
-```
-apps/backend-server/
-├── src/
-│   ├── index.ts          # Server entry point
-│   ├── server.ts         # Hono server setup
-│   ├── ws-adapter.ts     # oRPC WebSocket adapter wrapper
-│   ├── config.ts         # Server configuration
-│   └── routes/           # HTTP routes
-├── package.json
-└── AGENTS.md             # This file
-```
-
 ## Development Commands
 
 ```bash
@@ -97,18 +83,19 @@ This replaces the previously separate `db-migrations` Docker service. Migration 
 
 ### Structured Logging
 
-- **Rule**: Replace all `console.error` / `console.warn` / `console.log` calls with structured logging (Pino).
-- **Status**: ✅ Complete. `server.ts` uses `logger.error` / `logger.info` from `@mirai-app/orpc` consistently.
+- **Rule**: Replace `console.*` with structured logging.
 
 ### WebSocket Testing Gap
 
-- **Warning**: WebSocket connection init, auth handshake, and reconnection logic in `server.ts` and `ws-adapter.ts` have minimal automated test coverage.
-- **Action**: Add integration tests for the full WebSocket lifecycle: connection → auth → message → disconnect → reconnect.
+- **Warning**: WebSocket connection init, auth handshake, and reconnection logic have minimal automated test coverage.
+- **Action**: Add integration tests for the full WebSocket lifecycle.
+
+See [Testing Conventions](./../../docs/conventions/testing.md) for testing standards.
 
 ### Side Effects at Module Level
 
 - **Avoid**: Setting up global handlers or singletons at module import time.
-- **Status**: ✅ Fixed. `server.ts` `rateLimitStore` moved from module-level `Map` to factory inside `createServer()`.
+- **Status**: ✅ Fixed. `rateLimitStore` moved to factory inside `createServer()`.
 - **Rule**: Explicit initialization via `createServer()` or `main()` functions only.
 
 ## Overrides to Root Conventions

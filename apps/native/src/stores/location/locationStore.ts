@@ -1,7 +1,7 @@
-import { createStore } from "zustand/vanilla";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert, Linking } from "react-native";
 import * as Location from "expo-location";
+import { Alert, Linking } from "react-native";
+import { createStore } from "zustand/vanilla";
 import {
   getBackgroundLocationPreference,
   hasBackgroundLocationTaskStarted,
@@ -203,7 +203,7 @@ export const locationStore = createStore<LocationStore>()((set, get) => ({
       await startBackgroundLocationTask();
       await setBackgroundLocationPreference(true);
       set({ isBackgroundLocationEnabled: true, isBackgroundLocationActive: true });
-    } catch (error) {
+    } catch (_error) {
       Alert.alert(
         "Background Updates Error",
         "Failed to change background location updates. Please try again.",

@@ -186,6 +186,7 @@ jobs:
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
 
       - name: Build iOS release artifact
+        id: build
         run: bundle exec fastlane ios ios_build release_classification:${{ steps.routing.outputs.classification }}
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
@@ -204,6 +205,7 @@ jobs:
           echo "metadata_path=$METADATA" >> "$GITHUB_OUTPUT"
 
       - name: Submit iOS release to internal
+        id: submit_internal
         run: |
           bundle exec fastlane ios ios_submit \
             artifact_path:${{ steps.artifact.outputs.artifact_path }} \
@@ -225,6 +227,33 @@ jobs:
             apps/native/dist/ios/*.ipa
             apps/native/dist/ios/release-metadata.json
           if-no-files-found: error
+
+      - name: Generate iOS build summary
+        if: always()
+        run: |
+          echo "## iOS Build & Internal Submission Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Status | ${{ steps.build.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Internal Submission | ${{ steps.submit_internal.outcome == 'success' && '✅ Submitted' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ steps.current_semver.outputs.release }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Previous | ${{ steps.previous_semver.outputs.release }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Classification | ${{ steps.routing.outputs.classification }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | ${{ steps.artifact.outputs.artifact_path }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Track Routing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Track | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Internal | ✅ Submitted |" >> $GITHUB_STEP_SUMMARY
+          echo "| External | ${{ steps.routing.outputs.submit_external == 'true' && '✅ Queued' || '⬜ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ steps.routing.outputs.submit_production == 'true' && '✅ Queued' || '⬜ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.build.outcome }}" == "failure" ] || [ "${{ steps.submit_internal.outcome }}" == "failure" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "::error::iOS build/submit failed"
+          fi
 
   submit_external:
     name: Submit iOS to external testing
@@ -291,11 +320,27 @@ jobs:
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to external testing
+        id: submit
         run: |
           bundle exec fastlane ios ios_submit \
             artifact_path:dist/ios/*.ipa \
             release_classification:${{ needs.build.outputs.classification }} \
             destination:testflight_external
+
+      - name: Generate external submission summary
+        if: always()
+        run: |
+          echo "## iOS External TestFlight Submission" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.submit.outcome == 'success' && '✅ Submitted' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ needs.build.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Classification | ${{ needs.build.outputs.classification }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.submit.outcome }}" == "failure" ]; then
+            echo "::error::iOS external submission failed"
+          fi
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
@@ -370,11 +415,29 @@ jobs:
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to App Store
+        id: submit
         run: |
           bundle exec fastlane ios ios_submit \
             artifact_path:dist/ios/*.ipa \
             release_classification:${{ needs.build.outputs.classification }} \
             destination:app_store
+
+      - name: Generate production submission summary
+        if: always()
+        run: |
+          echo "## iOS App Store Submission" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.submit.outcome == 'success' && '✅ Submitted' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ needs.build.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Classification | ${{ needs.build.outputs.classification }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.submit.outcome }}" == "success" ]; then
+            echo "::notice::iOS v${{ needs.build.outputs.version }} submitted to App Store"
+          else
+            echo "::error::iOS App Store submission failed"
+          fi
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12

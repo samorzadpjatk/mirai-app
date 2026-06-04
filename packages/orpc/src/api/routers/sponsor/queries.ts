@@ -1,5 +1,6 @@
-import { ORPCError } from "@orpc/server";
 import type { DB } from "@mirai-app/db";
+import { extractActiveSponsors } from "@mirai-app/shared/sponsors";
+import { ORPCError } from "@orpc/server";
 
 export type SponsorContext = {
   db: DB;
@@ -33,7 +34,5 @@ export const getByTripId = async (context: SponsorContext, input: { tripId: stri
     orderBy: (ts, { asc }) => asc(ts.createdAt),
   });
 
-  return tripSponsorsList
-    .filter((ts) => ts.sponsor?.isActive)
-    .map((tripSponsor) => tripSponsor.sponsor);
+  return extractActiveSponsors(tripSponsorsList);
 };

@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import type { TripListItem } from "~/components/trips/list/types";
 import {
   getCachedTripById,
   setCachedTripById,
   upsertCachedTripListItem,
 } from "~/services/storage/selectedTripStorage";
-import type { TripListItem } from "~/components/trips/list/types";
 import { isTripPast } from "~/utils/trip";
 
 export function useTripDetails(tripId?: string | null) {
@@ -69,7 +69,7 @@ export function useTripDetails(tripId?: string | null) {
   const trip = tripQuery.data ?? localCachedTrip ?? null;
   const isLoadingTrip = Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 
-  const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
+  const isTripPastValue = trip ? isTripPast(trip.endDate) : undefined;
 
   return {
     currentUser,

@@ -1,5 +1,5 @@
-import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import type { TripListItem } from "~/components/trips/list/types";
 const SELECTED_TRIP_STORAGE_KEY = "selected_trip_id";
 const TRIPS_CACHE_KEY = "trips.cache.v1";
@@ -19,7 +19,7 @@ const readJson = async <T>(key: string, fallback: T): Promise<T> => {
     const raw = await AsyncStorage.getItem(key);
     if (!raw) return fallback;
     return (JSON.parse(raw) as T) ?? fallback;
-  } catch (error) {
+  } catch (_error) {
     return fallback;
   }
 };

@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { createContext, useContext, type ReactNode } from "react";
+import { type ReactNode, createContext, useContext } from "react";
 import type { SupabaseClient } from "./types";
 
 const SupabaseClientContext = createContext<SupabaseClient | null>(null);

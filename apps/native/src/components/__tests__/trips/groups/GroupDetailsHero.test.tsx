@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupDetailsHero } from "../../../trips/groups/details/GroupDetailsHero";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupDetailsHero", () => {
   it("should render group name", () => {

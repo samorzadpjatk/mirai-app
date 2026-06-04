@@ -1,8 +1,7 @@
-import React from "react";
-import { Text as mockText } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text as mockText } from "react-native";
 import { TripBanner } from "../../trips/TripBanner";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockUseTripStore = jest.fn();
 

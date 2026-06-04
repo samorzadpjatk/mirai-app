@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { colors, spacing, typography } from "~/styles";
 
 export default function AdminEditActivityScreen() {
   const router = useRouter();
@@ -144,7 +144,7 @@ export default function AdminEditActivityScreen() {
           </Text>
         </View>
 
-        <FormField label="Title" required>
+        <FormField label="Title" required={true}>
           <ThemedTextInput value={title} onChangeText={setTitle} placeholder="Title" />
         </FormField>
 
@@ -153,7 +153,7 @@ export default function AdminEditActivityScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Description"
-            multiline
+            multiline={true}
             numberOfLines={4}
             style={styles.textArea}
           />

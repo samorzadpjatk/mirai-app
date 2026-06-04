@@ -52,6 +52,11 @@ bun run db:studio:prod
 
 # Format schema
 bun run db:format
+
+# Testing
+bun run test
+bun run test:watch
+bun run test:coverage
 ```
 
 ## Database Commands
@@ -75,6 +80,21 @@ All database operations are run from this app:
 - `@mirai-app/supabase` - Supabase client
 - `csv-parse` - CSV parsing
 - `yaml` - YAML parsing
+
+## Testing
+
+This package uses [Vitest](https://vitest.dev/) for testing. See [Testing Conventions](./../../docs/conventions/testing.md) for repo-wide testing standards.
+
+### Seed Logic Validation
+
+Tests focus on validating seed orchestration and data transformation without requiring live database connections:
+
+- **Configuration parsing** - YAML and CSV file parsing and validation
+- **Seed logic validation** - Core seeding orchestration and flow control
+- **File upload handling** - Supabase Storage bucket operations (mocked)
+- **User/trip creation logic** - Database operation sequencing (mocked)
+
+Tests use mocked external dependencies (Supabase, Drizzle) to run without requiring live services.
 
 ## Links
 

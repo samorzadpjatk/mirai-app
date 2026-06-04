@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AlertsPagination } from "../../alerts/AlertsPagination";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AlertsPagination", () => {
   it("should render pagination info", () => {

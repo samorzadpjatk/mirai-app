@@ -1,13 +1,10 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UpdatePopup } from "../../updates/UpdatePopup";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("UpdatePopup", () => {
   it("renders update popup when visible", () => {
-    renderWithProviders(
-      <UpdatePopup visible={true} onUpdate={jest.fn()} onSkip={jest.fn()} />,
-    );
+    renderWithProviders(<UpdatePopup visible={true} onUpdate={jest.fn()} onSkip={jest.fn()} />);
 
     expect(screen.getAllByText("Update Available").length).toBeGreaterThanOrEqual(1);
     expect(
@@ -19,9 +16,7 @@ describe("UpdatePopup", () => {
     const onUpdate = jest.fn();
     const user = userEvent.setup();
 
-    renderWithProviders(
-      <UpdatePopup visible={true} onUpdate={onUpdate} onSkip={jest.fn()} />,
-    );
+    renderWithProviders(<UpdatePopup visible={true} onUpdate={onUpdate} onSkip={jest.fn()} />);
 
     await user.press(screen.getByText("Update Now"));
     expect(onUpdate).toHaveBeenCalled();
@@ -31,9 +26,7 @@ describe("UpdatePopup", () => {
     const onSkip = jest.fn();
     const user = userEvent.setup();
 
-    renderWithProviders(
-      <UpdatePopup visible={true} onUpdate={jest.fn()} onSkip={onSkip} />,
-    );
+    renderWithProviders(<UpdatePopup visible={true} onUpdate={jest.fn()} onSkip={onSkip} />);
 
     await user.press(screen.getByText("Skip"));
     expect(onSkip).toHaveBeenCalled();

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { RewardConfig } from "../types";
 import type { SupabaseUser } from "@mirai-app/supabase";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { RewardConfig } from "../types";
 
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));

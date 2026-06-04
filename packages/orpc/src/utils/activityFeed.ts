@@ -1,15 +1,15 @@
 import {
-  challenges,
-  challengeSubmissions,
-  challengeActivities,
-  submissionActivities,
   activityFeeds,
-  rankChangeActivities,
-  groups,
+  challengeActivities,
+  challengeSubmissions,
+  challenges,
   coinTransactions,
+  groups,
+  rankChangeActivities,
+  submissionActivities,
 } from "@mirai-app/db";
-import { eq, and, or, count, sql, lte, gt, isNull } from "drizzle-orm";
 import type { DB, TransactionDB } from "@mirai-app/db";
+import { and, count, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 
 const HOUR_MS = 60 * 60 * 1000;
 export const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;

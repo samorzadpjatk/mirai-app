@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { AdminModal, AdminModalButton } from "../AdminModal";
-import { colors, spacing, typography } from "~/styles";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
+import { colors, spacing, typography } from "~/styles";
+import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface CreateScheduleModalProps {
   visible: boolean;
@@ -58,21 +58,21 @@ export function CreateScheduleModal({
         </>
       }
     >
-      <FormField label="Schedule Name" required>
+      <FormField label="Schedule Name" required={true}>
         <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter schedule name..." />
       </FormField>
 
-      <FormField label="Message" required>
+      <FormField label="Message" required={true}>
         <ThemedTextInput
           value={message}
           onChangeText={setMessage}
           placeholder="Enter notification message..."
-          multiline
+          multiline={true}
           numberOfLines={3}
         />
       </FormField>
 
-      <FormField label="Trigger Time" required>
+      <FormField label="Trigger Time" required={true}>
         <ThemedTextInput
           value={triggerTime}
           onChangeText={setTriggerTime}
@@ -137,21 +137,21 @@ export function EditScheduleModal({
         </>
       }
     >
-      <FormField label="Schedule Name" required>
+      <FormField label="Schedule Name" required={true}>
         <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter schedule name..." />
       </FormField>
 
-      <FormField label="Message" required>
+      <FormField label="Message" required={true}>
         <ThemedTextInput
           value={message}
           onChangeText={setMessage}
           placeholder="Enter notification message..."
-          multiline
+          multiline={true}
           numberOfLines={3}
         />
       </FormField>
 
-      <FormField label="Trigger Time" required>
+      <FormField label="Trigger Time" required={true}>
         <ThemedTextInput
           value={triggerTime}
           onChangeText={setTriggerTime}

@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
 // Mock expo-location
 const mockHasStartedLocationUpdatesAsync = jest.fn<(taskName: string) => Promise<boolean>>();
@@ -31,8 +31,8 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
 
 import {
   getBackgroundLocationPreference,
-  setBackgroundLocationPreference,
   hasBackgroundLocationTaskStarted,
+  setBackgroundLocationPreference,
   startBackgroundLocationTask,
   stopBackgroundLocationTask,
 } from "~/services/location/backgroundLocation";

@@ -1,25 +1,25 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
-  View,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { colors, spacing } from "../../../../styles";
 import { ChallengesGrid } from "~/components/trips/challenges/ChallengesGrid";
 import { ChallengesLoadingState } from "~/components/trips/challenges/ChallengesLoadingState";
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
 import { TripNotFoundState } from "~/components/trips/challenges/TripNotFoundState";
-import { useChallenges } from "~/hooks/challenges";
 import type {
   ChallengeListItem,
   ChallengeSubmissionType,
 } from "~/components/trips/challenges/types";
+import { useChallenges } from "~/hooks/challenges";
+import { colors, spacing } from "../../../../styles";
 
 const statusColors: Record<string, string> = {
   HIDDEN: colors.statusHidden,
@@ -212,7 +212,7 @@ export default function ChallengesScreen() {
         {/* Group Info Card */}
         {userGroup && (
           <GroupInfoCard
-            groupName={userGroup.name}
+            groupName={userGroup.name ?? "No group"}
             position={leaderboardInfo?.position}
             totalGroups={leaderboardInfo?.totalGroups}
             pointsDifference={leaderboardInfo?.pointsDifference}
@@ -224,7 +224,7 @@ export default function ChallengesScreen() {
         )}
 
         <ScrollView
-          horizontal
+          horizontal={true}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.typeFiltersRow}
         >
@@ -266,7 +266,7 @@ export default function ChallengesScreen() {
         </ScrollView>
 
         <ScrollView
-          horizontal
+          horizontal={true}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersRow}
         >

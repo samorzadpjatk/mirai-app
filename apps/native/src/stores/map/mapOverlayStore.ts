@@ -1,21 +1,21 @@
 "use no memo";
 
-import { createStore } from "zustand/vanilla";
-import { useStore } from "zustand";
 import React, { createContext, useContext } from "react";
-import { useMapOverlayGestures } from "./hooks/useMapOverlayGestures";
+import { useStore } from "zustand";
+import { createStore } from "zustand/vanilla";
 import type { UserLocation } from "~/components/map/UserMap";
-import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapSelectedUser } from "~/hooks/map";
+import { usePanelAnimation, useShareModal } from "~/hooks/ui";
+import { useMapOverlayGestures } from "./hooks/useMapOverlayGestures";
 import {
-  getNextMapTheme,
-  isValidCoordinate,
-  shouldCollapseList,
-  buildFocusStateFromUser,
-  removeUserFromSharingUserIds,
-  removeUserFromSharingSettings,
   type MapTheme,
   type SharingSettings,
+  buildFocusStateFromUser,
+  getNextMapTheme,
+  isValidCoordinate,
+  removeUserFromSharingSettings,
+  removeUserFromSharingUserIds,
+  shouldCollapseList,
 } from "./mapOverlayStoreUtils";
 
 export type { MapTheme, SharingSettings };
@@ -355,7 +355,14 @@ export function useMapOverlayStore() {
 
   const handlers = buildMapOverlayHandlers({
     store,
-    selectedUserState: { selectedUser, selectUser, deselect, stopSharing, mapUserPress, canStopSharing },
+    selectedUserState: {
+      selectedUser,
+      selectUser,
+      deselect,
+      stopSharing,
+      mapUserPress,
+      canStopSharing,
+    },
     externals: { removeUser, currentCoordinate },
     shareModal,
   });

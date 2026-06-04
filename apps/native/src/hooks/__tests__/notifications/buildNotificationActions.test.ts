@@ -1,7 +1,7 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { buildNotificationActions } from "../../notifications/useNotifications";
 
-const mockGetExpoPushTokenAsync = jest.fn();
+const mockGetExpoPushTokenAsync = jest.fn(async () => ({ data: "test-token" }));
 
 jest.mock("expo-notifications", () => ({
   PermissionStatus: {
@@ -11,20 +11,22 @@ jest.mock("expo-notifications", () => ({
   },
   getPermissionsAsync: jest.fn(),
   requestPermissionsAsync: jest.fn(),
-  getExpoPushTokenAsync: (...args: unknown[]) => mockGetExpoPushTokenAsync(...args),
+  getExpoPushTokenAsync: () => mockGetExpoPushTokenAsync(),
 }));
 
 describe("buildNotificationActions", () => {
   const createMockDeps = () => ({
-    subscriptionStatus: undefined as { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> } | undefined,
+    subscriptionStatus: undefined as
+      | { isSubscribed?: boolean; subscriptions?: Array<{ token: string }> }
+      | undefined,
     permissionDeps: {
       permission: "undetermined",
-      requestPermission: jest.fn().mockResolvedValue("granted"),
+      requestPermission: jest.fn(async () => "granted"),
       openAppSettings: jest.fn(),
     },
     mutations: {
-      subscribeMutation: { mutateAsync: jest.fn() },
-      unsubscribeMutation: { mutateAsync: jest.fn() },
+      subscribeMutation: { mutateAsync: jest.fn(async (_data: { token: string }) => ({})) },
+      unsubscribeMutation: { mutateAsync: jest.fn(async (_data: { token: string }) => ({})) },
     },
   });
 
@@ -44,7 +46,9 @@ describe("buildNotificationActions", () => {
 
     expect(deps.permissionDeps.requestPermission).toHaveBeenCalled();
     expect(mockGetExpoPushTokenAsync).toHaveBeenCalled();
-    expect(deps.mutations.subscribeMutation.mutateAsync).toHaveBeenCalledWith({ token: "test-token" });
+    expect(deps.mutations.subscribeMutation.mutateAsync).toHaveBeenCalledWith({
+      token: "test-token",
+    });
   });
 
   it("should build testNotification that returns void", () => {

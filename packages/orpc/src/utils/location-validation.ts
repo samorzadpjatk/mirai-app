@@ -17,22 +17,6 @@ export const longitudeSchema = z
   .max(180, "Długość geograficzna musi być między -180 a 180");
 
 /**
- * Schema for geographic coordinates
- */
-export const coordinatesSchema = z.object({
-  latitude: latitudeSchema,
-  longitude: longitudeSchema,
-});
-
-/**
- * Schema for optional geographic coordinates
- */
-export const optionalCoordinatesSchema = z.object({
-  latitude: latitudeSchema.optional().nullable(),
-  longitude: longitudeSchema.optional().nullable(),
-});
-
-/**
  * Schema for location data with all optional fields
  */
 export const locationDataSchema = z.object({

@@ -1,14 +1,14 @@
-import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { colors, spacing } from "~/styles";
 
 export default function AdminCreateGroupScreen() {
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function AdminCreateGroupScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <FormField label="Group Name" required>
+        <FormField label="Group Name" required={true}>
           <ThemedTextInput
             value={groupName}
             onChangeText={setGroupName}

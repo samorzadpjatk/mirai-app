@@ -1,11 +1,11 @@
 import {
-  TextInput,
-  StyleSheet,
-  type TextInputProps,
   type StyleProp,
+  StyleSheet,
+  TextInput,
+  type TextInputProps,
   type TextStyle,
 } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   style?: StyleProp<TextStyle>;
@@ -13,7 +13,12 @@ interface ThemedTextInputProps extends Omit<TextInputProps, "style"> {
   testID?: string;
 }
 
-export function ThemedTextInput({ style, error = false, testID = "themed-text-input", ...props }: ThemedTextInputProps) {
+export function ThemedTextInput({
+  style,
+  error = false,
+  testID = "themed-text-input",
+  ...props
+}: ThemedTextInputProps) {
   return (
     <TextInput
       testID={testID}

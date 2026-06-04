@@ -1,9 +1,38 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadTripConfigs } from "../tripConfigs";
 
 const mockListFilesRecursive = vi.fn();
 const mockReadTextFile = vi.fn();
 const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
+
+vi.mock("yaml", () => ({
+  default: {
+    parse: (content: string): unknown => {
+      const trimmed = content.trim();
+      if (!trimmed) return null;
+
+      const openBrackets = (trimmed.match(/\[/g) || []).length;
+      const closeBrackets = (trimmed.match(/\]/g) || []).length;
+      if (openBrackets !== closeBrackets) {
+        throw new Error("YAMLException: unclosed bracket");
+      }
+
+      const lines = trimmed.split("\n");
+      const result: Record<string, unknown> = {};
+      for (const line of lines) {
+        const lineTrimmed = line.trim();
+        if (!lineTrimmed) continue;
+        const colonIdx = lineTrimmed.indexOf(":");
+        if (colonIdx > 0) {
+          const key = lineTrimmed.slice(0, colonIdx).trim();
+          const value = lineTrimmed.slice(colonIdx + 1).trim();
+          result[key] = value === "null" ? null : value;
+        }
+      }
+      return result;
+    },
+  },
+}));
 
 vi.mock("../utils/fs", () => ({
   listFilesRecursive: (...args: unknown[]) => mockListFilesRecursive(...args) as Promise<string[]>,
@@ -56,13 +85,15 @@ users: users/test.csv
         "/test/assets/dev/config/trip1.yaml",
         "/test/assets/dev/config/trip2.yml",
       ]);
-      mockReadTextFile.mockResolvedValueOnce(`
+      mockReadTextFile
+        .mockResolvedValueOnce(`
 key: trip-1
 name: Trip One
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/trip1.csv
-`).mockResolvedValueOnce(`
+`)
+        .mockResolvedValueOnce(`
 key: trip-2
 name: Trip Two
 startDate: 2026-02-01
@@ -84,13 +115,15 @@ users: users/trip2.csv
         "/test/assets/dev/config/data.json",
         "/test/assets/dev/config/other.yml",
       ]);
-      mockReadTextFile.mockResolvedValueOnce(`
+      mockReadTextFile
+        .mockResolvedValueOnce(`
 key: yaml-trip
 name: YAML Trip
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/test.csv
-`).mockResolvedValueOnce(`
+`)
+        .mockResolvedValueOnce(`
 key: yml-trip
 name: YML Trip
 startDate: 2026-02-01
@@ -110,13 +143,15 @@ users: users/test.csv
         "/test/assets/dev/config/valid.yaml",
         "/test/assets/dev/config/invalid.yaml",
       ]);
-      mockReadTextFile.mockResolvedValueOnce(`
+      mockReadTextFile
+        .mockResolvedValueOnce(`
 key: valid-trip
 name: Valid Trip
 startDate: 2026-01-01
 endDate: 2026-01-10
 users: users/test.csv
-`).mockResolvedValueOnce(`
+`)
+        .mockResolvedValueOnce(`
 key: invalid-trip
 name: Invalid Trip
 `);

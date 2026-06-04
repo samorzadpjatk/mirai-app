@@ -1,0 +1,1 @@
+export { extractActiveSponsors } from "./filters";

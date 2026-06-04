@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { UserLocation } from "~/components/map/UserMap";
 
 interface UseMapSelectedUserArgs {

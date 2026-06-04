@@ -1,7 +1,7 @@
 import yaml from "yaml";
+import type { TripConfig } from "./types";
 import { listFilesRecursive, readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import type { TripConfig } from "./types";
 
 function isTripConfig(value: unknown): value is TripConfig {
   if (typeof value !== "object" || value === null) return false;

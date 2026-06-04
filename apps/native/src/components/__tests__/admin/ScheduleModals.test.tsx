@@ -1,13 +1,13 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import React from "react";
 import { Pressable, Text, type TextInput, View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import {
   CreateScheduleModal,
-  EditScheduleModal,
   DeleteScheduleModal,
+  EditScheduleModal,
 } from "../../admin/schedules/ScheduleModals";
-import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface AdminModalProps {
   children: React.ReactNode;

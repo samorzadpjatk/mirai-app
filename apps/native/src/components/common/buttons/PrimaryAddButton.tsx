@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+  type StyleProp,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  type StyleProp,
   type TextStyle,
+  TouchableOpacity,
   type ViewStyle,
 } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";

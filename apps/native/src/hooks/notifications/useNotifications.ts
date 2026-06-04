@@ -1,10 +1,9 @@
-import { useCallback } from "react";
+import { orpc } from "@mirai-app/orpc/client";
+import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import { Alert } from "react-native";
 import { resolveProjectId } from "./notificationProjectId";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 import { useNotificationPermission } from "./useNotificationPermission";
 
 export interface UseNotificationsReturn {
@@ -69,10 +68,12 @@ export interface NotificationPermissionDeps {
 }
 
 export async function executeToggleSubscription(
-  subscriptionStatus: {
-    isSubscribed?: boolean;
-    subscriptions?: Array<{ token: string }>;
-  } | undefined,
+  subscriptionStatus:
+    | {
+        isSubscribed?: boolean;
+        subscriptions?: Array<{ token: string }>;
+      }
+    | undefined,
   permissionDeps: NotificationPermissionDeps,
   mutations: NotificationMutations,
 ): Promise<void> {
@@ -102,10 +103,12 @@ export async function executeToggleSubscription(
 }
 
 export function buildNotificationActions(
-  subscriptionStatus: {
-    isSubscribed?: boolean;
-    subscriptions?: Array<{ token: string }>;
-  } | undefined,
+  subscriptionStatus:
+    | {
+        isSubscribed?: boolean;
+        subscriptions?: Array<{ token: string }>;
+      }
+    | undefined,
   permissionDeps: NotificationPermissionDeps,
   mutations: NotificationMutations,
 ) {

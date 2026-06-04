@@ -1,4 +1,3 @@
-import React from "react";
 import { renderRouter, screen } from "expo-router/testing-library";
 
 /**

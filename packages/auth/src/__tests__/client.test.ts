@@ -1,44 +1,45 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  useAuth,
-  useUser,
-  useSession,
-  useIsAuthenticated,
-  useAuthLoading,
-  useLoginForm,
-  authStore,
-  AuthStoreProvider,
-} from "../client";
-import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared";
+import { authStore } from "@mirai-app/shared/stores";
+import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared/stores";
+import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  AuthStoreProvider,
+  useAuth,
+  useAuthLoading,
+  useIsAuthenticated,
+  useLoginForm,
+  useSession,
+  useUser,
+} from "../client";
 
-vi.mock("zustand", () => ({
-  useStore: vi.fn(),
-}));
+const mockUser: AuthUser = {
+  id: "user-123",
+  authUserId: "auth-123",
+  email: "test@example.com",
+  firstName: "Test",
+  lastName: "User",
+  name: "Test User",
+  emailVerified: new Date(),
+  role: "USER",
+};
 
-vi.mock("@mirai-app/shared", () => ({
-  authStore: {
-    getState: vi.fn(),
-    subscribe: vi.fn(),
-  },
-}));
+const mockSession: SupabaseSession = {
+  user: { id: "auth-123", email: "test@example.com" },
+  access_token: "token-123",
+  refresh_token: "refresh-123",
+};
 
-vi.mock("react", async () => {
-  const actual = await vi.importActual("react");
-  return {
-    ...actual,
-    useState: vi.fn(),
-    useEffect: vi.fn(),
-    useRef: vi.fn(),
-  };
-});
-
-import { useStore } from "zustand";
-import { useState } from "react";
+const initialAuthState: Partial<AuthStore> = {
+  user: null,
+  session: null,
+  isLoading: true,
+  isAuthenticated: false,
+};
 
 describe("client exports", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    authStore.setState(initialAuthState);
   });
 
   describe("authStore export", () => {
@@ -51,173 +52,76 @@ describe("client exports", () => {
 
   describe("useAuth hook", () => {
     it("should return auth context with all required properties", () => {
-      const mockState: AuthStore = {
-        user: {
-          id: "user-123",
-          authUserId: "auth-123",
-          email: "test@example.com",
-          firstName: "Test",
-          lastName: "User",
-          name: "Test User",
-          emailVerified: new Date(),
-          role: "USER",
-        },
-        session: {
-          user: { id: "auth-123", email: "test@example.com" },
-          access_token: "token-123",
-        } as SupabaseSession,
+      authStore.setState({
+        user: mockUser,
+        session: mockSession,
         isLoading: false,
         isAuthenticated: true,
-        signInWithOtp: vi.fn(),
-        signInWithPassword: vi.fn(),
-        verifyOtp: vi.fn(),
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      });
 
-      vi.mocked(useStore).mockReturnValue(mockState);
+      const { result } = renderHook(() => useAuth());
 
-      const result = useAuth();
-
-      expect(result.user).toEqual(mockState.user);
-      expect(result.session).toEqual(mockState.session);
-      expect(result.isLoading).toBe(false);
-      expect(result.isAuthenticated).toBe(true);
-      expect(typeof result.signInWithOtp).toBe("function");
-      expect(typeof result.signInWithPassword).toBe("function");
-      expect(typeof result.verifyOtp).toBe("function");
-      expect(typeof result.signOut).toBe("function");
-      expect(typeof result.refreshSession).toBe("function");
+      expect(result.current.user).toEqual(mockUser);
+      expect(result.current.session).toEqual(mockSession);
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(typeof result.current.signInWithOtp).toBe("function");
+      expect(typeof result.current.signInWithPassword).toBe("function");
+      expect(typeof result.current.verifyOtp).toBe("function");
+      expect(typeof result.current.signOut).toBe("function");
+      expect(typeof result.current.refreshSession).toBe("function");
     });
 
     it("should handle unauthenticated state", () => {
-      const mockState: AuthStore = {
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-        signInWithOtp: vi.fn(),
-        signInWithPassword: vi.fn(),
-        verifyOtp: vi.fn(),
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      const { result } = renderHook(() => useAuth());
 
-      vi.mocked(useStore).mockReturnValue(mockState);
-
-      const result = useAuth();
-
-      expect(result.user).toBeNull();
-      expect(result.session).toBeNull();
-      expect(result.isAuthenticated).toBe(false);
+      expect(result.current.user).toBeNull();
+      expect(result.current.session).toBeNull();
+      expect(result.current.isAuthenticated).toBe(false);
     });
 
     it("should handle loading state", () => {
-      const mockState: AuthStore = {
-        user: null,
-        session: null,
+      authStore.setState({
         isLoading: true,
-        isAuthenticated: false,
-        signInWithOtp: vi.fn(),
-        signInWithPassword: vi.fn(),
-        verifyOtp: vi.fn(),
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      });
 
-      vi.mocked(useStore).mockReturnValue(mockState);
+      const { result } = renderHook(() => useAuth());
 
-      const result = useAuth();
-
-      expect(result.isLoading).toBe(true);
+      expect(result.current.isLoading).toBe(true);
     });
 
     it("should call signInWithOtp with correct parameters", async () => {
       const mockSignInWithOtp = vi.fn().mockResolvedValue(undefined);
-      const mockState: AuthStore = {
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
+      authStore.setState({
         signInWithOtp: mockSignInWithOtp,
-        signInWithPassword: vi.fn(),
-        verifyOtp: vi.fn(),
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      });
 
-      vi.mocked(useStore).mockReturnValue(mockState);
-
-      const result = useAuth();
-      await result.signInWithOtp({ email: "test@example.com" });
+      const { result } = renderHook(() => useAuth());
+      await result.current.signInWithOtp({ email: "test@example.com" });
 
       expect(mockSignInWithOtp).toHaveBeenCalledWith("test@example.com");
     });
 
     it("should call signInWithPassword with correct parameters", async () => {
       const mockSignInWithPassword = vi.fn().mockResolvedValue(undefined);
-      const mockState: AuthStore = {
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-        signInWithOtp: vi.fn(),
+      authStore.setState({
         signInWithPassword: mockSignInWithPassword,
-        verifyOtp: vi.fn(),
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      });
 
-      vi.mocked(useStore).mockReturnValue(mockState);
-
-      const result = useAuth();
-      await result.signInWithPassword({ email: "test@example.com", password: "secret" });
+      const { result } = renderHook(() => useAuth());
+      await result.current.signInWithPassword({ email: "test@example.com", password: "secret" });
 
       expect(mockSignInWithPassword).toHaveBeenCalledWith("test@example.com", "secret");
     });
 
     it("should call verifyOtp with correct parameters", async () => {
       const mockVerifyOtp = vi.fn().mockResolvedValue(undefined);
-      const mockState: AuthStore = {
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-        signInWithOtp: vi.fn(),
-        signInWithPassword: vi.fn(),
+      authStore.setState({
         verifyOtp: mockVerifyOtp,
-        signOut: vi.fn(),
-        refreshSession: vi.fn(),
-        setUser: vi.fn(),
-        setSession: vi.fn(),
-        setLoading: vi.fn(),
-        initialize: vi.fn(),
-      };
+      });
 
-      vi.mocked(useStore).mockReturnValue(mockState);
-
-      const result = useAuth();
-      await result.verifyOtp({ email: "test@example.com", token: "123456" });
+      const { result } = renderHook(() => useAuth());
+      await result.current.verifyOtp({ email: "test@example.com", token: "123456" });
 
       expect(mockVerifyOtp).toHaveBeenCalledWith("test@example.com", "123456");
     });
@@ -225,90 +129,66 @@ describe("client exports", () => {
 
   describe("useUser hook", () => {
     it("should return user from store", () => {
-      const mockUser: AuthUser = {
-        id: "user-123",
-        authUserId: "auth-123",
-        email: "test@example.com",
-        firstName: "Test",
-        lastName: "User",
-        name: "Test User",
-        emailVerified: new Date(),
-        role: "USER",
-      };
+      authStore.setState({ user: mockUser });
 
-      vi.mocked(useStore).mockReturnValue(mockUser);
+      const { result } = renderHook(() => useUser());
 
-      const result = useUser();
-
-      expect(result).toEqual(mockUser);
+      expect(result.current).toEqual(mockUser);
     });
 
     it("should return null when no user", () => {
-      vi.mocked(useStore).mockReturnValue(null);
+      const { result } = renderHook(() => useUser());
 
-      const result = useUser();
-
-      expect(result).toBeNull();
+      expect(result.current).toBeNull();
     });
   });
 
   describe("useSession hook", () => {
     it("should return session from store", () => {
-      const mockSession: SupabaseSession = {
-        user: { id: "auth-123", email: "test@example.com" },
-        access_token: "token-123",
-        refresh_token: "refresh-123",
-      };
+      authStore.setState({ session: mockSession });
 
-      vi.mocked(useStore).mockReturnValue(mockSession);
+      const { result } = renderHook(() => useSession());
 
-      const result = useSession();
-
-      expect(result).toEqual(mockSession);
+      expect(result.current).toEqual(mockSession);
     });
 
     it("should return null when no session", () => {
-      vi.mocked(useStore).mockReturnValue(null);
+      const { result } = renderHook(() => useSession());
 
-      const result = useSession();
-
-      expect(result).toBeNull();
+      expect(result.current).toBeNull();
     });
   });
 
   describe("useIsAuthenticated hook", () => {
     it("should return true when authenticated", () => {
-      vi.mocked(useStore).mockReturnValue(true);
+      authStore.setState({ isAuthenticated: true });
 
-      const result = useIsAuthenticated();
+      const { result } = renderHook(() => useIsAuthenticated());
 
-      expect(result).toBe(true);
+      expect(result.current).toBe(true);
     });
 
     it("should return false when not authenticated", () => {
-      vi.mocked(useStore).mockReturnValue(false);
+      const { result } = renderHook(() => useIsAuthenticated());
 
-      const result = useIsAuthenticated();
-
-      expect(result).toBe(false);
+      expect(result.current).toBe(false);
     });
   });
 
   describe("useAuthLoading hook", () => {
     it("should return true when loading", () => {
-      vi.mocked(useStore).mockReturnValue(true);
+      authStore.setState({ isLoading: true });
 
-      const result = useAuthLoading();
+      const { result } = renderHook(() => useAuthLoading());
 
-      expect(result).toBe(true);
+      expect(result.current).toBe(true);
     });
 
     it("should return false when not loading", () => {
-      vi.mocked(useStore).mockReturnValue(false);
+      authStore.setState({ isLoading: false });
+      const { result } = renderHook(() => useAuthLoading());
 
-      const result = useAuthLoading();
-
-      expect(result).toBe(false);
+      expect(result.current).toBe(false);
     });
   });
 
@@ -318,23 +198,13 @@ describe("client exports", () => {
       expect(typeof useLoginForm).toBe("function");
     });
 
-    it("should return expected interface", () => {
-      const mockSetState = vi.fn();
-      vi.mocked(useState).mockReturnValue(["", mockSetState]);
+    it("should initialize with empty state", () => {
+      const { result } = renderHook(() => useLoginForm());
 
-      const mockSignInWithOtp = vi.fn().mockResolvedValue(undefined);
-      const mockAuthState = {
-        signInWithOtp: mockSignInWithOtp,
-      };
-      vi.mocked(useStore).mockReturnValue(mockAuthState);
-
-      const result = useLoginForm();
-
-      expect(typeof result.formState).toBe("object");
-      expect(typeof result.setEmail).toBe("function");
-      expect(typeof result.handleSubmit).toBe("function");
-      expect(typeof result.clearError).toBe("function");
-      expect(typeof result.clearSent).toBe("function");
+      expect(result.current.formState.email).toBe("");
+      expect(result.current.formState.isLoading).toBe(false);
+      expect(result.current.formState.isSent).toBe(false);
+      expect(result.current.formState.error).toBeNull();
     });
   });
 

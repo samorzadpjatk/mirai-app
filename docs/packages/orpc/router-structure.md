@@ -41,7 +41,7 @@ export type AppRouter = typeof appRouter;
 ## Sub-Router Pattern
 
 ```typescript
-// packages/orpc/src/api/routers/user.ts
+// packages/orpc/src/api/routers/user/index.ts
 import { os } from "@orpc/server";
 import { z } from 'zod';
 
@@ -141,9 +141,9 @@ export const userRouter = router({
 ```
 packages/orpc/src/api/routers/
 ├── index.ts          # Root router export
-├── user.ts           # User procedures
-├── post.ts           # Post procedures
-├── product.ts        # Product procedures
+├── user/             # User procedures
+├── post/             # Post procedures
+├── product/          # Product procedures
 └── _utils.ts         # Shared router utilities
 ```
 
@@ -167,7 +167,7 @@ createUser.mutate({ email: 'user@example.com', name: 'John' });
 1. **Keep routers small** - Split when you have >10 procedures OR >1000 lines
 2. **Enforce file size limits** - Router files >1000 lines violate SRP and are hard to review/test safely
 3. **Split pattern**: Extract into `*Queries.ts`, `*Mutations.ts`, `*Enrichment.ts` files
-4. **Current debt**: `activityFeed.ts` (1579), `group.ts` (1427), `location.ts` (1281), `challengeSubmission.ts` (1164), `reward.ts` (1152)
+4. **Completed splits**: `activityFeed.ts` → `activityFeed/`, `group.ts` → `group/`, `location.ts` → `location/`, `challengeSubmission.ts` → `challengeSubmission/`, `reward.ts` → `reward/`
 5. **Use consistent naming** - Follow the conventions above
 6. **Group by domain** - Not by CRUD operation
 7. **Version in router name** if needed: `userV2Router`

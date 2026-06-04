@@ -1,8 +1,7 @@
-import React from "react";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TripPickerModal } from "../../common/TripPickerModal";
 import type { TripListItem } from "../../trips/list/types";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = jest.fn();
 

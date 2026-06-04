@@ -1,13 +1,13 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
+import React from "react";
 import { Text as MockText, View as MockView, type StyleProp, type ViewStyle } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { UsersListPanel } from "../../map/panels/UsersListPanel";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockOnToggleExpand = jest.fn();
 const mockOnAddPress = jest.fn();
 const mockOnManagePress = jest.fn();
-const mockOnSelectUser = jest.fn();
+const mockHandleSelectUser = jest.fn();
 
 const mockGetMapOverlayStore = jest.fn(() => ({
   users: [
@@ -31,7 +31,7 @@ const mockGetMapOverlayStore = jest.fn(() => ({
   onToggleExpand: mockOnToggleExpand,
   onAddPress: mockOnAddPress,
   onManagePress: mockOnManagePress,
-  onSelectUser: mockOnSelectUser,
+  handleSelectUser: mockHandleSelectUser,
 }));
 
 jest.mock("~/stores/map", () => ({
@@ -109,7 +109,7 @@ describe("UsersListPanel", () => {
       onToggleExpand: mockOnToggleExpand,
       onAddPress: mockOnAddPress,
       onManagePress: mockOnManagePress,
-      onSelectUser: mockOnSelectUser,
+      handleSelectUser: mockHandleSelectUser,
     });
   });
 
@@ -188,7 +188,7 @@ describe("UsersListPanel", () => {
     }
 
     fireEvent.press(otherUserRow);
-    expect(mockOnSelectUser).toHaveBeenCalledWith(
+    expect(mockHandleSelectUser).toHaveBeenCalledWith(
       expect.objectContaining({ id: "user-2", name: "Jane Smith" }),
     );
 
@@ -199,7 +199,7 @@ describe("UsersListPanel", () => {
     }
 
     fireEvent.press(currentUserRow);
-    expect(mockOnSelectUser).toHaveBeenCalledTimes(1);
+    expect(mockHandleSelectUser).toHaveBeenCalledTimes(1);
   });
 
   it("applies the animated style override", () => {
@@ -210,16 +210,17 @@ describe("UsersListPanel", () => {
       onToggleExpand: mockOnToggleExpand,
       onAddPress: mockOnAddPress,
       onManagePress: mockOnManagePress,
-      onSelectUser: mockOnSelectUser,
+      handleSelectUser: mockHandleSelectUser,
     });
 
     const { getByTestId } = renderWithProviders(<UsersListPanel />);
 
-    const animatedView = getByTestId("animated-view") as unknown as {
-      props: { style: [StyleProp<ViewStyle>, StyleProp<ViewStyle>] };
-    };
+    const animatedView = getByTestId("animated-view");
+    const animatedViewStyle = (
+      animatedView.props as { style: [StyleProp<ViewStyle>, StyleProp<ViewStyle>] }
+    ).style;
 
-    expect(animatedView.props.style[0]).toEqual(expect.objectContaining({ overflow: "hidden" }));
-    expect(animatedView.props.style[1]).toEqual({ opacity: 0.5 });
+    expect(animatedViewStyle[0]).toEqual(expect.objectContaining({ overflow: "hidden" }));
+    expect(animatedViewStyle[1]).toEqual({ opacity: 0.5 });
   });
 });

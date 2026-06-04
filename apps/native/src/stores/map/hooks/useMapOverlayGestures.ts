@@ -1,11 +1,10 @@
-import { useCallback } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import {
+  interpolate,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  interpolate,
 } from "react-native-reanimated";
 
 export interface UseMapOverlayGesturesReturn {

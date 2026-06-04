@@ -1,6 +1,7 @@
-import { buildAuthEmailLookup, resolveAuthEmail } from "../../../utils/authEmails";
 import type { DB } from "@mirai-app/db";
+import { mapReportsWithEmails } from "@mirai-app/shared/reports";
 import type { SupabaseClient } from "@mirai-app/supabase";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 
 export type ReportContext = {
   db: DB;
@@ -32,20 +33,5 @@ export const fetchReportsBySubmission = async ({
     reports.map((report) => report.reporter?.user?.authUserId).filter(Boolean),
   );
 
-  return reports.map((report) => {
-    if (!report.reporter?.user) {
-      return report;
-    }
-    const { authUserId, ...reporterUser } = report.reporter.user;
-    return {
-      ...report,
-      reporter: {
-        ...report.reporter,
-        user: {
-          ...reporterUser,
-          email: resolveAuthEmail(emailByAuthUserId, authUserId),
-        },
-      },
-    };
-  });
+  return mapReportsWithEmails(reports, emailByAuthUserId);
 };

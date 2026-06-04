@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { colors, spacing, borderRadius } from "~/styles";
+import { Text, TouchableOpacity, View } from "react-native";
 import type { ChallengeItem } from "~/hooks/admin/useAdminChallengesByTrip";
+import { borderRadius, colors, spacing } from "~/styles";
 
 interface ChallengeListItemProps {
   challenge: ChallengeItem;

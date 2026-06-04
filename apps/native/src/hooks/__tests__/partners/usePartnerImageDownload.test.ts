@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 
 // Mock useFileDownload hook
@@ -13,11 +13,11 @@ jest.mock("~/hooks/files/useFileDownload", () => ({
 }));
 
 import {
-  usePartnerImageDownload,
+  calculatePartnerImageLoadingState,
   getPlaceholderPath,
   isComponentUnmountedErrorMessage,
   resolveImageUrlFromDownloadResult,
-  calculatePartnerImageLoadingState,
+  usePartnerImageDownload,
 } from "../../partners/usePartnerImageDownload";
 
 describe("usePartnerImageDownload", () => {

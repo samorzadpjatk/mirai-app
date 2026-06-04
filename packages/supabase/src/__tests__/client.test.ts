@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSupabaseClient } from "../client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import createBaseSupabaseClient from "../base";
+import { createSupabaseClient } from "../client";
 import type { StorageAdapter, SupabaseClientOptions } from "../types";
+import { createMockSupabaseClient } from "./utils";
 
 // Mock the base module
 vi.mock("../base", () => ({
@@ -11,19 +13,11 @@ vi.mock("../base", () => ({
 describe("createSupabaseClient", () => {
   const mockUrl = "https://test.supabase.co";
   const mockKey = "test-anon-key";
-  const mockSupabaseClient = {
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-    },
-    from: vi.fn(),
-  };
+  const mockSupabaseClient = createMockSupabaseClient() as SupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createBaseSupabaseClient).mockReturnValue(
-      mockSupabaseClient as unknown as ReturnType<typeof createBaseSupabaseClient>,
-    );
+    vi.mocked(createBaseSupabaseClient).mockReturnValue(mockSupabaseClient);
   });
 
   describe("basic client creation", () => {
@@ -63,10 +57,9 @@ describe("createSupabaseClient", () => {
     });
 
     it("should use in-memory storage when no storage provided and no global localStorage", () => {
-      // Ensure globalThis.localStorage is undefined
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
-        .localStorage;
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
+      // Ensure (globalThis as { localStorage?: StorageAdapter }).localStorage is undefined
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -79,8 +72,7 @@ describe("createSupabaseClient", () => {
       expect(options.auth?.storage?.removeItem).toBeDefined();
 
       // Restore original localStorage
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
-        originalLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
 
     it("should use global localStorage when available and no storage provided", () => {
@@ -91,7 +83,7 @@ describe("createSupabaseClient", () => {
       };
 
       // Set up global localStorage
-      (globalThis as unknown as { localStorage: StorageAdapter }).localStorage = mockLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = mockLocalStorage;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -107,7 +99,7 @@ describe("createSupabaseClient", () => {
       );
 
       // Clean up
-      delete (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      delete (globalThis as { localStorage?: StorageAdapter }).localStorage;
     });
 
     it("should prefer provided storage over global localStorage", () => {
@@ -123,7 +115,7 @@ describe("createSupabaseClient", () => {
         removeItem: vi.fn(),
       };
 
-      (globalThis as unknown as { localStorage: StorageAdapter }).localStorage = mockLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = mockLocalStorage;
 
       createSupabaseClient(mockUrl, mockKey, mockCustomStorage);
 
@@ -138,16 +130,15 @@ describe("createSupabaseClient", () => {
         }),
       );
 
-      delete (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage;
+      delete (globalThis as { localStorage?: StorageAdapter }).localStorage;
     });
   });
 
   describe("in-memory storage implementation", () => {
     it("should store and retrieve values with in-memory storage", () => {
       // Ensure no global localStorage
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
-        .localStorage;
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -162,14 +153,12 @@ describe("createSupabaseClient", () => {
       expect(value).toBe("test-value");
 
       // Restore
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
-        originalLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
 
     it("should return null for non-existent keys in in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
-        .localStorage;
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -181,14 +170,12 @@ describe("createSupabaseClient", () => {
 
       expect(value).toBeNull();
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
-        originalLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
 
     it("should remove items from in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
-        .localStorage;
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -202,14 +189,12 @@ describe("createSupabaseClient", () => {
 
       expect(value).toBeNull();
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
-        originalLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
 
     it("should handle multiple keys in in-memory storage", () => {
-      const originalLocalStorage = (globalThis as unknown as { localStorage?: StorageAdapter })
-        .localStorage;
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage = undefined;
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
       createSupabaseClient(mockUrl, mockKey);
 
@@ -223,8 +208,7 @@ describe("createSupabaseClient", () => {
       expect(storage?.getItem("key1")).toBe("value1");
       expect(storage?.getItem("key2")).toBe("value2");
 
-      (globalThis as unknown as { localStorage?: StorageAdapter }).localStorage =
-        originalLocalStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
   });
 

@@ -1,3 +1,7 @@
+function isCryptoWebCrypto(value: unknown): value is Crypto {
+  return value !== null && typeof value === "object" && "getRandomValues" in value;
+}
+
 export function randomUUID(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -9,12 +13,10 @@ export function randomUUID(): string {
     crypto.getRandomValues(bytes);
   } else if (
     typeof crypto !== "undefined" &&
-    (crypto as unknown as { webcrypto?: { getRandomValues: typeof crypto.getRandomValues } })
-      .webcrypto?.getRandomValues
+    "webcrypto" in crypto &&
+    isCryptoWebCrypto(crypto.webcrypto)
   ) {
-    (
-      crypto as unknown as { webcrypto: { getRandomValues: typeof crypto.getRandomValues } }
-    ).webcrypto.getRandomValues(bytes);
+    crypto.webcrypto.getRandomValues(bytes);
   } else {
     throw new Error("No secure random source available");
   }

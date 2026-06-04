@@ -1,8 +1,7 @@
-import React from "react";
-import { Alert, Image } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { Alert, Image } from "react-native";
 import { ExistingSubmissionCard } from "../../../trips/challenges/ExistingSubmissionCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 let mockDownloadedFileUri: string | null = "mock-uri";
 

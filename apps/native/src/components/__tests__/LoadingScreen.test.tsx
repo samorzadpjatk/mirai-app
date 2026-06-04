@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "./helpers/renderWithProviders";
 import LoadingScreen from "../LoadingScreen";
+import { renderWithProviders } from "./helpers/renderWithProviders";
 
 describe("LoadingScreen", () => {
   it("renders with default loading message", () => {

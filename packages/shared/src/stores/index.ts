@@ -15,7 +15,7 @@ export type {
 } from "./judgementStore";
 
 // Auth store
-export { authStore } from "./authStore";
+export { authStore, _resetAuthStoreForTests } from "./authStore";
 export type {
   AuthStore,
   AuthState,

@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export function ManageSharingModal() {
   const { showManageModal, setShowManageModal, sharingSettings, isRemovingUser, handleRemoveUser } =
@@ -31,7 +31,7 @@ export function ManageSharingModal() {
                 name={fullName}
                 imageUrl={user.image}
                 subtitle="Sharing location"
-                bordered
+                bordered={true}
                 rightElement={
                   <Pressable
                     style={styles.removeButton}

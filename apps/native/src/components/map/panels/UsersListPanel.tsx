@@ -1,9 +1,9 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
-import { formatRelativeTime } from "~/utils/format";
 import { useMapOverlayStore } from "~/stores/map";
+import { formatRelativeTime } from "~/utils/format";
 
 export function UsersListPanel() {
   const {
@@ -13,7 +13,7 @@ export function UsersListPanel() {
     onToggleExpand,
     onAddPress,
     onManagePress,
-    onSelectUser,
+    handleSelectUser,
   } = useMapOverlayStore();
 
   return (
@@ -52,7 +52,7 @@ export function UsersListPanel() {
                 style={styles.userListItem}
                 onPress={() => {
                   if (isMe) return;
-                  onSelectUser(user);
+                  handleSelectUser(user);
                 }}
               >
                 <View style={[styles.avatarWrapperSmall, isMe && styles.avatarWrapperMe]}>

@@ -1,13 +1,5 @@
-import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Modal,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { commonStyles } from "~/styles/commonStyles";
 import {
   getRewardAvailabilityColor,
@@ -77,13 +69,11 @@ export default function RewardDetailsModal({
           {images.length > 0 ? (
             <View style={{ width: carouselWidth, alignSelf: "center", marginBottom: 16 }}>
               <ScrollView
-                horizontal
-                pagingEnabled
+                horizontal={true}
+                pagingEnabled={true}
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={(event) => {
-                  const nextIndex = Math.round(
-                    event.nativeEvent.contentOffset.x / carouselWidth,
-                  );
+                  const nextIndex = Math.round(event.nativeEvent.contentOffset.x / carouselWidth);
                   onImageIndexChange(nextIndex);
                 }}
               >

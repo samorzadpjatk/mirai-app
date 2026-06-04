@@ -1,20 +1,14 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, inArray } from "drizzle-orm";
-import { locations, locationShares } from "@mirai-app/db";
-import type { Location as DbLocation, DB } from "@mirai-app/db";
+import { locationShares } from "@mirai-app/db";
+import type { DB, Location as DbLocation } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import {
-  type RealtimeChannel,
-  REALTIME_CHANNEL_STATES,
-} from "@mirai-app/supabase";
+import { REALTIME_CHANNEL_STATES, type RealtimeChannel } from "@mirai-app/supabase";
+import { ORPCError } from "@orpc/server";
+import { eq } from "drizzle-orm";
 import { tracked } from "~/api/trpc";
 import { calculateDistance } from "../../../utils/location-validation";
 import { logger } from "../../../utils/logger";
-import {
-  toLocationWithUser,
-  mapUserWithAvatar,
-} from "./utils";
 import type { FriendLocationEvent, LocationWithUser, SharingUser } from "./types";
+import { mapUserWithAvatar, toLocationWithUser } from "./utils";
 
 export type LocationContext = {
   db: DB;
@@ -406,14 +400,12 @@ export async function* getFriendsLocationsStream(
                           type: "upsert",
                           location,
                         });
-                      } else {
-                        if (inRadius.delete(userId)) {
-                          queue.push({
-                            id: connectionId,
-                            type: "delete",
-                            userId,
-                          });
-                        }
+                      } else if (inRadius.delete(userId)) {
+                        queue.push({
+                          id: connectionId,
+                          type: "delete",
+                          userId,
+                        });
                       }
                     } else {
                       queue.push({
@@ -456,14 +448,12 @@ export async function* getFriendsLocationsStream(
                         type: "upsert",
                         location,
                       });
-                    } else {
-                      if (inRadius.delete(userId)) {
-                        queue.push({
-                          id: connectionId,
-                          type: "delete",
-                          userId,
-                        });
-                      }
+                    } else if (inRadius.delete(userId)) {
+                      queue.push({
+                        id: connectionId,
+                        type: "delete",
+                        userId,
+                      });
                     }
                   } else {
                     queue.push({

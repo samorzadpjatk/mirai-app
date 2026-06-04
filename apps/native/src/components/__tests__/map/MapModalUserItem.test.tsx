@@ -1,10 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { MapModalUserItem } from "../../map/modals/MapModalUserItem";
-
-
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("MapModalUserItem", () => {
   it("should render with name", () => {

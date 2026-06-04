@@ -1,8 +1,7 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { ScheduleCard } from "../../admin/schedules/ScheduleCard";
 import type { NotificationSchedule } from "../../../hooks/admin/useAdminSchedules";
+import { ScheduleCard } from "../../admin/schedules/ScheduleCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: () => null,

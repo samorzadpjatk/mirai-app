@@ -1,7 +1,7 @@
-import React from "react";
 import { Ionicons } from "@expo/vector-icons";
+import type React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripEndedBannerProps {
   visible?: boolean;

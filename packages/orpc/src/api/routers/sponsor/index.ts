@@ -1,19 +1,16 @@
-import { createORPCRouter, adminProcedure, publicProcedure } from "../../trpc";
+import { adminProcedure, createORPCRouter, publicProcedure } from "../../trpc";
+import { addToTrip, create, deleteSponsor, removeFromTrip, update } from "./mutations";
+import { getAll, getById, getByTripId } from "./queries";
 import {
+  createSponsorInputSchema,
   idInputSchema,
   tripIdInputSchema,
-  createSponsorInputSchema,
-  updateSponsorInputSchema,
   tripSponsorInputSchema,
+  updateSponsorInputSchema,
 } from "./types";
-import { getAll, getById, getByTripId } from "./queries";
-import { create, update, deleteSponsor, addToTrip, removeFromTrip } from "./mutations";
 
-const handleGetAll = async ({
-  context,
-}: {
-  context: Parameters<typeof getAll>[0];
-}) => getAll(context);
+const handleGetAll = async ({ context }: { context: Parameters<typeof getAll>[0] }) =>
+  getAll(context);
 
 const handleGetById = async ({
   context,
@@ -74,31 +71,17 @@ const handleRemoveFromTrip = async ({
 export const sponsorRouter = createORPCRouter({
   getAll: publicProcedure.handler(handleGetAll),
 
-  getById: publicProcedure
-    .input(idInputSchema)
-    .handler(handleGetById),
+  getById: publicProcedure.input(idInputSchema).handler(handleGetById),
 
-  getByTripId: publicProcedure
-    .input(tripIdInputSchema)
-    .handler(handleGetByTripId),
+  getByTripId: publicProcedure.input(tripIdInputSchema).handler(handleGetByTripId),
 
-  create: adminProcedure
-    .input(createSponsorInputSchema)
-    .handler(handleCreate),
+  create: adminProcedure.input(createSponsorInputSchema).handler(handleCreate),
 
-  update: adminProcedure
-    .input(updateSponsorInputSchema)
-    .handler(handleUpdate),
+  update: adminProcedure.input(updateSponsorInputSchema).handler(handleUpdate),
 
-  delete: adminProcedure
-    .input(idInputSchema)
-    .handler(handleDeleteSponsor),
+  delete: adminProcedure.input(idInputSchema).handler(handleDeleteSponsor),
 
-  addToTrip: adminProcedure
-    .input(tripSponsorInputSchema)
-    .handler(handleAddToTrip),
+  addToTrip: adminProcedure.input(tripSponsorInputSchema).handler(handleAddToTrip),
 
-  removeFromTrip: adminProcedure
-    .input(tripSponsorInputSchema)
-    .handler(handleRemoveFromTrip),
+  removeFromTrip: adminProcedure.input(tripSponsorInputSchema).handler(handleRemoveFromTrip),
 });

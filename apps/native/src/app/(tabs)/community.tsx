@@ -1,3 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,12 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 
 import {
   CommunityActivityCard,
@@ -22,14 +22,14 @@ import {
 
 import LoadingScreen from "~/components/LoadingScreen";
 
-import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
-import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
-import { useSelectedTrip, useTrips } from "~/hooks/trips";
-import { colors, spacing, typography } from "~/styles";
-import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
 import { useAuth } from "@mirai-app/auth/client";
-import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
+import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
+import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
+import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
+import { useSelectedTrip, useTrips } from "~/hooks/trips";
+import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { colors, spacing, typography } from "~/styles";
 
 type ActivityFilter =
   | "all"
@@ -130,7 +130,7 @@ export default function CommunityScreen() {
   const keyExtractor = useCallback((item: CommunityFeedActivity) => item.id, []);
 
   const getItemLayout = useCallback(
-    (data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
+    (_data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
       length: 200, // Approximate height of CommunityActivityCard
       offset: 200 * index,
       index,
@@ -349,21 +349,23 @@ export default function CommunityScreen() {
           />
         }
         ListEmptyComponent={
-          !selectedTrip ? (
+          selectedTrip ? (
+            feedQuery.isLoading ? null : (
+              <EmptyState
+                icon="chatbubbles-outline"
+                iconSize={36}
+                title="No activities yet"
+                subtitle="Pull to refresh to load new community posts."
+              />
+            )
+          ) : (
             <EmptyState
               icon="navigate-outline"
               iconSize={36}
               title="Select trip first"
               subtitle="Pick your trip to load the community feed."
             />
-          ) : !feedQuery.isLoading ? (
-            <EmptyState
-              icon="chatbubbles-outline"
-              iconSize={36}
-              title="No activities yet"
-              subtitle="Pull to refresh to load new community posts."
-            />
-          ) : null
+          )
         }
         ListFooterComponent={
           feedQuery.isFetchingNextPage ? (

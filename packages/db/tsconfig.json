@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "types": ["vitest"],
+    "lib": ["ESNext", "DOM"],
+    "types": ["vitest", "node"],
     "outDir": "dist",
     "rootDir": ".",
     "declaration": true,
@@ -11,8 +12,7 @@
     "noEmit": false
   },
   "references": [
-    { "path": "../supabase" },
-    { "path": "../shared" }
+    { "path": "../supabase" }
   ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/__tests__/**/*", "src/**/*.test.*"]

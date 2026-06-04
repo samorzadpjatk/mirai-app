@@ -1,11 +1,16 @@
-import React from "react";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 const mockDownload = jest.fn(() => Promise.resolve());
 const mockReset = jest.fn();
 const mockAbort = jest.fn();
 
-let mockFileDownloadReturn = {
+let mockFileDownloadReturn: {
+  download: jest.Mock;
+  status: string;
+  file: { uri: string } | null;
+  reset: jest.Mock;
+  abort: jest.Mock;
+} = {
   download: mockDownload,
   status: "idle",
   file: null,
@@ -17,7 +22,8 @@ jest.mock("~/hooks/files", () => ({
   useFileDownload: () => mockFileDownloadReturn,
 }));
 
-const FullscreenSubmissionSlide = require("../../../trips/groups/details/FullscreenSubmissionSlide").default;
+const FullscreenSubmissionSlide =
+  require("../../../trips/groups/details/FullscreenSubmissionSlide").default;
 const { formatDateTime } = require("../../../trips/groups/details/FullscreenSubmissionSlide");
 
 const baseSubmission = (overrides = {}) => ({

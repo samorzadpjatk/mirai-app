@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { AdminChallengeListCard } from "../../admin/challenges/AdminChallengeListCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AdminChallengeListCard", () => {
   const mockChallenge = {

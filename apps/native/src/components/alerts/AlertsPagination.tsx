@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface AlertsPaginationProps {
   page: number;

@@ -6,10 +6,11 @@ Shared utilities and types used across the MIRAI app monorepo.
 
 This package contains common functionality that is shared between different applications and packages in the monorepo, including:
 
+- **Pure business logic** - Domain-specific pure functions extracted from hooks and routers (challenges, groups, trips, users, coins, feed, notifications, rewards, sponsors, storage, etc.)
 - **Storage utilities** - File storage standards and configurations
 - **State management** - Zustand stores for shared application state (auth, map, judgement)
 - **Trip information** - Types and utilities specific to trip data
-- **Test utilities** - Shared test helpers and mock factories for all packages
+- **Test utilities** - Shared test helpers, mock factories, and data builders for all packages
 - **Shared exports** - Centralized access to all shared functionality
 
 ## Structure
@@ -17,19 +18,33 @@ This package contains common functionality that is shared between different appl
 ```
 packages/shared/
 ├── src/
-│   ├── storage/       # Storage-related utilities and standards
-│   ├── stores/        # Zustand stores for shared state management
-│   ├── tripInfo/      # Trip information types and utilities
-│   ├── test-utils/    # Shared test utilities and helpers
+│   ├── challengeSubmissions/  # Challenge submission validation & points
+│   ├── challengeVote/         # Challenge vote builders and validators
+│   ├── challenges/            # Challenge query builders, validators, mappers
+│   ├── coins/                 # Coin builders, mappers, statistics
+│   ├── feed/                  # Activity feed filters and reactions
+│   ├── groups/                # Group flattening, filters, permissions
+│   ├── locations/             # Location data mappers
+│   ├── notifications/         # Notification delivery and schedule utilities
+│   ├── reports/               # Report builders
+│   ├── rewards/               # Reward progress calculation and validation
+│   ├── sponsors/              # Sponsor filters
+│   ├── storage/               # Storage-related utilities and standards
+│   ├── stores/                # Zustand stores for shared state management
+│   ├── test-utils/            # Shared test utilities and helpers
 │   │   ├── index.ts              # Barrel exports
 │   │   ├── mock-factories.ts     # Mock factories for Supabase/session/user
 │   │   ├── test-data-builders.ts # Builder pattern for test data
-│   │   ├── test-helpers.ts       # Async/mocking helpers
-│   │   └── vitest-setup.ts       # Shared setup/mocking
-│   └── index.ts       # Main exports
+│   │   └── test-helpers.ts       # Async/mocking helpers
+│   ├── tripInfo/              # Trip information types and utilities
+│   ├── trips/                 # Trip filters, leaderboard, query builders
+│   ├── users/                 # User pagination, ban utils, validation
+│   ├── utils/                 # General utilities (logger, pagination)
+│   └── index.ts               # Main exports
 ├── package.json
 ├── tsconfig.json
-├── vitest.config.ts   # Vitest configuration
+├── vitest.config.ts       # Vitest configuration
+├── vitest.base.config.ts  # Shared Vitest base config
 └── README.md
 ```
 

@@ -2,20 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Modal, Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
-import {
-  Extrapolation,
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-} from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { colors } from "~/styles";
-import { useJudgement } from "~/stores/judgement";
-import { textStyles, viewStyles } from "~/styles/judgement";
-import { QueuedSubmissionCard } from "~/components/judgement/QueuedSubmissionCard";
+import { Extrapolation, interpolate, runOnJS, useAnimatedStyle } from "react-native-reanimated";
+import { ActionBar } from "~/components/judgement/ActionBar";
 import { CurrentSubmissionCard } from "~/components/judgement/CurrentSubmissionCard";
 import { EmptyStateCard } from "~/components/judgement/EmptyStateCard";
-import { ActionBar } from "~/components/judgement/ActionBar";
+import { QueuedSubmissionCard } from "~/components/judgement/QueuedSubmissionCard";
+import { useJudgement } from "~/stores/judgement";
+import { colors } from "~/styles";
+import { textStyles, viewStyles } from "~/styles/judgement";
 import { useCardAnimations } from "./hooks/useCardAnimations";
 
 interface CardStackProps {
@@ -23,7 +18,7 @@ interface CardStackProps {
   challengeId: string;
 }
 
-import { canSubmitReject, calculateSwipeToValue } from "./cardStackUtils";
+import { calculateSwipeToValue, canSubmitReject } from "./cardStackUtils";
 
 export { canSubmitReject, calculateSwipeToValue };
 
@@ -45,7 +40,6 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const {
     translateX,
     translateY,
-    resetCardPosition,
     springBack,
     animateDecision,
     animateApproveSwipe,
@@ -81,22 +75,52 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
       {
         text: "Without place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+          ),
       },
       {
         text: "3rd place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 3),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            3,
+          ),
       },
       {
         text: "2nd place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 2),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            2,
+          ),
       },
       {
         text: "1st place",
         onPress: () =>
-          animateDecision("APPROVED", width, isReviewing, Boolean(currentSubmission), reviewCurrent, undefined, 1),
+          animateDecision(
+            "APPROVED",
+            width,
+            isReviewing,
+            Boolean(currentSubmission),
+            reviewCurrent,
+            undefined,
+            1,
+          ),
       },
     ]);
   }, [animateDecision, currentSubmission, isJudgedStaff, isReviewing, reviewCurrent, width]);
@@ -206,7 +230,7 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
 
       <Modal
         animationType="fade"
-        transparent
+        transparent={true}
         visible={isRejectModalVisible}
         onRequestClose={closeRejectModal}
       >
@@ -223,13 +247,17 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
               placeholderTextColor={colors.textTertiary}
               value={rejectionReason}
               onChangeText={setRejectionReason}
-              multiline
+              multiline={true}
               numberOfLines={3}
               maxLength={280}
               editable={!isReviewing}
             />
             <View style={viewStyles.rejectReasonActions}>
-              <Pressable testID="reject-cancel-button" style={viewStyles.rejectReasonCancelButton} onPress={closeRejectModal}>
+              <Pressable
+                testID="reject-cancel-button"
+                style={viewStyles.rejectReasonCancelButton}
+                onPress={closeRejectModal}
+              >
                 <Text style={textStyles.rejectReasonCancelText}>Cancel</Text>
               </Pressable>
               <Pressable

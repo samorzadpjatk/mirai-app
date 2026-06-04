@@ -1,12 +1,12 @@
-import { View, Text, ActivityIndicator, Modal, Pressable, useWindowDimensions } from "react-native";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { colors } from "~/styles";
-import { type Submission } from "~/stores/judgement";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useFileDownload } from "~/hooks/files";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import type { Submission } from "~/stores/judgement";
+import { colors } from "~/styles";
+import { textStyles, viewStyles } from "~/styles/judgement";
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const { width, height } = useWindowDimensions();

@@ -1,7 +1,6 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { FloatingActionButton } from "../../common/FloatingActionButton";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => undefined;
 

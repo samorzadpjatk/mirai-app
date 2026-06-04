@@ -1,7 +1,7 @@
-import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared";
+import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared/tripInfo";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 export function useTripResources(tripId?: string | null) {
   const resourcesQuery = useQuery(

@@ -10,15 +10,15 @@ export async function executeWithRetry<T>(
   maxRetriesCount?: number,
   delayInMs?: number,
 ): Promise<T> {
-  maxRetriesCount ??= defaultMaxRetriesCount;
-  delayInMs ??= defaultDelayInMs;
+  const maxRetries = maxRetriesCount ?? defaultMaxRetriesCount;
+  const delay = delayInMs ?? defaultDelayInMs;
 
   const handleDelay = async (retryAttempt: number) => {
-    const delay = getJitteredDelay(delayInMs * Math.pow(2, retryAttempt));
-    await new Promise((result) => setTimeout(result, delay));
+    const jitteredDelay = getJitteredDelay(delay * 2 ** retryAttempt);
+    await new Promise((result) => setTimeout(result, jitteredDelay));
   };
 
-  for (let retryAttempt = 0; retryAttempt < maxRetriesCount; retryAttempt++) {
+  for (let retryAttempt = 0; retryAttempt < maxRetries; retryAttempt++) {
     try {
       const result = await toExecute();
       if (isValidResult && !isValidResult(result)) {
@@ -29,7 +29,7 @@ export async function executeWithRetry<T>(
       return result;
     } catch (err: unknown) {
       await onError?.(err, retryAttempt);
-      if (retryAttempt === maxRetriesCount - 1) {
+      if (retryAttempt === maxRetries - 1) {
         throw err;
       }
 
@@ -37,5 +37,5 @@ export async function executeWithRetry<T>(
     }
   }
 
-  throw new Error(`None of the ${maxRetriesCount} retry attempts provided a valid result.`);
+  throw new Error(`None of the ${maxRetries} retry attempts provided a valid result.`);
 }

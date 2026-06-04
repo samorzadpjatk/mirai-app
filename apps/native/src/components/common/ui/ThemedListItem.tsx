@@ -1,7 +1,7 @@
-import { type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { ReactNode } from "react";
+import { Pressable, type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ThemedListItemProps {
   title: string;
@@ -51,8 +51,14 @@ export function ThemedListItem({
           </View>
         )}
         <View style={styles.textContainer}>
-          <Text testID="item-title" style={styles.title}>{title}</Text>
-          {subtitle && <Text testID="item-subtitle" style={styles.subtitle}>{subtitle}</Text>}
+          <Text testID="item-title" style={styles.title}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text testID="item-subtitle" style={styles.subtitle}>
+              {subtitle}
+            </Text>
+          )}
         </View>
         {rightElement}
       </View>

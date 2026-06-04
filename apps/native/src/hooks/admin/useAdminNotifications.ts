@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 
 export interface Notification {
   id: string;
@@ -57,7 +57,8 @@ export function useAdminNotifications(tripId?: string) {
   const { data, isLoading, isFetchingNextPage, isRefetching, hasNextPage, fetchNextPage, refetch } =
     useInfiniteQuery(
       orpc.notifications.getAll.infiniteOptions({
-        input: (pageParam: number) => buildNotificationQueryInput(notificationsQueryInput, pageParam),
+        input: (pageParam: number) =>
+          buildNotificationQueryInput(notificationsQueryInput, pageParam),
         initialPageParam: 0,
         getNextPageParam: getNextNotificationPageParam,
       }),

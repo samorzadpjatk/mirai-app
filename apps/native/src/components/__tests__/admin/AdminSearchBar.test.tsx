@@ -1,8 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { AdminSearchBar } from "../../admin/AdminSearchBar";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name }: { name: string }) => {

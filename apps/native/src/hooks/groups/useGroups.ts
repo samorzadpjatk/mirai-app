@@ -1,30 +1,13 @@
-import { useMemo, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { flattenGroups, filterGroupsBySearch } from "@mirai-app/shared";
+import {
+  buildGroupQueryInput,
+  filterGroupsBySearch,
+  flattenGroups,
+  getNextGroupPageParam,
+} from "@mirai-app/shared/groups";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import type { GroupListItem } from "~/components/trips/groups/types";
-
-const PAGE_SIZE = 30;
-
-export function buildGroupQueryInput(tripId: string | null | undefined, pageParam: number) {
-  const offset = pageParam || 0;
-  return {
-    tripId: tripId ?? "",
-    pagination: {
-      limit: PAGE_SIZE,
-      offset,
-    },
-  };
-}
-
-export function getNextGroupPageParam(lastPage: {
-  pagination: { hasMore: boolean; offset: number; limit: number };
-}) {
-  if (!lastPage.pagination.hasMore) {
-    return undefined;
-  }
-  return lastPage.pagination.offset + lastPage.pagination.limit;
-}
 
 export function useGroups(tripId?: string | null) {
   const [searchQuery, setSearchQuery] = useState("");

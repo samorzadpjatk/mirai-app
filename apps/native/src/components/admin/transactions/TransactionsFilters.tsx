@@ -1,7 +1,6 @@
-import React from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupOption {
   id: string;
@@ -39,7 +38,7 @@ export function TransactionsFilters({
       </View>
 
       <ScrollView
-        horizontal
+        horizontal={true}
         showsHorizontalScrollIndicator={false}
         style={styles.groupSelector}
         contentContainerStyle={styles.groupSelectorContent}

@@ -17,8 +17,10 @@ const createInMemoryStorage = (): StorageAdapter => {
 
 const getGlobalLocalStorage = (): StorageAdapter | undefined => {
   if (typeof globalThis === "undefined") return undefined;
-  const g = globalThis as unknown as { localStorage?: StorageAdapter };
-  return g.localStorage;
+  if ("localStorage" in globalThis && globalThis.localStorage) {
+    return globalThis.localStorage as StorageAdapter;
+  }
+  return undefined;
 };
 
 const getStorage = (userStorage?: StorageAdapter): StorageAdapter => {

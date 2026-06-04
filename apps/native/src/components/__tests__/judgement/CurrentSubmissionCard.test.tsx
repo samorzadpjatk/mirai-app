@@ -1,7 +1,7 @@
 import type React from "react";
-import { View, Text } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text, View } from "react-native";
 import { CurrentSubmissionCard } from "../../judgement/CurrentSubmissionCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("react-native-reanimated", () => {
   const React = require("react");

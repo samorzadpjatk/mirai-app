@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsListHeader } from "../../../trips/groups/GroupsListHeader";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupsListHeader", () => {
   it("should render title", () => {

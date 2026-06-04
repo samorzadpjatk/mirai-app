@@ -1,15 +1,15 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
+  type DimensionValue,
   Modal,
   Pressable,
+  type StyleProp,
   StyleSheet,
   Text,
   View,
-  type DimensionValue,
-  type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface AppModalShellProps {
   visible: boolean;

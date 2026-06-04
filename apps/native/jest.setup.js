@@ -1,5 +1,80 @@
 import "@testing-library/jest-native/extend-expect";
 
+// Mock window.addEventListener for MSW WebSocket support in jest-expo
+// MSW's WebSocketClientManager uses window.addEventListener, which is not
+// available in the jest-expo environment. This mock prevents errors when
+// MSW intercepts WebSocket connections.
+if (typeof window === 'undefined') {
+  globalThis.window = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  };
+} else {
+  if (typeof window.addEventListener !== 'function') {
+    window.addEventListener = () => {};
+  }
+  if (typeof window.removeEventListener !== 'function') {
+    window.removeEventListener = () => {};
+  }
+}
+
+import { server } from "./src/test-utils/msw/server";
+
+// Mock WebSocket for oRPC client initialization in tests
+class MockWebSocket {
+  readyState = 0;
+  onopen = null;
+  onmessage = null;
+  onclose = null;
+  onerror = null;
+  addEventListener = jest.fn((event, handler) => {
+    if (event === "open") this.onopen = handler;
+    if (event === "message") this.onmessage = handler;
+    if (event === "close") this.onclose = handler;
+    if (event === "error") this.onerror = handler;
+  });
+  removeEventListener = jest.fn();
+  send = jest.fn();
+  close = jest.fn(() => {
+    if (this._openTimer) {
+      clearTimeout(this._openTimer);
+      this._openTimer = null;
+    }
+    this.readyState = 3;
+    if (this.onclose) this.onclose();
+  });
+  constructor() {
+    this._openTimer = setTimeout(() => {
+      this._openTimer = null;
+      this.readyState = 1;
+      if (this.onopen) this.onopen();
+    }, 0);
+  }
+}
+globalThis.WebSocket = MockWebSocket;
+
+// Start MSW server before all tests
+beforeAll(() => {
+  // Ensure window.addEventListener is available before starting MSW
+  if (typeof window !== 'undefined') {
+    if (typeof window.addEventListener !== 'function') {
+      window.addEventListener = () => {};
+    }
+    if (typeof window.removeEventListener !== 'function') {
+      window.removeEventListener = () => {};
+    }
+  }
+  server.listen({ onUnhandledRequest: "error" });
+});
+
+// Reset handlers after each test
+afterEach(() => {
+  server.resetHandlers();
+});
+
+// Close MSW server after all tests
+afterAll(() => server.close());
+
 jest.mock("react-native-worklets", () => require("react-native-worklets/src/mock"));
 
 jest.mock("react-native-reanimated", () => {
@@ -27,7 +102,8 @@ jest.mock("@maplibre/maplibre-react-native", () => {
   const React = require("react");
   const { View } = require("react-native");
   return {
-    MapView: ({ children, testID, ...props }) => React.createElement(View, { testID: testID || "map-view", ...props }, children),
+    MapView: ({ children, testID, ...props }) =>
+      React.createElement(View, { testID: testID || "map-view", ...props }, children),
     Camera: "Camera",
     UserLocation: "UserLocation",
     PointAnnotation: "PointAnnotation",
@@ -70,8 +146,9 @@ jest.mock("react-native-safe-area-context", () => ({
   SafeAreaProvider: ({ children }) => children,
 }));
 
+
 // Global test utilities
-global.beforeEach(() => {
+global.afterEach(() => {
   jest.clearAllMocks();
 });
 
@@ -116,6 +193,9 @@ const SUPPRESSED_PATTERNS = [
   /Error checking for updates/,
   /Error downloading update/,
   /\[Upload\] Failed to start upload/,
+  /\[MSW\] Error: intercepted a WebSocket connection without a matching event handler/,
+  /Read more: https:\/\/mswjs\.io\/docs\/websocket/,
+  /If you still wish to intercept this unhandled connection, please create an event handler for it\./,
 ];
 
 // Helper to check if a message should be suppressed

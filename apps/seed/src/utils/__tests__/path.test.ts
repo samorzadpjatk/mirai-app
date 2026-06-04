@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { normalizeFsPath, normalizePath, joinPath, dirname, basename, relativePath } from "../path";
+import { describe, expect, it } from "vitest";
+import { basename, dirname, joinPath, normalizeFsPath, normalizePath, relativePath } from "../path";
 
 describe("Path Utilities", () => {
   describe("normalizeFsPath", () => {

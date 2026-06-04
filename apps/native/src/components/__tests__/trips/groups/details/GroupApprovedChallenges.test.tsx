@@ -1,14 +1,19 @@
-import React from "react";
-import { View } from "react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { fireEvent } from "@testing-library/react-native";
+import { View } from "react-native";
 import { GroupApprovedChallenges } from "../../../../trips/groups/details/GroupApprovedChallenges";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 jest.mock("~/components/trips/groups/details/SubmissionCircle", () => {
   const { Pressable, Text } = require("react-native");
   return {
     __esModule: true,
-    default: ({ submission, onPress }: { submission: { submissionId: string }; onPress: () => void }) => (
+    default: ({
+      submission,
+      onPress,
+    }: {
+      submission: { submissionId: string };
+      onPress: () => void;
+    }) => (
       <Pressable testID={`submission-circle-${submission.submissionId}`} onPress={onPress}>
         <Text>Circle</Text>
       </Pressable>

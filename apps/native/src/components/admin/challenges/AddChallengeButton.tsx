@@ -1,4 +1,3 @@
-import React from "react";
 import { PrimaryAddButton } from "~/components/common/buttons/PrimaryAddButton";
 
 interface AddChallengeButtonProps {

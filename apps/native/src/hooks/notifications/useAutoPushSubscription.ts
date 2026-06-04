@@ -1,10 +1,9 @@
-import { useEffect, useRef } from "react";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@mirai-app/auth/client";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
-import { useAuth } from "@mirai-app/auth/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
+import { useEffect, useRef } from "react";
 import { resolveProjectId } from "./notificationProjectId";
 
 export { resolveProjectId };
@@ -37,17 +36,15 @@ export function isAutoPushBlocked(
   );
 }
 
-export async function getExpoPushToken(
-  projectId?: string,
-): Promise<Notifications.ExpoPushToken> {
+export async function getExpoPushToken(projectId?: string): Promise<Notifications.ExpoPushToken> {
   return projectId
     ? await Notifications.getExpoPushTokenAsync({ projectId })
     : await Notifications.getExpoPushTokenAsync();
 }
 
-export async function runAutoPushSubscriptionFlow(
-  subscribeMutation: { mutateAsync: (data: { token: string }) => Promise<unknown> },
-): Promise<void> {
+export async function runAutoPushSubscriptionFlow(subscribeMutation: {
+  mutateAsync: (data: { token: string }) => Promise<unknown>;
+}): Promise<void> {
   try {
     const currentPermission = await Notifications.getPermissionsAsync();
     let finalStatus = currentPermission.status;

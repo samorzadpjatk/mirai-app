@@ -1,9 +1,8 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { Alert } from "react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengesGridItem } from "../../../trips/challenges/ChallengesGridItem";
 import type { ChallengeListItem } from "../../../trips/challenges/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengesGridItem", () => {
   const baseChallenge: ChallengeListItem = {

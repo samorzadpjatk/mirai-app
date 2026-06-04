@@ -1,5 +1,5 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook } from "@testing-library/react-native";
 import { useShareModal } from "../../ui/useShareModal";
 
 describe("useShareModal", () => {

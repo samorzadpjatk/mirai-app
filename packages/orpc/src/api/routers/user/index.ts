@@ -1,43 +1,40 @@
 import { z } from "zod";
 import {
+  adminProcedure,
   createORPCRouter,
   moderatorProcedure,
-  adminProcedure,
   protectedProcedure,
   publicProcedure,
 } from "../../trpc";
-import { roleSchema, nameSchema } from "./types";
 import {
+  banUserUntil,
+  createUser,
+  deleteUser,
+  removeHouseNumber,
+  removeWristNumber,
+  updateAvatar,
+  updateHouseNumber,
+  updateMyProfile,
+  updateName,
+  updateUserAdminStatus,
+  updateWristNumber,
+} from "./mutations";
+import {
+  getAll,
+  getAllAdminsNames,
   getBanStatus,
   getBanStatusByEmail,
   getById,
-  getTripParticipant,
   getByIdWithGroup,
-  getMyWithGroup,
   getMy,
-  getAll,
-  getAllAdminsNames,
+  getMyWithGroup,
+  getTripParticipant,
   searchWithPagination,
 } from "./queries";
-import {
-  updateAvatar,
-  updateMyProfile,
-  updateUserAdminStatus,
-  createUser,
-  updateName,
-  banUserUntil,
-  deleteUser,
-  updateWristNumber,
-  removeWristNumber,
-  updateHouseNumber,
-  removeHouseNumber,
-} from "./mutations";
+import { nameSchema, roleSchema } from "./types";
 
-const handleGetBanStatus = async ({
-  context,
-}: {
-  context: Parameters<typeof getBanStatus>[0];
-}) => getBanStatus(context);
+const handleGetBanStatus = async ({ context }: { context: Parameters<typeof getBanStatus>[0] }) =>
+  getBanStatus(context);
 
 const handleGetBanStatusByEmail = async ({
   context,
@@ -79,11 +76,7 @@ const handleGetMyWithGroup = async ({
   input: Parameters<typeof getMyWithGroup>[1];
 }) => getMyWithGroup(context, input);
 
-const handleGetMy = async ({
-  context,
-}: {
-  context: Parameters<typeof getMy>[0];
-}) => getMy(context);
+const handleGetMy = async ({ context }: { context: Parameters<typeof getMy>[0] }) => getMy(context);
 
 const handleUpdateAvatar = async ({
   context,
@@ -206,9 +199,7 @@ export const userRouter = createORPCRouter({
     )
     .handler(handleGetBanStatusByEmail),
 
-  getById: moderatorProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: moderatorProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   getTripParticipant: moderatorProcedure
     .input(z.object({ userId: z.string(), tripId: z.string() }))
@@ -237,9 +228,7 @@ export const userRouter = createORPCRouter({
     )
     .handler(handleUpdateMyProfile),
 
-  getAll: moderatorProcedure
-    .input(z.object({ tripId: z.string() }))
-    .handler(handleGetAll),
+  getAll: moderatorProcedure.input(z.object({ tripId: z.string() })).handler(handleGetAll),
 
   getAllAdminsNames: moderatorProcedure.handler(handleGetAllAdminsNames),
 
@@ -256,9 +245,9 @@ export const userRouter = createORPCRouter({
     .input(
       z.object({
         tripId: z.string(),
-        firstName: z.string().trim().min(1, "Imię jest wymagane"),
-        lastName: z.string().trim().min(1, "Nazwisko jest wymagane"),
-        email: z.string().trim().email("Nieprawidłowy adres email"),
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().email("Nieprawidłowy adres email"),
       }),
     )
     .handler(handleCreateUser),

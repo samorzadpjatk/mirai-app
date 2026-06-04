@@ -1,9 +1,9 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { ChallengeFormFields } from "../../admin/challenges/ChallengeFormFields";
+import React from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { ChallengeFormFields } from "../../admin/challenges/ChallengeFormFields";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockUpdateForm = jest.fn();
 const mockHandlePickImage = jest.fn();
@@ -44,6 +44,7 @@ const mockFormState = {
   isAutoApproveForced: false,
   isAutoApproveDisabled: false,
   needsLocation: false,
+  showLocationPicker: false,
   isUploadingImage: false,
   imageUploadPercent: null,
   submissionTypeLabel: "Text",
@@ -77,7 +78,7 @@ const mockFormState = {
   formatIso: jest.fn(),
   toOptionalInt: jest.fn(),
   toVotingDurationHours: jest.fn(),
-} as unknown as ReturnType<typeof useChallengeForm>;
+} as ReturnType<typeof useChallengeForm>;
 
 interface FormFieldProps {
   children: React.ReactNode;

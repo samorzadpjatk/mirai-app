@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { type Mock, vi } from "vitest";
 
 /**
  * No-op function for use as a placeholder callback.
@@ -95,7 +95,7 @@ export function createDelayedErrorMock(error: Error, delayMs = 100): () => Promi
  * Type-safe mock builder for creating typed mocks.
  */
 export function createTypedMock<T extends (...args: unknown[]) => unknown>(): {
-  mock: T;
+  mock: Mock<T>;
   mockResolvedValue: (value: Awaited<ReturnType<T>>) => void;
   mockRejectedValue: (error: Error) => void;
   mockImplementation: (impl: T) => void;
@@ -103,7 +103,7 @@ export function createTypedMock<T extends (...args: unknown[]) => unknown>(): {
   const mockFn = vi.fn();
 
   return {
-    mock: mockFn as unknown as T,
+    mock: mockFn as Mock<T>,
     mockResolvedValue: (value: Awaited<ReturnType<T>>) => {
       mockFn.mockResolvedValue(value);
     },

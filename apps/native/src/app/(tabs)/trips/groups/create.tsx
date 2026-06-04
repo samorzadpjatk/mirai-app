@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { useCreateGroup } from "~/hooks/groups";
-import { useTripDetails } from "~/hooks/trips";
-import { colors, spacing } from "../../../../styles";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFileUpload } from "~/hooks/files";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
-import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-import { getImageExtension, getImageContentType } from "~/utils/image";
+import { useFileUpload } from "~/hooks/files";
+import { useCreateGroup } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
+import { getFileContentType, getFileExtension } from "~/utils/image";
+import { colors, spacing } from "../../../../styles";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
@@ -76,7 +76,7 @@ export default function CreateGroupScreen() {
 
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const extension = getImageExtension(asset);
+    const extension = getFileExtension(asset);
     const storagePath = `group/${tripId}/cover-${Date.now()}.${extension}`;
 
     try {
@@ -84,7 +84,7 @@ export default function CreateGroupScreen() {
         storagePath,
         fileUri: asset.uri,
         fileName: asset.fileName ?? `group-cover-${Date.now()}.${extension}`,
-        contentType: asset.mimeType ?? getImageContentType(extension),
+        contentType: asset.mimeType ?? getFileContentType(extension),
         upsert: true,
       });
       setGroupImagePath(storagePath);

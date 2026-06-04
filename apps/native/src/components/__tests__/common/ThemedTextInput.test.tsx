@@ -1,8 +1,7 @@
-import React from "react";
-import { TextInput, type TextInputProps } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { TextInput, type TextInputProps } from "react-native";
 import { ThemedTextInput } from "../../common/ui/ThemedTextInput";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface TextInputStyle {
   borderColor?: string;

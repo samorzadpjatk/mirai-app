@@ -1,10 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripNewsSectionProps {
@@ -20,7 +20,7 @@ interface AdminNewsItem {
   createdAt: Date | string;
   admin?: {
     firstName: string;
-    lastName: string;
+    lastName?: string;
   } | null;
 }
 
@@ -71,7 +71,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
       createdAt: Date | string;
       admin?: {
         firstName: string;
-        lastName: string;
+        lastName?: string;
       } | null;
     }[];
 

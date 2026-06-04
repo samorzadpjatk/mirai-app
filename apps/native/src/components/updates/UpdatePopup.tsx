@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { View, Text, Animated } from "react-native";
+import { Animated, Text, View } from "react-native";
+import { AppModalFooter, AppModalShell } from "~/components/common/ui";
 import { colors, spacing, typography } from "~/styles";
-import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 
 interface UpdatePopupProps {
   visible: boolean;

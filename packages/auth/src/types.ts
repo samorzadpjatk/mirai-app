@@ -1,5 +1,5 @@
+import type { AuthUser } from "@mirai-app/shared/stores";
 import type { SupabaseSession } from "@mirai-app/supabase";
-import type { AuthUser } from "@mirai-app/shared";
 
 export interface DatabaseUser {
   id: string;

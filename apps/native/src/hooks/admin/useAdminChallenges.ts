@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export interface AdminChallengeUI {
   id: string;
@@ -51,9 +51,7 @@ export function transformRawChallenge(rawChallenge: DBChallenge): AdminChallenge
   };
 }
 
-export function buildCreateChallengeInput(
-  payload: { tripId: string } & Partial<AdminChallengeUI>,
-) {
+export function buildCreateChallengeInput(payload: { tripId: string } & Partial<AdminChallengeUI>) {
   const submissionType =
     payload.submissionType === "MULTI_IMAGE" ? "IMAGE" : (payload.submissionType ?? "IMAGE");
 

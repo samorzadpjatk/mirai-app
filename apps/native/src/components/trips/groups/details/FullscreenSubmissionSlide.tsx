@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, View, Text } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
 import { colors, spacing, typography } from "~/styles";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
@@ -43,14 +43,22 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <View testID="fullscreen-slide" style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
+    <View
+      testID="fullscreen-slide"
+      style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}
+    >
       <View style={styles.fullscreenImageWrap}>
         {status === "loading" ? (
           <View testID="loading-indicator" style={styles.fullscreenFallback}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image testID="fullscreen-image" source={{ uri: file.uri }} style={styles.fullscreenImage} contentFit="contain" />
+          <Image
+            testID="fullscreen-image"
+            source={{ uri: file.uri }}
+            style={styles.fullscreenImage}
+            contentFit="contain"
+          />
         ) : (
           <View testID="image-fallback" style={styles.fullscreenFallback}>
             <Ionicons name="image-outline" size={28} color={colors.textMuted} />
@@ -68,7 +76,7 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   fullscreenSlide: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
@@ -105,4 +113,4 @@ const styles = {
     color: colors.textMuted,
     fontSize: typography.xs,
   },
-};
+});

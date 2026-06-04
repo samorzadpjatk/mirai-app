@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, TouchableOpacity, View, Text } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
 import { colors } from "~/styles";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
@@ -29,14 +29,24 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
   }, [abort, download, reset, submission.imageStoragePath]);
 
   return (
-    <TouchableOpacity testID="submission-circle" style={styles.item} activeOpacity={0.85} onPress={onPress}>
+    <TouchableOpacity
+      testID="submission-circle"
+      style={styles.item}
+      activeOpacity={0.85}
+      onPress={onPress}
+    >
       <View style={styles.imageWrap}>
         {status === "loading" ? (
           <View testID="loading-indicator" style={styles.imageFallback}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image testID="submission-image" source={{ uri: file.uri }} style={styles.image} contentFit="cover" />
+          <Image
+            testID="submission-image"
+            source={{ uri: file.uri }}
+            style={styles.image}
+            contentFit="cover"
+          />
         ) : (
           <View testID="image-fallback" style={styles.imageFallback}>
             <Ionicons name="image-outline" size={18} color={colors.textMuted} />
@@ -50,7 +60,7 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   item: {
     width: "22%",
     alignItems: "center",
@@ -81,4 +91,4 @@ const styles = {
     fontWeight: "500",
     lineHeight: 14,
   },
-};
+});

@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripsEmptyState } from "../../../trips/list/TripsEmptyState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("TripsEmptyState", () => {
   it("should render with title and subtitle", () => {

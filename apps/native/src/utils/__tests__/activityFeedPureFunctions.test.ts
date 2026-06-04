@@ -1,9 +1,9 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  resolvePeerVotingDurationHours,
-  formatSubmissionDeadline,
-  resolvePodiumPoints,
   DEFAULT_PEER_VOTING_DURATION_HOURS,
+  formatSubmissionDeadline,
+  resolvePeerVotingDurationHours,
+  resolvePodiumPoints,
 } from "@mirai-app/orpc/utils/activityFeed";
 
 describe("resolvePeerVotingDurationHours", () => {
@@ -72,9 +72,9 @@ describe("resolvePodiumPoints", () => {
   it("should fallback to base points when place points are null", () => {
     const incomplete = {
       basePoints: 10,
-      firstPlacePoints: null as unknown as undefined,
-      secondPlacePoints: null as unknown as undefined,
-      thirdPlacePoints: null as unknown as undefined,
+      firstPlacePoints: null,
+      secondPlacePoints: null,
+      thirdPlacePoints: null,
     };
     expect(resolvePodiumPoints(incomplete, 1)).toBe(10);
   });

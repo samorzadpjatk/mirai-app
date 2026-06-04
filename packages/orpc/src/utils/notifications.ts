@@ -1,7 +1,8 @@
 import type { DB } from "@mirai-app/db";
-import { notifications, notificationPushes, groups, tripParticipants } from "@mirai-app/db";
-import { eq, and, desc } from "drizzle-orm";
+import { groups, notificationPushes, notifications, tripParticipants } from "@mirai-app/db";
+import { deduplicateIds, extractFulfilledValues } from "@mirai-app/shared/notifications";
 import { ORPCError } from "@orpc/server";
+import { and, desc, eq } from "drizzle-orm";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
 import { logger } from "./logger";
@@ -31,7 +32,7 @@ export async function sendNotification({
   try {
     return await executeWithRetry(
       async () => {
-        const uniqueUserIds = Array.from(new Set(input.userIds));
+        const uniqueUserIds = deduplicateIds(input.userIds);
 
         const inserted = await db
           .insert(notifications)
@@ -41,6 +42,8 @@ export async function sendNotification({
             url: input.url,
             createdById: userId,
             tripId: input.tripId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           })
           .returning();
         const notification = inserted[0];
@@ -121,9 +124,7 @@ export async function sendRankingUpdate({
     }),
   );
 
-  const successfulResults = results
-    .filter((r): r is PromiseFulfilledResult<SendNotificationResult> => r.status === "fulfilled")
-    .map((r) => r.value);
+  const successfulResults = extractFulfilledValues(results);
 
   return {
     success: successfulResults.length === groupRows.length,

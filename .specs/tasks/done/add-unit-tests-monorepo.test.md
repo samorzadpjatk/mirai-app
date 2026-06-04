@@ -36,7 +36,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | `apps/backend-server` | **Vitest** | Fast, native TypeScript support, ideal for Fastify + tRPC testing |
 | `apps/notification-sender` | **Vitest** | Consistent with backend-server, fast execution |
 | `apps/seed` | **Vitest** | CLI tool testing, no special requirements |
-| `packages/trpc` | **Vitest** | tRPC router testing, needs fast iteration |
+| `packages/orpc` | **Vitest** | tRPC router testing, needs fast iteration |
 | `packages/auth` | **Vitest** | Authentication logic testing, requires mocking Supabase/DB |
 | `packages/shared` | **Vitest** | Utility function testing, simplest setup |
 | `packages/supabase` | **Vitest** | Already configured ✅ |
@@ -100,7 +100,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 2. `packages/supabase` (no deps)
 3. `packages/db` (depends on supabase)
 4. `packages/auth` (depends on db, supabase, shared)
-5. `packages/trpc` (depends on auth, db, shared, supabase)
+5. `packages/orpc` (depends on auth, db, shared, supabase)
 6. `apps/backend-server` (depends on trpc)
 7. `apps/notification-sender` (depends on trpc, db, supabase)
 8. `apps/seed` (depends on db, supabase)
@@ -125,7 +125,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | `apps/backend-server/vitest.config.ts` | Vitest configuration |
 | `apps/notification-sender/vitest.config.ts` | Vitest configuration |
 | `apps/seed/vitest.config.ts` | Vitest configuration |
-| `packages/trpc/vitest.config.ts` | Vitest configuration |
+| `packages/orpc/vitest.config.ts` | Vitest configuration |
 | `packages/auth/vitest.config.ts` | Vitest configuration |
 | `packages/auth/vitest.setup.ts` | Vitest setup with DB/Supabase mocks |
 | `packages/shared/vitest.config.ts` | Vitest configuration |
@@ -460,14 +460,14 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 
 ---
 
-#### Step 3.2: Configure packages/trpc
+#### Step 3.2: Configure packages/orpc
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 5 - Depends on 3.1)
 
 **Success Criteria**:
-- `packages/trpc/vitest.config.ts` created with workspace alias resolution
-- `packages/trpc/package.json` has test script
+- `packages/orpc/vitest.config.ts` created with workspace alias resolution
+- `packages/orpc/package.json` has test script
 - At least one example test exists and passes (router test)
 - Running `bun run test` executes successfully
 
@@ -518,7 +518,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 5. Run test to verify setup
 
 **Blockers**:
-- Step 3.2 complete (packages/trpc)
+- Step 3.2 complete (packages/orpc)
 
 **Risks**:
 - Risk: Fastify server tests may require port binding
@@ -534,7 +534,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
   2. **Testing** (25%): Endpoint test passes, uses inject() method
   3. **Quality** (20%): Clean configuration, helper functions well-structured
   4. **Completeness** (20%): All subtasks completed, test script added
-  5. **Integration** (10%): Works with packages/trpc dependency
+  5. **Integration** (10%): Works with packages/orpc dependency
 
 ---
 
@@ -557,7 +557,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 5. Run test to verify setup
 
 **Blockers**:
-- Step 3.2 complete (packages/trpc)
+- Step 3.2 complete (packages/orpc)
 
 **Risks**:
 - Risk: Expo Push Notification service may require API keys
@@ -594,7 +594,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 
 **Blockers**:
 - Step 2.3 complete (packages/db decision)
-- Step 3.2 complete (packages/trpc) - recommended for consistency
+- Step 3.2 complete (packages/orpc) - recommended for consistency
 
 **Risks**:
 - Risk: Seed scripts may modify database
@@ -634,7 +634,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 
 **Blockers**:
 - Step 3.1 complete (packages/auth)
-- Step 3.2 complete (packages/trpc)
+- Step 3.2 complete (packages/orpc)
 - Step 2.2 complete (packages/shared)
 - Step 2.1 complete (packages/supabase)
 
@@ -783,7 +783,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | 2.2 | Configure packages/shared | Medium | 4.0/5.0 | 1 | Correctness, Quality, Testing |
 | 2.3 | Configure packages/db | Low | 3.5/5.0 | 1 | Correctness |
 | 3.1 | Configure packages/auth | High | 4.0/5.0 | 2 | All except Integration |
-| 3.2 | Configure packages/trpc | High | 4.0/5.0 | 2 | All except Integration |
+| 3.2 | Configure packages/orpc | High | 4.0/5.0 | 2 | All except Integration |
 | 3.3 | Configure apps/backend-server | High | 4.0/5.0 | 2 | All except Integration |
 | 3.4 | Configure apps/notification-sender | Medium | 4.0/5.0 | 1 | Correctness, Quality, Testing |
 | 3.5 | Configure apps/seed | Medium | 4.0/5.0 | 1 | Correctness, Quality, Testing |
@@ -861,7 +861,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | 2 | 2.2 | packages/shared | Vitest | sonnet | Small | 1.2 | 1.3, 2.1, 2.3 |
 | 2 | 2.3 | packages/db | N/A | haiku | Tiny | 1.2 | 1.3, 2.1, 2.2 |
 | 3 | 3.1 | packages/auth | Vitest | sonnet | Medium | 2.2, 2.1 | None |
-| 3 | 3.2 | packages/trpc | Vitest | sonnet | Medium | 3.1 | None |
+| 3 | 3.2 | packages/orpc | Vitest | sonnet | Medium | 3.1 | None |
 | 3 | 3.3 | apps/backend-server | Vitest | sonnet | Medium | 3.2 | 3.4, 3.5 |
 | 3 | 3.4 | apps/notification-sender | Vitest | sonnet | Small | 3.2 | 3.3, 3.5 |
 | 3 | 3.5 | apps/seed | Vitest | sonnet | Small | 2.3, 3.2 | 3.3, 3.4 |

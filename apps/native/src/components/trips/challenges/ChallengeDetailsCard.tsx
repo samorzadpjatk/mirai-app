@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeDetailsCardProps {
   challenge: {

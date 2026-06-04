@@ -1,7 +1,6 @@
-import React from "react";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { AppInfoFooter } from "../../profile/AppInfoFooter";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AppInfoFooter", () => {
   it("renders version and copyright labels", () => {

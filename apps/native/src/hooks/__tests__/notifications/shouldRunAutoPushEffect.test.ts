@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { shouldRunAutoPushEffect } from "../../notifications/useAutoPushSubscription";
 
 describe("shouldRunAutoPushEffect", () => {

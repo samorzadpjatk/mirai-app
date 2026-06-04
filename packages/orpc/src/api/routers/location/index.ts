@@ -1,37 +1,29 @@
 import { z } from "zod";
-import { createORPCRouter, protectedProcedure } from "../../trpc";
 import {
-  locationDataSchema,
   latitudeSchema,
+  locationDataSchema,
   longitudeSchema,
 } from "../../../utils/location-validation";
+import { createORPCRouter, protectedProcedure } from "../../trpc";
 import {
-  getMyLocation,
-  getFriendsLocations,
-  getMySharingSettings,
-  getAllUsersForSharing,
-  getPendingLocationSharingRequests,
-  getMyLocationSharingRequests,
-  getFriendsLocationsStream,
-} from "./queries";
-import {
-  updateLocationStream,
-  updateSharingSettings,
-  updateLocation,
+  acceptLocationSharingRequest,
   addUserToSharing,
+  rejectLocationSharingRequest,
   removeUserFromSharing,
   requestLocationSharing,
-  acceptLocationSharingRequest,
-  rejectLocationSharingRequest,
+  updateLocation,
+  updateLocationStream,
+  updateSharingSettings,
 } from "./mutations";
-
-export type {
-  ExpoLocationObject,
-  LocationWithUser,
-  FriendLocationEvent,
-  SharingUser,
-  SharingSettings,
-} from "./types";
+import {
+  getAllUsersForSharing,
+  getFriendsLocations,
+  getFriendsLocationsStream,
+  getMyLocation,
+  getMyLocationSharingRequests,
+  getMySharingSettings,
+  getPendingLocationSharingRequests,
+} from "./queries";
 
 const handleUpdateSharingSettings = async ({
   context,
@@ -49,11 +41,8 @@ const handleUpdateLocation = async ({
   input: Parameters<typeof updateLocation>[1];
 }) => updateLocation(context, input);
 
-const handleGetMyLocation = async ({
-  context,
-}: {
-  context: Parameters<typeof getMyLocation>[0];
-}) => getMyLocation(context);
+const handleGetMyLocation = async ({ context }: { context: Parameters<typeof getMyLocation>[0] }) =>
+  getMyLocation(context);
 
 const handleGetFriendsLocations = async ({
   context,
@@ -173,9 +162,7 @@ export const locationRouter = createORPCRouter({
   /**
    * Mutation variant for updating current user's location (non-stream)
    */
-  updateLocation: protectedProcedure
-    .input(locationDataSchema)
-    .handler(handleUpdateLocation),
+  updateLocation: protectedProcedure.input(locationDataSchema).handler(handleUpdateLocation),
 
   /**
    * Query variant to get current user's location (non-stream)
@@ -185,9 +172,7 @@ export const locationRouter = createORPCRouter({
   /**
    * Query to get friends' last known locations (non-stream)
    */
-  getFriendsLocations: protectedProcedure.handler(
-    handleGetFriendsLocations,
-  ),
+  getFriendsLocations: protectedProcedure.handler(handleGetFriendsLocations),
 
   /**
    * Get sharing settings for current user
@@ -252,7 +237,5 @@ export const locationRouter = createORPCRouter({
   /**
    * Get all location sharing requests (sent and received)
    */
-  getMyLocationSharingRequests: protectedProcedure.handler(
-    handleGetMyLocationSharingRequests,
-  ),
+  getMyLocationSharingRequests: protectedProcedure.handler(handleGetMyLocationSharingRequests),
 });

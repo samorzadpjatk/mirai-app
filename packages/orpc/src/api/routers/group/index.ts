@@ -1,37 +1,37 @@
 import { z } from "zod";
 import {
-  createORPCRouter,
-  protectedProcedure,
   adminProcedure,
+  createORPCRouter,
   moderatorProcedure,
+  protectedProcedure,
 } from "../../trpc";
-import { groupImageSchema, joinRequestDecisionSchema } from "./types";
 import {
-  getAllNames,
-  getMy,
-  getAll,
-  getGroupList,
-  getById,
-  getByIdWithOrganizer,
-  getPendingJoinRequests,
-  getMyJoinRequestForGroup,
-  ranking,
-} from "./queries";
-import {
+  addCoins,
+  assignUserToGroup,
+  bulkAssignUsersToGroup,
+  cancelMyJoinRequest,
   create,
-  update,
   deleteGroup,
   deleteMyGroup,
   join,
-  requestToJoin,
-  cancelMyJoinRequest,
-  respondToJoinRequest,
-  assignUserToGroup,
-  bulkAssignUsersToGroup,
-  removeUserFromGroup,
   leaveMyGroup,
-  addCoins,
+  removeUserFromGroup,
+  requestToJoin,
+  respondToJoinRequest,
+  update,
 } from "./mutations";
+import {
+  getAll,
+  getAllNames,
+  getById,
+  getByIdWithOrganizer,
+  getGroupList,
+  getMy,
+  getMyJoinRequestForGroup,
+  getPendingJoinRequests,
+  ranking,
+} from "./queries";
+import { groupImageSchema, joinRequestDecisionSchema } from "./types";
 
 const handleGetAllNames = async ({
   context,
@@ -214,9 +214,7 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ tripId: z.string() }))
     .handler(handleGetAllNames),
 
-  getMy: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
-    .handler(handleGetMy),
+  getMy: protectedProcedure.input(z.object({ tripId: z.string() })).handler(handleGetMy),
 
   getAll: protectedProcedure
     .input(
@@ -236,9 +234,7 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ tripId: z.string() }))
     .handler(handleGetGroupList),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: protectedProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
@@ -269,17 +265,13 @@ export const groupRouter = createORPCRouter({
     )
     .handler(handleUpdate),
 
-  delete: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleDeleteGroup),
+  delete: adminProcedure.input(z.object({ id: z.string() })).handler(handleDeleteGroup),
 
   deleteMyGroup: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .handler(handleDeleteMyGroup),
 
-  join: adminProcedure
-    .input(z.object({ id: z.string(), tripId: z.string() }))
-    .handler(handleJoin),
+  join: adminProcedure.input(z.object({ id: z.string(), tripId: z.string() })).handler(handleJoin),
 
   requestToJoin: protectedProcedure
     .input(z.object({ groupId: z.string() }))
@@ -343,7 +335,5 @@ export const groupRouter = createORPCRouter({
     .input(z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }))
     .handler(handleAddCoins),
 
-  ranking: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
-    .handler(handleRanking),
+  ranking: protectedProcedure.input(z.object({ tripId: z.string() })).handler(handleRanking),
 });

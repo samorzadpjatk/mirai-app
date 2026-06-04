@@ -1,6 +1,6 @@
-import { View, Text, ActivityIndicator } from "react-native";
-import { StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { ActivityIndicator, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "../styles";
 

@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text, TouchableOpacity, View } from "react-native";
 import { colors } from "~/styles";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import { textStyles, viewStyles } from "~/styles/judgement";
 
 const ActionBar = ({
   disabled,

@@ -1,36 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { render, renderHook } from "@testing-library/react";
-import { SupabaseProvider, useSupabaseClient } from "../react";
 import type { ReactNode } from "react";
-import type { SupabaseClient } from "../types";
-
-// Create a mock Supabase client
-const createMockSupabaseClient = (): SupabaseClient =>
-  ({
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-      signOut: vi.fn(),
-      onAuthStateChange: vi.fn(),
-    },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-    })),
-    storage: {
-      from: vi.fn(() => ({
-        upload: vi.fn().mockResolvedValue({ data: null, error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: "" } }),
-      })),
-    },
-  }) as unknown as SupabaseClient;
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { SupabaseProvider, useSupabaseClient } from "../react";
+import { createMockSupabaseClient } from "./utils";
 
 describe("SupabaseProvider", () => {
-  const mockClient = createMockSupabaseClient();
+  const mockClient = createMockSupabaseClient() as SupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -112,7 +88,7 @@ describe("SupabaseProvider", () => {
 });
 
 describe("useSupabaseClient", () => {
-  const mockClient = createMockSupabaseClient();
+  const mockClient = createMockSupabaseClient() as SupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -191,7 +167,7 @@ describe("useSupabaseClient", () => {
   });
 
   it("should work with multiple nested providers (different clients)", () => {
-    const mockClient2 = createMockSupabaseClient();
+    const mockClient2 = createMockSupabaseClient() as SupabaseClient;
 
     const InnerComponent = () => {
       const client = useSupabaseClient();

@@ -1,17 +1,18 @@
-import { ORPCError } from "@orpc/server";
-import { and, eq, inArray, ne } from "drizzle-orm";
-import type { Location as DbLocation, DB } from "@mirai-app/db";
-import { locations, locationShares, tripParticipants } from "@mirai-app/db";
+import type { DB, Location as DbLocation } from "@mirai-app/db";
+import { tripParticipants } from "@mirai-app/db";
+import { toExpoLocation } from "@mirai-app/shared/locations";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import { ORPCError } from "@orpc/server";
+import { and, inArray, ne } from "drizzle-orm";
 import { IMAGE_BUCKET } from "../../../utils/storage";
-import type { ExpoLocationObject, LocationWithUser } from "./types";
+import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { LocationWithUser } from "./types";
 import { AVATAR_FILE_EXTENSION, AVATAR_SIGNED_URL_SECONDS } from "./types";
 
 export const getUserAvatarPath = (userId: string): string =>
   `avatar/${userId}.${AVATAR_FILE_EXTENSION}`;
 
-export const getUserAvatarUrl = async (
+const getUserAvatarUrl = async (
   supabase: SupabaseClient,
   userId: string | null | undefined,
   hasAvatar: boolean | null | undefined,
@@ -44,24 +45,6 @@ export const mapUserWithAvatar = async (
     image: await getUserAvatarUrl(supabase, user.id, user.hasAvatar),
   };
 };
-
-/**
- * Convert database location to Expo-compliant format
- */
-export function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
-  return {
-    coords: {
-      latitude: dbLocation.latitude ?? 0,
-      longitude: dbLocation.longitude ?? 0,
-      altitude: dbLocation.altitude ?? null,
-      accuracy: dbLocation.accuracy ?? null,
-      altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,
-      heading: dbLocation.heading ?? null,
-      speed: dbLocation.speed ?? null,
-    },
-    timestamp: dbLocation.timestamp.getTime(),
-  };
-}
 
 /**
  * Convert database location with user to extended format
@@ -116,10 +99,7 @@ export async function ensureUserInActiveTrip(db: DB, userId: string): Promise<vo
       await ensureTripNotEnded(db, membership.trip.id);
       // If we find any active trip, allow the operation
       return;
-    } catch {
-      // Trip has ended, continue checking others
-      continue;
-    }
+    } catch {}
   }
 
   // All trips have ended

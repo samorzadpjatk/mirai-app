@@ -1,3 +1,6 @@
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,14 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { borderRadius, colors, spacing, typography } from "../../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTripDetails } from "~/hooks/trips";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
+import { useTripDetails } from "~/hooks/trips";
+import { borderRadius, colors, spacing, typography } from "../../../../../styles";
 
 type VotingPhase = "comparing" | "confirming" | "done" | "blocked";
 
@@ -268,9 +268,9 @@ export default function ChallengePeerVotingScreen() {
   }, [challengeId, router, tripId]);
   const shouldRedirectToChallengeDetails = Boolean(
     challengeId &&
-    tripId &&
-    challenge &&
-    (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE"),
+      tripId &&
+      challenge &&
+      (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE"),
   );
 
   const startComparing = useCallback(() => {

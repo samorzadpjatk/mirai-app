@@ -1,4 +1,8 @@
-import React, { useMemo, useState } from "react";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,16 +12,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AdminHeader } from "~/components/admin/AdminHeader";
-import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { orpc } from "@mirai-app/orpc/client";
-import { FilterChip, FilterChipRow, EmptyState, ThemedTextInput } from "~/components/common/ui";
+import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
+import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { EmptyState, FilterChip, FilterChipRow, ThemedTextInput } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
 

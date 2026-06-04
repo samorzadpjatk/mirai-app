@@ -1,8 +1,8 @@
+import { screen, userEvent } from "@testing-library/react-native";
 import React from "react";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
-import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import AddChallengeModal from "../../admin/challenges/AddChallengeModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockAlert = jest.spyOn(Alert, "alert");
 

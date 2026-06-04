@@ -1,31 +1,25 @@
-import { z } from "zod";
+import { type DB, challengeSubmissions, challenges } from "@mirai-app/db";
+import {
+  computeEffectiveChallengeValues,
+  inferPeerVotingDurationHours,
+  inferRecurringDaysFromWindow,
+  prepareChallengeInsert,
+  resolvePeerVotingTemplateWindow,
+  resolveRecurringDays,
+  resolveRecurringTemplateWindow,
+  resolveVotingTimes,
+  validatePeerVotingTimeline,
+  validateRecurringTimeline,
+} from "@mirai-app/shared/challenges";
 import { ORPCError } from "@orpc/server";
-import { eq, and, count } from "drizzle-orm";
-import { challenges, challengeSubmissions, type DB } from "@mirai-app/db";
+import { and, count, eq } from "drizzle-orm";
 import {
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
 } from "../../../utils/activityFeed";
-import {
-  precreateRecurringInstancesForTemplate,
-} from "../../../utils/recurringChallenges";
-import {
-  challengeImageSchema,
-  MAX_RECURRING_DAYS,
-  MAX_PEER_VOTING_DURATION_HOURS,
-  normalizeChallengeImageInput,
-} from "./types";
-import {
-  toClientChallenge,
-  validatePeerVotingTimeline,
-  inferPeerVotingDurationHours,
-  resolvePeerVotingTemplateWindow,
-  validateRecurringTimeline,
-  inferRecurringDaysFromWindow,
-  resolveRecurringDays,
-  resolveRecurringTemplateWindow,
-  resolveChallengeImage,
-} from "./utils";
+import { precreateRecurringInstancesForTemplate } from "../../../utils/recurringChallenges";
+import { normalizeChallengeImageInput } from "./types";
+import { resolveChallengeImage, toClientChallenge } from "./utils";
 
 export const createChallenge = async (
   context: {
@@ -71,10 +65,17 @@ export const createChallenge = async (
   },
 ) => {
   const now = new Date();
+
   const recurringDays = resolveRecurringDays({
     isRecurring: input.isRecurring,
     recurringDays: input.recurringDays,
   });
+  if (input.isRecurring && recurringDays === null) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Recurring challenge requires number of days",
+    });
+  }
+
   const recurringWindow =
     input.isRecurring && recurringDays
       ? resolveRecurringTemplateWindow({
@@ -89,7 +90,7 @@ export const createChallenge = async (
     votingEndTime: input.votingEndTime,
   });
 
-  validatePeerVotingTimeline({
+  const peerVotingValidation = validatePeerVotingTimeline({
     submissionType: input.submissionType,
     scoringCategory: input.scoringCategory,
     endTime: recurringWindow?.endTime ?? input.endTime,
@@ -97,23 +98,24 @@ export const createChallenge = async (
     votingStartTime: input.votingStartTime,
     votingEndTime: input.votingEndTime,
   });
+  if (!peerVotingValidation.valid) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: peerVotingValidation.errors?.[0] ?? "Invalid peer voting timeline",
+    });
+  }
 
-  const peerVotingTemplateWindow =
-    input.scoringCategory === "PEER_VOTING" &&
-    (recurringWindow?.endTime ?? input.endTime) &&
-    peerVotingDurationHours
-      ? resolvePeerVotingTemplateWindow({
-          submissionEndTime: recurringWindow?.endTime ?? input.endTime!,
-          votingDurationHours: peerVotingDurationHours,
-        })
-      : null;
-  validateRecurringTimeline({
+  const recurringValidation = validateRecurringTimeline({
     isRecurring: input.isRecurring,
     dailyStartTime: input.dailyStartTime,
     dailyEndTime: input.dailyEndTime,
     recurringDays,
     scoringCategory: input.scoringCategory,
   });
+  if (!recurringValidation.valid) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: recurringValidation.errors?.[0] ?? "Invalid recurring timeline",
+    });
+  }
 
   if (input.submissionType === "IMAGE_LOCATION" && input.autoApprove) {
     throw new ORPCError("BAD_REQUEST", {
@@ -121,69 +123,16 @@ export const createChallenge = async (
     });
   }
 
-  if (
-    input.submissionType === "TEXT" &&
-    input.autoApprove &&
-    !input.textExpectedPhrase?.trim()
-  ) {
+  if (input.submissionType === "TEXT" && input.autoApprove && !input.textExpectedPhrase?.trim()) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Text auto-approve requires an expected phrase, or disable auto-approve",
     });
   }
 
-  const requestedStatus = input.status ?? "HIDDEN";
-  const shouldActivateImmediately =
-    !input.isRecurring &&
-    requestedStatus === "VISIBLE" &&
-    Boolean(input.startTime) &&
-    input.startTime! <= now &&
-    (!input.endTime || input.endTime > now);
-  const initialStatus = shouldActivateImmediately ? "ACTIVE" : requestedStatus;
+  const insertValues = prepareChallengeInsert(input, now);
 
   const challenge = await context.db.transaction(async (tx) => {
-    const [createdChallenge] = await tx
-      .insert(challenges)
-      .values({
-        tripId: input.tripId,
-        name: input.name,
-        description: input.description ?? null,
-        image: normalizeChallengeImageInput(input.image),
-        submissionType: input.submissionType,
-        scoringCategory: input.scoringCategory,
-        isRecurring: input.isRecurring,
-        dailyStartTime: input.dailyStartTime,
-        dailyEndTime: input.dailyEndTime,
-        basePoints: input.basePoints,
-        firstPlacePoints: input.firstPlacePoints,
-        secondPlacePoints: input.secondPlacePoints,
-        thirdPlacePoints: input.thirdPlacePoints,
-        status: initialStatus,
-        startTime: recurringWindow?.startTime ?? input.startTime,
-        endTime: recurringWindow?.endTime ?? input.endTime,
-        votingStartTime:
-          input.scoringCategory === "PEER_VOTING"
-            ? (peerVotingTemplateWindow?.votingStartTime ?? null)
-            : null,
-        votingEndTime:
-          input.scoringCategory === "PEER_VOTING"
-            ? (peerVotingTemplateWindow?.votingEndTime ?? null)
-            : null,
-        targetLatitude: input.targetLatitude,
-        targetLongitude: input.targetLongitude,
-        expectedValue:
-          input.submissionType === "QR_CODE"
-            ? (input.qrCodeValue ?? null)
-            : input.submissionType === "TEXT"
-              ? (input.textExpectedPhrase ?? null)
-              : null,
-        autoApprove:
-          input.submissionType === "QR_CODE" || input.submissionType === "LOCATION"
-            ? true
-            : input.submissionType === "IMAGE_LOCATION"
-              ? false
-              : input.autoApprove,
-      })
-      .returning();
+    const [createdChallenge] = await tx.insert(challenges).values(insertValues).returning();
 
     if (!createdChallenge) {
       throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -292,31 +241,46 @@ export const updateChallenge = async (
     fallbackVotingEndTime: existing.votingEndTime,
   });
 
-  validatePeerVotingTimeline({
-    submissionType: input.submissionType ?? existing.submissionType,
+  const peerVotingValidation = validatePeerVotingTimeline({
+    submissionType: input.submissionType ?? existing.submissionType ?? "IMAGE",
     scoringCategory: input.scoringCategory ?? existing.scoringCategory,
     endTime: input.endTime ?? existing.endTime,
     votingDurationHours: peerVotingDurationHours,
     votingStartTime: input.votingStartTime ?? existing.votingStartTime,
     votingEndTime: input.votingEndTime ?? existing.votingEndTime,
   });
+  if (!peerVotingValidation.valid) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: peerVotingValidation.errors?.[0] ?? "Invalid peer voting timeline",
+    });
+  }
+
   const nextIsRecurring = input.isRecurring ?? existing.isRecurring;
-  const inferredRecurringDays = inferRecurringDaysFromWindow(
-    existing.startTime,
-    existing.endTime,
-  );
+  const inferredRecurringDays = inferRecurringDaysFromWindow(existing.startTime, existing.endTime);
   const recurringDays = resolveRecurringDays({
     isRecurring: nextIsRecurring,
     recurringDays: input.recurringDays,
     fallbackDays: inferredRecurringDays,
   });
-  validateRecurringTimeline({
+  if (nextIsRecurring && recurringDays === null) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Recurring challenge requires number of days",
+    });
+  }
+
+  const recurringValidation = validateRecurringTimeline({
     isRecurring: nextIsRecurring,
     dailyStartTime: input.dailyStartTime ?? existing.dailyStartTime,
     dailyEndTime: input.dailyEndTime ?? existing.dailyEndTime,
     recurringDays,
     scoringCategory: input.scoringCategory ?? existing.scoringCategory,
   });
+  if (!recurringValidation.valid) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: recurringValidation.errors?.[0] ?? "Invalid recurring timeline",
+    });
+  }
+
   const recurringWindow =
     nextIsRecurring && recurringDays
       ? resolveRecurringTemplateWindow({
@@ -368,19 +332,21 @@ export const updateChallenge = async (
     }
   }
 
-  const effectiveSubmissionType = input.submissionType ?? existing.submissionType;
-  const effectiveExpectedValue =
-    effectiveSubmissionType === "QR_CODE"
-      ? (input.qrCodeValue ?? existing.expectedValue ?? null)
-      : effectiveSubmissionType === "TEXT"
-        ? (input.textExpectedPhrase ?? existing.expectedValue ?? null)
-        : null;
-  const effectiveAutoApprove =
-    effectiveSubmissionType === "QR_CODE" || effectiveSubmissionType === "LOCATION"
-      ? true
-      : effectiveSubmissionType === "IMAGE_LOCATION"
-        ? false
-        : (input.autoApprove ?? existing.autoApprove);
+  const { effectiveSubmissionType, effectiveExpectedValue, effectiveAutoApprove } =
+    computeEffectiveChallengeValues(
+      {
+        submissionType: input.submissionType,
+        qrCodeValue: input.qrCodeValue,
+        textExpectedPhrase: input.textExpectedPhrase,
+        autoApprove: input.autoApprove,
+      },
+      {
+        submissionType:
+          existing.submissionType === "MULTI_IMAGE" ? "IMAGE" : existing.submissionType,
+        expectedValue: existing.expectedValue,
+        autoApprove: existing.autoApprove,
+      },
+    );
 
   if (effectiveSubmissionType === "IMAGE_LOCATION" && input.autoApprove) {
     throw new ORPCError("BAD_REQUEST", {
@@ -397,6 +363,14 @@ export const updateChallenge = async (
       message: "Text auto-approve requires an expected phrase, or disable auto-approve",
     });
   }
+
+  const { votingStartTime, votingEndTime } = resolveVotingTimes({
+    scoringCategory: nextScoringCategory,
+    status: nextStatus,
+    votingStartTime: input.votingStartTime,
+    votingEndTime: input.votingEndTime,
+    peerVotingTemplateWindow,
+  });
 
   const challenge = await context.db.transaction(async (tx) => {
     const [updatedChallenge] = await tx
@@ -417,27 +391,12 @@ export const updateChallenge = async (
         status: input.status,
         startTime: recurringWindow?.startTime ?? input.startTime,
         endTime: recurringWindow?.endTime ?? input.endTime,
-        votingStartTime:
-          nextScoringCategory !== "PEER_VOTING"
-            ? null
-            : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
-              ? input.votingStartTime
-              : peerVotingTemplateWindow?.votingStartTime,
-        votingEndTime:
-          nextScoringCategory !== "PEER_VOTING"
-            ? null
-            : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
-              ? input.votingEndTime
-              : peerVotingTemplateWindow?.votingEndTime,
+        votingStartTime,
+        votingEndTime,
         targetLatitude: input.targetLatitude,
         targetLongitude: input.targetLongitude,
         expectedValue: effectiveExpectedValue,
-        autoApprove:
-          effectiveSubmissionType === "QR_CODE" || effectiveSubmissionType === "LOCATION"
-            ? true
-            : effectiveSubmissionType === "IMAGE_LOCATION"
-              ? false
-              : input.autoApprove,
+        autoApprove: effectiveAutoApprove,
       })
       .where(eq(challenges.id, input.id))
       .returning();

@@ -1,8 +1,8 @@
-import type React from "react";
-import type { Text, TouchableOpacity, View, TextInput } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import type React from "react";
+import type { Text, TextInput, TouchableOpacity, View } from "react-native";
 import AdminRewardDetailModal from "../../admin/rewards/AdminRewardDetailModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockUpdateReward = jest.fn();
 const mockDeleteReward = jest.fn();
@@ -78,8 +78,6 @@ interface ThemedTextInputProps {
   keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
   multiline?: boolean;
 }
-
-
 
 describe("AdminRewardDetailModal", () => {
   beforeEach(() => {

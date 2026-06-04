@@ -1,9 +1,10 @@
+import { fireEvent, screen } from "@testing-library/react-native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { ChallengeFormModals } from "../../admin/challenges/ChallengeFormModals";
+import { statusOptions } from "~/components/admin/challenges/challengeFormConstants";
 import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { ChallengeFormModals } from "../../admin/challenges/ChallengeFormModals";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface DateTimePickerModalProps {
   visible: boolean;
@@ -131,7 +132,7 @@ describe("ChallengeFormModals", () => {
     activeSelect: null as "submissionType" | "scoringCategory" | "status" | null,
     showLocationPicker: false,
     isQrScannerOpen: false,
-    activeSelectOptions: [{ label: "Published", value: "PUBLISHED" }],
+    activeSelectOptions: statusOptions,
     imagePreviewUri: null,
     isPeerVoting: false,
     showPodiumPoints: false,
@@ -167,7 +168,7 @@ describe("ChallengeFormModals", () => {
     formatIso: jest.fn(),
     toOptionalInt: jest.fn(),
     toVotingDurationHours: jest.fn(),
-  } as unknown as ReturnType<typeof useChallengeForm>;
+  } as ReturnType<typeof useChallengeForm>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -189,7 +190,7 @@ describe("ChallengeFormModals", () => {
     expect(screen.getByText("DateTimePickerModal")).toBeTruthy();
     expect(screen.getByText("QrScannerModal")).toBeTruthy();
     expect(screen.getByText("LocationPicker")).toBeTruthy();
-    expect(screen.getByText("Published")).toBeTruthy();
+    expect(screen.getByText("Hidden")).toBeTruthy();
   });
 
   it("wires picker, scanner, and location callbacks", () => {
@@ -229,8 +230,8 @@ describe("ChallengeFormModals", () => {
       />,
     );
 
-    fireEvent.press(screen.getByText("Published"));
-    expect(updateForm).toHaveBeenCalledWith("status", "PUBLISHED");
+    fireEvent.press(screen.getByText("Hidden"));
+    expect(updateForm).toHaveBeenCalledWith("status", "HIDDEN");
     expect(setActiveSelect).toHaveBeenCalledWith(null);
   });
 });

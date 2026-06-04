@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripHeroCardProps {
   name: string;

@@ -1,6 +1,6 @@
+import { type DB, trips } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import { trips, type DB } from "@mirai-app/db";
 
 export const createTrip = async (
   context: {
@@ -47,11 +47,7 @@ export const updateTrip = async (
   if (!trip) {
     throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
   }
-  const [updated] = await context.db
-    .update(trips)
-    .set(data)
-    .where(eq(trips.id, id))
-    .returning();
+  const [updated] = await context.db.update(trips).set(data).where(eq(trips.id, id)).returning();
   return updated;
 };
 

@@ -1,8 +1,7 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { Notification } from "~/hooks/admin/useAdminNotifications";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface NotificationCardProps {
   notification: Notification;

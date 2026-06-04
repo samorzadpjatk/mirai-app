@@ -114,7 +114,7 @@ export async function invalidateAdminQueries(
   domains?: (keyof Omit<typeof QUERY_GROUPS, "REWARDS" | "REWARDS_ADMIN">)[],
 ) {
   const groups = domains
-    ? domains.map((domain) => QUERY_GROUPS[domain]).flat()
+    ? domains.flatMap((domain) => QUERY_GROUPS[domain])
     : [
         ...QUERY_GROUPS.ADMIN,
         ...QUERY_GROUPS.USER_DATA,

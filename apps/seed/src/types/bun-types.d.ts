@@ -8,6 +8,6 @@ export type BunFile = BunFileType;
 
 // Make BunFile available globally for type annotations
 declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  // biome-ignore lint/suspicious/noRedeclare: Global type augmentation for BunFile
   type BunFile = import("bun").BunFile;
 }

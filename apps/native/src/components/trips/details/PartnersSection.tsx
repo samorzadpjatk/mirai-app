@@ -1,7 +1,7 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import { colors, spacing, typography } from "~/styles";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
+import { colors, spacing, typography } from "~/styles";
 
 function PartnerLogo({ sponsor }: { sponsor: Partner }) {
   const { imageUrl } = usePartnerImageDownload(sponsor.logoPath);

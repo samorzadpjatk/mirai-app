@@ -1,88 +1,9 @@
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 import { Alert } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
+import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { NotificationScheduleCard } from "../../notifications/NotificationScheduleCard";
-
-const mockMutateDelete = jest.fn();
-const mockMutateToggle = jest.fn();
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  useTRPC: () => ({
-    notificationSchedule: {
-      delete: {
-        mutationOptions: () => ({
-          mutationFn: mockMutateDelete,
-        }),
-      },
-      toggleActive: {
-        mutationOptions: () => ({
-          mutationFn: mockMutateToggle,
-        }),
-      },
-      getAll: {
-        queryOptions: () => ({
-          queryKey: ["notificationSchedule", "getAll"],
-        }),
-      },
-    },
-  }),
-  orpc: {
-    notificationSchedule: {
-      delete: {
-        mutationOptions: () => ({
-          mutationFn: mockMutateDelete,
-        }),
-      },
-      toggleActive: {
-        mutationOptions: () => ({
-          mutationFn: mockMutateToggle,
-        }),
-      },
-      getAll: {
-        queryOptions: () => ({
-          queryKey: ["notificationSchedule", "getAll"],
-        }),
-      },
-    },
-  },
-}));
-
-interface MutationOptions {
-  onSuccess?: () => void;
-}
-
-jest.mock("@tanstack/react-query", () => {
-  return {
-    useMutation: jest.fn((options: MutationOptions | undefined) => ({
-      mutate: jest.fn(() => {
-        if (options?.onSuccess) {
-          options.onSuccess();
-        }
-      }),
-      isLoading: false,
-      error: null,
-    })),
-    useQueryClient: jest.fn(() => ({
-      invalidateQueries: jest.fn(),
-      refetchQueries: jest.fn(),
-      setQueryData: jest.fn(),
-      getQueryData: jest.fn(),
-      clear: jest.fn(),
-    })),
-    QueryClient: jest.fn(),
-    QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  };
-});
-
-import type { AlertButton } from "react-native";
-
-const mockAlert = jest.fn((title: string, message?: string, buttons?: AlertButton[]) => {
-  const deleteButton = buttons?.find((b) => b.style === "destructive");
-  if (deleteButton?.onPress) {
-    deleteButton.onPress();
-  }
-});
 
 jest.mock("~/utils/format", () => ({
   formatRelativeTime: () => "2 hours ago",
@@ -111,84 +32,95 @@ const mockSchedule = {
 
 describe("NotificationScheduleCard", () => {
   beforeEach(() => {
+    server.resetHandlers();
     jest.clearAllMocks();
-    jest.spyOn(Alert, "alert").mockImplementation(mockAlert);
-    mockMutateDelete.mockClear();
-    mockMutateToggle.mockClear();
+    jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
+      const deleteButton = buttons?.find((b) => b.style === "destructive");
+      if (deleteButton?.onPress) {
+        deleteButton.onPress();
+      }
+    });
   });
 
   it("should render schedule name", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText("Test Schedule")).toBeTruthy();
   });
 
   it("should render creator information", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText(/Created by/)).toBeTruthy();
     expect(screen.getByText(/John Doe/)).toBeTruthy();
   });
 
   it("should render active status tag", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText("Active")).toBeTruthy();
   });
 
   it("should render notification type tag", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText("REMINDER")).toBeTruthy();
   });
 
   it("should render trip name tag when trip exists", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText("Summer Trip 2024")).toBeTruthy();
   });
 
   it("should render time tag with correct format", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText("09:30")).toBeTruthy();
   });
 
   it("should render period information", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText(/Period:/)).toBeTruthy();
   });
 
   it("should render last run information when lastRun exists", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByText(/Last run:/)).toBeTruthy();
   });
 
   it("should render toggle button when active", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByTestId("toggle-button")).toBeTruthy();
   });
 
   it("should render delete button", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     expect(screen.getByTestId("delete-button")).toBeTruthy();
   });
 
-  it("should call toggle mutation when toggle button is pressed", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+  it("should call toggle mutation when toggle button is pressed", async () => {
+    const toggleResolver = jest.fn(() => ({ ...mockSchedule, isActive: false }));
+    server.use(createORPCHandler(["notificationSchedule", "toggleActive"], toggleResolver));
+
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     const toggleButton = screen.getByTestId("toggle-button");
     fireEvent.press(toggleButton);
 
-    expect(toggleButton).toBeTruthy();
+    await waitFor(() => {
+      expect(toggleResolver).toHaveBeenCalledWith({ id: mockSchedule.id });
+    });
   });
 
   it("should show delete confirmation when delete button is pressed", () => {
-    renderWithProviders(<NotificationScheduleCard schedule={mockSchedule} />);
+    server.use(createORPCHandler(["notificationSchedule", "delete"], () => ({ success: true })));
+
+    renderWithMSW(<NotificationScheduleCard schedule={mockSchedule} />);
 
     const deleteButton = screen.getByTestId("delete-button");
     fireEvent.press(deleteButton);
@@ -205,13 +137,24 @@ describe("NotificationScheduleCard", () => {
 });
 
 describe("NotificationScheduleCard - conditional states", () => {
+  beforeEach(() => {
+    server.resetHandlers();
+    jest.clearAllMocks();
+    jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
+      const deleteButton = buttons?.find((b) => b.style === "destructive");
+      if (deleteButton?.onPress) {
+        deleteButton.onPress();
+      }
+    });
+  });
+
   it("should render inactive status tag when schedule is inactive", () => {
     const inactiveSchedule = {
       ...mockSchedule,
       isActive: false,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={inactiveSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={inactiveSchedule} />);
 
     expect(screen.getByText("Inactive")).toBeTruthy();
   });
@@ -222,7 +165,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       isActive: false,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={inactiveSchedule} />);
+    renderWithMSW(<NotificationScheduleCard schedule={inactiveSchedule} />);
 
     expect(screen.getByTestId("toggle-button")).toBeTruthy();
   });
@@ -233,7 +176,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       trip: null,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithoutTrip} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleWithoutTrip} />);
 
     expect(screen.queryByText("Summer Trip 2024")).toBeNull();
   });
@@ -244,7 +187,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       lastRun: null,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithoutLastRun} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleWithoutLastRun} />);
 
     expect(screen.queryByText(/Last run:/)).toBeNull();
   });
@@ -255,7 +198,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       createdBy: null,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithUnknownCreator} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleWithUnknownCreator} />);
 
     expect(screen.getByText(/Unknown/)).toBeTruthy();
   });
@@ -269,7 +212,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       },
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithPartialName} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleWithPartialName} />);
 
     expect(screen.getByText(/Jane/)).toBeTruthy();
   });
@@ -281,7 +224,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 5,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleWithSingleDigits} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleWithSingleDigits} />);
 
     expect(screen.getByText("05:05")).toBeTruthy();
   });
@@ -293,7 +236,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 0,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleAtMidnight} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleAtMidnight} />);
 
     expect(screen.getByText("00:00")).toBeTruthy();
   });
@@ -305,7 +248,7 @@ describe("NotificationScheduleCard - conditional states", () => {
       minute: 59,
     };
 
-    renderWithProviders(<NotificationScheduleCard schedule={scheduleAtEndOfDay} />);
+    renderWithMSW(<NotificationScheduleCard schedule={scheduleAtEndOfDay} />);
 
     expect(screen.getByText("23:59")).toBeTruthy();
   });

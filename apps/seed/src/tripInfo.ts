@@ -1,16 +1,16 @@
-import { db } from "./config/db";
-import type { TripResource, TripInsurance, TripInsuranceStep } from "@mirai-app/db";
-import type { SeedEnv, TripInfoConfig, TripResourceConfig } from "./types";
-import yaml from "yaml";
-import { readTextFile } from "./utils/fs";
-import { joinPath } from "./utils/path";
-import { supabase } from "./config/supabase";
-import { env } from "./config/env";
-import { readFile } from "./utils/fs";
-import { assetsRoot } from "./constants";
-import { tripResources, tripInsurances, tripInsuranceSteps } from "@mirai-app/db";
+import type { TripInsurance, TripInsuranceStep, TripResource } from "@mirai-app/db";
+import { tripInsuranceSteps, tripInsurances, tripResources } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared/utils";
 import { eq, inArray } from "drizzle-orm";
-import { logger } from "@mirai-app/shared";
+import yaml from "yaml";
+import { db } from "./config/db";
+import { env } from "./config/env";
+import { supabase } from "./config/supabase";
+import { assetsRoot } from "./constants";
+import type { SeedEnv, TripInfoConfig, TripResourceConfig } from "./types";
+import { readTextFile } from "./utils/fs";
+import { readFile } from "./utils/fs";
+import { joinPath } from "./utils/path";
 
 function isTripResourceConfig(value: unknown): value is TripResourceConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -39,7 +39,7 @@ export const loadTripInfoConfig = async (
 };
 
 export const seedTripInfo = async (
-  databaseUrl: string,
+  _databaseUrl: string,
   tripId: string,
   seedEnv: SeedEnv,
   infoConfig: TripInfoConfig,

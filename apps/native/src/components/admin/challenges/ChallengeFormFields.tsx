@@ -1,4 +1,4 @@
-import React from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Image,
@@ -9,14 +9,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { ThemedTextInput } from "~/components/common/ui/ThemedTextInput";
-import { FormField } from "~/components/common/ui/FormField";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { type useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { FormField } from "~/components/common/ui/FormField";
+import { ThemedTextInput } from "~/components/common/ui/ThemedTextInput";
+import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
-export function formatLocationText(targetLocation: { latitude: number; longitude: number } | null): string {
+export function formatLocationText(
+  targetLocation: { latitude: number; longitude: number } | null,
+): string {
   if (!targetLocation) return "Tap to select location on map";
   return `Selected: ${targetLocation.latitude.toFixed(5)}, ${targetLocation.longitude.toFixed(5)}`;
 }
@@ -88,7 +89,7 @@ export function ChallengeFormFields({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Basics</Text>
 
-        <FormField label="Challenge Title" required>
+        <FormField label="Challenge Title" required={true}>
           <ThemedTextInput
             placeholder="e.g. Campus Marathon"
             value={form.title}
@@ -96,13 +97,13 @@ export function ChallengeFormFields({
           />
         </FormField>
 
-        <FormField label="Description" required>
+        <FormField label="Description" required={true}>
           <ThemedTextInput
             style={styles.textArea}
             placeholder="Describe the goal of this challenge..."
             value={form.description}
             onChangeText={(value) => updateForm("description", value)}
-            multiline
+            multiline={true}
           />
         </FormField>
 
@@ -200,9 +201,7 @@ export function ChallengeFormFields({
             >
               <View style={styles.locationContent}>
                 <View style={styles.locationInfo}>
-                  <Text style={styles.locationText}>
-                    {formatLocationText(form.targetLocation)}
-                  </Text>
+                  <Text style={styles.locationText}>{formatLocationText(form.targetLocation)}</Text>
                   <Text style={styles.hint}>Tap to open map and select the exact location</Text>
                 </View>
                 <View style={styles.locationIcon}>
@@ -399,7 +398,11 @@ export function ChallengeFormFields({
         <View style={styles.switchRow}>
           <Text style={styles.labelInline}>Auto-approve submissions</Text>
           <Switch
-            value={getAutoApproveSwitchValue(isAutoApproveForced, isAutoApproveDisabled, form.autoApprove)}
+            value={getAutoApproveSwitchValue(
+              isAutoApproveForced,
+              isAutoApproveDisabled,
+              form.autoApprove,
+            )}
             onValueChange={(value) => updateForm("autoApprove", value)}
             disabled={isAutoApproveForced || isAutoApproveDisabled}
             trackColor={{

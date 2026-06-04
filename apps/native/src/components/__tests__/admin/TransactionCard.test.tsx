@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import TransactionCard from "../../admin/transactions/TransactionCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: ({ name }: { name: string }) => name,

@@ -1,11 +1,31 @@
 import { vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "../stores/authStore";
+
+type MockFn = {
+  (...args: any[]): any;
+  mockResolvedValue(value: any): MockFn;
+  mockReturnValue(value: any): MockFn;
+  mockImplementation(fn: (...args: any[]) => any): MockFn;
+  mockRejectedValue(value: any): MockFn;
+};
+
+type Mockify<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? MockFn
+    : T[K] extends object
+      ? Mockify<T[K]>
+      : T[K];
+};
+
+export type MockSupabaseClient = Mockify<SupabaseClient> & Record<string, unknown>;
 
 /**
  * Creates a mock Supabase client for testing.
  * Provides chainable query builder methods and mock auth methods.
  */
-export function createMockSupabaseClient(overrides: Record<string, unknown> = {}): SupabaseClient {
+export function createMockSupabaseClient(
+  overrides: Record<string, unknown> = {},
+): MockSupabaseClient {
   const mockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -47,6 +67,9 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
       data: { session: null },
       error: null,
     }),
+    signInWithOtp: vi.fn().mockResolvedValue({
+      error: null,
+    }),
     getUser: vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
@@ -71,6 +94,9 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
       data: { user: null, session: null },
       error: null,
     }),
+    verifyOtp: vi.fn().mockResolvedValue({
+      error: null,
+    }),
     updateUser: vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
@@ -79,6 +105,28 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
       data: {},
       error: null,
     }),
+    admin: {
+      getUserById: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      listUsers: vi.fn().mockResolvedValue({
+        data: { users: [] },
+        error: null,
+      }),
+      createUser: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      updateUserById: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      deleteUser: vi.fn().mockResolvedValue({
+        data: {},
+        error: null,
+      }),
+    },
   };
 
   const mockChannel = {
@@ -115,7 +163,7 @@ export function createMockSupabaseClient(overrides: Record<string, unknown> = {}
     },
   };
 
-  return { ...mockClient, ...overrides } as unknown as SupabaseClient;
+  return { ...mockClient, ...overrides };
 }
 
 /**
@@ -143,6 +191,21 @@ export function createMockUser(overrides: Record<string, unknown> = {}) {
     app_metadata: {},
     aud: "authenticated",
     created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock Supabase user for testing with specific auth-related fields.
+ */
+export function createMockSupabaseUser<T>(overrides: Partial<T> = {}) {
+  return {
+    id: "test-auth-user-id",
+    aud: "authenticated",
+    email: "test@example.com",
+    email_confirmed_at: new Date().toISOString(),
+    user_metadata: { firstName: "Test", lastName: "User" },
+    app_metadata: { role: "USER" },
     ...overrides,
   };
 }

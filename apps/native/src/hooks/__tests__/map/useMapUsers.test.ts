@@ -1,5 +1,5 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, waitFor, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { useMapUsers } from "../../map/useMapUsers";
 
 describe("useMapUsers", () => {
@@ -299,19 +299,17 @@ describe("useMapUsers", () => {
   });
 
   it("should handle null avatarUrl in usersData", () => {
-    const args = {
+    const args: Parameters<typeof useMapUsers>[0] = {
       ...defaultArgs,
       locationsByUserId: {
         "user-2": { latitude: 52.23, longitude: 21.01, updatedAt: Date.now() },
       },
       usersData: {
-        "user-2": { name: "Jane Doe", image: null },
+        "user-2": { name: "Jane Doe", image: undefined },
       },
     };
 
-    const { result } = renderHook(() =>
-      useMapUsers(args as unknown as Parameters<typeof useMapUsers>[0]),
-    );
+    const { result } = renderHook(() => useMapUsers(args));
 
     expect(result.current[0]!.avatarUrl).toBeNull();
   });

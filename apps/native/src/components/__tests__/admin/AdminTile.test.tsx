@@ -1,8 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { AdminTile } from "../../admin/AdminTile";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("expo-router", () => {
   const mockPush = jest.fn();

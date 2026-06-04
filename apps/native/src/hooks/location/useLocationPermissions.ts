@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
-import { Alert } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateLocationQueries } from "@mirai-app/orpc/client/query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
+import { Alert } from "react-native";
 import { useLocationPermission } from "./useLocationPermission";
 
 export const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
@@ -51,8 +51,7 @@ export function buildLocationPermissionAlert(): {
 } {
   return {
     title: "Location Permission Required",
-    message:
-      "Please enable location permissions in your device settings to use location features.",
+    message: "Please enable location permissions in your device settings to use location features.",
   };
 }
 
@@ -60,7 +59,10 @@ export interface LocationSharingToggleDeps {
   permissionStatus: string;
   requestLocationPermissions: () => Promise<string>;
   updateSharingMutation: {
-    mutateAsync: (data: { isSharingLocation: boolean; userIdsToShareWith: string[] }) => Promise<unknown>;
+    mutateAsync: (data: {
+      isSharingLocation: boolean;
+      userIdsToShareWith: string[];
+    }) => Promise<unknown>;
   };
 }
 
@@ -141,10 +143,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
   // Load saved location sharing preference and sync with server
   useEffect(() => {
     void (async () => {
-      const { enabled, error } = await syncLocationSharingState(
-        sharingSettings,
-        AsyncStorage.getItem,
-      );
+      const { enabled } = await syncLocationSharingState(sharingSettings, AsyncStorage.getItem);
       setIsLocationSharingEnabled(enabled);
       setIsLoading(false);
     })();

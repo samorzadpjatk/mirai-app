@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import { ScrollView, StyleSheet } from "react-native";
 import { spacing } from "~/styles";
@@ -20,7 +20,7 @@ export const FilterChipRow: React.FC<FilterChipRowProps> = ({
   return (
     <ScrollView
       testID="filter-chip-row"
-      horizontal
+      horizontal={true}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={[
         styles.row,

@@ -1,18 +1,18 @@
-import React, { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { getFileContentType, getFileExtension } from "~/utils/image";
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function AdminCreateRewardScreen() {
 
   const calculatedCost =
     coinCost && totalAvailablePoints > 0
-      ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
+      ? Math.max(1, Math.round(totalAvailablePoints * (Number.parseFloat(coinCost) / 100)))
       : 0;
 
   const createRewardMutation = useMutation(
@@ -88,10 +88,10 @@ export default function AdminCreateRewardScreen() {
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-      const extension = getImageExtension(asset);
+      const extension = getFileExtension(asset);
       const fileName = asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
       const storagePath = `rewards/${tripId}/reward-${Date.now()}.${extension}`;
-      const contentType = asset.mimeType ?? getImageContentType(extension);
+      const contentType = asset.mimeType ?? getFileContentType(extension);
 
       await upload({
         storagePath,
@@ -112,8 +112,8 @@ export default function AdminCreateRewardScreen() {
   const handleSubmit = async () => {
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
-    const parsedCoinCost = parseInt(coinCost);
-    const parsedQuantity = parseInt(availableQuantity);
+    const parsedCoinCost = Number.parseInt(coinCost);
+    const parsedQuantity = Number.parseInt(availableQuantity);
 
     if (!trimmedName) {
       Alert.alert("Validation", "Reward name is required.");
@@ -130,12 +130,12 @@ export default function AdminCreateRewardScreen() {
       return;
     }
 
-    if (isNaN(parsedCoinCost) || parsedCoinCost <= 0 || parsedCoinCost > 100) {
+    if (Number.isNaN(parsedCoinCost) || parsedCoinCost <= 0 || parsedCoinCost > 100) {
       Alert.alert("Validation", "Valid coin cost percentage (1-100) is required.");
       return;
     }
 
-    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+    if (Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
       Alert.alert("Validation", "Valid available quantity is required.");
       return;
     }
@@ -176,7 +176,7 @@ export default function AdminCreateRewardScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <FormField label="Reward Name" required>
+        <FormField label="Reward Name" required={true}>
           <ThemedTextInput value={name} onChangeText={setName} placeholder="Enter reward name..." />
         </FormField>
 
@@ -185,13 +185,13 @@ export default function AdminCreateRewardScreen() {
             value={description}
             onChangeText={setDescription}
             placeholder="Enter reward description..."
-            multiline
+            multiline={true}
             numberOfLines={3}
             style={styles.textArea}
           />
         </FormField>
 
-        <FormField label="Coin Cost (%)" required>
+        <FormField label="Coin Cost (%)" required={true}>
           <ThemedTextInput
             value={coinCost}
             onChangeText={setCoinCost}
@@ -205,7 +205,7 @@ export default function AdminCreateRewardScreen() {
           )}
         </FormField>
 
-        <FormField label="Available Quantity" required>
+        <FormField label="Available Quantity" required={true}>
           <ThemedTextInput
             value={availableQuantity}
             onChangeText={setAvailableQuantity}
@@ -269,7 +269,7 @@ export default function AdminCreateRewardScreen() {
               <Ionicons
                 name="eye-outline"
                 size={16}
-                color={!isHidden ? colors.primary : colors.textSecondary}
+                color={isHidden ? colors.textSecondary : colors.primary}
               />
               <Text
                 style={[

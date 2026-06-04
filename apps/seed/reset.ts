@@ -1,20 +1,20 @@
 import { closeDb } from "@mirai-app/db";
-import { db } from "./src/config/db";
-import { supabase } from "./src/config/supabase";
-import { env } from "./src/config/env";
-import { logger } from "@mirai-app/shared";
 import {
-  trips,
-  tripParticipants,
-  sponsors,
-  tripSponsors,
-  rewards,
-  rewardPurchases,
   coinTransactions,
-  tripResources,
+  rewardPurchases,
+  rewards,
+  sponsors,
   tripInsuranceSteps,
   tripInsurances,
+  tripParticipants,
+  tripResources,
+  tripSponsors,
+  trips,
 } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared/utils";
+import { db } from "./src/config/db";
+import { env } from "./src/config/env";
+import { supabase } from "./src/config/supabase";
 
 const MAX_FILES_PER_BUCKET = 1000;
 
@@ -31,7 +31,7 @@ const cleanStorageBucket = async (bucket: string) => {
   }
 
   if (!files || files.length === 0) {
-    logger.info(`  ✓ Bucket is already empty`);
+    logger.info("  ✓ Bucket is already empty");
     return;
   }
 

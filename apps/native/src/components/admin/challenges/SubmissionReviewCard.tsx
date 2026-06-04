@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -150,7 +150,7 @@ export function SubmissionReviewCard({
       {hasText ? (
         <View style={styles.textBox}>
           <Text style={styles.textBoxLabel}>Submitted text</Text>
-          <Text selectable style={styles.textBoxValue}>
+          <Text selectable={true} style={styles.textBoxValue}>
             {textContent}
           </Text>
           <Text style={styles.textBoxHint}>Press and hold text to copy</Text>

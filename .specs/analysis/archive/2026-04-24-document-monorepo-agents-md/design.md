@@ -123,7 +123,7 @@ docs/
 <!-- In AGENTS.md -->
 For detailed setup instructions, see [docs/development/setup.md](../docs/development/setup.md)
 
-For tRPC patterns, see [docs/packages/trpc/router-structure.md](../../docs/packages/trpc/router-structure.md)
+For tRPC patterns, see [docs/packages/orpc/router-structure.md](../../docs/packages/orpc/router-structure.md)
 ```
 
 **Rationale:** Relative links work in all contexts (IDE, GitHub, AI tools) and maintain portability.
@@ -154,12 +154,12 @@ For tRPC patterns, see [docs/packages/trpc/router-structure.md](../../docs/packa
 
 **Decision:** Document tRPC in layers:
 
-**In packages/trpc AGENTS.md:**
+**In packages/orpc AGENTS.md:**
 - Router structure overview
 - How to create new procedures
 - Client initialization patterns
 
-**In docs/packages/trpc/:**
+**In docs/packages/orpc/:**
 - Detailed router composition
 - Middleware patterns
 - Error handling

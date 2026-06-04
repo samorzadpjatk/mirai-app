@@ -1,8 +1,16 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import { PartnersSection, type Partner } from "../../../trips/details/PartnersSection";
 import { NotificationsHeader } from "../../../notifications/NotificationsHeader";
+import { type Partner, PartnersSection } from "../../../trips/details/PartnersSection";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
+
+jest.mock("~/hooks/partners/usePartnerImageDownload", () => ({
+  usePartnerImageDownload: jest.fn(() => ({
+    imageUrl: "https://example.com/partner-logo.png",
+    isLoading: false,
+    error: null,
+    status: "success",
+  })),
+}));
 
 jest.mock("expo-router", () => {
   const mockPush = jest.fn();
@@ -75,11 +83,7 @@ describe("NotificationsHeader", () => {
 
   it("renders custom title and button label", () => {
     renderWithProviders(
-      <NotificationsHeader
-        title="Custom Title"
-        buttonLabel="Add"
-        onCreate={jest.fn()}
-      />,
+      <NotificationsHeader title="Custom Title" buttonLabel="Add" onCreate={jest.fn()} />,
     );
 
     expect(screen.getByText("Custom Title")).toBeOnTheScreen();

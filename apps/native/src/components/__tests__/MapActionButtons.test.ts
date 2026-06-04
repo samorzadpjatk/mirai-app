@@ -1,12 +1,12 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  calculateBackgroundDisplayState,
   buildBackgroundStatusLabel,
   calculateBackgroundControlDisabled,
+  calculateBackgroundDisplayState,
+  getBackgroundIconColor,
   getBackgroundIconName,
   getLocationIconName,
   getThemeIconName,
-  getBackgroundIconColor,
 } from "~/components/map/mapActionButtonsUtils";
 
 describe("calculateBackgroundDisplayState", () => {

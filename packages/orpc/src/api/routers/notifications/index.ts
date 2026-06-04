@@ -6,24 +6,20 @@ import {
   protectedProcedure,
 } from "../../trpc";
 import {
-  getSubscriptionStatus,
-  getAllMy,
-  getAll,
-} from "./queries";
-import {
+  deleteNotification,
+  retryNotification,
+  sendCoinAddedToGroup,
+  sendCoinRemovedFromGroup,
+  sendCustomToGroup,
+  sendNewMemberToGroup,
+  sendRankingUpdateToGroups,
+  sendToAll,
+  sendToGroup,
   subscribe,
   unsubscribe,
   unsubscribeAll,
-  sendToGroup,
-  sendToAll,
-  sendRankingUpdateToGroups,
-  sendCoinAddedToGroup,
-  sendCoinRemovedFromGroup,
-  sendNewMemberToGroup,
-  sendCustomToGroup,
-  retryNotification,
-  deleteNotification,
 } from "./mutations";
+import { getAll, getAllMy, getSubscriptionStatus } from "./queries";
 
 const handleSubscribe = async ({
   context,
@@ -142,13 +138,9 @@ const handleDeleteNotification = async ({
 }) => deleteNotification(context, input);
 
 export const notificationRouter = createORPCRouter({
-  subscribe: protectedProcedure
-    .input(z.object({ token: z.string() }))
-    .handler(handleSubscribe),
+  subscribe: protectedProcedure.input(z.object({ token: z.string() })).handler(handleSubscribe),
 
-  unsubscribe: protectedProcedure
-    .input(z.object({ token: z.string() }))
-    .handler(handleUnsubscribe),
+  unsubscribe: protectedProcedure.input(z.object({ token: z.string() })).handler(handleUnsubscribe),
 
   unsubscribeAll: protectedProcedure.handler(handleUnsubscribeAll),
 

@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ActionBar } from "../../judgement/ActionBar";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");

@@ -1,10 +1,9 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
-import { useMapSelectedUser } from "../../map/useMapSelectedUser";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook } from "@testing-library/react-native";
 import type { UserLocation } from "~/components/map/UserMap";
+import { useMapSelectedUser } from "../../map/useMapSelectedUser";
 
 describe("useMapSelectedUser", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockUpdateSharing = jest.fn() as any;
 
   const mockUsers: UserLocation[] = [

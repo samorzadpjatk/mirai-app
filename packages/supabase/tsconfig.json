@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx",
     "paths": {
       "~/*": ["./src/*"]
@@ -12,11 +12,9 @@
     "emitDeclarationOnly": true,
     "composite": true,
     "noEmit": false,
-    "types": ["@testing-library/jest-dom", "@testing-library/react", "vitest"]
+    "types": ["@testing-library/jest-dom", "@testing-library/react", "vitest", "bun"]
   },
-  "references": [
-    { "path": "../shared" }
-  ],
+  "references": [],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
 }

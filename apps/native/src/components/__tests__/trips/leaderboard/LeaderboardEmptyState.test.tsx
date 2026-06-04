@@ -1,7 +1,6 @@
-import React from "react";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { LeaderboardEmptyState } from "../../../trips/leaderboard/LeaderboardEmptyState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("LeaderboardEmptyState", () => {
   it("should render message", () => {

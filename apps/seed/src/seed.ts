@@ -1,16 +1,16 @@
-import { assetsRoot } from "./constants";
-import { ensureBuckets, uploadAssets, ensurePlaceholderImage, cleanupOldAssets } from "./storage";
+import { logger } from "@mirai-app/shared/utils";
 import { loadAuthUsers } from "./auth";
-import { loadTripConfigs } from "./tripConfigs";
-import { seedTrip } from "./trips";
+import { env } from "./config/env";
+import { assetsRoot } from "./constants";
 import { loadRewardConfigs, seedRewards } from "./rewards";
 import { loadSponsorConfigs, seedSponsors } from "./sponsors";
+import { cleanupOldAssets, ensureBuckets, ensurePlaceholderImage, uploadAssets } from "./storage";
+import { loadTripConfigs } from "./tripConfigs";
 import { loadTripInfoConfig, seedTripInfo } from "./tripInfo";
+import { seedTrip } from "./trips";
+import type { SeedEnv, SponsorConfig } from "./types";
 import { dirExists } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { env } from "./config/env";
-import type { SeedEnv, SponsorConfig } from "./types";
-import { logger } from "@mirai-app/shared";
 
 export const runSeed = async () => {
   const arg = process.argv.find((a) => a === "--dev" || a === "--prod");

@@ -1,8 +1,8 @@
-import type React from "react";
-import type { Text, TouchableOpacity, View, TextInput } from "react-native";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import type React from "react";
+import type { Text, TextInput, TouchableOpacity, View } from "react-native";
 import AdminRewardsModal from "../../admin/rewards/AdminRewardsModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockCreateReward = jest.fn();
 const mockUpload = jest.fn();
@@ -14,10 +14,6 @@ jest.mock("~/hooks/rewards", () => ({
 jest.mock("~/hooks/files", () => ({
   useFileUpload: () => ({ upload: mockUpload, status: "idle", progress: { percent: null } }),
 }));
-
-
-
-
 
 describe("AdminRewardsModal", () => {
   beforeEach(() => {

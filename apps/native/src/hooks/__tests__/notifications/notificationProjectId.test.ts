@@ -1,5 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
-import { resolveProjectId, type ProjectIdConstants } from "~/hooks/notifications/notificationProjectId";
+import { describe, expect, it } from "@jest/globals";
+import {
+  type ProjectIdConstants,
+  resolveProjectId,
+} from "~/hooks/notifications/notificationProjectId";
 
 describe("resolveProjectId", () => {
   it("should return undefined when no config is available", () => {

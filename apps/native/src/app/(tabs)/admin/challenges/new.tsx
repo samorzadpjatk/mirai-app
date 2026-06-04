@@ -1,11 +1,8 @@
-import React from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation } from "@tanstack/react-query";
-import { colors } from "~/styles";
-import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
 import { ChallengeFormModals } from "~/components/admin/challenges/ChallengeFormModals";
 import {
@@ -13,6 +10,8 @@ import {
   toOptionalInt,
   toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
+import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { colors } from "~/styles";
 
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
@@ -112,8 +111,8 @@ export default function NewChallengeScreen() {
           ? toOptionalInt(form.thirdPlacePoints)
           : undefined,
         status: form.status as "HIDDEN" | "VISIBLE",
-        startTime: !form.isRecurring ? formatIso(form.startTime) || undefined : undefined,
-        endTime: !form.isRecurring ? formatIso(form.endTime) || undefined : undefined,
+        startTime: form.isRecurring ? undefined : formatIso(form.startTime) || undefined,
+        endTime: form.isRecurring ? undefined : formatIso(form.endTime) || undefined,
         votingDurationHours: formState.isPeerVoting
           ? toVotingDurationHours(form.votingDurationValue, form.votingDurationUnit)
           : undefined,

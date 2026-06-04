@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export interface NotificationSchedule {
   id: string;
@@ -29,9 +29,7 @@ export function toTriggerTime(hour: number, minute: number): string {
 }
 
 export function isScheduleRecurring(startDate: string | Date, endDate: string | Date): boolean {
-  return (
-    new Date(endDate).getTime() - new Date(startDate).getTime() >= 24 * 60 * 60 * 1000
-  );
+  return new Date(endDate).getTime() - new Date(startDate).getTime() >= 24 * 60 * 60 * 1000;
 }
 
 export function buildScheduleMessage(
@@ -39,9 +37,7 @@ export function buildScheduleMessage(
   notificationTitle: string | null | undefined,
   notificationType: string,
 ): string {
-  return (
-    notificationBody ?? notificationTitle ?? `Scheduled notification: ${notificationType}`
-  );
+  return notificationBody ?? notificationTitle ?? `Scheduled notification: ${notificationType}`;
 }
 
 export function useAdminSchedules(tripId?: string) {

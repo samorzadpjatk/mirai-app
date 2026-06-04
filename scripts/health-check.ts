@@ -4,7 +4,7 @@
  * Usage: bun run health
  */
 
-import { readdirSync, existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 import pc from "picocolors";
 

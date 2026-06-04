@@ -1,8 +1,17 @@
-import { eq, and, inArray, count, sql, gt, lt } from "drizzle-orm";
-import { ORPCError } from "@orpc/server";
-import { coinTransactions, groups } from "@mirai-app/db";
+import { coinTransactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import {
+  buildAdditionalInsights,
+  buildCoinStatistics,
+  buildCoinTransactionWhereExpr,
+  calculateQuickStats,
+  mapToMostActiveAdminStats,
+} from "@mirai-app/shared/coins";
+import { buildPaginatedResponse } from "@mirai-app/shared/utils";
+import { ORPCError } from "@orpc/server";
+import { and, count, gt, inArray, lt, sql } from "drizzle-orm";
 import { formatUserFullName } from "../user/utils";
+import { fetchGroupIdsForTrip } from "./utils";
 
 export type CoinTransactionContext = {
   db: DB;
@@ -10,21 +19,10 @@ export type CoinTransactionContext = {
 };
 
 export const getStatistics = async (context: CoinTransactionContext, input: { tripId: string }) => {
-  const groupIds = await context.db
-    .select({ id: groups.id })
-    .from(groups)
-    .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
-
-  const groupIdList = groupIds.map((g) => g.id);
+  const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
   if (groupIdList.length === 0) {
-    return {
-      transactionCount: 0,
-      addedCoins: 0,
-      removedCoins: 0,
-      netBalance: 0,
-      time: new Date(),
-    };
+    return { transactionCount: 0, addedCoins: 0, removedCoins: 0, netBalance: 0, time: new Date() };
   }
 
   const whereExpr = inArray(coinTransactions.groupId, groupIdList);
@@ -41,27 +39,22 @@ export const getStatistics = async (context: CoinTransactionContext, input: { tr
       .where(and(whereExpr, lt(coinTransactions.amount, 0))),
   ]);
 
-  return {
-    transactionCount: transactionCountResult[0]?.count ?? 0,
-    addedCoins: addedCoinsResult[0]?.totalAmount ?? 0,
-    removedCoins: removedCoinsResult[0]?.totalAmount ?? 0,
-    netBalance:
-      (addedCoinsResult[0]?.totalAmount ?? 0) + (removedCoinsResult[0]?.totalAmount ?? 0),
-    time: new Date(),
-  };
+  const stats = buildCoinStatistics(
+    transactionCountResult[0]?.count ?? 0,
+    addedCoinsResult[0]?.totalAmount ?? 0,
+    removedCoinsResult[0]?.totalAmount ?? 0,
+  );
+
+  return { ...stats, time: new Date() };
 };
 
-export const getMostActiveAdminStats = async (context: CoinTransactionContext, input: { tripId: string }) => {
-  const groupIds = await context.db
-    .select({ id: groups.id })
-    .from(groups)
-    .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+export const getMostActiveAdminStats = async (
+  context: CoinTransactionContext,
+  input: { tripId: string },
+) => {
+  const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
-  const groupIdList = groupIds.map((g) => g.id);
-
-  if (groupIdList.length === 0) {
-    return [];
-  }
+  if (groupIdList.length === 0) return [];
 
   const result = await context.db
     .select({
@@ -75,43 +68,23 @@ export const getMostActiveAdminStats = async (context: CoinTransactionContext, i
     .orderBy(sql`sum(${coinTransactions.amount}) desc`)
     .limit(1);
 
-  return result.map((row) => ({
-    adminId: row.adminId,
-    _sum: { amount: row.totalAmount },
-    _count: { id: row.count },
-  }));
+  return mapToMostActiveAdminStats(result);
 };
 
 export const getAll = async (
   context: CoinTransactionContext,
   input: {
     tripId: string;
-    pagination?: {
-      limit: number;
-      offset: number;
-    };
+    pagination?: { limit: number; offset: number };
   },
 ) => {
   const limit = input.pagination?.limit ?? 50;
   const offset = input.pagination?.offset ?? 0;
 
-  const groupIds = await context.db
-    .select({ id: groups.id })
-    .from(groups)
-    .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
-
-  const groupIdList = groupIds.map((g) => g.id);
+  const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
   if (groupIdList.length === 0) {
-    return {
-      transactions: [],
-      pagination: {
-        total: 0,
-        limit,
-        offset,
-        hasMore: false,
-      },
-    };
+    return { transactions: [], pagination: { total: 0, limit, offset, hasMore: false } };
   }
 
   const whereExpr = inArray(coinTransactions.groupId, groupIdList);
@@ -119,19 +92,10 @@ export const getAll = async (
   const [transactions, totalResult] = await Promise.all([
     context.db.query.coinTransactions.findMany({
       where: whereExpr,
-      columns: {
-        id: true,
-        amount: true,
-        reason: true,
-        createdAt: true,
-      },
+      columns: { id: true, amount: true, reason: true, createdAt: true },
       with: {
-        group: {
-          columns: { id: true, name: true },
-        },
-        admin: {
-          columns: { id: true, firstName: true, lastName: true },
-        },
+        group: { columns: { id: true, name: true } },
+        admin: { columns: { id: true, firstName: true, lastName: true } },
       },
       orderBy: (ct, { desc }) => [desc(ct.createdAt)],
       limit,
@@ -141,29 +105,15 @@ export const getAll = async (
   ]);
 
   const total = totalResult[0]?.count ?? 0;
+  const paginated = buildPaginatedResponse(transactions, total, limit, offset);
 
-  return {
-    transactions,
-    pagination: {
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total,
-    },
-  };
+  return { transactions: paginated.items, pagination: paginated.pagination };
 };
 
 export const getQuickStats = async (context: CoinTransactionContext, input: { tripId: string }) => {
-  const groupIds = await context.db
-    .select({ id: groups.id })
-    .from(groups)
-    .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+  const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
-  const groupIdList = groupIds.map((g) => g.id);
-
-  if (groupIdList.length === 0) {
-    return null;
-  }
+  if (groupIdList.length === 0) return null;
 
   const totalCoinsResult = await context.db
     .select({
@@ -175,10 +125,6 @@ export const getQuickStats = async (context: CoinTransactionContext, input: { tr
 
   const totalCoins = totalCoinsResult[0];
   if (!totalCoins?.totalAmount) return null;
-
-  const averageCoinsPerGroup = totalCoins.count
-    ? Math.round(totalCoins.totalAmount / totalCoins.count)
-    : 0;
 
   const richestGroupResult = await context.db
     .select({
@@ -201,51 +147,35 @@ export const getQuickStats = async (context: CoinTransactionContext, input: { tr
 
   if (!richestGroupName) return null;
 
-  return {
-    totalCoins: totalCoins.totalAmount,
-    totalGroups: totalCoins.count,
-    averageCoinsPerGroup,
-    richestGroupName: richestGroupName.name,
-    time: new Date(),
-  };
+  const stats = calculateQuickStats(
+    totalCoins.totalAmount,
+    totalCoins.count,
+    richestGroupName.name,
+  );
+
+  return { ...stats, time: new Date() };
 };
 
-export const getAdditionalInsights = async (context: CoinTransactionContext, input: { tripId: string }) => {
-  const groupIds = await context.db
-    .select({ id: groups.id })
-    .from(groups)
-    .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
+export const getAdditionalInsights = async (
+  context: CoinTransactionContext,
+  input: { tripId: string },
+) => {
+  const groupIdList = await fetchGroupIdsForTrip(context.db, input.tripId);
 
-  const groupIdList = groupIds.map((g) => g.id);
-
-  if (groupIdList.length === 0) {
-    return null;
-  }
+  if (groupIdList.length === 0) return null;
 
   const whereExpr = inArray(coinTransactions.groupId, groupIdList);
 
   const [recentTransactions, mostActiveAdminStatsResult] = await Promise.all([
     context.db.query.coinTransactions.findMany({
       where: whereExpr,
-      columns: {
-        id: true,
-        amount: true,
-        reason: true,
-        createdAt: true,
-      },
-      with: {
-        group: {
-          columns: { name: true },
-        },
-      },
+      columns: { id: true, amount: true, reason: true, createdAt: true },
+      with: { group: { columns: { name: true } } },
       orderBy: (ct, { desc }) => [desc(ct.createdAt)],
       limit: 5,
     }),
     context.db
-      .select({
-        adminId: coinTransactions.adminId,
-        count: count(coinTransactions.id),
-      })
+      .select({ adminId: coinTransactions.adminId, count: count(coinTransactions.id) })
       .from(coinTransactions)
       .where(whereExpr)
       .groupBy(coinTransactions.adminId)
@@ -263,13 +193,11 @@ export const getAdditionalInsights = async (context: CoinTransactionContext, inp
 
   if (!mostActiveAdmin) return null;
 
-  return {
-    mostActiveAdmin: {
-      name: formatUserFullName(mostActiveAdmin),
-      transactionCount: firstAdminStat.count,
-    },
+  return buildAdditionalInsights(
     recentTransactions,
-  };
+    formatUserFullName(mostActiveAdmin),
+    firstAdminStat.count,
+  );
 };
 
 export const getCoinTransactions = async (
@@ -281,8 +209,7 @@ export const getCoinTransactions = async (
   },
 ) => {
   const participant = await context.db.query.tripParticipants.findFirst({
-    where: (tp, { and, eq }) =>
-      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+    where: (tp, { and, eq }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
     columns: { userId: true },
   });
 
@@ -301,37 +228,17 @@ export const getCoinTransactions = async (
     }
   }
 
-  let whereExpr;
-  if (input.groupId) {
-    whereExpr = eq(coinTransactions.groupId, input.groupId);
-  } else {
-    const groupIds = await context.db
-      .select({ id: groups.id })
-      .from(groups)
-      .where(and(eq(groups.tripId, input.tripId), eq(groups.isDeleted, false)));
-    whereExpr = inArray(
-      coinTransactions.groupId,
-      groupIds.map((g) => g.id),
-    );
-  }
+  const groupIdList = groupId ? [] : await fetchGroupIdsForTrip(context.db, input.tripId);
+
+  if (!groupId && groupIdList.length === 0) return [];
+
+  const whereExpr = buildCoinTransactionWhereExpr(groupId, groupIdList);
 
   return await context.db.query.coinTransactions.findMany({
     where: whereExpr,
     with: {
-      group: {
-        columns: {
-          id: true,
-          name: true,
-          coins: true,
-        },
-      },
-      admin: {
-        columns: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
+      group: { columns: { id: true, name: true, coins: true } },
+      admin: { columns: { id: true, firstName: true, lastName: true } },
     },
     orderBy: (ct, { desc }) => [desc(ct.createdAt)],
     limit: input.limit,

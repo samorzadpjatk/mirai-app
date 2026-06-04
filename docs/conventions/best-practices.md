@@ -110,21 +110,21 @@ Specs now describe new behavior
 
 - **Rule**: Router/service files >1000 lines violate SRP and are hard to review/test safely.
 - **Action**: Split into `*Queries.ts`, `*Mutations.ts`, `*Enrichment.ts` files.
-- **Current debt**: `activityFeed.ts` (1579), `group.ts` (1427), `location.ts` (1281), `challengeSubmission.ts` (1164), `reward.ts` (1152).
+- **Completed splits**: `activityFeed.ts` → `activityFeed/`, `group.ts` → `group/`, `location.ts` → `location/`, `challengeSubmission.ts` → `challengeSubmission/`, `reward.ts` → `reward/`.
 
 ### Module-Level Side Effects
 
 - **Anti-pattern**: Import-time side effects make testing and deterministic initialization impossible.
 - **Rule**: Move setup into explicit `init()` functions called from app entry points.
-- **Current offenders**:
-  - `apps/native/src/app/_layout.tsx` — sets global notification handler at module import
-  - `apps/native/src/services/background/backgroundLocationTask.ts` — registers background task at module load
-  - `packages/orpc/src/api/trpc.ts` — writes user-agent telemetry on every request via fire-and-forget
+- **Status**: ✅ Fixed. All module-level side effects refactored into `init*()` functions:
+  - `apps/native/src/app/_layout.tsx` — notification handlers initialized explicitly
+  - `apps/native/src/services/background/backgroundLocationTask.ts` — accepts dependencies via parameter injection
+  - `packages/orpc/src/api/trpc.ts` — telemetry moved to explicit initialization
 
 ### Console Logging as Error Handling
 
-- **Rule**: `console.error` / `console.warn` in production code is not error handling. Use structured logging (Pino backend, Sentry native).
-- **Current offenders**: 73 console calls in native app, 28 in backend routers.
+- **Rule**: `console.error` / `console.warn` / `console.log` in production code is not error handling. Use structured logging (Pino backend, Sentry native).
+- **Status**: ✅ Complete. All production `console.*` calls eliminated. Backend uses Pino logger from `@mirai-app/orpc`. Native uses Sentry for runtime error reporting.
 
 ### "Half-Effect" Trap
 

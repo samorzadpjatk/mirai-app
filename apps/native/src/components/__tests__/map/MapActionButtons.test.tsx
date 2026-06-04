@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { MapActionButtons } from "../../map/MapActionButtons";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockToggleLocationSharing = jest.fn();
 const mockToggleBackgroundLocation = jest.fn();
@@ -20,7 +19,7 @@ const mockGetLocationState = jest.fn(() => ({
 
 const mockGetMapState = jest.fn(() => ({
   mapTheme: "dark",
-  onRecenter: mockOnRecenter,
+  handleRecenter: mockOnRecenter,
   toggleTheme: mockToggleTheme,
 }));
 
@@ -46,7 +45,7 @@ describe("MapActionButtons", () => {
     });
     mockGetMapState.mockReturnValue({
       mapTheme: "dark",
-      onRecenter: mockOnRecenter,
+      handleRecenter: mockOnRecenter,
       toggleTheme: mockToggleTheme,
     });
   });

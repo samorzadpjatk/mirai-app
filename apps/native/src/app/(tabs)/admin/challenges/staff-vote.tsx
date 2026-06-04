@@ -1,4 +1,7 @@
-import React, { useEffect, useCallback, useMemo } from "react";
+import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,15 +11,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
-import { useStaffVoting, type VotingSubmission } from "~/hooks/admin/useStaffVoting";
-import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
+import { type VotingSubmission, useStaffVoting } from "~/hooks/admin/useStaffVoting";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export default function AdminChallengeStaffVotingScreen() {
   const router = useRouter();
@@ -335,26 +335,33 @@ export default function AdminChallengeStaffVotingScreen() {
               </Text>
             </View>
 
-            {voting.currentLeft && voting.currentRight ? (
-              <View style={styles.pairsWrap}>
-                <SubmissionImageCard
-                  submission={voting.currentLeft}
-                  title="Pick this"
-                  subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentLeft!.id)}
-                />
-                <SubmissionImageCard
-                  submission={voting.currentRight}
-                  title="Pick this"
-                  subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentRight!.id)}
-                />
-              </View>
-            ) : (
-              <View style={styles.centerState}>
-                <ActivityIndicator size="small" color={colors.primary} />
-              </View>
-            )}
+            {(() => {
+              const currentLeft = voting.currentLeft;
+              const currentRight = voting.currentRight;
+              if (!currentLeft || !currentRight) {
+                return (
+                  <View style={styles.centerState}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                );
+              }
+              return (
+                <View style={styles.pairsWrap}>
+                  <SubmissionImageCard
+                    submission={currentLeft}
+                    title="Pick this"
+                    subtitle="Tap to select winner"
+                    onPress={() => voting.handlePickWinner(currentLeft.id)}
+                  />
+                  <SubmissionImageCard
+                    submission={currentRight}
+                    title="Pick this"
+                    subtitle="Tap to select winner"
+                    onPress={() => voting.handlePickWinner(currentRight.id)}
+                  />
+                </View>
+              );
+            })()}
 
             {voting.stableTop3Count > 0 ? (
               <Text style={styles.hintText}>

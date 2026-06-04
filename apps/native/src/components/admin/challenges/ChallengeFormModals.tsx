@@ -1,10 +1,9 @@
-import React from "react";
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import { DateTimePickerModal } from "~/components/common/ui/DateTimePickerModal";
 import { QrScannerModal } from "~/components/common/QrScannerModal";
+import { DateTimePickerModal } from "~/components/common/ui/DateTimePickerModal";
 import { LocationPicker } from "~/components/map/LocationPicker";
-import { type useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeFormModalsProps {
   formState: ReturnType<typeof useChallengeForm>;
@@ -57,7 +56,7 @@ export function ChallengeFormModals({ formState }: ChallengeFormModalsProps) {
       {/* Option Picker Modal */}
       <Modal
         visible={activeSelect != null}
-        transparent
+        transparent={true}
         animationType="fade"
         onRequestClose={() => setActiveSelect(null)}
       >

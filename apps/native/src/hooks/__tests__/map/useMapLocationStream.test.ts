@@ -1,10 +1,10 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
   buildLocationUpdateData,
   buildUserDataFromLocationUser,
-  removeUserFromLocations,
   isUnauthorizedError,
   isValidLocationEvent,
+  removeUserFromLocations,
 } from "../../map/useMapLocationStream";
 
 describe("buildLocationUpdateData", () => {

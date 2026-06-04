@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { logger } from "@mirai-app/orpc";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create mock functions at module level
 const mockTrackDeliveryStart = vi.fn();
@@ -49,6 +50,15 @@ vi.mock("@mirai-app/orpc/client", () => {
     },
   };
 });
+
+vi.mock("@mirai-app/orpc", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 describe("Notification Sender - Environment Validation", () => {
   const originalEnv = process.env;
@@ -108,6 +118,7 @@ describe("Notification Sender - Main Error Handling", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -152,6 +163,7 @@ describe("Notification Sender - Client Initialization", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -162,7 +174,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     expect(mockCreateSupabaseClient).toHaveBeenCalledWith(
@@ -179,7 +191,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     expect(mockGetORPCClient).toHaveBeenCalledWith(
@@ -195,7 +207,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     expect(mockChannelOn).toBeDefined();
@@ -215,14 +227,12 @@ describe("Notification Sender - Subscribe Callback", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
 
   it("should log realtime channel status", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
     let subscribeCallback: ((status: string) => void) | undefined;
     mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
@@ -233,21 +243,16 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     if (subscribeCallback) {
       subscribeCallback("SUBSCRIBED");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "SUBSCRIBED" });
+      expect(logger.info).toHaveBeenCalledWith({ status: "SUBSCRIBED" }, "Realtime channel status");
     }
-
-    consoleLogSpy.mockRestore();
   });
 
   it("should handle different channel statuses", async () => {
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
     let subscribeCallback: ((status: string) => void) | undefined;
     mockChannelSubscribe.mockImplementation((callback: (status: string) => void) => {
       subscribeCallback = callback;
@@ -258,18 +263,19 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     if (subscribeCallback) {
       subscribeCallback("CLOSED");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CLOSED" });
+      expect(logger.info).toHaveBeenCalledWith({ status: "CLOSED" }, "Realtime channel status");
 
       subscribeCallback("CHANNEL_ERROR");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Realtime channel status", { status: "CHANNEL_ERROR" });
+      expect(logger.info).toHaveBeenCalledWith(
+        { status: "CHANNEL_ERROR" },
+        "Realtime channel status",
+      );
     }
-
-    consoleLogSpy.mockRestore();
   });
 });
 
@@ -286,6 +292,7 @@ describe("Notification Sender - SIGINT Handling", () => {
   });
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -296,7 +303,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     expect(mockChannelSubscribe).toBeDefined();
@@ -342,7 +349,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     expect(sigintHandler).toBeDefined();
@@ -364,9 +371,6 @@ describe("Notification Sender - SIGINT Handling", () => {
     const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
       /* noop */
     }) as (code?: string | number | null) => never);
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
     let sigintHandler: (() => Promise<void>) | undefined;
 
     processOnSpy.mockImplementation(((
@@ -384,18 +388,17 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     if (sigintHandler) {
       await sigintHandler();
 
-      expect(consoleLogSpy).toHaveBeenCalledWith("Shutting down");
+      expect(logger.info).toHaveBeenCalledWith("Shutting down");
     }
 
     processOnSpy.mockRestore();
     processExitSpy.mockRestore();
-    consoleLogSpy.mockRestore();
   });
 });
 
@@ -414,12 +417,6 @@ describe("Notification Sender - Notification Processing", () => {
     const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
       /* noop */
     }) as (code?: string | number | null) => never);
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {
-      /* noop */
-    });
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
 
     process.env = { ...originalEnv };
     process.env.TRPC_HOST = "localhost:2022";
@@ -440,7 +437,7 @@ describe("Notification Sender - Notification Processing", () => {
     mockTrackDeliveryFailure.mockResolvedValue(undefined);
 
     const { main } = await import("../index");
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await main();
 
     type PayloadHandler = (payload: { new: { id: string | number } }) => Promise<void> | void;
@@ -452,10 +449,11 @@ describe("Notification Sender - Notification Processing", () => {
       await new Promise((resolve) => setImmediate(resolve));
     };
 
-    return { payloadHandler, processExitSpy, consoleErrorSpy, consoleLogSpy };
+    return { payloadHandler, processExitSpy, loggerInfo: logger.info, loggerError: logger.error };
   }
 
   afterEach(() => {
+    process.removeAllListeners("SIGINT");
     process.env = originalEnv;
     vi.restoreAllMocks();
   });
@@ -491,7 +489,7 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should log delivery summary", async () => {
-    const { payloadHandler, consoleLogSpy } = await setupTest({
+    const { payloadHandler, loggerInfo } = await setupTest({
       total: 10,
       sent: 8,
       failed: 2,
@@ -500,14 +498,10 @@ describe("Notification Sender - Notification Processing", () => {
     if (!payloadHandler) return;
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleLogSpy).toHaveBeenCalledWith("Delivery summary", {
-      mobile: {
-        total: 10,
-        sent: 8,
-        failed: 2,
-        success: false,
-      },
-    });
+    expect(loggerInfo).toHaveBeenCalledWith(
+      { mobile: { total: 10, sent: 8, failed: 2, success: false } },
+      "Delivery summary",
+    );
   });
 
   it("should handle successful delivery with no failures", async () => {
@@ -540,12 +534,12 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should handle errors during delivery start tracking", async () => {
-    const { payloadHandler, consoleErrorSpy } = await setupTest();
+    const { payloadHandler, loggerError } = await setupTest();
     if (!payloadHandler) return;
     mockTrackDeliveryStart.mockRejectedValueOnce(new Error("Start failed"));
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(loggerError).toHaveBeenCalled();
     interface TrackFailureCall {
       notificationId: string;
       error: Error;
@@ -558,12 +552,12 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should handle errors during mobile notification sending", async () => {
-    const { payloadHandler, consoleErrorSpy } = await setupTest();
+    const { payloadHandler, loggerError } = await setupTest();
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(new Error("Send failed"));
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(loggerError).toHaveBeenCalled();
     interface TrackFailureCall {
       notificationId: string;
       error: Error;
@@ -576,12 +570,12 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should handle errors during delivery completion tracking", async () => {
-    const { payloadHandler, consoleErrorSpy } = await setupTest();
+    const { payloadHandler, loggerError } = await setupTest();
     if (!payloadHandler) return;
     mockTrackDeliveryComplete.mockRejectedValueOnce(new Error("Complete failed"));
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(loggerError).toHaveBeenCalled();
     interface TrackFailureCall {
       notificationId: string;
       error: Error;
@@ -618,13 +612,13 @@ describe("Notification Sender - Notification Processing", () => {
   });
 
   it("should handle errors in error tracking gracefully", async () => {
-    const { payloadHandler, consoleErrorSpy } = await setupTest();
+    const { payloadHandler, loggerError } = await setupTest();
     if (!payloadHandler) return;
     mockSendMobileNotifications.mockRejectedValueOnce(new Error("Send failed"));
     mockTrackDeliveryFailure.mockRejectedValueOnce(new Error("Track failed"));
     const mockPayload = { new: { id: "notif-123" } };
     await payloadHandler(mockPayload);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(loggerError).toHaveBeenCalled();
   });
 
   it("should handle multiple notifications in sequence", async () => {

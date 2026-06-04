@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeTimeLeftCard } from "../../../trips/challenges/ChallengeTimeLeftCard";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeTimeLeftCard", () => {
   let setIntervalSpy: jest.SpiedFunction<typeof setInterval>;

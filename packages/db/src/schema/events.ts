@@ -1,7 +1,7 @@
-import { pgTable, varchar, timestamp, text, boolean, primaryKey } from "drizzle-orm/pg-core";
+import { boolean, pgTable, primaryKey, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
-import { users } from "./users";
 import { groups } from "./groups";
+import { users } from "./users";
 
 export const events = pgTable("events", {
   id: varchar("id", { length: 36 })

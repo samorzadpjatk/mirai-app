@@ -1,8 +1,7 @@
-import React from "react";
-import { Text, TextInput, View, type TextProps } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text, TextInput, type TextProps, View } from "react-native";
 import { FormField } from "../../common/ui/FormField";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("FormField", () => {
   it("should render with label", () => {

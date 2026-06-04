@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Alert } from "react-native";
 
 export function extractSharingUserIds(
@@ -36,10 +36,7 @@ export function useMapSharing(enabledForAllUsersQuery: boolean, tripId?: string 
     }),
   );
 
-  const sharingUserIds = useMemo(
-    () => extractSharingUserIds(sharingSettings),
-    [sharingSettings],
-  );
+  const sharingUserIds = useMemo(() => extractSharingUserIds(sharingSettings), [sharingSettings]);
 
   const updateSharing = async (userIdsToShareWith: string[]) => {
     await updateSharingMutation.mutateAsync({

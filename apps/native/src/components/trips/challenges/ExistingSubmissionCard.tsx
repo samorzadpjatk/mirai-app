@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
 import {
   ActivityIndicator,
@@ -8,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 

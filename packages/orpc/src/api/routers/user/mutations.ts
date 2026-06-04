@@ -1,11 +1,12 @@
-import { z } from "zod";
+import { tripParticipants, users } from "@mirai-app/db";
+import { validateUserRegistration } from "@mirai-app/shared/users";
 import { ORPCError } from "@orpc/server";
-import { eq, and, count } from "drizzle-orm";
-import { users, tripParticipants } from "@mirai-app/db";
+import { and, count, eq } from "drizzle-orm";
+import type { z } from "zod";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import type { UserContext } from "./queries";
 import { roleSchema, userWithAuthSelect } from "./types";
 import { formatUserFullName, toPublicUser } from "./utils";
-import type { UserContext } from "./queries";
 
 export const updateAvatar = async (context: UserContext, input: { hasAvatar: boolean }) => {
   const [updatedUser] = await context.db
@@ -78,9 +79,7 @@ export const createUser = async (
   context: UserContext,
   input: { tripId: string; firstName: string; lastName: string; email: string },
 ) => {
-  const firstName = input.firstName.trim();
-  const lastName = input.lastName.trim();
-  const email = input.email.trim().toLowerCase();
+  const { firstName, lastName, email } = validateUserRegistration(input);
 
   const { data, error } = await context.supabase.auth.admin.createUser({
     email,
@@ -112,6 +111,8 @@ export const createUser = async (
           firstName,
           lastName,
           role: roleSchema.enum.USER,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         })
         .returning({
           id: users.id,
@@ -131,10 +132,11 @@ export const createUser = async (
       .values({
         userId: dbUser.id,
         tripId: input.tripId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
+      .onConflictDoNothing({
         target: [tripParticipants.userId, tripParticipants.tripId],
-        set: {},
       })
       .returning();
 
@@ -237,7 +239,8 @@ export const banUserUntil = async (
   }
 
   const existingMetadata =
-    (adminUser.data.user as { app_metadata?: { ban_reason?: string | null } } | null)?.app_metadata ?? {};
+    (adminUser.data.user as { app_metadata?: { ban_reason?: string | null } } | null)
+      ?.app_metadata ?? {};
   const reason = input.reason?.trim();
   const nextMetadata = {
     ...existingMetadata,
@@ -282,10 +285,7 @@ export const deleteUser = async (
     await tx
       .delete(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.userId, input.userId),
-          eq(tripParticipants.tripId, input.tripId),
-        ),
+        and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId)),
       );
 
     const [remainingResult] = await tx

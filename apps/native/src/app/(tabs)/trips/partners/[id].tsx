@@ -1,9 +1,9 @@
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useSponsorById } from "~/hooks/sponsors/useSponsors";
-import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
+import { useSponsorById } from "~/hooks/sponsors/useSponsors";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export default function PartnerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

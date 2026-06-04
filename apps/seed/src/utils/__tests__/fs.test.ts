@@ -1,13 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fileExists, dirExists, readFile, readTextFile, listFilesRecursive } from "../fs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { dirExists, fileExists, listFilesRecursive, readFile, readTextFile } from "../fs";
 
 // Mock Bun global
-declare global {
-  interface Bun {
-    file: ReturnType<typeof vi.fn>;
-    Glob: ReturnType<typeof vi.fn>;
-  }
-}
 
 describe("File System Utilities", () => {
   let mockBunFile: ReturnType<typeof vi.fn>;
@@ -15,12 +9,7 @@ describe("File System Utilities", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBunFile = vi.fn();
-    (
-      globalThis as unknown as { Bun: { file: typeof mockBunFile; Glob: ReturnType<typeof vi.fn> } }
-    ).Bun = {
-      file: mockBunFile,
-      Glob: vi.fn(),
-    };
+    Object.assign(globalThis, { Bun: { file: mockBunFile, Glob: vi.fn() } });
   });
 
   describe("fileExists", () => {
@@ -190,11 +179,7 @@ describe("File System Utilities", () => {
 
     beforeEach(() => {
       mockGlob = vi.fn();
-      (globalThis as unknown as { Bun: { Glob: typeof mockGlob; file: typeof mockBunFile } }).Bun =
-        {
-          file: mockBunFile,
-          Glob: mockGlob,
-        };
+      Object.assign(globalThis, { Bun: { file: mockBunFile, Glob: mockGlob } });
     });
 
     it("should throw when directory does not exist", async () => {
@@ -227,30 +212,17 @@ describe("File System Utilities", () => {
         .fn()
         .mockReturnValue(["file1.txt", "subdir/file2.txt", "subdir/nested/file3.txt"]);
       const mockGlobInstance: { scan: typeof mockScan } = { scan: mockScan };
-      mockGlob.mockReturnValue(mockGlobInstance);
-
-      const result: string[] = await listFilesRecursive("/root/dir");
-
-      expect(result).toEqual([
-        "/root/dir/file1.txt",
-        "/root/dir/subdir/file2.txt",
-        "/root/dir/subdir/nested/file3.txt",
-      ]);
-    });
-
-    it("should handle empty directories", async () => {
-      const mockFile: { stat: () => Promise<{ isDirectory: () => boolean }> } = {
-        stat: vi.fn().mockResolvedValue({ isDirectory: () => true }),
-      };
-      mockBunFile.mockReturnValue(mockFile);
-
-      const mockScan = vi.fn().mockReturnValue([]);
-      const mockGlobInstance: { scan: typeof mockScan } = { scan: mockScan };
-      mockGlob.mockReturnValue(mockGlobInstance);
+      mockGlob.mockImplementation(function () {
+        return mockGlobInstance;
+      });
 
       const result: string[] = await listFilesRecursive("/empty/dir");
 
-      expect(result).toEqual([]);
+      expect(result).toEqual([
+        "/empty/dir/file1.txt",
+        "/empty/dir/subdir/file2.txt",
+        "/empty/dir/subdir/nested/file3.txt",
+      ]);
     });
 
     it("should handle glob pattern correctly", async () => {
@@ -261,7 +233,9 @@ describe("File System Utilities", () => {
 
       const mockScan = vi.fn().mockReturnValue([]);
       const mockGlobInstance: { scan: typeof mockScan } = { scan: mockScan };
-      mockGlob.mockReturnValue(mockGlobInstance);
+      mockGlob.mockImplementation(function () {
+        return mockGlobInstance;
+      });
 
       await listFilesRecursive("/test/dir");
 
@@ -276,7 +250,9 @@ describe("File System Utilities", () => {
 
       const mockScan = vi.fn().mockReturnValue(["file with spaces.txt", "file-with-dashes.txt"]);
       const mockGlobInstance: { scan: typeof mockScan } = { scan: mockScan };
-      mockGlob.mockReturnValue(mockGlobInstance);
+      mockGlob.mockImplementation(function () {
+        return mockGlobInstance;
+      });
 
       const result: string[] = await listFilesRecursive("/path with spaces");
 

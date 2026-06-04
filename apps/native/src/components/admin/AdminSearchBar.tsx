@@ -1,7 +1,6 @@
-import React from "react";
-import { View, TextInput, ScrollView, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface SearchField {
   key: string;
@@ -43,7 +42,11 @@ export function AdminSearchBar({
         />
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fieldSelector}>
+      <ScrollView
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        style={styles.fieldSelector}
+      >
         {fields.map((field) => (
           <TouchableOpacity
             key={field.key}

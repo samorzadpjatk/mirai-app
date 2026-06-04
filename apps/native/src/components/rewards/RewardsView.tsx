@@ -1,25 +1,25 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  useWindowDimensions,
-  RefreshControl,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useRewards, usePurchaseReward } from "~/hooks/rewards";
-import { useMyGroup } from "~/hooks/groups";
-import { useTripDetails } from "~/hooks/trips";
 import { useQueryClient } from "@tanstack/react-query";
-import type { RewardListItem } from "./types";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { useMyGroup } from "~/hooks/groups";
+import { usePurchaseReward, useRewards } from "~/hooks/rewards";
+import { useTripDetails } from "~/hooks/trips";
 import { commonStyles } from "~/styles/commonStyles";
 import RewardCard from "./RewardCard";
-import RewardPurchaseModal from "./RewardPurchaseModal";
 import RewardDetailsModal from "./RewardDetailsModal";
+import RewardPurchaseModal from "./RewardPurchaseModal";
+import type { RewardListItem } from "./types";
 
 interface Props {
   tripId: string;
@@ -31,7 +31,14 @@ export function extractSafeRewards(rewards: unknown): RewardListItem[] {
   return [];
 }
 
-export function getRewardImages(reward: RewardListItem): string[] {
+export interface RewardImageSource {
+  signedImageUrls?: string[] | null;
+  images?: string[] | null;
+  signedImageUrl?: string | null;
+  image?: string | null;
+}
+
+export function getRewardImages(reward: RewardImageSource): string[] {
   if (reward.signedImageUrls && reward.signedImageUrls.length > 0) {
     return reward.signedImageUrls;
   }
@@ -64,10 +71,10 @@ export function getRewardButtonState(
     text = "Sold out";
   } else if (!isEligibleToBuy) {
     text = "Only group leader";
-  } else if (!canAfford) {
-    text = "Not enough coins";
-  } else {
+  } else if (canAfford) {
     text = "Claim reward";
+  } else {
+    text = "Not enough coins";
   }
   return {
     disabled: !enabled,
@@ -77,10 +84,7 @@ export function getRewardButtonState(
   };
 }
 
-export function getRewardBorderColor(
-  justRefreshed: boolean,
-  isOutOfStock: boolean,
-): string {
+export function getRewardBorderColor(justRefreshed: boolean, isOutOfStock: boolean): string {
   if (justRefreshed && !isOutOfStock) return "#10b981";
   if (isOutOfStock) return "#ef4444";
   return "#273a3a";
@@ -112,12 +116,12 @@ export function getRewardAvailabilityColor(isOutOfStock: boolean): string {
 }
 
 export function getTotalCost(coinCost: number, quantity: string): number {
-  return coinCost * (parseInt(quantity, 10) || 1);
+  return coinCost * (Number.parseInt(quantity, 10) || 1);
 }
 
 export function isValidQuantity(quantity: string): boolean {
-  const qty = parseInt(quantity, 10);
-  return !isNaN(qty) && qty >= 1;
+  const qty = Number.parseInt(quantity, 10);
+  return !Number.isNaN(qty) && qty >= 1;
 }
 
 export function getPurchaseModalError(
@@ -192,7 +196,7 @@ export default function RewardsView({ tripId }: Props) {
     }
 
     try {
-      const qty = parseInt(quantity, 10);
+      const qty = Number.parseInt(quantity, 10);
       await purchaseReward.mutateAsync({
         rewardId: selectedReward.id,
         quantity: qty,
@@ -339,7 +343,7 @@ export default function RewardsView({ tripId }: Props) {
               key={reward.id}
               reward={reward}
               justRefreshed={justRefreshed}
-              isTripPast={isTripPast}
+              isTripPast={isTripPast ?? false}
               onPress={openRewardDetailsModal}
               onPurchasePress={openPurchaseModal}
             />
@@ -366,7 +370,7 @@ export default function RewardsView({ tripId }: Props) {
         onClose={() => setShowRewardDetailsModal(false)}
         onPurchase={openPurchaseModal}
         onImageIndexChange={setPreviewImageIndex}
-        isTripPast={isTripPast}
+        isTripPast={isTripPast ?? false}
       />
     </View>
   );

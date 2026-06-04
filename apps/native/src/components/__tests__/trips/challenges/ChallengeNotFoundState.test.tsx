@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeNotFoundState } from "../../../trips/challenges/ChallengeNotFoundState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeNotFoundState", () => {
   it("should render title", () => {

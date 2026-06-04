@@ -1,7 +1,4 @@
-import {
-  formatRelativeTime,
-  formatAdminName,
-} from "../../../trips/details/TripNewsSection";
+import { formatAdminName, formatRelativeTime } from "../../../trips/details/TripNewsSection";
 
 describe("TripNewsSection pure functions", () => {
   describe("formatRelativeTime", () => {

@@ -1,9 +1,8 @@
+import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
+import { ORPCError, onError } from "@orpc/server";
+import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { RPCHandler } from "@orpc/server/fetch";
-import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
-import { ORPCError, onError } from "@orpc/server";
-import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -35,7 +34,6 @@ function createRateLimiter() {
 
   function checkRateLimit(
     ip: string,
-    path: string,
     isAuthEndpoint: boolean,
   ): { allowed: boolean; retryAfter: number } {
     const now = Date.now();
@@ -90,7 +88,7 @@ export function createServer(opts: ServerOptions) {
 
   app.use("*", async (c, next) => {
     const contentLength = c.req.header("content-length");
-    if (contentLength && parseInt(contentLength, 10) > TEN_MB) {
+    if (contentLength && Number.parseInt(contentLength, 10) > TEN_MB) {
       return c.text("Payload Too Large", 413);
     }
     await next();
@@ -100,7 +98,7 @@ export function createServer(opts: ServerOptions) {
     const ip = getClientIp(c);
     const path = new URL(c.req.url).pathname;
     const isAuthEndpoint = path.startsWith(prefix);
-    const { allowed, retryAfter } = checkRateLimit(ip, path, isAuthEndpoint);
+    const { allowed, retryAfter } = checkRateLimit(ip, isAuthEndpoint);
 
     if (!allowed) {
       c.header("Retry-After", String(retryAfter));
@@ -133,17 +131,6 @@ export function createServer(opts: ServerOptions) {
       }),
     );
   }
-
-  const rpcHandler = new RPCHandler(appRouter, {
-    interceptors: [
-      onError((error): void => {
-        logger.error(error, "RPC HTTP handler error");
-        if (!dev && !(error instanceof ORPCError)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
-        }
-      }),
-    ],
-  });
 
   app.get("/health", (c) => c.text("OK"));
 

@@ -21,14 +21,11 @@ export const logger = pino(
         write(msg: string) {
           const parsed = JSON.parse(msg);
           if (parsed.level >= 50) {
-             
             console.error(parsed.msg);
           } else if (parsed.level >= 40) {
-             
             console.warn(parsed.msg);
           } else {
-             
-            console.log(parsed.msg);
+            console.info(parsed.msg);
           }
         },
       }

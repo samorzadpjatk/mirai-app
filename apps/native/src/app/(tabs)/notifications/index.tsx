@@ -1,16 +1,16 @@
+import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
   StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { orpc } from "@mirai-app/orpc/client";
-import { useRouter } from "expo-router";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
 import { NotificationsHeader } from "~/components/notifications/NotificationsHeader";

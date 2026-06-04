@@ -1,10 +1,9 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { GroupEditLoadingState } from "../../../../trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "../../../../trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "../../../../trips/groups/edit/GroupEditNotFoundState";
 import { GroupEditPermissionState } from "../../../../trips/groups/edit/GroupEditPermissionState";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupEditLoadingState", () => {
   it("renders loading indicator", () => {
@@ -66,9 +65,7 @@ describe("GroupEditPermissionState", () => {
     const onGoBack = jest.fn();
     const user = userEvent.setup();
 
-    renderWithProviders(
-      <GroupEditPermissionState message="Access denied" onGoBack={onGoBack} />,
-    );
+    renderWithProviders(<GroupEditPermissionState message="Access denied" onGoBack={onGoBack} />);
 
     await user.press(screen.getByText("Go Back"));
     expect(onGoBack).toHaveBeenCalled();

@@ -1,18 +1,18 @@
 import { colors } from "../colors";
-import { spacing, borderRadius } from "../spacing";
-import { typography } from "../typography";
-import { shadows } from "../shadows";
 import { commonStyles } from "../commonStyles";
-import { viewStyles, textStyles } from "../judgement";
 import {
-  colors as exportedColors,
-  spacing as exportedSpacing,
   borderRadius as exportedBorderRadius,
-  typography as exportedTypography,
-  shadows as exportedShadows,
+  colors as exportedColors,
   commonStyles as exportedCommonStyles,
+  shadows as exportedShadows,
+  spacing as exportedSpacing,
+  typography as exportedTypography,
   theme,
 } from "../index";
+import { textStyles, viewStyles } from "../judgement";
+import { shadows } from "../shadows";
+import { borderRadius, spacing } from "../spacing";
+import { typography } from "../typography";
 
 describe("colors", () => {
   it("should export colors object", () => {

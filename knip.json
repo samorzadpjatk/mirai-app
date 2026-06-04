@@ -4,7 +4,7 @@
     "apps/native": {
       "entry": ["src/**/*.{ts,tsx}"],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["tailwindcss", "expo-system-ui", "@babel/plugin-transform-react-jsx"]
+      "ignoreDependencies": ["tailwindcss", "expo-system-ui", "@babel/plugin-transform-react-jsx", "react-native-css-interop"]
     },
     "apps/backend-server": {
       "project": ["src/**/*.ts"]
@@ -37,8 +37,7 @@
     "scripts/**"
   ],
   "ignoreBinaries": [
-    "dist/index.js",
-    "tsc"
+    "jest"
   ],
   "ignoreDependencies": [
     "@commitlint/config-conventional",

@@ -1,10 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { MapModalShell } from "../../map/modals/MapModalShell";
-
-
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => undefined;
 

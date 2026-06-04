@@ -1,9 +1,9 @@
-import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Text, View } from "react-native";
+import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
-import { type Submission } from "~/stores/judgement";
+import { textStyles, viewStyles } from "~/styles/judgement";
 import { getInitials } from "~/utils/validation";
-import { viewStyles, textStyles } from "~/styles/judgement";
 
 const QueuedSubmissionCard = ({
   submission,

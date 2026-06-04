@@ -1,7 +1,6 @@
-import React from "react";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { screen } from "@testing-library/react-native";
 import { UserAvatar } from "../../map/ui/UserAvatar";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("UserAvatar", () => {
   it("should render image when imageUrl is provided", () => {
@@ -97,12 +96,9 @@ describe("UserAvatar", () => {
     );
 
     const containers = screen.getAllByTestId("user-avatar-initials-container");
-    const firstStyle = (
-      containers[0] as unknown as { props: { style: { backgroundColor?: string }[] } }
-    ).props.style;
-    const secondStyle = (
-      containers[1] as unknown as { props: { style: { backgroundColor?: string }[] } }
-    ).props.style;
+    expect(containers).toHaveLength(2);
+    const firstStyle = (containers[0]!.props as { style: { backgroundColor?: string }[] }).style;
+    const secondStyle = (containers[1]!.props as { style: { backgroundColor?: string }[] }).style;
     const firstBg = firstStyle.find((s) => s.backgroundColor)?.backgroundColor;
     const secondBg = secondStyle.find((s) => s.backgroundColor)?.backgroundColor;
     expect(firstBg).toBe(secondBg);
@@ -117,12 +113,9 @@ describe("UserAvatar", () => {
     );
 
     const containers = screen.getAllByTestId("user-avatar-initials-container");
-    const firstStyle = (
-      containers[0] as unknown as { props: { style: { backgroundColor?: string }[] } }
-    ).props.style;
-    const secondStyle = (
-      containers[1] as unknown as { props: { style: { backgroundColor?: string }[] } }
-    ).props.style;
+    expect(containers).toHaveLength(2);
+    const firstStyle = (containers[0]!.props as { style: { backgroundColor?: string }[] }).style;
+    const secondStyle = (containers[1]!.props as { style: { backgroundColor?: string }[] }).style;
     const firstBg = firstStyle.find((s) => s.backgroundColor)?.backgroundColor;
     const secondBg = secondStyle.find((s) => s.backgroundColor)?.backgroundColor;
 

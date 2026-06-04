@@ -1,16 +1,16 @@
+import type { Role } from "@mirai-app/db";
+import { tripParticipants, trips, users } from "@mirai-app/db";
+import { logger } from "@mirai-app/shared/utils";
+import { eq } from "drizzle-orm";
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
 import { db } from "./config/db";
-import { supabase } from "./config/supabase";
 import { env } from "./config/env";
+import { supabase } from "./config/supabase";
 import { cleanupTripBackground } from "./storage";
-import type { TripConfig, AuthUserByEmail } from "./types";
+import type { AuthUserByEmail, TripConfig } from "./types";
 import { parseUsersCsv } from "./users";
+import { readFile, readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { readTextFile, readFile } from "./utils/fs";
-import type { Role } from "@mirai-app/db";
-import { trips, users, tripParticipants } from "@mirai-app/db";
-import { eq } from "drizzle-orm";
-import { logger } from "@mirai-app/shared";
 
 export const seedTrip = async (
   tripConfig: TripConfig,
@@ -55,10 +55,10 @@ export const seedTrip = async (
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
-        logger.warn(
-          error,
-          `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}`,
-        );
+      logger.warn(
+        error,
+        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}`,
+      );
     }
   }
 
@@ -73,7 +73,8 @@ export const seedTrip = async (
         backgroundImagePath,
       })
       .where(eq(trips.id, trip.id));
-    trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.id, trip!.id) });
+    const tripId = trip.id;
+    trip = await db.query.trips.findFirst({ where: (t, { eq }) => eq(t.id, tripId) });
   } else {
     const inserted = await db
       .insert(trips)
@@ -117,7 +118,22 @@ export const seedTrip = async (
       where: (u, { eq }) => eq(u.authUserId, authUser.id),
     });
 
-    if (!dbUser) {
+    if (dbUser) {
+      const roleMapping: Record<string, string> = {
+        admin: "ADMIN",
+        moderator: "MODERATOR",
+        service: "SERVICE",
+        user: "USER",
+      };
+
+      const expectedRole = (roleMapping[row.role?.toLowerCase() ?? "user"] ?? "USER") as Role;
+
+      if (dbUser.role !== expectedRole) {
+        const dbUserId = dbUser.id;
+        await db.update(users).set({ role: expectedRole }).where(eq(users.id, dbUserId));
+        dbUser = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, dbUserId) });
+      }
+    } else {
       logger.warn(
         `✗ DB user not yet created for ${email} (auth id ${authUser.id}). Creating manually...`,
       );
@@ -146,21 +162,6 @@ export const seedTrip = async (
       } catch (error) {
         logger.warn(error, `✗ Failed to create DB user manually for ${email}`);
         continue;
-      }
-    } else {
-      const roleMapping: Record<string, string> = {
-        admin: "ADMIN",
-        moderator: "MODERATOR",
-        service: "SERVICE",
-        user: "USER",
-      };
-
-      const expectedRole = (roleMapping[row.role?.toLowerCase() ?? "user"] ?? "USER") as Role;
-
-      if (dbUser.role !== expectedRole) {
-        const dbUserId = dbUser.id;
-        await db.update(users).set({ role: expectedRole }).where(eq(users.id, dbUserId));
-        dbUser = await db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, dbUserId) });
       }
     }
 
@@ -196,9 +197,9 @@ export const seedTrip = async (
           })
           .returning();
         ghostUser = inserted[0];
-        logger.info(`✓ Manually created ghost DB user`);
+        logger.info("✓ Manually created ghost DB user");
       } catch (error) {
-        logger.warn(error, `✗ Failed to create ghost DB user manually`);
+        logger.warn(error, "✗ Failed to create ghost DB user manually");
         return trip;
       }
     }

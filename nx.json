@@ -16,17 +16,11 @@
         }
       }
     },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
-    },
+
     {
       "plugin": "@nx/vitest",
       "options": {
         "targetName": "test",
-        "ciTargetName": "test:ci",
         "configName": "vitest.config.ts"
       }
     },

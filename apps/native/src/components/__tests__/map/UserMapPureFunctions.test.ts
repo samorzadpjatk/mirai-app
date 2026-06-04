@@ -1,9 +1,9 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  processUserLocationUpdate,
+  buildFilteredUsers,
   buildMapStyleConfig,
   getActivityOpacity,
-  buildFilteredUsers,
+  processUserLocationUpdate,
 } from "~/components/map/UserMap";
 
 describe("processUserLocationUpdate", () => {

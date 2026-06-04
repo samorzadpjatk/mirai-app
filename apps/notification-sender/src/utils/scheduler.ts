@@ -6,6 +6,7 @@ export type SchedulerTask = () => Promise<void>;
  * Simple scheduler that runs tasks at regular intervals.
  */
 export class Scheduler {
+  private timeoutId: NodeJS.Timeout | null = null;
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
 
@@ -27,7 +28,8 @@ export class Scheduler {
     logger.info({ intervalMinutes: this.intervalMinutes }, "Scheduler started");
 
     // Run immediately (wrap in setTimeout to avoid sync call during start)
-    setTimeout(() => {
+    this.timeoutId = setTimeout(() => {
+      this.timeoutId = null;
       this.runTask();
     }, 0);
 
@@ -48,6 +50,11 @@ export class Scheduler {
   stop(): void {
     if (!this.isRunning) {
       return;
+    }
+
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
 
     if (this.intervalId) {

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 

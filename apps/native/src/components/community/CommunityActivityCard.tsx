@@ -1,7 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
@@ -20,13 +20,13 @@ interface CommunityFeedActivity {
   createdAt: Date | string;
   reactionsSummary?: {
     total: number;
-    counts?: {
+    counts: {
       heart: number;
       fire: number;
       clap: number;
       star: number;
     };
-    myReactions?: string[];
+    myReactions: string[];
   };
   admin?: {
     id: string;

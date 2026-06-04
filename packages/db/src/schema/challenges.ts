@@ -1,25 +1,25 @@
 import {
-  pgTable,
-  varchar,
-  timestamp,
-  text,
-  integer,
-  real,
   boolean,
   index,
+  integer,
+  pgTable,
+  real,
+  text,
+  timestamp,
   uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
-import { trips } from "./trips";
-import { groups } from "./groups";
-import { users } from "./users";
-import { tripParticipants } from "./trips";
 import {
-  submissionTypeEnum,
-  scoringCategoryEnum,
   challengeStatusEnum,
+  scoringCategoryEnum,
   submissionStatusEnum,
+  submissionTypeEnum,
 } from "./enums";
+import { groups } from "./groups";
+import { trips } from "./trips";
+import { tripParticipants } from "./trips";
+import { users } from "./users";
 
 export const challenges = pgTable(
   "challenges",

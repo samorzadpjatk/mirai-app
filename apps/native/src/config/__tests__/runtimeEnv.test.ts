@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 
 interface RuntimeEnv {
   SUPABASE_URL: string;
@@ -15,7 +15,7 @@ const getEnvString = (value: unknown, name: string): string => {
   return value;
 };
 
-const createRuntimeEnv = (env: Record<string, string | undefined>): RuntimeEnv => {
+const createRuntimeEnv = (env: Record<string, unknown>): RuntimeEnv => {
   const SUPABASE_URL = getEnvString(env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
   const SUPABASE_ANON_KEY = getEnvString(env.EXPO_PUBLIC_SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
   const TRPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
@@ -155,7 +155,7 @@ describe("runtimeEnv", () => {
 
   describe("getEnvString helper", () => {
     it("should throw error for non-string values", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: 123 as unknown as string };
+      const env = { ...baseEnv, EXPO_PUBLIC_SUPABASE_URL: 123 };
 
       expect(() => createRuntimeEnv(env)).toThrow("Missing SUPABASE_URL environment variable");
     });

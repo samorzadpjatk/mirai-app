@@ -90,18 +90,6 @@ Copy `.env.example` files in `environment/` and fill in values:
 cp environment/.env.dev.example environment/.env.dev
 ```
 
-## Package Dependency Graph
-
-```
-auth ──────┐
-           ├──→ orpc ────→ backend-server, notification-sender
-db ────────┤      └──→ native (via client)
-           │
-supabase ──┤      └──→ native (via client)
-           │
-shared ────┘
-```
-
 ## How AGENTS.md Works
 
 This project uses OpenAI's layered AGENTS.md discovery pattern. Files concatenate from root down; later files override earlier guidance. Temporary overrides use `AGENTS.override.md`. See [docs/conventions/agents-md.md](./docs/conventions/agents-md.md) for size guidelines and templates.
@@ -131,72 +119,20 @@ Detailed documentation lives in `docs/` folder:
 | [docs/conventions/](./docs/conventions/) | Coding standards and best practices |
 | [docs/workflows/](./docs/workflows/) | AI-driven workflow documentation |
 
-## AI-Driven Change Workflow
+## Code Quality & Testing
 
-This project uses CEK SDD. All implementation uses test-first methodology.
+See [Testing Conventions](./docs/conventions/testing.md) and [Best Practices](./docs/conventions/best-practices.md) for detailed standards.
 
-**Quick Reference:** `/sdd:brainstorm`, `/sdd:add-task`, `/sdd:plan`, `/sdd:implement`, `/tdd:test-driven-development`, `/review-local-changes`
-
-**Full docs:** [AI Change Workflow](./docs/workflows/ai-change-workflow.md) · [Best Practices](./docs/conventions/best-practices.md) · [TDD](./docs/conventions/tdd.md) · [Docs](./docs/conventions/documentation.md)
-
-## AGENTS.md Template
-
-Use the template when creating new AGENTS.md files:
-
-**[→ View Template](./docs/templates/AGENTS.md.template)**
-
-
-
-## Code Quality Standards
-
-### File Size Limits
-
-- **Rule**: Router/service files >1000 lines violate SRP and are hard to review/test safely.
-- **Action**: Split into directory-based modules: `{router}/types.ts`, `{router}/utils.ts`, `{router}/queries.ts`, `{router}/mutations.ts`, `{router}/index.ts`.
-- **Import path fix when moving deeper**: `../../api/trpc` → `../../trpc`, `../../utils/` → `../../../utils/`.
-- **Verification after split**: Run `tsc --noEmit` in the package, then `bun run test`.
-- **Completed splits**: `activityFeed.ts` → `activityFeed/`, `group.ts` → `group/`, `location.ts` → `location/`, `challengeSubmission.ts` → `challengeSubmission/`, `reward.ts` → `reward/`, `user.ts` → `user/`, `challenge.ts` → `challenge/`.
-- **Parallel execution**: Independent file splits can be delegated to 4+ background subagents simultaneously.
-
-### Module-Level Side Effects
-
-- **Rule**: Move setup into explicit `init()` functions called from app entry points.
-- **Fixed**: All module-level side effects refactored into `init*()` functions in `apps/native/src/app/_layout.tsx`, `apps/native/src/services/background/backgroundLocationTask.ts`, `packages/orpc/src/api/trpc.ts`, `apps/backend-server/src/server.ts`.
-
-### Console Logging as Error Handling
-
-- **Rule**: Use **Pino** for structured logging. Never commit `console.*` in production code.
-- **Backend**: Import `logger` from `@mirai-app/orpc`.
-- **Native**: Use Sentry for runtime error reporting.
-- **Status**: ✅ Complete. All production `console.*` calls eliminated.
-
-### Functional Core, Imperative Shell
-
-- **Pattern**: Extract pure business logic from any package/app into `@mirai-app/shared`. Leave hooks, routers, and components as thin shells.
-- **Why**: Pure functions test with real data (no mocks). Replaces 1,000-line mock-verification tests with 30-line real data tests.
-- **Rule**: When a test file exceeds 200 lines mocking framework internals, the code has extractable domain logic.
-- **Deduplication**: Search across packages before extracting. Extract once, import everywhere.
-
-## Testing Standards
-
-See [Testing Conventions](./docs/conventions/testing.md) for detailed standards.
-
-- **Test behavior, not implementation.** Avoid mock-verification tests.
-- **Extract pure domain logic** to `@mirai-app/shared` for real-data testing.
-- **Export at top level only** — never inside hooks or components.
-- **Add failure-path transaction tests** per router. Create `MockTransactionDB` simulating rollback.
-- **Constructor mock resilience**: Use `Object.defineProperty(mock, "fn", { get: () => jest.fn(), configurable: true })` to survive `jest.clearAllMocks()`.
+Key rules:
+- **Test behavior, not implementation.** Extract pure domain logic to `@mirai-app/shared` for real-data testing.
+- **File size limits**: Router files >1000 lines must split into `queries.ts`, `mutations.ts`, `utils.ts`.
+- **No module-level side effects**: Use explicit `init()` functions.
+- **No `console.*` in production**: Use Pino (backend) or Sentry (native).
+- **Transaction tests**: Use real PGLite with `BEGIN...ROLLBACK` per router.
 
 ## Architecture Decisions
 
-### Functional Programming Libraries
-
 **Verdict**: Do NOT introduce Effect, fp-ts, or similar FP libraries. See [Best Practices](./docs/conventions/best-practices.md) for full analysis.
-
-- Effect would be a **net-negative refactor** (+4–5% LOC, ~5,400–7,400 lines added)
-- Existing stack already solves what Effect offers: `ORPCError` for errors, React Query for async state, Drizzle for transactions, `executeWithRetry` for retries
-- Team is actively seeking maintainers — FP libraries would reduce contributor pool to near-zero
-- **Acceptable**: `neverthrow` (~3KB) or `oxide.ts` (~2KB) for specific functions if needed
 
 ## License
 
@@ -208,22 +144,14 @@ AGPL-3.0 - See [LICENSE](./LICENSE) for details.
 
 ## General Guidelines for working with Nx
 
-- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- For navigating/exploring the workspace, invoke the `nx-workspace` skill first
+- When running tasks, always prefer running the task through `nx` (i.e., `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
 - Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
 - You have access to the Nx MCP server and its tools, use them to help the user
-- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
 - NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
 
 ## Scaffolding & Generators
 
 - For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
-
-## When to use nx_docs
-
-- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
-- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
-- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
-
 
 <!-- nx configuration end-->

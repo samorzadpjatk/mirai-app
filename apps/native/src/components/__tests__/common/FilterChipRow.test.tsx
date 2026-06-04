@@ -1,9 +1,8 @@
-import React from "react";
-import { Text, type ViewStyle, type ScrollViewProps } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { FilterChipRow } from "../../common/ui/FilterChipRow";
+import { type ScrollViewProps, Text, type ViewStyle } from "react-native";
 import { FilterChip } from "../../common/ui/FilterChip";
+import { FilterChipRow } from "../../common/ui/FilterChipRow";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface ContentContainerStyle extends ViewStyle {
   flexDirection?: "row" | "column";

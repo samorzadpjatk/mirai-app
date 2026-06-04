@@ -1,9 +1,9 @@
 /** @jsxImportSource react */
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
-import { authStore, type SupabaseClient } from "@mirai-app/shared";
-import type { AuthUser } from "@mirai-app/shared";
+import { type SupabaseClient, authStore } from "@mirai-app/shared/stores";
+import type { AuthUser } from "@mirai-app/shared/stores";
+import { type ReactNode, useEffect, useRef } from "react";
 
 export interface AuthStoreProviderProps {
   children: ReactNode;

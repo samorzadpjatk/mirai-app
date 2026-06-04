@@ -1,8 +1,5 @@
-import { describe, it, expect } from "@jest/globals";
-import {
-  toLensPreset,
-  buildLensPresetOptions,
-} from "../camera/PhotoCaptureModal";
+import { describe, expect, it } from "@jest/globals";
+import { buildLensPresetOptions, toLensPreset } from "../camera/PhotoCaptureModal";
 
 describe("toLensPreset", () => {
   it("should map ultrawide to 0.5x", () => {

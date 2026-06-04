@@ -1,10 +1,10 @@
 import {
+  buildGalleryIndexBySubmissionId,
+  buildGallerySubmissions,
+  calculatePreviewRegularLimit,
   filterImageSubmissions,
   getPodiumSubmissions,
   getRegularSubmissions,
-  calculatePreviewRegularLimit,
-  buildGallerySubmissions,
-  buildGalleryIndexBySubmissionId,
 } from "../../../trips/challenges/ChallengeCommunitySubmissionsCard";
 
 describe("ChallengeCommunitySubmissionsCard pure functions", () => {
@@ -85,7 +85,7 @@ describe("ChallengeCommunitySubmissionsCard pure functions", () => {
     });
 
     it("excludes podium submissions from regular list", () => {
-      const podiumSubmissions = [imageSubmissions[0]];
+      const podiumSubmissions = [imageSubmissions[0]!];
       const result = getRegularSubmissions(imageSubmissions, podiumSubmissions, true);
       expect(result).toHaveLength(2);
       expect(result.map((s) => s.id)).toEqual(["2", "3"]);
@@ -125,7 +125,7 @@ describe("ChallengeCommunitySubmissionsCard pure functions", () => {
         imageSubmissions,
       );
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe("3");
+      expect(result[0]!.id).toBe("3");
     });
   });
 

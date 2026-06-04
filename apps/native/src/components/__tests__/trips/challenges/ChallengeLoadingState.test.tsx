@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeLoadingState } from "../../../trips/challenges/ChallengeLoadingState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeLoadingState", () => {
   it("should render container", () => {

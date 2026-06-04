@@ -1,11 +1,11 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
+  formatBanLabel,
   formatDate,
   getInitials,
-  isNonEmptyString,
-  isNameValid,
   isBanReady,
-  formatBanLabel,
+  isNameValid,
+  isNonEmptyString,
 } from "../validation";
 
 describe("Validation Utilities", () => {

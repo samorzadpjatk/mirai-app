@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import AdminStats from "../../admin/AdminStats";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AdminStats", () => {
   it("renders with stats", () => {

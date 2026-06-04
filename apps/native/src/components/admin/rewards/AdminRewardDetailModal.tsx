@@ -1,25 +1,25 @@
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Image,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/components/common/ui";
+import { useFileUpload } from "~/hooks/files";
 import {
   useDeleteReward,
   useReward,
   useSetRewardHidden,
-  useUpdateRewardPurchaseStatus,
   useUpdateReward,
+  useUpdateRewardPurchaseStatus,
 } from "~/hooks/rewards";
-import * as ImagePicker from "expo-image-picker";
-import { useFileUpload } from "~/hooks/files";
-import { AppModalShell, AppModalFooter, FormField, ThemedTextInput } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface Props {
   rewardId: string | null;
@@ -92,8 +92,8 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       return;
     }
 
-    const coinCostPercentage = parseInt(form.coinCost, 10);
-    if (isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
+    const coinCostPercentage = Number.parseInt(form.coinCost, 10);
+    if (Number.isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
       Alert.alert("Error", "Cost must be between 1% and 100%");
       return;
     }
@@ -103,7 +103,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         id: rewardId,
         name: form.name,
         description: form.description,
-        availableQuantity: parseInt(form.availableQuantity, 10),
+        availableQuantity: Number.parseInt(form.availableQuantity, 10),
         coinCost: coinCostPercentage, // Store as percentage
         images: form.images,
       });
@@ -356,7 +356,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 </TouchableOpacity>
               )}
 
-              <FormField label="Name" required>
+              <FormField label="Name" required={true}>
                 <ThemedTextInput
                   placeholder="Reward name"
                   value={form.name}
@@ -364,17 +364,17 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 />
               </FormField>
 
-              <FormField label="Description" required>
+              <FormField label="Description" required={true}>
                 <ThemedTextInput
                   placeholder="Reward description"
-                  multiline
+                  multiline={true}
                   value={form.description}
                   onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
                 />
               </FormField>
 
               <View style={{ flexDirection: "row", gap: spacing.md, marginBottom: spacing.lg }}>
-                <FormField label="Available quantity" required style={{ flex: 1 }}>
+                <FormField label="Available quantity" required={true} style={{ flex: 1 }}>
                   <ThemedTextInput
                     keyboardType="numeric"
                     value={form.availableQuantity}
@@ -383,7 +383,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                     }
                   />
                 </FormField>
-                <FormField label="Cost (% of total points)" required style={{ flex: 1 }}>
+                <FormField label="Cost (% of total points)" required={true} style={{ flex: 1 }}>
                   <ThemedTextInput
                     keyboardType="numeric"
                     value={form.coinCost}

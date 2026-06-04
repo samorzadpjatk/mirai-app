@@ -1,78 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { createSupabaseClient } from "@mirai-app/supabase";
-import { getORPCClient } from "@mirai-app/orpc/client";
-import { authStorage } from "~/services/storage/storage";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
-const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
-
 import {
   toFiniteNumberOrNull,
-  toNonNegativeOrNull,
   toHeadingOrNull,
+  toNonNegativeOrNull,
 } from "./backgroundLocationTaskUtils";
 
 export { toFiniteNumberOrNull, toNonNegativeOrNull, toHeadingOrNull };
-
-const isSending = false;
-
-async function shouldSendBackgroundLocation(): Promise<boolean> {
-  const [sharingEnabled, backgroundEnabled] = await Promise.all([
-    AsyncStorage.getItem(LOCATION_SHARING_SETTINGS_KEY),
-    AsyncStorage.getItem(BACKGROUND_LOCATION_SETTINGS_KEY),
-  ]);
-
-  return sharingEnabled === "true" && backgroundEnabled === "true";
-}
-
-async function getAccessToken(): Promise<string | null> {
-  const {
-    data: { session },
-    error,
-  } = await supabaseClient.auth.getSession();
-
-  if (error) {
-    return null;
-  }
-
-  return session?.access_token ?? null;
-}
-
-async function sendLocationUpdate(location: LocationObject): Promise<void> {
-  const accessToken = await getAccessToken();
-  if (!accessToken) {
-    return;
-  }
-
-  const latitude = toFiniteNumberOrNull(location.coords.latitude);
-  const longitude = toFiniteNumberOrNull(location.coords.longitude);
-  if (latitude == null || longitude == null) {
-    return;
-  }
-
-  const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL, accessToken);
-
-  try {
-    await client.location.updateLocation({
-      latitude,
-      longitude,
-      accuracy: toNonNegativeOrNull(location.coords.accuracy),
-      altitude: toFiniteNumberOrNull(location.coords.altitude),
-      altitudeAccuracy: toNonNegativeOrNull(location.coords.altitudeAccuracy),
-      heading: toHeadingOrNull(location.coords.heading),
-      speed: toNonNegativeOrNull(location.coords.speed),
-    });
-  } finally {
-    await cleanup();
-  }
-}
 
 export interface BackgroundTaskState {
   isSending: boolean;
@@ -81,6 +22,97 @@ export interface BackgroundTaskState {
 export interface BackgroundTaskDeps {
   shouldSend: () => Promise<boolean>;
   sendUpdate: (location: LocationObject) => Promise<void>;
+}
+
+export interface BackgroundTaskFactoryDeps {
+  supabaseClient: {
+    auth: {
+      getSession: () => Promise<{
+        data: { session: { access_token: string } | null };
+        error: Error | null;
+      }>;
+    };
+  };
+  getORPCClient: (
+    httpUrl: string,
+    wsUrl: string,
+    authorizationToken?: string,
+  ) => {
+    client: {
+      location: {
+        updateLocation: (input: {
+          latitude: number;
+          longitude: number;
+          accuracy?: number | null;
+          altitude?: number | null;
+          altitudeAccuracy?: number | null;
+          heading?: number | null;
+          speed?: number | null;
+        }) => Promise<unknown>;
+      };
+    };
+    cleanup: () => Promise<void>;
+  };
+  httpUrl: string;
+  wsUrl: string;
+}
+
+export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): BackgroundTaskDeps {
+  async function getAccessToken(): Promise<string | null> {
+    const {
+      data: { session },
+      error,
+    } = await deps.supabaseClient.auth.getSession();
+
+    if (error) {
+      return null;
+    }
+
+    return session?.access_token ?? null;
+  }
+
+  async function shouldSend(): Promise<boolean> {
+    const [sharingEnabled, backgroundEnabled] = await Promise.all([
+      AsyncStorage.getItem(LOCATION_SHARING_SETTINGS_KEY),
+      AsyncStorage.getItem(BACKGROUND_LOCATION_SETTINGS_KEY),
+    ]);
+
+    return sharingEnabled === "true" && backgroundEnabled === "true";
+  }
+
+  async function sendUpdate(location: LocationObject): Promise<void> {
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      return;
+    }
+
+    const latitude = toFiniteNumberOrNull(location.coords.latitude);
+    const longitude = toFiniteNumberOrNull(location.coords.longitude);
+    if (latitude == null || longitude == null) {
+      return;
+    }
+
+    const { client, cleanup } = deps.getORPCClient(deps.httpUrl, deps.wsUrl, accessToken);
+
+    try {
+      await client.location.updateLocation({
+        latitude,
+        longitude,
+        accuracy: toNonNegativeOrNull(location.coords.accuracy),
+        altitude: toFiniteNumberOrNull(location.coords.altitude),
+        altitudeAccuracy: toNonNegativeOrNull(location.coords.altitudeAccuracy),
+        heading: toHeadingOrNull(location.coords.heading),
+        speed: toNonNegativeOrNull(location.coords.speed),
+      });
+    } finally {
+      await cleanup();
+    }
+  }
+
+  return {
+    shouldSend,
+    sendUpdate,
+  };
 }
 
 export async function handleBackgroundLocationTask(
@@ -116,19 +148,16 @@ export async function handleBackgroundLocationTask(
   }
 }
 
-export function initBackgroundLocationTask(): void {
+export function initBackgroundLocationTask(deps: BackgroundTaskDeps): void {
   const state: BackgroundTaskState = { isSending: false };
 
   try {
     TaskManager.defineTask(BACKGROUND_LOCATION_TASK_NAME, async ({ data, error }) => {
       await handleBackgroundLocationTask(
         data as { locations?: LocationObject[] } | undefined,
-        error,
+        error as Error | null,
         state,
-        {
-          shouldSend: shouldSendBackgroundLocation,
-          sendUpdate: sendLocationUpdate,
-        },
+        deps,
       );
     });
   } catch (error) {

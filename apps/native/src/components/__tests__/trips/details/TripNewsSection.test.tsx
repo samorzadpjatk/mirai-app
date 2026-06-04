@@ -1,68 +1,44 @@
-import React from "react";
-import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { fireEvent, waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../../test-utils/msw/server";
+import { renderWithMSW } from "../../../../test-utils/msw/test-wrapper";
 import { TripNewsSection } from "../../../trips/details/TripNewsSection";
 
 const mockPush = jest.fn();
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+  useRouter: () => ({ push: mockPush }),
 }));
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  orpc: {
-    activityFeed: {
-      getByTrip: {
-        queryOptions: jest.fn(() => ({ queryKey: ["news", "trip-1"] })),
-      },
-    },
-  },
-}));
-
-jest.mock("@tanstack/react-query", () => {
-  const actual = jest.requireActual("@tanstack/react-query");
-  return {
-    ...actual,
-    useQuery: jest.fn(),
-  };
-});
-
-const { useQuery } = require("@tanstack/react-query");
 
 describe("TripNewsSection", () => {
   beforeEach(() => {
     mockPush.mockClear();
-    useQuery.mockReturnValue({
-      data: { activities: [] },
-      isLoading: false,
-    });
+    server.resetHandlers();
   });
 
-  it("should render loading state", () => {
-    useQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-    });
-
-    const { getByText } = renderWithProviders(<TripNewsSection tripId="trip-1" />);
-    expect(getByText("Loading admin news...")).toBeTruthy();
+  it("should render loading state", async () => {
+    server.use(
+      createORPCHandler(
+        ["activityFeed", "getByTrip"],
+        () =>
+          new Promise(() => {
+            /* intentionally never resolves */
+          }),
+      ),
+    );
+    const { getByText } = renderWithMSW(<TripNewsSection tripId="trip-1" />);
+    await waitFor(() => expect(getByText("Loading admin news...")).toBeTruthy());
   });
 
-  it("should render empty state", () => {
-    useQuery.mockReturnValue({
-      data: { activities: [] },
-      isLoading: false,
-    });
-
-    const { getByText } = renderWithProviders(<TripNewsSection tripId="trip-1" />);
-    expect(getByText("No news yet.")).toBeTruthy();
+  it("should render empty state", async () => {
+    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => ({ activities: [] })));
+    const { getByText } = renderWithMSW(<TripNewsSection tripId="trip-1" />);
+    await waitFor(() => expect(getByText("No news yet.")).toBeTruthy());
   });
 
-  it("should render news items", () => {
-    useQuery.mockReturnValue({
-      data: {
+  it("should render news items", async () => {
+    server.use(
+      createORPCHandler(["activityFeed", "getByTrip"], () => ({
         activities: [
           {
             id: "news-1",
@@ -74,18 +50,17 @@ describe("TripNewsSection", () => {
             admin: { firstName: "John", lastName: "Doe" },
           },
         ],
-      },
-      isLoading: false,
-    });
-
-    const { getByText } = renderWithProviders(<TripNewsSection tripId="trip-1" />);
-    expect(getByText("Test News")).toBeTruthy();
-    expect(getByText("Added by John Doe")).toBeTruthy();
+      })),
+    );
+    const { getByText } = renderWithMSW(<TripNewsSection tripId="trip-1" />);
+    await waitFor(() => expect(getByText("Test News")).toBeTruthy());
+    await waitFor(() => expect(getByText("Added by John Doe")).toBeTruthy());
   });
 
-  it("should navigate to community when View all pressed", () => {
-    const { getByText } = renderWithProviders(<TripNewsSection tripId="trip-1" />);
-
+  it("should navigate to community when View all pressed", async () => {
+    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => ({ activities: [] })));
+    const { getByText } = renderWithMSW(<TripNewsSection tripId="trip-1" />);
+    await waitFor(() => expect(getByText("No news yet.")).toBeTruthy());
     fireEvent.press(getByText("View all"));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/(tabs)/community",
@@ -93,9 +68,9 @@ describe("TripNewsSection", () => {
     });
   });
 
-  it("should navigate to community with focus when news item pressed", () => {
-    useQuery.mockReturnValue({
-      data: {
+  it("should navigate to community with focus when news item pressed", async () => {
+    server.use(
+      createORPCHandler(["activityFeed", "getByTrip"], () => ({
         activities: [
           {
             id: "news-1",
@@ -107,12 +82,10 @@ describe("TripNewsSection", () => {
             admin: { firstName: "John", lastName: "Doe" },
           },
         ],
-      },
-      isLoading: false,
-    });
-
-    const { getByText } = renderWithProviders(<TripNewsSection tripId="trip-1" />);
-
+      })),
+    );
+    const { getByText } = renderWithMSW(<TripNewsSection tripId="trip-1" />);
+    await waitFor(() => expect(getByText("Test News")).toBeTruthy());
     fireEvent.press(getByText("Test News"));
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/(tabs)/community",

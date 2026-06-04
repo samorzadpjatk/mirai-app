@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
+  type ReviewStatus,
+  type Submission,
   judgementStore,
   useJudgementStore,
-  type Submission,
-  type ReviewStatus,
 } from "../judgementStore";
 
 describe("Judgement Store", () => {

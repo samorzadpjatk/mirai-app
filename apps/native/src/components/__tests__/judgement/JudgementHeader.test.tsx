@@ -1,7 +1,6 @@
-import React from "react";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { JudgementHeader } from "../../judgement/JudgementHeader";
 import { useJudgement } from "~/stores/judgement";
+import { JudgementHeader } from "../../judgement/JudgementHeader";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("~/stores/judgement");
 

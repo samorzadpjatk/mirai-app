@@ -1,5 +1,3 @@
-import type { ImagePickerAsset } from "expo-image-picker";
-
 /**
  * Extracts the file extension from an ImagePicker asset.
  * Handles both images and videos. Falls back to mimeType detection or defaults to 'jpg'.
@@ -23,9 +21,6 @@ export const getFileExtension = (asset: { fileName?: string | null; mimeType?: s
   if (contentType === "video/webm") return "webm";
   return "jpg";
 };
-
-/** @deprecated Use getFileExtension instead. */
-export const getImageExtension = getFileExtension;
 
 /**
  * Returns the appropriate MIME content type for a given file extension.
@@ -52,9 +47,6 @@ export const getFileContentType = (extension: string) => {
       return "image/jpeg";
   }
 };
-
-/** @deprecated Use getFileContentType instead. */
-export const getImageContentType = getFileContentType;
 
 /**
  * Determines a stable file name for an upload asset.

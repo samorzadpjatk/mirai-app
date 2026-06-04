@@ -1,6 +1,6 @@
+import { CameraView, useCameraPermissions } from "expo-camera";
 import React, { useCallback, useRef, useState } from "react";
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 

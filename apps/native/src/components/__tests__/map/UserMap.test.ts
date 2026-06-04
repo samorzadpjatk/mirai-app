@@ -1,5 +1,5 @@
-import { describe, it, expect } from "@jest/globals";
-import { getActivityOpacity, buildFilteredUsers } from "~/components/map/UserMap";
+import { describe, expect, it } from "@jest/globals";
+import { buildFilteredUsers, getActivityOpacity } from "~/components/map/UserMap";
 import type { UserLocation } from "~/components/map/UserMap";
 
 describe("getActivityOpacity", () => {
@@ -115,16 +115,7 @@ describe("buildFilteredUsers", () => {
   });
 
   it("should not prepend current user when missing required fields", () => {
-    const result = buildFilteredUsers(
-      [activeUser],
-      now,
-      "me",
-      null,
-      "Me",
-      null,
-      true,
-      true,
-    );
+    const result = buildFilteredUsers([activeUser], now, "me", null, "Me", null, true, true);
     expect(result).toEqual([activeUser]);
   });
 });

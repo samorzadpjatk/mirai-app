@@ -1,9 +1,22 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ServerOptions } from "../server";
 import type * as ServerModule from "../server";
 
+let captureOnError = false;
+let lastOnErrorCallback: ((error: unknown) => void) | null = null;
+
+const appRouterProxy = new Proxy({} as any, {
+  get(target, prop) {
+    return target[prop];
+  },
+  set(target, prop, value) {
+    target[prop] = value;
+    return true;
+  },
+});
+
 vi.mock("@mirai-app/orpc", () => ({
-  appRouter: {},
+  appRouter: appRouterProxy,
   createORPCContext: vi.fn((opts) => ({
     headers: opts.headers,
     databaseUrl: opts.databaseUrl,
@@ -20,15 +33,57 @@ vi.mock("@mirai-app/orpc", () => ({
   },
 }));
 
+vi.mock("@orpc/server", () => ({
+  ORPCError: class ORPCError extends Error {
+    code: string;
+    constructor(code: string, opts?: { message?: string }) {
+      super(opts?.message);
+      this.code = code;
+    }
+  },
+  onError: (fn: any) => {
+    lastOnErrorCallback = fn;
+    return async (ctx: any) => {
+      try {
+        return await ctx.next();
+      } catch (error) {
+        await fn(error, ctx);
+        throw error;
+      }
+    };
+  },
+}));
+
+vi.mock("@orpc/server/bun-ws", () => ({
+  RPCHandler: class MockRPCHandler {
+    message = vi.fn().mockResolvedValue(undefined);
+    close = vi.fn().mockImplementation(() => {});
+  },
+}));
+
 let createServer: typeof ServerModule.createServer;
+const servers: Array<{ stop: () => Promise<void> }> = [];
 
 beforeEach(async () => {
   vi.resetModules();
+  for (const key of Object.keys(appRouterProxy)) {
+    delete appRouterProxy[key];
+  }
+  lastOnErrorCallback = null;
   const serverModule = await import("../server");
-  createServer = serverModule.createServer;
+  const originalCreateServer = serverModule.createServer;
+  createServer = (...args: Parameters<typeof originalCreateServer>) => {
+    const server = originalCreateServer(...args);
+    servers.push(server);
+    return server;
+  };
+  servers.length = 0;
 });
 
-afterEach(() => {
+afterEach(async () => {
+  for (const server of servers) {
+    await server.stop();
+  }
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -607,6 +662,233 @@ describe("Backend Server (Hono)", () => {
       expect(res.status).toBe(429);
       expect(res.headers.get("retry-after")).toBeTruthy();
       expect(await res.text()).toBe("Too Many Requests");
+    });
+  });
+
+  describe("WebSocket Error Handler", () => {
+    it("should throw ORPCError for non-ORPCError in production mode", async () => {
+      const { app } = createServer({
+        dev: false,
+        port: 3040,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      expect(lastOnErrorCallback).toBeDefined();
+      if (!lastOnErrorCallback) {
+        throw new Error("onError callback was not captured");
+      }
+      const callback = lastOnErrorCallback;
+      const regularError = new Error("Test error");
+      expect(() => callback(regularError)).toThrow();
+    });
+  });
+
+  describe("WebSocket Auth and Message Handling", () => {
+    it("should handle connection_init with authorization payload", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3041,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: { connectionParams: undefined, url: "/trpc", authProcessed: false },
+        send: vi.fn(),
+      };
+
+      await serveOptions.websocket.message(
+        mockWs,
+        JSON.stringify({
+          type: "connection_init",
+          payload: { authorization: "Bearer test-token" },
+        }),
+      );
+
+      expect(mockWs.data.authProcessed).toBe(true);
+      expect(mockWs.data.connectionParams).toEqual({ authorization: "Bearer test-token" });
+      expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify({ type: "connection_ack" }));
+
+      await stop();
+    });
+
+    it("should handle JSON.parse failure in websocket message", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3042,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: { connectionParams: undefined, url: "/trpc", authProcessed: false },
+        send: vi.fn(),
+      };
+
+      await serveOptions.websocket.message(mockWs, "invalid json{");
+
+      expect(mockWs.data.authProcessed).toBe(true);
+
+      await stop();
+    });
+  });
+
+  describe("WebSocket Environment Variable Validation", () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it("should throw when SUPABASE_URL is missing during websocket message", async () => {
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3043,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: {
+          connectionParams: { authorization: "Bearer test" },
+          url: "/trpc",
+          authProcessed: true,
+        },
+        send: vi.fn(),
+      };
+
+      await expect(
+        serveOptions.websocket.message(
+          mockWs,
+          JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+        ),
+      ).rejects.toThrow("Missing Supabase credentials");
+
+      await stop();
+    });
+
+    it("should throw when SUPABASE_SERVICE_ROLE_KEY is missing during websocket message", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3044,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: {
+          connectionParams: { authorization: "Bearer test" },
+          url: "/trpc",
+          authProcessed: true,
+        },
+        send: vi.fn(),
+      };
+
+      await expect(
+        serveOptions.websocket.message(
+          mockWs,
+          JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+        ),
+      ).rejects.toThrow("Missing Supabase credentials");
+
+      await stop();
+    });
+
+    it("should throw when DATABASE_URL is missing during websocket message", async () => {
+      process.env.SUPABASE_URL = "http://localhost:8000";
+      process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+      delete process.env.DATABASE_URL;
+
+      let serveOptions: any;
+      const serveSpy = vi.fn((opts) => {
+        serveOptions = opts;
+        return { stop: vi.fn() };
+      });
+      vi.stubGlobal("Bun", { serve: serveSpy });
+
+      const { start, stop } = createServer({
+        dev: true,
+        port: 3045,
+        prefix: "/trpc",
+        host: "127.0.0.1",
+      });
+
+      start();
+
+      const mockWs = {
+        data: {
+          connectionParams: { authorization: "Bearer test" },
+          url: "/trpc",
+          authProcessed: true,
+        },
+        send: vi.fn(),
+      };
+
+      await expect(
+        serveOptions.websocket.message(
+          mockWs,
+          JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+        ),
+      ).rejects.toThrow("Missing database credentials");
+
+      await stop();
     });
   });
 });

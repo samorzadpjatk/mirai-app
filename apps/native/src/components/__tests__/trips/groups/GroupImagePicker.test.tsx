@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupImagePicker } from "../../../trips/groups/GroupImagePicker";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupImagePicker", () => {
   const mockOnPickImage = jest.fn();

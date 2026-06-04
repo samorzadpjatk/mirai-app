@@ -1,6 +1,6 @@
-import React, { type ComponentProps } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import type { AdminChallengeUI } from "~/hooks/admin";
 import { commonStyles } from "~/styles/commonStyles";
 

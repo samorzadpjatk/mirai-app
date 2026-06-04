@@ -5,7 +5,9 @@ const getEnvString = (value: unknown, name: string): string => {
   return value;
 };
 
-export const createRuntimeEnv = (env: NodeJS.ProcessEnv) => {
+export type RuntimeEnvInput = Record<string, unknown>;
+
+export const createRuntimeEnv = (env: RuntimeEnvInput) => {
   const SUPABASE_URL = getEnvString(env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
   const SUPABASE_ANON_KEY = getEnvString(env.EXPO_PUBLIC_SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
   const TRPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");

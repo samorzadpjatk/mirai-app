@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
-import { useTrips } from "~/hooks/trips";
+import { useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/components/common/ui";
 import { useAdminChallenges } from "~/hooks/admin";
 import type { AdminChallengeUI } from "~/hooks/admin";
+import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
-import { AppModalShell, AppModalFooter, FormField, ThemedTextInput } from "~/components/common/ui";
 
 interface Props {
   visible: boolean;
@@ -12,7 +12,10 @@ interface Props {
   challenge: AdminChallengeUI;
 }
 
-export function filterTripsByName(trips: { name: string }[], searchTerm: string): { name: string }[] {
+export function filterTripsByName(
+  trips: { name: string }[],
+  searchTerm: string,
+): { name: string }[] {
   const q = searchTerm.trim().toLowerCase();
   if (!q) return [];
   return trips.filter((t) => t.name.toLowerCase().includes(q)).slice(0, 6);
@@ -57,7 +60,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
   return (
     <AppModalShell visible={visible} title="Edit Challenge" onClose={onClose} variant="pageSheet">
       <ScrollView style={{ padding: spacing.lg }}>
-        <FormField label="Challenge Title" required>
+        <FormField label="Challenge Title" required={true}>
           <ThemedTextInput
             placeholder="e.g. Campus Marathon"
             value={state.title}
@@ -65,7 +68,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
           />
         </FormField>
 
-        <FormField label="Trip ID" required>
+        <FormField label="Trip ID" required={true}>
           <ThemedTextInput
             placeholder="Trip ID or search"
             value={tripId}
@@ -83,7 +86,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
                 maxHeight: 160,
               }}
             >
-              <ScrollView nestedScrollEnabled style={{ padding: 8 }}>
+              <ScrollView nestedScrollEnabled={true} style={{ padding: 8 }}>
                 {filtered.map((t) => (
                   <TouchableOpacity
                     key={t.id}
@@ -126,12 +129,12 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
           )}
         </FormField>
 
-        <FormField label="Description" required>
+        <FormField label="Description" required={true}>
           <ThemedTextInput
             placeholder="Describe the goal"
             value={state.description}
             onChangeText={(t) => setState({ ...state, description: t })}
-            multiline
+            multiline={true}
             numberOfLines={3}
             textAlignVertical="top"
           />

@@ -1,9 +1,9 @@
+import { fireEvent, screen } from "@testing-library/react-native";
 import type React from "react";
 import type { Text } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { type Challenge, ChallengeStatus } from "../../../types/challenges";
 import { ChallengeCard } from "../../challenges/ChallengeCard";
-import { ChallengeStatus, type Challenge } from "../../../types/challenges";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface IoniconsProps {
   name: string;

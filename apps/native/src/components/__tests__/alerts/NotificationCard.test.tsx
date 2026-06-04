@@ -1,9 +1,9 @@
+import { screen } from "@testing-library/react-native";
 import React from "react";
 import { View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { screen } from "@testing-library/react-native";
-import { NotificationCard } from "../../alerts/NotificationCard";
 import type { NotificationItem } from "~/types/notifications";
+import { NotificationCard } from "../../alerts/NotificationCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");

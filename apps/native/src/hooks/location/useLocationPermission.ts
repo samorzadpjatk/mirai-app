@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
-import { Alert } from "react-native";
 import * as Location from "expo-location";
+import { useCallback, useEffect, useState } from "react";
+import { Alert } from "react-native";
 import {
-  shouldShowLocationPermissionAlert,
   buildLocationPermissionAlert,
+  shouldShowLocationPermissionAlert,
 } from "./useLocationPermissions";
 
 export type LocationPermissionStatus = "granted" | "denied" | "undetermined";

@@ -1,7 +1,7 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import { LocationPicker } from "../../map/LocationPicker";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockOnLocationSelected = jest.fn();
 const mockOnClose = jest.fn();

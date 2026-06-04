@@ -1,16 +1,24 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and } from "drizzle-orm";
 import {
-  notifications,
   notificationPushes,
+  notifications,
   pushSubscriptions,
   tripParticipants,
 } from "@mirai-app/db";
-import { NotificationService, sendMobileNotifications } from "../../../services/notificationService";
+import {
+  buildRetryResult,
+  extractUserIdsFromParticipants,
+  validateGroupBelongsToTrip,
+} from "@mirai-app/shared/notifications";
+import { formatDisplayName } from "@mirai-app/shared/users";
+import { ORPCError } from "@orpc/server";
+import { and, eq } from "drizzle-orm";
+import {
+  NotificationService,
+  sendMobileNotifications,
+} from "../../../services/notificationService";
+import { logger } from "../../../utils/logger";
 import { sendNotification, sendRankingUpdate } from "../../../utils/notifications";
 import type { SendNotificationResult } from "../../../utils/notifications";
-import { formatDisplayName } from "@mirai-app/shared";
-import { logger } from "../../../utils/logger";
 import type { NotificationContext } from "./queries";
 
 export const subscribe = async (context: NotificationContext, input: { token: string }) => {
@@ -20,13 +28,15 @@ export const subscribe = async (context: NotificationContext, input: { token: st
       .values({
         userId: context.dbUser.id,
         token: input.token,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [pushSubscriptions.userId, pushSubscriptions.token],
         set: { updatedAt: new Date() },
       })
       .returning();
-    return { success: true, id: subscription!.id };
+    return { success: true, id: subscription?.id };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     logger.error({ error: err }, "Error saving push subscription");
@@ -88,19 +98,17 @@ export const sendToGroup = async (
     const group = await context.db.query.groups.findFirst({
       where: (g, { eq }) => eq(g.id, input.groupId),
     });
-    if (group?.tripId !== input.tripId || group.isDeleted) {
+    if (!group) {
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
+    validateGroupBelongsToTrip(group, input.tripId);
     const participants = await context.db
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
     const result = await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
@@ -115,6 +123,9 @@ export const sendToGroup = async (
     await sendMobileNotifications(context.db, result.notificationId);
     return result;
   } catch (error) {
+    if (error instanceof ORPCError) {
+      throw error;
+    }
     logger.error({ error }, "Error sending notification to group");
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
       message: "Failed to send notification to group",
@@ -131,7 +142,7 @@ export const sendToAll = async (
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(eq(tripParticipants.tripId, input.tripId));
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
     const result = await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
@@ -179,20 +190,18 @@ export const sendCoinAddedToGroup = async (
     const group = await context.db.query.groups.findFirst({
       where: (g, { eq }) => eq(g.id, input.groupId),
     });
-    if (group?.tripId !== input.tripId) {
+    if (!group) {
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
+    validateGroupBelongsToTrip(group, input.tripId);
 
     const participants = await context.db
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
     const notificationData = NotificationService.createCoinsAddedNotification(
       group.name,
       input.coins,
@@ -225,20 +234,18 @@ export const sendCoinRemovedFromGroup = async (
     const group = await context.db.query.groups.findFirst({
       where: (g, { eq }) => eq(g.id, input.groupId),
     });
-    if (group?.tripId !== input.tripId) {
+    if (!group) {
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
+    validateGroupBelongsToTrip(group, input.tripId);
 
     const participants = await context.db
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
     const notificationData = NotificationService.createCoinsRemovedNotification(
       group.name,
       input.coins,
@@ -271,9 +278,10 @@ export const sendNewMemberToGroup = async (
     const group = await context.db.query.groups.findFirst({
       where: (g, { eq }) => eq(g.id, input.groupId),
     });
-    if (group?.tripId !== input.tripId) {
+    if (!group) {
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
+    validateGroupBelongsToTrip(group, input.tripId);
     const user = await context.db.query.users.findFirst({
       where: (u, { eq }) => eq(u.id, input.userId),
       columns: { id: true, firstName: true, lastName: true },
@@ -289,7 +297,7 @@ export const sendNewMemberToGroup = async (
       .where(
         and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, group.id)),
       );
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
 
     const notificationData = NotificationService.createNewMemberNotification(
       group.name,
@@ -325,19 +333,17 @@ export const sendCustomToGroup = async (
     const group = await context.db.query.groups.findFirst({
       where: (g, { eq }) => eq(g.id, input.groupId),
     });
-    if (group?.tripId !== input.tripId || group.isDeleted) {
+    if (!group) {
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
+    validateGroupBelongsToTrip(group, input.tripId);
     const participants = await context.db
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)
       .where(
-        and(
-          eq(tripParticipants.tripId, input.tripId),
-          eq(tripParticipants.groupId, input.groupId),
-        ),
+        and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
-    const userIds = participants.map((p) => p.userId);
+    const userIds = extractUserIdsFromParticipants(participants);
     return await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
@@ -392,14 +398,11 @@ export const retryNotification = async (
 
     const retryResult = await sendMobileNotifications(context.db, input.notificationId);
 
-    return {
-      success: retryResult.success,
-      notificationId: input.notificationId,
-      retriedCount: pushes.length,
-      sent: retryResult.sent,
-      failed: retryResult.failed,
-    };
+    return buildRetryResult(retryResult, input.notificationId, pushes.length);
   } catch (error) {
+    if (error instanceof ORPCError) {
+      throw error;
+    }
     logger.error({ error }, "Error retrying notification");
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to retry notification" });
   }

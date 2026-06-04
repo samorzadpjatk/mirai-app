@@ -1,8 +1,7 @@
-import React from "react";
-import { Pressable, Text, View } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Pressable, Text, View } from "react-native";
 import { AppModalShell } from "../../common/ui/AppModalShell";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => undefined;
 

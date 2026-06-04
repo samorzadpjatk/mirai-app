@@ -1,20 +1,21 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { renderHook, act } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { act, renderHook } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { useChallengeForm } from "../../admin/useChallengeForm";
 
 // Mock expo-image-picker
-const mockLaunchImageLibraryAsync = jest.fn<
-  (options?: {
-    mediaTypes?: string;
-    allowsEditing?: boolean;
-    aspect?: number[];
-    quality?: number;
-  }) => Promise<{
-    canceled: boolean;
-    assets: { uri: string; fileName?: string; mimeType?: string }[];
-  }>
->();
+const mockLaunchImageLibraryAsync =
+  jest.fn<
+    (options?: {
+      mediaTypes?: string;
+      allowsEditing?: boolean;
+      aspect?: number[];
+      quality?: number;
+    }) => Promise<{
+      canceled: boolean;
+      assets: { uri: string; fileName?: string; mimeType?: string }[];
+    }>
+  >();
 
 jest.mock("expo-image-picker", () => ({
   launchImageLibraryAsync: (options?: {
@@ -45,8 +46,8 @@ jest.mock("~/hooks/files", () => ({
 
 // Mock image utilities
 jest.mock("~/utils/image", () => ({
-  getImageExtension: jest.fn(() => "jpg"),
-  getImageContentType: jest.fn(() => "image/jpeg"),
+  getFileExtension: jest.fn(() => "jpg"),
+  getFileContentType: jest.fn(() => "image/jpeg"),
 }));
 
 // Mock challenge form constants

@@ -1,23 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  Text,
-  ActivityIndicator,
 } from "react-native";
 import { useLocationContext } from "~/stores/location";
 import { useMapOverlayStore } from "~/stores/map";
 import { colors, spacing, typography } from "~/styles";
 import {
-  calculateBackgroundDisplayState,
   buildBackgroundStatusLabel,
   calculateBackgroundControlDisabled,
+  calculateBackgroundDisplayState,
+  getBackgroundIconColor,
   getBackgroundIconName,
   getLocationIconName,
   getThemeIconName,
-  getBackgroundIconColor,
 } from "./mapActionButtonsUtils";
 
 export function MapActionButtons() {
@@ -30,7 +30,7 @@ export function MapActionButtons() {
     isUpdatingBackgroundLocation,
     toggleBackgroundLocationUpdates,
   } = useLocationContext();
-  const { mapTheme, onRecenter, toggleTheme } = useMapOverlayStore();
+  const { mapTheme, handleRecenter, toggleTheme } = useMapOverlayStore();
 
   const isBackgroundDisplayedOn = calculateBackgroundDisplayState(
     isLocationSharingEnabled,
@@ -128,7 +128,11 @@ export function MapActionButtons() {
           <Ionicons name={getThemeIconName(mapTheme)} size={22} color="#00ced1" />
         </Pressable>
         {isLocationSharingEnabled && (
-          <Pressable testID="recenter-button" style={styles.recenterButton} onPress={onRecenter}>
+          <Pressable
+            testID="recenter-button"
+            style={styles.recenterButton}
+            onPress={handleRecenter}
+          >
             <Ionicons name="locate" size={20} color="#00ced1" />
           </Pressable>
         )}

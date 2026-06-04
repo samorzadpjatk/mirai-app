@@ -1,16 +1,28 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, inArray, count } from "drizzle-orm";
-import { groups, tripParticipants, groupJoinRequests, coinTransactions } from "@mirai-app/db";
-import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
-import { captureTripRankingSnapshot, createRankChangeActivities } from "../../../utils/activityFeed";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
 import {
-  toUserWithEmail,
+  buildLeaveResult,
+  calculateNextOrganizer,
+  canDeleteGroupAsOrganizer,
+  canRemoveUserFromGroup,
+  canUpdateGroup,
+  canViewJoinRequests,
+  isUserInGroup,
+} from "@mirai-app/shared/groups";
+import { ORPCError } from "@orpc/server";
+import { and, count, eq, inArray } from "drizzle-orm";
+import {
+  captureTripRankingSnapshot,
+  createRankChangeActivities,
+} from "../../../utils/activityFeed";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
+import type { GroupContext } from "./queries";
+import {
   generateFourDigitCode,
   normalizeGroupImageInput,
   resolveGroupImage,
+  toUserWithEmail,
 } from "./utils";
-import type { GroupContext } from "./queries";
 
 export const create = async (
   context: GroupContext,
@@ -139,18 +151,16 @@ export const update = async (
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
+  const updateCheck = canUpdateGroup(
+    context.dbUser.role,
+    group.organizerId === context.dbUser.id,
+    Boolean(updateData.organizerId && updateData.organizerId !== group.organizerId),
+  );
+  if (updateCheck.error) {
+    throw new ORPCError(updateCheck.error, { message: updateCheck.message });
+  }
+
   const isAdmin = context.dbUser.role === "ADMIN";
-  const isOrganizer = group.organizerId === context.dbUser.id;
-
-  if (!isAdmin && !isOrganizer) {
-    throw new ORPCError("FORBIDDEN", {
-      message: "Only group organizer or admin can update this group",
-    });
-  }
-
-  if (!isAdmin && updateData.organizerId && updateData.organizerId !== group.organizerId) {
-    throw new ORPCError("FORBIDDEN", { message: "Only admin can change group organizer" });
-  }
 
   await context.db
     .update(groups)
@@ -228,8 +238,9 @@ export const deleteMyGroup = async (context: GroupContext, input: { groupId: str
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  if (group.organizerId !== context.dbUser.id) {
-    throw new ORPCError("FORBIDDEN", { message: "Only group organizer can delete this group" });
+  const deleteCheck = canDeleteGroupAsOrganizer(group.organizerId, context.dbUser.id);
+  if (deleteCheck.error) {
+    throw new ORPCError(deleteCheck.error, { message: deleteCheck.message });
   }
 
   await context.db.transaction(async (tx) => {
@@ -263,11 +274,7 @@ export const join = async (context: GroupContext, input: { id: string; tripId: s
     throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
   }
 
-  const existingMembership = group.participants.find(
-    (member) => member.userId === context.dbUser.id,
-  );
-
-  if (existingMembership) {
+  if (isUserInGroup(context.dbUser.id, group.participants)) {
     throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
   }
 
@@ -363,10 +370,7 @@ export const requestToJoin = async (context: GroupContext, input: { groupId: str
   return request;
 };
 
-export const cancelMyJoinRequest = async (
-  context: GroupContext,
-  input: { groupId: string },
-) => {
+export const cancelMyJoinRequest = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
   const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
@@ -381,11 +385,7 @@ export const cancelMyJoinRequest = async (
   }
 
   const matchGroupTripUser = (gjr: any, { and, eq }: any) =>
-    and(
-      eq(gjr.groupId, group.id),
-      eq(gjr.tripId, group.tripId),
-      eq(gjr.userId, context.dbUser.id),
-    );
+    and(eq(gjr.groupId, group.id), eq(gjr.tripId, group.tripId), eq(gjr.userId, context.dbUser.id));
 
   const existingRequest = await context.db.query.groupJoinRequests.findFirst({
     where: matchGroupTripUser,
@@ -396,9 +396,7 @@ export const cancelMyJoinRequest = async (
     throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
   }
 
-  await context.db
-    .delete(groupJoinRequests)
-    .where(eq(groupJoinRequests.id, existingRequest.id));
+  await context.db.delete(groupJoinRequests).where(eq(groupJoinRequests.id, existingRequest.id));
 
   return { success: true };
 };
@@ -430,10 +428,9 @@ export const respondToJoinRequest = async (
 
     await ensureTripNotEnded(context.db, request.tripId);
 
-    if (request.group.organizerId !== context.dbUser.id) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Only group organizer can respond to join requests",
-      });
+    const respondCheck = canViewJoinRequests(request.group.organizerId, context.dbUser.id);
+    if (respondCheck.error) {
+      throw new ORPCError(respondCheck.error, { message: respondCheck.message });
     }
 
     if (request.group.isDeleted) {
@@ -498,11 +495,7 @@ export const assignUserToGroup = async (
     throw new ORPCError("BAD_REQUEST", { message: "Group not in trip" });
   }
 
-  const existingMembership = group.participants.find(
-    (member) => member.userId === input.userId,
-  );
-
-  if (existingMembership) {
+  if (isUserInGroup(input.userId, group.participants)) {
     throw new ORPCError("CONFLICT", { message: "Użytkownik już należy do tej grupy" });
   }
 
@@ -523,10 +516,7 @@ export const assignUserToGroup = async (
     await tx
       .delete(groupJoinRequests)
       .where(
-        and(
-          eq(groupJoinRequests.tripId, input.tripId),
-          eq(groupJoinRequests.userId, input.userId),
-        ),
+        and(eq(groupJoinRequests.tripId, input.tripId), eq(groupJoinRequests.userId, input.userId)),
       );
 
     return [upsertedParticipant];
@@ -655,19 +645,14 @@ export const removeUserFromGroup = async (
       throw new ORPCError("NOT_FOUND", { message: "Group not found" });
     }
 
-    const isAdmin = context.dbUser.role === "ADMIN";
-    const isOrganizer = Boolean(group?.organizerId && group.organizerId === context.dbUser.id);
-
-    if (!isAdmin && !isOrganizer) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Only group organizer or admin can remove members",
-      });
-    }
-
-    if (!isAdmin && participant.userId === group?.organizerId) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Group leader cannot be removed by organizer",
-      });
+    const removeCheck = canRemoveUserFromGroup(
+      context.dbUser.role,
+      group?.organizerId === context.dbUser.id,
+      participant.userId,
+      group?.organizerId ?? null,
+    );
+    if (removeCheck.error) {
+      throw new ORPCError(removeCheck.error, { message: removeCheck.message });
     }
 
     const [updated] = await tx
@@ -692,10 +677,7 @@ export const removeUserFromGroup = async (
         await tx
           .delete(groupJoinRequests)
           .where(eq(groupJoinRequests.groupId, participant.groupId));
-        await tx
-          .update(groups)
-          .set({ isDeleted: true })
-          .where(eq(groups.id, participant.groupId));
+        await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, participant.groupId));
       } else if (group?.organizerId && participant.userId === group.organizerId) {
         const matchTripAndGroup = (tp: any, { and, eq }: any) =>
           and(eq(tp.tripId, input.tripId), eq(tp.groupId, participant.groupId!));
@@ -707,10 +689,11 @@ export const removeUserFromGroup = async (
           columns: { userId: true },
         });
 
-        if (nextOrganizer) {
+        const nextOrganizerId = calculateNextOrganizer(nextOrganizer ? [nextOrganizer] : []);
+        if (nextOrganizerId) {
           await tx
             .update(groups)
-            .set({ organizerId: nextOrganizer.userId })
+            .set({ organizerId: nextOrganizerId })
             .where(eq(groups.id, participant.groupId));
         }
       }
@@ -764,37 +747,22 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
         .select({ count: count() })
         .from(tripParticipants)
         .where(
-          and(
-            eq(tripParticipants.tripId, group.tripId),
-            eq(tripParticipants.groupId, group.id),
-          ),
+          and(eq(tripParticipants.tripId, group.tripId), eq(tripParticipants.groupId, group.id)),
         );
       const membersLeft = membersLeftResult[0]?.count ?? 0;
 
       if (membersLeft === 0) {
         await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
         await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));
-        return {
-          left: true,
-          reassignedOrganizerId: null,
-          groupDeleted: true,
-        };
+        return buildLeaveResult(true, null, true);
       }
 
-      return {
-        left: true,
-        reassignedOrganizerId: null,
-        groupDeleted: false,
-      };
+      return buildLeaveResult(true, null, false);
     });
   }
 
   const matchOtherMembers = (tp: any, { and, eq, ne }: any) =>
-    and(
-      eq(tp.tripId, group.tripId),
-      eq(tp.groupId, group.id),
-      ne(tp.userId, context.dbUser.id),
-    );
+    and(eq(tp.tripId, group.tripId), eq(tp.groupId, group.id), ne(tp.userId, context.dbUser.id));
   const sortByCreatedAt = (tp: any, { asc }: any) => [asc(tp.createdAt)];
 
   const remainingParticipants = await context.db.query.tripParticipants.findMany({
@@ -803,14 +771,11 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
     columns: { userId: true },
   });
 
-  const nextOrganizerId = remainingParticipants[0]?.userId ?? null;
+  const nextOrganizerId = calculateNextOrganizer(remainingParticipants);
 
   await context.db.transaction(async (tx) => {
     if (nextOrganizerId) {
-      await tx
-        .update(groups)
-        .set({ organizerId: nextOrganizerId })
-        .where(eq(groups.id, group.id));
+      await tx.update(groups).set({ organizerId: nextOrganizerId }).where(eq(groups.id, group.id));
     } else {
       await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.groupId, group.id));
       await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, group.id));
@@ -827,11 +792,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
       );
   });
 
-  return {
-    left: true,
-    reassignedOrganizerId: nextOrganizerId,
-    groupDeleted: !nextOrganizerId,
-  };
+  return buildLeaveResult(true, nextOrganizerId, !nextOrganizerId);
 };
 
 export const addCoins = async (

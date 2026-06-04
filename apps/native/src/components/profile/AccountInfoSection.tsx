@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { StyleSheet, Text, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export function AccountInfoSection() {
   const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });

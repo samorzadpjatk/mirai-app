@@ -1,7 +1,8 @@
-import { ORPCError } from "@orpc/server";
-import { eq, count } from "drizzle-orm";
-import { notifications, notificationPushes } from "@mirai-app/db";
+import { notificationPushes, notifications } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { buildPaginationBounds, mapSubscriptionStatus } from "@mirai-app/shared/notifications";
+import { ORPCError } from "@orpc/server";
+import { count, eq } from "drizzle-orm";
 
 export type NotificationContext = {
   db: DB;
@@ -13,14 +14,7 @@ export const getSubscriptionStatus = async (context: NotificationContext) => {
     where: (ps, { eq }) => eq(ps.userId, context.dbUser.id),
   });
 
-  return {
-    isSubscribed: subscriptions.length > 0,
-    subscriptions: subscriptions.map((s) => ({
-      id: s.id,
-      token: s.token,
-      createdAt: s.createdAt,
-    })),
-  };
+  return mapSubscriptionStatus(subscriptions);
 };
 
 export const getAllMy = async (
@@ -33,7 +27,7 @@ export const getAllMy = async (
     .where(eq(notificationPushes.targetUserId, context.dbUser.id));
   const notificationIds = pushRows.map((p) => p.notificationId);
   const count = notificationIds.length;
-  const totalPages = Math.ceil(count / input.pageSize);
+  const { totalPages } = buildPaginationBounds(count, input.pageSize);
   if (input.page > totalPages && totalPages > 0) {
     throw new ORPCError("BAD_REQUEST", {
       message: `Page ${input.page} exceeds total pages ${totalPages}`,

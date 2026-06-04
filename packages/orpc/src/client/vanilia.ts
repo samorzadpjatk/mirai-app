@@ -1,4 +1,4 @@
-import { createORPCClient, ORPCError } from "@orpc/client";
+import { DynamicLink, ORPCError, createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WSLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
@@ -39,7 +39,7 @@ const createWsConnection = (wsUrl: string, authorizationToken?: string) => {
     });
 
     const originalSend = ws.send.bind(ws);
-    ws.send = function (data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+    ws.send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
       if (authAcknowledged) {
         return originalSend(data);
       }
@@ -62,9 +62,14 @@ const isRetryableError = (error: unknown): boolean => {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: string) => {
-  const ws = createWsConnection(wsUrl, authorizationToken);
-  new WSLink({ websocket: ws });
+const STREAMING_PROCEDURES = new Set([
+  "location/getFriendsLocationsStream",
+  "location/updateLocationStream",
+]);
+
+const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: string) => {
+  const ws = wsUrl ? createWsConnection(wsUrl, authorizationToken) : null;
+  const wsLink = ws ? new WSLink({ websocket: ws }) : null;
 
   const httpLink = new RPCLink({
     url: httpUrl,
@@ -91,12 +96,24 @@ const getORPCClient = (httpUrl: string, wsUrl: string, authorizationToken?: stri
     ],
   });
 
-  const client: RouterClient<AppRouter> = createORPCClient(httpLink);
+  const link = wsLink
+    ? new DynamicLink((_options, path) => {
+        const pathKey = path.join("/");
+        if (STREAMING_PROCEDURES.has(pathKey)) {
+          return wsLink;
+        }
+        return httpLink;
+      })
+    : httpLink;
+
+  const client: RouterClient<AppRouter> = createORPCClient(link);
 
   return {
     client,
     cleanup: () => {
-      ws.close();
+      if (ws) {
+        ws.close();
+      }
       return Promise.resolve();
     },
   };

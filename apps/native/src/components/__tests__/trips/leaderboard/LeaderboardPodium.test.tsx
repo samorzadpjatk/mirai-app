@@ -1,9 +1,9 @@
+import { fireEvent, screen } from "@testing-library/react-native";
 import React from "react";
 import type { Text as TextType } from "react-native";
-import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { LeaderboardPodium } from "../../../trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "../../../trips/leaderboard/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("@expo/vector-icons", () => {
   const MockReact = jest.requireActual<typeof React>("react");

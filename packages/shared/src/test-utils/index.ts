@@ -1,5 +1,10 @@
 // Export mock factories
-export { createMockSupabaseClient, createMockSession, createMockUser } from "./mock-factories";
+export {
+  createMockSupabaseClient,
+  createMockSession,
+  createMockUser,
+  createMockSupabaseUser,
+} from "./mock-factories";
 
 // Export test helpers
 export {
@@ -24,13 +29,3 @@ export {
   createApiResponseBuilder,
   createPaginatedBuilder,
 } from "./test-data-builders";
-
-// Export Vitest setup helpers
-export {
-  setupSupabaseMocks,
-  setupDbMocks,
-  setupExpoMocks,
-  setupReactNativeMocks,
-  setupNodeMocks,
-  setupReactNativeMocksComplete,
-} from "./vitest-setup";

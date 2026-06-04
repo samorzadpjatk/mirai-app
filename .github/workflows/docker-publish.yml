@@ -50,7 +50,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: "1.3.14"
 
@@ -58,6 +58,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build & push container images via Nx
+        id: build
         env:
           INPUT_PUSH: true
           INPUT_REGISTRY: ${{ env.REGISTRY }}
@@ -70,3 +71,26 @@ jobs:
           bunx nx run-many -t container \
             --projects=apps/backend-server,apps/notification-sender \
             --configuration=ci
+
+      - name: Generate Docker build summary
+        if: always()
+        run: |
+          echo "## Docker Build & Push Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.build.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | ${{ env.REGISTRY }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Images | backend-server, notification-sender |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tags | semver, latest |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.build.outcome }}" == "success" ]; then
+            echo "### ✅ Images Published" >> $GITHUB_STEP_SUMMARY
+            echo "- \`${{ env.REGISTRY }}/${{ github.repository_owner }}/backend-server:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`${{ env.REGISTRY }}/${{ github.repository_owner }}/notification-sender:latest\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "See step logs for build error details." >> $GITHUB_STEP_SUMMARY
+            echo "::error::Docker build failed"
+          fi

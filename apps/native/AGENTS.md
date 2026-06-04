@@ -21,25 +21,6 @@ Expo React Native application for iOS and Android. The primary mobile interface 
 - **State**: Zustand 5.0.11
 - **API**: oRPC + React Query
 
-## Key Files
-
-```
-apps/native/
-├── app/                  # Expo Router pages
-│   ├── (tabs)/           # Tab navigation
-│   ├── _layout.tsx       # Root layout
-│   └── index.tsx         # Entry point
-├── src/
-│   ├── components/       # React components
-│   ├── hooks/            # Custom hooks
-│   ├── stores/           # Zustand stores
-│   └── utils/            # Utilities
-├── scripts/              # Build scripts
-├── fastlane/             # iOS/Android releases
-├── package.json
-└── AGENTS.md             # This file
-```
-
 ## Development Commands
 
 ```bash
@@ -58,6 +39,11 @@ bun run lint       # ESLint
 bun run typecheck  # TypeScript
 bun run format:check
 bun run format:write
+
+# Testing
+bun run test       # Run tests with coverage
+bun run test:ci    # CI mode (pass with no tests)
+bun run test:watch # Watch mode
 
 # Build
 bun run build      # Export for production
@@ -102,13 +88,13 @@ bun run release:ios:submit
 
 ## Native-Specific Code Quality Rules
 
-See [Native Code Quality](./../../docs/apps/native/code-quality.md) for detailed standards. Key rules:
+See [Native Code Quality](./../../docs/apps/native/code-quality.md) and [Testing Conventions](./../../docs/conventions/testing.md) for detailed standards. Key rules:
 
 - **Bundle Budget**: Every KB matters for OTA. Verify dependencies >5KB replace existing ones.
 - **Hook Test Anti-Patterns**: Stop mock-verification hook tests. Extract pure domain logic to `@mirai-app/shared`.
 - **Pure Function Extraction**: Name with `calculateXxx`, `syncXxx`, `executeXxx`, `buildXxx`, `toXxxOrNull`.
 - **Mock Removal for UI**: Render real components. Query by descriptive `testID` props.
-- **Coverage**: 83.74% statements, 3,034 tests across 267 suites.
+- **MSW Patterns**: Use Mock Service Worker for API mocking in component tests. Avoid mocking React Query internals.
 
 ## Links
 

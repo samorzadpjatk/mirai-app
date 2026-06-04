@@ -1,9 +1,8 @@
+import type { DB, Role, User } from "@mirai-app/db";
+import type { AuthUser } from "@mirai-app/shared/stores";
+import { formatDisplayName } from "@mirai-app/shared/users";
+import { logger } from "@mirai-app/shared/utils";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
-import type { User, Role, DB } from "@mirai-app/db";
-import { users } from "@mirai-app/db";
-import { eq } from "drizzle-orm";
-import type { AuthUser } from "@mirai-app/shared";
-import { formatDisplayName, logger } from "@mirai-app/shared";
 
 interface MinimalBuffer {
   from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
@@ -49,22 +48,6 @@ function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unk
     logger.error(error, "Error decoding JWT payload");
     return null;
   }
-}
-
-function getTokenExpiry(accessToken: string) {
-  const payload = decodeJwtPayload<{ exp?: number }>(accessToken);
-  if (!payload?.exp) {
-    return {
-      expiresAt: null as number | null,
-      expiresIn: null as number | null,
-    };
-  }
-
-  const expiresAt = payload.exp;
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  const expiresIn = Math.max(expiresAt - nowInSeconds, 0);
-
-  return { expiresAt, expiresIn };
 }
 
 export class AuthenticationError extends Error {
@@ -203,11 +186,12 @@ export async function requireAuth(
 }> {
   const session = await getSession(db, supabase, accessToken);
 
-  if (!session?.user) {
+  if (!session?.user || !session.authUserId) {
     throw new AuthenticationError("Unauthorized");
   }
 
-  const adminLookup = await supabase.auth.admin.getUserById(session.authUserId!);
+  const authUserId = session.authUserId;
+  const adminLookup = await supabase.auth.admin.getUserById(authUserId);
 
   if (adminLookup.error) {
     logger.warn(
@@ -226,7 +210,7 @@ export async function requireAuth(
   }
 
   const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.authUserId, session.authUserId!),
+    where: (u, { eq }) => eq(u.authUserId, authUserId),
   });
 
   if (!dbUser) {

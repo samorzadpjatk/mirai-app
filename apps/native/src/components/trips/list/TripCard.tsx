@@ -1,9 +1,9 @@
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
-import miraiLogo from "../../../../assets/mirai_logo.png";
-import { borderRadius, colors, spacing, typography } from "~/styles";
-import type { TripListItem } from "./types";
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import miraiLogo from "../../../../assets/mirai_logo.png";
+import type { TripListItem } from "./types";
 
 interface TripCardProps {
   trip: TripListItem;

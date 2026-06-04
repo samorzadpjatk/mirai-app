@@ -30,10 +30,7 @@ export const challengeColumns = {
   updatedAt: true,
 } as const;
 
-export const CHALLENGE_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
 export const MAX_RECURRING_DAYS = 30;
-export const DAY_MS = 24 * 60 * 60 * 1000;
-export const HOUR_MS = 60 * 60 * 1000;
 export const MAX_PEER_VOTING_DURATION_HOURS = 24 * 30;
 
 export const challengeImageSchema = z

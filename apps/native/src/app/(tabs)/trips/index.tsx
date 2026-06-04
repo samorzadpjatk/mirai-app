@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useAuth } from "@mirai-app/auth/client";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -8,13 +9,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { useAuth } from "@mirai-app/auth/client";
-import LoadingScreen from "../../../components/LoadingScreen";
-import { useSelectedTrip, useTrips } from "~/hooks/trips";
-import TripDetailsScreen from "./details";
-import { TripCard } from "~/components/trips/list/TripCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TripCard } from "~/components/trips/list/TripCard";
+import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
+import LoadingScreen from "../../../components/LoadingScreen";
+import TripDetailsScreen from "./details";
 
 export default function TripsScreen() {
   const { session, isLoading } = useAuth();

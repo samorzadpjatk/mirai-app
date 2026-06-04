@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { formatRankingPosition } from "../trips/groups/details/GroupStatsGrid";
 
 describe("formatRankingPosition", () => {

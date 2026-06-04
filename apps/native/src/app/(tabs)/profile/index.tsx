@@ -1,14 +1,14 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { orpc } from "@mirai-app/orpc/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing } from "../../../styles";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
-import { useRouter, useFocusEffect } from "expo-router";
-import { orpc } from "@mirai-app/orpc/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { colors, spacing } from "../../../styles";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();

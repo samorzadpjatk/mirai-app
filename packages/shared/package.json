@@ -1,37 +1,55 @@
 {
   "name": "@mirai-app/shared",
-  "nx": { "tags": ["type:package", "scope:shared"] },
+  "nx": {
+    "tags": [
+      "type:package",
+      "scope:shared"
+    ]
+  },
   "private": true,
   "license": "AGPL-3.0",
-  "module": "index.ts",
   "type": "module",
   "exports": {
-    ".": "./index.ts",
     "./test-utils": "./src/test-utils/index.ts",
+    "./challenges": "./src/challenges/index.ts",
     "./feed": "./src/feed/index.ts",
-    "./trips": "./src/trips/index.ts"
+    "./groups": "./src/groups/index.ts",
+    "./stores": "./src/stores/index.ts",
+    "./trips": "./src/trips/index.ts",
+    "./users": "./src/users/index.ts",
+    "./storage": "./src/storage/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./utils/location": "./src/utils/location.ts",
+    "./tripInfo": "./src/tripInfo/index.ts",
+    "./rewards": "./src/rewards/index.ts",
+    "./coins": "./src/coins/index.ts",
+    "./challengeSubmissions": "./src/challengeSubmissions/index.ts",
+    "./challengeVote": "./src/challengeVote/index.ts",
+    "./locations": "./src/locations/index.ts",
+    "./notifications": "./src/notifications/index.ts",
+    "./reports": "./src/reports/index.ts",
+    "./sponsors": "./src/sponsors/index.ts"
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest --run --changed",
+    "test:ci": "vitest run --coverage",
     "test:watch": "vitest",
-    "lint": "eslint .",
-    "lint:fix": "eslint --fix .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@supabase/supabase-js": "^2.89.0",
-    "@types/react": "~19.1.17",
-    "@vitest/coverage-v8": "^3.0.0",
+    "@mirai-app/db": "workspace:*",
+    "@orpc/server": "^1.14.2",
+    "@types/react": "~19.2.10",
+    "@vitest/coverage-v8": "^4.1.8",
     "react": "^19.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "vitest": "^4.1.8"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.2",
     "pino": "^9.6.0",
     "zustand": "^5.0.11"
   }

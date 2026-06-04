@@ -1,8 +1,7 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import RewardCard from "../../rewards/RewardCard";
 import type { RewardListItem } from "../../rewards/types";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => ({
   id: "reward-1",
@@ -22,7 +21,6 @@ const baseReward = (overrides: Partial<RewardListItem> = {}): RewardListItem => 
   isEligibleToBuy: true,
   isOutOfStock: false,
   purchasedCount: 0,
-  originalCoinCost: null,
   ...overrides,
 });
 

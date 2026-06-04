@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { EditGroupFormFields } from "../../../../trips/groups/edit/EditGroupFormFields";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("EditGroupFormFields", () => {
   it("should render group name label", () => {
@@ -14,10 +13,7 @@ describe("EditGroupFormFields", () => {
     renderWithProviders(<EditGroupFormFields groupName="" onChangeName={jest.fn()} />);
 
     const input = screen.getByPlaceholderText("Enter group name");
-    interface InputElement {
-      props: { value: string };
-    }
-    expect((input as unknown as InputElement).props.value).toBe("");
+    expect((input.props as { value: string }).value).toBe("");
   });
 
   it("should render with provided group name", () => {
@@ -26,10 +22,7 @@ describe("EditGroupFormFields", () => {
     );
 
     const input = screen.getByPlaceholderText("Enter group name");
-    interface InputElement {
-      props: { value: string };
-    }
-    expect((input as unknown as InputElement).props.value).toBe("Existing Group");
+    expect((input.props as { value: string }).value).toBe("Existing Group");
   });
 
   it("should call onChangeName when text changes", () => {
@@ -50,15 +43,12 @@ describe("EditGroupFormFields", () => {
     );
 
     let input = screen.getByPlaceholderText("Enter group name");
-    interface InputElement {
-      props: { value: string };
-    }
-    expect((input as unknown as InputElement).props.value).toBe("Old Name");
+    expect((input.props as { value: string }).value).toBe("Old Name");
 
     view.rerender(<EditGroupFormFields groupName="New Name" onChangeName={onChangeName} />);
 
     input = screen.getByPlaceholderText("Enter group name");
-    expect((input as unknown as InputElement).props.value).toBe("New Name");
+    expect((input.props as { value: string }).value).toBe("New Name");
   });
 
   it("should have correct placeholder text", () => {

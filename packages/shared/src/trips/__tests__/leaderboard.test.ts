@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { calculateLeaderboardInfo, findUserGroup } from "../leaderboard";
 
 describe("calculateLeaderboardInfo", () => {

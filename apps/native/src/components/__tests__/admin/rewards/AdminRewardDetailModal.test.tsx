@@ -1,11 +1,11 @@
-import type ReactType from "react";
-import type { View, Text, TouchableOpacity, TextInput } from "react-native";
-import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
-import AdminRewardDetailModal from "../../../admin/rewards/AdminRewardDetailModal";
 import * as ImagePicker from "expo-image-picker";
+import type ReactType from "react";
+import React from "react";
+import type { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Alert } from "react-native";
+import AdminRewardDetailModal from "../../../admin/rewards/AdminRewardDetailModal";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 const mockMutateAsync = jest.fn();
 const mockDeleteMutateAsync = jest.fn();

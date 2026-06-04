@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripsHeader } from "../../../trips/list/TripsHeader";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("TripsHeader", () => {
   it("should render with title and subtitle", () => {

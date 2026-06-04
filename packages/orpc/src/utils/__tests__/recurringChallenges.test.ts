@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  ensureRecurringInstanceForTemplate,
-  precreateRecurringInstancesForTemplate,
-  ensureRecurringInstancesForTrip,
-  resolveRecurringChallengeIdForTrip,
-  type RecurringTemplate,
-} from "../recurringChallenges";
 import type { TransactionDB } from "@mirai-app/db";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  type RecurringTemplate,
+  ensureRecurringInstanceForTemplate,
+  ensureRecurringInstancesForTrip,
+  precreateRecurringInstancesForTemplate,
+  resolveRecurringChallengeIdForTrip,
+} from "../recurringChallenges";
 
 describe("recurringChallenges", () => {
   let mockTx: TransactionDB;
@@ -35,7 +35,7 @@ describe("recurringChallenges", () => {
           }),
         })),
       })),
-    } as unknown as TransactionDB;
+    } as TransactionDB;
   });
 
   const createMockTemplate = (overrides: Partial<RecurringTemplate> = {}): RecurringTemplate => ({

@@ -1,6 +1,6 @@
-import { runSeed } from "./src/seed";
 import { closeDb } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared";
+import { logger } from "@mirai-app/shared/utils";
+import { runSeed } from "./src/seed";
 
 try {
   await runSeed();

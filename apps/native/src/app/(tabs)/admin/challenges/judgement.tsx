@@ -1,12 +1,11 @@
-import React from "react";
-import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useQuery } from "@tanstack/react-query";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { textStyles, viewStyles } from "~/styles/judgement";
 
 export default function ChallengeJudgementScreen() {
   const insets = useSafeAreaInsets();

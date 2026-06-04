@@ -1,17 +1,18 @@
-import React, { useMemo, useRef, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { UserAvatar } from "./ui/UserAvatar";
 import {
-  MapView,
   Camera,
   UserLocation as MapLibreUserLocation,
+  MapView,
   PointAnnotation,
-  VectorSource,
-  RasterSource,
   RasterLayer,
+  RasterSource,
+  VectorSource,
 } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { useLocationContext } from "~/stores/location";
+import { UserAvatar } from "./ui/UserAvatar";
 
 export interface UserLocation {
   id: string;
@@ -172,12 +173,22 @@ export function processUserLocationUpdate(
   shouldNotify: boolean;
 } {
   if (!loc.coords) {
-    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+    return {
+      shouldUpdateLocation: false,
+      coordinate: null,
+      shouldCenter: false,
+      shouldNotify: false,
+    };
   }
 
   const { longitude, latitude } = loc.coords;
   if (longitude == null || latitude == null) {
-    return { shouldUpdateLocation: false, coordinate: null, shouldCenter: false, shouldNotify: false };
+    return {
+      shouldUpdateLocation: false,
+      coordinate: null,
+      shouldCenter: false,
+      shouldNotify: false,
+    };
   }
 
   const shouldUpdateLocation = Boolean(currentUserId && canShareOwnLocation);
@@ -302,7 +313,12 @@ export const UserMap: React.FC<UserMapProps> = ({
   const handleUserLocationUpdate = (loc: {
     coords?: { longitude?: number | null; latitude?: number | null };
   }) => {
-    const result = processUserLocationUpdate(loc, currentUserId, canShareOwnLocation, hasCenteredRef.current);
+    const result = processUserLocationUpdate(
+      loc,
+      currentUserId,
+      canShareOwnLocation,
+      hasCenteredRef.current,
+    );
 
     if (!result.coordinate) return;
 
@@ -335,11 +351,11 @@ export const UserMap: React.FC<UserMapProps> = ({
         mapStyle={currentMapStyle}
         style={styles.map}
         logoEnabled={false}
-        compassEnabled
-        rotateEnabled
-        pitchEnabled
-        scrollEnabled
-        zoomEnabled
+        compassEnabled={true}
+        rotateEnabled={true}
+        pitchEnabled={true}
+        scrollEnabled={true}
+        zoomEnabled={true}
         onPress={onMapPress}
       >
         <Camera

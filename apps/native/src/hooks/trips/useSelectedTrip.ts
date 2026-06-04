@@ -1,9 +1,9 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  clearSelectedTripIdInStorage,
   getSelectedTripIdFromStorage,
   setSelectedTripIdInStorage,
-  clearSelectedTripIdInStorage,
 } from "~/services/storage/selectedTripStorage";
 
 const SELECTED_TRIP_QUERY_KEY = ["selected-trip-id"] as const;
@@ -13,7 +13,7 @@ export function useSelectedTrip() {
   const selectedTripQuery = useQuery({
     queryKey: SELECTED_TRIP_QUERY_KEY,
     queryFn: getSelectedTripIdFromStorage,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
   });
   const setSelectedTripMutation = useMutation({
     mutationFn: async (tripId: string | null) => {

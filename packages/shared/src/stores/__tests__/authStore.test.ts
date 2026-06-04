@@ -1,14 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  authStore,
-  _resetAuthStoreForTests,
-  type AuthUser,
   type AuthChangeEvent,
+  type AuthUser,
   type SupabaseClient,
   type SupabaseSession,
+  _resetAuthStoreForTests,
+  authStore,
 } from "../authStore";
 
-import { mockConsole, flushPromises } from "../../test-utils/test-helpers";
+import { createMockSupabaseClient } from "../../test-utils/mock-factories";
+import { flushPromises, mockConsole } from "../../test-utils/test-helpers";
 
 describe("Auth Store", () => {
   let consoleMock: { restore: () => void };
@@ -132,14 +133,8 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -150,7 +145,6 @@ describe("Auth Store", () => {
 
       await flushPromises();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.getSession).toHaveBeenCalled();
       expect(onUserFetch).toHaveBeenCalledWith("auth-1");
 
@@ -162,14 +156,8 @@ describe("Auth Store", () => {
     });
 
     it("should initialize without user when no session exists", async () => {
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
 
       authStore.getState().initialize({
         client: mockClient,
@@ -190,14 +178,13 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       const onUserFetch = vi.fn().mockRejectedValue(new Error("Fetch failed"));
 
@@ -216,20 +203,18 @@ describe("Auth Store", () => {
 
     it("should subscribe to auth state changes", () => {
       const unsubscribeMock = vi.fn();
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: unsubscribeMock } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: unsubscribeMock } },
+      });
 
       const cleanup = authStore.getState().initialize({
         client: mockClient,
       });
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.onAuthStateChange).toHaveBeenCalled();
 
       // Test cleanup function
@@ -253,21 +238,12 @@ describe("Auth Store", () => {
         | ((event: AuthChangeEvent, session: SupabaseSession | null) => void)
         | null = null;
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi
-            .fn()
-            .mockImplementation(
-              (callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
-                authStateCallback = callback;
-                return {
-                  data: { subscription: { unsubscribe: vi.fn() } },
-                };
-              },
-            ),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+      mockClient.auth.onAuthStateChange.mockImplementation((callback) => {
+        authStateCallback = callback;
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -302,21 +278,12 @@ describe("Auth Store", () => {
         | ((event: AuthChangeEvent, session: SupabaseSession | null) => void)
         | null = null;
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi
-            .fn()
-            .mockImplementation(
-              (callback: (event: AuthChangeEvent, session: SupabaseSession | null) => void) => {
-                authStateCallback = callback;
-                return {
-                  data: { subscription: { unsubscribe: vi.fn() } },
-                };
-              },
-            ),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+      mockClient.auth.onAuthStateChange.mockImplementation((callback) => {
+        authStateCallback = callback;
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      });
 
       authStore.getState().initialize({
         client: mockClient,
@@ -345,14 +312,13 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
 
       authStore.getState().initialize({
         client: mockClient,
@@ -375,22 +341,21 @@ describe("Auth Store", () => {
     });
 
     it("should sign in with OTP successfully", async () => {
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signInWithOtp.mockResolvedValue({ error: null });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
 
       await authStore.getState().signInWithOtp("test@example.com");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signInWithOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         options: { shouldCreateUser: false },
@@ -399,15 +364,15 @@ describe("Auth Store", () => {
 
     it("should throw error when signInWithOtp fails", async () => {
       const mockError = new Error("Invalid email");
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signInWithOtp: vi.fn().mockResolvedValue({ error: mockError }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signInWithOtp.mockResolvedValue({ error: mockError });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -442,18 +407,18 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signInWithPassword: vi.fn().mockResolvedValue({
-            data: { session: mockSession },
-            error: null,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signInWithPassword.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -462,7 +427,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().signInWithPassword("test@example.com", "password");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "password",
@@ -473,18 +437,17 @@ describe("Auth Store", () => {
 
     it("should throw error when signInWithPassword fails", async () => {
       const mockError = new Error("Invalid credentials");
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signInWithPassword: vi.fn().mockResolvedValue({
-            data: null,
-            error: mockError,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signInWithPassword.mockResolvedValue({
+        error: mockError,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -495,18 +458,18 @@ describe("Auth Store", () => {
     });
 
     it("should handle sign in without session in response", async () => {
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signInWithPassword: vi.fn().mockResolvedValue({
-            data: {},
-            error: null,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signInWithPassword.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -541,15 +504,15 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          verifyOtp: vi.fn().mockResolvedValue({ error: null }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.verifyOtp.mockResolvedValue({ error: null });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -558,7 +521,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().verifyOtp("test@example.com", "123456");
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.verifyOtp).toHaveBeenCalledWith({
         email: "test@example.com",
         token: "123456",
@@ -569,15 +531,15 @@ describe("Auth Store", () => {
 
     it("should throw error when verifyOtp fails", async () => {
       const mockError = new Error("Invalid token");
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          verifyOtp: vi.fn().mockResolvedValue({ error: mockError }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.verifyOtp.mockResolvedValue({ error: mockError });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -612,15 +574,15 @@ describe("Auth Store", () => {
         access_token: "token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signOut: vi.fn().mockResolvedValue({ error: null }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signOut.mockResolvedValue({ error: null });
 
       const onUserFetch = vi.fn().mockResolvedValue(mockUser);
 
@@ -632,7 +594,6 @@ describe("Auth Store", () => {
 
       await authStore.getState().signOut();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.signOut).toHaveBeenCalled();
       const state = authStore.getState();
       expect(state.user).toBeNull();
@@ -642,15 +603,15 @@ describe("Auth Store", () => {
 
     it("should throw error when signOut fails", async () => {
       const mockError = new Error("Sign out failed");
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          signOut: vi.fn().mockResolvedValue({ error: mockError }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.signOut.mockResolvedValue({ error: mockError });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -672,43 +633,41 @@ describe("Auth Store", () => {
         access_token: "new-token",
       };
 
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          refreshSession: vi.fn().mockResolvedValue({
-            data: { session: newSession },
-            error: null,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.refreshSession.mockResolvedValue({
+        data: { session: newSession },
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
 
       await authStore.getState().refreshSession();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(mockClient.auth.refreshSession).toHaveBeenCalled();
       expect(authStore.getState().session).toEqual(newSession);
     });
 
     it("should throw error when refreshSession fails", async () => {
       const mockError = new Error("Session expired");
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          refreshSession: vi.fn().mockResolvedValue({
-            data: null,
-            error: mockError,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.refreshSession.mockResolvedValue({
+        error: mockError,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();
@@ -717,18 +676,18 @@ describe("Auth Store", () => {
     });
 
     it("should handle refresh without session in response", async () => {
-      const mockClient = {
-        auth: {
-          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-          onAuthStateChange: vi.fn().mockReturnValue({
-            data: { subscription: { unsubscribe: vi.fn() } },
-          }),
-          refreshSession: vi.fn().mockResolvedValue({
-            data: {},
-            error: null,
-          }),
-        },
-      } as unknown as SupabaseClient;
+      const mockClient = createMockSupabaseClient();
+
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      mockClient.auth.refreshSession.mockResolvedValue({
+        data: {},
+        error: null,
+      });
 
       authStore.getState().initialize({ client: mockClient });
       await flushPromises();

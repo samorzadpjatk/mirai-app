@@ -1,11 +1,11 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
+  buildFocusStateFromUser,
   getNextMapTheme,
   isValidCoordinate,
-  shouldCollapseList,
-  buildFocusStateFromUser,
-  removeUserFromSharingUserIds,
   removeUserFromSharingSettings,
+  removeUserFromSharingUserIds,
+  shouldCollapseList,
 } from "~/stores/map/mapOverlayStore";
 
 describe("getNextMapTheme", () => {
@@ -28,8 +28,8 @@ describe("isValidCoordinate", () => {
   });
 
   it("should return false for invalid length", () => {
-    expect(isValidCoordinate([52.2297])).toBe(false);
-    expect(isValidCoordinate([52.2297, 21.0122, 0])).toBe(false);
+    expect(isValidCoordinate([52.2297] as number[] as [number, number])).toBe(false);
+    expect(isValidCoordinate([52.2297, 21.0122, 0] as number[] as [number, number])).toBe(false);
   });
 });
 

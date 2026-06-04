@@ -1,15 +1,9 @@
-import { count, inArray } from "drizzle-orm";
 import { activityReactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { emptyReactionCounts } from "@mirai-app/shared/feed";
+import { count, inArray } from "drizzle-orm";
 import { resolveSignedUrl } from "./storage";
 import type { ActivityWithRelations } from "./types";
-
-export const emptyReactionCounts = () => ({
-  heart: 0,
-  fire: 0,
-  clap: 0,
-  star: 0,
-});
 
 export const enrichActivities = async (
   context: {

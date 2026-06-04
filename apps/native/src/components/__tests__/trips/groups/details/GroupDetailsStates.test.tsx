@@ -1,8 +1,7 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { GroupDetailsLoadingState } from "../../../../trips/groups/details/GroupDetailsLoadingState";
 import { GroupNotFoundState } from "../../../../trips/groups/details/GroupNotFoundState";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupDetailsLoadingState", () => {
   it("renders loading indicator", () => {

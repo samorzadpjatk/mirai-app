@@ -1,17 +1,18 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, inArray } from "drizzle-orm";
-import { challenges, challengeVotes } from "@mirai-app/db";
+import { challengeVotes, challenges } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { buildVoteInsertValues, validateVotePayload } from "@mirai-app/shared/challengeVote";
+import { ORPCError } from "@orpc/server";
+import { and, eq, inArray } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import { voteColumns } from "./types";
 import {
+  ensureChallengeVoting,
   ensureTripParticipant,
   getChallengeInTrip,
-  ensureChallengeVoting,
-  recomputeSubmissionVotes,
   getJudgedStaffVotingProgress,
   maybeFinalizeJudgedStaffVoting,
+  recomputeSubmissionVotes,
   validateJudgedStaffVotePayload,
 } from "./utils";
 
@@ -101,17 +102,12 @@ export const submitVotes = async (
   const challenge = await getChallengeInTrip(context, input.challengeId, input.tripId);
   ensureChallengeVoting({ challenge, actorRole: context.dbUser.role });
 
-  const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
-  if (uniqueSubmissionIds.size !== input.votes.length) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "Nie mozna glosowac wielokrotnie na to samo zgloszenie",
-    });
+  const payloadError = validateVotePayload(input.votes);
+  if (payloadError) {
+    throw new ORPCError(payloadError.error, { message: payloadError.message });
   }
 
-  const uniquePositions = new Set(input.votes.map((vote) => vote.votePosition));
-  if (uniquePositions.size !== input.votes.length) {
-    throw new ORPCError("BAD_REQUEST", { message: "Pozycje glosow musza byc unikalne" });
-  }
+  const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
 
   const matchSubmissions = (cs: any, { eq, and, inArray }: any) =>
     and(inArray(cs.id, [...uniqueSubmissionIds]), eq(cs.challengeId, input.challengeId));
@@ -151,16 +147,9 @@ export const submitVotes = async (
   const sortByVotePosition = (cv: any, { asc }: any) => [asc(cv.votePosition)];
 
   const result = await context.db.transaction(async (tx) => {
-    await tx.insert(challengeVotes).values(
-      input.votes.map((vote) => ({
-        challengeId: input.challengeId,
-        submissionId: vote.submissionId,
-        voterId: participant.id,
-        votePosition: vote.votePosition,
-        votePoints: vote.votePoints,
-        normalizedWeight: vote.normalizedWeight ?? 1.0,
-      })),
-    );
+    await tx
+      .insert(challengeVotes)
+      .values(buildVoteInsertValues(input.votes, input.challengeId, participant.id));
 
     await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
@@ -255,14 +244,7 @@ export const submitVote = async (
     const result = await context.db.transaction(async (tx) => {
       const [createdVote] = await tx
         .insert(challengeVotes)
-        .values({
-          challengeId: input.challengeId,
-          submissionId: input.submissionId,
-          voterId: participant.id,
-          votePosition: input.votePosition,
-          votePoints: input.votePoints,
-          normalizedWeight: input.normalizedWeight ?? 1.0,
-        })
+        .values(buildVoteInsertValues([input], input.challengeId, participant.id))
         .returning();
 
       await recomputeSubmissionVotes({ db: tx }, input.challengeId);

@@ -1,25 +1,23 @@
-import { useMemo, useState, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName, getInitials } from "@mirai-app/shared/users";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { orpc } from "@mirai-app/orpc/client";
-import { useGroupEditor } from "~/hooks/groups";
-import { useTripDetails } from "~/hooks/trips";
-import { borderRadius as radius, colors, spacing, typography } from "../../../../../styles";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFileUpload } from "~/hooks/files";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "~/components/trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEditNotFoundState";
 import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEditPermissionState";
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
-import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-import { getImageExtension, getImageContentType } from "~/utils/image";
-import { formatDisplayName, getInitials } from "@mirai-app/shared";
-
-
+import { useFileUpload } from "~/hooks/files";
+import { useGroupEditor } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
+import { getFileContentType, getFileExtension } from "~/utils/image";
+import { colors, borderRadius as radius, spacing, typography } from "../../../../../styles";
 
 export default function EditGroupScreen() {
   const router = useRouter();
@@ -107,7 +105,7 @@ export default function EditGroupScreen() {
 
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
-    const extension = getImageExtension(asset);
+    const extension = getFileExtension(asset);
     const storagePath = `group/${group.trip.id}/${groupId}-${Date.now()}.${extension}`;
 
     try {
@@ -115,7 +113,7 @@ export default function EditGroupScreen() {
         storagePath,
         fileUri: asset.uri,
         fileName: asset.fileName ?? `group-cover-${Date.now()}.${extension}`,
-        contentType: asset.mimeType ?? getImageContentType(extension),
+        contentType: asset.mimeType ?? getFileContentType(extension),
         upsert: true,
       });
       setGroupImagePath(storagePath);
@@ -239,7 +237,8 @@ export default function EditGroupScreen() {
 
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>
-                        {formatDisplayName(participant.user.firstName, participant.user.lastName) ?? "Unknown user"}
+                        {formatDisplayName(participant.user.firstName, participant.user.lastName) ??
+                          "Unknown user"}
                       </Text>
                       <Text style={styles.memberMeta}>
                         {participant.user.email ?? "No email"}

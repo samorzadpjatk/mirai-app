@@ -5,9 +5,7 @@ export interface ProjectIdConstants {
   easConfig?: { projectId?: unknown } | null;
 }
 
-export function resolveProjectId(
-  constants: ProjectIdConstants = Constants,
-): string | undefined {
+export function resolveProjectId(constants: ProjectIdConstants = Constants): string | undefined {
   const expoConfigExtra = (constants.expoConfig?.extra ?? null) as unknown;
   if (typeof expoConfigExtra === "object" && expoConfigExtra !== null) {
     const eas = (expoConfigExtra as { eas?: unknown }).eas;

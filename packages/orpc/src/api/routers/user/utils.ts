@@ -1,14 +1,17 @@
-import { formatDisplayName } from "@mirai-app/shared";
+import { formatDisplayName } from "@mirai-app/shared/users";
+import type { z } from "zod";
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import type { PublicUser, roleSchema } from "./types";
-import type { z } from "zod";
 
 export const formatUserFullName = (user?: {
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
 }) => {
-  return formatDisplayName(user?.firstName, user?.lastName, user?.email ?? "Unknown user") ?? "Unknown user";
+  return (
+    formatDisplayName(user?.firstName, user?.lastName, user?.email ?? "Unknown user") ??
+    "Unknown user"
+  );
 };
 
 export const toPublicUser = (

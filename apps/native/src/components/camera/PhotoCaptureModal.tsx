@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
+import { Image } from "expo-image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
 import { AppModalShell } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface CapturedPhoto {
   uri: string;
@@ -188,7 +188,7 @@ export function PhotoCaptureModal({
               mirror={false}
               mode="picture"
               autofocus="on"
-              responsiveOrientationWhenOrientationLocked
+              responsiveOrientationWhenOrientationLocked={true}
               selectedLens={selectedLens}
               onAvailableLensesChanged={(event) => {
                 const lenses = event?.lenses ?? [];

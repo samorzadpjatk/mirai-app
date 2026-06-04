@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ensureBuckets, ensurePlaceholderImage, uploadAssets, BUCKET_MAP } from "../storage";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BUCKET_MAP, ensureBuckets, ensurePlaceholderImage, uploadAssets } from "../storage";
 
 vi.mock("../config/env", () => ({
   env: {

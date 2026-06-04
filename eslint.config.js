@@ -30,7 +30,7 @@ export default tseslint.config(
             },
             {
               sourceTag: "scope:shared",
-              onlyDependOnLibsWithTags: ["scope:shared"],
+              onlyDependOnLibsWithTags: ["scope:shared", "scope:db"],
             },
             {
               sourceTag: "scope:db",

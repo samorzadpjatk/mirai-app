@@ -1,8 +1,8 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName } from "@mirai-app/shared";
-import { colors, spacing, borderRadius, typography } from "../../../../styles";
+import { formatDisplayName } from "@mirai-app/shared/users";
+import type React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 interface CoinTransaction {
   id: string;
@@ -55,7 +55,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
     <View style={styles.container}>
       <Text style={styles.title}>Coin Transactions</Text>
       <ScrollView
-        horizontal
+        horizontal={true}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -76,7 +76,12 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
               <View style={styles.transactionMeta}>
                 <Text style={styles.date}>{formatDate(transaction.createdAt)}</Text>
                 <Text style={styles.admin}>
-                  by {formatDisplayName(transaction.admin.firstName, transaction.admin.lastName, "Unknown Admin")}
+                  by{" "}
+                  {formatDisplayName(
+                    transaction.admin.firstName,
+                    transaction.admin.lastName,
+                    "Unknown Admin",
+                  )}
                 </Text>
               </View>
             </View>

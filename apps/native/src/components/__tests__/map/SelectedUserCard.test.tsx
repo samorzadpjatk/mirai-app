@@ -1,7 +1,7 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
 import { SelectedUserCard } from "../../map/ui/SelectedUserCard";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@mirai-app/orpc", () => ({
   api: {},
@@ -34,8 +34,8 @@ jest.mock("~/stores/map", () => ({
     },
     sharingUserIds: ["user-1"],
     canStopSharing: true,
-    onBackToList: mockBackToList,
-    onStopSharing: mockStopSharing,
+    handleBackToList: mockBackToList,
+    handleStopSharing: mockStopSharing,
     users: [],
     currentUserId: undefined,
     showUsersList: false,

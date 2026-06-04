@@ -1,7 +1,6 @@
-import React from "react";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupsLoadingState } from "../../../trips/groups/GroupsLoadingState";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupsLoadingState", () => {
   it("should render container", () => {

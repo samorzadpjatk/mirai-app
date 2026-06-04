@@ -1,8 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { AdminHeader } from "../../admin/AdminHeader";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("AdminHeader", () => {
   it("renders with title only", () => {

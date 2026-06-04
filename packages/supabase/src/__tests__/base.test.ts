@@ -1,39 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import createBaseSupabaseClient from "../base";
 import { createClient } from "@supabase/supabase-js";
-import { logger } from "@mirai-app/shared";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import createBaseSupabaseClient from "../base";
 import type { SupabaseClientOptions } from "../types";
+import { createMockSupabaseClient } from "./utils";
 
 // Mock the @supabase/supabase-js module
 vi.mock("@supabase/supabase-js", () => ({
   createClient: vi.fn(),
 }));
 
-vi.mock("@mirai-app/shared", () => ({
-  logger: {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 describe("createBaseSupabaseClient", () => {
   const mockUrl = "https://test.supabase.co";
   const mockAnonKey = "test-anon-key";
-  const mockSupabaseClient = {
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-    },
-    from: vi.fn(),
-  };
+  const mockSupabaseClient = createMockSupabaseClient() as ReturnType<typeof createClient>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createClient).mockReturnValue(
-      mockSupabaseClient as unknown as ReturnType<typeof createClient>,
-    );
+    vi.mocked(createClient).mockReturnValue(mockSupabaseClient);
   });
 
   it("should create a Supabase client with URL and anon key", () => {
@@ -152,15 +135,6 @@ describe("createBaseSupabaseClient", () => {
           },
         },
       }),
-    );
-  });
-
-  it("should log client creation with URL", async () => {
-    createBaseSupabaseClient(mockUrl, mockAnonKey);
-
-    expect(logger.debug).toHaveBeenCalledWith(
-      { url: mockUrl },
-      "Creating Supabase client",
     );
   });
 

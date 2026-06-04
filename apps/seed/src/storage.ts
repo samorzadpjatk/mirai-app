@@ -1,10 +1,10 @@
+import { logger } from "@mirai-app/shared/utils";
 import { env } from "./config/env";
 import { supabase } from "./config/supabase";
 import { assetsRoot } from "./constants";
 import type { SeedEnv } from "./types";
 import { listFilesRecursive, readFile } from "./utils/fs";
 import { joinPath, normalizePath, relativePath } from "./utils/path";
-import { logger } from "@mirai-app/shared";
 
 export const BUCKET_MAP = {
   public: () => env.publicBucket,

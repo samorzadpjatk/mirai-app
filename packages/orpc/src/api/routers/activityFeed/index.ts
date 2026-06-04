@@ -1,43 +1,39 @@
-import { z } from "zod";
 import { ORPCError } from "@orpc/server";
+import { z } from "zod";
 import {
-  createORPCRouter,
-  protectedProcedure,
-  moderatorProcedure,
   adminProcedure,
+  createORPCRouter,
+  moderatorProcedure,
+  protectedProcedure,
 } from "../../trpc";
-import {
-  activityCursorSchema,
-  REACTION_TYPES,
-  CHALLENGE_EVENT_TYPES,
-} from "./types";
-import {
-  ensureTripParticipant,
-  ensureTripExists,
-  updateUserLastSeenOn,
-  optionalImageReferenceSchema,
-  imageReferenceSchema,
-} from "./utils";
-import {
-  fetchActivityWithRelationsById,
-  getActivitiesPage,
-  getActivitiesCursorPage,
-  type ActivityContext,
-} from "./queries";
 import { enrichActivities } from "./enrichment";
 import {
-  createCustom,
-  createUserPost,
-  createSubmissionActivity,
   createChallengeActivity,
+  createCustom,
   createRankChangeActivity,
-  update,
-  setPinned,
-  hide,
-  unhide,
-  toggleReaction,
+  createSubmissionActivity,
+  createUserPost,
   deleteActivity,
+  hide,
+  setPinned,
+  toggleReaction,
+  unhide,
+  update,
 } from "./mutations";
+import {
+  type ActivityContext,
+  fetchActivityWithRelationsById,
+  getActivitiesCursorPage,
+  getActivitiesPage,
+} from "./queries";
+import { CHALLENGE_EVENT_TYPES, REACTION_TYPES, activityCursorSchema } from "./types";
+import {
+  ensureTripExists,
+  ensureTripParticipant,
+  imageReferenceSchema,
+  optionalImageReferenceSchema,
+  updateUserLastSeenOn,
+} from "./utils";
 
 const handleGetByTrip = async ({
   context,
@@ -224,9 +220,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleGetByTripModeration),
 
-  getById: moderatorProcedure
-    .input(z.object({ id: z.string() }))
-    .handler(handleGetById),
+  getById: moderatorProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
 
   createCustom: moderatorProcedure
     .input(
@@ -334,9 +328,7 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleHide),
 
-  unhide: moderatorProcedure
-    .input(z.object({ activityId: z.string() }))
-    .handler(handleUnhide),
+  unhide: moderatorProcedure.input(z.object({ activityId: z.string() })).handler(handleUnhide),
 
   toggleReaction: protectedProcedure
     .input(
@@ -347,7 +339,5 @@ export const activityFeedRouter = createORPCRouter({
     )
     .handler(handleToggleReaction),
 
-  delete: adminProcedure
-    .input(z.object({ activityId: z.string() }))
-    .handler(handleDeleteActivity),
+  delete: adminProcedure.input(z.object({ activityId: z.string() })).handler(handleDeleteActivity),
 });

@@ -1,6 +1,6 @@
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { CreateUserModal } from "../../admin/users/CreateUserModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("CreateUserModal", () => {
   const onClose = jest.fn();

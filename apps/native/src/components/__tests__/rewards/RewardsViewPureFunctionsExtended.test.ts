@@ -1,14 +1,14 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  getRewardButtonState,
-  getRewardBorderColor,
-  getRewardShadowProps,
-  getRewardAvailabilityText,
-  getRewardAvailabilityColor,
-  getTotalCost,
-  isValidQuantity,
   getPurchaseModalError,
   getPurchaseValidationError,
+  getRewardAvailabilityColor,
+  getRewardAvailabilityText,
+  getRewardBorderColor,
+  getRewardButtonState,
+  getRewardShadowProps,
+  getTotalCost,
+  isValidQuantity,
 } from "~/components/rewards/RewardsView";
 
 describe("getRewardButtonState", () => {

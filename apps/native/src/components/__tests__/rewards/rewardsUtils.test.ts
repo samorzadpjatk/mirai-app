@@ -1,8 +1,5 @@
-import { describe, it, expect } from "@jest/globals";
-import {
-  extractSafeRewards,
-  getRewardImages,
-} from "../../rewards/RewardsView";
+import { describe, expect, it } from "@jest/globals";
+import { extractSafeRewards, getRewardImages } from "../../rewards/RewardsView";
 
 describe("extractSafeRewards", () => {
   it("should return array when input is array", () => {

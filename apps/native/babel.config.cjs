@@ -4,7 +4,7 @@ module.exports = function (api) {
 
   return {
     presets: [
-      "babel-preset-expo",
+      ["babel-preset-expo", { unstable_transformImportMeta: true }],
       "nativewind/babel",
       // Handle JSX and Flow (with @flow pragma)
       ["@babel/preset-react", { runtime: "automatic", flow: true }],

@@ -1,9 +1,8 @@
-import React from "react";
 import { fireEvent, waitFor } from "@testing-library/react-native";
 import { Text, TouchableOpacity, View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
-import { GroupAssignmentModal } from "../../admin/groups/GroupAssignmentModal";
 import type { Group, User } from "~/hooks/admin/useAdminUsers";
+import { GroupAssignmentModal } from "../../admin/groups/GroupAssignmentModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface GroupAssignmentResult {
   id: string;

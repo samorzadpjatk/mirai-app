@@ -133,6 +133,44 @@ This package follows an **integration-only testing approach**. We don't maintain
 - Drizzle ORM behavior depends on actual database state and responses
 - The package contains no business logic, only schema definitions and client exports
 
+### PGLite Test Helper
+
+This package provides a `createPgliteTestDb()` helper for integration testing in other packages. It creates an in-memory PostgreSQL database using the production schema:
+
+```typescript
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+
+const { db, reset, cleanup } = await createPgliteTestDb();
+
+// Use db for tests
+await db.insert(users).values({ id: "user-1", ... });
+
+// Reset state between tests (fast)
+await reset();
+
+// Clean up when done
+await cleanup();
+```
+
+**For optimal performance**, use the `beforeAll` + `beforeEach(reset)` + `afterAll` pattern:
+
+```typescript
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from "vitest";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+
+describe("My router", () => {
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+
+  beforeAll(async () => { testDb = await createPgliteTestDb(); });
+  beforeEach(async () => { await testDb.reset(); });
+  afterAll(async () => { await testDb.cleanup(); });
+
+  it("tests database operations", async () => { ... });
+});
+```
+
+**Reset behavior:** The `reset()` function truncates all schema tables with `RESTART IDENTITY CASCADE`, ensuring clean state and predictable auto-increment sequences between tests.
+
 Database commands serve as implicit integration tests:
 - `db:generate` validates schema syntax and generates migration SQL
 - `db:push` and `db:migrate` verify migrations apply correctly

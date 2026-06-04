@@ -1,9 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { logger } from "@mirai-app/orpc";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Scheduler, createInactivityScheduler } from "../scheduler";
+
+vi.mock("@mirai-app/orpc", () => ({
+  logger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 describe("Scheduler", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -90,9 +101,6 @@ describe("Scheduler", () => {
     });
 
     it("should handle task errors gracefully", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
-        /* noop */
-      });
       const error = new Error("Task failed");
       const task = vi.fn().mockRejectedValue(error);
       const scheduler = new Scheduler(task, 5);
@@ -103,19 +111,15 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Task failed" }),
         "Scheduler task failed",
-        expect.objectContaining({ message: "Task failed", type: "Error" }),
       );
 
       scheduler.stop();
-      consoleSpy.mockRestore();
     });
 
     it("should continue running after task errors", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi
         .fn()
         .mockRejectedValueOnce(new Error("First failure"))
@@ -139,8 +143,6 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       expect(task).toHaveBeenCalledTimes(3);
       expect(scheduler.isActive()).toBe(true);
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle async tasks correctly", async () => {
@@ -191,19 +193,14 @@ describe("Scheduler", () => {
 
   describe("edge cases", () => {
     it("should not start if already running", () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
       scheduler.start(); // Try to start again
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler is already running");
+      expect(logger.warn).toHaveBeenCalledWith("Scheduler is already running");
       expect(scheduler.isActive()).toBe(true);
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle stop when not running gracefully", () => {
@@ -268,9 +265,6 @@ describe("Scheduler", () => {
     });
 
     it("should handle task that throws synchronously", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
-        /* noop */
-      });
       const error = new Error("Sync error");
       const task = vi.fn().mockImplementation(() => {
         throw error;
@@ -281,19 +275,15 @@ describe("Scheduler", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(task).toHaveBeenCalledTimes(1);
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Sync error" }),
         "Scheduler task failed",
-        expect.objectContaining({ message: "Sync error", type: "Error" }),
       );
 
       scheduler.stop();
-      consoleSpy.mockRestore();
     });
 
     it("should handle task returning non-promise value", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi.fn().mockReturnValue("not a promise");
       const scheduler = new Scheduler(task, 5);
 
@@ -302,57 +292,43 @@ describe("Scheduler", () => {
 
       expect(task).toHaveBeenCalledTimes(1);
       // Should not throw error since non-promise is awaitable
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
 
       scheduler.stop();
-      consoleSpy.mockRestore();
     });
   });
 
   describe("logging", () => {
     it("should log when started", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started", { intervalMinutes: 5 });
+      expect(logger.info).toHaveBeenCalledWith({ intervalMinutes: 5 }, "Scheduler started");
 
       scheduler.stop();
-      consoleSpy.mockRestore();
     });
 
     it("should log when stopped", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 5);
 
       scheduler.start();
       scheduler.stop();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler stopped");
-
-      consoleSpy.mockRestore();
+      expect(logger.info).toHaveBeenCalledWith("Scheduler stopped");
     });
 
     it("should log with correct interval", () => {
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-        /* noop */
-      });
       const task = vi.fn().mockResolvedValue(undefined);
       const scheduler = new Scheduler(task, 15);
 
       scheduler.start();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Scheduler started", { intervalMinutes: 15 });
+      expect(logger.info).toHaveBeenCalledWith({ intervalMinutes: 15 }, "Scheduler started");
 
       scheduler.stop();
-      consoleSpy.mockRestore();
     });
   });
 });
@@ -360,6 +336,7 @@ describe("Scheduler", () => {
 describe("createInactivityScheduler", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -382,9 +359,6 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should run inactivity check and log results", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
     const checkFunction = vi.fn().mockResolvedValue({ inactiveUsers: 5 });
     const scheduler = createInactivityScheduler(checkFunction, 5);
 
@@ -394,19 +368,19 @@ describe("createInactivityScheduler", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalledTimes(3);
-    expect(consoleSpy).toHaveBeenNthCalledWith(1, "Scheduler started", { intervalMinutes: 5 });
-    expect(consoleSpy).toHaveBeenNthCalledWith(2, "Running inactivity check");
-    expect(consoleSpy).toHaveBeenNthCalledWith(3, "Inactivity check completed", { result: { inactiveUsers: 5 } });
+    expect(logger.info).toHaveBeenCalledTimes(3);
+    expect(logger.info).toHaveBeenNthCalledWith(1, { intervalMinutes: 5 }, "Scheduler started");
+    expect(logger.info).toHaveBeenNthCalledWith(2, "Running inactivity check");
+    expect(logger.info).toHaveBeenNthCalledWith(
+      3,
+      { result: { inactiveUsers: 5 } },
+      "Inactivity check completed",
+    );
 
     scheduler.stop();
-    consoleSpy.mockRestore();
   });
 
   it("should handle check function errors", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
-      /* noop */
-    });
     const error = new Error("Check failed");
     const checkFunction = vi.fn().mockRejectedValue(error);
     const scheduler = createInactivityScheduler(checkFunction, 5);
@@ -415,13 +389,12 @@ describe("createInactivityScheduler", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(checkFunction).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Check failed" }),
       "Scheduler task failed",
-      expect.objectContaining({ message: "Check failed", type: "Error" }),
     );
 
     scheduler.stop();
-    consoleSpy.mockRestore();
   });
 
   it("should run check at regular intervals", async () => {
@@ -446,16 +419,12 @@ describe("createInactivityScheduler", () => {
   });
 
   it("should handle check function returning different types", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
-
     // Test with array
     const checkFunction1 = vi.fn().mockResolvedValue([1, 2, 3]);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: [1, 2, 3] });
+    expect(logger.info).toHaveBeenCalledWith({ result: [1, 2, 3] }, "Inactivity check completed");
     scheduler1.stop();
 
     // Test with null
@@ -463,7 +432,7 @@ describe("createInactivityScheduler", () => {
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: null });
+    expect(logger.info).toHaveBeenCalledWith({ result: null }, "Inactivity check completed");
     scheduler2.stop();
 
     // Test with undefined
@@ -471,23 +440,17 @@ describe("createInactivityScheduler", () => {
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: null });
+    expect(logger.info).toHaveBeenCalledWith({ result: null }, "Inactivity check completed");
     scheduler3.stop();
-
-    consoleSpy.mockRestore();
   });
 
   it("should handle check function returning primitive values", async () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
-      /* noop */
-    });
-
     // Test with number
     const checkFunction1 = vi.fn().mockResolvedValue(42);
     const scheduler1 = createInactivityScheduler(checkFunction1, 5);
     scheduler1.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: 42 });
+    expect(logger.info).toHaveBeenCalledWith({ result: 42 }, "Inactivity check completed");
     scheduler1.stop();
 
     // Test with string
@@ -495,7 +458,7 @@ describe("createInactivityScheduler", () => {
     const scheduler2 = createInactivityScheduler(checkFunction2, 5);
     scheduler2.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: "completed" });
+    expect(logger.info).toHaveBeenCalledWith({ result: "completed" }, "Inactivity check completed");
     scheduler2.stop();
 
     // Test with boolean
@@ -503,9 +466,7 @@ describe("createInactivityScheduler", () => {
     const scheduler3 = createInactivityScheduler(checkFunction3, 5);
     scheduler3.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(consoleSpy).toHaveBeenCalledWith("Inactivity check completed", { result: true });
+    expect(logger.info).toHaveBeenCalledWith({ result: true }, "Inactivity check completed");
     scheduler3.stop();
-
-    consoleSpy.mockRestore();
   });
 });

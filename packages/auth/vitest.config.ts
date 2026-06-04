@@ -1,41 +1,49 @@
-import { defineConfig } from "vitest/config";
 import path from "path";
+import { defineConfig, mergeConfig } from "vitest/config";
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { baseConfig, baseCoverageExcludes } from "../shared/vitest.base.config";
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: "node",
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/__tests__/**/*.test.ts"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      exclude: [
-        "node_modules/",
-        "dist/",
-        "**/*.d.ts",
-        "**/*.config.*",
-        "**/vitest.setup.ts",
-        "src/types.ts",
-        "src/store/index.ts",
-        "src/hooks/useLoginForm.ts",
-        "src/store/AuthStoreProvider.tsx",
-        "src/index.ts",
-      ],
-      thresholds: {
-        branches: 80,
-        functions: 80,
-        lines: 80,
-        statements: 80,
+export default mergeConfig(
+  baseConfig,
+  defineConfig({
+    test: {
+      environment: "jsdom",
+      hookTimeout: 30000,
+      setupFiles: ["./vitest.setup.ts"],
+      include: ["src/**/__tests__/**/*.test.ts"],
+      coverage: {
+        exclude: [
+          ...baseCoverageExcludes,
+          "src/types.ts",
+          "src/store/index.ts",
+          "src/hooks/useLoginForm.ts",
+          "src/store/AuthStoreProvider.tsx",
+          "src/index.ts",
+        ],
       },
     },
-  },
-  resolve: {
-    alias: {
-      "~": path.resolve(__dirname, "./src"),
-      "@mirai-app/db": path.resolve(__dirname, "../db/src"),
-      "@mirai-app/supabase": path.resolve(__dirname, "../supabase/src"),
-      "@mirai-app/shared": path.resolve(__dirname, "../shared/src"),
+    resolve: {
+      alias: [
+        {
+          find: "@mirai-app/shared/test-utils",
+          replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/stores",
+          replacement: path.resolve(__dirname, "../shared/src/stores/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/users",
+          replacement: path.resolve(__dirname, "../shared/src/users/index.ts"),
+        },
+        {
+          find: "@mirai-app/shared/utils",
+          replacement: path.resolve(__dirname, "../shared/src/utils/index.ts"),
+        },
+        { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },
+        { find: "@mirai-app/supabase", replacement: path.resolve(__dirname, "../supabase/src") },
+        { find: "~", replacement: path.resolve(__dirname, "./src") },
+      ],
     },
-  },
-});
+  }),
+);

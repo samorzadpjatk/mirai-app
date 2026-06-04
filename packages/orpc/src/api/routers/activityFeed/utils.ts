@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { ORPCError } from "@orpc/server";
-import { eq } from "drizzle-orm";
 import { users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { ORPCError } from "@orpc/server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";
 import { isValidHttpUrl } from "../../../utils/url-validation";
 
@@ -19,15 +19,6 @@ export const imageReferenceSchema = z
   }, "Image must be a valid HTTP/HTTPS URL or storage path");
 
 export const optionalImageReferenceSchema = imageReferenceSchema.optional();
-
-export const normalizeImageReference = (value: string | undefined) => {
-  if (!value) return undefined;
-  const normalized = normalizeSupabaseStoragePath(value);
-  if (normalized) {
-    return normalized.storagePath;
-  }
-  return value;
-};
 
 export const ensureTripParticipant = async (
   context: { db: DB; dbUser: { id: string } },

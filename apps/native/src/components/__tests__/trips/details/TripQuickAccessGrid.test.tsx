@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { TripQuickAccessGrid } from "../../../trips/details/TripQuickAccessGrid";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("TripQuickAccessGrid", () => {
   const defaultProps = {

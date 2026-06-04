@@ -1,12 +1,12 @@
-import { View, Text, type ViewStyle } from "react-native";
-import Animated, { type AnimatedStyle } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { colors } from "~/styles";
-import { type Submission } from "~/stores/judgement";
-import { formatDate, getInitials } from "~/utils/validation";
-import { viewStyles, textStyles } from "~/styles/judgement";
+import { Text, View, type ViewStyle } from "react-native";
+import Animated, { type AnimatedStyle } from "react-native-reanimated";
 import { SubmissionAssetPreview } from "~/components/judgement/SubmissionAssetPreview";
+import type { Submission } from "~/stores/judgement";
+import { colors } from "~/styles";
+import { textStyles, viewStyles } from "~/styles/judgement";
+import { formatDate, getInitials } from "~/utils/validation";
 
 const CurrentSubmissionCard = ({
   submission,

@@ -1,5 +1,5 @@
-import { type ReactNode } from "react";
-import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import type { ReactNode } from "react";
+import { type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { colors, spacing, typography } from "~/styles";
 
 interface FormFieldProps {

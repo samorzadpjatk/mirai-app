@@ -1,17 +1,26 @@
-import { z } from "zod";
-import { ORPCError } from "@orpc/server";
-import { eq, and, count, ilike, asc } from "drizzle-orm";
-import { users, tripParticipants, groups } from "@mirai-app/db";
+import { groups, tripParticipants, users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import {
+  buildPagination,
+  buildUserSearchWhere,
+  filterParticipantsByEmail,
+  mapParticipantRow,
+  normalizeEmail,
+  parseBanStatus,
+  sortParticipants,
+} from "@mirai-app/shared/users";
 import type { SupabaseClient } from "@mirai-app/supabase";
+import { ORPCError } from "@orpc/server";
+import { and, asc, count, eq, sql } from "drizzle-orm";
+import type { z } from "zod";
 import {
   buildAuthEmailLookup,
   buildAuthUserSummaryLookup,
   resolveAuthEmail,
 } from "../../../utils/authEmails";
+import { logger } from "../../../utils/logger";
 import type { SupabaseAdminUser, roleSchema } from "./types";
 import { toPublicUser, toPublicUserWithAuthSummary } from "./utils";
-import { logger } from "../../../utils/logger";
 
 export type UserBaseContext = {
   db: DB;
@@ -42,30 +51,11 @@ export const getBanStatus = async (context: UserBaseContext) => {
   }
 
   const adminUser = adminLookup.data.user as SupabaseAdminUser | null;
-  const bannedUntilRaw = adminUser?.banned_until ?? null;
-  const reasonRaw = adminUser?.app_metadata?.ban_reason ?? null;
-
-  if (!bannedUntilRaw) {
-    return { banned: false, bannedUntil: null, reason: null };
-  }
-
-  const bannedUntil = new Date(bannedUntilRaw);
-  if (Number.isNaN(bannedUntil.getTime()) || bannedUntil.getTime() <= Date.now()) {
-    return { banned: false, bannedUntil: null, reason: null };
-  }
-
-  return {
-    banned: true,
-    bannedUntil: bannedUntil.toISOString(),
-    reason: reasonRaw ?? "Temporary ban",
-  };
+  return parseBanStatus(adminUser?.banned_until, adminUser?.app_metadata?.ban_reason);
 };
 
-export const getBanStatusByEmail = async (
-  context: UserBaseContext,
-  input: { email: string },
-) => {
-  const normalizedEmail = input.email.trim().toLowerCase();
+export const getBanStatusByEmail = async (context: UserBaseContext, input: { email: string }) => {
+  const normalizedEmail = normalizeEmail(input.email);
   const perPage = 1000;
   let page = 1;
   let authUserId: string | null = null;
@@ -106,23 +96,9 @@ export const getBanStatusByEmail = async (
   }
 
   const adminUser = lookup.data.user as SupabaseAdminUser | null;
-  const bannedUntilRaw = adminUser?.banned_until ?? null;
-  const reasonRaw = adminUser?.app_metadata?.ban_reason ?? null;
-
-  if (!bannedUntilRaw) {
-    return { exists: true, banned: false, bannedUntil: null, reason: null };
-  }
-
-  const bannedUntil = new Date(bannedUntilRaw);
-  if (Number.isNaN(bannedUntil.getTime()) || bannedUntil.getTime() <= Date.now()) {
-    return { exists: true, banned: false, bannedUntil: null, reason: null };
-  }
-
   return {
     exists: true,
-    banned: true,
-    bannedUntil: bannedUntil.toISOString(),
-    reason: reasonRaw ?? "Temporary ban",
+    ...parseBanStatus(adminUser?.banned_until, adminUser?.app_metadata?.ban_reason),
   };
 };
 
@@ -181,10 +157,7 @@ export const getByIdWithGroup = async (
   });
 };
 
-export const getMyWithGroup = async (
-  context: UserContext,
-  input: { tripId: string },
-) => {
+export const getMyWithGroup = async (context: UserContext, input: { tripId: string }) => {
   return await context.db.query.users.findFirst({
     where: (u, { eq }) => eq(u.id, context.dbUser.id),
     columns: {
@@ -230,17 +203,7 @@ export const getAll = async (context: UserContext, input: { tripId: string }) =>
     .where(eq(tripParticipants.tripId, input.tripId))
     .orderBy(asc(users.firstName), asc(users.lastName));
 
-  const participants = rows.map((r) => ({
-    ...r.trip_participants,
-    user: {
-      id: r.users.id,
-      authUserId: r.users.authUserId,
-      firstName: r.users.firstName,
-      lastName: r.users.lastName,
-      role: r.users.role,
-    },
-    group: r.groups ? { id: r.groups.id, name: r.groups.name } : null,
-  }));
+  const participants = rows.map(mapParticipantRow);
 
   const emailByAuthUserId = await buildAuthEmailLookup(
     context.supabase,
@@ -248,7 +211,13 @@ export const getAll = async (context: UserContext, input: { tripId: string }) =>
   );
 
   return participants.map((participant) => ({
-    ...toPublicUser(participant.user, emailByAuthUserId),
+    ...toPublicUser(
+      {
+        ...participant.user,
+        role: participant.user.role as z.infer<typeof roleSchema>,
+      },
+      emailByAuthUserId,
+    ),
     wristNumber: participant.wristNumber,
     houseNumber: participant.houseNumber,
     group: participant.group,
@@ -272,13 +241,7 @@ export const searchWithPagination = async (
   context: UserContext,
   input: {
     tripId: string;
-    field:
-      | "firstName"
-      | "lastName"
-      | "email"
-      | "wristNumber"
-      | "houseNumber"
-      | "groupName";
+    field: "firstName" | "lastName" | "email" | "wristNumber" | "houseNumber" | "groupName";
     searchTerm?: string;
     pagination?: {
       limit: number;
@@ -296,18 +259,17 @@ export const searchWithPagination = async (
   const currentPage = Math.floor(offset / limit) + 1;
 
   const toPagination = (total: number) => {
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = offset + limit < total;
+    const pagination = buildPagination(total, limit, offset, currentPage);
     return {
       total,
       totalCount: total,
       limit,
       offset,
-      hasMore: hasNextPage,
-      hasNextPage,
+      hasMore: pagination.hasNextPage,
+      hasNextPage: pagination.hasNextPage,
       currentPage,
-      totalPages,
-      hasPreviousPage: currentPage > 1,
+      totalPages: pagination.totalPages,
+      hasPreviousPage: pagination.hasPreviousPage,
     };
   };
 
@@ -333,31 +295,42 @@ export const searchWithPagination = async (
       participantRows.map((participant) => participant.user.authUserId),
     );
 
-    const normalizedSearch = searchTerm?.toLowerCase();
-    const filtered = participantRows.filter((participant) => {
-      if (!normalizedSearch) return true;
-      const email = authSummaryById.get(participant.user.authUserId)?.email ?? null;
-      return email?.toLowerCase().includes(normalizedSearch) ?? false;
-    });
+    const authSummaryByUserId = new Map(
+      participantRows.map((p) => [
+        p.user.id,
+        authSummaryById.get(p.user.authUserId) ?? { email: null },
+      ]),
+    );
+    const filtered = filterParticipantsByEmail(
+      participantRows,
+      searchTerm,
+      authSummaryByUserId,
+    ) as typeof participantRows;
 
-    const sorted = filtered.sort((a, b) => {
-      const aUser = toPublicUserWithAuthSummary(a.user, authSummaryById);
-      const bUser = toPublicUserWithAuthSummary(b.user, authSummaryById);
-      const firstNameCompare = (aUser.firstName ?? "").localeCompare(bUser.firstName ?? "");
-      if (firstNameCompare !== 0) return firstNameCompare;
-
-      const lastNameCompare = (aUser.lastName ?? "").localeCompare(bUser.lastName ?? "");
-      if (lastNameCompare !== 0) return lastNameCompare;
-
-      return (aUser.email ?? "").localeCompare(bUser.email ?? "");
-    });
+    const enriched = filtered.map((p) => ({
+      ...p,
+      user: {
+        ...p.user,
+        authSummary: authSummaryById.get(p.user.authUserId) ?? { email: null },
+      },
+    })) as typeof participantRows;
+    const sorted = sortParticipants(enriched, "firstName") as typeof participantRows;
 
     const paged = sorted.slice(offset, offset + limit);
     const total = filtered.length;
 
     return {
       users: paged.map((participant) => ({
-        ...toPublicUserWithAuthSummary(participant.user, authSummaryById),
+        ...toPublicUserWithAuthSummary(
+          {
+            id: participant.user.id,
+            authUserId: participant.user.authUserId,
+            firstName: participant.user.firstName,
+            lastName: participant.user.lastName,
+            role: participant.user.role as z.infer<typeof roleSchema>,
+          },
+          authSummaryById,
+        ),
         wristNumber: participant.wristNumber,
         houseNumber: participant.houseNumber,
         group: participant.group,
@@ -367,28 +340,13 @@ export const searchWithPagination = async (
     };
   }
 
-  const buildWhere = () => {
-    const base = eq(tripParticipants.tripId, tripId);
-    if (!searchTerm) return base;
-    if (field === "groupName") {
-      return and(base, ilike(groups.name, `%${searchTerm}%`));
-    }
-    if (field === "firstName") {
-      return and(base, ilike(users.firstName, `%${searchTerm}%`));
-    }
-    if (field === "lastName") {
-      return and(base, ilike(users.lastName, `%${searchTerm}%`));
-    }
-    if (field === "wristNumber") {
-      return and(base, ilike(tripParticipants.wristNumber, `%${searchTerm}%`));
-    }
-    if (field === "houseNumber") {
-      return and(base, ilike(tripParticipants.houseNumber, `%${searchTerm}%`));
-    }
-    return base;
-  };
-
-  const where = buildWhere();
+  const where =
+    field === "houseNumber" && searchTerm
+      ? and(
+          eq(tripParticipants.tripId, tripId),
+          sql`LOWER(${tripParticipants.houseNumber}) LIKE LOWER(${`%${searchTerm}%`})`,
+        )
+      : buildUserSearchWhere(tripId, field, searchTerm);
 
   const [rows, totalResult] = await Promise.all([
     context.db
@@ -417,7 +375,7 @@ export const searchWithPagination = async (
       authUserId: r.users.authUserId,
       firstName: r.users.firstName,
       lastName: r.users.lastName,
-      role: r.users.role,
+      role: r.users.role as z.infer<typeof roleSchema>,
     },
     group: r.groups ? { id: r.groups.id, name: r.groups.name } : null,
   }));

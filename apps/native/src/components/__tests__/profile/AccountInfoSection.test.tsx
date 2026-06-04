@@ -1,40 +1,8 @@
-import React from "react";
-import { View } from "react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { waitFor } from "@testing-library/react-native";
+import { createORPCHandler, server } from "../../../test-utils/msw/server";
+import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { AccountInfoSection } from "../../profile/AccountInfoSection";
-
-const mockUseQuery = jest.fn((...args: unknown[]) => ({
-  data: null as { id: string; email?: string; firstName: string; lastName: string } | null,
-  isLoading: false,
-  error: undefined as Error | undefined,
-}));
-
-jest.mock("@mirai-app/orpc/client", () => ({
-  useTRPC: () => ({
-    user: {
-      getMy: {
-        queryOptions: () => ({
-          queryKey: ["user", "getMy"],
-        }),
-      },
-    },
-  }),
-  orpc: {
-    user: {
-      getMy: {
-        queryOptions: () => ({
-          queryKey: ["user", "getMy"],
-        }),
-      },
-    },
-  },
-}));
-
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: unknown[]) => mockUseQuery(...args),
-  QueryClient: jest.fn(),
-  QueryClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
 
 jest.mock("@expo/vector-icons", () => {
   const { View } = require("react-native");
@@ -56,111 +24,88 @@ jest.mock("@expo/vector-icons", () => {
 describe("AccountInfoSection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: undefined,
-    });
+    server.resetHandlers();
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
+        id: "user-1",
+        email: "test@example.com",
+        firstName: "Test",
+        lastName: "User",
+      })),
+    );
   });
 
-  it("should render section title", () => {
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
+  it("should render section title and email label", async () => {
+    const { getByText } = renderWithMSW(<AccountInfoSection />);
     expect(getByText("Account Information")).toBeTruthy();
-  });
-
-  it("should render email label", () => {
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
     expect(getByText("Email")).toBeTruthy();
   });
 
-  it("should render email icon", () => {
-    const { getByTestId } = renderWithProviders(<AccountInfoSection />);
-
+  it("should render email icon", async () => {
+    const { getByTestId } = renderWithMSW(<AccountInfoSection />);
     expect(getByTestId("icon-mail")).toBeTruthy();
   });
 
-  it("should render user email when data is available", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should render user email when data is available", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         email: "john.doe@example.com",
         firstName: "John",
         lastName: "Doe",
-      },
-      isLoading: false,
-      error: undefined,
-    });
-
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
-    expect(getByText("john.doe@example.com")).toBeTruthy();
+      })),
+    );
+    const { getByText } = renderWithMSW(<AccountInfoSection />);
+    await waitFor(() => expect(getByText("john.doe@example.com")).toBeTruthy());
   });
 
-  it("should handle undefined email", () => {
-    mockUseQuery.mockReturnValue({
-      data: {
+  it("should handle undefined email", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => ({
         id: "user-1",
         email: undefined,
         firstName: "John",
         lastName: "Doe",
-      },
-      isLoading: false,
-      error: undefined,
-    });
-
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
-    expect(getByText("Email")).toBeTruthy();
+      })),
+    );
+    const { getByText } = renderWithMSW(<AccountInfoSection />);
+    await waitFor(() => expect(getByText("Email")).toBeTruthy());
   });
 
-  it("should render info card container", () => {
-    const { getByTestId } = renderWithProviders(<AccountInfoSection />);
-
+  it("should render info card container", async () => {
+    const { getByTestId } = renderWithMSW(<AccountInfoSection />);
     expect(getByTestId("account-info-card")).toBeTruthy();
   });
 
-  it("should render info row with icon and content", () => {
-    const { getByTestId, getByText } = renderWithProviders(<AccountInfoSection />);
-
+  it("should render info row with icon and content", async () => {
+    const { getByTestId, getByText } = renderWithMSW(<AccountInfoSection />);
     expect(getByTestId("icon-mail")).toBeTruthy();
     expect(getByText("Email")).toBeTruthy();
   });
 
-  it("should call useQuery with correct options", () => {
-    renderWithProviders(<AccountInfoSection />);
+  it("should handle loading state", async () => {
+    server.use(
+      createORPCHandler(
+        ["user", "getMy"],
+        () =>
+          new Promise(() => {
+            /* intentionally never resolves */
+          }),
+      ),
+    );
+    const { getByText } = renderWithMSW(<AccountInfoSection />);
+    await waitFor(() => expect(getByText("Account Information")).toBeTruthy());
+    await waitFor(() => expect(getByText("Email")).toBeTruthy());
+  });
 
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        queryKey: ["user", "getMy"],
+  it("should handle error state gracefully", async () => {
+    server.use(
+      createORPCHandler(["user", "getMy"], () => {
+        throw new Error("Failed to load");
       }),
     );
-  });
-
-  it("should handle loading state", () => {
-    mockUseQuery.mockReturnValue({
-      data: null,
-      isLoading: true,
-      error: undefined,
-    });
-
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
-    expect(getByText("Account Information")).toBeTruthy();
-    expect(getByText("Email")).toBeTruthy();
-  });
-
-  it("should handle error state gracefully", () => {
-    mockUseQuery.mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: new Error("Failed to load"),
-    });
-
-    const { getByText } = renderWithProviders(<AccountInfoSection />);
-
-    expect(getByText("Account Information")).toBeTruthy();
-    expect(getByText("Email")).toBeTruthy();
+    const { getByText } = renderWithMSW(<AccountInfoSection />);
+    await waitFor(() => expect(getByText("Account Information")).toBeTruthy());
+    await waitFor(() => expect(getByText("Email")).toBeTruthy());
   });
 });

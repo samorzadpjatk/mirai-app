@@ -1,7 +1,6 @@
-import React from "react";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
 import { SaveGroupButton } from "../../../../trips/groups/edit/SaveGroupButton";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("SaveGroupButton", () => {
   it("should render with 'Save Changes' label", () => {

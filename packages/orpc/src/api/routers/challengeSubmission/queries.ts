@@ -1,11 +1,11 @@
-import { isNull } from "drizzle-orm";
+import type { DB } from "@mirai-app/db";
+import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
+import { isNull } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { submissionBaseColumns, submissionWithRelations } from "./types";
-import { attachReviewerEmail, ensureTripParticipant, ensureChallengeInTrip } from "./utils";
-import type { DB } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
+import { attachReviewerEmail, ensureChallengeInTrip, ensureTripParticipant } from "./utils";
 
 export type SubmissionContext = {
   db: DB;
@@ -108,8 +108,7 @@ export const fetchSubmissionById = async (params: {
   }
 
   const challengeCheck = await params.context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) =>
-      and(eq(c.id, submission.challengeId), eq(c.tripId, params.tripId)),
+    where: (c, { eq, and }) => and(eq(c.id, submission.challengeId), eq(c.tripId, params.tripId)),
     columns: { id: true },
   });
   if (!challengeCheck) {

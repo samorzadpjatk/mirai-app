@@ -1,6 +1,6 @@
-import { Stack } from "expo-router";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { Stack } from "expo-router";
 import { colors } from "~/styles";
 
 const backgroundColor = "#17181c";

@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: tRPC router structure documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document the oRPC router structure, including how plain-object routers are composed and exported.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document the oRPC router structure, including how plain-object routers are composed and exported.
 
 #### Scenario: Understanding oRPC router composition
 - **WHEN** an AI assistant needs to understand the oRPC router structure
@@ -11,7 +11,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document the oRP
 - **AND** they SHALL understand that `createTRPCRouter` is replaced by plain object exports
 
 ### Requirement: tRPC procedure documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to create oRPC procedures using `.handler()`, including input validation and output types.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document how to create oRPC procedures using `.handler()`, including input validation and output types.
 
 #### Scenario: Creating new oRPC procedures
 - **WHEN** an AI assistant needs to create a new oRPC procedure
@@ -21,7 +21,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to 
 - **AND** they SHALL understand that `ctx` is renamed to `context` in handlers
 
 ### Requirement: tRPC client usage documentation
-The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to initialize and use the oRPC client in consuming applications.
+The packages/orpc AGENTS.md and docs/packages/orpc/ files SHALL document how to initialize and use the oRPC client in consuming applications.
 
 #### Scenario: Using oRPC client in apps
 - **WHEN** an AI assistant needs to use the oRPC client
@@ -31,7 +31,7 @@ The packages/trpc AGENTS.md and docs/packages/trpc/ files SHALL document how to 
 - **AND** they SHALL understand that TanStack Query uses provider-less `createTanstackQueryUtils`
 
 ### Requirement: tRPC middleware documentation
-The docs/packages/trpc/ files SHALL document oRPC middleware patterns, including authentication, authorization, and logging middleware.
+The docs/packages/orpc/ files SHALL document oRPC middleware patterns, including authentication, authorization, and logging middleware.
 
 #### Scenario: Understanding oRPC middleware
 - **WHEN** an AI assistant needs to understand or create oRPC middleware
@@ -41,7 +41,7 @@ The docs/packages/trpc/ files SHALL document oRPC middleware patterns, including
 - **AND** they SHALL understand that context is passed via `next({ context: {...} })`
 
 ### Requirement: tRPC error handling documentation
-The docs/packages/trpc/ files SHALL document oRPC error handling patterns, including `ORPCError` and error formatting.
+The docs/packages/orpc/ files SHALL document oRPC error handling patterns, including `ORPCError` and error formatting.
 
 #### Scenario: Handling oRPC errors
 - **WHEN** an AI assistant needs to handle oRPC errors

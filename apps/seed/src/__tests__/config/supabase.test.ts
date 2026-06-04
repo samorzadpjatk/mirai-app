@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { SupabaseClient } from "@mirai-app/supabase";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("config/supabase", () => {
   const mockCreateSupabaseClient = vi.fn();

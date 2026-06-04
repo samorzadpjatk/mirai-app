@@ -1,9 +1,9 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
-  calculateCanViewOthersLocations,
-  calculateCanShareOwnLocation,
-  shouldShowLocationPermissionAlert,
   buildLocationPermissionAlert,
+  calculateCanShareOwnLocation,
+  calculateCanViewOthersLocations,
+  shouldShowLocationPermissionAlert,
 } from "../../location/useLocationPermissions";
 
 describe("calculateCanViewOthersLocations", () => {

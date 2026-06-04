@@ -1,15 +1,12 @@
-import { z } from "zod";
+import { type DB, coinTransactions, groups, rewardPurchases, rewards } from "@mirai-app/db";
+import { calculateRewardProgress } from "@mirai-app/shared/rewards";
+import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/shared/rewards";
 import { ORPCError } from "@orpc/server";
-import { eq, sql, count } from "drizzle-orm";
-import { type DB, rewards, rewardPurchases, groups, coinTransactions } from "@mirai-app/db";
+import { count, eq, sql } from "drizzle-orm";
+import type { z } from "zod";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
-import {
-  calculateTotalAvailablePoints,
-  canTransitionPurchaseStatus,
-  normalizeRewardImagesInput,
-  serializeRewardImages,
-} from "./utils";
-import { rewardPurchaseStatusSchema, userRewardPurchaseStatusSchema, type RewardPurchaseStatus } from "./types";
+import type { RewardPurchaseStatus, userRewardPurchaseStatusSchema } from "./types";
+import { calculateTotalAvailablePoints, normalizeRewardImagesInput } from "./utils";
 
 export const createReward = async (
   context: { db: DB; dbUser: { id: string } },
@@ -149,10 +146,7 @@ export const setRewardHidden = async (
   });
 };
 
-export const deleteReward = async (
-  context: { db: DB },
-  input: { id: string },
-) => {
+export const deleteReward = async (context: { db: DB }, input: { id: string }) => {
   const [purchaseCountResult] = await context.db
     .select({ count: count() })
     .from(rewardPurchases)
@@ -185,7 +179,7 @@ export const purchaseReward = async (
       throw new ORPCError("NOT_FOUND", { message: "Reward not found" });
     }
 
-    await ensureTripNotEnded(tx as unknown as DB, reward.tripId);
+    await ensureTripNotEnded(tx, reward.tripId);
 
     if (reward.isHidden) {
       throw new ORPCError("BAD_REQUEST", { message: "Reward is hidden" });
@@ -225,18 +219,16 @@ export const purchaseReward = async (
       });
     }
 
-    const totalAvailablePoints = await calculateTotalAvailablePoints(
-      tx as unknown as DB,
-      reward.tripId,
-    );
-    let dynamicCoinCost = reward.coinCost;
-
-    if (totalAvailablePoints > 0) {
-      const percentageOfTotal = reward.coinCost / 100;
-      dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-      dynamicCoinCost = Math.max(1, dynamicCoinCost);
-    }
-
+    const totalAvailablePoints = await calculateTotalAvailablePoints(tx, reward.tripId);
+    const progress = calculateRewardProgress({
+      reward,
+      totalAvailablePoints,
+      groupCoins: userParticipant.group.coins,
+      isGroupLeader: true,
+      purchasedCount: 0,
+      isAllTrips: false,
+    });
+    const dynamicCoinCost = progress.coinCost;
     const totalCost = dynamicCoinCost * input.quantity;
 
     if (userParticipant.group.coins < totalCost) {
@@ -612,5 +604,3 @@ export const updatePurchaseStatus = async (
     });
   });
 };
-
-

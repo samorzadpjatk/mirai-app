@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { TransactionsFilters } from "../../admin/transactions/TransactionsFilters";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 describe("TransactionsFilters", () => {
   const mockOnSearchChange = jest.fn();

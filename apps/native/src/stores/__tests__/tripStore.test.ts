@@ -1,8 +1,8 @@
-import type { useSelectedTrip, useTripDetails } from "~/hooks/trips";
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { useTripStore, useTripSync } from "../tripStore";
-import { renderHook } from "@testing-library/react-native";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import type { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
+import { renderHook } from "@testing-library/react-native";
+import type { useSelectedTrip, useTripDetails } from "~/hooks/trips";
+import { useTripStore, useTripSync } from "../tripStore";
 
 // Mock the hooks that useTripSync depends on
 const mockUseSelectedTrip = jest.fn<() => ReturnType<typeof useSelectedTrip>>();
@@ -275,7 +275,7 @@ describe("tripStore", () => {
         setSelectedTripId: jest.fn(),
       });
       mockUseTripDetails.mockReturnValue({
-        isTripPast: undefined as unknown as boolean,
+        isTripPast: undefined,
         isLoadingTrip: false,
         currentUser: null,
         isLoadingUser: false,
@@ -299,7 +299,7 @@ describe("tripStore", () => {
         setSelectedTripId: jest.fn(),
       });
       mockUseTripDetails.mockReturnValue({
-        isTripPast: undefined as unknown as boolean,
+        isTripPast: undefined,
         isLoadingTrip: false,
         currentUser: null,
         isLoadingUser: false,

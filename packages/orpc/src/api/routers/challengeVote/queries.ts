@@ -1,5 +1,5 @@
-import { ORPCError } from "@orpc/server";
 import type { DB } from "@mirai-app/db";
+import { ORPCError } from "@orpc/server";
 import { voteColumns } from "./types";
 import { ensureTripParticipant, getChallengeInTrip, getJudgedStaffVotingProgress } from "./utils";
 
@@ -17,10 +17,7 @@ export const getMyByChallenge = async (
   });
 };
 
-export const getByChallenge = async (
-  context: { db: DB },
-  input: { challengeId: string },
-) => {
+export const getByChallenge = async (context: { db: DB }, input: { challengeId: string }) => {
   return context.db.query.challengeVotes.findMany({
     where: (cv, { eq }) => eq(cv.challengeId, input.challengeId),
     columns: voteColumns,

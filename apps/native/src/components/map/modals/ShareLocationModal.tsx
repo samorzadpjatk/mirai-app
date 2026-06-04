@@ -1,9 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ThemedTextInput } from "~/components/common/ui";
 import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
-import { colors, spacing, typography, borderRadius } from "~/styles";
-import { ThemedTextInput } from "~/components/common/ui";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export function ShareLocationModal() {
   const { shareModal, allAvailableUsers, sharingUserIds } = useMapOverlayStore();
@@ -51,41 +51,43 @@ export function ShareLocationModal() {
       )}
 
       <ScrollView style={styles.modalUsersList}>
-        {!shouldShowSearchResults ? (
+        {shouldShowSearchResults ? (
+          filteredUsers?.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No matching users found.</Text>
+            </View>
+          ) : (
+            filteredUsers?.map((user) => {
+              const isAlreadySharing = sharingUserIds.includes(user.id);
+              const isSelected = selectedUsers.has(user.id);
+              const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+
+              return (
+                <MapModalUserItem
+                  key={user.id}
+                  name={fullName}
+                  imageUrl={user.image}
+                  subtitle={isAlreadySharing ? "Already sharing" : undefined}
+                  selected={isAlreadySharing || isSelected}
+                  onPress={() => {
+                    if (isAlreadySharing) return;
+                    toggleSelectedUser(user.id);
+                  }}
+                  rightElement={
+                    isAlreadySharing || isSelected ? (
+                      <Text style={styles.checkmark}>✓</Text>
+                    ) : undefined
+                  }
+                />
+              );
+            })
+          )
+        ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
               Type at least 2 characters to search for a person.
             </Text>
           </View>
-        ) : filteredUsers?.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No matching users found.</Text>
-          </View>
-        ) : (
-          filteredUsers?.map((user) => {
-            const isAlreadySharing = sharingUserIds.includes(user.id);
-            const isSelected = selectedUsers.has(user.id);
-            const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-
-            return (
-              <MapModalUserItem
-                key={user.id}
-                name={fullName}
-                imageUrl={user.image}
-                subtitle={isAlreadySharing ? "Already sharing" : undefined}
-                selected={isAlreadySharing || isSelected}
-                onPress={() => {
-                  if (isAlreadySharing) return;
-                  toggleSelectedUser(user.id);
-                }}
-                rightElement={
-                  isAlreadySharing || isSelected ? (
-                    <Text style={styles.checkmark}>✓</Text>
-                  ) : undefined
-                }
-              />
-            );
-          })
         )}
       </ScrollView>
 

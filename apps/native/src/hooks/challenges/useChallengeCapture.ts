@@ -1,12 +1,12 @@
-import { useCallback, useState } from "react";
-import * as ImagePicker from "expo-image-picker";
-import { Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { Alert } from "react-native";
 import { useFileUpload } from "~/hooks/files";
-import { getFileExtension, getFileContentType, getUploadFileName } from "~/utils/image";
+import { getFileContentType, getFileExtension, getUploadFileName } from "~/utils/image";
 
 interface ChallengeCaptureOptions {
   tripId: string | undefined;
@@ -47,7 +47,7 @@ export function buildUploadConfig(
   asset: ChallengeUploadAsset,
   storagePath: string,
   extension: string,
-  type: "image" | "video" = "image",
+  _type: "image" | "video" = "image",
 ) {
   const fileName = getUploadFileName(asset, extension, "challenge");
   const contentType = asset.mimeType ?? getFileContentType(extension);
@@ -92,7 +92,7 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   const showSuccessAlert = useCallback(
-    (challengeName?: string, points?: number, destinationTripId?: string | null) => {
+    (_challengeName?: string, _points?: number, destinationTripId?: string | null) => {
       const resolvedTripId = destinationTripId ?? tripId;
       Alert.alert(
         "Submission sent",

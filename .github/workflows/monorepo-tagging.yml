@@ -82,3 +82,29 @@ jobs:
           git push origin "$TAG"
           echo "tag_created=true" >> "$GITHUB_OUTPUT"
           echo "tag_refreshed=false" >> "$GITHUB_OUTPUT"
+
+      - name: Generate tagging summary
+        if: always()
+        run: |
+          echo "## Monorepo Tagging Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SemVer Tag | ${{ steps.publish.outputs.semver_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Previous Tag | ${{ steps.publish.outputs.previous_tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag Created | ${{ steps.publish.outputs.tag_created == 'true' && '✅ Yes' || '⬜ No' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag Refreshed | ${{ steps.publish.outputs.tag_refreshed == 'true' && '✅ Yes' || '⬜ No' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.publish.outputs.tag_created }}" == "true" ]; then
+            echo "### ✅ New Tag Created" >> $GITHUB_STEP_SUMMARY
+            echo "Tag \`${{ steps.publish.outputs.semver_tag }}\` has been pushed to origin." >> $GITHUB_STEP_SUMMARY
+            echo "::notice::New tag ${{ steps.publish.outputs.semver_tag }} created"
+          elif [ "${{ steps.publish.outputs.tag_refreshed }}" == "true" ]; then
+            echo "### 🔄 Tag Refreshed" >> $GITHUB_STEP_SUMMARY
+            echo "Tag \`${{ steps.publish.outputs.semver_tag }}\` was moved to the current commit." >> $GITHUB_STEP_SUMMARY
+            echo "::notice::Tag ${{ steps.publish.outputs.semver_tag }} refreshed"
+          else
+            echo "### ℹ️ No Tag Changes" >> $GITHUB_STEP_SUMMARY
+            echo "Tag \`${{ steps.publish.outputs.semver_tag }}\` already points to the current commit." >> $GITHUB_STEP_SUMMARY
+          fi

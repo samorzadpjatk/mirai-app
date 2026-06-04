@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: oRPC server initialization provides builder, context, and procedures
-The oRPC server initialization in `packages/trpc/src/api/trpc.ts` SHALL provide an `os` builder from `@orpc/server`, a context factory `createORPCContext`, and typed procedures (`publicProcedure`, `protectedProcedure`, `moderatorProcedure`, `adminProcedure`).
+The oRPC server initialization in `packages/orpc/src/api/trpc.ts` SHALL provide an `os` builder from `@orpc/server`, a context factory `createORPCContext`, and typed procedures (`publicProcedure`, `protectedProcedure`, `moderatorProcedure`, `adminProcedure`).
 
 #### Scenario: Server initializes with oRPC builder
 - **WHEN** an AI assistant or developer imports from `@mirai-app/orpc`

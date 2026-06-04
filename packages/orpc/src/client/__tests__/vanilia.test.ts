@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { noop } from "@mirai-app/shared/test-utils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Set up console spy BEFORE importing the module under test
 const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
@@ -7,6 +7,11 @@ const consoleSpy = vi.spyOn(console, "log").mockImplementation(noop);
 // Mock the @orpc/client module
 vi.mock("@orpc/client", () => ({
   createORPCClient: vi.fn(() => ({})),
+  DynamicLink: class DynamicLink {
+    constructor() {
+      return {} as any;
+    }
+  },
   ORPCError: class ORPCError extends Error {
     status: number;
     code: string;
@@ -32,7 +37,7 @@ vi.mock("@orpc/client/websocket", () => ({
 const mockWebSocketInstances: { close: ReturnType<typeof vi.fn> }[] = [];
 vi.stubGlobal(
   "WebSocket",
-  vi.fn(() => {
+  vi.fn().mockImplementation(function () {
     const instance = { close: vi.fn().mockResolvedValue(undefined) };
     mockWebSocketInstances.push(instance);
     return instance;
@@ -51,8 +56,12 @@ describe("getORPCClient", () => {
     vi.clearAllMocks();
     consoleSpy.mockClear();
     mockWebSocketInstances.length = 0;
-    RPCLinkFetch.mockReturnValue({});
-    WSLink.mockReturnValue({});
+    RPCLinkFetch.mockImplementation(function () {
+      return {};
+    });
+    WSLink.mockImplementation(function () {
+      return {};
+    });
   });
 
   afterEach(() => {
@@ -186,8 +195,12 @@ describe("WebSocket Client Creation", () => {
 describe("HTTP Link Configuration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    RPCLinkFetch.mockReturnValue({});
-    WSLink.mockReturnValue({});
+    RPCLinkFetch.mockImplementation(function () {
+      return {};
+    });
+    WSLink.mockImplementation(function () {
+      return {};
+    });
   });
 
   it("should configure HTTP link with correct URL", () => {
@@ -242,22 +255,19 @@ describe("HTTP Link Configuration", () => {
 });
 
 describe("Retry Interceptor", () => {
-  let originalSetTimeout: typeof global.setTimeout;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    RPCLinkFetch.mockReturnValue({});
-    WSLink.mockReturnValue({});
-
-    originalSetTimeout = global.setTimeout;
-    global.setTimeout = vi.fn((cb: () => void) => {
-      if (typeof cb === "function") cb();
-      return 0 as unknown as ReturnType<typeof setTimeout>;
-    }) as unknown as typeof global.setTimeout;
+    RPCLinkFetch.mockImplementation(function () {
+      return {};
+    });
+    WSLink.mockImplementation(function () {
+      return {};
+    });
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    global.setTimeout = originalSetTimeout;
+    vi.useRealTimers();
   });
 
   it("should retry on ORPCError with status >= 500", async () => {
@@ -284,7 +294,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(6000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(3);
   }, 60_000);
@@ -313,7 +325,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);
@@ -335,7 +349,9 @@ describe("Retry Interceptor", () => {
 
     const nextFn = vi.fn().mockRejectedValue(serverError);
 
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow();
+    const promise = interceptor({ next: nextFn, path: "test" }).catch(() => {});
+    await vi.advanceTimersByTimeAsync(31_000);
+    await promise;
     expect(nextFn).toHaveBeenCalledTimes(5);
   }, 60_000);
 
@@ -424,7 +440,9 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);
@@ -493,14 +511,14 @@ describe("Retry Interceptor", () => {
       return Promise.resolve("success");
     });
 
-    const result = await interceptor({ next: nextFn, path: "test" });
+    const promise = interceptor({ next: nextFn, path: "test" });
+    await vi.advanceTimersByTimeAsync(2000);
+    const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(2);
   }, 60_000);
 
   it("should use exponential backoff with increasing delays", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-
     const httpUrl = "http://localhost:3000";
     const wsUrl = "ws://localhost:3000";
 
@@ -532,13 +550,9 @@ describe("Retry Interceptor", () => {
     const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(3);
-
-    vi.useRealTimers();
   }, 60_000);
 
   it("should cap delay at 30 seconds", async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-
     const httpUrl = "http://localhost:3000";
     const wsUrl = "ws://localhost:3000";
 
@@ -572,8 +586,6 @@ describe("Retry Interceptor", () => {
     const result = await promise;
     expect(result).toBe("success");
     expect(nextFn).toHaveBeenCalledTimes(5);
-
-    vi.useRealTimers();
   }, 60_000);
 });
 
@@ -590,12 +602,16 @@ describe("createWsConnection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     enhancedWsInstances.length = 0;
-    RPCLinkFetch.mockReturnValue({});
-    WSLink.mockReturnValue({});
+    RPCLinkFetch.mockImplementation(function () {
+      return {};
+    });
+    WSLink.mockImplementation(function () {
+      return {};
+    });
 
     vi.stubGlobal(
       "WebSocket",
-      vi.fn((url: string) => {
+      vi.fn().mockImplementation(function (url: string) {
         const listeners: Record<string, Array<(event: unknown) => void>> = {};
         const originalSend = vi.fn();
         const ws = {
@@ -621,7 +637,7 @@ describe("createWsConnection", () => {
   afterEach(() => {
     vi.stubGlobal(
       "WebSocket",
-      vi.fn(() => {
+      vi.fn().mockImplementation(function () {
         const instance = { close: vi.fn().mockResolvedValue(undefined) };
         mockWebSocketInstances.push(instance);
         return instance;

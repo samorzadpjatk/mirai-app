@@ -1,8 +1,7 @@
-import React from "react";
-import { Text } from "react-native";
 import { screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import { Text } from "react-native";
 import { SegmentedOption } from "../../common/ui/SegmentedOption";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const noop = (): void => {
   // Intentionally empty for test mocks

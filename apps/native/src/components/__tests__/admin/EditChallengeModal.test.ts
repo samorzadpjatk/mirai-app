@@ -1,4 +1,4 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { filterTripsByName } from "~/components/admin/challenges/EditChallengeModal";
 
 describe("filterTripsByName", () => {

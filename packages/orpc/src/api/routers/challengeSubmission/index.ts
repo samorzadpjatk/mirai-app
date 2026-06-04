@@ -1,23 +1,23 @@
 import { z } from "zod";
 import {
-  createORPCRouter,
-  protectedProcedure,
-  moderatorProcedure,
   adminProcedure,
+  createORPCRouter,
+  moderatorProcedure,
+  protectedProcedure,
 } from "../../trpc";
 import {
-  fetchSubmissionsByChallenge,
-  fetchSubmissionsByChallengeForParticipant,
-  fetchSubmissionById,
-  fetchMySubmissionForChallenge,
-} from "./queries";
-import {
+  adminDeleteSubmission,
   createSubmission,
-  updateMineSubmission,
   deleteMineSubmission,
   reviewSubmission,
-  adminDeleteSubmission,
+  updateMineSubmission,
 } from "./mutations";
+import {
+  fetchMySubmissionForChallenge,
+  fetchSubmissionById,
+  fetchSubmissionsByChallenge,
+  fetchSubmissionsByChallengeForParticipant,
+} from "./queries";
 
 const handleGetByChallengeForAdmin = async ({
   context,
@@ -37,7 +37,10 @@ const handleGetByChallenge = async ({
   input,
 }: {
   context: Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0]["context"];
-  input: Pick<Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0], "challengeId" | "tripId">;
+  input: Pick<
+    Parameters<typeof fetchSubmissionsByChallengeForParticipant>[0],
+    "challengeId" | "tripId"
+  >;
 }) =>
   fetchSubmissionsByChallengeForParticipant({
     context,

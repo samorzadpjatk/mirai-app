@@ -1,8 +1,8 @@
+import { fireEvent, screen, userEvent } from "@testing-library/react-native";
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
 import { ShareLocationModal } from "../../map/modals/ShareLocationModal";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockSetSearchQuery = jest.fn();
 const mockToggleSelectedUser = jest.fn();
@@ -98,8 +98,6 @@ jest.mock("~/components/map/modals/MapModalUserItem", () => ({
   },
 }));
 
-
-
 describe("ShareLocationModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -115,7 +113,9 @@ describe("ShareLocationModal", () => {
   it("should render search input", () => {
     renderWithProviders(<ShareLocationModal />);
 
-    expect(screen.getByPlaceholderText("Type at least 2 characters to search...")).toBeOnTheScreen();
+    expect(
+      screen.getByPlaceholderText("Type at least 2 characters to search..."),
+    ).toBeOnTheScreen();
   });
 
   it("should show empty state when search query is too short", () => {
@@ -129,7 +129,10 @@ describe("ShareLocationModal", () => {
   it("should call setSearchQuery when typing", () => {
     renderWithProviders(<ShareLocationModal />);
 
-    fireEvent.changeText(screen.getByPlaceholderText("Type at least 2 characters to search..."), "Jo");
+    fireEvent.changeText(
+      screen.getByPlaceholderText("Type at least 2 characters to search..."),
+      "Jo",
+    );
 
     expect(mockSetSearchQuery).toHaveBeenCalledWith("Jo");
   });

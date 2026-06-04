@@ -1,14 +1,13 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { commonStyles } from "~/styles/commonStyles";
 import {
-  getRewardImages,
-  getRewardBorderColor,
-  getRewardShadowProps,
-  getRewardButtonState,
-  getRewardAvailabilityText,
   getRewardAvailabilityColor,
+  getRewardAvailabilityText,
+  getRewardBorderColor,
+  getRewardButtonState,
+  getRewardImages,
+  getRewardShadowProps,
 } from "./RewardsView";
 import type { RewardListItem } from "./types";
 
@@ -20,7 +19,13 @@ interface Props {
   onPurchasePress: (reward: RewardListItem) => void;
 }
 
-export default function RewardCard({ reward, justRefreshed, isTripPast, onPress, onPurchasePress }: Props) {
+export default function RewardCard({
+  reward,
+  justRefreshed,
+  isTripPast,
+  onPress,
+  onPurchasePress,
+}: Props) {
   const rewardImages = getRewardImages(reward);
   const rewardPrimaryImage = rewardImages[0] ?? null;
   const buttonState = getRewardButtonState(

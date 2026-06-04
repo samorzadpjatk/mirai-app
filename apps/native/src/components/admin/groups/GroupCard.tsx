@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName } from "@mirai-app/shared";
-import { colors, spacing, borderRadius, typography } from "~/styles";
+import { formatDisplayName } from "@mirai-app/shared/users";
+import { Text, TouchableOpacity, View } from "react-native";
 import type { Group } from "~/hooks/admin/useAdminCoins";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupCardProps {
   group: Group;
@@ -50,7 +49,8 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
               }}
             >
               Organizer:{" "}
-              {formatDisplayName(group.organizer.firstName, group.organizer.lastName) ?? "Unknown User"}
+              {formatDisplayName(group.organizer.firstName, group.organizer.lastName) ??
+                "Unknown User"}
             </Text>
           )}
         </View>

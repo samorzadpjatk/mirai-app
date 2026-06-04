@@ -1,8 +1,7 @@
-import React from "react";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { GroupCard } from "../../../trips/groups/GroupCard";
 import type { GroupListItem } from "../../../trips/groups/types";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("GroupCard", () => {
   const mockGroup: GroupListItem = {
@@ -82,10 +81,7 @@ describe("GroupCard", () => {
     renderWithProviders(<GroupCard group={groupWithImage} onPress={mockOnPress} />);
     const image = screen.getByTestId("group-image");
     expect(image).toBeTruthy();
-    interface ImageElement {
-      props: { source: { uri: string } };
-    }
-    expect((image as unknown as ImageElement).props.source.uri).toBe(
+    expect((image.props as { source: { uri: string } }).source.uri).toBe(
       "https://example.com/image.jpg",
     );
   });

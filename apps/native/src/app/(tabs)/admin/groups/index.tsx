@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useMemo, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
   FlatList,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, borderRadius, typography } from "../../../../styles";
-import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import { AdminHeader } from "~/components/admin/AdminHeader";
-import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
+import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
+import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import type { Group } from "~/hooks/admin/useAdminGroups";
+import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 export default function AdminGroupsScreen() {
   const insets = useSafeAreaInsets();

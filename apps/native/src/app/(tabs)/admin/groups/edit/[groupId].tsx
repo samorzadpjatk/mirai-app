@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography, borderRadius } from "~/styles";
+import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import { Ionicons } from "@expo/vector-icons";
-import { AdminHeader } from "~/components/admin/AdminHeader";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface OrganizerOption {
   id: string;
@@ -189,7 +189,7 @@ export default function AdminEditGroupScreen() {
       <StatusBar style="light" />
       <View style={styles.body}>
         <View style={styles.formSection}>
-          <FormField label="Group Name" required>
+          <FormField label="Group Name" required={true}>
             <ThemedTextInput
               value={groupName}
               onChangeText={setGroupName}

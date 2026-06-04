@@ -1,14 +1,15 @@
-import { executeWithRetry } from "../utils/resilience";
-import { logger } from "../utils/logger";
-import { type DB } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
+import { challenges, notificationPushes, tripParticipants } from "@mirai-app/db";
+import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared/notifications";
+import { and, count, eq } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
+import { logger } from "../utils/logger";
 import {
+  type RankingTemplateValues,
   applyRankingTemplate,
   containsRankingTemplate,
-  type RankingTemplateValues,
 } from "../utils/notificationTemplates";
-import { tripParticipants, challenges, notificationPushes } from "@mirai-app/db";
-import { eq, and, count } from "drizzle-orm";
+import { executeWithRetry } from "../utils/resilience";
 
 export interface NotificationData {
   title: string;
@@ -173,7 +174,7 @@ export class NotificationService {
     amount: number,
     reason: string | undefined,
   ): NotificationData {
-    let body;
+    let body: string;
     if (reason) {
       body = `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
     } else {
@@ -190,7 +191,7 @@ export class NotificationService {
     amount: number,
     reason: string | undefined,
   ): NotificationData {
-    let body;
+    let body: string;
     if (reason) {
       body = `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
     } else {
@@ -213,7 +214,7 @@ export class NotificationService {
 
   static createRankingUpdateNotification(groupName: string, newPosition: number): NotificationData {
     return {
-      title: `🏆 Ranking update!`,
+      title: "🏆 Ranking update!",
       body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
       url: "/ranking",
     };
@@ -351,10 +352,7 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
       const t = await executeWithRetry(
         () => expo.sendPushNotificationsAsync(chunk),
         (err, retryAttempt) => {
-          logger.error(
-            err,
-            `Error sending push notification chunk (attempt ${retryAttempt + 1})`,
-          );
+          logger.error(err, `Error sending push notification chunk (attempt ${retryAttempt + 1})`);
         },
         undefined,
         3,
@@ -373,30 +371,11 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     }
   }
 
-  const resultByUser = new Map<string, { hasSuccess: boolean; hasFailure: boolean }>();
-
-  tickets
-    .map((t, idx) => {
-      const token = messages[idx]?.to;
-      if (!token || typeof token !== "string") return null;
-      const userId = userByToken.get(token);
-      if (!userId) return null;
-      const statusCode = t.status === "ok" ? 200 : 500;
-      return { userId, statusCode };
-    })
-    .filter((r): r is { userId: string; statusCode: number } => r !== null)
-    .forEach((r) => {
-      const current = resultByUser.get(r.userId) ?? {
-        hasSuccess: false,
-        hasFailure: false,
-      };
-      if (r.statusCode >= 200 && r.statusCode < 300) {
-        current.hasSuccess = true;
-      } else {
-        current.hasFailure = true;
-      }
-      resultByUser.set(r.userId, current);
-    });
+  const resultByUser = aggregateTicketResults(
+    tickets,
+    messages as Array<{ to: string }>,
+    userByToken,
+  );
 
   const sentUserIds = Array.from(resultByUser.entries())
     .filter(([, status]) => status.hasSuccess)
@@ -473,24 +452,11 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
       .onConflictDoNothing();
   }
 
-  const failedCount = hasExplicitAudience
-    ? Array.from(explicitAudienceUserIds).filter((userId) => {
-        const status = resultByUser.get(userId);
-        if (!status) return true;
-        return !status.hasSuccess;
-      }).length
-    : failedUserIds.length;
-
-  const sentCount = hasExplicitAudience
-    ? Array.from(explicitAudienceUserIds).filter((userId) => {
-        const status = resultByUser.get(userId);
-        return !!status?.hasSuccess;
-      }).length
-    : sentUserIds.length;
-
-  const totalCount = hasExplicitAudience
-    ? explicitAudienceUserIds.size
-    : sentUserIds.length + failedUserIds.length;
+  const {
+    sent: sentCount,
+    failed: failedCount,
+    total: totalCount,
+  } = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, sentUserIds, failedUserIds);
 
   return {
     success: failedCount === 0,

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { loadAuthUsers, createAuthUserByEmail, ensureGhostAuthUser } from "../auth";
-import type { AuthUserByEmail } from "../types";
 import type { SupabaseUser } from "@mirai-app/supabase";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createAuthUserByEmail, ensureGhostAuthUser, loadAuthUsers } from "../auth";
+import type { AuthUserByEmail } from "../types";
 
 const mockListUsers = vi.fn();
 const mockCreateUser = vi.fn();

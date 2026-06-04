@@ -1,8 +1,7 @@
-import React from "react";
-import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../../../helpers/renderWithProviders";
+import { ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
 import { EditMembersPicker } from "../../../../trips/groups/edit/EditMembersPicker";
+import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 const mockParticipants = [
   {

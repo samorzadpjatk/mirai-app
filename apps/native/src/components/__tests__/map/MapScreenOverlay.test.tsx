@@ -1,8 +1,8 @@
-import React from "react";
-import { View, type StyleProp, type ViewStyle } from "react-native";
 import { screen } from "@testing-library/react-native";
-import { renderWithProviders } from "../helpers/renderWithProviders";
+import React from "react";
+import { type StyleProp, View, type ViewStyle } from "react-native";
 import { MapScreenOverlay } from "../../map/overlays/MapScreenOverlay";
+import { renderWithProviders } from "../helpers/renderWithProviders";
 
 const mockGetMapOverlayStore = jest.fn(() => ({
   selectedUser: null as { id: string; name: string } | null,

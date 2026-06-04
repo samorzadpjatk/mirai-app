@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
 import { orpc } from "@mirai-app/orpc/client";
+import { formatDisplayName } from "@mirai-app/shared/users";
 import * as Crypto from "expo-crypto";
+import { useEffect, useMemo, useState } from "react";
 import { useLocationContext } from "~/stores/location";
-import { formatDisplayName } from "@mirai-app/shared";
 
 export function buildLocationUpdateData(location: {
   coords: { latitude: number; longitude: number };
@@ -16,9 +16,10 @@ export function buildLocationUpdateData(location: {
 }
 
 export function buildUserDataFromLocationUser(user: {
-  firstName?: string | null;
-  lastName?: string | null;
-  image?: string | null;
+  id?: string | undefined;
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  image?: string | null | undefined;
 }) {
   return {
     name: formatDisplayName(user.firstName, user.lastName) ?? undefined,
@@ -45,8 +46,7 @@ export function isValidLocationEvent(event: {
   userId?: string;
 }): boolean {
   return (
-    (event.type === "upsert" && !!event.location) ||
-    (event.type === "delete" && !!event.userId)
+    (event.type === "upsert" && !!event.location) || (event.type === "delete" && !!event.userId)
   );
 }
 
@@ -54,7 +54,12 @@ export function processLocationStreamEvent(
   event: {
     type: string;
     location?: {
-      user?: { id?: string; firstName?: string | null; lastName?: string | null; image?: string | null };
+      user?: {
+        id?: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        image?: string | null;
+      };
       coords?: { latitude: number; longitude: number };
       timestamp?: string | number | Date;
     };
@@ -76,12 +81,19 @@ export function processLocationStreamEvent(
     const userId = location?.user?.id ?? "";
     setLocationsByUserId((prev) => ({
       ...prev,
-      [userId]: buildLocationUpdateData(location as { coords: { latitude: number; longitude: number }; timestamp: string | number | Date }),
+      [userId]: buildLocationUpdateData(
+        location as {
+          coords: { latitude: number; longitude: number };
+          timestamp: string | number | Date;
+        },
+      ),
     }));
     if (location?.user) {
       setUsersData((prev) => ({
         ...prev,
-        [userId]: buildUserDataFromLocationUser(location.user),
+        [userId]: buildUserDataFromLocationUser(
+          location.user as Parameters<typeof buildUserDataFromLocationUser>[0],
+        ),
       }));
     }
   }

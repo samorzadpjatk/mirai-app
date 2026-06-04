@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import type React from "react";
+import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { colors, spacing, typography } from "~/styles";
 
 // Ionicons icon names type

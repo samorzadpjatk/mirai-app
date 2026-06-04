@@ -1,7 +1,6 @@
-import React from "react";
 import { fireEvent, screen, userEvent } from "@testing-library/react-native";
-import { renderWithProviders } from "../../helpers/renderWithProviders";
 import { ChallengeActionButton } from "../../../trips/challenges/ChallengeActionButton";
+import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 describe("ChallengeActionButton", () => {
   it("should render with default label when not loading", () => {

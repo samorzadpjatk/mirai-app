@@ -1,34 +1,36 @@
-import { ORPCError } from "@orpc/server";
-import { eq, and, sql, lte } from "drizzle-orm";
 import {
-  challenges,
-  challengeSubmissions,
-  groups,
-  coinTransactions,
   activityFeeds,
+  challengeSubmissions,
+  challenges,
+  coinTransactions,
+  groups,
   submissionActivities,
 } from "@mirai-app/db";
-import type { DB, ChallengeSubmission } from "@mirai-app/db";
-import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import type { ChallengeSubmission, DB } from "@mirai-app/db";
+import {
+  resolveAwardedPoints,
+  shouldAutoApproveSubmission,
+  validateSubmissionPayload,
+} from "@mirai-app/shared/challengeSubmissions";
+import { ORPCError } from "@orpc/server";
+import { and, eq, lte, sql } from "drizzle-orm";
 import {
   captureTripRankingSnapshot,
   createChallengeStatusActivityById,
   createRankChangeActivities,
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
 } from "../../../utils/activityFeed";
+import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { SubmissionContext } from "./queries";
 import { submissionBaseColumns, submissionWithRelations } from "./types";
 import {
   attachReviewerEmail,
-  ensureTripParticipant,
   ensureChallengeInTrip,
-  validateSubmissionPayload,
-  shouldAutoApproveSubmission,
-  resolveAwardedPoints,
+  ensureTripParticipant,
   rebalanceSpeedRankings,
 } from "./utils";
-import type { SubmissionContext } from "./queries";
 
 export const createSubmission = async (
   context: SubmissionContext,
@@ -247,9 +249,7 @@ export const updateMineSubmission = async (
         const activation = await tx
           .update(challenges)
           .set({ status: "ACTIVE" })
-          .where(
-            and(eq(challenges.id, submission.challenge.id), eq(challenges.status, "VISIBLE")),
-          )
+          .where(and(eq(challenges.id, submission.challenge.id), eq(challenges.status, "VISIBLE")))
           .returning({ id: challenges.id });
 
         if (activation.length > 0) {
@@ -292,8 +292,7 @@ export const updateMineSubmission = async (
         }
         submission.challenge.status = "VOTING_PHASE";
       } else if (
-        (submission.challenge.status === "VISIBLE" ||
-          submission.challenge.status === "ACTIVE") &&
+        (submission.challenge.status === "VISIBLE" || submission.challenge.status === "ACTIVE") &&
         submission.challenge.scoringCategory !== "PEER_VOTING" &&
         submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
         submission.challenge.endTime &&
@@ -476,8 +475,7 @@ export const reviewSubmission = async (
 
   if (submission.challenge.scoringCategory === "JUDGED_STAFF") {
     throw new ORPCError("BAD_REQUEST", {
-      message:
-        "For judged staff challenges use staff voting flow instead of manual approve/reject",
+      message: "For judged staff challenges use staff voting flow instead of manual approve/reject",
     });
   }
 
@@ -648,10 +646,7 @@ export const reviewSubmission = async (
   };
 };
 
-export const adminDeleteSubmission = async (
-  context: { db: DB },
-  input: { id: string },
-) => {
+export const adminDeleteSubmission = async (context: { db: DB }, input: { id: string }) => {
   await context.db.delete(challengeSubmissions).where(eq(challengeSubmissions.id, input.id));
   return { success: true };
 };

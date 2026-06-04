@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { Image } from "expo-image";
+import type React from "react";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 interface UserAvatarProps {
   /**
@@ -31,11 +32,11 @@ function getInitials(name: string): string {
 
   const parts = trimmed.split(/\s+/);
   if (parts.length === 1) {
-    return parts[0]![0]!.toUpperCase();
+    return (parts[0]?.[0] ?? "?").toUpperCase();
   }
 
-  const first = parts[0]![0] ?? "";
-  const last = parts[parts.length - 1]![0];
+  const first = parts[0]?.[0] ?? "";
+  const last = parts[parts.length - 1]?.[0];
   return (first + last).toUpperCase();
 }
 
