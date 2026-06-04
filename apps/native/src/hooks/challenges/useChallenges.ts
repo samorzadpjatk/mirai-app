@@ -6,10 +6,7 @@ import {
   getNextChallengePageParam,
   mapChallengeToListItem,
 } from "@mirai-app/shared/challenges";
-import {
-  calculateLeaderboardInfo,
-  findUserGroup,
-} from "@mirai-app/shared/trips";
+import { calculateLeaderboardInfo, findUserGroup } from "@mirai-app/shared/trips";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";

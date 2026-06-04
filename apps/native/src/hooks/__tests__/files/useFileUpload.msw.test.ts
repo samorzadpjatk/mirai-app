@@ -23,7 +23,7 @@ interface UploadCallbacks {
 
 let mockUploadCallbacks: UploadCallbacks = {};
 let mockShouldAutoSucceed = false;
-let mockAutoSucceedTimeout: NodeJS.Timeout | null = null;
+let mockAutoSucceedTimeout: ReturnType<typeof setTimeout> | null = null;
 
 jest.mock("tus-js-client", () => ({
   Upload: jest.fn().mockImplementation((_fileBlob, options) => {

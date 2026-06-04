@@ -1,4 +1,8 @@
-import { STANDARD_BUCKETS, normalizeBucketName, normalizeStoragePath } from "@mirai-app/shared/storage";
+import {
+  STANDARD_BUCKETS,
+  normalizeBucketName,
+  normalizeStoragePath,
+} from "@mirai-app/shared/storage";
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 

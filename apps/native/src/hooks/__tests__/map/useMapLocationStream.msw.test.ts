@@ -11,7 +11,8 @@ const mockUseLocationContext = jest.fn(() => ({
 }));
 
 jest.mock("~/stores/location", () => ({
-  useLocationContext: (...args: unknown[]) => mockUseLocationContext(...args),
+  useLocationContext: (...args: unknown[]) =>
+    mockUseLocationContext(...(args as Parameters<typeof mockUseLocationContext>)),
   useLocationStore: jest.fn(),
   locationStore: {},
   setLocationServerUpdater: jest.fn(),
