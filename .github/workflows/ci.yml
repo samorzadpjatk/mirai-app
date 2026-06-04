@@ -255,10 +255,10 @@ jobs:
 
       - name: Post diff coverage comment
         uses: Affanmir/diff-cover-action@v2
-        if: github.event_name == 'pull_request' && always()
+        if: github.event_name == 'pull_request' && steps.test.outcome == 'success'
         with:
           coverage-files: ./coverage/lcov_*.info
-          fail-under: '0'
+          fail-under: '80'
           post-comment: true
           create-annotations: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
