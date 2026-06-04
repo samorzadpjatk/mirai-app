@@ -235,7 +235,7 @@ jobs:
         if: always()
         run: |
           mkdir -p ./coverage
-          find . -path ./node_modules -prune -o -path ./.bun -prune -o -name "lcov.info" -type f -print | while read file; do
+          find . -path ./node_modules -prune -o -path ./.bun -prune -o -path ./.nx/cache -prune -o -name "lcov.info" -type f -print | while read file; do
             dir=$(dirname "$file" | sed 's|^\./||' | sed 's|/coverage$||' | tr '/' '_')
             cp "$file" "./coverage/lcov_${dir}.info"
             echo "Collected: $file -> ./coverage/lcov_${dir}.info"
@@ -249,13 +249,14 @@ jobs:
           name: coverage-reports
           path: |
             ./coverage/**
+            ./**/coverage/**
           retention-days: 30
 
       - name: Post coverage comment
         uses: scttnlsn/covrs@v0
         if: github.event_name == 'pull_request' && always()
         with:
-          coverage-files: ./coverage/**/lcov.info
+          coverage-files: ./coverage/lcov_*.info
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

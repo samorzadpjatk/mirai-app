@@ -25,8 +25,7 @@
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run --changed --passWithNoTests",
-    "test:ci": "vitest run --passWithNoTests",
-    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test:ci": "vitest run --coverage --passWithNoTests",
     "test:watch": "vitest"
   },
   "dependencies": {

@@ -28,9 +28,7 @@
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run --changed",
-    "test:ci": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:sqlite": "bunx --bun vitest run --config vitest.sqlite.config.ts",
+    "test:ci": "vitest run --coverage",
     "test:watch": "vitest",
     "clean": "rm -rf node_modules"
   },
