@@ -7,6 +7,7 @@ const baseCoverageExcludes = [
   "**/*.d.ts",
   "**/*.config.*",
   "**/vitest.setup.ts",
+  "**/__tests__/**",
 ];
 
 const baseConfig = defineConfig({
