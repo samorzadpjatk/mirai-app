@@ -241,10 +241,10 @@ jobs:
           retention-days: 30
 
       - name: Post coverage comment
-        uses: scttnlsn/covrs@v1
+        uses: scttnlsn/covrs@v0
         if: github.event_name == 'pull_request' && always()
         with:
-          lcov_file: ./coverage/**/lcov.info
+          coverage-files: ./coverage/**/lcov.info
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -269,4 +269,9 @@ jobs:
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Coverage reports uploaded to artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "### Coverage Reports" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage artifacts uploaded to GitHub Actions" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "- PR diff coverage comment posted via covrs (local GitHub Action)" >> $GITHUB_STEP_SUMMARY
+          fi
