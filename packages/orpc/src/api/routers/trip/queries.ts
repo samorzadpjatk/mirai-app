@@ -4,7 +4,13 @@ import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/shared/tr
 import { ORPCError } from "@orpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
-import { resolveGroupImage } from "./utils";
+import {
+  resolveGroupImage,
+  toClientTrip,
+  toClientTripInsurance,
+  toClientTripInsuranceStep,
+  toClientTripResource,
+} from "./utils";
 
 export const getAll = async (
   context: {
@@ -66,7 +72,7 @@ export const getAll = async (
   const total = totalRows[0]?.count ?? 0;
 
   return {
-    trips: tripsList.map(buildTripListItem),
+    trips: tripsList.map((trip) => buildTripListItem(toClientTrip(trip))),
     pagination: calculatePagination(limit, offset, total),
   };
 };
@@ -129,9 +135,10 @@ async function buildTripDetail(
     ),
   );
 
+  const normalizedTrip = toClientTrip(trip);
   return {
-    ...trip,
-    ...buildTripDetailResponse(trip, countMap, emailByAuthUserId, resolvedGroupImages),
+    ...normalizedTrip,
+    ...buildTripDetailResponse(normalizedTrip, countMap, emailByAuthUserId, resolvedGroupImages),
   };
 }
 
@@ -194,15 +201,34 @@ export const getResources = async (
     throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
   }
 
-  const matchTripResourcesByTripId = (tr: any, { eq }: any) => eq(tr.tripId, input.tripId);
+  const matchByTripId = (tr: any, { eq }: any) => eq(tr.tripId, input.tripId);
   const sortBySortOrder = (tr: any, { asc }: any) => asc(tr.sortOrder);
   const matchTripInsuranceByTripId = (ti: any, { eq }: any) => eq(ti.tripId, input.tripId);
   const sortByStepNumber = (s: any, { asc }: any) => asc(s.stepNumber);
 
-  const resources = await context.db.query.tripResources.findMany({
-    where: matchTripResourcesByTripId,
-    orderBy: sortBySortOrder,
-  });
+  const [links, files, texts, icons] = await Promise.all([
+    context.db.query.tripResourceLinks.findMany({
+      where: matchByTripId,
+      orderBy: sortBySortOrder,
+    }),
+    context.db.query.tripResourceFiles.findMany({
+      where: matchByTripId,
+      orderBy: sortBySortOrder,
+    }),
+    context.db.query.tripResourceTexts.findMany({
+      where: matchByTripId,
+      orderBy: sortBySortOrder,
+    }),
+    context.db.query.tripResourceIcons.findMany({
+      where: matchByTripId,
+      orderBy: sortBySortOrder,
+    }),
+  ]);
+
+  const resources = [...links, ...files, ...texts, ...icons]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((resource) => toClientTripResource(resource));
+
   const insurance = await context.db.query.tripInsurances.findFirst({
     where: matchTripInsuranceByTripId,
     with: {
@@ -211,5 +237,13 @@ export const getResources = async (
       },
     },
   });
-  return { resources, insurance };
+  return {
+    resources,
+    insurance: insurance
+      ? {
+          ...toClientTripInsurance(insurance),
+          steps: insurance.steps.map((step) => toClientTripInsuranceStep(step)),
+        }
+      : null,
+  };
 };

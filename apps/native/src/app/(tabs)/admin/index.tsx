@@ -110,7 +110,7 @@ export default function AdminPanelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedTripId, setSelectedTripId] = useState<string>("");
 
   const {
     data,
@@ -157,7 +157,7 @@ export default function AdminPanelScreen() {
     [data?.pages],
   );
 
-  const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
+  const effectiveTripId = selectedTripId || (trips?.[0]?.id ?? null);
 
   const selectedTrip = useMemo(() => {
     if (!trips || !effectiveTripId) return null;

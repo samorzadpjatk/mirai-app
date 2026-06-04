@@ -182,8 +182,8 @@ describe("authEmails", () => {
 
       expect(summary).toEqual({
         email: "user1@example.com",
-        bannedUntil: null,
-        banReason: null,
+        bannedUntil: "",
+        banReason: "",
         isBanned: false,
       });
     });
@@ -226,7 +226,7 @@ describe("authEmails", () => {
       const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
       const summary = result.get("user-1");
 
-      expect(summary?.bannedUntil).toBeNull();
+      expect(summary?.bannedUntil).toBe("");
       expect(summary?.isBanned).toBe(false);
     });
 
@@ -259,9 +259,9 @@ describe("authEmails", () => {
       const summary = result.get("user-1");
 
       expect(summary).toEqual({
-        email: null,
-        bannedUntil: null,
-        banReason: null,
+        email: "",
+        bannedUntil: "",
+        banReason: "",
         isBanned: false,
       });
       expect(console.warn).toHaveBeenCalledWith(
@@ -334,36 +334,36 @@ describe("authEmails", () => {
       expect(result).toBe("user1@example.com");
     });
 
-    it("should return null for non-existing user ID", () => {
+    it("should return empty string for non-existing user ID", () => {
       const lookup = new Map([["user-1", "user1@example.com"]]);
 
       const result = resolveAuthEmail(lookup, "user-2");
 
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
 
-    it("should return null for null authUserId", () => {
+    it("should return empty string for null authUserId", () => {
       const lookup = new Map([["user-1", "user1@example.com"]]);
 
       const result = resolveAuthEmail(lookup, null);
 
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
 
-    it("should return null for undefined authUserId", () => {
+    it("should return empty string for undefined authUserId", () => {
       const lookup = new Map([["user-1", "user1@example.com"]]);
 
       const result = resolveAuthEmail(lookup, undefined);
 
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
 
-    it("should return null when email in lookup is null", () => {
+    it("should return empty string when email in lookup is null", () => {
       const lookup = new Map([["user-1", null]]);
 
       const result = resolveAuthEmail(lookup, "user-1");
 
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
 
     it("should handle empty lookup map", () => {
@@ -371,7 +371,7 @@ describe("authEmails", () => {
 
       const result = resolveAuthEmail(lookup, "user-1");
 
-      expect(result).toBeNull();
+      expect(result).toBe("");
     });
   });
 });

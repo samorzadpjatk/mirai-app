@@ -36,12 +36,6 @@ describe("TripNewsSection pure functions", () => {
   describe("formatAdminName", () => {
     it("formats first and last name", () => {
       const item = {
-        id: "1",
-        activityType: "custom" as const,
-        title: "Test",
-        description: null,
-        imageUrl: null,
-        createdAt: new Date(),
         admin: { firstName: "John", lastName: "Doe" },
       };
       expect(formatAdminName(item)).toBe("John Doe");
@@ -49,24 +43,13 @@ describe("TripNewsSection pure functions", () => {
 
     it("handles missing admin", () => {
       const item = {
-        id: "1",
-        activityType: "custom" as const,
-        title: "Test",
-        description: null,
-        imageUrl: null,
-        createdAt: new Date(),
+        admin: null,
       };
       expect(formatAdminName(item)).toBe("Admin");
     });
 
     it("handles missing last name", () => {
       const item = {
-        id: "1",
-        activityType: "custom" as const,
-        title: "Test",
-        description: null,
-        imageUrl: null,
-        createdAt: new Date(),
         admin: { firstName: "John" },
       };
       expect(formatAdminName(item)).toBe("John");
@@ -74,12 +57,6 @@ describe("TripNewsSection pure functions", () => {
 
     it("handles whitespace-only names", () => {
       const item = {
-        id: "1",
-        activityType: "custom" as const,
-        title: "Test",
-        description: null,
-        imageUrl: null,
-        createdAt: new Date(),
         admin: { firstName: "  ", lastName: "  " },
       };
       expect(formatAdminName(item)).toBe("Admin");

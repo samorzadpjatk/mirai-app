@@ -1,4 +1,4 @@
-export { getORPCClient } from "./vanilia";
+export { getORPCClient, getServiceORPCClient } from "./vanilia";
 export { QueryProvider, queryClient, orpc } from "./query-client";
 export { makeQueryClient, getQueryClient } from "./query-client-factory";
 export { useORPCClient } from "./use-orpc-client";

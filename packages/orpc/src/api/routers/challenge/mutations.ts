@@ -1,4 +1,12 @@
-import { type DB, challengeSubmissions, challenges } from "@mirai-app/db";
+import {
+  type DB,
+  challengeLocation,
+  challengeQrCode,
+  challengeRecurrence,
+  challengeSubmissions,
+  challengeText,
+  challenges,
+} from "@mirai-app/db";
 import {
   computeEffectiveChallengeValues,
   inferPeerVotingDurationHours,
@@ -19,7 +27,7 @@ import {
 } from "../../../utils/activityFeed";
 import { precreateRecurringInstancesForTemplate } from "../../../utils/recurringChallenges";
 import { normalizeChallengeImageInput } from "./types";
-import { resolveChallengeImage, toClientChallenge } from "./utils";
+import { fetchChallengeWithRelations, resolveChallengeImage, toClientChallenge } from "./utils";
 
 export const createChallenge = async (
   context: {
@@ -66,21 +74,25 @@ export const createChallenge = async (
 ) => {
   const now = new Date();
 
-  const recurringDays = resolveRecurringDays({
-    isRecurring: input.isRecurring,
-    recurringDays: input.recurringDays,
-  });
-  if (input.isRecurring && recurringDays === null) {
+  const {
+    challenge: insertValues,
+    recurrence: recurrenceValues,
+    location: locationValues,
+    text: textValues,
+    qrCode: qrCodeValues,
+  } = prepareChallengeInsert(input, now);
+
+  if (recurrenceValues.isRecurring && recurrenceValues.recurringDays === 0) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Recurring challenge requires number of days",
     });
   }
 
   const recurringWindow =
-    input.isRecurring && recurringDays
+    recurrenceValues.isRecurring && recurrenceValues.recurringDays > 0
       ? resolveRecurringTemplateWindow({
           anchorDate: input.startTime ?? now,
-          recurringDays,
+          recurringDays: recurrenceValues.recurringDays,
         })
       : null;
 
@@ -105,10 +117,10 @@ export const createChallenge = async (
   }
 
   const recurringValidation = validateRecurringTimeline({
-    isRecurring: input.isRecurring,
-    dailyStartTime: input.dailyStartTime,
-    dailyEndTime: input.dailyEndTime,
-    recurringDays,
+    isRecurring: recurrenceValues.isRecurring,
+    dailyStartTime: recurrenceValues.dailyStartTime,
+    dailyEndTime: recurrenceValues.dailyEndTime,
+    recurringDays: recurrenceValues.recurringDays,
     scoringCategory: input.scoringCategory,
   });
   if (!recurringValidation.valid) {
@@ -129,8 +141,6 @@ export const createChallenge = async (
     });
   }
 
-  const insertValues = prepareChallengeInsert(input, now);
-
   const challenge = await context.db.transaction(async (tx) => {
     const [createdChallenge] = await tx.insert(challenges).values(insertValues).returning();
 
@@ -140,10 +150,44 @@ export const createChallenge = async (
       });
     }
 
-    if (createdChallenge.isRecurring) {
+    await tx.insert(challengeRecurrence).values({
+      challengeId: createdChallenge.id,
+      ...recurrenceValues,
+    });
+
+    await tx.insert(challengeLocation).values({
+      challengeId: createdChallenge.id,
+      ...locationValues,
+    });
+
+    if (textValues) {
+      await tx.insert(challengeText).values({
+        challengeId: createdChallenge.id,
+        ...textValues,
+      });
+    }
+
+    if (qrCodeValues) {
+      await tx.insert(challengeQrCode).values({
+        challengeId: createdChallenge.id,
+        ...qrCodeValues,
+      });
+    }
+
+    if (recurrenceValues.isRecurring) {
       await precreateRecurringInstancesForTemplate({
         tx,
-        template: createdChallenge,
+        template: {
+          ...createdChallenge,
+          dailyStartTime: recurrenceValues.dailyStartTime,
+          dailyEndTime: recurrenceValues.dailyEndTime,
+          isRecurring: recurrenceValues.isRecurring,
+          recurringDays: recurrenceValues.recurringDays,
+          targetLatitude: locationValues.targetLatitude,
+          targetLongitude: locationValues.targetLongitude,
+          textExpectedPhrase: textValues?.expectedPhrase ?? null,
+          qrCodeValue: qrCodeValues?.expectedValue ?? null,
+        },
       });
     }
 
@@ -160,7 +204,13 @@ export const createChallenge = async (
   });
 
   return {
-    ...toClientChallenge(challenge),
+    ...toClientChallenge({
+      ...challenge,
+      ...recurrenceValues,
+      ...locationValues,
+      textExpectedPhrase: textValues?.expectedPhrase ?? null,
+      qrCodeValue: qrCodeValues?.expectedValue ?? null,
+    }),
     image: await resolveChallengeImage(context.supabase, challenge.image),
   };
 };
@@ -209,25 +259,10 @@ export const updateChallenge = async (
     autoApprove?: boolean;
   },
 ) => {
-  const existing = await context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) => and(eq(c.id, input.id), eq(c.tripId, input.tripId)),
-    columns: {
-      id: true,
-      status: true,
-      description: true,
-      submissionType: true,
-      autoApprove: true,
-      isRecurring: true,
-      dailyStartTime: true,
-      dailyEndTime: true,
-      scoringCategory: true,
-      expectedValue: true,
-      startTime: true,
-      endTime: true,
-      votingStartTime: true,
-      votingEndTime: true,
-    },
-  });
+  const existing = await fetchChallengeWithRelations(
+    context.db,
+    and(eq(challenges.id, input.id), eq(challenges.tripId, input.tripId)),
+  );
 
   if (!existing) {
     throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
@@ -255,7 +290,7 @@ export const updateChallenge = async (
     });
   }
 
-  const nextIsRecurring = input.isRecurring ?? existing.isRecurring;
+  const nextIsRecurring = input.isRecurring ?? existing.isRecurring ?? false;
   const inferredRecurringDays = inferRecurringDaysFromWindow(existing.startTime, existing.endTime);
   const recurringDays = resolveRecurringDays({
     isRecurring: nextIsRecurring,
@@ -343,7 +378,8 @@ export const updateChallenge = async (
       {
         submissionType:
           existing.submissionType === "MULTI_IMAGE" ? "IMAGE" : existing.submissionType,
-        expectedValue: existing.expectedValue,
+        textExpectedPhrase: existing.textExpectedPhrase,
+        qrCodeValue: existing.qrCodeValue,
         autoApprove: existing.autoApprove,
       },
     );
@@ -381,9 +417,6 @@ export const updateChallenge = async (
         image: normalizeChallengeImageInput(input.image),
         submissionType: input.submissionType,
         scoringCategory: input.scoringCategory,
-        isRecurring: input.isRecurring,
-        dailyStartTime: input.dailyStartTime,
-        dailyEndTime: input.dailyEndTime,
         basePoints: input.basePoints,
         firstPlacePoints: input.firstPlacePoints,
         secondPlacePoints: input.secondPlacePoints,
@@ -393,9 +426,6 @@ export const updateChallenge = async (
         endTime: recurringWindow?.endTime ?? input.endTime,
         votingStartTime,
         votingEndTime,
-        targetLatitude: input.targetLatitude,
-        targetLongitude: input.targetLongitude,
-        expectedValue: effectiveExpectedValue,
         autoApprove: effectiveAutoApprove,
       })
       .where(eq(challenges.id, input.id))
@@ -407,10 +437,75 @@ export const updateChallenge = async (
       });
     }
 
-    if (updatedChallenge.isRecurring) {
+    const recurrenceValues = {
+      isRecurring: nextIsRecurring,
+      dailyStartTime: input.dailyStartTime ?? existing.dailyStartTime ?? "",
+      dailyEndTime: input.dailyEndTime ?? existing.dailyEndTime ?? "",
+      recurringDays: recurringDays ?? 0,
+      type: "DAILY" as const,
+    };
+
+    await tx
+      .insert(challengeRecurrence)
+      .values({ challengeId: updatedChallenge.id, ...recurrenceValues })
+      .onConflictDoUpdate({
+        target: challengeRecurrence.challengeId,
+        set: recurrenceValues,
+      });
+
+    const locationValues = {
+      targetLatitude: input.targetLatitude ?? existing.targetLatitude ?? 0,
+      targetLongitude: input.targetLongitude ?? existing.targetLongitude ?? 0,
+    };
+
+    await tx
+      .insert(challengeLocation)
+      .values({ challengeId: updatedChallenge.id, ...locationValues })
+      .onConflictDoUpdate({
+        target: challengeLocation.challengeId,
+        set: locationValues,
+      });
+
+    if (effectiveSubmissionType === "TEXT" && effectiveExpectedValue) {
+      await tx
+        .insert(challengeText)
+        .values({
+          challengeId: updatedChallenge.id,
+          expectedPhrase: effectiveExpectedValue,
+        })
+        .onConflictDoUpdate({
+          target: challengeText.challengeId,
+          set: { expectedPhrase: effectiveExpectedValue },
+        });
+    } else if (effectiveSubmissionType === "QR_CODE" && effectiveExpectedValue) {
+      await tx
+        .insert(challengeQrCode)
+        .values({
+          challengeId: updatedChallenge.id,
+          expectedValue: effectiveExpectedValue,
+        })
+        .onConflictDoUpdate({
+          target: challengeQrCode.challengeId,
+          set: { expectedValue: effectiveExpectedValue },
+        });
+    }
+
+    if (recurrenceValues.isRecurring) {
       await precreateRecurringInstancesForTemplate({
         tx,
-        template: updatedChallenge,
+        template: {
+          ...updatedChallenge,
+          dailyStartTime: recurrenceValues.dailyStartTime,
+          dailyEndTime: recurrenceValues.dailyEndTime,
+          isRecurring: recurrenceValues.isRecurring,
+          recurringDays: recurrenceValues.recurringDays,
+          targetLatitude: locationValues.targetLatitude,
+          targetLongitude: locationValues.targetLongitude,
+          textExpectedPhrase:
+            effectiveSubmissionType === "TEXT" ? (effectiveExpectedValue ?? null) : null,
+          qrCodeValue:
+            effectiveSubmissionType === "QR_CODE" ? (effectiveExpectedValue ?? null) : null,
+        },
       });
     }
 
@@ -426,7 +521,18 @@ export const updateChallenge = async (
   });
 
   return {
-    ...toClientChallenge(challenge),
+    ...toClientChallenge({
+      ...challenge,
+      isRecurring: nextIsRecurring,
+      dailyStartTime: input.dailyStartTime ?? existing.dailyStartTime,
+      dailyEndTime: input.dailyEndTime ?? existing.dailyEndTime,
+      recurringDays: recurringDays ?? 0,
+      targetLatitude: input.targetLatitude ?? existing.targetLatitude,
+      targetLongitude: input.targetLongitude ?? existing.targetLongitude,
+      textExpectedPhrase:
+        effectiveSubmissionType === "TEXT" ? (effectiveExpectedValue ?? null) : null,
+      qrCodeValue: effectiveSubmissionType === "QR_CODE" ? (effectiveExpectedValue ?? null) : null,
+    }),
     image: await resolveChallengeImage(context.supabase, challenge.image),
   };
 };

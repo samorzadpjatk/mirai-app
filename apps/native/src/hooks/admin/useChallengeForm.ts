@@ -92,14 +92,14 @@ export function useChallengeForm({
   };
 
   const [form, setForm] = useState<ChallengeFormState>(defaultForm);
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string>("");
   const [activePicker, setActivePicker] = useState<DateField>(null);
   const [activeSelect, setActiveSelect] = useState<
     "submissionType" | "scoringCategory" | "status" | null
   >(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
-  const [initialImage, setInitialImage] = useState<string | null>(null);
+  const [initialImage, setInitialImage] = useState<string>("");
 
   // Derived state
   const isPeerVoting = form.scoringCategory === "PEER_VOTING";
@@ -373,14 +373,14 @@ export function useChallengeForm({
     } as ChallengeFormState;
 
     setForm(newFormState);
-    setImagePreviewUri(nextImage ?? null);
+    setImagePreviewUri(nextImage ?? "");
     setInitialImage(nextImage);
     if (challengeId) {
       setInitializedChallengeId(challengeId);
     }
   };
 
-  const [initializedChallengeId, setInitializedChallengeId] = useState<string | null>(null);
+  const [initializedChallengeId, setInitializedChallengeId] = useState<string>("");
 
   return {
     // Form state

@@ -1,5 +1,12 @@
-import type { TripInsurance, TripInsuranceStep, TripResource } from "@mirai-app/db";
-import { tripInsuranceSteps, tripInsurances, tripResources } from "@mirai-app/db";
+import type { TripInsurance, TripInsuranceStep } from "@mirai-app/db";
+import {
+  tripInsuranceSteps,
+  tripInsurances,
+  tripResourceFiles,
+  tripResourceIcons,
+  tripResourceLinks,
+  tripResourceTexts,
+} from "@mirai-app/db";
 import { logger } from "@mirai-app/shared/utils";
 import { eq, inArray } from "drizzle-orm";
 import yaml from "yaml";
@@ -52,7 +59,10 @@ export const seedTripInfo = async (
   }
 
   try {
-    await db.delete(tripResources).where(eq(tripResources.tripId, tripId));
+    await db.delete(tripResourceLinks).where(eq(tripResourceLinks.tripId, tripId));
+    await db.delete(tripResourceFiles).where(eq(tripResourceFiles.tripId, tripId));
+    await db.delete(tripResourceTexts).where(eq(tripResourceTexts.tripId, tripId));
+    await db.delete(tripResourceIcons).where(eq(tripResourceIcons.tripId, tripId));
 
     for (const resourceConfig of infoConfig.resources) {
       let publicUrl = resourceConfig.publicUrl;
@@ -102,21 +112,44 @@ export const seedTripInfo = async (
         }
       }
 
-      const resource: Omit<TripResource, "id" | "createdAt" | "updatedAt"> = {
-        tripId,
-        type: resourceConfig.type,
-        label: resourceConfig.label,
-        description: resourceConfig.description ?? null,
-        url: resourceConfig.url ?? publicUrl ?? null,
-        storagePath: resourceConfig.storagePath ?? null,
-        fileName: resourceConfig.fileName ?? null,
-        publicUrl: publicUrl ?? null,
-        iconName: resourceConfig.iconName ?? null,
-        value: resourceConfig.value ?? null,
-        sortOrder: resourceConfig.sortOrder ?? 0,
-      };
+      const sortOrder = resourceConfig.sortOrder ?? 0;
 
-      await db.insert(tripResources).values(resource);
+      if (resourceConfig.url || publicUrl) {
+        await db.insert(tripResourceLinks).values({
+          tripId,
+          label: resourceConfig.label,
+          type: resourceConfig.type,
+          url: resourceConfig.url ?? publicUrl ?? "",
+          description: resourceConfig.description ?? "",
+          sortOrder,
+        });
+      } else if (resourceConfig.storagePath) {
+        await db.insert(tripResourceFiles).values({
+          tripId,
+          label: resourceConfig.label,
+          type: resourceConfig.type,
+          storagePath: resourceConfig.storagePath,
+          fileName: resourceConfig.fileName ?? "",
+          publicUrl: publicUrl ?? "",
+          sortOrder,
+        });
+      } else if (resourceConfig.value) {
+        await db.insert(tripResourceTexts).values({
+          tripId,
+          label: resourceConfig.label,
+          type: resourceConfig.type,
+          value: resourceConfig.value,
+          sortOrder,
+        });
+      } else if (resourceConfig.iconName) {
+        await db.insert(tripResourceIcons).values({
+          tripId,
+          label: resourceConfig.label,
+          type: resourceConfig.type,
+          iconName: resourceConfig.iconName,
+          sortOrder,
+        });
+      }
 
       logger.info(`✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`);
     }

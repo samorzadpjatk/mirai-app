@@ -5,25 +5,19 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 describe("ChallengesLoadingState", () => {
   it("should render container", () => {
     renderWithProviders(<ChallengesLoadingState />);
-    const view = screen.getByTestId("challenges-loading-container");
+    const view = screen.getByTestId("challenges-loading-state");
     expect(view).toBeTruthy();
   });
 
-  it("should render ActivityIndicator", () => {
+  it("should render placeholder views", () => {
     renderWithProviders(<ChallengesLoadingState />);
-    const activityIndicator = screen.getByTestId("challenges-loading-indicator");
-    expect(activityIndicator).toBeTruthy();
-  });
-
-  it("should render with large size indicator", () => {
-    renderWithProviders(<ChallengesLoadingState />);
-    const activityIndicator = screen.getByTestId("challenges-loading-indicator");
-    expect(activityIndicator.props.size).toBe("large");
+    const view = screen.getByTestId("challenges-loading-state");
+    expect(view.children.length).toBeGreaterThan(0);
   });
 
   it("should have flex container styling", () => {
     renderWithProviders(<ChallengesLoadingState />);
-    const view = screen.getByTestId("challenges-loading-container");
+    const view = screen.getByTestId("challenges-loading-state");
     expect(view.props.style).toBeTruthy();
   });
 });

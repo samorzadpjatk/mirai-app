@@ -7,8 +7,11 @@ import {
   submissionActivities,
   userPosts,
 } from "./activities";
+import { challengeLocation } from "./challengeLocation";
+import { challengeQrCode } from "./challengeQrCode";
+import { challengeRecurrence } from "./challengeRecurrence";
+import { challengeText } from "./challengeText";
 import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
-import { events, userEvents } from "./events";
 import { groupJoinRequests, groups } from "./groups";
 import { locationShares, locationSharingRequests, locations } from "./locations";
 import {
@@ -21,13 +24,11 @@ import {
 } from "./notifications";
 import { coinTransactions, rewardPurchases, rewards } from "./rewards";
 import { sponsors, tripSponsors } from "./sponsors";
-import {
-  tripInsuranceSteps,
-  tripInsurances,
-  tripParticipants,
-  tripResources,
-  trips,
-} from "./trips";
+import { tripResourceFiles } from "./tripResourceFiles";
+import { tripResourceIcons } from "./tripResourceIcons";
+import { tripResourceLinks } from "./tripResourceLinks";
+import { tripResourceTexts } from "./tripResourceTexts";
+import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
 import { userAgents } from "./userAgents";
 import { users } from "./users";
 
@@ -44,8 +45,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     relationName: "NotificationAdmin",
   }),
   pushSubscriptions: many(pushSubscriptions),
-  createdEvents: many(events),
-  userEvents: many(userEvents),
   location: one(locations),
   locationsSharedWithMe: many(locationShares),
   sentLocationRequests: many(locationSharingRequests, {
@@ -76,7 +75,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 }));
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
-  tripResources: many(tripResources),
+  tripResourceLinks: many(tripResourceLinks),
+  tripResourceFiles: many(tripResourceFiles),
+  tripResourceTexts: many(tripResourceTexts),
+  tripResourceIcons: many(tripResourceIcons),
   participants: many(tripParticipants),
   notifications: many(notifications),
   notificationSchedules: many(notificationSchedules),
@@ -90,9 +92,30 @@ export const tripsRelations = relations(trips, ({ one, many }) => ({
   groups: many(groups),
 }));
 
-export const tripResourcesRelations = relations(tripResources, ({ one }) => ({
+export const tripResourceLinksRelations = relations(tripResourceLinks, ({ one }) => ({
   trip: one(trips, {
-    fields: [tripResources.tripId],
+    fields: [tripResourceLinks.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export const tripResourceFilesRelations = relations(tripResourceFiles, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tripResourceFiles.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export const tripResourceTextsRelations = relations(tripResourceTexts, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tripResourceTexts.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export const tripResourceIconsRelations = relations(tripResourceIcons, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tripResourceIcons.tripId],
     references: [trips.id],
   }),
 }));
@@ -130,29 +153,6 @@ export const tripParticipantsRelations = relations(tripParticipants, ({ one, man
   userPosts: many(userPosts),
 }));
 
-export const eventsRelations = relations(events, ({ one, many }) => ({
-  creator: one(users, {
-    fields: [events.creatorId],
-    references: [users.id],
-  }),
-  organizerGroup: one(groups, {
-    fields: [events.organizerGroupId],
-    references: [groups.id],
-  }),
-  userEvents: many(userEvents),
-}));
-
-export const userEventsRelations = relations(userEvents, ({ one }) => ({
-  user: one(users, {
-    fields: [userEvents.userId],
-    references: [users.id],
-  }),
-  event: one(events, {
-    fields: [userEvents.eventId],
-    references: [events.id],
-  }),
-}));
-
 export const groupsRelations = relations(groups, ({ one, many }) => ({
   trip: one(trips, {
     fields: [groups.tripId],
@@ -164,7 +164,6 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   }),
   participants: many(tripParticipants),
   coinTransactions: many(coinTransactions),
-  organizedEvents: many(events),
   challengeSubmissions: many(challengeSubmissions),
   rewardPurchases: many(rewardPurchases),
   submissionActivities: many(submissionActivities, {
@@ -203,6 +202,50 @@ export const challengesRelations = relations(challenges, ({ one, many }) => ({
   }),
   challengeActivities: many(challengeActivities, {
     relationName: "ChallengeActivityChallenge",
+  }),
+  recurrence: one(challengeRecurrence, {
+    fields: [challenges.id],
+    references: [challengeRecurrence.challengeId],
+  }),
+  location: one(challengeLocation, {
+    fields: [challenges.id],
+    references: [challengeLocation.challengeId],
+  }),
+  text: one(challengeText, {
+    fields: [challenges.id],
+    references: [challengeText.challengeId],
+  }),
+  qrCode: one(challengeQrCode, {
+    fields: [challenges.id],
+    references: [challengeQrCode.challengeId],
+  }),
+}));
+
+export const challengeRecurrenceRelations = relations(challengeRecurrence, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [challengeRecurrence.challengeId],
+    references: [challenges.id],
+  }),
+}));
+
+export const challengeLocationRelations = relations(challengeLocation, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [challengeLocation.challengeId],
+    references: [challenges.id],
+  }),
+}));
+
+export const challengeTextRelations = relations(challengeText, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [challengeText.challengeId],
+    references: [challenges.id],
+  }),
+}));
+
+export const challengeQrCodeRelations = relations(challengeQrCode, ({ one }) => ({
+  challenge: one(challenges, {
+    fields: [challengeQrCode.challengeId],
+    references: [challenges.id],
   }),
 }));
 

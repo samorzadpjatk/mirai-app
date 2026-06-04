@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ErrorState } from "~/components/common/ui";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
@@ -24,11 +25,16 @@ export default function GroupDetailsScreen() {
 
   const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
-  const { data: group, isLoading: groupLoading } = useQuery({
+  const {
+    data: group,
+    isLoading: groupLoading,
+    isError: isGroupError,
+    error: groupError,
+  } = useQuery({
     ...orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } }),
     enabled: !!groupId,
   });
-  const { isTripPast } = useTripDetails(group?.trip?.id);
+  const { tripId, isTripPast } = useTripDetails(group?.trip?.id);
   const isCurrentUserMemberInViewedGroup = Boolean(
     group?.participants.some((participant) => participant.user.id === currentUser?.id),
   );
@@ -38,7 +44,7 @@ export default function GroupDetailsScreen() {
 
   const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
     ...orpc.user.getMyWithGroup.queryOptions({
-      input: { tripId: group?.trip?.id ?? "" },
+      input: { tripId: tripId },
     }),
     enabled: !!group?.trip?.id,
   });
@@ -62,7 +68,7 @@ export default function GroupDetailsScreen() {
   const { data: transactions } = useQuery({
     ...orpc.coinTransaction.getCoinTransactions.queryOptions({
       input: {
-        tripId: group?.trip?.id ?? "",
+        tripId: tripId,
         groupId: groupId ?? "",
         limit: 20,
       },
@@ -70,7 +76,7 @@ export default function GroupDetailsScreen() {
     enabled: !!groupId && !!group?.trip?.id,
   });
   const { data: rankingData } = useQuery({
-    ...orpc.group.ranking.queryOptions({ input: { tripId: group?.trip?.id ?? "" } }),
+    ...orpc.group.ranking.queryOptions({ input: { tripId: tripId } }),
     enabled: !!group?.trip?.id,
   });
   const leaveGroupMutation = useMutation(
@@ -81,17 +87,17 @@ export default function GroupDetailsScreen() {
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.getAll.queryOptions({
-            input: { tripId: group?.trip?.id ?? "" },
+            input: { tripId: tripId },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.ranking.queryOptions({
-            input: { tripId: group?.trip?.id ?? "" },
+            input: { tripId: tripId },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.user.getMyWithGroup.queryOptions({
-            input: { tripId: group?.trip?.id ?? "" },
+            input: { tripId: tripId },
           }).queryKey,
         });
       },
@@ -142,12 +148,12 @@ export default function GroupDetailsScreen() {
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.getAll.queryOptions({
-            input: { tripId: group?.trip?.id ?? "" },
+            input: { tripId: tripId },
           }).queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: orpc.group.ranking.queryOptions({
-            input: { tripId: group?.trip?.id ?? "" },
+            input: { tripId: tripId },
           }).queryKey,
         });
       },
@@ -158,6 +164,15 @@ export default function GroupDetailsScreen() {
 
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
+  }
+
+  if (isGroupError) {
+    return (
+      <ErrorState
+        title="Failed to load group"
+        message={groupError?.message ?? "Something went wrong"}
+      />
+    );
   }
 
   if (!group) {

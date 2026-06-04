@@ -10,7 +10,7 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
-import { batchEmailLookup, resolveGroupImage, toUserWithEmail } from "./utils";
+import { batchEmailLookup, resolveGroupImage, toClientGroup, toUserWithEmail } from "./utils";
 
 export type GroupContext = {
   db: DB;
@@ -80,7 +80,7 @@ export const getMy = async (context: GroupContext, input: { tripId: string }) =>
   ]);
 
   return {
-    ...group,
+    ...toClientGroup(group),
     image: await resolveGroupImage(context.supabase, group.image),
     organizer: group.organizer
       ? toUserWithEmail(group.organizer, emailByAuthUserId)
@@ -156,7 +156,7 @@ export const getAll = async (
   return {
     groups: await Promise.all(
       groupsResult.map(async (group) => ({
-        ...group,
+        ...toClientGroup(group),
         image: await resolveGroupImage(context.supabase, group.image),
         organizer: group.organizer
           ? toUserWithEmail(group.organizer, emailByAuthUserId)
@@ -210,7 +210,7 @@ export const getGroupList = async (context: GroupContext, input: { tripId: strin
 
   return await Promise.all(
     groupsWithCount.map(async (group) => ({
-      ...group,
+      ...toClientGroup(group),
       image: await resolveGroupImage(context.supabase, group.image),
     })),
   );
@@ -286,7 +286,7 @@ export const getById = async (context: GroupContext, input: { id: string }) => {
   const approvedSubmissions = mapApprovedSubmissions(group.challengeSubmissions);
 
   return {
-    ...group,
+    ...toClientGroup(group),
     _count: { participants: executionCountResult[0]?.count ?? 0 },
     image: await resolveGroupImage(context.supabase, group.image),
     organizer: group.organizer
@@ -322,7 +322,7 @@ export const getByIdWithOrganizer = async (context: GroupContext, input: { group
     .where(eq(tripParticipants.groupId, input.groupId));
 
   return {
-    ...group,
+    ...toClientGroup(group),
     _count: { participants: countResult[0]?.count ?? 0 },
   };
 };
@@ -439,7 +439,7 @@ export const ranking = async (context: GroupContext, input: { tripId: string }) 
   return {
     data: await Promise.all(
       data.map(async (group) => ({
-        ...group,
+        ...toClientGroup(group),
         image: await resolveGroupImage(context.supabase, group.image),
         organizer: group.organizer
           ? toUserWithEmail(group.organizer, emailByAuthUserId)

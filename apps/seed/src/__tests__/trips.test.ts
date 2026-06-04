@@ -647,7 +647,7 @@ describe("trips", () => {
       expect(result).toEqual({
         id: "trip-1",
         name: "Trip With Failed Ghost",
-        description: undefined,
+        description: "",
         startDate: new Date("2026-01-01"),
         endDate: new Date("2026-01-10"),
         backgroundImagePath: undefined,

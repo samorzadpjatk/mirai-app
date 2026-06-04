@@ -45,7 +45,7 @@ export default function EditProfileScreen() {
   const [lastName, setLastName] = useState(initialLastName);
   const [isPicking, setIsPicking] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<string | null>(null);
+  const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<string>("");
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const {
@@ -121,7 +121,7 @@ export default function EditProfileScreen() {
   const remoteAvatarUri = avatarFile?.uri
     ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
     : null;
-  const avatarUri = localAvatarPreviewUri ?? remoteAvatarUri;
+  const avatarUri = localAvatarPreviewUri || remoteAvatarUri;
 
   const uploadAvatarAsset = useCallback(
     async (asset: UploadAsset) => {

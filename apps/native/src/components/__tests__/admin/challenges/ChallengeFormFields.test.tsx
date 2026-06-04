@@ -47,7 +47,7 @@ const baseFormState = (overrides: Partial<FormState> = {}): FormState => {
       textExpectedPhrase: "",
       autoApprove: false,
     },
-    imagePreviewUri: null,
+    imagePreviewUri: "",
     isPeerVoting: false,
     showPodiumPoints: true,
     isAutoApproveForced: false,
@@ -62,8 +62,8 @@ const baseFormState = (overrides: Partial<FormState> = {}): FormState => {
     activeSelect: null,
     showLocationPicker: false,
     isQrScannerOpen: false,
-    initialImage: null,
-    initializedChallengeId: null,
+    initialImage: "",
+    initializedChallengeId: "",
     uploadStatus: "idle",
     uploadProgress: { percent: null, bytesTotal: null, bytesUploaded: 0 },
     uploadError: null,
@@ -384,7 +384,7 @@ describe("ChallengeFormFields", () => {
     );
 
     fireEvent.press(getByText("Clear"));
-    expect(setImagePreviewUri).toHaveBeenCalledWith(null);
+    expect(setImagePreviewUri).toHaveBeenCalledWith("");
     expect(updateForm).toHaveBeenCalledWith("image", "");
   });
 

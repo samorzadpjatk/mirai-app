@@ -273,7 +273,7 @@ export default function RewardsView({ tripId }: Props) {
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text style={[commonStyles.h3]}>Rewards</Text>
-            {refreshing && <ActivityIndicator size="small" color="#00ced1" />}
+            {refreshing ? <ActivityIndicator size="small" color="#00ced1" /> : null}
             {lastRefreshTime && !refreshing && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <Ionicons name="refresh" size={14} color="#10b981" />

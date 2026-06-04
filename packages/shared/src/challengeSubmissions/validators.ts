@@ -38,7 +38,8 @@ export const shouldAutoApproveSubmission = (params: {
   challenge: {
     submissionType: string;
     autoApprove: boolean;
-    expectedValue: string | null;
+    qrCodeValue?: string | null;
+    textExpectedPhrase?: string | null;
     targetLatitude: number | null;
     targetLongitude: number | null;
   };
@@ -47,7 +48,7 @@ export const shouldAutoApproveSubmission = (params: {
   longitude?: number | null;
 }) => {
   if (params.challenge.submissionType === "QR_CODE") {
-    const expected = params.challenge.expectedValue?.trim();
+    const expected = params.challenge.qrCodeValue?.trim();
     const submitted = params.textContent?.trim();
     if (!expected) {
       throw new ORPCError("BAD_REQUEST", {
@@ -71,7 +72,7 @@ export const shouldAutoApproveSubmission = (params: {
   }
 
   if (params.challenge.submissionType === "TEXT") {
-    const expected = params.challenge.expectedValue?.trim();
+    const expected = params.challenge.textExpectedPhrase?.trim();
     if (expected) {
       const submitted = params.textContent?.trim();
       if (!submitted || submitted !== expected) {

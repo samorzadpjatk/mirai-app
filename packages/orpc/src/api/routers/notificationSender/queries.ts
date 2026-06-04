@@ -1,7 +1,7 @@
-import { publicProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../trpc";
 import type { InactivityCheckResult } from "./types";
 
-export const checkInactiveUsers = publicProcedure.handler(() => {
+export const checkInactiveUsers = serviceAccountProcedure.handler(() => {
   return {
     checked: 0,
     notified: 0,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
+import { createMockActivity } from "../../../test-utils/activityMocks";
 import {
   applyReactionSummaryToFeed,
   buildEmptyFeedPageData,
@@ -41,7 +42,7 @@ describe("getNextCommunityFeedPageParam", () => {
   it("should return the next cursor when it exists", () => {
     const nextCursor: FeedCursor = {
       id: "cursor-1",
-      createdAt: "2024-01-01",
+      createdAt: new Date("2024-01-01"),
       isPinned: false,
     };
     const page: FeedPageData = {
@@ -64,13 +65,13 @@ describe("getNextCommunityFeedPageParam", () => {
   });
 });
 
-const baseActivity = {
+const baseActivity = createMockActivity({
   tripId: "trip-1",
-  activityType: "custom" as const,
-  description: null,
-  imageUrl: null,
-  createdAt: "2024-01-01",
-};
+  activityType: "custom",
+  description: "",
+  imageUrl: "",
+  createdAt: new Date("2024-01-01"),
+});
 
 describe("updateActivityReactionsInPages", () => {
   it("should update the target activity's reactions summary", () => {
@@ -78,9 +79,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -88,9 +89,9 @@ describe("updateActivityReactionsInPages", () => {
             },
           },
           {
+            ...baseActivity,
             id: "a2",
             title: "Activity 2",
-            ...baseActivity,
             reactionsSummary: {
               total: 3,
               counts: { heart: 3, fire: 0, clap: 0, star: 0 },
@@ -125,9 +126,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -135,9 +136,9 @@ describe("updateActivityReactionsInPages", () => {
             },
           },
           {
+            ...baseActivity,
             id: "a2",
             title: "Activity 2",
-            ...baseActivity,
             reactionsSummary: {
               total: 3,
               counts: { heart: 3, fire: 0, clap: 0, star: 0 },
@@ -145,9 +146,9 @@ describe("updateActivityReactionsInPages", () => {
             },
           },
           {
+            ...baseActivity,
             id: "a3",
             title: "Activity 3",
-            ...baseActivity,
             reactionsSummary: {
               total: 1,
               counts: { heart: 1, fire: 0, clap: 0, star: 0 },
@@ -179,9 +180,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -207,9 +208,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -222,9 +223,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a2",
             title: "Activity 2",
-            ...baseActivity,
             reactionsSummary: {
               total: 3,
               counts: { heart: 3, fire: 0, clap: 0, star: 0 },
@@ -255,9 +256,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -306,9 +307,9 @@ describe("updateActivityReactionsInPages", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },
@@ -348,9 +349,9 @@ describe("applyReactionSummaryToFeed", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               total: 5,
               counts: { heart: 5, fire: 0, clap: 0, star: 0 },

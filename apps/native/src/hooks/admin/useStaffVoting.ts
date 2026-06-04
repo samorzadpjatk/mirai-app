@@ -22,7 +22,7 @@ interface UseStaffVotingProps {
     endTime?: string | Date | null;
     status: string;
   };
-  onPhaseChange?: (phase: VotingPhase, blockedReason?: string | null) => void;
+  onPhaseChange?: (phase: VotingPhase, blockedReason?: string) => void;
 }
 
 const ELO_BASE_RATING = 1500;
@@ -86,13 +86,13 @@ export const useStaffVoting = ({
   onPhaseChange,
 }: UseStaffVotingProps) => {
   const [phase, setPhase] = useState<VotingPhase>("comparing");
-  const [blockedReason, setBlockedReason] = useState<string | null>(null);
+  const [blockedReason, setBlockedReason] = useState<string>("");
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [comparedPairs, setComparedPairs] = useState<Set<string>>(new Set());
   const [currentPair, setCurrentPair] = useState<[string, string] | null>(null);
   const [comparisonCount, setComparisonCount] = useState(0);
   const [stableTop3Count, setStableTop3Count] = useState(0);
-  const [previousTop3Key, setPreviousTop3Key] = useState<string | null>(null);
+  const [previousTop3Key, setPreviousTop3Key] = useState<string>("");
   const [finalTopThreeIds, setFinalTopThreeIds] = useState<string[]>([]);
   const [bootstrapped, setBootstrapped] = useState(false);
 
@@ -138,9 +138,9 @@ export const useStaffVoting = ({
     setCurrentPair(pair);
     setComparisonCount(0);
     setStableTop3Count(0);
-    setPreviousTop3Key(null);
+    setPreviousTop3Key("");
     setFinalTopThreeIds([]);
-    setBlockedReason(null);
+    setBlockedReason("");
     setPhase("comparing");
     onPhaseChange?.("comparing");
   }, [votingSubmissions, onPhaseChange]);
@@ -307,13 +307,13 @@ export const useStaffVoting = ({
 
   const resetVoting = useCallback(() => {
     setPhase("comparing");
-    setBlockedReason(null);
+    setBlockedReason("");
     setRatings({});
     setComparedPairs(new Set());
     setCurrentPair(null);
     setComparisonCount(0);
     setStableTop3Count(0);
-    setPreviousTop3Key(null);
+    setPreviousTop3Key("");
     setFinalTopThreeIds([]);
     setBootstrapped(false);
     onPhaseChange?.("comparing");

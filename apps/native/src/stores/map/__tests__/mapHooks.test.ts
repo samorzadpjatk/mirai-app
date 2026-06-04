@@ -7,11 +7,11 @@ describe("mapHooks", () => {
   beforeEach(() => {
     act(() => {
       mapStore.setState({
-        selectedUserId: null,
+        selectedUserId: "",
         showUsersList: true,
         isListExpanded: false,
         showManageModal: false,
-        followMode: null,
+        followMode: "none",
         focusedCoordinate: null,
         mapTheme: "dark",
       });
@@ -26,7 +26,7 @@ describe("mapHooks", () => {
 
     it("should select selectedUserId", () => {
       const { result } = renderHook(() => useMapStore((state) => state.selectedUserId));
-      expect(result.current).toBeNull();
+      expect(result.current).toBe("");
     });
 
     it("should select showUsersList", () => {
@@ -41,7 +41,7 @@ describe("mapHooks", () => {
 
     it("should select followMode", () => {
       const { result } = renderHook(() => useMapStore((state) => state.followMode));
-      expect(result.current).toBeNull();
+      expect(result.current).toBe("none");
     });
 
     it("should select focusedCoordinate", () => {
@@ -163,7 +163,7 @@ describe("mapHooks", () => {
         result.current();
       });
 
-      expect(mapStore.getState().selectedUserId).toBeNull();
+      expect(mapStore.getState().selectedUserId).toBe("");
     });
 
     it("should call backToList action through store", () => {
@@ -181,7 +181,7 @@ describe("mapHooks", () => {
       });
 
       expect(mapStore.getState().showUsersList).toBe(true);
-      expect(mapStore.getState().selectedUserId).toBeNull();
+      expect(mapStore.getState().selectedUserId).toBe("");
     });
 
     it("should call recenter action through store", () => {
@@ -272,7 +272,7 @@ describe("mapHooks", () => {
         result.current.deselectUser();
       });
 
-      expect(mapStore.getState().selectedUserId).toBeNull();
+      expect(mapStore.getState().selectedUserId).toBe("");
     });
 
     it("should call backToList through useMapActions", () => {

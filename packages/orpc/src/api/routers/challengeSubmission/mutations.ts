@@ -1,6 +1,9 @@
 import {
   activityFeeds,
+  challengeLocation,
+  challengeQrCode,
   challengeSubmissions,
+  challengeText,
   challenges,
   coinTransactions,
   groups,
@@ -218,10 +221,7 @@ export const updateMineSubmission = async (
           votingStartTime: true,
           submissionType: true,
           description: true,
-          targetLatitude: true,
-          targetLongitude: true,
           autoApprove: true,
-          expectedValue: true,
         },
       },
     },
@@ -230,6 +230,39 @@ export const updateMineSubmission = async (
   if (submission?.challenge.tripId !== input.tripId) {
     throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
   }
+
+  const [challengeLocationData] = await context.db
+    .select({
+      targetLatitude: challengeLocation.targetLatitude,
+      targetLongitude: challengeLocation.targetLongitude,
+    })
+    .from(challengeLocation)
+    .where(eq(challengeLocation.challengeId, submission.challenge.id))
+    .limit(1);
+
+  const [challengeTextData] = await context.db
+    .select({
+      expectedPhrase: challengeText.expectedPhrase,
+    })
+    .from(challengeText)
+    .where(eq(challengeText.challengeId, submission.challenge.id))
+    .limit(1);
+
+  const [challengeQrCodeData] = await context.db
+    .select({
+      expectedValue: challengeQrCode.expectedValue,
+    })
+    .from(challengeQrCode)
+    .where(eq(challengeQrCode.challengeId, submission.challenge.id))
+    .limit(1);
+
+  const challengeWithLocation = {
+    ...submission.challenge,
+    targetLatitude: challengeLocationData?.targetLatitude ?? 0,
+    targetLongitude: challengeLocationData?.targetLongitude ?? 0,
+    textExpectedPhrase: challengeTextData?.expectedPhrase ?? null,
+    qrCodeValue: challengeQrCodeData?.expectedValue ?? null,
+  };
 
   if (submission.status === "APPROVED") {
     throw new ORPCError("FORBIDDEN", {
@@ -331,7 +364,7 @@ export const updateMineSubmission = async (
       });
 
       const autoApproved = shouldAutoApproveSubmission({
-        challenge: submission.challenge,
+        challenge: challengeWithLocation,
         textContent: nextTextContent,
         latitude: nextLatitude,
         longitude: nextLongitude,
@@ -600,7 +633,7 @@ export const reviewSubmission = async (
             activityType: "submission",
             title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
             description: "Nie czekaj, ty też podejmij wyzwanie!",
-            imageUrl: refreshedForActivity.imageIds[0],
+            imageUrl: refreshedForActivity.imageIds[0] ?? "",
             createdByAdmin: context.dbUser.id,
           })
           .returning();

@@ -33,10 +33,10 @@ export function AdminHeader({
         )}
         <View>
           <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
       </View>
-      {rightComponent && <View style={styles.headerRight}>{rightComponent}</View>}
+      {rightComponent ? <View style={styles.headerRight}>{rightComponent}</View> : null}
     </View>
   );
 }

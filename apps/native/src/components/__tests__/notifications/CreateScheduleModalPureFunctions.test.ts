@@ -7,34 +7,34 @@ import {
 describe("CreateScheduleModal pure functions", () => {
   describe("isScheduleSubmitDisabled", () => {
     it("returns true when name is empty", () => {
-      expect(isScheduleSubmitDisabled("", "2024-01-01", "2024-01-02", "custom", null, false)).toBe(
+      expect(isScheduleSubmitDisabled("", "2024-01-01", "2024-01-02", "custom", "", false)).toBe(
         true,
       );
     });
 
     it("returns true when start date is empty", () => {
-      expect(isScheduleSubmitDisabled("Name", "", "2024-01-02", "custom", null, false)).toBe(true);
+      expect(isScheduleSubmitDisabled("Name", "", "2024-01-02", "custom", "", false)).toBe(true);
     });
 
     it("returns true when end date is empty", () => {
-      expect(isScheduleSubmitDisabled("Name", "2024-01-01", "", "custom", null, false)).toBe(true);
+      expect(isScheduleSubmitDisabled("Name", "2024-01-01", "", "custom", "", false)).toBe(true);
     });
 
     it("returns true when ranking type has no trip", () => {
       expect(
-        isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "ranking", null, false),
+        isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "ranking", "", false),
       ).toBe(true);
     });
 
     it("returns true when mutation is pending", () => {
-      expect(
-        isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "custom", null, true),
-      ).toBe(true);
+      expect(isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "custom", "", true)).toBe(
+        true,
+      );
     });
 
     it("returns false when all required fields are filled for custom", () => {
       expect(
-        isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "custom", null, false),
+        isScheduleSubmitDisabled("Name", "2024-01-01", "2024-01-02", "custom", "", false),
       ).toBe(false);
     });
 
@@ -47,19 +47,19 @@ describe("CreateScheduleModal pure functions", () => {
 
   describe("canSubmitSchedule", () => {
     it("returns false when name is empty", () => {
-      expect(canSubmitSchedule("", "2024-01-01", "2024-01-02", "custom", null)).toBe(false);
+      expect(canSubmitSchedule("", "2024-01-01", "2024-01-02", "custom", "")).toBe(false);
     });
 
     it("returns false when start date is empty", () => {
-      expect(canSubmitSchedule("Name", "", "2024-01-02", "custom", null)).toBe(false);
+      expect(canSubmitSchedule("Name", "", "2024-01-02", "custom", "")).toBe(false);
     });
 
     it("returns false when ranking type has no trip", () => {
-      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", null)).toBe(false);
+      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "ranking", "")).toBe(false);
     });
 
     it("returns true for valid custom schedule", () => {
-      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "custom", null)).toBe(true);
+      expect(canSubmitSchedule("Name", "2024-01-01", "2024-01-02", "custom", "")).toBe(true);
     });
 
     it("returns true for valid ranking schedule", () => {
@@ -72,7 +72,7 @@ describe("CreateScheduleModal pure functions", () => {
       const result = buildScheduleInput(
         "Test Schedule",
         "custom",
-        null,
+        "",
         "Title",
         "Body",
         "2024-01-01",
@@ -107,8 +107,8 @@ describe("CreateScheduleModal pure functions", () => {
       );
 
       expect(result.notificationType).toBe("ranking");
-      expect(result.notificationTitle).toBeUndefined();
-      expect(result.notificationBody).toBeUndefined();
+      expect(result.notificationTitle).toBe("");
+      expect(result.notificationBody).toBe("");
       expect(result.tripId).toBe("trip-1");
     });
 
@@ -116,7 +116,7 @@ describe("CreateScheduleModal pure functions", () => {
       const result = buildScheduleInput(
         "  Trimmed  ",
         "custom",
-        null,
+        "",
         "",
         "",
         "2024-01-01",

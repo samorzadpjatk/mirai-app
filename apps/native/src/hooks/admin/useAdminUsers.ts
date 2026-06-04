@@ -7,16 +7,16 @@ const USERS_PER_PAGE = 30;
 
 export interface User {
   id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
   wristNumber?: string | null;
   houseNumber?: string | null;
   group?: { id: string; name: string } | null;
   tripId: string;
-  bannedUntil?: string | null;
-  banReason?: string | null;
+  bannedUntil?: string;
+  banReason?: string;
   isBanned?: boolean;
 }
 

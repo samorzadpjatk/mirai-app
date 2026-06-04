@@ -104,3 +104,5 @@ export const tripRouter = createORPCRouter({
     .handler(handleUpdateTrip),
   delete: adminProcedure.input(z.object({ id: z.string() })).handler(handleDeleteTrip),
 });
+
+export { toClientTrip } from "./utils";

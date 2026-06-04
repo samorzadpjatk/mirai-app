@@ -40,7 +40,7 @@ export default function AdminCreateRewardScreen() {
   const [availableQuantity, setAvailableQuantity] = useState("");
   const [isHidden, setIsHidden] = useState(false);
   const [imagePath, setImagePath] = useState("");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string>("");
 
   const calculatedCost =
     coinCost && totalAvailablePoints > 0
@@ -59,7 +59,7 @@ export default function AdminCreateRewardScreen() {
         setAvailableQuantity("");
         setIsHidden(false);
         setImagePath("");
-        setImagePreviewUri(null);
+        setImagePreviewUri("");
         resetUpload();
         Alert.alert("Success", "Reward created successfully.", [
           {
@@ -234,7 +234,7 @@ export default function AdminCreateRewardScreen() {
                 style={styles.imageRemoveButton}
                 onPress={() => {
                   setImagePath("");
-                  setImagePreviewUri(null);
+                  setImagePreviewUri("");
                 }}
                 activeOpacity={0.85}
                 disabled={isUploadingImage}

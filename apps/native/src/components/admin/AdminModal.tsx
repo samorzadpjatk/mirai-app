@@ -46,7 +46,7 @@ export function AdminModal({
         {children}
       </ScrollView>
 
-      {actions && <View style={{ padding: spacing.lg, paddingTop: 0 }}>{actions}</View>}
+      {actions ? <View style={{ padding: spacing.lg, paddingTop: 0 }}>{actions}</View> : null}
     </AppModalShell>
   );
 }

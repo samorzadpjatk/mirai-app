@@ -80,7 +80,7 @@ export function PhotoCaptureModal({
   const cameraRef = useRef<CameraView | null>(null);
   const [activeFacing, setActiveFacing] = useState<"front" | "back">(() => facing);
   const [availableLenses, setAvailableLenses] = useState<string[]>([]);
-  const [selectedLens, setSelectedLens] = useState<string | undefined>(undefined);
+  const [selectedLens, setSelectedLens] = useState<string>("");
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<CapturedPhoto | null>(null);
   const lensPresetOptions = useMemo(
@@ -92,7 +92,7 @@ export function PhotoCaptureModal({
     setCapturedPhoto(null);
     setIsCapturingPhoto(false);
     setAvailableLenses([]);
-    setSelectedLens(undefined);
+    setSelectedLens("");
   }, []);
 
   const handleClose = useCallback(() => {
@@ -166,7 +166,7 @@ export function PhotoCaptureModal({
     if (isCapturingPhoto || isUsingPhoto) return;
     setActiveFacing((current) => (current === "front" ? "back" : "front"));
     setAvailableLenses([]);
-    setSelectedLens(undefined);
+    setSelectedLens("");
   }, [isCapturingPhoto, isUsingPhoto]);
 
   return (
@@ -197,7 +197,7 @@ export function PhotoCaptureModal({
                 setAvailableLenses(lenses);
                 setSelectedLens((current) => {
                   if (current && selectableLenses.includes(current)) return current;
-                  return selectableLenses[0];
+                  return selectableLenses[0] ?? "";
                 });
               }}
             />

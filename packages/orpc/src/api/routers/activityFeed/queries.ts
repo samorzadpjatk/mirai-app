@@ -9,6 +9,7 @@ import {
 import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import { enrichActivities } from "./enrichment";
+import type { Activity, RawActivityWithRelations } from "./types";
 
 export type ActivityContext = {
   db: DB;
@@ -28,12 +29,15 @@ export type ActivityContext = {
   dbUser: { id: string };
 };
 
-export const fetchActivityWithRelationsById = async (db: DB, id: string) => {
+export const fetchActivityWithRelationsById = async (
+  db: DB,
+  id: string,
+): Promise<RawActivityWithRelations | undefined> => {
   return db.query.activityFeeds.findFirst({
     where: (af, { eq }) => eq(af.id, id),
     columns: getActivityColumns(),
     with: getActivityRelationTree(),
-  });
+  }) as Promise<RawActivityWithRelations | undefined>;
 };
 
 export const getActivitiesPage = async (params: {
@@ -58,7 +62,17 @@ export const getActivitiesPage = async (params: {
   page: number;
   pageSize: number;
   includeHidden: boolean;
-}) => {
+}): Promise<{
+  activities: Activity[];
+  nextCursor: null;
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}> => {
   const whereClause = buildActivityWhere(params.tripId, params.includeHidden);
 
   const countResult = await params.context.db
@@ -84,7 +98,7 @@ export const getActivitiesPage = async (params: {
   });
 
   return {
-    activities: await enrichActivities(params.context, activities),
+    activities: await enrichActivities(params.context, activities as RawActivityWithRelations[]),
     nextCursor: null,
     pagination: {
       total: count,
@@ -122,7 +136,21 @@ export const getActivitiesCursorPage = async (params: {
     createdAt: Date;
     isPinned: boolean;
   } | null;
-}) => {
+}): Promise<{
+  activities: Activity[];
+  nextCursor: {
+    id: string;
+    createdAt: Date;
+    isPinned: boolean;
+  } | null;
+  pagination: {
+    total: null;
+    page: null;
+    pageSize: number;
+    totalPages: null;
+    hasMore: boolean;
+  };
+}> => {
   const whereClause = buildActivityWhere(
     params.tripId,
     params.includeHidden,
@@ -142,7 +170,10 @@ export const getActivitiesCursorPage = async (params: {
   const lastActivity = currentPageActivities[currentPageActivities.length - 1];
 
   return {
-    activities: await enrichActivities(params.context, currentPageActivities),
+    activities: await enrichActivities(
+      params.context,
+      currentPageActivities as RawActivityWithRelations[],
+    ),
     nextCursor:
       hasMore && lastActivity
         ? {

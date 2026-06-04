@@ -386,6 +386,9 @@ describe("authServer", () => {
       expect(result?.lastName).toBe("User");
       expect(result?.role).toBe("USER");
       expect(result?.emailVerified).toBeInstanceOf(Date);
+      expect(result?.hasName).toBe(true);
+      expect(result?.hasEmail).toBe(true);
+      expect(result?.isEmailVerified).toBe(true);
     });
 
     it("should use email prefix as display name when no name provided", () => {
@@ -404,6 +407,26 @@ describe("authServer", () => {
       const result = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
 
       expect(result?.name).toBe("test");
+      expect(result?.hasName).toBe(false);
+      expect(result?.hasEmail).toBe(true);
+    });
+
+    it("should handle null email gracefully", () => {
+      const dbUser = {
+        id: "db-123",
+        authUserId: "auth-123",
+        firstName: null,
+        lastName: null,
+        role: "USER",
+      } as User;
+
+      const supabaseUser = createMockSupabaseUser({ email: null });
+
+      const result = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
+
+      expect(result?.name).toBe("");
+      expect(result?.email).toBe("");
+      expect(result?.hasEmail).toBe(false);
     });
   });
 

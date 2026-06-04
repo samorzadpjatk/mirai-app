@@ -23,7 +23,7 @@ export function canSubmitSchedule(
   createStartDate: string,
   createEndDate: string,
   createType: "custom" | "ranking",
-  createTripId: string | null,
+  createTripId: string,
 ): boolean {
   return (
     createName.trim().length > 0 &&
@@ -38,7 +38,7 @@ export function isScheduleSubmitDisabled(
   createStartDate: string,
   createEndDate: string,
   createType: "custom" | "ranking",
-  createTripId: string | null,
+  createTripId: string,
   isPending: boolean,
 ): boolean {
   return (
@@ -50,7 +50,7 @@ export function isScheduleSubmitDisabled(
 export function buildScheduleInput(
   createName: string,
   createType: "custom" | "ranking",
-  createTripId: string | null,
+  createTripId: string,
   createTitle: string,
   createBody: string,
   createStartDate: string,
@@ -62,8 +62,8 @@ export function buildScheduleInput(
     name: createName.trim(),
     ...(createTripId ? { tripId: createTripId } : {}),
     notificationType: createType,
-    notificationTitle: createType === "custom" ? createTitle : undefined,
-    notificationBody: createType === "custom" ? createBody : undefined,
+    notificationTitle: createType === "custom" ? createTitle : "",
+    notificationBody: createType === "custom" ? createBody : "",
     startDate: new Date(createStartDate),
     endDate: new Date(createEndDate),
     hour: Number.parseInt(createHour, 10),
@@ -78,7 +78,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
 
   const [createName, setCreateName] = useState("");
   const [createType, setCreateType] = useState<"custom" | "ranking">("custom");
-  const [createTripId, setCreateTripId] = useState<string | null>(null);
+  const [createTripId, setCreateTripId] = useState<string>("");
   const [createTitle, setCreateTitle] = useState("");
   const [createBody, setCreateBody] = useState("");
   const [createStartDate, setCreateStartDate] = useState("");
@@ -90,7 +90,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
     if (!isOpen) return;
     const id = setTimeout(() => {
       setCreateType("custom");
-      setCreateTripId(null);
+      setCreateTripId("");
     }, 0);
     return () => clearTimeout(id);
   }, [isOpen]);
@@ -98,7 +98,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
   useEffect(() => {
     if (createType === "ranking" && !createTripId && trips.length > 0) {
       const id = setTimeout(() => {
-        setCreateTripId(trips[0]?.id ?? null);
+        setCreateTripId(trips[0]?.id ?? "");
       }, 0);
       return () => clearTimeout(id);
     }
@@ -116,7 +116,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         onClose();
         setCreateName("");
         setCreateType("custom");
-        setCreateTripId(null);
+        setCreateTripId("");
         setCreateTitle("");
         setCreateBody("");
         setCreateStartDate("");
@@ -141,7 +141,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
 
   const handleSelectType = (type: "custom" | "ranking") => {
     setCreateType(type);
-    setCreateTripId(type === "ranking" ? (trips[0]?.id ?? null) : null);
+    setCreateTripId(type === "ranking" ? (trips[0]?.id ?? "") : "");
   };
 
   const handleSubmit = () => {

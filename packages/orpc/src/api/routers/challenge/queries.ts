@@ -1,14 +1,14 @@
-import { type DB, challengeSubmissions, challenges } from "@mirai-app/db";
+import { type DB, challengeRecurrence, challengeSubmissions, challenges } from "@mirai-app/db";
 import { buildChallengeFilter } from "@mirai-app/shared/challenges";
 import { ORPCError } from "@orpc/server";
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import {
   ensureRecurringInstancesForTrip,
   resolveRecurringChallengeIdForTrip,
 } from "../../../utils/recurringChallenges";
-import { challengeColumns } from "./types";
 import {
   activateVisibleChallenges,
+  fetchChallengesWithRelations,
   resolveChallengeImage,
   resolveChallengeImages,
   toClientChallenge,
@@ -30,11 +30,11 @@ export const getAll = async (context: {
   await activateVisibleChallenges(context.db);
 
   const filter = buildChallengeFilter();
-  const challengeRows = await context.db.query.challenges.findMany({
-    where: (c, { eq }) => eq(c.isRecurring, filter.isRecurring),
-    columns: challengeColumns,
-    orderBy: (c, { desc }) => [desc(c.createdAt)],
-  });
+  const challengeRows = await fetchChallengesWithRelations(
+    context.db,
+    eq(challengeRecurrence.isRecurring, false),
+    desc(challenges.createdAt),
+  );
 
   const resolved = await resolveChallengeImages(context.supabase, challengeRows);
   return resolved.map((challenge) => toClientChallenge(challenge));
@@ -73,21 +73,17 @@ export const getAllByTrip = async (
   const offset = input.pagination?.offset ?? 0;
 
   const filter = buildChallengeFilter(input.tripId);
+  const where = filter.tripId
+    ? and(eq(challenges.tripId, filter.tripId), eq(challengeRecurrence.isRecurring, false))
+    : eq(challengeRecurrence.isRecurring, false);
+
   const [challengeRows, totalResult] = await Promise.all([
-    context.db.query.challenges.findMany({
-      where: (c, { eq, and }) =>
-        and(eq(c.tripId, filter.tripId!), eq(c.isRecurring, filter.isRecurring)),
-      columns: challengeColumns,
-      orderBy: (c, { desc }) => [desc(c.createdAt)],
-      limit,
-      offset,
-    }),
+    fetchChallengesWithRelations(context.db, where, desc(challenges.createdAt), limit, offset),
     context.db
       .select({ count: count() })
       .from(challenges)
-      .where(
-        and(eq(challenges.tripId, filter.tripId!), eq(challenges.isRecurring, filter.isRecurring)),
-      ),
+      .leftJoin(challengeRecurrence, eq(challenges.id, challengeRecurrence.challengeId))
+      .where(where),
   ]);
 
   const total = totalResult[0]?.count ?? 0;
@@ -210,10 +206,13 @@ export const getById = async (
     tripId: input.tripId,
   });
 
-  const challenge = await context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) => and(eq(c.id, resolvedChallengeId), eq(c.tripId, input.tripId)),
-    columns: challengeColumns,
-  });
+  const challenge = await fetchChallengesWithRelations(
+    context.db,
+    and(eq(challenges.id, resolvedChallengeId), eq(challenges.tripId, input.tripId)),
+    undefined,
+    1,
+    0,
+  ).then((rows) => rows[0] ?? null);
 
   if (!challenge) {
     throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });

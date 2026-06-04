@@ -91,6 +91,7 @@ describe("raw PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now,
@@ -137,6 +138,7 @@ describe("raw PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip 1",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now,
@@ -145,6 +147,7 @@ describe("raw PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-2",
       name: "Test Trip 2",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now,
@@ -208,6 +211,7 @@ describe("raw PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now,
@@ -506,6 +510,7 @@ describe("Drizzle ORM PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now,
@@ -550,8 +555,8 @@ describe("Drizzle ORM PGLite integration", () => {
     const result = await getBanStatus(ctx);
 
     expect(result.banned).toBe(false);
-    expect(result.bannedUntil).toBeNull();
-    expect(result.reason).toBeNull();
+    expect(result.bannedUntil).toBe("");
+    expect(result.reason).toBe("");
   });
 
   it("getBanStatus returns ban status for banned user", async () => {
@@ -1012,8 +1017,8 @@ describe("Drizzle ORM PGLite integration", () => {
     const result = await getBanStatus(ctx);
 
     expect(result.banned).toBe(false);
-    expect(result.bannedUntil).toBeNull();
-    expect(result.reason).toBeNull();
+    expect(result.bannedUntil).toBe("");
+    expect(result.reason).toBe("");
   });
 
   it("getBanStatus returns not banned when admin lookup fails", async () => {
@@ -1031,8 +1036,8 @@ describe("Drizzle ORM PGLite integration", () => {
     const result = await getBanStatus(ctx);
 
     expect(result.banned).toBe(false);
-    expect(result.bannedUntil).toBeNull();
-    expect(result.reason).toBeNull();
+    expect(result.bannedUntil).toBe("");
+    expect(result.reason).toBe("");
   });
 
   it("getBanStatusByEmail returns not found when user does not exist", async () => {
@@ -1046,8 +1051,8 @@ describe("Drizzle ORM PGLite integration", () => {
 
     expect(result.exists).toBe(false);
     expect(result.banned).toBe(false);
-    expect(result.bannedUntil).toBeNull();
-    expect(result.reason).toBeNull();
+    expect(result.bannedUntil).toBe("");
+    expect(result.reason).toBe("");
   });
 
   it("getBanStatusByEmail throws when listUsers returns error", async () => {

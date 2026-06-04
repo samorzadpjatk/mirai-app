@@ -4,20 +4,20 @@ import { mapStore } from "../mapStore";
 describe("mapStore", () => {
   beforeEach(() => {
     mapStore.setState({
-      selectedUserId: null,
+      selectedUserId: "",
       showUsersList: true,
       isListExpanded: false,
       showManageModal: false,
-      followMode: null,
+      followMode: "none",
       focusedCoordinate: null,
       mapTheme: "dark",
     });
   });
 
   describe("initial state", () => {
-    it("should have null selectedUserId", () => {
+    it("should have empty selectedUserId", () => {
       const state = mapStore.getState();
-      expect(state.selectedUserId).toBeNull();
+      expect(state.selectedUserId).toBe("");
     });
 
     it("should have showUsersList as true", () => {
@@ -35,9 +35,9 @@ describe("mapStore", () => {
       expect(state.showManageModal).toBe(false);
     });
 
-    it("should have followMode as null", () => {
+    it("should have followMode as none", () => {
       const state = mapStore.getState();
-      expect(state.followMode).toBeNull();
+      expect(state.followMode).toBe("none");
     });
 
     it("should have focusedCoordinate as null", () => {
@@ -81,7 +81,7 @@ describe("mapStore", () => {
         deselectUser();
 
         const state = mapStore.getState();
-        expect(state.selectedUserId).toBeNull();
+        expect(state.selectedUserId).toBe("");
       });
 
       it("should handle deselect when no user selected", () => {
@@ -89,7 +89,7 @@ describe("mapStore", () => {
         deselectUser();
 
         const state = mapStore.getState();
-        expect(state.selectedUserId).toBeNull();
+        expect(state.selectedUserId).toBe("");
       });
     });
 
@@ -100,7 +100,7 @@ describe("mapStore", () => {
         backToList();
 
         const state = mapStore.getState();
-        expect(state.selectedUserId).toBeNull();
+        expect(state.selectedUserId).toBe("");
         expect(state.showUsersList).toBe(true);
       });
     });
@@ -166,12 +166,12 @@ describe("mapStore", () => {
         expect(mapStore.getState().followMode).toBe("user");
       });
 
-      it("should set follow mode to null", () => {
+      it("should set follow mode to none", () => {
         const { setFollowMode } = mapStore.getState();
         setFollowMode("user");
-        setFollowMode(null);
+        setFollowMode("none");
 
-        expect(mapStore.getState().followMode).toBeNull();
+        expect(mapStore.getState().followMode).toBe("none");
       });
     });
 
@@ -216,7 +216,7 @@ describe("mapStore", () => {
         recenter([52.2297, 21.0122]);
 
         const state = mapStore.getState();
-        expect(state.selectedUserId).toBeNull();
+        expect(state.selectedUserId).toBe("");
         expect(state.focusedCoordinate).toEqual([52.2297, 21.0122]);
       });
 
@@ -274,7 +274,7 @@ describe("mapStore", () => {
 
       state.backToList();
       expect(mapStore.getState().showUsersList).toBe(true);
-      expect(mapStore.getState().selectedUserId).toBeNull();
+      expect(mapStore.getState().selectedUserId).toBe("");
 
       state.toggleListExpansion();
       expect(mapStore.getState().isListExpanded).toBe(true);

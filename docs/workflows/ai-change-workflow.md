@@ -392,7 +392,7 @@ Verifies:
 ├── analysis/                   # Codebase impact analysis
 └── scratchpad/                 # Agent working notes (gitignored)
 
-.claude/skills/                # CEK reusable skills
+.agents/skills/                # CEK reusable skills
 └── <skill-name>/
     └── SKILL.md
 

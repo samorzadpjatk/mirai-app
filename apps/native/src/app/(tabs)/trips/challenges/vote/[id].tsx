@@ -155,22 +155,24 @@ export default function ChallengePeerVotingScreen() {
   const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
+  const { tripId: resolvedTripId, isTripPast } = useTripDetails(tripId);
+
   const challengeQuery = orpc.challenge.getById.queryOptions({
     input: {
       id: challengeId ?? "",
-      tripId: tripId ?? "",
+      tripId: resolvedTripId,
     },
   });
   const submissionsQuery = orpc.challengeSubmission.getByChallenge.queryOptions({
     input: {
       challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+      tripId: resolvedTripId,
     },
   });
   const myVotesQuery = orpc.challengeVote.getMyByChallenge.queryOptions({
     input: {
       challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+      tripId: resolvedTripId,
     },
   });
 
@@ -187,11 +189,9 @@ export default function ChallengePeerVotingScreen() {
     enabled: !!challengeId && !!tripId,
   });
   const { data: meWithGroup, isLoading: isLoadingMeWithGroup } = useQuery({
-    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
+    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: resolvedTripId } }),
     enabled: !!tripId,
   });
-
-  const { isTripPast } = useTripDetails(tripId);
 
   useEffect(() => {
     if (isTripPast && challengeId && tripId) {
@@ -208,13 +208,13 @@ export default function ChallengePeerVotingScreen() {
   const submitVoteMutation = useMutation(orpc.challengeVote.submitVote.mutationOptions());
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");
-  const [blockedReason, setBlockedReason] = useState<string | null>(null);
+  const [blockedReason, setBlockedReason] = useState<string>("");
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [comparedPairs, setComparedPairs] = useState<Set<string>>(new Set());
-  const [currentPair, setCurrentPair] = useState<[string, string] | null>(null);
+  const [currentPair, setCurrentPair] = useState<[string, string]>(["", ""]);
   const [comparisonCount, setComparisonCount] = useState(0);
   const [stableTop3Count, setStableTop3Count] = useState(0);
-  const [previousTop3Key, setPreviousTop3Key] = useState<string | null>(null);
+  const [previousTop3Key, setPreviousTop3Key] = useState<string>("");
   const [finalTopThreeIds, setFinalTopThreeIds] = useState<string[]>([]);
   const [bootstrapped, setBootstrapped] = useState(false);
   const bootstrapRef = useRef({ pending: false, completed: false });
@@ -255,17 +255,17 @@ export default function ChallengePeerVotingScreen() {
     return calculatedTopThree;
   }, [calculatedTopThree, finalTopThreeIds, submissionById]);
 
-  const currentLeft = currentPair ? submissionById.get(currentPair[0]) : null;
-  const currentRight = currentPair ? submissionById.get(currentPair[1]) : null;
+  const currentLeft = currentPair[0] ? submissionById.get(currentPair[0]) : null;
+  const currentRight = currentPair[0] ? submissionById.get(currentPair[1]) : null;
   const navigateBackToChallenge = useCallback(() => {
     router.replace({
       pathname: "/trips/challenges/[id]",
       params: {
         id: challengeId ?? "",
-        tripId: tripId ?? "",
+        tripId: resolvedTripId,
       },
     });
-  }, [challengeId, router, tripId]);
+  }, [challengeId, router, resolvedTripId]);
   const shouldRedirectToChallengeDetails = Boolean(
     challengeId &&
       tripId &&
@@ -283,12 +283,12 @@ export default function ChallengePeerVotingScreen() {
 
     setRatings(initialRatings);
     setComparedPairs(initialCompared);
-    setCurrentPair(pair);
+    setCurrentPair(pair ?? ["", ""]);
     setComparisonCount(0);
     setStableTop3Count(0);
-    setPreviousTop3Key(null);
+    setPreviousTop3Key("");
     setFinalTopThreeIds([]);
-    setBlockedReason(null);
+    setBlockedReason("");
     setPhase("comparing");
   }, [votingSubmissions]);
 
@@ -362,7 +362,7 @@ export default function ChallengePeerVotingScreen() {
 
   const handlePickWinner = (winnerId: string) => {
     if (phase !== "comparing") return;
-    if (!currentPair) return;
+    if (!currentPair[0]) return;
     const [leftId, rightId] = currentPair;
     const loserId = winnerId === leftId ? rightId : leftId;
 
@@ -400,12 +400,12 @@ export default function ChallengePeerVotingScreen() {
 
     if (reachedHardCap || reachedStableTop3 || noMorePairs) {
       setFinalTopThreeIds(nextTop3Ids);
-      setCurrentPair(null);
+      setCurrentPair(["", ""]);
       setPhase("confirming");
       return;
     }
 
-    setCurrentPair(nextPair);
+    setCurrentPair(nextPair ?? ["", ""]);
     void loserId;
   };
 
@@ -568,7 +568,7 @@ export default function ChallengePeerVotingScreen() {
           <View style={styles.blockedCard}>
             <Text style={styles.blockedTitle}>Voting unavailable</Text>
             <Text style={styles.blockedText}>
-              {blockedReason ??
+              {blockedReason ||
                 "Voting is not available right now. It starts automatically after moderation and after the submission phase ends."}
             </Text>
             <TouchableOpacity

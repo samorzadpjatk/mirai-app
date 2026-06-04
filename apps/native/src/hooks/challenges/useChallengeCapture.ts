@@ -88,8 +88,8 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
     error: uploadError,
   } = useFileUpload();
   const [isLoading, setIsLoading] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [capturedImage, setCapturedImage] = useState<string>("");
+  const [submissionId, setSubmissionId] = useState<string>("");
 
   const showSuccessAlert = useCallback(
     (_challengeName?: string, _points?: number, destinationTripId?: string | null) => {
@@ -266,7 +266,7 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
         const config = buildUploadConfig(asset, storagePath, extension);
         await upload(config);
 
-        setCapturedImage(null);
+        setCapturedImage("");
         showSuccessAlert(challengeName, points, tripId);
       } catch (error) {
         if (createdSubmissionId && tripId) {
@@ -321,13 +321,13 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
   const resetCapture = useCallback(() => {
     abortUpload();
     resetUpload();
-    setCapturedImage(null);
+    setCapturedImage("");
   }, [abortUpload, resetUpload]);
 
   const handleRetake = useCallback(async () => {
     abortUpload();
     resetUpload();
-    setCapturedImage(null);
+    setCapturedImage("");
 
     if (submissionId && tripId) {
       try {
@@ -340,7 +340,7 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
       }
     }
 
-    setSubmissionId(null);
+    setSubmissionId("");
   }, [abortUpload, deleteSubmissionMutation, resetUpload, submissionId, tripId]);
 
   return {

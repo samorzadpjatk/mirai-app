@@ -28,17 +28,17 @@ export default function EditGroupScreen() {
   const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const { group, isLoading: groupLoading } = useGroupEditor(groupId);
-  const { isTripPast } = useTripDetails(group?.trip?.id);
+  const { tripId, isTripPast } = useTripDetails(group?.trip?.id);
 
   useEffect(() => {
-    if (isTripPast && group?.trip?.id) {
+    if (isTripPast && tripId) {
       router.replace(`/trips/groups/${groupId}`);
     }
-  }, [isTripPast, group?.trip?.id, groupId, router]);
+  }, [isTripPast, tripId, groupId, router]);
 
   const [groupName, setGroupName] = useState("");
-  const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(null);
+  const [groupImagePath, setGroupImagePath] = useState<string>("");
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string>("");
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
@@ -48,7 +48,7 @@ export default function EditGroupScreen() {
     // which can cause cascading renders and trigger the lint rule
     const id = setTimeout(() => {
       setGroupName(group.name);
-      setGroupImagePreviewUri(group.image ?? null);
+      setGroupImagePreviewUri(group.image ?? "");
       setCurrentMembers(new Set(group.participants.map((p) => p.user.id)));
     }, 0);
     return () => clearTimeout(id);
@@ -89,7 +89,7 @@ export default function EditGroupScreen() {
   };
 
   const handlePickImage = async () => {
-    if (!group?.trip?.id || !groupId) return;
+    if (!tripId || !groupId) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== ImagePicker.PermissionStatus.GRANTED) {
       Alert.alert("Permission Required", "Photo library access is required.");
@@ -106,7 +106,7 @@ export default function EditGroupScreen() {
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
     const extension = getFileExtension(asset);
-    const storagePath = `group/${group.trip.id}/${groupId}-${Date.now()}.${extension}`;
+    const storagePath = `group/${tripId}/${groupId}-${Date.now()}.${extension}`;
 
     try {
       await upload({

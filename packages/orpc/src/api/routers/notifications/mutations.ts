@@ -289,8 +289,8 @@ export const sendNewMemberToGroup = async (
     if (!user) {
       throw new ORPCError("NOT_FOUND", { message: "User not found" });
     }
-    const firstName = typeof user.firstName === "string" ? user.firstName : null;
-    const lastName = typeof user.lastName === "string" ? user.lastName : null;
+    const firstName = user.firstName ?? "";
+    const lastName = user.lastName ?? "";
     const participants = await context.db
       .select({ userId: tripParticipants.userId })
       .from(tripParticipants)

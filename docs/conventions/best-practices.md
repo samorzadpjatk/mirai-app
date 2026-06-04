@@ -126,6 +126,16 @@ Specs now describe new behavior
 - **Rule**: `console.error` / `console.warn` / `console.log` in production code is not error handling. Use structured logging (Pino backend, Sentry native).
 - **Status**: ✅ Complete. All production `console.*` calls eliminated. Backend uses Pino logger from `@mirai-app/orpc`. Native uses Sentry for runtime error reporting.
 
+### No `&&` in JSX Outside `<Text>` (React Native)
+
+- **Rule**: Always use `!!value && <Component />` or `value ? <Component /> : null` when conditionally rendering inside `<View>` or at the root JSX level. The `&&` operator leaks empty strings (`""`) and `0`, which crash React Native with "Text strings must be rendered within a <Text> component".
+- **Safe patterns**:
+  - `{!!value && <Component />}` — explicit boolean conversion
+  - `{value ? <Component /> : null}` — ternary with null fallback
+  - `{value && "text"}` — inside `<Text>` only, empty string is a valid text child
+  - `style={[styles.base, isActive && styles.active]}` — style arrays are safe
+- **Status**: ✅ Enforced. All risky patterns audited and fixed in `apps/native/src/`.
+
 ### "Half-Effect" Trap
 
 - **Warning**: Partial FP library adoption creates the highest-cost state.

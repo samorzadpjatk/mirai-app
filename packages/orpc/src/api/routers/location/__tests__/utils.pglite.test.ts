@@ -47,6 +47,7 @@ async function seedTrip(id: string, name: string, endDate: Date) {
   await testDb.db.insert(trips).values({
     id,
     name,
+    description: "",
     startDate: new Date("2025-06-01"),
     endDate,
     createdAt: new Date(),
@@ -81,7 +82,7 @@ async function seedLocation(
     latitude: overrides.latitude ?? 52.2297,
     longitude: overrides.longitude ?? 21.0122,
     altitude: null,
-    accuracy: null,
+    accuracy: 0,
     altitudeAccuracy: null,
     heading: null,
     speed: null,

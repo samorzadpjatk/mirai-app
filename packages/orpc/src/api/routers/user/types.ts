@@ -12,13 +12,17 @@ export const nameSchema = z
 
 export interface PublicUser {
   id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: z.infer<typeof roleSchema>;
-  bannedUntil?: string | null;
-  banReason?: string | null;
+  bannedUntil?: string;
+  banReason?: string;
   isBanned?: boolean;
+  emailVerified?: Date;
+  hasName: boolean;
+  hasEmail: boolean;
+  isEmailVerified: boolean;
 }
 
 export const userWithAuthSelect = {

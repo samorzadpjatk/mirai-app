@@ -37,6 +37,7 @@ describe("sponsor router — PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id,
       name,
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),

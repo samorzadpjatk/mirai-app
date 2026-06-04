@@ -1,4 +1,12 @@
-import { challengeSubmissions, challenges, coinTransactions, groups } from "@mirai-app/db";
+import {
+  challengeLocation,
+  challengeQrCode,
+  challengeSubmissions,
+  challengeText,
+  challenges,
+  coinTransactions,
+  groups,
+} from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
 import { resolveAwardedPoints } from "@mirai-app/shared/challengeSubmissions";
 import { ORPCError } from "@orpc/server";
@@ -79,28 +87,34 @@ export const ensureChallengeInTrip = async (
       ),
     );
 
-  const challenge = await context.db.query.challenges.findFirst({
-    where: (c, { eq, and }) => and(eq(c.id, challengeId), eq(c.tripId, tripId)),
-    columns: {
-      id: true,
-      name: true,
-      status: true,
-      scoringCategory: true,
-      startTime: true,
-      endTime: true,
-      votingStartTime: true,
-      submissionType: true,
-      description: true,
-      expectedValue: true,
-      targetLatitude: true,
-      targetLongitude: true,
-      autoApprove: true,
-      basePoints: true,
-      firstPlacePoints: true,
-      secondPlacePoints: true,
-      thirdPlacePoints: true,
-    },
-  });
+  const [challenge] = await context.db
+    .select({
+      id: challenges.id,
+      name: challenges.name,
+      status: challenges.status,
+      scoringCategory: challenges.scoringCategory,
+      startTime: challenges.startTime,
+      endTime: challenges.endTime,
+      votingStartTime: challenges.votingStartTime,
+      submissionType: challenges.submissionType,
+      description: challenges.description,
+      autoApprove: challenges.autoApprove,
+      basePoints: challenges.basePoints,
+      firstPlacePoints: challenges.firstPlacePoints,
+      secondPlacePoints: challenges.secondPlacePoints,
+      thirdPlacePoints: challenges.thirdPlacePoints,
+      textExpectedPhrase: challengeText.expectedPhrase,
+      qrCodeValue: challengeQrCode.expectedValue,
+      targetLatitude: challengeLocation.targetLatitude,
+      targetLongitude: challengeLocation.targetLongitude,
+    })
+    .from(challenges)
+    .leftJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
+    .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
+    .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
+    .where(and(eq(challenges.id, challengeId), eq(challenges.tripId, tripId)))
+    .limit(1);
+
   if (!challenge) {
     throw new ORPCError("NOT_FOUND", { message: "Challenge not found" });
   }

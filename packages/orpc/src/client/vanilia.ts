@@ -3,8 +3,9 @@ import { RPCLink } from "@orpc/client/fetch";
 import { RPCLink as WSLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
+import type { ServiceRouter } from "../api/service-root";
 
-const createWsConnection = (wsUrl: string, authorizationToken?: string) => {
+const createWsConnection = (wsUrl: string, authorizationToken?: string, serviceToken?: string) => {
   const ws = new WebSocket(wsUrl) as WebSocket & {
     addEventListener?: typeof WebSocket.prototype.addEventListener;
     send?: typeof WebSocket.prototype.send;
@@ -119,4 +120,48 @@ const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: str
   };
 };
 
-export { getORPCClient };
+const getServiceORPCClient = (httpUrl: string, wsUrl?: string, serviceToken?: string) => {
+  const ws = wsUrl ? createWsConnection(wsUrl, undefined, serviceToken) : null;
+  const wsLink = ws ? new WSLink({ websocket: ws }) : null;
+
+  const httpLink = new RPCLink({
+    url: httpUrl,
+    headers() {
+      const headers: Record<string, string> = {};
+      if (serviceToken) {
+        headers["x-service-token"] = serviceToken;
+      }
+      return headers;
+    },
+    interceptors: [
+      async (ctx) => {
+        let attempts = 0;
+        while (true) {
+          try {
+            return await ctx.next(ctx);
+          } catch (error) {
+            attempts++;
+            if (attempts >= 5 || !isRetryableError(error)) throw error;
+            await delay(Math.min(1000 * 2 ** attempts, 30_000));
+          }
+        }
+      },
+    ],
+  });
+
+  const link = wsLink ? wsLink : httpLink;
+
+  const client: RouterClient<ServiceRouter> = createORPCClient(link);
+
+  return {
+    client,
+    cleanup: () => {
+      if (ws) {
+        ws.close();
+      }
+      return Promise.resolve();
+    },
+  };
+};
+
+export { getORPCClient, getServiceORPCClient };

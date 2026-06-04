@@ -127,7 +127,7 @@ const createChallengeEventActivity = async (params: {
       activityType: "challenge_event",
       title,
       description,
-      imageUrl: params.challenge.image,
+      imageUrl: params.challenge.image ?? "",
       createdByAdmin: params.createdByAdmin ?? null,
     })
     .returning();
@@ -350,7 +350,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
         activityType: "submission",
         title,
         description,
-        imageUrl: submission.imageIds[0] ?? challenge.image,
+        imageUrl: submission.imageIds[0] ?? challenge.image ?? "",
         createdByAdmin: params.createdByAdmin ?? null,
       })
       .returning();
@@ -707,7 +707,7 @@ export const createRankChangeActivities = async (params: {
       activityType: "rank_change",
       title: "Zmiany w tabeli",
       description,
-      imageUrl: anchor.group.image,
+      imageUrl: anchor.group.image ?? "",
       createdByAdmin: params.createdByAdmin ?? null,
     })
     .returning();

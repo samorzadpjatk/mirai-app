@@ -17,6 +17,7 @@ const appRouterProxy = new Proxy({} as any, {
 
 vi.mock("@mirai-app/orpc", () => ({
   appRouter: appRouterProxy,
+  serviceRouter: appRouterProxy,
   createORPCContext: vi.fn((opts) => ({
     headers: opts.headers,
     databaseUrl: opts.databaseUrl,

@@ -8,9 +8,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { ErrorState } from "~/components/common/ui";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
 import { NotificationsHeader } from "~/components/notifications/NotificationsHeader";
@@ -76,13 +76,12 @@ export default function NotificationsScreen() {
 
   if (isError) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorTitle}>Error loading notifications</Text>
-        <Text style={styles.errorMessage}>{error?.message ?? "Something went wrong"}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => void refetch()}>
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </View>
+      <ErrorState
+        title="Error loading notifications"
+        message={error?.message ?? "Something went wrong"}
+        onRetry={() => void refetch()}
+        retryLabel="Try Again"
+      />
     );
   }
 

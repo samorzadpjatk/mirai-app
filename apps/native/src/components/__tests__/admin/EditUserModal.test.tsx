@@ -61,7 +61,7 @@ describe("EditUserModal", () => {
     wristNumber: "123",
     houseNumber: "456",
     isBanned: false,
-    bannedUntil: null,
+    bannedUntil: undefined,
     groupId: "group-1",
     tripId: "trip-1",
   };

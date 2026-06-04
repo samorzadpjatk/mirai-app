@@ -8,12 +8,12 @@ import {
 } from "~/services/location/constants";
 
 import {
-  toFiniteNumberOrNull,
-  toHeadingOrNull,
-  toNonNegativeOrNull,
+  toFiniteNumberOrUndefined,
+  toHeadingOrUndefined,
+  toNonNegativeOrUndefined,
 } from "./backgroundLocationTaskUtils";
 
-export { toFiniteNumberOrNull, toNonNegativeOrNull, toHeadingOrNull };
+export { toFiniteNumberOrUndefined, toNonNegativeOrUndefined, toHeadingOrUndefined };
 
 export interface BackgroundTaskState {
   isSending: boolean;
@@ -43,11 +43,11 @@ export interface BackgroundTaskFactoryDeps {
         updateLocation: (input: {
           latitude: number;
           longitude: number;
-          accuracy?: number | null;
-          altitude?: number | null;
-          altitudeAccuracy?: number | null;
-          heading?: number | null;
-          speed?: number | null;
+          accuracy?: number | undefined;
+          altitude?: number | undefined;
+          altitudeAccuracy?: number | undefined;
+          heading?: number | undefined;
+          speed?: number | undefined;
         }) => Promise<unknown>;
       };
     };
@@ -86,8 +86,8 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
       return;
     }
 
-    const latitude = toFiniteNumberOrNull(location.coords.latitude);
-    const longitude = toFiniteNumberOrNull(location.coords.longitude);
+    const latitude = toFiniteNumberOrUndefined(location.coords.latitude);
+    const longitude = toFiniteNumberOrUndefined(location.coords.longitude);
     if (latitude == null || longitude == null) {
       return;
     }
@@ -98,11 +98,11 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
       await client.location.updateLocation({
         latitude,
         longitude,
-        accuracy: toNonNegativeOrNull(location.coords.accuracy),
-        altitude: toFiniteNumberOrNull(location.coords.altitude),
-        altitudeAccuracy: toNonNegativeOrNull(location.coords.altitudeAccuracy),
-        heading: toHeadingOrNull(location.coords.heading),
-        speed: toNonNegativeOrNull(location.coords.speed),
+        accuracy: toNonNegativeOrUndefined(location.coords.accuracy),
+        altitude: toFiniteNumberOrUndefined(location.coords.altitude),
+        altitudeAccuracy: toNonNegativeOrUndefined(location.coords.altitudeAccuracy),
+        heading: toHeadingOrUndefined(location.coords.heading),
+        speed: toNonNegativeOrUndefined(location.coords.speed),
       });
     } finally {
       await cleanup();

@@ -34,6 +34,7 @@ describe("tripGuards", () => {
     await testDb.db.insert(trips).values({
       id,
       name: `Trip ${id}`,
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate,
       createdAt: new Date(),
@@ -46,6 +47,7 @@ describe("tripGuards", () => {
       id,
       tripId,
       name: `Group ${id}`,
+      description: "",
       organizerId,
       code: `code-${id}`,
       isDeleted,

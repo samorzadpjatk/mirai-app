@@ -373,7 +373,7 @@ describe("location router — Drizzle ORM PGLite integration", () => {
     expect(result.coords.latitude).toBe(52.2297);
     expect(result.coords.longitude).toBe(21.0122);
     expect(result.coords.altitude).toBeNull();
-    expect(result.coords.accuracy).toBeNull();
+    expect(result.coords.accuracy).toBe(0);
     expect(result.timestamp).toBe(dbLocation.timestamp.getTime());
   });
 });

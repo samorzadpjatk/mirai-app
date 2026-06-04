@@ -11,7 +11,7 @@ interface UseExpoUpdatesReturn {
   checkForUpdates: () => Promise<void>;
   startUpdate: () => Promise<void>;
   skipUpdate: () => void;
-  error: string | null;
+  error: string;
 }
 
 export function useExpoUpdates(): UseExpoUpdatesReturn {
@@ -20,7 +20,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
   const [isInitialized, setIsInitialized] = useState(() => __DEV__ || !Updates.isEnabled);
   const hasAutoChecked = useRef(false);
 
@@ -34,7 +34,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
 
     try {
       setIsChecking(true);
-      setError(null);
+      setError("");
 
       const update = await Updates.checkForUpdateAsync();
 
@@ -55,7 +55,7 @@ export function useExpoUpdates(): UseExpoUpdatesReturn {
   const startUpdate = useCallback(async () => {
     try {
       setIsDownloading(true);
-      setError(null);
+      setError("");
 
       // Download the update
       await Updates.fetchUpdateAsync();

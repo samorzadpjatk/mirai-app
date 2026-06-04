@@ -267,6 +267,9 @@ export function ChallengeCommunitySubmissionsCard({
             </View>
           </View>
 
+          {/* ListEmptyComponent not needed: gallery modal is guarded by `openGalleryAt`
+              which checks `if (!gallerySubmissions.length) return;` before opening.
+              The FlatList only renders when there are gallery submissions to display. */}
           <FlatList
             ref={galleryListRef}
             data={gallerySubmissions}

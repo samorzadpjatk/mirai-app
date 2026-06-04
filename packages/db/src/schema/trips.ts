@@ -16,7 +16,7 @@ export const trips = pgTable("trips", {
     .primaryKey()
     .$defaultFn(() => randomUUID()),
   name: text("name").notNull(),
-  description: text("description"),
+  description: text("description").notNull(),
   startDate: timestamp("start_date", { withTimezone: true }).notNull(),
   endDate: timestamp("end_date", { withTimezone: true }).notNull(),
   backgroundImagePath: text("background_image_path"),
@@ -25,33 +25,6 @@ export const trips = pgTable("trips", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
-
-export const tripResources = pgTable(
-  "trip_resources",
-  {
-    id: varchar("id", { length: 36 })
-      .primaryKey()
-      .$defaultFn(() => randomUUID()),
-    tripId: varchar("trip_id", { length: 36 })
-      .notNull()
-      .references(() => trips.id, { onDelete: "cascade" }),
-    type: text("type").notNull(),
-    label: text("label").notNull(),
-    description: text("description"),
-    url: text("url"),
-    storagePath: text("storage_path"),
-    fileName: text("file_name"),
-    publicUrl: text("public_url"),
-    iconName: text("icon_name"),
-    value: text("value"),
-    sortOrder: integer("sort_order").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .$onUpdate(() => new Date())
-      .notNull(),
-  },
-  (t) => [index("trip_resources_trip_id_type_idx").on(t.tripId, t.type)],
-);
 
 export const tripInsurances = pgTable("trip_insurances", {
   id: varchar("id", { length: 36 })

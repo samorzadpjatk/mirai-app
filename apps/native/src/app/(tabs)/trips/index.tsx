@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ErrorState } from "~/components/common/ui";
 import { TripCard } from "~/components/trips/list/TripCard";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
@@ -27,6 +28,8 @@ export default function TripsScreen() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
+    isError,
+    error,
     refetch,
   } = useTrips();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
@@ -56,6 +59,16 @@ export default function TripsScreen() {
 
   if (isLoading || isLoadingSelectedTrip || (!selectedTripId && tripsLoading)) {
     return <LoadingScreen message="Loading trip..." />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to load trips"
+        message={error?.message ?? "Something went wrong"}
+        onRetry={() => void refetch()}
+      />
+    );
   }
 
   if (!session) {
@@ -97,7 +110,7 @@ export default function TripsScreen() {
             <TripCard key={trip.id} trip={trip} onPress={() => setSelectedTripId(trip.id)} />
           ))}
         </View>
-        {trips.length === 0 && <Text style={styles.emptyText}>No trips available.</Text>}
+        {trips.length === 0 ? <Text style={styles.emptyText}>No trips available.</Text> : null}
 
         {isFetchingNextPage ? (
           <View style={styles.listFooter}>

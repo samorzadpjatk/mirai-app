@@ -150,7 +150,7 @@ export async function seedTrip(db: DB, id: string, name: string, description?: s
   await db.insert(trips).values({
     id,
     name,
-    description,
+    description: description ?? "",
     startDate: new Date("2025-06-01"),
     endDate: new Date("2025-06-07"),
     createdAt: new Date(),
@@ -170,6 +170,7 @@ export async function seedGroup(
     id,
     tripId,
     name,
+    description: "",
     organizerId,
     code,
     createdAt: new Date(),

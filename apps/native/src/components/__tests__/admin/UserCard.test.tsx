@@ -16,7 +16,7 @@ describe("UserCard", () => {
     wristNumber: "123",
     houseNumber: "456",
     isBanned: false,
-    bannedUntil: null,
+    bannedUntil: undefined,
     tripId: "trip-1",
     group: {
       id: "group-1",
@@ -98,42 +98,42 @@ describe("UserCard", () => {
   });
 
   it("renders user with only first name", () => {
-    const userWithOnlyFirstName = { ...mockUser, lastName: null };
+    const userWithOnlyFirstName = { ...mockUser, lastName: "" };
     renderWithProviders(<UserCard user={userWithOnlyFirstName} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("John")).toBeTruthy();
   });
 
   it("renders user with only last name", () => {
-    const userWithOnlyLastName = { ...mockUser, firstName: null };
+    const userWithOnlyLastName = { ...mockUser, firstName: "" };
     renderWithProviders(<UserCard user={userWithOnlyLastName} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("Doe")).toBeTruthy();
   });
 
   it("renders user with no name using email", () => {
-    const userWithNoName = { ...mockUser, firstName: null, lastName: null };
+    const userWithNoName = { ...mockUser, firstName: "", lastName: "" };
     renderWithProviders(<UserCard user={userWithNoName} onEdit={mockOnEdit} />);
 
     expect(screen.getAllByText("john@example.com").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders 'Not selected' when user has no group", () => {
-    const userWithoutGroup = { ...mockUser, group: null };
+    const userWithoutGroup = { ...mockUser, group: undefined };
     renderWithProviders(<UserCard user={userWithoutGroup} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("Group: Not selected")).toBeTruthy();
   });
 
   it("renders em dash for missing wrist number", () => {
-    const userWithoutWristNumber = { ...mockUser, wristNumber: null };
+    const userWithoutWristNumber = { ...mockUser, wristNumber: "" };
     renderWithProviders(<UserCard user={userWithoutWristNumber} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("—")).toBeTruthy();
   });
 
   it("renders em dash for missing house number", () => {
-    const userWithoutHouseNumber = { ...mockUser, houseNumber: null };
+    const userWithoutHouseNumber = { ...mockUser, houseNumber: "" };
     renderWithProviders(<UserCard user={userWithoutHouseNumber} onEdit={mockOnEdit} />);
 
     expect(screen.getByText("—")).toBeTruthy();

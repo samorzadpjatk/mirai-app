@@ -158,7 +158,7 @@ describe("useAdminTrips", () => {
       expect(result.current.tripsLoading).toBe(false);
     });
 
-    expect(result.current.selectedTripId).toBeNull();
+    expect(result.current.selectedTripId).toBe("");
     expect(result.current.selectedTrip).toBeNull();
     expect(result.current.hasTrip).toBe(false);
   });

@@ -82,6 +82,7 @@ async function seedTrip(id: string, name: string) {
   await testDb.db.insert(trips).values({
     id,
     name,
+    description: "",
     startDate: new Date("2025-06-01"),
     endDate: new Date("2025-06-07"),
     createdAt: new Date(),
@@ -94,6 +95,7 @@ async function seedGroup(id: string, tripId: string, name: string, organizerId: 
     id,
     tripId,
     name,
+    description: "",
     organizerId,
     code: `CODE-${id}`,
     createdAt: new Date(),

@@ -44,19 +44,19 @@ describe("getNextChallengePageParam", () => {
 import { buildChallengeFilter } from "../queryBuilders";
 
 describe("buildChallengeFilter", () => {
-  it("should return isRecurring false without tripId", () => {
-    expect(buildChallengeFilter()).toEqual({ isRecurring: false });
+  it("should return empty filter without tripId", () => {
+    expect(buildChallengeFilter()).toEqual({});
   });
 
   it("should include tripId when provided", () => {
-    expect(buildChallengeFilter("trip-123")).toEqual({ isRecurring: false, tripId: "trip-123" });
+    expect(buildChallengeFilter("trip-123")).toEqual({ tripId: "trip-123" });
   });
 
   it("should omit tripId for all trips", () => {
-    expect(buildChallengeFilter("all")).toEqual({ isRecurring: false });
+    expect(buildChallengeFilter("all")).toEqual({});
   });
 
   it("should omit tripId for null", () => {
-    expect(buildChallengeFilter(null)).toEqual({ isRecurring: false });
+    expect(buildChallengeFilter(null)).toEqual({});
   });
 });

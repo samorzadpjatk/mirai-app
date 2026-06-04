@@ -1,4 +1,6 @@
 import {
+  challengeLocation,
+  challengeRecurrence,
   challengeSubmissions,
   challengeVotes,
   challenges,
@@ -38,6 +40,7 @@ async function seedTrip(id: string, name: string) {
   await testDb.db.insert(trips).values({
     id,
     name,
+    description: "",
     startDate: new Date("2025-06-01"),
     endDate: new Date("2025-06-07"),
     createdAt: new Date(),
@@ -62,6 +65,7 @@ async function seedGroup(id: string, tripId: string, name: string, organizerId: 
     id,
     tripId,
     name,
+    description: "",
     organizerId,
     code: `CODE-${id}`,
     createdAt: new Date(),
@@ -83,12 +87,21 @@ async function seedParticipant(id: string, userId: string, tripId: string, group
 async function seedChallenge(
   id: string,
   tripId: string,
-  overrides: Partial<typeof challenges.$inferInsert> = {},
+  overrides: Partial<typeof challenges.$inferInsert> & {
+    isRecurring?: boolean;
+    dailyStartTime?: string;
+    dailyEndTime?: string;
+    recurringDays?: number;
+    targetLatitude?: number;
+    targetLongitude?: number;
+    expectedValue?: string;
+  } = {},
 ) {
   await testDb.db.insert(challenges).values({
     id,
     tripId,
     name: "Test Challenge",
+    description: "",
     submissionType: "IMAGE",
     scoringCategory: "PEER_VOTING",
     basePoints: 100,
@@ -100,6 +113,22 @@ async function seedChallenge(
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
+  });
+
+  await testDb.db.insert(challengeRecurrence).values({
+    challengeId: id,
+    isRecurring: overrides.isRecurring ?? false,
+    dailyStartTime: overrides.dailyStartTime ?? "",
+    dailyEndTime: overrides.dailyEndTime ?? "",
+    recurringDays: overrides.recurringDays ?? 0,
+    type: "DAILY",
+  });
+
+  await testDb.db.insert(challengeLocation).values({
+    challengeId: id,
+    targetLatitude: overrides.targetLatitude ?? 0,
+    targetLongitude: overrides.targetLongitude ?? 0,
+    expectedValue: overrides.expectedValue ?? "",
   });
 }
 

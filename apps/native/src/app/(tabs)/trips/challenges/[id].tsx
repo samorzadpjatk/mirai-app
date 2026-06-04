@@ -76,7 +76,7 @@ export default function ChallengeDetailScreen() {
     isAssignedToUser,
   } = useChallengeDetails(challengeId, tripId);
 
-  const { isTripPast } = useTripDetails(tripId);
+  const { tripId: resolvedTripId, isTripPast } = useTripDetails(tripId);
 
   const {
     isLoading: cameraLoading,
@@ -105,13 +105,13 @@ export default function ChallengeDetailScreen() {
   const submissionQuery = orpc.challengeSubmission.getMyForChallenge.queryOptions({
     input: {
       challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+      tripId: resolvedTripId,
     },
   });
   const challengeSubmissionsQuery = orpc.challengeSubmission.getByChallenge.queryOptions({
     input: {
       challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
+      tripId: resolvedTripId,
     },
   });
 
@@ -124,7 +124,7 @@ export default function ChallengeDetailScreen() {
     enabled: !!challengeId && !!tripId,
   });
   const { data: trip } = useQuery({
-    ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
+    ...orpc.trip.getById.queryOptions({ input: { id: resolvedTripId } }),
     enabled: !!tripId,
   });
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -195,7 +195,7 @@ export default function ChallengeDetailScreen() {
       if (mySubmission?.imageIds?.[0]) {
         await deleteCachedDownload(mySubmission.imageIds[0]);
       }
-      setCapturedImage(null);
+      setCapturedImage("");
       Alert.alert("Submission withdrawn", "You can submit again now.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to withdraw submission";
@@ -635,7 +635,7 @@ export default function ChallengeDetailScreen() {
           />
         )}
 
-        {isUploading && <ChallengeUploadProgressCard progress={uploadProgress.percent} />}
+        {isUploading ? <ChallengeUploadProgressCard progress={uploadProgress.percent} /> : null}
 
         {mySubmission && !isTripPast && (
           <ExistingSubmissionCard

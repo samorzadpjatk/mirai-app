@@ -70,10 +70,13 @@ describe("toPublicUser", () => {
       lastName: "Kowalski",
       email: "user@example.com",
       role: "USER",
+      hasName: true,
+      hasEmail: true,
+      isEmailVerified: false,
     });
   });
 
-  it("returns null email when authUserId is missing", () => {
+  it("returns empty email when authUserId is missing", () => {
     const emailMap = new Map<string, string | null>();
     const user = {
       id: "u2",
@@ -84,10 +87,11 @@ describe("toPublicUser", () => {
 
     const result = toPublicUser(user, emailMap);
 
-    expect(result.email).toBeNull();
+    expect(result.email).toBe("");
+    expect(result.hasEmail).toBe(false);
   });
 
-  it("returns null email when authUserId not in map", () => {
+  it("returns empty email when authUserId not in map", () => {
     const emailMap = new Map([["other-auth", "other@example.com"]]);
     const user = {
       id: "u3",
@@ -99,10 +103,12 @@ describe("toPublicUser", () => {
 
     const result = toPublicUser(user, emailMap);
 
-    expect(result.email).toBeNull();
+    expect(result.email).toBe("");
+    expect(result.hasName).toBe(false);
+    expect(result.hasEmail).toBe(false);
   });
 
-  it("coerces undefined names to null", () => {
+  it("coerces undefined names to empty string", () => {
     const emailMap = new Map<string, string | null>();
     const user = {
       id: "u4",
@@ -112,8 +118,9 @@ describe("toPublicUser", () => {
 
     const result = toPublicUser(user, emailMap);
 
-    expect(result.firstName).toBeNull();
-    expect(result.lastName).toBeNull();
+    expect(result.firstName).toBe("");
+    expect(result.lastName).toBe("");
+    expect(result.hasName).toBe(false);
   });
 });
 
@@ -143,6 +150,9 @@ describe("assembleParticipantWithUser", () => {
         lastName: "Kowalski",
         email: "user@example.com",
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       },
       wristNumber: "123",
       houseNumber: "5",
@@ -169,7 +179,9 @@ describe("assembleParticipantWithUser", () => {
 
     const result = assembleParticipantWithUser(participant, emailMap);
 
-    expect(result.user.email).toBeNull();
+    expect(result.user.email).toBe("");
+    expect(result.user.hasName).toBe(false);
+    expect(result.user.hasEmail).toBe(false);
     expect(result.wristNumber).toBeNull();
     expect(result.houseNumber).toBeNull();
     expect(result.groupId).toBeNull();

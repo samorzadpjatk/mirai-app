@@ -1,4 +1,6 @@
 import {
+  challengeLocation,
+  challengeRecurrence,
   challengeSubmissions,
   challengeVotes,
   challenges,
@@ -18,6 +20,7 @@ async function seedTrip(id: string, name: string) {
   await testDb.db.insert(trips).values({
     id,
     name,
+    description: "",
     startDate: new Date("2025-06-01"),
     endDate: new Date("2025-06-07"),
     createdAt: now(),
@@ -32,9 +35,16 @@ async function seedGroup(
   organizerId: string,
   code: string,
 ) {
-  await testDb.db
-    .insert(groups)
-    .values({ id, tripId, name, organizerId, code, createdAt: now(), updatedAt: now() });
+  await testDb.db.insert(groups).values({
+    id,
+    tripId,
+    name,
+    description: "",
+    organizerId,
+    code,
+    createdAt: now(),
+    updatedAt: now(),
+  });
 }
 
 async function seedUser(id: string, authUserId: string, firstName: string, lastName: string) {
@@ -78,12 +88,28 @@ describe("challengeVote router — PGLite transaction rollback", () => {
       id: "challenge-123",
       tripId: "trip-123",
       name: "Photo Challenge",
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "PEER_VOTING",
       status: "ACTIVE",
       endTime: now(),
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: "challenge-123",
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: "challenge-123",
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
 
     await testDb.db.insert(challengeSubmissions).values({
@@ -201,12 +227,28 @@ describe("challengeVote router — Drizzle ORM PGLite integration", () => {
       id: "challenge-123",
       tripId: "trip-123",
       name: "Photo Challenge",
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "PEER_VOTING",
       status: "ACTIVE",
       endTime: now(),
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: "challenge-123",
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: "challenge-123",
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
 
     await testDb.db.insert(challengeSubmissions).values({

@@ -10,15 +10,20 @@ export {
   rewardPurchaseStatusEnum,
   users,
   trips,
-  tripResources,
+  tripResourceLinks,
+  tripResourceFiles,
+  tripResourceTexts,
+  tripResourceIcons,
   tripInsurances,
   tripInsuranceSteps,
   tripParticipants,
-  events,
-  userEvents,
   groups,
   groupJoinRequests,
   challenges,
+  challengeRecurrence,
+  challengeLocation,
+  challengeText,
+  challengeQrCode,
   challengeSubmissions,
   challengeVotes,
   submissionReports,
@@ -45,17 +50,20 @@ export {
   userAgents,
   usersRelations,
   tripsRelations,
-  tripResourcesRelations,
+  tripResourceLinksRelations,
+  tripResourceFilesRelations,
+  tripResourceTextsRelations,
+  tripResourceIconsRelations,
   tripInsurancesRelations,
   tripInsuranceStepsRelations,
   tripParticipantsRelations,
-  eventsRelations,
-  userEventsRelations,
   groupsRelations,
   groupJoinRequestsRelations,
   challengesRelations,
   challengeSubmissionsRelations,
   challengeVotesRelations,
+  challengeTextRelations,
+  challengeQrCodeRelations,
   submissionReportsRelations,
   activityFeedsRelations,
   activityReactionsRelations,
@@ -87,27 +95,28 @@ import type { users } from "./schema/users";
 export type User = typeof users.$inferSelect;
 export type Role = (typeof roleEnum.enumValues)[number];
 
-import type {
-  tripInsuranceSteps,
-  tripInsurances,
-  tripParticipants,
-  tripResources,
-  trips,
-} from "./schema/trips";
+import type { tripResourceFiles } from "./schema/tripResourceFiles";
+import type { tripResourceIcons } from "./schema/tripResourceIcons";
+import type { tripResourceLinks } from "./schema/tripResourceLinks";
+import type { tripResourceTexts } from "./schema/tripResourceTexts";
+import type { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./schema/trips";
 export type Trip = typeof trips.$inferSelect;
-export type TripResource = typeof tripResources.$inferSelect;
+export type TripResourceLink = typeof tripResourceLinks.$inferSelect;
+export type TripResourceFile = typeof tripResourceFiles.$inferSelect;
+export type TripResourceText = typeof tripResourceTexts.$inferSelect;
+export type TripResourceIcon = typeof tripResourceIcons.$inferSelect;
 export type TripInsurance = typeof tripInsurances.$inferSelect;
 export type TripInsuranceStep = typeof tripInsuranceSteps.$inferSelect;
 export type TripParticipant = typeof tripParticipants.$inferSelect;
-
-import type { events, userEvents } from "./schema/events";
-export type Event = typeof events.$inferSelect;
-export type UserEvent = typeof userEvents.$inferSelect;
 
 import type { groupJoinRequests, groups } from "./schema/groups";
 export type Group = typeof groups.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequests.$inferSelect;
 
+import type { challengeLocation } from "./schema/challengeLocation";
+import type { challengeQrCode } from "./schema/challengeQrCode";
+import type { challengeRecurrence } from "./schema/challengeRecurrence";
+import type { challengeText } from "./schema/challengeText";
 import type {
   challengeSubmissions,
   challengeVotes,
@@ -115,6 +124,10 @@ import type {
   submissionReports,
 } from "./schema/challenges";
 export type Challenge = typeof challenges.$inferSelect;
+export type ChallengeRecurrence = typeof challengeRecurrence.$inferSelect;
+export type ChallengeLocation = typeof challengeLocation.$inferSelect;
+export type ChallengeText = typeof challengeText.$inferSelect;
+export type ChallengeQrCode = typeof challengeQrCode.$inferSelect;
 export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect;
 export type ChallengeVote = typeof challengeVotes.$inferSelect;
 export type SubmissionReport = typeof submissionReports.$inferSelect;

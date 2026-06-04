@@ -109,4 +109,60 @@ describe("GroupApprovedChallenges", () => {
     fireEvent.press(getByTestId("view-all-button"));
     expect(getByText("1/2")).toBeTruthy();
   });
+
+  it("should handle scroll event in fullscreen modal", () => {
+    const { getByTestId } = renderWithProviders(
+      <GroupApprovedChallenges submissions={submissions} />,
+    );
+
+    fireEvent.press(getByTestId("view-all-button"));
+
+    const flatList = getByTestId("fullscreen-flatlist");
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { x: 400, y: 0 },
+        contentSize: { width: 800, height: 600 },
+        layoutMeasurement: { width: 400, height: 600 },
+      },
+    });
+  });
+
+  it("should auto-close fullscreen when last submission is removed", () => {
+    const { getByTestId, getByText, queryByText, rerender } = renderWithProviders(
+      <GroupApprovedChallenges submissions={submissions} />,
+    );
+
+    fireEvent.press(getByTestId("view-all-button"));
+    expect(getByText("1/2")).toBeTruthy();
+
+    rerender(<GroupApprovedChallenges submissions={[]} />);
+    expect(queryByText("1/2")).toBeNull();
+  });
+
+  it("should handle single submission", () => {
+    const singleSubmission = [submissions[0]!];
+    const { getByText, getByTestId } = renderWithProviders(
+      <GroupApprovedChallenges submissions={singleSubmission} />,
+    );
+
+    expect(getByText("Challenge Photos")).toBeTruthy();
+    expect(getByTestId("submission-circle-sub-1")).toBeTruthy();
+  });
+
+  it("should handle scroll to index failure", () => {
+    const { getByTestId } = renderWithProviders(
+      <GroupApprovedChallenges submissions={submissions} />,
+    );
+
+    fireEvent.press(getByTestId("view-all-button"));
+
+    const flatList = getByTestId("fullscreen-flatlist");
+    fireEvent.scroll(flatList, {
+      nativeEvent: {
+        contentOffset: { x: -100, y: 0 },
+        contentSize: { width: 800, height: 600 },
+        layoutMeasurement: { width: 400, height: 600 },
+      },
+    });
+  });
 });

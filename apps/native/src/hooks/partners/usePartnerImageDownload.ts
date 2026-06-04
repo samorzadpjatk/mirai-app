@@ -26,7 +26,7 @@ export function calculatePartnerImageLoadingState(
 }
 
 export function usePartnerImageDownload(logoPath: string | null | undefined) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const { download, status: downloadStatus, error: downloadError } = useFileDownload();
   const mountedRef = useRef(true);
@@ -42,7 +42,7 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
     const loadImage = async () => {
       if (!mountedRef.current) return;
       setIsLoading(true);
-      setImageUrl(null);
+      setImageUrl("");
 
       try {
         // If there's a logo path, download it using useFileDownload
@@ -89,14 +89,14 @@ export function usePartnerImageDownload(logoPath: string | null | undefined) {
         }
 
         // Final fallback - null (no image)
-        setImageUrl(null);
+        setImageUrl("");
       } catch (error) {
         if (!mountedRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         if (!isComponentUnmountedErrorMessage(message)) {
           // TODO: Add Sentry crash reporting for production errors
         }
-        if (mountedRef.current) setImageUrl(null);
+        if (mountedRef.current) setImageUrl("");
       } finally {
         if (mountedRef.current) setIsLoading(false);
       }

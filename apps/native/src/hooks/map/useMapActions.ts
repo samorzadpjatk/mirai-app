@@ -8,11 +8,11 @@ export function useMapActions() {
     return updateLocationMutation.mutateAsync({
       latitude: input.latitude,
       longitude: input.longitude,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
+      accuracy: undefined,
+      altitude: undefined,
+      altitudeAccuracy: undefined,
+      heading: undefined,
+      speed: undefined,
     });
   };
 

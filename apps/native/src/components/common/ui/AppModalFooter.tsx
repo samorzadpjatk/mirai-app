@@ -34,7 +34,7 @@ export function AppModalFooter({
     <View style={[styles.footer, variant === "right" && styles.footerRight, style]}>
       {children}
       <View style={styles.actions}>
-        {secondaryLabel && onSecondary && (
+        {secondaryLabel && onSecondary ? (
           <PrimaryLoadingButton
             testID={secondaryTestID}
             label={secondaryLabel}
@@ -44,7 +44,7 @@ export function AppModalFooter({
             style={styles.secondaryButton}
             textStyle={styles.secondaryButtonText}
           />
-        )}
+        ) : null}
         <PrimaryLoadingButton
           testID={primaryTestID}
           label={primaryLabel}

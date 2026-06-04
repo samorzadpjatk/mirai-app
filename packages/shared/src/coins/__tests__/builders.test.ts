@@ -28,7 +28,7 @@ describe("buildCoinTransactionValues", () => {
     expect(result).toEqual({
       groupId: "group-123",
       amount: 50,
-      reason: null,
+      reason: "",
       adminId: "admin-123",
     });
   });
@@ -59,7 +59,7 @@ describe("buildCoinTransactionValues", () => {
     expect(result).toEqual({
       groupId: "group-123",
       amount: -50,
-      reason: null,
+      reason: "",
       adminId: "admin-123",
     });
   });

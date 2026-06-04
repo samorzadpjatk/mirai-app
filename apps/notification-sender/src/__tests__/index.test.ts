@@ -34,7 +34,7 @@ vi.mock("@mirai-app/supabase", async () => {
 
 vi.mock("@mirai-app/orpc/client", () => {
   return {
-    getORPCClient: (...args: unknown[]) => {
+    getServiceORPCClient: (...args: unknown[]) => {
       mockGetORPCClient(...args);
       return {
         client: {
@@ -81,6 +81,7 @@ describe("Notification Sender - Environment Validation", () => {
     delete process.env.TRPC_HOST;
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
     expect(() => main()).toThrow("Missing env: TRPC_HOST");
@@ -90,6 +91,7 @@ describe("Notification Sender - Environment Validation", () => {
     process.env.TRPC_HOST = "localhost:2022";
     delete process.env.SUPABASE_URL;
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
     expect(() => main()).toThrow("Missing env: SUPABASE_URL");
@@ -98,10 +100,21 @@ describe("Notification Sender - Environment Validation", () => {
   it("should throw error when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     const { main } = await import("../index");
     expect(() => main()).toThrow("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+  });
+
+  it("should throw error when SERVICE_ACCOUNT_TOKEN is missing", async () => {
+    process.env.TRPC_HOST = "localhost:2022";
+    process.env.SUPABASE_URL = "http://localhost:8000";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    delete process.env.SERVICE_ACCOUNT_TOKEN;
+
+    const { main } = await import("../index");
+    expect(() => main()).toThrow("Missing env: SERVICE_ACCOUNT_TOKEN");
   });
 });
 
@@ -127,6 +140,7 @@ describe("Notification Sender - Main Error Handling", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     mockCreateSupabaseClient.mockImplementationOnce(() => {
       throw new Error("Supabase connection failed");
@@ -140,6 +154,7 @@ describe("Notification Sender - Main Error Handling", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     mockCreateSupabaseClient.mockImplementationOnce(() => {
       throw new Error("string error");
@@ -172,6 +187,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -189,15 +205,16 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
     await main();
 
     expect(mockGetORPCClient).toHaveBeenCalledWith(
-      "http://localhost:2022/api/trpc",
-      "ws://localhost:2022/api/trpc",
-      "test-key",
+      "http://localhost:2022/internal/trpc",
+      "ws://localhost:2022/internal/trpc",
+      "test-token",
     );
   });
 
@@ -205,6 +222,7 @@ describe("Notification Sender - Client Initialization", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -241,6 +259,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -261,6 +280,7 @@ describe("Notification Sender - Subscribe Callback", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -301,6 +321,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -347,6 +368,8 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -386,6 +409,7 @@ describe("Notification Sender - SIGINT Handling", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     const { main } = await import("../index");
 
@@ -422,6 +446,7 @@ describe("Notification Sender - Notification Processing", () => {
     process.env.TRPC_HOST = "localhost:2022";
     process.env.SUPABASE_URL = "http://localhost:8000";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+    process.env.SERVICE_ACCOUNT_TOKEN = "test-token";
 
     mockChannelOn.mockReturnValue({ subscribe: vi.fn() });
     mockTrackDeliveryStart.mockResolvedValue(undefined);

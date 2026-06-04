@@ -20,7 +20,7 @@ export const groups = pgTable("groups", {
     .notNull()
     .references(() => trips.id),
   name: text("name").notNull(),
-  description: text("description"),
+  description: text("description").notNull(),
   image: text("image"),
   isDeleted: boolean("is_deleted").default(false).notNull(),
   organizerId: varchar("organizer_id", { length: 36 })

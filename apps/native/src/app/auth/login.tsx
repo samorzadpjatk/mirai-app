@@ -38,15 +38,15 @@ export default function LoginScreen() {
 
   const [otp, setOtp] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifyError, setVerifyError] = useState<string>("");
   const [password, setPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [precheckError, setPrecheckError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string>("");
+  const [precheckError, setPrecheckError] = useState<string>("");
   const [hasAcceptedPrivacyPolicy, setHasAcceptedPrivacyPolicy] = useState(false);
-  const [privacyPolicyError, setPrivacyPolicyError] = useState<string | null>(null);
+  const [privacyPolicyError, setPrivacyPolicyError] = useState<string>("");
   const [isPolicyModalVisible, setIsPolicyModalVisible] = useState(false);
-  const [policyPdfUri, setPolicyPdfUri] = useState<string | null>(null);
+  const [policyPdfUri, setPolicyPdfUri] = useState<string>("");
   const [isPolicyLoading, setIsPolicyLoading] = useState(false);
   const [hasViewedPrivacyPolicy, setHasViewedPrivacyPolicy] = useState(false);
   const privacyPolicyDownload = useFileDownload();
@@ -62,7 +62,7 @@ export default function LoginScreen() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) {
-      return { banned: false, bannedUntil: null as string | null, reason: null as string | null };
+      return { banned: false, bannedUntil: "", reason: "" };
     }
     const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL, token);
     try {
@@ -81,7 +81,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleBannedLogin = async (reason: string | null, bannedUntil: string | null) => {
+  const handleBannedLogin = async (reason: string, bannedUntil: string) => {
     await signOut();
     const formattedDate = bannedUntil ? new Date(bannedUntil).toLocaleString() : "unknown date";
     const message = `Your account is banned until ${formattedDate}.${reason ? ` Reason: ${reason}.` : ""}`;
@@ -103,7 +103,7 @@ export default function LoginScreen() {
       return;
     }
 
-    setPrivacyPolicyError(null);
+    setPrivacyPolicyError("");
 
     if (isGhostLogin) {
       if (!password) {
@@ -112,13 +112,13 @@ export default function LoginScreen() {
       }
 
       setPasswordLoading(true);
-      setPasswordError(null);
+      setPasswordError("");
 
       try {
         await signInWithPassword({ email, password });
         const banStatus = await checkBanStatus();
         if (banStatus.banned) {
-          await handleBannedLogin(banStatus.reason ?? null, banStatus.bannedUntil ?? null);
+          await handleBannedLogin(banStatus.reason ?? "", banStatus.bannedUntil ?? "");
           return;
         }
         router.replace("/");
@@ -135,7 +135,7 @@ export default function LoginScreen() {
       return;
     }
 
-    setPrecheckError(null);
+    setPrecheckError("");
     clearError();
 
     try {
@@ -168,9 +168,9 @@ export default function LoginScreen() {
   const onEmailChange = (value: string) => {
     clearError();
     clearSent();
-    setPrecheckError(null);
-    setPasswordError(null);
-    setPrivacyPolicyError(null);
+    setPrecheckError("");
+    setPasswordError("");
+    setPrivacyPolicyError("");
     setPassword("");
     setEmail(value);
   };
@@ -182,13 +182,13 @@ export default function LoginScreen() {
     }
 
     setVerifyLoading(true);
-    setVerifyError(null);
+    setVerifyError("");
 
     try {
       await verifyOtp({ email, token: otp });
       const banStatus = await checkBanStatus();
       if (banStatus.banned) {
-        await handleBannedLogin(banStatus.reason ?? null, banStatus.bannedUntil ?? null);
+        await handleBannedLogin(banStatus.reason ?? "", banStatus.bannedUntil ?? "");
         return;
       }
       router.replace("/");
@@ -201,7 +201,7 @@ export default function LoginScreen() {
 
   const closeModal = () => {
     setOtp("");
-    setVerifyError(null);
+    setVerifyError("");
     clearSent();
   };
 
@@ -232,7 +232,7 @@ export default function LoginScreen() {
     setIsPolicyModalVisible(false);
     if (!isPolicyLoading && policyPdfUri) {
       setHasViewedPrivacyPolicy(true);
-      setPrivacyPolicyError(null);
+      setPrivacyPolicyError("");
     }
   };
 
@@ -295,7 +295,7 @@ export default function LoginScreen() {
                     return;
                   }
                   setHasAcceptedPrivacyPolicy((prev) => !prev);
-                  setPrivacyPolicyError(null);
+                  setPrivacyPolicyError("");
                 }}
                 activeOpacity={0.8}
               >
@@ -311,9 +311,9 @@ export default function LoginScreen() {
                   </Text>
                 </Text>
               </TouchableOpacity>
-              {privacyPolicyError && (
+              {privacyPolicyError ? (
                 <Text style={[styles.policyErrorText, { marginTop: 6 }]}>{privacyPolicyError}</Text>
-              )}
+              ) : null}
             </View>
 
             {isGhostLogin ? (
@@ -335,7 +335,7 @@ export default function LoginScreen() {
                     editable={!isBusy}
                   />
                 </View>
-                {passwordError && <Text style={styles.modalErrorText}>{passwordError}</Text>}
+                {passwordError ? <Text style={styles.modalErrorText}>{passwordError}</Text> : null}
               </View>
             ) : (
               <View style={styles.inputSection}>
@@ -387,7 +387,7 @@ export default function LoginScreen() {
               editable={!verifyLoading}
             />
 
-            {verifyError && <Text style={styles.modalErrorText}>{verifyError}</Text>}
+            {verifyError ? <Text style={styles.modalErrorText}>{verifyError}</Text> : null}
 
             <PrimaryLoadingButton
               label="Verify & Sign In"

@@ -20,13 +20,13 @@ export const longitudeSchema = z
  * Schema for location data with all optional fields
  */
 export const locationDataSchema = z.object({
-  latitude: latitudeSchema.optional().nullable(),
-  longitude: longitudeSchema.optional().nullable(),
-  accuracy: z.number().nonnegative().optional().nullable(),
-  altitude: z.number().optional().nullable(),
-  altitudeAccuracy: z.number().nonnegative().optional().nullable(),
-  heading: z.number().min(0).max(360).optional().nullable(),
-  speed: z.number().nonnegative().optional().nullable(),
+  latitude: latitudeSchema,
+  longitude: longitudeSchema,
+  accuracy: z.number().nonnegative().optional(),
+  altitude: z.number().optional(),
+  altitudeAccuracy: z.number().nonnegative().optional(),
+  heading: z.number().min(0).max(360).optional(),
+  speed: z.number().nonnegative().optional(),
 });
 
 /**

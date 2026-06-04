@@ -178,6 +178,22 @@ Database commands serve as implicit integration tests:
 
 For detailed testing rationale and patterns for consuming packages, see [TESTING.md](./TESTING.md). For general monorepo testing conventions, see the root [TESTING.md](../../TESTING.md).
 
+## Schema Changes
+
+### 2026-06-04: Schema Refactor
+
+The following tables were removed as they were not actively used by the application:
+
+- **`events`** — Event management table (no active references in code)
+- **`userEvents`** — User-event relationship table (no active references in code)
+
+The `userAgents` table is retained for operational telemetry but is documented as non-business data.
+
+### Current Schema
+
+- **38 tables** (down from 40)
+- See `packages/db/src/schema/index.ts` for the full table list
+
 ## More Information
 
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)

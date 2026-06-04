@@ -23,13 +23,22 @@ export const toPublicUser = (
     role: z.infer<typeof roleSchema>;
   },
   emailByAuthUserId: Map<string, string | null>,
-): PublicUser => ({
-  id: user.id,
-  firstName: user.firstName ?? null,
-  lastName: user.lastName ?? null,
-  role: user.role,
-  email: resolveAuthEmail(emailByAuthUserId, user.authUserId),
-});
+): PublicUser => {
+  const firstName = user.firstName ?? "";
+  const lastName = user.lastName ?? "";
+  const email = resolveAuthEmail(emailByAuthUserId, user.authUserId);
+
+  return {
+    id: user.id,
+    firstName,
+    lastName,
+    role: user.role,
+    email,
+    hasName: Boolean(firstName.trim() || lastName.trim()),
+    hasEmail: Boolean(email.trim()),
+    isEmailVerified: false,
+  };
+};
 
 export const toPublicUserWithAuthSummary = (
   user: {
@@ -42,22 +51,29 @@ export const toPublicUserWithAuthSummary = (
   authByAuthUserId: Map<
     string,
     {
-      email: string | null;
-      bannedUntil: string | null;
-      banReason: string | null;
+      email: string;
+      bannedUntil: string;
+      banReason: string;
       isBanned: boolean;
     }
   >,
 ): PublicUser => {
   const summary = user.authUserId ? (authByAuthUserId.get(user.authUserId) ?? null) : null;
+  const firstName = user.firstName ?? "";
+  const lastName = user.lastName ?? "";
+  const email = summary?.email ?? "";
+
   return {
     id: user.id,
-    firstName: user.firstName ?? null,
-    lastName: user.lastName ?? null,
+    firstName,
+    lastName,
     role: user.role,
-    email: summary?.email ?? null,
-    bannedUntil: summary?.bannedUntil ?? null,
-    banReason: summary?.banReason ?? null,
+    email,
+    ...(summary?.bannedUntil ? { bannedUntil: summary.bannedUntil } : {}),
+    ...(summary?.banReason ? { banReason: summary.banReason } : {}),
     isBanned: summary?.isBanned ?? false,
+    hasName: Boolean(firstName.trim() || lastName.trim()),
+    hasEmail: Boolean(email.trim()),
+    isEmailVerified: false,
   };
 };

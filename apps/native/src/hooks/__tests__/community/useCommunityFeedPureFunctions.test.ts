@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from "@jest/globals";
+import { createMockActivity } from "../../../test-utils/activityMocks";
 import {
   buildCommunityFeedActivities,
   buildCommunityFeedQueryKey,
@@ -6,13 +7,13 @@ import {
 } from "../../community/useCommunityFeed";
 import type { FeedPageData } from "../../community/useCommunityFeed";
 
-const baseActivity = {
+const baseActivity = createMockActivity({
   tripId: "trip-1",
-  activityType: "custom" as const,
-  description: null,
-  imageUrl: null,
-  createdAt: "2024-01-01",
-};
+  activityType: "custom",
+  description: "",
+  imageUrl: "",
+  createdAt: new Date("2024-01-01"),
+});
 
 const baseReactionsSummary = {
   total: 0,
@@ -44,9 +45,9 @@ describe("buildCommunityFeedActivities", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               ...baseReactionsSummary,
               total: 1,
@@ -54,9 +55,9 @@ describe("buildCommunityFeedActivities", () => {
             },
           },
           {
+            ...baseActivity,
             id: "a2",
             title: "Activity 2",
-            ...baseActivity,
             reactionsSummary: {
               ...baseReactionsSummary,
               total: 2,
@@ -69,9 +70,9 @@ describe("buildCommunityFeedActivities", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a3",
             title: "Activity 3",
-            ...baseActivity,
             reactionsSummary: {
               ...baseReactionsSummary,
               total: 3,
@@ -95,9 +96,9 @@ describe("buildCommunityFeedActivities", () => {
       {
         activities: [
           {
+            ...baseActivity,
             id: "a1",
             title: "Activity 1",
-            ...baseActivity,
             reactionsSummary: {
               ...baseReactionsSummary,
               total: 1,

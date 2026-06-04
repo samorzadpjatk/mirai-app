@@ -33,6 +33,7 @@ describe("notificationDelivery — real PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -100,6 +101,7 @@ describe("notificationDelivery — Drizzle ORM PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),

@@ -129,6 +129,8 @@ Key rules:
 - **No module-level side effects**: Use explicit `init()` functions.
 - **No `console.*` in production**: Use Pino (backend) or Sentry (native).
 - **Transaction tests**: Use real PGLite with `BEGIN...ROLLBACK` per router.
+- **Nulls at the boundary**: Database nulls are normalized to defaults before reaching shared types, router outputs, or UI components. See [docs/conventions/null-safety.md](./docs/conventions/null-safety.md).
+- **No `.default()` for user data**: Database columns holding user-provided content (descriptions, titles, names) must be `.notNull()` **without** `.default()`. System fields (timestamps, booleans, counters) may use `.default()`.
 
 ## Architecture Decisions
 

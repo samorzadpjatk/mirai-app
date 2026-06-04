@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { renderHook, waitFor } from "@testing-library/react-native";
 
 // Mock useFileDownload hook
-const mockDownload = jest.fn<() => Promise<{ uri: string }>>();
+const mockDownload = jest.fn<() => Promise<{ uri?: string } | null | undefined>>();
 
 jest.mock("~/hooks/files/useFileDownload", () => ({
   useFileDownload: jest.fn(() => ({
@@ -29,7 +29,7 @@ describe("usePartnerImageDownload", () => {
     const { result } = renderHook(() => usePartnerImageDownload(null));
 
     await waitFor(() => {
-      expect(result.current.imageUrl).toBeNull();
+      expect(result.current.imageUrl).toBe("");
     });
   });
 
@@ -64,7 +64,7 @@ describe("usePartnerImageDownload", () => {
     const { result } = renderHook(() => usePartnerImageDownload(undefined));
 
     await waitFor(() => {
-      expect(result.current.imageUrl).toBeNull();
+      expect(result.current.imageUrl).toBe("");
     });
   });
 
@@ -129,5 +129,70 @@ describe("calculatePartnerImageLoadingState", () => {
 
   it("should return false when neither is loading", () => {
     expect(calculatePartnerImageLoadingState(false, "idle")).toBe(false);
+  });
+});
+
+describe("usePartnerImageDownload error handling", () => {
+  it("should handle download error and return empty string", async () => {
+    mockDownload.mockRejectedValue(new Error("download failed"));
+
+    const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+      expect(result.current.isLoading).toBe(false);
+    });
+  });
+
+  it("should handle download returning null result", async () => {
+    mockDownload.mockResolvedValue(null);
+
+    const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+    });
+  });
+
+  it("should handle download returning undefined result", async () => {
+    mockDownload.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+    });
+  });
+
+  it("should handle download returning empty object", async () => {
+    mockDownload.mockResolvedValue({});
+
+    const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+    });
+  });
+
+  it("should handle component unmounted error gracefully", async () => {
+    mockDownload.mockRejectedValue(new Error("component unmounted"));
+
+    const { result } = renderHook(() => usePartnerImageDownload("partners/logo.jpg"));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+    });
+  });
+
+  it("should handle null logoPath and skip download", async () => {
+    mockDownload.mockResolvedValue({ uri: "file:///placeholder.jpg" });
+
+    const { result } = renderHook(() => usePartnerImageDownload(null));
+
+    await waitFor(() => {
+      expect(result.current.imageUrl).toBe("");
+    });
+
+    expect(mockDownload).not.toHaveBeenCalled();
   });
 });

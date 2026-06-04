@@ -1,14 +1,18 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { colors } from "~/styles";
+import { StyleSheet, View } from "react-native";
+import { borderRadius, colors, spacing } from "~/styles";
 
 export function GroupEditLoadingState() {
   return (
-    <View style={styles.container}>
-      <ActivityIndicator
-        testID="group-edit-loading-indicator"
-        size="large"
-        color={colors.primary}
-      />
+    <View testID="group-edit-loading-state" style={styles.container}>
+      {/* Form field placeholders */}
+      <View style={styles.fieldLabelPlaceholder} />
+      <View style={styles.fieldInputPlaceholder} />
+      <View style={styles.fieldLabelPlaceholder} />
+      <View style={styles.fieldInputPlaceholder} />
+      <View style={styles.fieldLabelPlaceholder} />
+      <View style={styles.fieldInputPlaceholder} />
+      {/* Button placeholder */}
+      <View style={styles.buttonPlaceholder} />
     </View>
   );
 }
@@ -17,7 +21,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  fieldLabelPlaceholder: {
+    height: 16,
+    width: "30%",
+    backgroundColor: colors.surfaceDark,
+    borderRadius: borderRadius.sm,
+  },
+  fieldInputPlaceholder: {
+    height: 48,
+    backgroundColor: colors.surfaceDark,
+    borderRadius: borderRadius.md,
+  },
+  buttonPlaceholder: {
+    height: 48,
+    backgroundColor: colors.surfaceDark,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.lg,
   },
 });

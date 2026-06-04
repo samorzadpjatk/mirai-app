@@ -1,7 +1,11 @@
 import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import React from "react";
 import { Text, View } from "react-native";
-import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
+import {
+  PhotoCaptureModal,
+  buildLensPresetOptions,
+  toLensPreset,
+} from "~/components/camera/PhotoCaptureModal";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 
 interface TakePictureOptions {
@@ -293,6 +297,100 @@ describe("PhotoCaptureModal", () => {
         expect(queryByText("Retake")).toBeNull();
         expect(getByText("camera")).toBeTruthy();
       });
+    });
+  });
+
+  describe("lens preset functions", () => {
+    it("toLensPreset should map ultrawide to 0.5x", () => {
+      expect(toLensPreset("ultrawide")).toBe("0.5x");
+      expect(toLensPreset("UltraWide")).toBe("0.5x");
+    });
+
+    it("toLensPreset should map telephoto to 2x", () => {
+      expect(toLensPreset("telephoto")).toBe("2x");
+      expect(toLensPreset("TelePhoto")).toBe("2x");
+    });
+
+    it("toLensPreset should map wide angles to 1x", () => {
+      expect(toLensPreset("wideangle")).toBe("1x");
+      expect(toLensPreset("dualwide")).toBe("1x");
+      expect(toLensPreset("triple")).toBe("1x");
+      expect(toLensPreset("dual")).toBe("1x");
+      expect(toLensPreset("truedepth")).toBe("1x");
+      expect(toLensPreset("front")).toBe("1x");
+      expect(toLensPreset("wide")).toBe("1x");
+    });
+
+    it("toLensPreset should return null for unknown lenses", () => {
+      expect(toLensPreset("macro")).toBeNull();
+      expect(toLensPreset("unknown")).toBeNull();
+    });
+
+    it("buildLensPresetOptions should build options from lenses", () => {
+      const lenses = ["ultrawide", "wideangle", "telephoto"];
+      const options = buildLensPresetOptions(lenses);
+      expect(options).toHaveLength(3);
+      expect(options[0]).toEqual({ label: "0.5x", lens: "ultrawide" });
+      expect(options[1]).toEqual({ label: "1x", lens: "wideangle" });
+      expect(options[2]).toEqual({ label: "2x", lens: "telephoto" });
+    });
+
+    it("buildLensPresetOptions should deduplicate by preset", () => {
+      const lenses = ["ultrawide", "ultrawide2", "wideangle", "wideangle2"];
+      const options = buildLensPresetOptions(lenses);
+      expect(options).toHaveLength(2);
+      expect(options[0]).toEqual({ label: "0.5x", lens: "ultrawide" });
+      expect(options[1]).toEqual({ label: "1x", lens: "wideangle" });
+    });
+
+    it("buildLensPresetOptions should filter unknown lenses", () => {
+      const lenses = ["ultrawide", "macro", "unknown"];
+      const options = buildLensPresetOptions(lenses);
+      expect(options).toHaveLength(1);
+      expect(options[0]).toEqual({ label: "0.5x", lens: "ultrawide" });
+    });
+
+    it("buildLensPresetOptions should return empty array for empty input", () => {
+      expect(buildLensPresetOptions([])).toEqual([]);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle capture when camera ref is null", async () => {
+      const { getByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
+      act(() => {
+        fireEvent.press(getByText("camera"));
+      });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+    });
+
+    it("should handle use photo when no photo is captured", async () => {
+      const { queryByText } = renderWithProviders(<PhotoCaptureModal {...defaultProps} />);
+      expect(queryByText("Use Photo")).toBeNull();
+    });
+
+    it("should handle isUsingPhoto state", async () => {
+      mockTakePictureAsync.mockResolvedValue({
+        uri: "file:///test/photo.jpg",
+        format: "jpeg",
+      });
+
+      const { getByText, queryByText } = renderWithProviders(
+        <PhotoCaptureModal {...defaultProps} isUsingPhoto={true} />,
+      );
+
+      act(() => {
+        fireEvent.press(getByText("camera"));
+      });
+
+      await waitFor(() => {
+        expect(getByText("Retake")).toBeTruthy();
+      });
+
+      expect(queryByText("Use Photo")).toBeNull();
+      expect(mockOnUsePhoto).not.toHaveBeenCalled();
     });
   });
 });

@@ -51,6 +51,9 @@ describe("Auth Store", () => {
         name: "John Doe",
         emailVerified: new Date(),
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: true,
       };
 
       authStore.getState().setUser(mockUser);
@@ -68,8 +71,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       authStore.getState().setUser(mockUser);
@@ -124,8 +130,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       const mockSession: SupabaseSession = {
@@ -230,8 +239,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       let authStateCallback:
@@ -398,8 +410,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       const mockSession: SupabaseSession = {
@@ -495,8 +510,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       const mockSession: SupabaseSession = {
@@ -565,8 +583,11 @@ describe("Auth Store", () => {
         firstName: "John",
         lastName: "Doe",
         name: "John Doe",
-        emailVerified: null,
+        emailVerified: undefined,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: false,
       };
 
       const mockSession: SupabaseSession = {
@@ -715,8 +736,11 @@ describe("Auth Store", () => {
           firstName: "John",
           lastName: "Doe",
           name: "John Doe",
-          emailVerified: null,
+          emailVerified: undefined,
           role,
+          hasName: true,
+          hasEmail: true,
+          isEmailVerified: false,
         };
         expect(user.role).toBe(role);
       }
@@ -733,8 +757,12 @@ describe("Auth Store", () => {
         name: "John Doe",
         emailVerified: verifiedDate,
         role: "USER",
+        hasName: true,
+        hasEmail: true,
+        isEmailVerified: true,
       };
       expect(user.emailVerified).toEqual(verifiedDate);
+      expect(user.isEmailVerified).toBe(true);
     });
   });
 

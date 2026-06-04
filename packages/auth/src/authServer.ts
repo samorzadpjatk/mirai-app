@@ -99,26 +99,29 @@ export function mapDatabaseUserToAuthUser(
     return null;
   }
 
-  const email = supabaseUser?.email ?? null;
+  const email = supabaseUser?.email ?? "";
   const emailVerified = supabaseUser?.email_confirmed_at
     ? new Date(supabaseUser.email_confirmed_at)
-    : null;
+    : undefined;
 
-  const displayName = formatDisplayName(
-    dbUser.firstName,
-    dbUser.lastName,
-    email?.split("@")[0] ?? null,
-  );
+  const displayName =
+    formatDisplayName(dbUser.firstName, dbUser.lastName, email?.split("@")[0] ?? null) ?? "";
+
+  const firstName = dbUser.firstName ?? "";
+  const lastName = dbUser.lastName ?? "";
 
   return {
     id: dbUser.id,
     authUserId: dbUser.authUserId,
     email,
-    firstName: dbUser.firstName ?? null,
-    lastName: dbUser.lastName ?? null,
+    firstName,
+    lastName,
     name: displayName,
     emailVerified,
     role: dbUser.role,
+    hasName: Boolean(firstName.trim() || lastName.trim()),
+    hasEmail: Boolean(email.trim()),
+    isEmailVerified: emailVerified != null,
   };
 }
 

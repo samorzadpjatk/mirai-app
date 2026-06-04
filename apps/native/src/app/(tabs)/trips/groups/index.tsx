@@ -25,7 +25,7 @@ export default function GroupsListScreen() {
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
-  const { isTripPast } = useTripDetails(tripId);
+  const { tripId: resolvedTripId, isTripPast } = useTripDetails(tripId);
   const {
     filteredGroups,
     isLoading,
@@ -38,7 +38,7 @@ export default function GroupsListScreen() {
     setSearchQuery,
   } = useGroups(tripId);
   const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
-    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" } }),
+    ...orpc.user.getMyWithGroup.queryOptions({ input: { tripId: resolvedTripId } }),
     enabled: !!tripId,
   });
   const groupsLoading = isLoading;

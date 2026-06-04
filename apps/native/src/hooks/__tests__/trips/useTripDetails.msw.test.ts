@@ -42,6 +42,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.isLoadingTrip).toBe(false);
     expect(result.current.isErrorTrip).toBe(false);
     expect(result.current.tripError).toBeNull();
+    expect(result.current.tripId).toBe("trip-1");
   });
 
   it("should return null when no tripId provided", async () => {
@@ -56,6 +57,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.trip).toBeNull();
     expect(result.current.isLoadingTrip).toBe(false);
     expect(result.current.isErrorTrip).toBe(false);
+    expect(result.current.tripId).toBe("");
   });
 
   it("should handle empty string tripId", async () => {
@@ -70,6 +72,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.trip).toBeNull();
     expect(result.current.isLoadingTrip).toBe(false);
     expect(result.current.isErrorTrip).toBe(false);
+    expect(result.current.tripId).toBe("");
   });
 
   it("should show loading states while fetching", async () => {
@@ -99,6 +102,7 @@ describe("useTripDetails (MSW)", () => {
 
     expect(result.current.isLoadingUser).toBe(false);
     expect(result.current.trip).toEqual(mockTrip);
+    expect(result.current.tripId).toBe("trip-loading");
   });
 
   it("should determine if trip is past", async () => {
@@ -125,6 +129,7 @@ describe("useTripDetails (MSW)", () => {
 
     expect(result.current.isTripPast).toBe(true);
     expect(result.current.trip?.id).toBe("trip-past");
+    expect(result.current.tripId).toBe("trip-past");
   });
 
   it("should determine if trip is not past (future trip)", async () => {
@@ -151,6 +156,7 @@ describe("useTripDetails (MSW)", () => {
 
     expect(result.current.isTripPast).toBe(false);
     expect(result.current.trip?.id).toBe("trip-future");
+    expect(result.current.tripId).toBe("trip-future");
   });
 
   it("should return current user data", async () => {
@@ -178,6 +184,7 @@ describe("useTripDetails (MSW)", () => {
 
     expect(result.current.currentUser).toEqual(mockUser);
     expect(result.current.isLoadingUser).toBe(false);
+    expect(result.current.tripId).toBe("trip-user");
   });
 
   it("should expose refetchTrip function", async () => {
@@ -203,6 +210,7 @@ describe("useTripDetails (MSW)", () => {
     });
 
     expect(typeof result.current.refetchTrip).toBe("function");
+    expect(result.current.tripId).toBe("trip-refetch");
   });
 
   it("should handle trip with minimal data", async () => {
@@ -231,6 +239,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.trip?.description).toBeNull();
     expect(result.current.trip?.backgroundImagePath).toBeNull();
     expect(result.current.trip?.groups).toEqual([]);
+    expect(result.current.tripId).toBe("trip-min");
   });
 
   it("should handle both APIs returning null", async () => {
@@ -249,6 +258,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.currentUser).toBeNull();
     expect(result.current.isLoadingUser).toBe(false);
     expect(result.current.isLoadingTrip).toBe(false);
+    expect(result.current.tripId).toBe("trip-null");
   });
 
   it("should handle trip with multiple groups", async () => {
@@ -280,6 +290,7 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.trip?.groups).toHaveLength(3);
     expect(result.current.trip?.groups[0]!.name).toBe("Group 1");
     expect(result.current.trip?.groups[2]!.name).toBe("Group 3");
+    expect(result.current.tripId).toBe("trip-multi");
   });
 
   it("should fall back to cached trip when API returns null", async () => {
@@ -310,5 +321,6 @@ describe("useTripDetails (MSW)", () => {
     });
 
     expect(result.current.trip).toEqual(cachedTrip);
+    expect(result.current.tripId).toBe("trip-cached");
   });
 });

@@ -8,7 +8,7 @@ import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { EmptyState, FormField, ThemedTextInput } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface OrganizerOption {
@@ -238,12 +238,23 @@ export default function AdminEditGroupScreen() {
                 </Text>
                 <Text style={styles.userOptionEmail}>{item.email}</Text>
               </View>
-              {selectedOrganizer?.id === item.id && (
+              {selectedOrganizer?.id === item.id ? (
                 <Ionicons name="checkmark" size={18} color={colors.primary} />
-              )}
+              ) : null}
             </TouchableOpacity>
           )}
           ItemSeparatorComponent={() => <View style={styles.userSeparator} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon="search"
+              title="No users found"
+              subtitle={
+                normalizedSearch
+                  ? "Try adjusting your search terms"
+                  : "No users available for this trip"
+              }
+            />
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           style={styles.usersList}

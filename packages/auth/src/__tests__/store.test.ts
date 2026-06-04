@@ -23,6 +23,9 @@ const mockUser: AuthUser = {
   name: "Test User",
   emailVerified: new Date("2024-01-01"),
   role: "USER",
+  hasName: true,
+  hasEmail: true,
+  isEmailVerified: true,
 };
 
 const mockSession: SupabaseSession = {

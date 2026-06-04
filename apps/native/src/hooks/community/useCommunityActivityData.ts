@@ -1,11 +1,11 @@
+import type { Activity } from "@mirai-app/orpc";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 
 interface UseCommunityActivityDataProps {
-  activities: CommunityFeedActivity[];
+  activities: Activity[];
 }
 
 export const useCommunityActivityData = ({ activities }: UseCommunityActivityDataProps) => {

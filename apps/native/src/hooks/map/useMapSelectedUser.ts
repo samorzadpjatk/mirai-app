@@ -14,7 +14,7 @@ export function useMapSelectedUser({
   sharingUserIds,
   updateSharing,
 }: UseMapSelectedUserArgs) {
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   const selectedUser = useMemo(
     () => users.find((u) => u.id === selectedUserId) ?? null,
@@ -27,7 +27,7 @@ export function useMapSelectedUser({
     sharingUserIds.includes(selectedUser.id);
 
   const selectUser = (user: UserLocation) => setSelectedUserId(user.id);
-  const deselect = () => setSelectedUserId(null);
+  const deselect = () => setSelectedUserId("");
 
   const stopSharing = async () => {
     if (!selectedUser) return;

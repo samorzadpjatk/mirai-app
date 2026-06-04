@@ -2,6 +2,14 @@ import { index, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
 import { users } from "./users";
 
+/**
+ * Operational telemetry table — NOT user-facing business data.
+ * Used for update rollout analysis and platform detection.
+ * Not part of the app's business data model.
+ *
+ * This table is populated by the mobileAppMiddleware in every request
+ * and is NOT consumed by the native app.
+ */
 export const userAgents = pgTable(
   "user_agents",
   {

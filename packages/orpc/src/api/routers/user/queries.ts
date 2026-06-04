@@ -34,12 +34,12 @@ export type UserContext = UserBaseContext & {
 
 export const getBanStatus = async (context: UserBaseContext) => {
   if (!context.accessToken) {
-    return { banned: false, bannedUntil: null, reason: null };
+    return { banned: false, bannedUntil: "", reason: "" };
   }
 
   const { data, error } = await context.supabase.auth.getUser(context.accessToken);
   if (error || !data.user) {
-    return { banned: false, bannedUntil: null, reason: null };
+    return { banned: false, bannedUntil: "", reason: "" };
   }
 
   const adminLookup = await context.supabase.auth.admin.getUserById(data.user.id);
@@ -47,7 +47,7 @@ export const getBanStatus = async (context: UserBaseContext) => {
     logger.warn(
       `[Auth] Failed to check ban status for ${data.user.id}: ${adminLookup.error.message}`,
     );
-    return { banned: false, bannedUntil: null, reason: null };
+    return { banned: false, bannedUntil: "", reason: "" };
   }
 
   const adminUser = adminLookup.data.user as SupabaseAdminUser | null;
@@ -85,7 +85,7 @@ export const getBanStatusByEmail = async (context: UserBaseContext, input: { ema
   }
 
   if (!authUserId) {
-    return { exists: false, banned: false, bannedUntil: null, reason: null };
+    return { exists: false, banned: false, bannedUntil: "", reason: "" };
   }
 
   const lookup = await context.supabase.auth.admin.getUserById(authUserId);

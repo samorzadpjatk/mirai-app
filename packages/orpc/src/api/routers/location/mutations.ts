@@ -8,8 +8,8 @@ import type { SharingUser } from "./types";
 import { assertShareableTargets, ensureUserInActiveTrip, mapUserWithAvatar } from "./utils";
 
 type LocationDataInput = {
-  latitude?: number | null;
-  longitude?: number | null;
+  latitude: number;
+  longitude: number;
   accuracy?: number | null;
   altitude?: number | null;
   altitudeAccuracy?: number | null;
@@ -24,7 +24,7 @@ export async function* updateLocationStream(context: LocationContext, input: Loc
       userId: context.dbUser.id,
       latitude: input.latitude,
       longitude: input.longitude,
-      accuracy: input.accuracy,
+      accuracy: input.accuracy ?? 0,
       altitude: input.altitude,
       altitudeAccuracy: input.altitudeAccuracy,
       heading: input.heading,
@@ -37,7 +37,7 @@ export async function* updateLocationStream(context: LocationContext, input: Loc
       set: {
         latitude: input.latitude,
         longitude: input.longitude,
-        accuracy: input.accuracy,
+        accuracy: input.accuracy ?? 0,
         altitude: input.altitude,
         altitudeAccuracy: input.altitudeAccuracy,
         heading: input.heading,
@@ -88,6 +88,8 @@ export const updateSharingSettings = async (
       userId: context.dbUser.id,
       isSharingLocation,
       timestamp: new Date(),
+      latitude: 0,
+      longitude: 0,
     })
     .onConflictDoUpdate({
       target: locations.userId,
@@ -147,7 +149,7 @@ export const updateLocation = async (context: LocationContext, input: LocationDa
       userId: context.dbUser.id,
       latitude: input.latitude,
       longitude: input.longitude,
-      accuracy: input.accuracy,
+      accuracy: input.accuracy ?? 0,
       altitude: input.altitude,
       altitudeAccuracy: input.altitudeAccuracy,
       heading: input.heading,
@@ -159,7 +161,7 @@ export const updateLocation = async (context: LocationContext, input: LocationDa
       set: {
         latitude: input.latitude,
         longitude: input.longitude,
-        accuracy: input.accuracy,
+        accuracy: input.accuracy ?? 0,
         altitude: input.altitude,
         altitudeAccuracy: input.altitudeAccuracy,
         heading: input.heading,
@@ -186,6 +188,8 @@ export const addUserToSharing = async (context: LocationContext, input: { userId
       userId: context.dbUser.id,
       timestamp: new Date(),
       isSharingLocation: true,
+      latitude: 0,
+      longitude: 0,
     })
     .onConflictDoUpdate({
       target: locations.userId,
@@ -380,6 +384,8 @@ export const acceptLocationSharingRequest = async (
         userId: request.senderId,
         timestamp: new Date(),
         isSharingLocation: true,
+        latitude: 0,
+        longitude: 0,
       })
       .onConflictDoUpdate({
         target: locations.userId,
@@ -406,6 +412,8 @@ export const acceptLocationSharingRequest = async (
         userId: request.receiverId,
         timestamp: new Date(),
         isSharingLocation: true,
+        latitude: 0,
+        longitude: 0,
       })
       .onConflictDoUpdate({
         target: locations.userId,

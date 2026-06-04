@@ -138,7 +138,11 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
             </View>
           </View>
 
+          {/* ListEmptyComponent not needed: this modal is guarded by the outer conditional
+              `if (!canOpenFullscreen(submissions.length)) return null;` which ensures
+              the FlatList only renders when there are submissions to display. */}
           <FlatList
+            testID="fullscreen-flatlist"
             ref={listRef}
             data={submissions}
             keyExtractor={(item) => item.submissionId}
