@@ -25,6 +25,7 @@ export const logger = pino(
           } else if (parsed.level >= 40) {
             console.warn(parsed.msg);
           } else {
+            console.info(parsed.msg);
           }
         },
       }

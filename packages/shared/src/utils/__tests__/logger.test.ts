@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const spies = vi.hoisted(() => ({
-  log: vi.spyOn(console, "log").mockImplementation(() => undefined),
+  info: vi.spyOn(console, "info").mockImplementation(() => undefined),
   warn: vi.spyOn(console, "warn").mockImplementation(() => undefined),
   error: vi.spyOn(console, "error").mockImplementation(() => undefined),
 }));
@@ -9,15 +9,15 @@ const spies = vi.hoisted(() => ({
 describe("logger", () => {
   describe("test environment", () => {
     beforeEach(() => {
-      spies.log.mockClear();
+      spies.info.mockClear();
       spies.warn.mockClear();
       spies.error.mockClear();
     });
 
-    it("logs info messages via console.log (level < 40 branch)", async () => {
+    it("logs info messages via console.info (level < 40 branch)", async () => {
       const { logger } = await import("../../utils/logger");
       logger.info("hello info");
-      expect(spies.log).toHaveBeenCalledWith("hello info");
+      expect(spies.info).toHaveBeenCalledWith("hello info");
     });
 
     it("logs warn messages via console.warn (level >= 40 branch)", async () => {
