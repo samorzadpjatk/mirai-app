@@ -1,5 +1,5 @@
 import { groups, tripParticipants, trips, users } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
+import type { DB, Role } from "@mirai-app/db";
 import type { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { vi } from "vitest";
 
@@ -133,12 +133,14 @@ export async function seedUser(
   authUserId = `auth-${id}`,
   firstName = "Test",
   lastName = "User",
+  role?: Role,
 ) {
   await db.insert(users).values({
     id,
     authUserId,
     firstName,
     lastName,
+    role,
     createdAt: new Date(),
     updatedAt: new Date(),
   });

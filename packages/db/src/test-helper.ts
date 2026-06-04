@@ -56,82 +56,9 @@ export async function createPgliteTestDb() {
  * Uses drizzle-kit's API to generate and apply the schema.
  */
 async function pushSchema(client: PGliteType) {
-  // Import drizzle-kit API dynamically to avoid issues
-  const { createRequire } = await import("node:module");
-  const require = createRequire(import.meta.url);
+  const { pushSchema: pushSchemaApi } = await import("drizzle-kit/api");
+  const db = drizzle(client, { schema });
 
-  try {
-    const { pushSchema: pushSchemaApi } = require("drizzle-kit/api");
-    const db = drizzle(client, { schema });
-
-    const { apply } = await pushSchemaApi(schema, db, undefined, undefined, undefined);
-    await apply();
-  } catch (error) {
-    console.warn("drizzle-kit pushSchema API failed, using manual schema push", error);
-    await applySchemaManually(client);
-  }
-}
-
-async function applySchemaManually(client: PGliteType) {
-  // This is a simplified approach for when drizzle-kit API is unavailable
-  // In production, we rely on drizzle-kit's generate and push
-  // For tests, we just need the tables to exist
-  const { getTableConfig } = await import("drizzle-orm/pg-core");
-
-  // Create tables for each schema definition
-  const tables = [
-    schema.users,
-    schema.trips,
-    schema.tripResources,
-    schema.tripInsurances,
-    schema.tripInsuranceSteps,
-    schema.tripParticipants,
-    schema.events,
-    schema.userEvents,
-    schema.groups,
-    schema.groupJoinRequests,
-    schema.challenges,
-    schema.challengeSubmissions,
-    schema.challengeVotes,
-    schema.submissionReports,
-    schema.activityFeeds,
-    schema.activityReactions,
-    schema.challengeActivities,
-    schema.rankChangeActivities,
-    schema.submissionActivities,
-    schema.userPosts,
-    schema.notifications,
-    schema.notificationPushes,
-    schema.notificationDeliveries,
-    schema.notificationSchedules,
-    schema.notificationScheduleExecutions,
-    schema.pushSubscriptions,
-    schema.locations,
-    schema.locationSharingRequests,
-    schema.locationShares,
-    schema.rewards,
-    schema.rewardPurchases,
-    schema.coinTransactions,
-    schema.sponsors,
-    schema.tripSponsors,
-    schema.userAgents,
-  ];
-
-  for (const table of tables) {
-    if (table) {
-      const config = getTableConfig(table);
-      const columns = config.columns
-        .map((col) => {
-          const type = col.getSQLType();
-          const notNull = col.notNull ? " NOT NULL" : "";
-          const defaultValue = col.hasDefault ? ` DEFAULT ${col.default}` : "";
-          const primaryKey = col.primary ? " PRIMARY KEY" : "";
-          return `${col.name} ${type}${notNull}${defaultValue}${primaryKey}`;
-        })
-        .join(", ");
-
-      const sql = `CREATE TABLE IF NOT EXISTS "${config.name}" (${columns})`;
-      await client.query(sql);
-    }
-  }
+  const { apply } = await pushSchemaApi(schema, db as any, undefined, undefined, undefined);
+  await apply();
 }
