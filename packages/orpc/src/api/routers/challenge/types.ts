@@ -2,28 +2,6 @@ import { z } from "zod";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";
 import { isValidHttpUrl } from "../../../utils/url-validation";
 
-export const challengeColumns = {
-  id: true,
-  tripId: true,
-  name: true,
-  description: true,
-  image: true,
-  submissionType: true,
-  scoringCategory: true,
-  basePoints: true,
-  firstPlacePoints: true,
-  secondPlacePoints: true,
-  thirdPlacePoints: true,
-  status: true,
-  startTime: true,
-  endTime: true,
-  votingStartTime: true,
-  votingEndTime: true,
-  autoApprove: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
 export const MAX_RECURRING_DAYS = 30;
 export const MAX_PEER_VOTING_DURATION_HOURS = 24 * 30;
 

@@ -75,7 +75,7 @@ export type ChallengeWithRelations = Challenge & {
   qrCodeValue: string | null;
 };
 
-export const challengeWithRelationsColumns = {
+const challengeWithRelationsColumns = {
   ...getTableColumns(challenges),
   dailyStartTime: challengeRecurrence.dailyStartTime,
   dailyEndTime: challengeRecurrence.dailyEndTime,

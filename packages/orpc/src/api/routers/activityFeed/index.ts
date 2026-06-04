@@ -342,11 +342,4 @@ export const activityFeedRouter = createORPCRouter({
   delete: adminProcedure.input(z.object({ activityId: z.string() })).handler(handleDeleteActivity),
 });
 
-export {
-  toClientActivity,
-  toClientChallengeActivity,
-  toClientChallengeSnippet,
-  toClientGroupSnippet,
-  toClientSubmissionActivity,
-  toClientSubmissionSnippet,
-} from "./utils";
+

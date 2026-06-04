@@ -37,8 +37,6 @@ export const toClientTripResource = <
   description: resource.description ?? "",
 });
 
-export type ClientTripResource = ReturnType<typeof toClientTripResource>;
-
 export const toClientTripInsurance = <
   T extends {
     hospitalName?: string | null;
