@@ -1,6 +1,11 @@
 "use client";
 
-import { type AuthStore, type AuthUser, type SupabaseSession, authStore } from "@mirai-app/shared";
+import {
+  type AuthStore,
+  type AuthUser,
+  type SupabaseSession,
+  authStore,
+} from "@mirai-app/shared/stores";
 import { useStore } from "zustand";
 
 /**
