@@ -193,6 +193,9 @@ const SUPPRESSED_PATTERNS = [
   /Error checking for updates/,
   /Error downloading update/,
   /\[Upload\] Failed to start upload/,
+  /\[MSW\] Error: intercepted a WebSocket connection without a matching event handler/,
+  /Read more: https:\/\/mswjs\.io\/docs\/websocket/,
+  /If you still wish to intercept this unhandled connection, please create an event handler for it\./,
 ];
 
 // Helper to check if a message should be suppressed
