@@ -28,7 +28,6 @@ module.exports = {
   },
   moduleNameMapper: {
     "^~/(.*)$": "<rootDir>/src/$1",
-    "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
     "^@mirai-app/supabase$": "<rootDir>/../../packages/supabase/src/index.ts",
     "^@mirai-app/auth$": "<rootDir>/../../packages/auth/src/index.ts",
     "^@mirai-app/db$": "<rootDir>/../../packages/db/src/index.ts",
