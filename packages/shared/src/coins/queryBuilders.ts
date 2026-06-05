@@ -1,4 +1,4 @@
-import { coinTransactions } from "@mirai-app/db";
+import { coinTransactions } from "@mirai-app/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 

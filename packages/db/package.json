@@ -9,6 +9,10 @@
       "import": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./schema": {
+      "import": "./src/schema/index.ts",
+      "default": "./src/schema/index.ts"
+    },
     "./test-helper": {
       "import": "./src/pglite.ts",
       "default": "./src/pglite.ts"

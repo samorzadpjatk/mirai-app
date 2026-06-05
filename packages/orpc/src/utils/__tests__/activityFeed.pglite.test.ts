@@ -1,7 +1,7 @@
 import {
   activityFeeds,
   challengeActivities,
-  challengeLocation,
+  challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
   challengeVotes,
@@ -132,7 +132,7 @@ async function seedChallenge(
     type: "DAILY",
   });
 
-  await testDb.db.insert(challengeLocation).values({
+  await testDb.db.insert(challengeLocationMatch).values({
     challengeId: id,
     targetLatitude: overrides.targetLatitude ?? 0,
     targetLongitude: overrides.targetLongitude ?? 0,

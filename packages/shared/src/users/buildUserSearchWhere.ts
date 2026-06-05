@@ -1,4 +1,4 @@
-import { groups, tripParticipants, users } from "@mirai-app/db";
+import { groups, tripParticipants, users } from "@mirai-app/db/schema";
 import { type SQL, and, eq, sql } from "drizzle-orm";
 
 export type UserSearchField =

@@ -1,4 +1,4 @@
-import type { Location as DbLocation } from "@mirai-app/db";
+import type { Location as DbLocation } from "@mirai-app/db/schema";
 
 /**
  * Expo-compliant location object type

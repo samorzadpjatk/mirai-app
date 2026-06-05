@@ -1,5 +1,5 @@
 import {
-  challengeLocation,
+  challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
   challenges,
@@ -100,7 +100,7 @@ describe("challengeSubmission router — PGLite transaction rollback", () => {
       type: "DAILY",
     });
 
-    await testDb.db.insert(challengeLocation).values({
+    await testDb.db.insert(challengeLocationMatch).values({
       challengeId: "challenge-1",
       targetLatitude: 0,
       targetLongitude: 0,
@@ -373,7 +373,7 @@ describe("challengeSubmission router — Drizzle ORM PGLite integration", () => 
       type: "DAILY",
     });
 
-    await testDb.db.insert(challengeLocation).values({
+    await testDb.db.insert(challengeLocationMatch).values({
       challengeId: "challenge-1",
       targetLatitude: 0,
       targetLongitude: 0,

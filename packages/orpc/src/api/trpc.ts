@@ -18,7 +18,7 @@ import {
   requireAuth,
   requireModerator,
 } from "@mirai-app/auth";
-import { type DB, createDb, userAgents } from "@mirai-app/db";
+import { type DB, createDb } from "@mirai-app/db";
 import { type SupabaseClient, createSupabaseClient } from "@mirai-app/supabase";
 import { logger } from "../utils/logger";
 
@@ -53,20 +53,6 @@ const getAccessToken = (
     }
   }
 
-  return null;
-};
-
-const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
-  if (!userAgent) return null;
-
-  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
-  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
-
-  // Android User Agent pattern: okhttp/4.12.0
-  const androidPattern = /^okhttp\/[\d.]+$/;
-
-  if (iosPattern.test(userAgent)) return "ios";
-  if (androidPattern.test(userAgent)) return "android";
   return null;
 };
 
@@ -134,45 +120,6 @@ export const createORPCContext = (opts: {
  */
 const base = os.$context<ORPCContext>();
 
-let _telemetryEnabled = false;
-
-export function enableUserAgentTelemetry(): void {
-  _telemetryEnabled = true;
-}
-
-// Global middleware for request telemetry
-const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
-  if (!_telemetryEnabled) {
-    return next();
-  }
-
-  const userAgent = context.headers.get("user-agent") ?? context.headers.get("User-Agent");
-
-  const platform = getPlatformFromUserAgent(userAgent);
-
-  // Log user agent for update rollout analysis
-  try {
-    if (userAgent && platform) {
-      // Log to database asynchronously (fire and forget)
-      void context.db
-        .insert(userAgents)
-        .values({
-          userAgent,
-          platform,
-          userId: null,
-          endpoint: path.join("/"),
-        })
-        .catch((error: unknown) => {
-          logger.error(error, "[UserAgent Logging] Failed to log user agent");
-        });
-    }
-  } catch (error) {
-    logger.error(error, "[UserAgent Logging] Unexpected error");
-  }
-
-  return next();
-});
-
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
  *
@@ -182,9 +129,8 @@ const mobileAppMiddleware = base.middleware(async ({ context, next, path }) => {
 
 /**
  * Base procedure
- * All procedures pass through shared telemetry middleware.
  */
-const baseProcedure = base.use(mobileAppMiddleware);
+const baseProcedure = base;
 
 /**
  * Public (unauthenticated) procedure
@@ -251,7 +197,7 @@ export const moderatorProcedure = baseProcedure.use(async ({ context, next }) =>
   }
 });
 
-export const mobileAppProcedure = base.use(mobileAppMiddleware);
+export const mobileAppProcedure = base;
 
 export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
   try {

@@ -132,6 +132,16 @@ Key rules:
 - **Nulls at the boundary**: Database nulls are normalized to defaults before reaching shared types, router outputs, or UI components. See [docs/conventions/null-safety.md](./docs/conventions/null-safety.md).
 - **No `.default()` for user data**: Database columns holding user-provided content (descriptions, titles, names) must be `.notNull()` **without** `.default()`. System fields (timestamps, booleans, counters) may use `.default()`.
 
+## Data Retention
+
+All data retention policies are documented in [docs/conventions/data-retention.md](./docs/conventions/data-retention.md). Key rules for agents:
+
+- **Application-level cleanup only**: Retention jobs are scheduled functions in `apps/backend-server`, never PostgreSQL triggers or DB-level cron.
+- **Financial data is permanent**: `coin_transactions` and `audit_logs` (cold storage) are never deleted. Hard-deleting financial rows is a bug.
+- **Soft-delete users**: When a user requests deletion, anonymize the `users` row (set `email = NULL`, `name = 'Deleted User'`, `deleted_at = NOW()`) instead of hard-deleting. Preserve the UUID for referential integrity in financial and audit tables.
+- **GDPR erasure bypasses retention schedules**: If a user requests deletion under GDPR Article 17, delete their data immediately regardless of the standard retention period. Financial data is exempt under Article 17(3)(b).
+- **Batch cleanup**: Delete or archive in batches of 1,000 rows with a 100ms sleep between batches. Use a stable cutoff time, not `NOW()` per row.
+
 ## Architecture Decisions
 
 **Verdict**: Do NOT introduce Effect, fp-ts, or similar FP libraries. See [Best Practices](./docs/conventions/best-practices.md) for full analysis.

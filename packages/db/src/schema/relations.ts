@@ -7,7 +7,8 @@ import {
   submissionActivities,
   userPosts,
 } from "./activities";
-import { challengeLocation } from "./challengeLocation";
+import { auditLogs } from "./auditLogs";
+import { challengeLocationMatch } from "./challengeLocationMatch";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
 import { challengeText } from "./challengeText";
@@ -28,8 +29,8 @@ import { tripResourceFiles } from "./tripResourceFiles";
 import { tripResourceIcons } from "./tripResourceIcons";
 import { tripResourceLinks } from "./tripResourceLinks";
 import { tripResourceTexts } from "./tripResourceTexts";
+import { tripSponsorDisplay } from "./tripSponsorDisplay";
 import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
-import { userAgents } from "./userAgents";
 import { users } from "./users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -88,6 +89,7 @@ export const tripsRelations = relations(trips, ({ one, many }) => ({
   activityFeed: many(activityFeeds),
   groupJoinRequests: many(groupJoinRequests),
   tripSponsors: many(tripSponsors),
+  tripSponsorDisplays: many(tripSponsorDisplay),
   tripInsurance: one(tripInsurances),
   groups: many(groups),
 }));
@@ -207,9 +209,9 @@ export const challengesRelations = relations(challenges, ({ one, many }) => ({
     fields: [challenges.id],
     references: [challengeRecurrence.challengeId],
   }),
-  location: one(challengeLocation, {
+  location: one(challengeLocationMatch, {
     fields: [challenges.id],
-    references: [challengeLocation.challengeId],
+    references: [challengeLocationMatch.challengeId],
   }),
   text: one(challengeText, {
     fields: [challenges.id],
@@ -228,9 +230,9 @@ export const challengeRecurrenceRelations = relations(challengeRecurrence, ({ on
   }),
 }));
 
-export const challengeLocationRelations = relations(challengeLocation, ({ one }) => ({
+export const challengeLocationMatchRelations = relations(challengeLocationMatch, ({ one }) => ({
   challenge: one(challenges, {
-    fields: [challengeLocation.challengeId],
+    fields: [challengeLocationMatch.challengeId],
     references: [challenges.id],
   }),
 }));
@@ -519,6 +521,7 @@ export const rewardPurchasesRelations = relations(rewardPurchases, ({ one }) => 
 
 export const sponsorsRelations = relations(sponsors, ({ many }) => ({
   tripSponsors: many(tripSponsors),
+  tripSponsorDisplays: many(tripSponsorDisplay),
 }));
 
 export const tripSponsorsRelations = relations(tripSponsors, ({ one }) => ({
@@ -532,9 +535,22 @@ export const tripSponsorsRelations = relations(tripSponsors, ({ one }) => ({
   }),
 }));
 
-export const userAgentsRelations = relations(userAgents, ({ one }) => ({
-  user: one(users, {
-    fields: [userAgents.userId],
+export const tripSponsorDisplayRelations = relations(tripSponsorDisplay, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tripSponsorDisplay.tripId],
+    references: [trips.id],
+  }),
+  sponsor: one(sponsors, {
+    fields: [tripSponsorDisplay.sponsorId],
+    references: [sponsors.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  performedBy: one(users, {
+    fields: [auditLogs.performedById],
     references: [users.id],
   }),
 }));
+
+// userAgentsRelations removed - telemetry table dropped

@@ -68,5 +68,8 @@
       ],
       "enabled": true
     }
-  }
+  },
+  "plugin": [
+    "context-mode"
+  ]
 }

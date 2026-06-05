@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgTable,
@@ -12,27 +14,31 @@ import { randomUUID } from "../utils/uuid";
 import { trips } from "./trips";
 import { users } from "./users";
 
-export const groups = pgTable("groups", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => randomUUID()),
-  tripId: varchar("trip_id", { length: 36 })
-    .notNull()
-    .references(() => trips.id),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  image: text("image"),
-  isDeleted: boolean("is_deleted").default(false).notNull(),
-  organizerId: varchar("organizer_id", { length: 36 })
-    .notNull()
-    .references(() => users.id),
-  code: text("code").notNull().unique(),
-  coins: integer("coins").default(0).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const groups = pgTable(
+  "groups",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    tripId: varchar("trip_id", { length: 36 })
+      .notNull()
+      .references(() => trips.id),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    image: text("image"),
+    isDeleted: boolean("is_deleted").default(false).notNull(),
+    organizerId: varchar("organizer_id", { length: 36 })
+      .notNull()
+      .references(() => users.id),
+    code: text("code").notNull().unique(),
+    coins: integer("coins").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [check("groups_coins_non_negative", sql`${t.coins} >= 0`)],
+);
 
 export const groupJoinRequests = pgTable(
   "group_join_requests",

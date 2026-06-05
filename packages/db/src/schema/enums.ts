@@ -41,3 +41,10 @@ export const rewardPurchaseStatusEnum = pgEnum("reward_purchase_status", [
   "CANCELLED",
   "DELIVERED",
 ]);
+export const tripRoleEnum = pgEnum("trip_role", [
+  "ORGANIZER",
+  "ADMIN",
+  "MEMBER",
+  "COORDINATOR",
+  "SPONSOR",
+]);

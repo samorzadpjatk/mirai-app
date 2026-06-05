@@ -5,7 +5,6 @@ import {
   requireAuth,
   requireModerator,
 } from "@mirai-app/auth";
-import { userAgents } from "@mirai-app/db";
 import { createRouterClient } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
 import { env } from "bun";
@@ -16,7 +15,6 @@ import {
   adminProcedure,
   createORPCContext,
   createORPCRouter,
-  enableUserAgentTelemetry,
   moderatorProcedure,
   protectedProcedure,
   publicProcedure,
@@ -174,149 +172,6 @@ describe("publicProcedure with telemetry disabled", () => {
     const ctx = createTestContext();
     const caller = createRouterClient(router, { context: ctx });
     await expect(caller.test()).resolves.toBe("ok");
-  });
-});
-
-describe("getPlatformFromUserAgent via telemetry middleware", () => {
-  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
-
-  beforeAll(async () => {
-    testDb = await createPgliteTestDb();
-    enableUserAgentTelemetry();
-  });
-
-  beforeEach(async () => {
-    await testDb.reset();
-  });
-
-  afterAll(async () => {
-    await testDb.cleanup();
-  });
-
-  const createTestRouter = () =>
-    createORPCRouter({
-      test: publicProcedure.handler(() => "ok"),
-    });
-
-  const createTestContext = (headers: Headers): TRPCContext => ({
-    db: testDb.db,
-    supabase: createMockSupabase() as TRPCContext["supabase"],
-    headers,
-    accessToken: null,
-  });
-
-  it("should detect iOS user agent", async () => {
-    const router = createTestRouter();
-    const ctx = createTestContext(
-      new Headers({
-        "user-agent": "MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0",
-      }),
-    );
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    // Wait for fire-and-forget insert to complete
-    await new Promise((r) => setTimeout(r, 100));
-
-    const rows = await testDb.db.select().from(userAgents);
-    expect(rows.length).toBe(1);
-    expect(rows[0].userAgent).toBe("MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0");
-    expect(rows[0].platform).toBe("ios");
-  });
-
-  it("should detect Android user agent", async () => {
-    const router = createTestRouter();
-    const ctx = createTestContext(
-      new Headers({
-        "user-agent": "okhttp/4.12.0",
-      }),
-    );
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    // Wait for fire-and-forget insert to complete
-    await new Promise((r) => setTimeout(r, 100));
-
-    const rows = await testDb.db.select().from(userAgents);
-    expect(rows.length).toBe(1);
-    expect(rows[0].userAgent).toBe("okhttp/4.12.0");
-    expect(rows[0].platform).toBe("android");
-  });
-
-  it("should not log for unknown user agent", async () => {
-    const router = createTestRouter();
-    const ctx = createTestContext(
-      new Headers({
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-      }),
-    );
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    // Wait for any potential fire-and-forget insert to complete
-    await new Promise((r) => setTimeout(r, 100));
-
-    const rows = await testDb.db.select().from(userAgents);
-    expect(rows.length).toBe(0);
-  });
-
-  it("should handle null user agent", async () => {
-    const router = createTestRouter();
-    const ctx = createTestContext(new Headers());
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    // Wait for any potential fire-and-forget insert to complete
-    await new Promise((r) => setTimeout(r, 100));
-
-    const rows = await testDb.db.select().from(userAgents);
-    expect(rows.length).toBe(0);
-  });
-
-  it("should handle db insert rejection gracefully", async () => {
-    const router = createTestRouter();
-    const mockDb = {
-      ...testDb.db,
-      insert: vi.fn().mockReturnValue({
-        values: vi.fn().mockRejectedValue(new Error("db error")),
-      }),
-    } as TRPCContext["db"];
-    const ctx = createTestContext(
-      new Headers({
-        "user-agent": "MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0",
-      }),
-    );
-    ctx.db = mockDb;
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    await new Promise((r) => setTimeout(r, 100));
-  });
-
-  it("should handle synchronous db error", async () => {
-    const router = createTestRouter();
-    const mockDb = {
-      ...testDb.db,
-      insert: vi.fn().mockImplementation(() => {
-        throw new Error("sync error");
-      }),
-    } as TRPCContext["db"];
-    const ctx = createTestContext(
-      new Headers({
-        "user-agent": "MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0",
-      }),
-    );
-    ctx.db = mockDb;
-
-    const caller = createRouterClient(router, { context: ctx });
-    await caller.test();
-
-    await new Promise((r) => setTimeout(r, 100));
   });
 });
 

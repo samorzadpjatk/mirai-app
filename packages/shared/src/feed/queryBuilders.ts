@@ -1,4 +1,4 @@
-import { activityFeeds } from "@mirai-app/db";
+import { activityFeeds } from "@mirai-app/db/schema";
 import { and, eq, lt, or } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 

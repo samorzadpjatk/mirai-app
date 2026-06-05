@@ -1,7 +1,7 @@
 import {
   type Challenge,
   type DB,
-  challengeLocation,
+  challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
   challengeText,
@@ -81,8 +81,8 @@ const challengeWithRelationsColumns = {
   dailyEndTime: challengeRecurrence.dailyEndTime,
   isRecurring: challengeRecurrence.isRecurring,
   recurringDays: challengeRecurrence.recurringDays,
-  targetLatitude: challengeLocation.targetLatitude,
-  targetLongitude: challengeLocation.targetLongitude,
+  targetLatitude: challengeLocationMatch.targetLatitude,
+  targetLongitude: challengeLocationMatch.targetLongitude,
   textExpectedPhrase: challengeText.expectedPhrase,
   qrCodeValue: challengeQrCode.expectedValue,
 };
@@ -98,7 +98,7 @@ export const fetchChallengesWithRelations = async (
     .select(challengeWithRelationsColumns)
     .from(challenges)
     .leftJoin(challengeRecurrence, eq(challenges.id, challengeRecurrence.challengeId))
-    .leftJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
+    .leftJoin(challengeLocationMatch, eq(challenges.id, challengeLocationMatch.challengeId))
     .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
     .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
     .where(where)

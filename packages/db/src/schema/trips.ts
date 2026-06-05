@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   pgTable,
@@ -8,23 +10,28 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
+import { tripRoleEnum } from "./enums";
 import { groups } from "./groups";
 import { users } from "./users";
 
-export const trips = pgTable("trips", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => randomUUID()),
-  name: text("name").notNull(),
-  description: text("description").notNull(),
-  startDate: timestamp("start_date", { withTimezone: true }).notNull(),
-  endDate: timestamp("end_date", { withTimezone: true }).notNull(),
-  backgroundImagePath: text("background_image_path"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const trips = pgTable(
+  "trips",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+    endDate: timestamp("end_date", { withTimezone: true }).notNull(),
+    backgroundImagePath: text("background_image_path"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [check("trips_dates_valid", sql`${t.endDate} > ${t.startDate}`)],
+);
 
 export const tripInsurances = pgTable("trip_insurances", {
   id: varchar("id", { length: 36 })
@@ -89,7 +96,7 @@ export const tripParticipants = pgTable(
     groupId: varchar("group_id", { length: 36 }).references(() => groups.id),
     wristNumber: text("wrist_number"),
     houseNumber: text("house_number"),
-    role: text("role").default("MEMBER").notNull(),
+    role: tripRoleEnum("role").default("MEMBER").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())

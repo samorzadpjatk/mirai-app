@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   pgTable,
   primaryKey,
@@ -12,27 +14,34 @@ import { randomUUID } from "../utils/uuid";
 import { locationSharingRequestStatusEnum } from "./enums";
 import { users } from "./users";
 
-export const locations = pgTable("locations", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => randomUUID()),
-  userId: varchar("user_id", { length: 36 })
-    .notNull()
-    .unique()
-    .references(() => users.id),
-  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
-  isSharingLocation: boolean("is_sharing_location").default(false).notNull(),
-  accuracy: real("accuracy").default(0).notNull(),
-  altitude: real("altitude"),
-  altitudeAccuracy: real("altitude_accuracy"),
-  heading: real("heading"),
-  latitude: real("latitude").notNull(),
-  longitude: real("longitude").notNull(),
-  speed: real("speed"),
-  lastInactivityNotification: timestamp("last_inactivity_notification", {
-    withTimezone: true,
-  }),
-});
+export const locations = pgTable(
+  "locations",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .unique()
+      .references(() => users.id),
+    timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
+    isSharingLocation: boolean("is_sharing_location").default(false).notNull(),
+    accuracy: real("accuracy").default(0).notNull(),
+    altitude: real("altitude"),
+    altitudeAccuracy: real("altitude_accuracy"),
+    heading: real("heading"),
+    latitude: real("latitude").notNull(),
+    longitude: real("longitude").notNull(),
+    speed: real("speed"),
+    lastInactivityNotification: timestamp("last_inactivity_notification", {
+      withTimezone: true,
+    }),
+  },
+  (t) => [
+    check("locations_latitude_valid", sql`${t.latitude} BETWEEN -90 AND 90`),
+    check("locations_longitude_valid", sql`${t.longitude} BETWEEN -180 AND 180`),
+  ],
+);
 
 export const locationSharingRequests = pgTable(
   "location_sharing_requests",

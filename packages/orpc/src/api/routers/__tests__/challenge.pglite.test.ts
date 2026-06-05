@@ -1,7 +1,7 @@
 import {
   activityFeeds,
   challengeActivities,
-  challengeLocation,
+  challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
   challenges,
@@ -106,7 +106,7 @@ async function seedChallenge(
     type: "DAILY",
   });
 
-  await testDb.db.insert(challengeLocation).values({
+  await testDb.db.insert(challengeLocationMatch).values({
     challengeId: id,
     targetLatitude: overrides.targetLatitude ?? 0,
     targetLongitude: overrides.targetLongitude ?? 0,
@@ -149,7 +149,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             type: "DAILY",
           });
 
-          await tx.insert(challengeLocation).values({
+          await tx.insert(challengeLocationMatch).values({
             challengeId: "challenge-1",
             targetLatitude: 0,
             targetLongitude: 0,
@@ -230,7 +230,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             type: "DAILY",
           });
 
-          await tx.insert(challengeLocation).values({
+          await tx.insert(challengeLocationMatch).values({
             challengeId: "challenge-template-1",
             targetLatitude: 0,
             targetLongitude: 0,
@@ -261,7 +261,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             type: "DAILY",
           });
 
-          await tx.insert(challengeLocation).values({
+          await tx.insert(challengeLocationMatch).values({
             challengeId: "challenge-instance-1",
             targetLatitude: 0,
             targetLongitude: 0,
@@ -409,7 +409,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             type: "DAILY",
           });
 
-          await tx.insert(challengeLocation).values({
+          await tx.insert(challengeLocationMatch).values({
             challengeId: "challenge-instance-1",
             targetLatitude: 0,
             targetLongitude: 0,
@@ -637,7 +637,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
         type: "DAILY",
       });
 
-      await tx.insert(challengeLocation).values({
+      await tx.insert(challengeLocationMatch).values({
         challengeId: "challenge-1",
         targetLatitude: 0,
         targetLongitude: 0,

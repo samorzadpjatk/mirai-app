@@ -1,5 +1,5 @@
-import type { Sponsor, TripSponsor } from "@mirai-app/db";
-import { sponsors, tripSponsors } from "@mirai-app/db";
+import type { Sponsor, TripSponsor, TripSponsorDisplay } from "@mirai-app/db";
+import { sponsors, tripSponsorDisplay, tripSponsors } from "@mirai-app/db";
 import { logger } from "@mirai-app/shared/utils";
 import yaml from "yaml";
 import { db } from "./config/db";
@@ -48,9 +48,6 @@ export const seedSponsors = async (
         name: sponsorConfig.name,
         description: sponsorConfig.description,
         logoPath: sponsorConfig.logoPath,
-        height: sponsorConfig.height ?? 0,
-        offsetX: sponsorConfig.offsetX ?? 0,
-        offsetY: sponsorConfig.offsetY ?? 0,
         isActive: true,
       };
 
@@ -83,6 +80,26 @@ export const seedSponsors = async (
         });
 
       logger.info(`✓ Associated sponsor ${sponsorConfig.name} with trip`);
+    }
+
+    for (const sponsorConfig of sponsorConfigs) {
+      const displayData: Omit<TripSponsorDisplay, "id"> = {
+        tripId,
+        sponsorId: sponsorConfig.id,
+        height: sponsorConfig.height ?? 0,
+        offsetX: sponsorConfig.offsetX ?? 0,
+        offsetY: sponsorConfig.offsetY ?? 0,
+      };
+
+      await db
+        .insert(tripSponsorDisplay)
+        .values(displayData)
+        .onConflictDoUpdate({
+          target: [tripSponsorDisplay.tripId, tripSponsorDisplay.sponsorId],
+          set: displayData,
+        });
+
+      logger.info(`✓ Seeded sponsor display for ${sponsorConfig.name}`);
     }
 
     logger.info("✓ Sponsors seeding completed");

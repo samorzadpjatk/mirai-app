@@ -1,6 +1,6 @@
 import {
   type DB,
-  challengeLocation,
+  challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
   challengeSubmissions,
@@ -155,7 +155,7 @@ export const createChallenge = async (
       ...recurrenceValues,
     });
 
-    await tx.insert(challengeLocation).values({
+    await tx.insert(challengeLocationMatch).values({
       challengeId: createdChallenge.id,
       ...locationValues,
     });
@@ -459,10 +459,10 @@ export const updateChallenge = async (
     };
 
     await tx
-      .insert(challengeLocation)
+      .insert(challengeLocationMatch)
       .values({ challengeId: updatedChallenge.id, ...locationValues })
       .onConflictDoUpdate({
-        target: challengeLocation.challengeId,
+        target: challengeLocationMatch.challengeId,
         set: locationValues,
       });
 

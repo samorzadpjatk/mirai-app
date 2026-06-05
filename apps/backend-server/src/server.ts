@@ -1,4 +1,4 @@
-import { appRouter, enableUserAgentTelemetry, logger, serviceRouter } from "@mirai-app/orpc";
+import { appRouter, logger, serviceRouter } from "@mirai-app/orpc";
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { Hono } from "hono";
@@ -21,7 +21,6 @@ export interface ServerOptions {
 }
 
 export function createServer(opts: ServerOptions) {
-  enableUserAgentTelemetry();
   const dev = opts.dev ?? true;
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";

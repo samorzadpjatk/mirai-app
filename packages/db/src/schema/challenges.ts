@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgTable,
@@ -50,7 +52,10 @@ export const challenges = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (t) => [index("challenges_trip_id_status_idx").on(t.tripId, t.status)],
+  (t) => [
+    index("challenges_trip_id_status_idx").on(t.tripId, t.status),
+    check("challenges_time_valid", sql`${t.endTime} > ${t.startTime} OR ${t.endTime} IS NULL`),
+  ],
 );
 
 export const challengeSubmissions = pgTable(
@@ -88,6 +93,8 @@ export const challengeSubmissions = pgTable(
     uniqueIndex("challenge_submissions_challenge_id_group_id_unique").on(t.challengeId, t.groupId),
     index("challenge_submissions_challenge_id_status_idx").on(t.challengeId, t.status),
     index("challenge_submissions_group_id_idx").on(t.groupId),
+    check("challenge_submissions_awarded_points_non_negative", sql`${t.awardedPoints} >= 0`),
+    check("challenge_submissions_bonus_points_non_negative", sql`${t.bonusPoints} >= 0`),
   ],
 );
 
@@ -119,6 +126,8 @@ export const challengeVotes = pgTable(
     ),
     index("challenge_votes_challenge_id_idx").on(t.challengeId),
     index("challenge_votes_submission_id_idx").on(t.submissionId),
+    check("challenge_votes_vote_position_positive", sql`${t.votePosition} > 0`),
+    check("challenge_votes_vote_points_positive", sql`${t.votePoints} > 0`),
   ],
 );
 
