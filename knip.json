@@ -22,7 +22,8 @@
       "project": ["src/**/*.ts"]
     },
     "packages/orpc": {
-      "project": ["src/**/*.ts", "src/**/*.tsx"]
+      "project": ["src/**/*.ts", "src/**/*.tsx"],
+      "ignoreDependencies": ["pino"]
     },
     "packages/shared": {
       "project": ["src/**/*.ts"]
