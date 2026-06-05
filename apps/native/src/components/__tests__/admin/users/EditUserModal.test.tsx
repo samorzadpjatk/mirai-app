@@ -6,7 +6,10 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 jest.mock("~/components/common/ui/DateTimePickerModal", () => {
   const { Pressable, Text } = require("react-native");
   return {
-    DateTimePickerModal: ({ onConfirm, visible }: any) =>
+    DateTimePickerModal: ({
+      onConfirm,
+      visible,
+    }: { onConfirm?: (date: Date) => void; visible?: boolean }) =>
       visible ? (
         <Pressable testID="date-picker-confirm" onPress={() => onConfirm?.(new Date("2099-01-01"))}>
           <Text>Confirm Date</Text>
@@ -18,14 +21,22 @@ jest.mock("~/components/common/ui/DateTimePickerModal", () => {
 jest.mock("~/components/admin/AdminModal", () => {
   const { View, TouchableOpacity, Text } = require("react-native");
   return {
-    AdminModal: ({ children, actions, visible }: any) =>
+    AdminModal: ({
+      children,
+      actions,
+      visible,
+    }: { children?: React.ReactNode; actions?: React.ReactNode; visible?: boolean }) =>
       visible ? (
         <View testID="admin-modal">
           {children}
           <View testID="modal-actions">{actions}</View>
         </View>
       ) : null,
-    AdminModalButton: ({ title, onPress, disabled }: any) => (
+    AdminModalButton: ({
+      title,
+      onPress,
+      disabled,
+    }: { title?: string; onPress?: () => void; disabled?: boolean }) => (
       <TouchableOpacity testID={`modal-button-${title}`} onPress={onPress} disabled={disabled}>
         <Text>{title}</Text>
       </TouchableOpacity>

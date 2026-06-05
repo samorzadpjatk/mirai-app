@@ -1,3 +1,6 @@
+import type { Context } from "@orpc/server";
+import type { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+import type { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as BunServerModule from "../bun-server";
 
@@ -54,6 +57,14 @@ function mockBunServe(serveSpy: ReturnType<typeof vi.fn>) {
   Bun.serve = serveSpy;
 }
 
+function mockHono() {
+  return { fetch: vi.fn() } as unknown as Hono;
+}
+
+function mockWsHandler() {
+  return { message: vi.fn(), close: vi.fn() } as unknown as BunWsRPCHandler<Context>;
+}
+
 function getServeOptions(serveSpy: ReturnType<typeof vi.fn>) {
   return serveSpy.mock.calls[0]![0] as {
     fetch: (
@@ -72,9 +83,15 @@ describe("createBunServer", () => {
     const serveSpy = vi.fn(() => ({ stop: vi.fn() }));
     mockBunServe(serveSpy);
 
-    const mockApp = { fetch: vi.fn(() => new Response("OK")) };
-    const mockWsHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
-    const mockServiceHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
+    const mockApp = { fetch: vi.fn(() => new Response("OK")) } as unknown as Hono;
+    const mockWsHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
+    const mockServiceHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
 
     const { start, stop } = createBunServer({
       port: 3005,
@@ -115,9 +132,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/api/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -134,9 +151,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn(() => new Response("OK")) },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -160,9 +177,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn(() => new Response("OK")) },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -186,9 +203,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn(() => new Response("OK")) },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: { fetch: vi.fn(() => new Response("OK")) } as unknown as Hono,
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -214,9 +231,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -244,15 +261,21 @@ describe("createBunServer", () => {
     const serveSpy = vi.fn(() => ({ stop: vi.fn() }));
     mockBunServe(serveSpy);
 
-    const mockWsHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
-    const mockServiceHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
+    const mockWsHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
+    const mockServiceHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
 
     const { start } = createBunServer({
       port: 3042,
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
+      app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
     });
@@ -285,15 +308,21 @@ describe("createBunServer", () => {
     const serveSpy = vi.fn(() => ({ stop: vi.fn() }));
     mockBunServe(serveSpy);
 
-    const mockWsHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
-    const mockServiceHandler = { message: vi.fn().mockResolvedValue(undefined), close: vi.fn() };
+    const mockWsHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
+    const mockServiceHandler = {
+      message: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
 
     const { start } = createBunServer({
       port: 3046,
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
+      app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
     });
@@ -326,15 +355,21 @@ describe("createBunServer", () => {
     const serveSpy = vi.fn(() => ({ stop: vi.fn() }));
     mockBunServe(serveSpy);
 
-    const mockWsHandler = { message: vi.fn(), close: vi.fn() };
-    const mockServiceHandler = { message: vi.fn(), close: vi.fn() };
+    const mockWsHandler = {
+      message: vi.fn(),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
+    const mockServiceHandler = {
+      message: vi.fn(),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
 
     const { start } = createBunServer({
       port: 3047,
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
+      app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
     });
@@ -358,15 +393,21 @@ describe("createBunServer", () => {
     const serveSpy = vi.fn(() => ({ stop: vi.fn() }));
     mockBunServe(serveSpy);
 
-    const mockWsHandler = { message: vi.fn(), close: vi.fn() };
-    const mockServiceHandler = { message: vi.fn(), close: vi.fn() };
+    const mockWsHandler = {
+      message: vi.fn(),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
+    const mockServiceHandler = {
+      message: vi.fn(),
+      close: vi.fn(),
+    } as unknown as BunWsRPCHandler<Context>;
 
     const { start } = createBunServer({
       port: 3048,
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
+      app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
     });
@@ -395,9 +436,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();
@@ -433,9 +474,9 @@ describe("createBunServer", () => {
       hostname: "127.0.0.1",
       prefix: "/trpc",
       servicePrefix: "/internal/trpc",
-      app: { fetch: vi.fn() },
-      wsRpcHandler: { message: vi.fn(), close: vi.fn() },
-      serviceWsRpcHandler: { message: vi.fn(), close: vi.fn() },
+      app: mockHono(),
+      wsRpcHandler: mockWsHandler(),
+      serviceWsRpcHandler: mockWsHandler(),
     });
 
     start();

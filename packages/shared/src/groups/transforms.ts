@@ -87,9 +87,18 @@ export function buildLeaveResult(
   };
 }
 
-export function toGroupDetail<
-  TGroup extends { organizer?: any | null; participants: Array<{ user: any } & any> },
->(
+interface GroupParticipant {
+  user: unknown;
+  [key: string]: unknown;
+}
+
+interface GroupWithOrganizer {
+  organizer?: unknown | null;
+  participants: GroupParticipant[];
+  [key: string]: unknown;
+}
+
+export function toGroupDetail<TGroup extends GroupWithOrganizer>(
   group: TGroup,
   emailMap: Map<string, string | null>,
   imageUrl: string | null | undefined,
@@ -98,8 +107,8 @@ export function toGroupDetail<
 ): Omit<TGroup, "organizer" | "participants"> & {
   _count: { participants: number };
   image: string | null | undefined;
-  organizer: any | null;
-  participants: any[];
+  organizer: unknown | null;
+  participants: Array<GroupParticipant & { user: unknown }>;
   approvedSubmissions: ApprovedSubmissionOutput[];
 } {
   const { organizer, participants, ...rest } = group;
@@ -108,10 +117,12 @@ export function toGroupDetail<
     ...rest,
     _count: { participants: participantCount },
     image: imageUrl,
-    organizer: organizer ? toUserWithEmail(organizer, emailMap) : null,
+    organizer: organizer
+      ? toUserWithEmail(organizer as { authUserId?: string | null }, emailMap)
+      : null,
     participants: participants.map((p) => ({
       ...p,
-      user: toUserWithEmail(p.user, emailMap),
+      user: toUserWithEmail(p.user as { authUserId?: string | null }, emailMap),
     })),
     approvedSubmissions,
   };

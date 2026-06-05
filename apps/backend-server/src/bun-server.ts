@@ -1,4 +1,7 @@
 import { createORPCContext, logger } from "@mirai-app/orpc";
+import type { Context } from "@orpc/server";
+import type { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+import type { Hono } from "hono";
 import { getWsEnvConfig, parseWsAuthMessage } from "./utils";
 
 export interface BunServerOptions {
@@ -6,9 +9,9 @@ export interface BunServerOptions {
   hostname: string;
   prefix: string;
   servicePrefix: string;
-  app: any;
-  wsRpcHandler: any;
-  serviceWsRpcHandler: any;
+  app: Hono;
+  wsRpcHandler: BunWsRPCHandler<Context>;
+  serviceWsRpcHandler: BunWsRPCHandler<Context>;
 }
 
 export function createBunServer(opts: BunServerOptions) {

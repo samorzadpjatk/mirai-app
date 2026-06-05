@@ -22,14 +22,16 @@ vi.mock("@orpc/server", () => ({
       this.code = code;
     }
   },
-  onError: (fn: any) => async (ctx: any) => {
-    try {
-      return await ctx.next();
-    } catch (error) {
-      await fn(error, ctx);
-      throw error;
-    }
-  },
+  onError:
+    (fn: (error: unknown, ctx: { next: () => Promise<unknown> }) => Promise<unknown>) =>
+    async (ctx: { next: () => Promise<unknown> }) => {
+      try {
+        return await ctx.next();
+      } catch (error) {
+        await fn(error, ctx);
+        throw error;
+      }
+    },
 }));
 
 vi.mock("@orpc/server/bun-ws", () => ({

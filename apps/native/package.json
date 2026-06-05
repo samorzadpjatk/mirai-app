@@ -29,7 +29,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "jest --onlyChanged --coverage --maxWorkers=50%",
+    "test": "jest --onlyChanged --maxWorkers=50%",
     "test:ci": "jest --ci --coverage --maxWorkers=50%",
     "test:watch": "jest --watch --maxWorkers=50%",
     "clean": "rm -rf .expo .nx node_modules dist coverage"

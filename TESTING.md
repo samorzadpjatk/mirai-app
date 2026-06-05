@@ -744,7 +744,7 @@ global.window = {
     getItem: vi.fn(),
     setItem: vi.fn(),
   },
-} as any;
+} as unknown as Window & typeof globalThis;
 ```
 
 #### Jest tests fail with "Unexpected token export"

@@ -10,7 +10,8 @@ import {
 } from "~/stores/map/mapOverlayStore";
 
 describe("buildMapOverlayHandlers", () => {
-  const mockFn = <T extends (...args: any[]) => any>() => jest.fn<T>();
+  const mockFn = <T extends (...args: any[]) => any>() =>
+    jest.fn() as unknown as jest.MockedFunction<T>;
 
   const baseUser = (overrides?: Partial<UserLocation>): UserLocation => ({
     id: "user-1",

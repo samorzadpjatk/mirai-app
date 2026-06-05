@@ -9,10 +9,7 @@ import { setupServer } from "msw/node";
  * @param path - Router path segments, e.g. ["trip", "getAll"]
  * @param resolver - Function that receives the deserialized input and returns output
  */
-export function createORPCHandler(
-  path: string[],
-  resolver: (input: any) => unknown | Promise<unknown>,
-) {
+export function createORPCHandler(path: string[], resolver: (input: any) => any) {
   const urlPath = `http://localhost:9999/${path.join("/")}`;
 
   return http.post(urlPath, async ({ request }) => {
