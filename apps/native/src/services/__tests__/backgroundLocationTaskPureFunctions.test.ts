@@ -138,10 +138,12 @@ describe("handleBackgroundLocationTask", () => {
   const createMockDeps = () => ({
     shouldSend: jest.fn<() => Promise<boolean>>(),
     sendUpdate: jest.fn<(location: LocationObject) => Promise<void>>(),
+    getLastSentLocation: jest.fn<() => Promise<LocationObject | null>>(),
+    setLastSentLocation: jest.fn<(location: LocationObject) => Promise<void>>(),
   });
 
   it("should return early when error is provided", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
 
     await handleBackgroundLocationTask(undefined, new Error("Task failed"), state, deps);
@@ -151,7 +153,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when already sending", async () => {
-    const state: BackgroundTaskState = { isSending: true };
+    const state: BackgroundTaskState = { isSending: true, lastSentLocation: null };
     const deps = createMockDeps();
 
     await handleBackgroundLocationTask(
@@ -166,7 +168,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when location sharing is disabled", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(false);
 
@@ -183,7 +185,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when no locations provided", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
 
@@ -194,7 +196,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when data is undefined", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
 
@@ -205,10 +207,11 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should send location update for the latest location", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
     deps.sendUpdate.mockResolvedValue(undefined);
+    deps.getLastSentLocation.mockResolvedValue(null);
 
     const locations: [LocationObject, LocationObject] = [
       makeLocation(52.0, 21.0),
@@ -222,10 +225,11 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should handle sendUpdate error gracefully", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
     deps.sendUpdate.mockRejectedValue(new Error("Network error"));
+    deps.getLastSentLocation.mockResolvedValue(null);
 
     await handleBackgroundLocationTask(
       { locations: [makeLocation(52.23, 21.01)] },
@@ -239,7 +243,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should reset isSending even when shouldSend throws", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockRejectedValue(new Error("Storage error"));
 

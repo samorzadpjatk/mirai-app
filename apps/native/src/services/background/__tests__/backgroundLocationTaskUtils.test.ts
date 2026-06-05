@@ -70,6 +70,12 @@ describe("calculateDistance", () => {
   it("should return 0 for same coordinates", () => {
     expect(calculateDistance(52.2297, 21.0122, 52.2297, 21.0122)).toBe(0);
   });
+
+  it("should calculate distance between Warsaw and Krakow", () => {
+    const distance = calculateDistance(52.2297, 21.0122, 50.0647, 19.945);
+    expect(distance).toBeGreaterThan(250000);
+    expect(distance).toBeLessThan(300000);
+  });
 });
 
 describe("shouldSendLocationUpdate", () => {
@@ -108,12 +114,75 @@ describe("shouldSendLocationUpdate", () => {
     expect(result).toBe(false);
   });
 
-  it("should handle undefined accuracy", () => {
+  it("should handle null accuracy", () => {
     const result = shouldSendLocationUpdate(
-      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: undefined } },
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: null } },
       { coords: { latitude: 52.2297, longitude: 21.0122 } },
       100000,
     );
     expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=5m and delta=15m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: 5 } },
+      { coords: { latitude: 52.2297, longitude: 21.0125 } },
+      15,
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=100m and delta=150m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: 100 } },
+      { coords: { latitude: 52.2297, longitude: 21.0132 } },
+      15,
+    );
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=100m and delta=250m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: 100 } },
+      { coords: { latitude: 52.2297, longitude: 21.0165 } },
+      15,
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=null and delta=10m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: null } },
+      { coords: { latitude: 52.2297, longitude: 21.0123 } },
+      15,
+    );
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=null and delta=20m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: null } },
+      { coords: { latitude: 52.2297, longitude: 21.0125 } },
+      15,
+    );
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=5m and delta=8m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: 5 } },
+      { coords: { latitude: 52.2297, longitude: 21.01218 } },
+      15,
+    );
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=0 and delta=10m", () => {
+    const result = shouldSendLocationUpdate(
+      { coords: { latitude: 52.2297, longitude: 21.0122, accuracy: 0 } },
+      { coords: { latitude: 52.2297, longitude: 21.0125 } },
+      15,
+    );
+    expect(result).toBe(true);
   });
 });

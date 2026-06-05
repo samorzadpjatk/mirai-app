@@ -44,7 +44,7 @@ export function shouldSendLocationUpdate(
     coords: {
       latitude: number;
       longitude: number;
-      accuracy: number | undefined;
+      accuracy: number | null;
     };
   },
   lastSentLocation: {

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
+import * as SecureStore from "expo-secure-store";
 import * as TaskManager from "expo-task-manager";
 
 jest.mock("expo-task-manager", () => ({ defineTask: jest.fn() }));
@@ -11,16 +12,25 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   removeItem: jest.fn(),
 }));
 
+jest.mock("expo-secure-store", () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: "whenUnlockedThisDeviceOnly",
+}));
+
 import { getORPCClient } from "@mirai-app/orpc/client";
 import {
   type BackgroundTaskDeps,
   type BackgroundTaskFactoryDeps,
+  type BackgroundTaskState,
   createBackgroundTaskDeps,
+  handleBackgroundLocationTask,
   initBackgroundLocationTask,
 } from "~/services/background/backgroundLocationTask";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
+  LAST_SENT_LOCATION_KEY,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
@@ -38,6 +48,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(true)),
       sendUpdate: jest.fn(() => Promise.resolve()),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -52,6 +64,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(true)),
       sendUpdate: jest.fn(() => Promise.resolve()),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -70,6 +84,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(true)),
       sendUpdate: jest.fn(() => Promise.resolve()),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -93,6 +109,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(false)),
       sendUpdate: jest.fn(() => Promise.resolve()),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -111,6 +129,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(true)),
       sendUpdate: jest.fn(() => Promise.resolve()),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -129,6 +149,8 @@ describe("initBackgroundLocationTask", () => {
     const mockDeps: BackgroundTaskDeps = {
       shouldSend: jest.fn(() => Promise.resolve(true)),
       sendUpdate: jest.fn(() => Promise.reject(new Error("Network error"))),
+      getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+      setLastSentLocation: jest.fn(() => Promise.resolve()),
     };
 
     initBackgroundLocationTask(mockDeps);
@@ -143,6 +165,127 @@ describe("initBackgroundLocationTask", () => {
         error: null,
       }),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("handleBackgroundLocationTask", () => {
+  const createMockDeps = (): jest.Mocked<BackgroundTaskDeps> => ({
+    shouldSend: jest.fn(() => Promise.resolve(true)),
+    sendUpdate: jest.fn(() => Promise.resolve()),
+    getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+    setLastSentLocation: jest.fn(() => Promise.resolve()),
+  });
+
+  const createMockState = (
+    lastSentLocation: LocationObject | null = null,
+  ): BackgroundTaskState => ({
+    isSending: false,
+    lastSentLocation,
+  });
+
+  it("uses state.lastSentLocation when available and skips send when filtered", async () => {
+    const mockDeps = createMockDeps();
+    const lastSentLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+    const state = createMockState(lastSentLocation);
+
+    const newLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.getLastSentLocation).not.toHaveBeenCalled();
+    expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
+    expect(mockDeps.setLastSentLocation).not.toHaveBeenCalled();
+  });
+
+  it("calls getLastSentLocation when state.lastSentLocation is null", async () => {
+    const mockDeps = createMockDeps();
+    mockDeps.getLastSentLocation.mockResolvedValue({
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject);
+
+    const state = createMockState(null);
+    const newLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.getLastSentLocation).toHaveBeenCalled();
+    expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
+  });
+
+  it("calls setLastSentLocation after successful send", async () => {
+    const mockDeps = createMockDeps();
+    const state = createMockState(null);
+    const newLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.sendUpdate).toHaveBeenCalledWith(newLocation);
+    expect(mockDeps.setLastSentLocation).toHaveBeenCalledWith(newLocation);
+    expect(state.lastSentLocation).toBe(newLocation);
+  });
+
+  it("does not call setLastSentLocation when filtered", async () => {
+    const mockDeps = createMockDeps();
+    const lastSentLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+    const state = createMockState(lastSentLocation);
+    const newLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.sendUpdate).not.toHaveBeenCalled();
+    expect(mockDeps.setLastSentLocation).not.toHaveBeenCalled();
+  });
+
+  it("first update after restart always sends when getLastSentLocation returns null", async () => {
+    const mockDeps = createMockDeps();
+    mockDeps.getLastSentLocation.mockResolvedValue(null);
+
+    const state = createMockState(null);
+    const newLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.sendUpdate).toHaveBeenCalledWith(newLocation);
+    expect(mockDeps.setLastSentLocation).toHaveBeenCalledWith(newLocation);
+  });
+
+  it("does not call getLastSentLocation when state.lastSentLocation is available", async () => {
+    const mockDeps = createMockDeps();
+    const lastSentLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+    const state = createMockState(lastSentLocation);
+    const newLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.getLastSentLocation).not.toHaveBeenCalled();
+  });
+
+  it("sends update when distance exceeds threshold", async () => {
+    const mockDeps = createMockDeps();
+    const lastSentLocation = {
+      coords: { latitude: 52.2297, longitude: 21.0122 },
+    } as LocationObject;
+    const state = createMockState(lastSentLocation);
+    const newLocation = {
+      coords: { latitude: 50.0647, longitude: 19.945 },
+    } as LocationObject;
+
+    await handleBackgroundLocationTask({ locations: [newLocation] }, null, state, mockDeps);
+
+    expect(mockDeps.sendUpdate).toHaveBeenCalledWith(newLocation);
+    expect(mockDeps.setLastSentLocation).toHaveBeenCalledWith(newLocation);
   });
 });
 
@@ -292,5 +435,71 @@ describe("createBackgroundTaskDeps", () => {
     const result = await deps.shouldSend();
 
     expect(result).toBe(false);
+  });
+
+  it("getLastSentLocation returns parsed LocationObject from SecureStore", async () => {
+    const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
+    const storedLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } };
+    mockGetItemAsync.mockResolvedValue(JSON.stringify(storedLocation));
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const result = await deps.getLastSentLocation();
+
+    expect(mockGetItemAsync).toHaveBeenCalledWith(LAST_SENT_LOCATION_KEY);
+    expect(result).toEqual(storedLocation);
+  });
+
+  it("getLastSentLocation returns null when SecureStore is empty", async () => {
+    const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
+    mockGetItemAsync.mockResolvedValue(null);
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const result = await deps.getLastSentLocation();
+
+    expect(result).toBeNull();
+  });
+
+  it("getLastSentLocation returns null when SecureStore throws", async () => {
+    const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
+    mockGetItemAsync.mockRejectedValue(new Error("SecureStore error"));
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const result = await deps.getLastSentLocation();
+
+    expect(result).toBeNull();
+  });
+
+  it("setLastSentLocation stores JSON in SecureStore with correct keychain settings", async () => {
+    const mockSetItemAsync = jest.mocked(SecureStore.setItemAsync);
+    mockSetItemAsync.mockResolvedValue();
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const location = { coords: { latitude: 52.2297, longitude: 21.0122 } } as LocationObject;
+    await deps.setLastSentLocation(location);
+
+    expect(mockSetItemAsync).toHaveBeenCalledWith(
+      LAST_SENT_LOCATION_KEY,
+      JSON.stringify(location),
+      { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY },
+    );
+  });
+
+  it("setLastSentLocation does not throw when SecureStore fails", async () => {
+    const mockSetItemAsync = jest.mocked(SecureStore.setItemAsync);
+    mockSetItemAsync.mockRejectedValue(new Error("SecureStore error"));
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const location = { coords: { latitude: 52.2297, longitude: 21.0122 } } as LocationObject;
+    await expect(deps.setLastSentLocation(location)).resolves.toBeUndefined();
   });
 });

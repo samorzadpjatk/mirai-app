@@ -1,13 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
+import * as SecureStore from "expo-secure-store";
 import * as TaskManager from "expo-task-manager";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
+  LAST_SENT_LOCATION_KEY,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
 import {
+  shouldSendLocationUpdate,
   toFiniteNumberOrUndefined,
   toHeadingOrUndefined,
   toNonNegativeOrUndefined,
@@ -17,11 +20,14 @@ export { toFiniteNumberOrUndefined, toNonNegativeOrUndefined, toHeadingOrUndefin
 
 export interface BackgroundTaskState {
   isSending: boolean;
+  lastSentLocation: LocationObject | null;
 }
 
 export interface BackgroundTaskDeps {
   shouldSend: () => Promise<boolean>;
   sendUpdate: (location: LocationObject) => Promise<void>;
+  getLastSentLocation: () => Promise<LocationObject | null>;
+  setLastSentLocation: (location: LocationObject) => Promise<void>;
 }
 
 export interface BackgroundTaskFactoryDeps {
@@ -109,9 +115,31 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
     }
   }
 
+  async function getLastSentLocation(): Promise<LocationObject | null> {
+    try {
+      const raw = await SecureStore.getItemAsync(LAST_SENT_LOCATION_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw) as LocationObject;
+    } catch {
+      return null;
+    }
+  }
+
+  async function setLastSentLocation(location: LocationObject): Promise<void> {
+    try {
+      await SecureStore.setItemAsync(LAST_SENT_LOCATION_KEY, JSON.stringify(location), {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      });
+    } catch {
+      // Fire-and-forget: if SecureStore fails, we still have in-memory state
+    }
+  }
+
   return {
     shouldSend,
     sendUpdate,
+    getLastSentLocation,
+    setLastSentLocation,
   };
 }
 
@@ -140,7 +168,15 @@ export async function handleBackgroundLocationTask(
       return;
     }
 
+    const lastSent = state.lastSentLocation ?? (await deps.getLastSentLocation());
+
+    if (!shouldSendLocationUpdate(latestLocation, lastSent)) {
+      return;
+    }
+
     await deps.sendUpdate(latestLocation);
+    state.lastSentLocation = latestLocation;
+    void deps.setLastSentLocation(latestLocation); // Fire-and-forget
   } catch {
     /* no-op */
   } finally {
@@ -149,7 +185,7 @@ export async function handleBackgroundLocationTask(
 }
 
 export function initBackgroundLocationTask(deps: BackgroundTaskDeps): void {
-  const state: BackgroundTaskState = { isSending: false };
+  const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
 
   try {
     TaskManager.defineTask(BACKGROUND_LOCATION_TASK_NAME, async ({ data, error }) => {
