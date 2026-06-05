@@ -3,7 +3,7 @@ import type { CoinTransactionInput } from "./validators";
 interface CoinTransactionValues {
   groupId: string;
   amount: number;
-  reason: string | null;
+  reason: string;
   adminId: string;
 }
 
@@ -19,7 +19,7 @@ export function buildCoinTransactionValues(
   return {
     groupId: input.groupId,
     amount: isAdd ? input.amount : -input.amount,
-    reason: input.reason ?? null,
+    reason: input.reason ?? "",
     adminId,
   };
 }

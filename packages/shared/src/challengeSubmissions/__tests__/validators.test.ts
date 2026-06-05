@@ -9,7 +9,8 @@ import {
 const createMockChallenge = (overrides: Record<string, unknown> = {}) => ({
   submissionType: "TEXT",
   autoApprove: false,
-  expectedValue: null,
+  textExpectedPhrase: null,
+  qrCodeValue: null,
   targetLatitude: null,
   targetLongitude: null,
   ...overrides,
@@ -121,27 +122,27 @@ describe("validateSubmissionPayload", () => {
 
 describe("shouldAutoApproveSubmission", () => {
   it("returns true for QR_CODE with matching expected value", () => {
-    const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET" });
+    const challenge = createMockChallenge({ submissionType: "QR_CODE", qrCodeValue: "SECRET" });
     const result = shouldAutoApproveSubmission({ challenge, textContent: "SECRET" });
     expect(result).toBe(true);
   });
 
   it("throws for QR_CODE with non-matching expected value", () => {
-    const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET" });
+    const challenge = createMockChallenge({ submissionType: "QR_CODE", qrCodeValue: "SECRET" });
     expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow(
       "Invalid QR code",
     );
   });
 
   it("throws for QR_CODE without expected value configured", () => {
-    const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: null });
+    const challenge = createMockChallenge({ submissionType: "QR_CODE", qrCodeValue: null });
     expect(() => shouldAutoApproveSubmission({ challenge, textContent: "SECRET" })).toThrow(
       "QR challenge is not configured with expected code",
     );
   });
 
   it("throws for QR_CODE with empty submitted text", () => {
-    const challenge = createMockChallenge({ submissionType: "QR_CODE", expectedValue: "SECRET" });
+    const challenge = createMockChallenge({ submissionType: "QR_CODE", qrCodeValue: "SECRET" });
     expect(() => shouldAutoApproveSubmission({ challenge, textContent: "" })).toThrow(
       "Invalid QR code",
     );
@@ -209,20 +210,20 @@ describe("shouldAutoApproveSubmission", () => {
   });
 
   it("returns true for TEXT with matching expected value", () => {
-    const challenge = createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER" });
+    const challenge = createMockChallenge({ submissionType: "TEXT", textExpectedPhrase: "ANSWER" });
     const result = shouldAutoApproveSubmission({ challenge, textContent: "ANSWER" });
     expect(result).toBe(true);
   });
 
   it("throws for TEXT with non-matching expected value", () => {
-    const challenge = createMockChallenge({ submissionType: "TEXT", expectedValue: "ANSWER" });
+    const challenge = createMockChallenge({ submissionType: "TEXT", textExpectedPhrase: "ANSWER" });
     expect(() => shouldAutoApproveSubmission({ challenge, textContent: "WRONG" })).toThrow(
       "Incorrect phrase",
     );
   });
 
   it("returns false for TEXT without expected value configured", () => {
-    const challenge = createMockChallenge({ submissionType: "TEXT", expectedValue: null });
+    const challenge = createMockChallenge({ submissionType: "TEXT", textExpectedPhrase: null });
     const result = shouldAutoApproveSubmission({ challenge, textContent: "ANYTHING" });
     expect(result).toBe(false);
   });

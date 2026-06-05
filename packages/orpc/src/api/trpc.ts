@@ -9,6 +9,7 @@
 
 import { os, ORPCError } from "@orpc/server";
 
+import { timingSafeEqual } from "crypto";
 import {
   AuthenticationError,
   AuthorizationError,
@@ -272,6 +273,52 @@ export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
     }
     throw err;
   }
+});
+
+/**
+ * Service Account procedure
+ *
+ * For service-to-service communication (e.g., notification-sender microservice).
+ * Validates x-service-token header against SERVICE_ACCOUNT_TOKEN env var using
+ * timing-safe comparison to prevent timing attacks.
+ */
+export const serviceAccountProcedure = baseProcedure.use(async ({ context, next }) => {
+  const serviceToken = context.headers.get("x-service-token");
+  const expectedToken = process.env.SERVICE_ACCOUNT_TOKEN;
+
+  if (!expectedToken) {
+    logger.error("SERVICE_ACCOUNT_TOKEN not configured");
+    throw new ORPCError("FORBIDDEN", { message: "Service authentication not configured" });
+  }
+
+  if (!serviceToken) {
+    throw new ORPCError("FORBIDDEN", { message: "Missing service token" });
+  }
+
+  try {
+    const expectedBuffer = Buffer.from(expectedToken);
+    const actualBuffer = Buffer.from(serviceToken);
+
+    if (expectedBuffer.length !== actualBuffer.length) {
+      throw new ORPCError("FORBIDDEN", { message: "Invalid service token" });
+    }
+
+    if (!timingSafeEqual(expectedBuffer, actualBuffer)) {
+      throw new ORPCError("FORBIDDEN", { message: "Invalid service token" });
+    }
+  } catch (err) {
+    if (err instanceof ORPCError) {
+      throw err;
+    }
+    logger.error(err, "Service token validation error");
+    throw new ORPCError("FORBIDDEN", { message: "Invalid service token" });
+  }
+
+  return next({
+    context: {
+      serviceAuthenticated: true,
+    },
+  });
 });
 
 export const createORPCRouter = <T extends Record<string, unknown>>(routes: T): T => routes;

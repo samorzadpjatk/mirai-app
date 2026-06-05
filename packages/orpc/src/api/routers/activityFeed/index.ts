@@ -304,7 +304,7 @@ export const activityFeedRouter = createORPCRouter({
       z.object({
         activityId: z.string(),
         title: z.string().trim().min(1).optional(),
-        description: z.string().trim().nullable().optional(),
+        description: z.string().trim().optional(),
         isPinned: z.boolean().optional(),
       }),
     )

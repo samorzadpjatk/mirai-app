@@ -3,7 +3,7 @@ import { buildDeliveryStatus, extractErrorMessage } from "@mirai-app/shared/noti
 import { eq } from "drizzle-orm";
 import { sendMobileNotifications } from "../../../services/notificationService";
 import { logger } from "../../../utils/logger";
-import { publicProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../trpc";
 import {
   SendMobileNotificationsInput,
   TrackDeliveryCompleteInput,
@@ -11,13 +11,13 @@ import {
   TrackDeliveryStartInput,
 } from "./types";
 
-export const sendMobileNotificationsMutation = publicProcedure
+export const sendMobileNotificationsMutation = serviceAccountProcedure
   .input(SendMobileNotificationsInput)
   .handler(async ({ input, context }) => {
     return await sendMobileNotifications(context.db, input.notificationId);
   });
 
-export const trackDeliveryStartMutation = publicProcedure
+export const trackDeliveryStartMutation = serviceAccountProcedure
   .input(TrackDeliveryStartInput)
   .handler(async ({ input, context }) => {
     try {
@@ -49,7 +49,7 @@ export const trackDeliveryStartMutation = publicProcedure
     }
   });
 
-export const trackDeliveryCompleteMutation = publicProcedure
+export const trackDeliveryCompleteMutation = serviceAccountProcedure
   .input(TrackDeliveryCompleteInput)
   .handler(async ({ input, context }) => {
     try {
@@ -84,7 +84,7 @@ export const trackDeliveryCompleteMutation = publicProcedure
     }
   });
 
-export const trackDeliveryFailureMutation = publicProcedure
+export const trackDeliveryFailureMutation = serviceAccountProcedure
   .input(TrackDeliveryFailureInput)
   .handler(async ({ input, context }) => {
     try {

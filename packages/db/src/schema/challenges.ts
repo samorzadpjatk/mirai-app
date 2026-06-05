@@ -31,35 +31,26 @@ export const challenges = pgTable(
       .notNull()
       .references(() => trips.id),
     name: text("name").notNull(),
-    description: text("description"),
+    description: text("description").notNull(),
     image: text("image"),
     submissionType: submissionTypeEnum("submission_type").notNull(),
     scoringCategory: scoringCategoryEnum("scoring_category").notNull(),
-    isRecurring: boolean("is_recurring").default(false).notNull(),
-    dailyStartTime: text("daily_start_time"),
-    dailyEndTime: text("daily_end_time"),
     basePoints: integer("base_points").default(0).notNull(),
-    firstPlacePoints: integer("first_place_points"),
-    secondPlacePoints: integer("second_place_points"),
-    thirdPlacePoints: integer("third_place_points"),
+    firstPlacePoints: integer("first_place_points").default(0).notNull(),
+    secondPlacePoints: integer("second_place_points").default(0).notNull(),
+    thirdPlacePoints: integer("third_place_points").default(0).notNull(),
     status: challengeStatusEnum("status").default("HIDDEN").notNull(),
     startTime: timestamp("start_time", { withTimezone: true }),
     endTime: timestamp("end_time", { withTimezone: true }),
     votingStartTime: timestamp("voting_start_time", { withTimezone: true }),
     votingEndTime: timestamp("voting_end_time", { withTimezone: true }),
-    targetLatitude: real("target_latitude"),
-    targetLongitude: real("target_longitude"),
-    expectedValue: text("expected_value"),
     autoApprove: boolean("auto_approve").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (t) => [
-    index("challenges_trip_id_status_idx").on(t.tripId, t.status),
-    index("challenges_is_recurring_idx").on(t.isRecurring),
-  ],
+  (t) => [index("challenges_trip_id_status_idx").on(t.tripId, t.status)],
 );
 
 export const challengeSubmissions = pgTable(
@@ -144,7 +135,7 @@ export const submissionReports = pgTable(
       .notNull()
       .references(() => tripParticipants.id),
     reason: text("reason").notNull(),
-    details: text("details"),
+    details: text("details").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("submission_reports_submission_id_idx").on(t.submissionId)],

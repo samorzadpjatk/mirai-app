@@ -20,9 +20,9 @@ export const sponsors = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull(),
     logoPath: text("logo_path").notNull(),
-    height: integer("height"),
-    offsetX: integer("offset_x"),
-    offsetY: integer("offset_y"),
+    height: integer("height").default(0).notNull(),
+    offsetX: integer("offset_x").default(0).notNull(),
+    offsetY: integer("offset_y").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

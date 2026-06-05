@@ -10,12 +10,14 @@ export {
 export { users } from "./users";
 export {
   trips,
-  tripResources,
   tripInsurances,
   tripInsuranceSteps,
   tripParticipants,
 } from "./trips";
-export { events, userEvents } from "./events";
+export { tripResourceLinks } from "./tripResourceLinks";
+export { tripResourceFiles } from "./tripResourceFiles";
+export { tripResourceTexts } from "./tripResourceTexts";
+export { tripResourceIcons } from "./tripResourceIcons";
 export { groups, groupJoinRequests } from "./groups";
 export {
   challenges,
@@ -23,6 +25,10 @@ export {
   challengeVotes,
   submissionReports,
 } from "./challenges";
+export { challengeRecurrence } from "./challengeRecurrence";
+export { challengeLocation } from "./challengeLocation";
+export { challengeText } from "./challengeText";
+export { challengeQrCode } from "./challengeQrCode";
 export {
   activityFeeds,
   activityReactions,
@@ -46,15 +52,20 @@ export { userAgents } from "./userAgents";
 export {
   usersRelations,
   tripsRelations,
-  tripResourcesRelations,
+  tripResourceLinksRelations,
+  tripResourceFilesRelations,
+  tripResourceTextsRelations,
+  tripResourceIconsRelations,
   tripInsurancesRelations,
   tripInsuranceStepsRelations,
   tripParticipantsRelations,
-  eventsRelations,
-  userEventsRelations,
   groupsRelations,
   groupJoinRequestsRelations,
   challengesRelations,
+  challengeRecurrenceRelations,
+  challengeLocationRelations,
+  challengeTextRelations,
+  challengeQrCodeRelations,
   challengeSubmissionsRelations,
   challengeVotesRelations,
   submissionReportsRelations,
@@ -89,8 +100,11 @@ import {
   submissionActivities,
   userPosts,
 } from "./activities";
+import { challengeLocation } from "./challengeLocation";
+import { challengeQrCode } from "./challengeQrCode";
+import { challengeRecurrence } from "./challengeRecurrence";
+import { challengeText } from "./challengeText";
 import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
-import { events, userEvents } from "./events";
 import { groupJoinRequests, groups } from "./groups";
 import { locationShares, locationSharingRequests, locations } from "./locations";
 import {
@@ -103,28 +117,31 @@ import {
 } from "./notifications";
 import { coinTransactions, rewardPurchases, rewards } from "./rewards";
 import { sponsors, tripSponsors } from "./sponsors";
-import {
-  tripInsuranceSteps,
-  tripInsurances,
-  tripParticipants,
-  tripResources,
-  trips,
-} from "./trips";
+import { tripResourceFiles } from "./tripResourceFiles";
+import { tripResourceIcons } from "./tripResourceIcons";
+import { tripResourceLinks } from "./tripResourceLinks";
+import { tripResourceTexts } from "./tripResourceTexts";
+import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
 import { userAgents } from "./userAgents";
 import { users } from "./users";
 
 export const schemaTables = [
   users,
   trips,
-  tripResources,
+  tripResourceLinks,
+  tripResourceFiles,
+  tripResourceTexts,
+  tripResourceIcons,
   tripInsurances,
   tripInsuranceSteps,
   tripParticipants,
-  events,
-  userEvents,
   groups,
   groupJoinRequests,
   challenges,
+  challengeRecurrence,
+  challengeLocation,
+  challengeText,
+  challengeQrCode,
   challengeSubmissions,
   challengeVotes,
   submissionReports,

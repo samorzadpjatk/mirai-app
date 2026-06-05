@@ -34,8 +34,8 @@ export const createCustom = async (
       tripId: input.tripId,
       activityType: "custom",
       title: input.title,
-      description: input.description,
-      imageUrl: normalizeImageReference(input.imageUrl),
+      description: input.description ?? "",
+      imageUrl: normalizeImageReference(input.imageUrl) ?? "",
       isPinned: input.isPinned,
       createdByAdmin: context.dbUser.id,
     })
@@ -77,8 +77,8 @@ export const createUserPost = async (
         tripId: input.tripId,
         activityType: "user_post",
         title: input.title,
-        description: input.description,
-        imageUrl: normalizeImageReference(input.imageUrl),
+        description: input.description ?? "",
+        imageUrl: normalizeImageReference(input.imageUrl) ?? "",
       })
       .returning();
 
@@ -157,8 +157,8 @@ export const createSubmissionActivity = async (
         tripId: input.tripId,
         activityType: "submission",
         title: input.title,
-        description: input.description,
-        imageUrl: submission.imageIds[0] ?? null,
+        description: input.description ?? "",
+        imageUrl: submission.imageIds[0] ?? "",
         isPinned: input.isPinned,
         createdByAdmin: context.dbUser.id,
       })
@@ -242,8 +242,8 @@ export const createChallengeActivity = async (
         tripId: input.tripId,
         activityType: "challenge_event",
         title: input.title,
-        description: input.description ?? challenge.description ?? undefined,
-        imageUrl: challenge.image,
+        description: input.description ?? challenge.description ?? "",
+        imageUrl: challenge.image ?? "",
         isPinned: input.isPinned,
         createdByAdmin: context.dbUser.id,
       })
@@ -313,8 +313,8 @@ export const createRankChangeActivity = async (
         tripId: input.tripId,
         activityType: "rank_change",
         title: input.title,
-        description: input.description,
-        imageUrl: group.image,
+        description: input.description ?? "",
+        imageUrl: group.image ?? "",
         isPinned: input.isPinned,
         createdByAdmin: context.dbUser.id,
       })

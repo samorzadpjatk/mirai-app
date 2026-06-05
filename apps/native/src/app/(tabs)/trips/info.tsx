@@ -38,7 +38,7 @@ export default function TripInfoScreen() {
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfModalTitle, setPdfModalTitle] = useState("");
-  const [pdfModalUri, setPdfModalUri] = useState<string | null>(null);
+  const [pdfModalUri, setPdfModalUri] = useState<string>("");
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const paramTripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
@@ -421,7 +421,7 @@ export default function TripInfoScreen() {
           title={pdfModalTitle}
           onClose={() => {
             setIsPdfModalVisible(false);
-            setPdfModalUri(null);
+            setPdfModalUri("");
           }}
         >
           {/* PDF Viewer */}

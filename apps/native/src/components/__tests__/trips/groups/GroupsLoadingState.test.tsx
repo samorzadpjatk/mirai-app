@@ -5,25 +5,19 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 describe("GroupsLoadingState", () => {
   it("should render container", () => {
     renderWithProviders(<GroupsLoadingState />);
-    const view = screen.getByTestId("groups-loading-container");
+    const view = screen.getByTestId("groups-loading-state");
     expect(view).toBeTruthy();
   });
 
-  it("should render ActivityIndicator", () => {
+  it("should render placeholder views", () => {
     renderWithProviders(<GroupsLoadingState />);
-    const activityIndicator = screen.getByTestId("groups-loading-indicator");
-    expect(activityIndicator).toBeTruthy();
-  });
-
-  it("should render with large size indicator", () => {
-    renderWithProviders(<GroupsLoadingState />);
-    const activityIndicator = screen.getByTestId("groups-loading-indicator");
-    expect(activityIndicator.props.size).toBe("large");
+    const view = screen.getByTestId("groups-loading-state");
+    expect(view.children.length).toBeGreaterThan(0);
   });
 
   it("should have centered layout styling", () => {
     renderWithProviders(<GroupsLoadingState />);
-    const view = screen.getByTestId("groups-loading-container");
+    const view = screen.getByTestId("groups-loading-state");
     expect(view.props.style).toBeTruthy();
   });
 });

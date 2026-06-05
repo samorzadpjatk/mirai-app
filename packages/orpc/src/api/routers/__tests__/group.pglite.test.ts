@@ -30,6 +30,7 @@ describe("group router — PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id,
       name,
+      description: "",
       startDate: now(),
       endDate: new Date(Date.now() + 86400000),
       createdAt: now(),
@@ -60,6 +61,7 @@ describe("group router — PGLite transaction rollback", () => {
       id,
       tripId,
       name: `Group ${id}`,
+      description: "",
       organizerId,
       code,
       coins,
@@ -551,6 +553,7 @@ describe("group router — PGLite transaction rollback", () => {
           groupId: "group-1",
           amount: 50,
           adminId: "user-1",
+          reason: "",
           createdAt: now(),
           updatedAt: now(),
         });
@@ -590,70 +593,7 @@ describe("group router — PGLite transaction rollback", () => {
         groupId: "group-1",
         amount: 50,
         adminId: "user-1",
-        createdAt: now(),
-        updatedAt: now(),
-      });
-    });
-
-    const afterGroup = await testDb.db
-      .select({ coins: groups.coins })
-      .from(groups)
-      .where(eq(groups.id, "group-1"));
-    expect(afterGroup[0].coins).toBe(150);
-
-    const afterTxCount = await testDb.db
-      .select({ count: sql<number>`count(*)` })
-      .from(coinTransactions)
-      .where(eq(coinTransactions.groupId, "group-1"));
-    expect(afterTxCount[0].count).toBe(1);
-  });
-});
-
-describe("group router — PGLite Drizzle ORM integration", () => {
-  beforeEach(async () => {
-    await testDb.db.insert(trips).values({
-      id: "trip-1",
-      name: "Test Trip",
-      startDate: now(),
-      endDate: new Date(Date.now() + 86400000),
-      createdAt: now(),
-      updatedAt: now(),
-    });
-
-    await testDb.db.insert(users).values({
-      id: "user-1",
-      authUserId: "auth-user-1",
-      firstName: "Alice",
-      lastName: "Smith",
-      role: "USER",
-      createdAt: now(),
-      updatedAt: now(),
-    });
-
-    await testDb.db.insert(groups).values({
-      id: "group-1",
-      tripId: "trip-1",
-      name: "Test Group",
-      organizerId: "user-1",
-      code: "1234",
-      coins: 100,
-      createdAt: now(),
-      updatedAt: now(),
-    });
-  });
-
-  it("updates group coins via Drizzle ORM transaction", async () => {
-    await testDb.db.transaction(async (tx) => {
-      await tx
-        .update(groups)
-        .set({ coins: sql`${groups.coins} + ${50}` })
-        .where(eq(groups.id, "group-1"));
-
-      await tx.insert(coinTransactions).values({
-        id: "ct-1",
-        groupId: "group-1",
-        amount: 50,
-        adminId: "user-1",
+        reason: "",
         createdAt: now(),
         updatedAt: now(),
       });
@@ -671,6 +611,10 @@ describe("group router — PGLite Drizzle ORM integration", () => {
   });
 
   it("rolls back Drizzle ORM transaction on failure", async () => {
+    await seedTrip("trip-1", "Test Trip");
+    await seedUser("user-1", "Alice", "Smith");
+    await seedGroup("group-1", "trip-1", "user-1", "1234", 100);
+
     await expect(
       testDb.db.transaction(async (tx) => {
         await tx
@@ -683,6 +627,7 @@ describe("group router — PGLite Drizzle ORM integration", () => {
           groupId: "group-1",
           amount: 50,
           adminId: "user-1",
+          reason: "",
           createdAt: now(),
           updatedAt: now(),
         });

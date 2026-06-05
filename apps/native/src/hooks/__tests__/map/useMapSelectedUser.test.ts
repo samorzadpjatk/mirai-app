@@ -44,7 +44,7 @@ describe("useMapSelectedUser", () => {
   it("should initialize with no selected user", () => {
     const { result } = renderHook(() => useMapSelectedUser(defaultArgs));
 
-    expect(result.current.selectedUserId).toBeNull();
+    expect(result.current.selectedUserId).toBe("");
     expect(result.current.selectedUser).toBeNull();
   });
 
@@ -72,7 +72,7 @@ describe("useMapSelectedUser", () => {
       result.current.deselect();
     });
 
-    expect(result.current.selectedUserId).toBeNull();
+    expect(result.current.selectedUserId).toBe("");
     expect(result.current.selectedUser).toBeNull();
   });
 

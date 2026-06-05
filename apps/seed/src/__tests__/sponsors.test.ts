@@ -237,17 +237,17 @@ describe("sponsors", () => {
 
       expect(mockSponsorValues).toHaveBeenCalledWith(
         expect.objectContaining({
-          height: null,
-          offsetX: null,
-          offsetY: null,
+          height: 0,
+          offsetX: 0,
+          offsetY: 0,
         }),
       );
       expect(mockSponsorOnConflict).toHaveBeenCalledWith(
         expect.objectContaining({
           set: expect.objectContaining({
-            height: null,
-            offsetX: null,
-            offsetY: null,
+            height: 0,
+            offsetX: 0,
+            offsetY: 0,
           }),
         }),
       );

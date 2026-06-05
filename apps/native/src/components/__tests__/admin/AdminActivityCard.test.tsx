@@ -1,4 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { createMockActivity } from "../../../test-utils/activityMocks";
 import { AdminActivityCard } from "../../admin/activity/AdminActivityCard";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 
@@ -10,24 +11,7 @@ describe("AdminActivityCard", () => {
   const now = new Date("2026-01-01T12:00:00.000Z").getTime();
   const spy = jest.spyOn(Date, "now").mockReturnValue(now);
 
-  interface SubmissionActivity {
-    group: { name: string };
-  }
-
-  interface Activity {
-    id: string;
-    tripId: string;
-    activityType: "submission";
-    title: string;
-    description: string;
-    imageUrl: string;
-    isPinned: boolean;
-    isHidden: boolean;
-    createdAt: Date;
-    submissionActivity: SubmissionActivity;
-  }
-
-  const baseActivity: Activity = {
+  const baseActivity = createMockActivity({
     id: "activity-1",
     tripId: "trip-1",
     activityType: "submission",
@@ -38,9 +22,24 @@ describe("AdminActivityCard", () => {
     isHidden: false,
     createdAt: new Date(now - 5 * 60000),
     submissionActivity: {
-      group: { name: "Test Group" },
+      submissionId: "",
+      challengeId: "",
+      groupId: "",
+      hasVideo: false,
+      isWinner: false,
+      ranking: 0,
+      pointsAwarded: 0,
+      currentGroupRank: null,
+      group: {
+        id: "",
+        name: "Test Group",
+        image: "",
+        coins: 0,
+      },
+      challenge: null,
+      submission: null,
     },
-  };
+  });
 
   const callbacks = {
     onEdit: jest.fn(),
@@ -88,7 +87,12 @@ describe("AdminActivityCard", () => {
   it("shows pinned and hidden labels when needed", () => {
     renderWithProviders(
       <AdminActivityCard
-        item={{ ...baseActivity, isPinned: true, isHidden: true, createdAt: new Date(now) }}
+        item={createMockActivity({
+          ...baseActivity,
+          isPinned: true,
+          isHidden: true,
+          createdAt: new Date(now),
+        })}
         canDelete={false}
         isBusy={false}
         {...callbacks}

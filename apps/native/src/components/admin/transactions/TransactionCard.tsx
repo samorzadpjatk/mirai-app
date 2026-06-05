@@ -65,7 +65,9 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction }) => {
         </View>
       </View>
 
-      {transaction.reason && <Text style={styles.transactionReason}>{transaction.reason}</Text>}
+      {transaction.reason ? (
+        <Text style={styles.transactionReason}>{transaction.reason}</Text>
+      ) : null}
 
       <Text style={styles.transactionAdmin}>Admin: {adminName}</Text>
     </View>

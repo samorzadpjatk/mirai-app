@@ -43,3 +43,9 @@ export const normalizeGroupImageInput = (value: string | undefined) => {
 };
 
 export const resolveGroupImage = resolveStorageUrl;
+
+export const toClientGroup = <T extends Record<string, unknown>>(group: T) => ({
+  ...group,
+  description: (group as { description?: string | null }).description ?? "",
+  image: (group as { image?: string | null }).image ?? "",
+});

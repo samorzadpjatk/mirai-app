@@ -89,7 +89,7 @@ export function EditMembersPicker({
                     isOrganizerUser && styles.checkboxDisabled,
                   ]}
                 >
-                  {isSelected && <View style={styles.checkboxInner} />}
+                  {isSelected ? <View style={styles.checkboxInner} /> : null}
                 </View>
               </TouchableOpacity>
             );

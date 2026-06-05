@@ -48,9 +48,9 @@ export const seedSponsors = async (
         name: sponsorConfig.name,
         description: sponsorConfig.description,
         logoPath: sponsorConfig.logoPath,
-        height: sponsorConfig.height ?? null,
-        offsetX: sponsorConfig.offsetX ?? null,
-        offsetY: sponsorConfig.offsetY ?? null,
+        height: sponsorConfig.height ?? 0,
+        offsetX: sponsorConfig.offsetX ?? 0,
+        offsetY: sponsorConfig.offsetY ?? 0,
         isActive: true,
       };
 

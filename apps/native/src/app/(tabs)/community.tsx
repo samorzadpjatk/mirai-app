@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { Activity } from "@mirai-app/orpc";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -24,20 +25,20 @@ import LoadingScreen from "~/components/LoadingScreen";
 
 import { useAuth } from "@mirai-app/auth/client";
 import { Logo } from "~/components";
-import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
+import {
+  EmptyState,
+  ErrorState,
+  FilterChip,
+  FilterChipRow,
+  TripPickerModal,
+} from "~/components/common/ui";
 import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { colors, spacing, typography } from "~/styles";
 
-type ActivityFilter =
-  | "all"
-  | "submission"
-  | "challenge_event"
-  | "rank_change"
-  | "custom"
-  | "user_post";
+type ActivityFilter = "all" | Activity["activityType"];
 
 const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: "all", label: "All" },
@@ -315,6 +316,14 @@ export default function CommunityScreen() {
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingStateText}>Loading feed...</Text>
           </View>
+        ) : null}
+
+        {selectedTrip && feedQuery.isError ? (
+          <ErrorState
+            title="Failed to load feed"
+            message={feedQuery.error?.message ?? "Something went wrong"}
+            onRetry={() => void feedQuery.refetch()}
+          />
         ) : null}
       </View>
 

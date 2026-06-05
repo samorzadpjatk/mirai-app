@@ -34,16 +34,16 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <View testID="empty-state-container" style={[styles.emptyState, style]}>
-      {icon && (
+      {icon ? (
         <View
           testID="empty-state-icon-wrapper"
           style={[styles.emptyIcon, { opacity: iconOpacity }]}
         >
           <Ionicons name={icon} size={iconSize} color={iconColor} />
         </View>
-      )}
+      ) : null}
       <Text style={styles.emptyStateTitle}>{title}</Text>
-      {subtitle && <Text style={styles.emptyStateText}>{subtitle}</Text>}
+      {subtitle ? <Text style={styles.emptyStateText}>{subtitle}</Text> : null}
     </View>
   );
 }

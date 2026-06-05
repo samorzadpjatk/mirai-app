@@ -222,6 +222,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       renderHook(() => useTripSync());
@@ -247,6 +248,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       const { rerender } = renderHook(() => useTripSync());
@@ -262,6 +264,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
       rerender(undefined);
 
@@ -283,6 +286,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       renderHook(() => useTripSync());
@@ -307,6 +311,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       renderHook(() => useTripSync());
@@ -329,6 +334,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       renderHook(() => useTripSync());
@@ -351,6 +357,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       renderHook(() => useTripSync());
@@ -373,6 +380,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       const { rerender } = renderHook(() => useTripSync());
@@ -402,6 +410,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
 
       const { rerender } = renderHook(() => useTripSync());
@@ -422,6 +431,7 @@ describe("tripStore", () => {
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
         tripError: null,
+        tripId: "",
       });
       rerender(undefined);
 

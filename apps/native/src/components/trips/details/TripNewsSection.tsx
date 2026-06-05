@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { Activity } from "@mirai-app/orpc";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
@@ -11,18 +12,7 @@ interface TripNewsSectionProps {
   tripId: string;
 }
 
-interface AdminNewsItem {
-  id: string;
-  activityType: "custom";
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  createdAt: Date | string;
-  admin?: {
-    firstName: string;
-    lastName?: string;
-  } | null;
-}
+type AdminNewsItem = Extract<Activity, { activityType: "custom" }>;
 
 export function formatRelativeTime(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value);
@@ -40,7 +30,9 @@ export function formatRelativeTime(value: Date | string): string {
   return `${datePart} ${timePart}`;
 }
 
-export function formatAdminName(item: AdminNewsItem): string {
+export function formatAdminName(item: {
+  admin: { firstName: string; lastName?: string } | null;
+}): string {
   const firstName = item.admin?.firstName?.trim();
   const lastName = item.admin?.lastName?.trim();
   const full = `${firstName ?? ""} ${lastName ?? ""}`.trim();

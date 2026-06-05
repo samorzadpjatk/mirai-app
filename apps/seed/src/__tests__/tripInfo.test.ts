@@ -8,8 +8,14 @@ const mockJoinPath = vi.fn((...parts: string[]) => parts.join("/"));
 const mockUpload = vi.fn();
 const mockGetPublicUrl = vi.fn();
 
-const mockTripResourceDeleteMany = vi.fn();
-const mockTripResourceCreate = vi.fn();
+const mockTripResourceLinkDeleteMany = vi.fn();
+const mockTripResourceLinkCreate = vi.fn();
+const mockTripResourceFileDeleteMany = vi.fn();
+const mockTripResourceFileCreate = vi.fn();
+const mockTripResourceTextDeleteMany = vi.fn();
+const mockTripResourceTextCreate = vi.fn();
+const mockTripResourceIconDeleteMany = vi.fn();
+const mockTripResourceIconCreate = vi.fn();
 const mockTripInsuranceDeleteMany = vi.fn();
 const mockTripInsuranceCreate = vi.fn();
 const mockTripInsuranceStepDeleteMany = vi.fn();
@@ -64,7 +70,10 @@ vi.mock("../constants", () => ({
 }));
 
 vi.mock("@mirai-app/db", () => ({
-  tripResources: { __table: "tripResources", tripId: { name: "tripId" } },
+  tripResourceLinks: { __table: "tripResourceLinks", tripId: { name: "tripId" } },
+  tripResourceFiles: { __table: "tripResourceFiles", tripId: { name: "tripId" } },
+  tripResourceTexts: { __table: "tripResourceTexts", tripId: { name: "tripId" } },
+  tripResourceIcons: { __table: "tripResourceIcons", tripId: { name: "tripId" } },
   tripInsurances: { __table: "tripInsurances", tripId: { name: "tripId" }, id: { name: "id" } },
   tripInsuranceSteps: { __table: "tripInsuranceSteps", insuranceId: { name: "insuranceId" } },
 }));
@@ -73,8 +82,14 @@ vi.mock("../config/db", () => ({
   db: {
     delete: (table: { __table?: string }) => ({
       where: (condition: unknown) => {
-        if (table?.__table === "tripResources") {
-          return mockTripResourceDeleteMany(condition);
+        if (table?.__table === "tripResourceLinks") {
+          return mockTripResourceLinkDeleteMany(condition);
+        } else if (table?.__table === "tripResourceFiles") {
+          return mockTripResourceFileDeleteMany(condition);
+        } else if (table?.__table === "tripResourceTexts") {
+          return mockTripResourceTextDeleteMany(condition);
+        } else if (table?.__table === "tripResourceIcons") {
+          return mockTripResourceIconDeleteMany(condition);
         } else if (table?.__table === "tripInsurances") {
           return mockTripInsuranceDeleteMany(condition);
         } else if (table?.__table === "tripInsuranceSteps") {
@@ -97,8 +112,14 @@ vi.mock("../config/db", () => ({
             onFulfilled: (value: unknown) => unknown,
             onRejected?: (reason: unknown) => unknown,
           ) => {
-            if (table?.__table === "tripResources") {
-              mockTripResourceCreate(data);
+            if (table?.__table === "tripResourceLinks") {
+              mockTripResourceLinkCreate(data);
+            } else if (table?.__table === "tripResourceFiles") {
+              mockTripResourceFileCreate(data);
+            } else if (table?.__table === "tripResourceTexts") {
+              mockTripResourceTextCreate(data);
+            } else if (table?.__table === "tripResourceIcons") {
+              mockTripResourceIconCreate(data);
             } else if (table?.__table === "tripInsuranceSteps") {
               mockTripInsuranceStepCreate(data);
             }
@@ -173,7 +194,10 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", { resources: [] });
 
-      expect(mockTripResourceCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceLinkCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceFileCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceTextCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceIconCreate).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("No trip info configured, skipping...");
 
       consoleSpy.mockRestore();
@@ -188,7 +212,10 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripResourceDeleteMany).toHaveBeenCalledWith(expect.anything());
+      expect(mockTripResourceLinkDeleteMany).toHaveBeenCalledWith(expect.anything());
+      expect(mockTripResourceFileDeleteMany).toHaveBeenCalledWith(expect.anything());
+      expect(mockTripResourceTextDeleteMany).toHaveBeenCalledWith(expect.anything());
+      expect(mockTripResourceIconDeleteMany).toHaveBeenCalledWith(expect.anything());
 
       consoleSpy.mockRestore();
     });
@@ -214,19 +241,17 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripResourceCreate).toHaveBeenCalledWith({
+      expect(mockTripResourceLinkCreate).toHaveBeenCalledWith({
         tripId: "trip-1",
-        type: "hero_image",
         label: "Hero Image",
-        description: "Main hero image",
+        type: "hero_image",
         url: "https://example.com/hero.jpg",
-        publicUrl: null,
-        storagePath: "images/hero.jpg",
-        fileName: "hero",
-        iconName: "image",
-        value: "hero-value",
+        description: "Main hero image",
         sortOrder: 0,
       });
+      expect(mockTripResourceFileCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceTextCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceIconCreate).not.toHaveBeenCalled();
 
       consoleSpy.mockRestore();
     });
@@ -245,19 +270,10 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockTripResourceCreate).toHaveBeenCalledWith({
-        tripId: "trip-1",
-        type: "simple",
-        label: "Simple Resource",
-        description: null,
-        url: null,
-        publicUrl: null,
-        storagePath: null,
-        fileName: null,
-        iconName: null,
-        value: null,
-        sortOrder: 0,
-      });
+      expect(mockTripResourceLinkCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceFileCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceTextCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceIconCreate).not.toHaveBeenCalled();
 
       consoleSpy.mockRestore();
     });
@@ -519,7 +535,7 @@ describe("tripInfo", () => {
         resources: [{ type: "simple", label: "Simple", sortOrder: 0 }],
       };
 
-      mockTripResourceDeleteMany.mockRejectedValue(new Error("DB Error"));
+      mockTripResourceLinkDeleteMany.mockRejectedValue(new Error("DB Error"));
 
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 

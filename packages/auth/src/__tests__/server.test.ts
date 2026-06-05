@@ -105,6 +105,9 @@ describe("server exports", () => {
       expect(result?.name).toBe("Test User");
       expect(result?.role).toBe("USER");
       expect(result?.emailVerified).toBeInstanceOf(Date);
+      expect(result?.hasName).toBe(true);
+      expect(result?.hasEmail).toBe(true);
+      expect(result?.isEmailVerified).toBe(true);
     });
 
     it("should return null when dbUser has no authUserId", () => {
@@ -131,6 +134,7 @@ describe("server exports", () => {
 
       const result = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
       expect(result?.name).toBe("test");
+      expect(result?.hasName).toBe(false);
     });
 
     it("should handle null email gracefully", () => {
@@ -145,7 +149,9 @@ describe("server exports", () => {
       const supabaseUser = createMockSupabaseUser({ email: null });
 
       const result = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
-      expect(result?.name).toBeNull();
+      expect(result?.name).toBe("");
+      expect(result?.email).toBe("");
+      expect(result?.hasEmail).toBe(false);
     });
   });
 
@@ -308,57 +314,11 @@ describe("server exports", () => {
       );
     });
 
-    it("should handle moderator role from app_metadata", async () => {
+    it("should fallback to email prefix when no name in metadata", async () => {
       const mockSupabaseUser = {
         id: "auth-123",
-        email: "test@example.com",
+        email: "john.doe@example.com",
         user_metadata: {},
-        app_metadata: { role: "moderator" },
-      } as SupabaseUser;
-
-      const mockUpsertUser = vi.fn().mockResolvedValue({
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "MODERATOR",
-      } as User);
-
-      await syncUserToDatabase(mockSupabaseUser, mockUpsertUser);
-
-      expect(mockUpsertUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          role: "MODERATOR",
-        }),
-      );
-    });
-
-    it("should handle service role", async () => {
-      const mockSupabaseUser = {
-        id: "auth-123",
-        email: "test@example.com",
-        user_metadata: {},
-        app_metadata: { role: "service" },
-      } as SupabaseUser;
-
-      const mockUpsertUser = vi.fn().mockResolvedValue({
-        id: "db-123",
-        authUserId: "auth-123",
-        role: "SERVICE",
-      } as User);
-
-      await syncUserToDatabase(mockSupabaseUser, mockUpsertUser);
-
-      expect(mockUpsertUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          role: "SERVICE",
-        }),
-      );
-    });
-
-    it("should default to USER role for unknown roles", async () => {
-      const mockSupabaseUser = {
-        id: "auth-123",
-        email: "test@example.com",
-        user_metadata: { role: "unknown" },
         app_metadata: {},
       } as SupabaseUser;
 
@@ -372,7 +332,27 @@ describe("server exports", () => {
 
       expect(mockUpsertUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          role: "USER",
+          firstName: "john.doe",
+          lastName: null,
+        }),
+      );
+    });
+
+    it("should handle null email by using null firstName", async () => {
+      const mockSupabaseUser = createMockSupabaseUser({ id: "auth-123", email: null });
+
+      const mockUpsertUser = vi.fn().mockResolvedValue({
+        id: "db-123",
+        authUserId: "auth-123",
+        role: "USER",
+      } as User);
+
+      await syncUserToDatabase(mockSupabaseUser, mockUpsertUser);
+
+      expect(mockUpsertUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: null,
+          lastName: null,
         }),
       );
     });

@@ -52,28 +52,6 @@ describe("location/utils pure functions", () => {
       });
     });
 
-    it("should default latitude and longitude to 0 when null", () => {
-      const dbLocation: DbLocation = {
-        id: "loc-2",
-        userId: "user-2",
-        timestamp: new Date("2024-06-15T12:00:00Z"),
-        isSharingLocation: false,
-        latitude: null,
-        longitude: null,
-        altitude: null,
-        accuracy: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-        lastInactivityNotification: null,
-      };
-
-      const result = toExpoLocation(dbLocation);
-
-      expect(result.coords.latitude).toBe(0);
-      expect(result.coords.longitude).toBe(0);
-    });
-
     it("should default all optional coords to null when missing", () => {
       const dbLocation: DbLocation = {
         id: "loc-3",
@@ -83,7 +61,7 @@ describe("location/utils pure functions", () => {
         latitude: 0,
         longitude: 0,
         altitude: null,
-        accuracy: null,
+        accuracy: 0,
         altitudeAccuracy: null,
         heading: null,
         speed: null,
@@ -93,7 +71,7 @@ describe("location/utils pure functions", () => {
       const result = toExpoLocation(dbLocation);
 
       expect(result.coords.altitude).toBeNull();
-      expect(result.coords.accuracy).toBeNull();
+      expect(result.coords.accuracy).toBe(0);
       expect(result.coords.altitudeAccuracy).toBeNull();
       expect(result.coords.heading).toBeNull();
       expect(result.coords.speed).toBeNull();
@@ -109,7 +87,7 @@ describe("location/utils pure functions", () => {
         latitude: 1.0,
         longitude: 1.0,
         altitude: null,
-        accuracy: null,
+        accuracy: 0,
         altitudeAccuracy: null,
         heading: null,
         speed: null,
@@ -154,7 +132,7 @@ describe("location/utils pure functions", () => {
         latitude: -33.8688,
         longitude: -151.2093,
         altitude: null,
-        accuracy: null,
+        accuracy: 0,
         altitudeAccuracy: null,
         heading: null,
         speed: null,

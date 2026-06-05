@@ -32,7 +32,7 @@ export default function AdminCreateActivityScreen() {
   const [description, setDescription] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [imagePath, setImagePath] = useState("");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [imagePreviewUri, setImagePreviewUri] = useState<string>("");
 
   const feedQueryOptions = orpc.activityFeed.getByTripModeration.queryOptions({
     input: {
@@ -50,7 +50,7 @@ export default function AdminCreateActivityScreen() {
         setDescription("");
         setIsPinned(false);
         setImagePath("");
-        setImagePreviewUri(null);
+        setImagePreviewUri("");
         resetUpload();
         Alert.alert("Success", "Activity created successfully.", [
           {
@@ -181,7 +181,7 @@ export default function AdminCreateActivityScreen() {
                 style={styles.imageRemoveButton}
                 onPress={() => {
                   setImagePath("");
-                  setImagePreviewUri(null);
+                  setImagePreviewUri("");
                 }}
                 activeOpacity={0.85}
                 disabled={isUploadingImage}

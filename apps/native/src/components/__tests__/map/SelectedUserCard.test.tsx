@@ -41,7 +41,7 @@ jest.mock("~/stores/map", () => ({
     showUsersList: false,
     isListExpanded: false,
     showManageModal: false,
-    followMode: null,
+    followMode: "none",
     focusedCoordinate: null,
     mapTheme: "dark",
     allAvailableUsers: undefined,

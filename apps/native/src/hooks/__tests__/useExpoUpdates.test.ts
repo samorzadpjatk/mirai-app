@@ -58,7 +58,7 @@ describe("useExpoUpdates", () => {
     expect(result.current.isDownloading).toBe(false);
     expect(result.current.downloadProgress).toBe(0);
     expect(result.current.showUpdatePopup).toBe(false);
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBe("");
   });
 
   it("should skip update check in development mode", async () => {
@@ -235,7 +235,7 @@ describe("useExpoUpdates", () => {
       await result.current.checkForUpdates();
     });
 
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBe("");
   });
 
   it("should clear error on successful download start", async () => {
@@ -252,7 +252,7 @@ describe("useExpoUpdates", () => {
       await result.current.startUpdate();
     });
 
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBe("");
   });
 
   it("should auto-check for updates on mount in production", async () => {

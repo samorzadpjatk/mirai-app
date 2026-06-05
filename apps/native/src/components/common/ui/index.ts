@@ -9,5 +9,6 @@ export { FilterChip } from "./FilterChip";
 export { FilterChipRow } from "./FilterChipRow";
 export { DateTimePickerModal } from "./DateTimePickerModal";
 export { EmptyState } from "./EmptyState";
+export { ErrorState } from "./ErrorState";
 export { FullScreenModal } from "./FullScreenModal";
 export { TripPickerModal } from "../TripPickerModal";

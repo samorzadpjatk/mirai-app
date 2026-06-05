@@ -30,6 +30,7 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.group).toEqual(mockGroup);
     expect(result.current.currentUser).toEqual(mockUser);
     expect(result.current.isLoadingUser).toBe(false);
+    expect(result.current.tripId).toBe("trip-1");
   });
 
   it("should return undefined group when groupId is null", async () => {
@@ -46,6 +47,7 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.group).toBeUndefined();
     expect(result.current.isLoadingGroup).toBe(false);
     expect(result.current.currentUser).toEqual(mockUser);
+    expect(result.current.tripId).toBe("");
   });
 
   it("should return undefined group when groupId is undefined", async () => {
@@ -61,6 +63,7 @@ describe("useGroupDetails (MSW)", () => {
 
     expect(result.current.group).toBeUndefined();
     expect(result.current.isLoadingGroup).toBe(false);
+    expect(result.current.tripId).toBe("");
   });
 
   it("should return undefined group when groupId is empty string", async () => {
@@ -77,6 +80,7 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.group).toBeUndefined();
     expect(result.current.isLoadingGroup).toBe(false);
     expect(result.current.currentUser).toEqual(mockUser);
+    expect(result.current.tripId).toBe("");
   });
 
   it("should handle loading states while fetching", async () => {
@@ -107,6 +111,7 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.isLoadingUser).toBe(false);
     expect(result.current.group).toEqual(mockGroup);
     expect(result.current.currentUser).toEqual(mockUser);
+    expect(result.current.tripId).toBe("trip-1");
   });
 
   it("should handle group with minimal data", async () => {
@@ -134,6 +139,7 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.group).toEqual(mockGroup);
     expect(result.current.group!.participants).toEqual([]);
     expect(result.current.group!.trip).toBeNull();
+    expect(result.current.tripId).toBe("");
   });
 
   it("should handle group with multiple participants", async () => {
@@ -164,6 +170,7 @@ describe("useGroupDetails (MSW)", () => {
 
     expect(result.current.group).toEqual(mockGroup);
     expect(result.current.group!.participants).toHaveLength(3);
+    expect(result.current.tripId).toBe("trip-1");
   });
 
   it("should handle both APIs returning null", async () => {
@@ -181,5 +188,6 @@ describe("useGroupDetails (MSW)", () => {
     expect(result.current.group).toBeNull();
     expect(result.current.currentUser).toBeNull();
     expect(result.current.isLoadingUser).toBe(false);
+    expect(result.current.tripId).toBe("");
   });
 });

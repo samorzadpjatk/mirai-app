@@ -7,7 +7,8 @@ export interface EffectiveValuesInput {
 
 export interface EffectiveValuesExisting {
   submissionType?: "IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE" | null;
-  expectedValue?: string | null;
+  textExpectedPhrase?: string | null;
+  qrCodeValue?: string | null;
   autoApprove?: boolean | null;
 }
 
@@ -25,9 +26,9 @@ export const computeEffectiveChallengeValues = (
 
   const effectiveExpectedValue =
     effectiveSubmissionType === "QR_CODE"
-      ? (input.qrCodeValue ?? existing.expectedValue ?? null)
+      ? (input.qrCodeValue ?? existing.qrCodeValue ?? null)
       : effectiveSubmissionType === "TEXT"
-        ? (input.textExpectedPhrase ?? existing.expectedValue ?? null)
+        ? (input.textExpectedPhrase ?? existing.textExpectedPhrase ?? null)
         : null;
 
   const effectiveAutoApprove =

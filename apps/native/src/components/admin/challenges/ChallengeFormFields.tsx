@@ -129,7 +129,7 @@ export function ChallengeFormFields({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                formState.setImagePreviewUri(null);
+                formState.setImagePreviewUri("");
                 updateForm("image", "");
               }}
               style={styles.clearButton}

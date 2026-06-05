@@ -1,6 +1,8 @@
 import {
   activityFeeds,
   challengeActivities,
+  challengeLocation,
+  challengeRecurrence,
   challengeSubmissions,
   challenges,
   coinTransactions,
@@ -38,6 +40,7 @@ async function seedTrip(id: string, name: string) {
   await testDb.db.insert(trips).values({
     id,
     name,
+    description: "",
     startDate: new Date("2025-06-01"),
     endDate: new Date("2025-06-07"),
     createdAt: now(),
@@ -52,9 +55,62 @@ async function seedGroup(
   organizerId: string,
   code: string,
 ) {
-  await testDb.db
-    .insert(groups)
-    .values({ id, tripId, name, organizerId, code, createdAt: now(), updatedAt: now() });
+  await testDb.db.insert(groups).values({
+    id,
+    tripId,
+    name,
+    description: "",
+    organizerId,
+    code,
+    createdAt: now(),
+    updatedAt: now(),
+  });
+}
+
+async function seedChallenge(
+  id: string,
+  tripId: string,
+  overrides: Partial<typeof challenges.$inferInsert> & {
+    isRecurring?: boolean;
+    dailyStartTime?: string;
+    dailyEndTime?: string;
+    recurringDays?: number;
+    targetLatitude?: number;
+    targetLongitude?: number;
+  } = {},
+) {
+  await testDb.db.insert(challenges).values({
+    id,
+    tripId,
+    name: overrides.name ?? "Test Challenge",
+    description: overrides.description ?? "",
+    submissionType: overrides.submissionType ?? "IMAGE",
+    scoringCategory: overrides.scoringCategory ?? "SPEED",
+    status: overrides.status ?? "HIDDEN",
+    basePoints: overrides.basePoints ?? 100,
+    autoApprove: overrides.autoApprove ?? false,
+    startTime: overrides.startTime ?? null,
+    endTime: overrides.endTime ?? null,
+    votingStartTime: overrides.votingStartTime ?? null,
+    votingEndTime: overrides.votingEndTime ?? null,
+    createdAt: overrides.createdAt ?? now(),
+    updatedAt: overrides.updatedAt ?? now(),
+  });
+
+  await testDb.db.insert(challengeRecurrence).values({
+    challengeId: id,
+    isRecurring: overrides.isRecurring ?? false,
+    dailyStartTime: overrides.dailyStartTime ?? "",
+    dailyEndTime: overrides.dailyEndTime ?? "",
+    recurringDays: overrides.recurringDays ?? 0,
+    type: "DAILY",
+  });
+
+  await testDb.db.insert(challengeLocation).values({
+    challengeId: id,
+    targetLatitude: overrides.targetLatitude ?? 0,
+    targetLongitude: overrides.targetLongitude ?? 0,
+  });
 }
 
 describe("challenge router — PGLite transaction rollback", () => {
@@ -82,6 +138,21 @@ describe("challenge router — PGLite transaction rollback", () => {
             autoApprove: false,
             createdAt: now(),
             updatedAt: now(),
+          });
+
+          await tx.insert(challengeRecurrence).values({
+            challengeId: "challenge-1",
+            isRecurring: false,
+            dailyStartTime: "",
+            dailyEndTime: "",
+            recurringDays: 0,
+            type: "DAILY",
+          });
+
+          await tx.insert(challengeLocation).values({
+            challengeId: "challenge-1",
+            targetLatitude: 0,
+            targetLongitude: 0,
           });
 
           await tx.insert(activityFeeds).values({
@@ -142,15 +213,27 @@ describe("challenge router — PGLite transaction rollback", () => {
             submissionType: "IMAGE",
             scoringCategory: "SPEED",
             status: "VISIBLE",
-            isRecurring: true,
-            dailyStartTime: "09:00",
-            dailyEndTime: "18:00",
             basePoints: 50,
             autoApprove: false,
             startTime: now(),
             endTime: new Date(now().getTime() + 7 * 24 * 60 * 60 * 1000),
             createdAt: now(),
             updatedAt: now(),
+          });
+
+          await tx.insert(challengeRecurrence).values({
+            challengeId: "challenge-template-1",
+            isRecurring: true,
+            dailyStartTime: "09:00",
+            dailyEndTime: "18:00",
+            recurringDays: 7,
+            type: "DAILY",
+          });
+
+          await tx.insert(challengeLocation).values({
+            challengeId: "challenge-template-1",
+            targetLatitude: 0,
+            targetLongitude: 0,
           });
 
           await tx.insert(challenges).values({
@@ -161,13 +244,27 @@ describe("challenge router — PGLite transaction rollback", () => {
             submissionType: "IMAGE",
             scoringCategory: "SPEED",
             status: "VISIBLE",
-            isRecurring: false,
             basePoints: 50,
             autoApprove: false,
             startTime: now(),
             endTime: new Date(now().getTime() + 24 * 60 * 60 * 1000),
             createdAt: now(),
             updatedAt: now(),
+          });
+
+          await tx.insert(challengeRecurrence).values({
+            challengeId: "challenge-instance-1",
+            isRecurring: false,
+            dailyStartTime: "",
+            dailyEndTime: "",
+            recurringDays: 0,
+            type: "DAILY",
+          });
+
+          await tx.insert(challengeLocation).values({
+            challengeId: "challenge-instance-1",
+            targetLatitude: 0,
+            targetLongitude: 0,
           });
 
           throw new Error("Simulated failure after recurring precreation");
@@ -187,9 +284,7 @@ describe("challenge router — PGLite transaction rollback", () => {
     beforeEach(async () => {
       await seedUser("admin-1", "auth-admin-1", "Admin", "User");
       await seedTrip("trip-1", "Test Trip");
-      await testDb.db.insert(challenges).values({
-        id: "challenge-1",
-        tripId: "trip-1",
+      await seedChallenge("challenge-1", "trip-1", {
         name: "Original Challenge",
         description: "Original description",
         submissionType: "IMAGE",
@@ -197,8 +292,6 @@ describe("challenge router — PGLite transaction rollback", () => {
         status: "HIDDEN",
         basePoints: 100,
         autoApprove: false,
-        createdAt: now(),
-        updatedAt: now(),
       });
     });
 
@@ -223,6 +316,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             activityType: "challenge_event",
             title: "Czas start!",
             description: "Challenge started",
+            imageUrl: "",
             createdByAdmin: "admin-1",
             createdAt: now(),
             updatedAt: now(),
@@ -261,11 +355,18 @@ describe("challenge router — PGLite transaction rollback", () => {
 
     it("rolls back recurring instance precreation on update failure", async () => {
       await testDb.db
-        .update(challenges)
+        .update(challengeRecurrence)
         .set({
           isRecurring: true,
           dailyStartTime: "09:00",
           dailyEndTime: "18:00",
+          recurringDays: 7,
+        })
+        .where(eq(challengeRecurrence.challengeId, "challenge-1"));
+
+      await testDb.db
+        .update(challenges)
+        .set({
           startTime: now(),
           endTime: new Date(now().getTime() + 7 * 24 * 60 * 60 * 1000),
         })
@@ -291,13 +392,27 @@ describe("challenge router — PGLite transaction rollback", () => {
             submissionType: "IMAGE",
             scoringCategory: "SPEED",
             status: "VISIBLE",
-            isRecurring: false,
             basePoints: 100,
             autoApprove: false,
             startTime: now(),
             endTime: new Date(now().getTime() + 24 * 60 * 60 * 1000),
             createdAt: now(),
             updatedAt: now(),
+          });
+
+          await tx.insert(challengeRecurrence).values({
+            challengeId: "challenge-instance-1",
+            isRecurring: false,
+            dailyStartTime: "",
+            dailyEndTime: "",
+            recurringDays: 0,
+            type: "DAILY",
+          });
+
+          await tx.insert(challengeLocation).values({
+            challengeId: "challenge-instance-1",
+            targetLatitude: 0,
+            targetLongitude: 0,
           });
 
           throw new Error("Simulated failure after recurring update");
@@ -326,9 +441,7 @@ describe("challenge router — PGLite transaction rollback", () => {
       await seedGroup("group-1", "trip-1", "Test Group", "admin-1", "1234");
       await seedGroup("group-2", "trip-1", "Group 2", "admin-1", "5678");
 
-      await testDb.db.insert(challenges).values({
-        id: "challenge-1",
-        tripId: "trip-1",
+      await seedChallenge("challenge-1", "trip-1", {
         name: "Voting Challenge",
         description: "A peer voting challenge",
         submissionType: "IMAGE",
@@ -338,8 +451,6 @@ describe("challenge router — PGLite transaction rollback", () => {
         autoApprove: false,
         votingStartTime: new Date(now().getTime() - 24 * 60 * 60 * 1000),
         votingEndTime: new Date(now().getTime() + 24 * 60 * 60 * 1000),
-        createdAt: now(),
-        updatedAt: now(),
       });
 
       await testDb.db.insert(challengeSubmissions).values({
@@ -413,8 +524,9 @@ describe("challenge router — PGLite transaction rollback", () => {
             id: "activity-1",
             tripId: "trip-1",
             activityType: "challenge_event",
-            title: "Challenge completed: Voting Challenge",
-            description: "Voting has ended",
+            title: "Czas start!",
+            description: "Challenge started",
+            imageUrl: "",
             createdByAdmin: "admin-1",
             createdAt: now(),
             updatedAt: now(),
@@ -433,6 +545,7 @@ describe("challenge router — PGLite transaction rollback", () => {
             activityType: "submission",
             title: "#1 place: Test Group",
             description: "Challenge: Voting Challenge | Votes: 5 | Score: 4.50 | Points: +100",
+            imageUrl: "",
             createdByAdmin: "admin-1",
             createdAt: now(),
             updatedAt: now(),
@@ -505,6 +618,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
         id: "challenge-1",
         tripId: "trip-1",
         name: "Test Challenge",
+        description: "",
         submissionType: "IMAGE",
         scoringCategory: "SPEED",
         status: "ACTIVE",
@@ -512,6 +626,21 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
         autoApprove: false,
         createdAt: now(),
         updatedAt: now(),
+      });
+
+      await tx.insert(challengeRecurrence).values({
+        challengeId: "challenge-1",
+        isRecurring: false,
+        dailyStartTime: "",
+        dailyEndTime: "",
+        recurringDays: 0,
+        type: "DAILY",
+      });
+
+      await tx.insert(challengeLocation).values({
+        challengeId: "challenge-1",
+        targetLatitude: 0,
+        targetLongitude: 0,
       });
 
       const activityResult = await tx
@@ -522,6 +651,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
           activityType: "challenge_event",
           title: "Czas start!",
           description: "Challenge started",
+          imageUrl: "",
           createdByAdmin: "admin-1",
           createdAt: now(),
           updatedAt: now(),
@@ -564,9 +694,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
   it("updates challenge and inserts activity via Drizzle ORM transaction", async () => {
     await seedUser("admin-1", "auth-admin-1", "Admin", "User");
     await seedTrip("trip-1", "Test Trip");
-    await testDb.db.insert(challenges).values({
-      id: "challenge-1",
-      tripId: "trip-1",
+    await seedChallenge("challenge-1", "trip-1", {
       name: "Original Challenge",
       description: "Original description",
       submissionType: "IMAGE",
@@ -574,8 +702,6 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
       status: "HIDDEN",
       basePoints: 100,
       autoApprove: false,
-      createdAt: now(),
-      updatedAt: now(),
     });
 
     await testDb.db.transaction(async (tx) => {
@@ -592,6 +718,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
           activityType: "challenge_event",
           title: "Czas start!",
           description: "Challenge started",
+          imageUrl: "",
           createdByAdmin: "admin-1",
           createdAt: now(),
           updatedAt: now(),
@@ -625,9 +752,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
   it("rolls back Drizzle ORM transaction on failure for challenge operations", async () => {
     await seedUser("admin-1", "auth-admin-1", "Admin", "User");
     await seedTrip("trip-1", "Test Trip");
-    await testDb.db.insert(challenges).values({
-      id: "challenge-1",
-      tripId: "trip-1",
+    await seedChallenge("challenge-1", "trip-1", {
       name: "Original Challenge",
       description: "Original description",
       submissionType: "IMAGE",
@@ -635,8 +760,6 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
       status: "HIDDEN",
       basePoints: 100,
       autoApprove: false,
-      createdAt: now(),
-      updatedAt: now(),
     });
 
     await expect(
@@ -652,6 +775,7 @@ describe("challenge router — Drizzle ORM PGLite integration", () => {
           activityType: "challenge_event",
           title: "Czas start!",
           description: "Challenge started",
+          imageUrl: "",
           createdByAdmin: "admin-1",
           createdAt: now(),
           updatedAt: now(),

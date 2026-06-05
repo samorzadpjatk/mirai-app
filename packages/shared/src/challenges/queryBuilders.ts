@@ -15,7 +15,7 @@ export function getNextChallengePageParam(
 }
 
 export function buildChallengeFilter(tripId?: string | null) {
-  const filter: { isRecurring: boolean; tripId?: string } = { isRecurring: false };
+  const filter: { tripId?: string } = {};
   if (tripId && tripId !== "all") {
     filter.tripId = tripId;
   }

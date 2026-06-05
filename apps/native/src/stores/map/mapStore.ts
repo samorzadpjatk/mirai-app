@@ -11,11 +11,11 @@ export interface MapUserLocation {
 }
 
 export interface MapState {
-  selectedUserId: string | null;
+  selectedUserId: string;
   showUsersList: boolean;
   isListExpanded: boolean;
   showManageModal: boolean;
-  followMode: "user" | null;
+  followMode: "user" | "none";
   focusedCoordinate: [number, number] | null;
   mapTheme: MapTheme;
 }
@@ -27,7 +27,7 @@ export interface MapActions {
   toggleListExpansion: () => void;
   collapseList: () => void;
   setShowManageModal: (open: boolean) => void;
-  setFollowMode: (mode: "user" | null) => void;
+  setFollowMode: (mode: "user" | "none") => void;
   setFocusedCoordinate: (coordinate: [number, number] | null) => void;
   toggleTheme: () => void;
   recenter: (currentCoordinate: [number, number] | null) => void;
@@ -39,11 +39,11 @@ export type MapStore = MapState & MapActions;
 
 export const mapStore = createStore<MapStore>()((set, get) => ({
   // State
-  selectedUserId: null,
+  selectedUserId: "",
   showUsersList: true,
   isListExpanded: false,
   showManageModal: false,
-  followMode: null,
+  followMode: "none",
   focusedCoordinate: null,
   mapTheme: "dark",
 
@@ -59,12 +59,12 @@ export const mapStore = createStore<MapStore>()((set, get) => ({
   },
 
   deselectUser: () => {
-    set({ selectedUserId: null });
+    set({ selectedUserId: "" });
   },
 
   backToList: () => {
     set({
-      selectedUserId: null,
+      selectedUserId: "",
       showUsersList: true,
     });
   },
@@ -98,7 +98,7 @@ export const mapStore = createStore<MapStore>()((set, get) => ({
   recenter: (currentCoordinate) => {
     if (!currentCoordinate) return;
     set({
-      selectedUserId: null,
+      selectedUserId: "",
       focusedCoordinate: currentCoordinate,
     });
   },

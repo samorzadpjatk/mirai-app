@@ -54,11 +54,11 @@ export function ThemedListItem({
           <Text testID="item-title" style={styles.title}>
             {title}
           </Text>
-          {subtitle && (
+          {subtitle ? (
             <Text testID="item-subtitle" style={styles.subtitle}>
               {subtitle}
             </Text>
-          )}
+          ) : null}
         </View>
         {rightElement}
       </View>

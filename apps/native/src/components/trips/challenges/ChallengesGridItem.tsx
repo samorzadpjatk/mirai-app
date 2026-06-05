@@ -56,7 +56,9 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
                 },
               ]}
             >
-              {isLocked && <Ionicons name="lock-closed" size={10} color={statusMeta.textColor} />}
+              {isLocked ? (
+                <Ionicons name="lock-closed" size={10} color={statusMeta.textColor} />
+              ) : null}
               <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
                 {statusMeta.label}
               </Text>

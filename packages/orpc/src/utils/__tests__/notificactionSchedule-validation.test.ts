@@ -281,6 +281,8 @@ describe("notificactionSchedule-validation", () => {
       const input = {
         name: "Test",
         notificationType: "ranking" as const,
+        notificationTitle: "",
+        notificationBody: "",
         startDate: new Date(),
         endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         hour: 0,

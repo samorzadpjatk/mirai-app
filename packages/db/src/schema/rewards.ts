@@ -70,7 +70,7 @@ export const coinTransactions = pgTable("coin_transactions", {
     .notNull()
     .references(() => groups.id),
   amount: integer("amount").notNull(),
-  reason: text("reason"),
+  reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .$onUpdate(() => new Date())

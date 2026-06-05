@@ -37,13 +37,10 @@ export interface ChallengeInsertInput {
 export interface ChallengeInsertValues {
   tripId: string;
   name: string;
-  description: string | null;
+  description: string;
   image: string | undefined;
   submissionType: "IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
-  isRecurring: boolean | undefined;
-  dailyStartTime: string | undefined;
-  dailyEndTime: string | undefined;
   basePoints: number | undefined;
   firstPlacePoints: number | undefined;
   secondPlacePoints: number | undefined;
@@ -53,10 +50,28 @@ export interface ChallengeInsertValues {
   endTime: Date | undefined;
   votingStartTime: Date | null;
   votingEndTime: Date | null;
-  targetLatitude: number | undefined;
-  targetLongitude: number | undefined;
-  expectedValue: string | null;
   autoApprove: boolean;
+}
+
+export interface ChallengeRecurrenceInsertValues {
+  isRecurring: boolean;
+  dailyStartTime: string;
+  dailyEndTime: string;
+  recurringDays: number;
+  type: string;
+}
+
+export interface ChallengeLocationInsertValues {
+  targetLatitude: number;
+  targetLongitude: number;
+}
+
+export interface ChallengeTextInsertValues {
+  expectedPhrase: string;
+}
+
+export interface ChallengeQrCodeInsertValues {
+  expectedValue: string;
 }
 
 const normalizeChallengeImageInput = (value: string | undefined) => {
@@ -67,7 +82,13 @@ const normalizeChallengeImageInput = (value: string | undefined) => {
 export const prepareChallengeInsert = (
   input: ChallengeInsertInput,
   now: Date,
-): ChallengeInsertValues => {
+): {
+  challenge: ChallengeInsertValues;
+  recurrence: ChallengeRecurrenceInsertValues;
+  location: ChallengeLocationInsertValues;
+  text?: ChallengeTextInsertValues;
+  qrCode?: ChallengeQrCodeInsertValues;
+} => {
   const recurringDays = resolveRecurringDays({
     isRecurring: input.isRecurring,
     recurringDays: input.recurringDays,
@@ -107,16 +128,13 @@ export const prepareChallengeInsert = (
     now,
   );
 
-  return {
+  const challenge: ChallengeInsertValues = {
     tripId: input.tripId,
     name: input.name,
-    description: input.description ?? null,
+    description: input.description ?? "",
     image: normalizeChallengeImageInput(input.image),
     submissionType: input.submissionType,
     scoringCategory: input.scoringCategory,
-    isRecurring: input.isRecurring,
-    dailyStartTime: input.dailyStartTime,
-    dailyEndTime: input.dailyEndTime,
     basePoints: input.basePoints,
     firstPlacePoints: input.firstPlacePoints,
     secondPlacePoints: input.secondPlacePoints,
@@ -132,14 +150,6 @@ export const prepareChallengeInsert = (
       input.scoringCategory === "PEER_VOTING"
         ? (peerVotingTemplateWindow?.votingEndTime ?? null)
         : null,
-    targetLatitude: input.targetLatitude,
-    targetLongitude: input.targetLongitude,
-    expectedValue:
-      input.submissionType === "QR_CODE"
-        ? (input.qrCodeValue ?? null)
-        : input.submissionType === "TEXT"
-          ? (input.textExpectedPhrase ?? null)
-          : null,
     autoApprove:
       input.submissionType === "QR_CODE" || input.submissionType === "LOCATION"
         ? true
@@ -147,4 +157,33 @@ export const prepareChallengeInsert = (
           ? false
           : (input.autoApprove ?? false),
   };
+
+  const recurrence: ChallengeRecurrenceInsertValues = {
+    isRecurring: input.isRecurring ?? false,
+    dailyStartTime: input.dailyStartTime ?? "",
+    dailyEndTime: input.dailyEndTime ?? "",
+    recurringDays: recurringDays ?? 0,
+    type: "DAILY",
+  };
+
+  const location: ChallengeLocationInsertValues = {
+    targetLatitude: input.targetLatitude ?? 0,
+    targetLongitude: input.targetLongitude ?? 0,
+  };
+
+  const result: ReturnType<typeof prepareChallengeInsert> = {
+    challenge,
+    recurrence,
+    location,
+  };
+
+  if (input.submissionType === "TEXT") {
+    result.text = { expectedPhrase: input.textExpectedPhrase ?? "" };
+  }
+
+  if (input.submissionType === "QR_CODE") {
+    result.qrCode = { expectedValue: input.qrCodeValue ?? "" };
+  }
+
+  return result;
 };

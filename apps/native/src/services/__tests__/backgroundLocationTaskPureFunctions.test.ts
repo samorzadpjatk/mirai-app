@@ -38,79 +38,79 @@ jest.mock("~/services/storage/storage", () => ({
 }));
 
 import {
-  toFiniteNumberOrNull,
-  toHeadingOrNull,
-  toNonNegativeOrNull,
+  toFiniteNumberOrUndefined,
+  toHeadingOrUndefined,
+  toNonNegativeOrUndefined,
 } from "~/services/background/backgroundLocationTask";
 
-describe("toFiniteNumberOrNull", () => {
+describe("toFiniteNumberOrUndefined", () => {
   it("should return the number for valid finite values", () => {
-    expect(toFiniteNumberOrNull(42)).toBe(42);
-    expect(toFiniteNumberOrNull(0)).toBe(0);
-    expect(toFiniteNumberOrNull(-10)).toBe(-10);
-    expect(toFiniteNumberOrNull(3.14)).toBe(3.14);
+    expect(toFiniteNumberOrUndefined(42)).toBe(42);
+    expect(toFiniteNumberOrUndefined(0)).toBe(0);
+    expect(toFiniteNumberOrUndefined(-10)).toBe(-10);
+    expect(toFiniteNumberOrUndefined(3.14)).toBe(3.14);
   });
 
-  it("should return null for non-finite values", () => {
-    expect(toFiniteNumberOrNull(NaN)).toBeNull();
-    expect(toFiniteNumberOrNull(Infinity)).toBeNull();
-    expect(toFiniteNumberOrNull(-Infinity)).toBeNull();
+  it("should return undefined for non-finite values", () => {
+    expect(toFiniteNumberOrUndefined(NaN)).toBeUndefined();
+    expect(toFiniteNumberOrUndefined(Infinity)).toBeUndefined();
+    expect(toFiniteNumberOrUndefined(-Infinity)).toBeUndefined();
   });
 
-  it("should return null for null or undefined", () => {
-    expect(toFiniteNumberOrNull(null)).toBeNull();
-    expect(toFiniteNumberOrNull(undefined)).toBeNull();
+  it("should return undefined for null or undefined", () => {
+    expect(toFiniteNumberOrUndefined(null)).toBeUndefined();
+    expect(toFiniteNumberOrUndefined(undefined)).toBeUndefined();
   });
 
-  it("should return null for non-number types", () => {
-    expect(toFiniteNumberOrNull("42")).toBeNull();
-    expect(toFiniteNumberOrNull({})).toBeNull();
+  it("should return undefined for non-number types", () => {
+    expect(toFiniteNumberOrUndefined("42")).toBeUndefined();
+    expect(toFiniteNumberOrUndefined({})).toBeUndefined();
   });
 });
 
-describe("toNonNegativeOrNull", () => {
+describe("toNonNegativeOrUndefined", () => {
   it("should return value for non-negative finite numbers", () => {
-    expect(toNonNegativeOrNull(42)).toBe(42);
-    expect(toNonNegativeOrNull(0)).toBe(0);
+    expect(toNonNegativeOrUndefined(42)).toBe(42);
+    expect(toNonNegativeOrUndefined(0)).toBe(0);
   });
 
-  it("should return null for negative numbers", () => {
-    expect(toNonNegativeOrNull(-1)).toBeNull();
-    expect(toNonNegativeOrNull(-10)).toBeNull();
+  it("should return undefined for negative numbers", () => {
+    expect(toNonNegativeOrUndefined(-1)).toBeUndefined();
+    expect(toNonNegativeOrUndefined(-10)).toBeUndefined();
   });
 
-  it("should return null for non-finite values", () => {
-    expect(toNonNegativeOrNull(NaN)).toBeNull();
-    expect(toNonNegativeOrNull(Infinity)).toBeNull();
+  it("should return undefined for non-finite values", () => {
+    expect(toNonNegativeOrUndefined(NaN)).toBeUndefined();
+    expect(toNonNegativeOrUndefined(Infinity)).toBeUndefined();
   });
 
-  it("should return null for null or undefined", () => {
-    expect(toNonNegativeOrNull(null)).toBeNull();
-    expect(toNonNegativeOrNull(undefined)).toBeNull();
+  it("should return undefined for null or undefined", () => {
+    expect(toNonNegativeOrUndefined(null)).toBeUndefined();
+    expect(toNonNegativeOrUndefined(undefined)).toBeUndefined();
   });
 });
 
-describe("toHeadingOrNull", () => {
+describe("toHeadingOrUndefined", () => {
   it("should return value for valid headings", () => {
-    expect(toHeadingOrNull(0)).toBe(0);
-    expect(toHeadingOrNull(180)).toBe(180);
-    expect(toHeadingOrNull(360)).toBe(360);
+    expect(toHeadingOrUndefined(0)).toBe(0);
+    expect(toHeadingOrUndefined(180)).toBe(180);
+    expect(toHeadingOrUndefined(360)).toBe(360);
   });
 
-  it("should return null for out-of-range headings", () => {
-    expect(toHeadingOrNull(-1)).toBeNull();
-    expect(toHeadingOrNull(361)).toBeNull();
-    expect(toHeadingOrNull(400)).toBeNull();
+  it("should return undefined for out-of-range headings", () => {
+    expect(toHeadingOrUndefined(-1)).toBeUndefined();
+    expect(toHeadingOrUndefined(361)).toBeUndefined();
+    expect(toHeadingOrUndefined(400)).toBeUndefined();
   });
 
-  it("should return null for non-finite values", () => {
-    expect(toHeadingOrNull(NaN)).toBeNull();
-    expect(toHeadingOrNull(Infinity)).toBeNull();
+  it("should return undefined for non-finite values", () => {
+    expect(toHeadingOrUndefined(NaN)).toBeUndefined();
+    expect(toHeadingOrUndefined(Infinity)).toBeUndefined();
   });
 
-  it("should return null for null or undefined", () => {
-    expect(toHeadingOrNull(null)).toBeNull();
-    expect(toHeadingOrNull(undefined)).toBeNull();
+  it("should return undefined for null or undefined", () => {
+    expect(toHeadingOrUndefined(null)).toBeUndefined();
+    expect(toHeadingOrUndefined(undefined)).toBeUndefined();
   });
 });
 

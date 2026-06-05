@@ -1,4 +1,10 @@
-import { appRouter, createORPCContext, enableUserAgentTelemetry, logger } from "@mirai-app/orpc";
+import {
+  appRouter,
+  createORPCContext,
+  enableUserAgentTelemetry,
+  logger,
+  serviceRouter,
+} from "@mirai-app/orpc";
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { Hono } from "hono";
@@ -147,6 +153,18 @@ export function createServer(opts: ServerOptions) {
     ],
   });
 
+  const servicePrefix = "/internal/trpc";
+  const serviceWsRpcHandler = new BunWsRPCHandler(serviceRouter, {
+    interceptors: [
+      onError((error): void => {
+        logger.error(error, "Service RPC WebSocket handler error");
+        if (!dev && !(error instanceof ORPCError)) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
+        }
+      }),
+    ],
+  });
+
   const start = () => {
     try {
       bunServer = Bun.serve({
@@ -154,6 +172,13 @@ export function createServer(opts: ServerOptions) {
         hostname: host,
         fetch(req, server) {
           const url = new URL(req.url, "http://localhost");
+
+          if (
+            url.pathname.startsWith(servicePrefix) &&
+            server.upgrade(req, { data: { url: req.url } })
+          ) {
+            return;
+          }
 
           if (url.pathname.startsWith(prefix) && server.upgrade(req, { data: { url: req.url } })) {
             return;
@@ -224,10 +249,26 @@ export function createServer(opts: ServerOptions) {
               connectionParams: data.connectionParams,
             });
 
-            await wsRpcHandler.message(ws, message, { context });
+            const wsUrl = data.url ? new URL(data.url, "http://localhost") : null;
+            const isServiceEndpoint = wsUrl?.pathname.startsWith(servicePrefix) ?? false;
+
+            if (isServiceEndpoint) {
+              await serviceWsRpcHandler.message(ws, message, { context });
+            } else {
+              await wsRpcHandler.message(ws, message, { context });
+            }
           },
           close(ws) {
-            wsRpcHandler.close(ws);
+            const wsUrl = (ws.data as { url?: string }).url;
+            const isServiceEndpoint = wsUrl
+              ? new URL(wsUrl, "http://localhost").pathname.startsWith(servicePrefix)
+              : false;
+
+            if (isServiceEndpoint) {
+              serviceWsRpcHandler.close(ws);
+            } else {
+              wsRpcHandler.close(ws);
+            }
           },
         },
       });

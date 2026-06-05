@@ -33,6 +33,7 @@ describe("coin router — real PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-123",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -43,6 +44,7 @@ describe("coin router — real PGLite transaction rollback", () => {
       id: "group-123",
       tripId: "trip-123",
       name: "Test Group",
+      description: "",
       organizerId: "user-123",
       code: "1234",
       coins: 100,
@@ -168,6 +170,7 @@ describe("coin router — Drizzle ORM PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id: "trip-123",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -177,6 +180,7 @@ describe("coin router — Drizzle ORM PGLite integration", () => {
       id: "group-123",
       tripId: "trip-123",
       name: "Test Group",
+      description: "",
       organizerId: "user-123",
       code: "1234",
       coins: 100,

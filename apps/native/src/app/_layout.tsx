@@ -148,16 +148,23 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
       const user = await orpc.user.getMy.call({});
       if (!user) return null;
 
+      const normalizedFirstName = user.firstName ?? "";
+      const normalizedLastName = user.lastName ?? "";
+      const normalizedEmail = user.email ?? "";
+
       // Transform database user to AuthUser format
       return {
         id: user.id,
         authUserId: user.authUserId,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        name: formatDisplayName(user.firstName, user.lastName),
-        emailVerified: null, // TODO: Add email verification logic when available
+        email: normalizedEmail,
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+        name: formatDisplayName(normalizedFirstName, normalizedLastName) ?? "",
+        emailVerified: undefined,
         role: user.role,
+        hasName: Boolean(normalizedFirstName.trim() || normalizedLastName.trim()),
+        hasEmail: Boolean(normalizedEmail.trim()),
+        isEmailVerified: false,
       };
     } catch {
       // TODO: Add Sentry crash reporting for production errors

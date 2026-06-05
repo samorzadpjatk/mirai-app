@@ -49,11 +49,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: 52.2297,
       longitude: 21.0122,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 
@@ -81,11 +76,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: -33.8688,
       longitude: -151.2093,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 
@@ -113,11 +103,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: 0,
       longitude: 0,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 
@@ -221,11 +206,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: 52.22976666111,
       longitude: 21.01223333888,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 
@@ -253,11 +233,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: 89.9999,
       longitude: 180,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 
@@ -285,11 +260,6 @@ describe("useMapActions (MSW)", () => {
     expect(capturedInput).toEqual({
       latitude: 0,
       longitude: -180,
-      accuracy: null,
-      altitude: null,
-      altitudeAccuracy: null,
-      heading: null,
-      speed: null,
     });
   });
 });

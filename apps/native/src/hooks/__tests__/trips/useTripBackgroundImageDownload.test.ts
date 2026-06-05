@@ -42,7 +42,7 @@ describe("useTripBackgroundImageDownload", () => {
       useTripBackgroundImageDownload("trips/backgrounds/trip-1.jpg"),
     );
 
-    expect(result.current.imageUrl).toBeNull();
+    expect(result.current.imageUrl).toBe("");
     expect(result.current.error).toBeNull();
     expect(result.current.status).toBe("idle");
   });
@@ -56,7 +56,7 @@ describe("useTripBackgroundImageDownload", () => {
 
     const { result } = renderHook(() => useTripBackgroundImageDownload(null));
 
-    expect(result.current.imageUrl).toBeNull();
+    expect(result.current.imageUrl).toBe("");
     expect(result.current.error).toBeNull();
   });
 
@@ -259,7 +259,7 @@ describe("useTripBackgroundImageDownload", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.imageUrl).toBeNull();
+      expect(result.current.imageUrl).toBe("");
     });
 
     consoleSpy.mockRestore();

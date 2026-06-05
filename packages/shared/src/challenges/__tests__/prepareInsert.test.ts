@@ -16,12 +16,12 @@ describe("prepareChallengeInsert", () => {
       now,
     );
 
-    expect(result.tripId).toBe("trip-1");
-    expect(result.name).toBe("Test Challenge");
-    expect(result.submissionType).toBe("IMAGE");
-    expect(result.scoringCategory).toBe("SPEED");
-    expect(result.status).toBe("HIDDEN");
-    expect(result.isRecurring).toBeUndefined();
+    expect(result.challenge.tripId).toBe("trip-1");
+    expect(result.challenge.name).toBe("Test Challenge");
+    expect(result.challenge.submissionType).toBe("IMAGE");
+    expect(result.challenge.scoringCategory).toBe("SPEED");
+    expect(result.challenge.status).toBe("HIDDEN");
+    expect(result.recurrence.isRecurring).toBe(false);
   });
 
   it("normalizes autoApprove for QR_CODE", () => {
@@ -35,7 +35,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.autoApprove).toBe(true);
+    expect(result.challenge.autoApprove).toBe(true);
   });
 
   it("normalizes autoApprove for LOCATION", () => {
@@ -49,7 +49,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.autoApprove).toBe(true);
+    expect(result.challenge.autoApprove).toBe(true);
   });
 
   it("normalizes autoApprove for IMAGE_LOCATION", () => {
@@ -63,7 +63,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.autoApprove).toBe(false);
+    expect(result.challenge.autoApprove).toBe(false);
   });
 
   it("preserves autoApprove for TEXT", () => {
@@ -77,7 +77,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.autoApprove).toBe(true);
+    expect(result.challenge.autoApprove).toBe(true);
   });
 
   it("sets expectedValue for QR_CODE", () => {
@@ -91,10 +91,10 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.expectedValue).toBe("SECRET123");
+    expect(result.qrCode?.expectedValue).toBe("SECRET123");
   });
 
-  it("sets expectedValue for TEXT", () => {
+  it("sets expectedPhrase for TEXT", () => {
     const result = prepareChallengeInsert(
       {
         tripId: "trip-1",
@@ -105,10 +105,10 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.expectedValue).toBe("hello world");
+    expect(result.text?.expectedPhrase).toBe("hello world");
   });
 
-  it("returns null expectedValue for IMAGE", () => {
+  it("returns undefined text and qrCode for IMAGE", () => {
     const result = prepareChallengeInsert(
       {
         tripId: "trip-1",
@@ -118,7 +118,8 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.expectedValue).toBeNull();
+    expect(result.text).toBeUndefined();
+    expect(result.qrCode).toBeUndefined();
   });
 
   it("computes recurring window when recurring", () => {
@@ -136,10 +137,10 @@ describe("prepareChallengeInsert", () => {
       now,
     );
 
-    expect(result.isRecurring).toBe(true);
+    expect(result.recurrence.isRecurring).toBe(true);
     const anchorDay = startOfDay(startTime);
-    expect(result.startTime).toEqual(anchorDay);
-    expect(result.endTime).toEqual(endOfDay(addDays(anchorDay, 2)));
+    expect(result.challenge.startTime).toEqual(anchorDay);
+    expect(result.challenge.endTime).toEqual(endOfDay(addDays(anchorDay, 2)));
   });
 
   it("computes peer voting window", () => {
@@ -156,8 +157,10 @@ describe("prepareChallengeInsert", () => {
       now,
     );
 
-    expect(result.votingStartTime).toEqual(endTime);
-    expect(result.votingEndTime).toEqual(new Date(endTime.getTime() + 4 * 60 * 60 * 1000));
+    expect(result.challenge.votingStartTime).toEqual(endTime);
+    expect(result.challenge.votingEndTime).toEqual(
+      new Date(endTime.getTime() + 4 * 60 * 60 * 1000),
+    );
   });
 
   it("sets voting times to null for non-peer-voting", () => {
@@ -170,8 +173,8 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.votingStartTime).toBeNull();
-    expect(result.votingEndTime).toBeNull();
+    expect(result.challenge.votingStartTime).toBeNull();
+    expect(result.challenge.votingEndTime).toBeNull();
   });
 
   it("computes ACTIVE status for immediate activation", () => {
@@ -187,7 +190,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.status).toBe("ACTIVE");
+    expect(result.challenge.status).toBe("ACTIVE");
   });
 
   it("keeps VISIBLE status when start time is future", () => {
@@ -203,7 +206,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.status).toBe("VISIBLE");
+    expect(result.challenge.status).toBe("VISIBLE");
   });
 
   it("normalizes image input", () => {
@@ -217,7 +220,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.image).toBe("https://example.com/image.png");
+    expect(result.challenge.image).toBe("https://example.com/image.png");
   });
 
   it("returns undefined image when not provided", () => {
@@ -230,7 +233,7 @@ describe("prepareChallengeInsert", () => {
       },
       now,
     );
-    expect(result.image).toBeUndefined();
+    expect(result.challenge.image).toBeUndefined();
   });
 
   it("preserves optional fields", () => {
@@ -253,14 +256,14 @@ describe("prepareChallengeInsert", () => {
       now,
     );
 
-    expect(result.description).toBe("A test challenge");
-    expect(result.basePoints).toBe(10);
-    expect(result.firstPlacePoints).toBe(20);
-    expect(result.secondPlacePoints).toBe(15);
-    expect(result.thirdPlacePoints).toBe(10);
-    expect(result.targetLatitude).toBe(52.2297);
-    expect(result.targetLongitude).toBe(21.0122);
-    expect(result.dailyStartTime).toBe("09:00");
-    expect(result.dailyEndTime).toBe("18:00");
+    expect(result.challenge.description).toBe("A test challenge");
+    expect(result.challenge.basePoints).toBe(10);
+    expect(result.challenge.firstPlacePoints).toBe(20);
+    expect(result.challenge.secondPlacePoints).toBe(15);
+    expect(result.challenge.thirdPlacePoints).toBe(10);
+    expect(result.location.targetLatitude).toBe(52.2297);
+    expect(result.location.targetLongitude).toBe(21.0122);
+    expect(result.recurrence.dailyStartTime).toBe("09:00");
+    expect(result.recurrence.dailyEndTime).toBe("18:00");
   });
 });

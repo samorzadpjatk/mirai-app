@@ -3,7 +3,15 @@ import type { DB } from "@mirai-app/db";
 import { emptyReactionCounts } from "@mirai-app/shared/feed";
 import { count, inArray } from "drizzle-orm";
 import { resolveSignedUrl } from "./storage";
-import type { ActivityWithRelations } from "./types";
+import type { Activity, RawActivityWithRelations } from "./types";
+import {
+  toClientActivity,
+  toClientChallengeActivity,
+  toClientChallengeSnippet,
+  toClientGroupSnippet,
+  toClientSubmissionActivity,
+  toClientSubmissionSnippet,
+} from "./utils";
 
 export const enrichActivities = async (
   context: {
@@ -23,10 +31,10 @@ export const enrichActivities = async (
     };
     dbUser: { id: string };
   },
-  activities: ActivityWithRelations[],
-) => {
+  activities: RawActivityWithRelations[],
+): Promise<Activity[]> => {
   if (activities.length === 0) {
-    return activities;
+    return [];
   }
 
   const activityIds = activities.map((activity) => activity.id);
@@ -110,79 +118,175 @@ export const enrichActivities = async (
 
   return Promise.all(
     activities.map(async (activity) => {
-      const submissionActivity = activity.submissionActivity
-        ? {
-            ...activity.submissionActivity,
-            currentGroupRank:
-              rankByTripGroup.get(`${activity.tripId}:${activity.submissionActivity.groupId}`) ??
-              null,
-            group: activity.submissionActivity.group
-              ? {
-                  ...activity.submissionActivity.group,
-                  image: await getResolvedImage(activity.submissionActivity.group.image),
-                }
-              : null,
-          }
-        : null;
-
-      const challengeActivity = activity.challengeActivity
-        ? {
-            ...activity.challengeActivity,
-            challenge: activity.challengeActivity.challenge
-              ? {
-                  ...activity.challengeActivity.challenge,
-                  image: await getResolvedImage(activity.challengeActivity.challenge.image),
-                }
-              : null,
-          }
-        : null;
-
-      const rankChangeActivity = activity.rankChangeActivity
-        ? {
-            ...activity.rankChangeActivity,
-            group: activity.rankChangeActivity.group
-              ? {
-                  ...activity.rankChangeActivity.group,
-                  image: await getResolvedImage(activity.rankChangeActivity.group.image),
-                }
-              : null,
-          }
-        : null;
-
-      const userPost = activity.userPost
-        ? {
-            ...activity.userPost,
-            additionalImages: await Promise.all(
-              activity.userPost.additionalImages.map((image) => getResolvedImage(image)),
-            ),
-            author: {
-              ...activity.userPost.author,
-              group: activity.userPost.author?.group
-                ? {
-                    ...activity.userPost.author.group,
-                    image: await getResolvedImage(activity.userPost.author.group.image),
-                  }
-                : null,
-            },
-          }
-        : null;
-
       const counts = countsByActivity.get(activity.id) ?? emptyReactionCounts();
       const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
 
-      return {
+      const base = toClientActivity({
         ...activity,
         imageUrl: await getResolvedImage(activity.imageUrl),
-        submissionActivity,
-        challengeActivity,
-        rankChangeActivity,
-        userPost,
         reactionsSummary: {
           total,
           counts,
           myReactions: Array.from(myReactionsByActivity.get(activity.id) ?? []),
         },
-      };
+      });
+
+      switch (activity.activityType) {
+        case "custom": {
+          return {
+            ...base,
+            activityType: "custom" as const,
+            submissionActivity: null,
+            challengeActivity: null,
+            rankChangeActivity: null,
+            userPost: null,
+          };
+        }
+
+        case "user_post": {
+          const rawUserPost = activity.userPost;
+          return {
+            ...base,
+            activityType: "user_post" as const,
+            userPost: rawUserPost
+              ? {
+                  authorId: rawUserPost.authorId,
+                  additionalImages: (
+                    await Promise.all(
+                      rawUserPost.additionalImages.map((image) => getResolvedImage(image)),
+                    )
+                  ).filter((img): img is string => img !== null),
+                  author: rawUserPost.author
+                    ? {
+                        ...rawUserPost.author,
+                        group: rawUserPost.author.group
+                          ? toClientGroupSnippet({
+                              ...rawUserPost.author.group,
+                              image: await getResolvedImage(rawUserPost.author.group.image),
+                            })
+                          : null,
+                      }
+                    : null,
+                }
+              : { authorId: "", additionalImages: [], author: null },
+            submissionActivity: null,
+            challengeActivity: null,
+            rankChangeActivity: null,
+          };
+        }
+
+        case "submission": {
+          const rawSubmission = activity.submissionActivity;
+          return {
+            ...base,
+            activityType: "submission" as const,
+            submissionActivity: rawSubmission
+              ? toClientSubmissionActivity({
+                  ...rawSubmission,
+                  currentGroupRank:
+                    rankByTripGroup.get(`${activity.tripId}:${rawSubmission.groupId}`) ?? null,
+                  group: rawSubmission.group
+                    ? toClientGroupSnippet({
+                        ...rawSubmission.group,
+                        image: await getResolvedImage(rawSubmission.group.image),
+                      })
+                    : null,
+                  challenge: rawSubmission.challenge
+                    ? toClientChallengeSnippet(rawSubmission.challenge)
+                    : null,
+                  submission: rawSubmission.submission
+                    ? toClientSubmissionSnippet(rawSubmission.submission)
+                    : null,
+                })
+              : {
+                  submissionId: "",
+                  challengeId: "",
+                  groupId: "",
+                  hasVideo: false,
+                  isWinner: false,
+                  ranking: 0,
+                  pointsAwarded: 0,
+                  currentGroupRank: null,
+                  group: null,
+                  challenge: null,
+                  submission: null,
+                },
+            challengeActivity: null,
+            rankChangeActivity: null,
+            userPost: null,
+          };
+        }
+
+        case "challenge_event": {
+          const rawChallenge = activity.challengeActivity;
+          return {
+            ...base,
+            activityType: "challenge_event" as const,
+            challengeActivity: rawChallenge
+              ? toClientChallengeActivity({
+                  ...rawChallenge,
+                  challenge: rawChallenge.challenge
+                    ? toClientChallengeSnippet({
+                        ...rawChallenge.challenge,
+                        image: await getResolvedImage(rawChallenge.challenge.image),
+                      })
+                    : null,
+                })
+              : {
+                  challengeId: "",
+                  eventType: "",
+                  endTime: null,
+                  submissionType: "",
+                  basePoints: 0,
+                  submissionCount: 0,
+                  challenge: null,
+                },
+            submissionActivity: null,
+            rankChangeActivity: null,
+            userPost: null,
+          };
+        }
+
+        case "rank_change": {
+          const rawRankChange = activity.rankChangeActivity;
+          return {
+            ...base,
+            activityType: "rank_change" as const,
+            rankChangeActivity: rawRankChange
+              ? {
+                  ...rawRankChange,
+                  group: rawRankChange.group
+                    ? toClientGroupSnippet({
+                        ...rawRankChange.group,
+                        image: await getResolvedImage(rawRankChange.group.image),
+                      })
+                    : null,
+                }
+              : {
+                  groupId: "",
+                  newRank: 0,
+                  totalCoins: 0,
+                  coinsGained: 0,
+                  group: null,
+                },
+            submissionActivity: null,
+            challengeActivity: null,
+            userPost: null,
+          };
+        }
+
+        default: {
+          // Fallback for unknown activity types — treat as custom
+          return {
+            ...base,
+            activityType: "custom" as const,
+            submissionActivity: null,
+            challengeActivity: null,
+            rankChangeActivity: null,
+            userPost: null,
+          };
+        }
+      }
     }),
   );
 };

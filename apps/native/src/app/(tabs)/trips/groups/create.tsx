@@ -20,8 +20,8 @@ export default function CreateGroupScreen() {
   const insets = useSafeAreaInsets();
 
   const [groupName, setGroupName] = useState("");
-  const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(null);
+  const [groupImagePath, setGroupImagePath] = useState<string>("");
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string>("");
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { createGroup, isCreating } = useCreateGroup(tripId);

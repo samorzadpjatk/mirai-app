@@ -1,3 +1,4 @@
+import type { Activity } from "@mirai-app/orpc";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -19,31 +20,9 @@ import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { EmptyState, FilterChip, FilterChipRow, ThemedTextInput } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
+type ActivityType = Activity["activityType"];
 
-interface AdminActivity {
-  id: string;
-  tripId: string;
-  activityType: ActivityType;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  isPinned: boolean;
-  isHidden: boolean;
-  createdAt: Date | string;
-  admin?: { firstName?: string | null; lastName?: string | null } | null;
-  submissionActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  rankChangeActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  userPost?: {
-    author?: {
-      group?: { name?: string | null } | null;
-    } | null;
-  } | null;
-}
+type AdminActivity = Activity;
 
 const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
   { label: "All", value: "all" },

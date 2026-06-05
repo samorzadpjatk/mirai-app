@@ -80,7 +80,7 @@ export const seedTrip = async (
       .insert(trips)
       .values({
         name: tripConfig.name,
-        description: tripConfig.description,
+        description: tripConfig.description ?? "",
         startDate: new Date(tripConfig.startDate),
         endDate: new Date(tripConfig.endDate),
         backgroundImagePath,

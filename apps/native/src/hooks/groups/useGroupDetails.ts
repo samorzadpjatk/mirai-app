@@ -12,5 +12,6 @@ export function useGroupDetails(groupId?: string | null) {
     isLoadingUser: currentUserQuery.isLoading,
     group: groupQuery.data,
     isLoadingGroup: groupQuery.isLoading,
+    tripId: groupQuery.data?.trip?.id ?? "",
   } as const;
 }

@@ -20,11 +20,35 @@ describe("recurringChallenges", () => {
       create: vi.fn(),
     };
 
+    const createSelectChain = () => {
+      let hasLimit = false;
+      const chain = {
+        from: vi.fn(() => chain),
+        leftJoin: vi.fn(() => chain),
+        innerJoin: vi.fn(() => chain),
+        where: vi.fn(() => chain),
+        limit: vi.fn(() => {
+          hasLimit = true;
+          return chain;
+        }),
+        then: vi.fn((resolve) => {
+          if (hasLimit) {
+            const result = challengeMock.findFirst();
+            return Promise.resolve(result).then((r) => resolve(r ? [r] : []));
+          }
+          const result = challengeMock.findMany();
+          return Promise.resolve(result).then((r) => resolve(r));
+        }),
+      };
+      return chain;
+    };
+
     mockTx = {
       challenge: challengeMock,
       query: {
         challenges: challengeMock,
       },
+      select: vi.fn(() => createSelectChain()),
       insert: vi.fn(() => ({
         values: vi.fn((data) => ({
           returning: vi.fn(() => {
@@ -485,7 +509,7 @@ describe("recurringChallenges", () => {
         now: new Date("2024-01-02T12:00:00"),
       });
 
-      expect(mockTx.challenge.findMany).toHaveBeenCalled();
+      expect(mockTx.select).toHaveBeenCalled();
       expect(result.length).toBeGreaterThan(0);
     });
 

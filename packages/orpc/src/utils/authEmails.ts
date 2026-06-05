@@ -38,9 +38,9 @@ export const buildAuthEmailLookup = async (
 };
 
 export interface AuthUserSummary {
-  email: string | null;
-  bannedUntil: string | null;
-  banReason: string | null;
+  email: string;
+  bannedUntil: string;
+  banReason: string;
   isBanned: boolean;
 }
 
@@ -65,28 +65,28 @@ export const buildAuthUserSummaryLookup = async (
         return [
           authUserId,
           {
-            email: null,
-            bannedUntil: null,
-            banReason: null,
+            email: "",
+            bannedUntil: "",
+            banReason: "",
             isBanned: false,
           },
         ] as const;
       }
 
       const user = data.user as SupabaseAdminUser | null;
-      const bannedUntilRaw = user?.banned_until ?? null;
-      const bannedUntil = bannedUntilRaw && bannedUntilRaw.length > 0 ? bannedUntilRaw : null;
+      const bannedUntilRaw = user?.banned_until ?? "";
+      const bannedUntil = bannedUntilRaw && bannedUntilRaw.length > 0 ? bannedUntilRaw : "";
       const bannedUntilDate = bannedUntil ? new Date(bannedUntil) : null;
       const isBanned =
         !!bannedUntilDate &&
         !Number.isNaN(bannedUntilDate.getTime()) &&
         bannedUntilDate.getTime() > now;
-      const banReason = user?.app_metadata?.ban_reason ?? null;
+      const banReason = user?.app_metadata?.ban_reason ?? "";
 
       return [
         authUserId,
         {
-          email: user?.email ?? null,
+          email: user?.email ?? "",
           bannedUntil,
           banReason,
           isBanned,
@@ -101,7 +101,7 @@ export const buildAuthUserSummaryLookup = async (
 export const resolveAuthEmail = (
   emailByAuthUserId: Map<string, string | null>,
   authUserId?: string | null,
-): string | null => {
-  if (!authUserId) return null;
-  return emailByAuthUserId.get(authUserId) ?? null;
+): string => {
+  if (!authUserId) return "";
+  return emailByAuthUserId.get(authUserId) ?? "";
 };

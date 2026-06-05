@@ -1,4 +1,6 @@
 import {
+  challengeLocation,
+  challengeRecurrence,
   challengeSubmissions,
   challenges,
   coinTransactions,
@@ -53,6 +55,7 @@ describe("challengeSubmission router — PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -63,6 +66,7 @@ describe("challengeSubmission router — PGLite transaction rollback", () => {
       id: "group-1",
       tripId: "trip-1",
       name: "Test Group",
+      description: "",
       organizerId: "user-1",
       code: "1234",
       coins: 100,
@@ -74,6 +78,7 @@ describe("challengeSubmission router — PGLite transaction rollback", () => {
       id: "challenge-1",
       tripId: "trip-1",
       name: "Test Challenge",
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "UNLIMITED",
       basePoints: 10,
@@ -84,6 +89,21 @@ describe("challengeSubmission router — PGLite transaction rollback", () => {
       autoApprove: true,
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: "challenge-1",
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: "challenge-1",
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
   });
 
@@ -308,6 +328,7 @@ describe("challengeSubmission router — Drizzle ORM PGLite integration", () => 
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -318,6 +339,7 @@ describe("challengeSubmission router — Drizzle ORM PGLite integration", () => 
       id: "group-1",
       tripId: "trip-1",
       name: "Test Group",
+      description: "",
       organizerId: "user-1",
       code: "1234",
       coins: 100,
@@ -329,6 +351,7 @@ describe("challengeSubmission router — Drizzle ORM PGLite integration", () => 
       id: "challenge-1",
       tripId: "trip-1",
       name: "Test Challenge",
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "UNLIMITED",
       basePoints: 10,
@@ -339,6 +362,21 @@ describe("challengeSubmission router — Drizzle ORM PGLite integration", () => 
       autoApprove: true,
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: "challenge-1",
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: "challenge-1",
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
 
     await testDb.db.insert(challengeSubmissions).values({

@@ -7,7 +7,10 @@ import {
   tripInsuranceSteps,
   tripInsurances,
   tripParticipants,
-  tripResources,
+  tripResourceFiles,
+  tripResourceIcons,
+  tripResourceLinks,
+  tripResourceTexts,
   tripSponsors,
   trips,
 } from "@mirai-app/db";
@@ -69,7 +72,10 @@ const cleanDatabase = async () => {
   await db.delete(tripInsurances);
   logger.info("  ✓ Deleted trip insurances");
 
-  await db.delete(tripResources);
+  await db.delete(tripResourceLinks);
+  await db.delete(tripResourceFiles);
+  await db.delete(tripResourceTexts);
+  await db.delete(tripResourceIcons);
   logger.info("  ✓ Deleted trip resources");
 
   await db.delete(rewardPurchases);

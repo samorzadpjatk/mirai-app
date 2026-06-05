@@ -263,6 +263,50 @@ export const users = pgTable("users", {
 });
 ```
 
+## Schema Refactor History
+
+### 2026-06-04: Database Schema Cleanup
+
+**Removed tables** (no active application references):
+- `events` — Event management table (no runtime references, no router, no UI usage)
+- `userEvents` — User-event relationship table (no runtime references, no router, no UI usage)
+
+**Retained tables** (operational/telemetry):
+- `userAgents` — User agent tracking for operational telemetry (documented as non-business data)
+
+**Router restructuring**:
+- `notificationDelivery` and `notificationSender` moved from `appRouter` to dedicated `serviceRouter`
+- `submissionReport` router removed entirely (no UI calls it)
+- `appRouter` now contains 15 public-facing routers
+- `serviceRouter` contains 2 internal service-to-service routers
+
+**Result**: 38 tables (down from 40), 15 client routers + 2 service routers.
+
+## Schema Refactor Log
+
+### 2026-06-04: Removed Unused Tables
+
+The following tables were removed from the schema as they were not actively used by the application:
+
+| Table | Reason | Migration |
+|-------|--------|-----------|
+| `events` | No active references in application code | `20260604170708_quick_warhawk.sql` |
+| `userEvents` | No active references in application code | `20260604170708_quick_warhawk.sql` |
+
+### Operational Tables
+
+The following table is retained for operational telemetry but is not considered business data:
+
+| Table | Purpose |
+|-------|---------|
+| `userAgents` | Stores user agent strings for operational analytics |
+
+### Current Schema State
+
+- **38 tables** (down from 40)
+- Full table list: `packages/db/src/schema/index.ts`
+- See `DB_SCHEMA_REFACTOR_PLAN.md` for complete refactor details
+
 ## Best Practices
 
 1. **Use UUIDs** for external-facing IDs

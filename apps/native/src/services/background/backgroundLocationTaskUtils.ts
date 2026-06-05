@@ -1,22 +1,22 @@
-export function toFiniteNumberOrNull(value: unknown): number | null {
+export function toFiniteNumberOrUndefined(value: unknown): number | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
+    return undefined;
   }
   return value;
 }
 
-export function toNonNegativeOrNull(value: unknown): number | null {
-  const normalized = toFiniteNumberOrNull(value);
+export function toNonNegativeOrUndefined(value: unknown): number | undefined {
+  const normalized = toFiniteNumberOrUndefined(value);
   if (normalized == null || normalized < 0) {
-    return null;
+    return undefined;
   }
   return normalized;
 }
 
-export function toHeadingOrNull(value: unknown): number | null {
-  const normalized = toFiniteNumberOrNull(value);
+export function toHeadingOrUndefined(value: unknown): number | undefined {
+  const normalized = toFiniteNumberOrUndefined(value);
   if (normalized == null || normalized < 0 || normalized > 360) {
-    return null;
+    return undefined;
   }
   return normalized;
 }
@@ -44,7 +44,7 @@ export function shouldSendLocationUpdate(
     coords: {
       latitude: number;
       longitude: number;
-      accuracy: number | null;
+      accuracy: number | undefined;
     };
   },
   lastSentLocation: {

@@ -43,6 +43,7 @@ describe("coinTransaction router — PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id,
       name,
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -57,9 +58,16 @@ describe("coinTransaction router — PGLite integration", () => {
     organizerId: string,
     code: string,
   ) {
-    await testDb.db
-      .insert(groups)
-      .values({ id, tripId, name, organizerId, code, createdAt: now(), updatedAt: now() });
+    await testDb.db.insert(groups).values({
+      id,
+      tripId,
+      name,
+      description: "",
+      organizerId,
+      code,
+      createdAt: now(),
+      updatedAt: now(),
+    });
   }
 
   async function seedCoinTransaction(

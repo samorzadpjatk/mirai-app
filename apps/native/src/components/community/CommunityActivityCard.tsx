@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { Activity } from "@mirai-app/orpc";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -6,79 +7,11 @@ import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPod
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
 
-type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
+type ActivityType = Activity["activityType"];
 
 type ActivityFilter = ActivityType | "all";
 
-interface CommunityFeedActivity {
-  id: string;
-  tripId: string;
-  activityType: ActivityType;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  createdAt: Date | string;
-  reactionsSummary?: {
-    total: number;
-    counts: {
-      heart: number;
-      fire: number;
-      clap: number;
-      star: number;
-    };
-    myReactions: string[];
-  };
-  admin?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-  challengeActivity?: {
-    challengeId: string;
-    eventType: string;
-    challenge?: {
-      name: string;
-      description?: string | null;
-    } | null;
-  } | null;
-  submissionActivity?: {
-    groupId: string;
-    isWinner: boolean;
-    currentGroupRank?: number | null;
-    ranking: number | null;
-    pointsAwarded: number | null;
-    challenge?: {
-      name: string;
-    } | null;
-    group?: {
-      id: string;
-      name: string;
-      image: string | null;
-    } | null;
-  } | null;
-  rankChangeActivity?: {
-    newRank: number;
-    coinsGained: number;
-    totalCoins: number;
-    group?: {
-      name: string;
-      image: string | null;
-    } | null;
-  } | null;
-  userPost?: {
-    additionalImages: (string | null)[];
-    author?: {
-      user?: {
-        id: string;
-        firstName: string;
-        lastName: string;
-      } | null;
-      group?: {
-        name: string;
-      } | null;
-    } | null;
-  } | null;
-}
+type CommunityFeedActivity = Activity;
 
 interface OwnerMeta {
   name: string;

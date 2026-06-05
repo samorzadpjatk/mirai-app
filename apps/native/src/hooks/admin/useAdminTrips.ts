@@ -10,7 +10,7 @@ export interface Trip {
 }
 
 export function useAdminTrips() {
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedTripId, setSelectedTripId] = useState<string>("");
   const {
     trips,
     isLoading: tripsLoading,
@@ -20,7 +20,7 @@ export function useAdminTrips() {
     refetch,
   } = useTrips();
 
-  const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
+  const effectiveTripId = selectedTripId || trips?.[0]?.id || "";
 
   const selectedTrip = useMemo(() => {
     if (!trips || !effectiveTripId) return null;

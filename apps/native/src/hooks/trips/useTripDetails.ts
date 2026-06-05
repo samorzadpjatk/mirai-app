@@ -18,8 +18,8 @@ export function useTripDetails(tripId?: string | null) {
   const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
 
   type TripData = Exclude<typeof tripQuery.data, undefined>;
-  const [cachedTrip, setCachedTrip] = useState<TripData | null>(null);
-  const [cachedTripId, setCachedTripId] = useState<string | null>(null);
+  const [cachedTrip, setCachedTrip] = useState<TripData | undefined>(undefined);
+  const [cachedTripId, setCachedTripId] = useState<string>("");
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
 
   useEffect(() => {
@@ -27,8 +27,8 @@ export function useTripDetails(tripId?: string | null) {
 
     void (async () => {
       if (!isMounted) return;
-      setCachedTrip(null);
-      setCachedTripId(null);
+      setCachedTrip(undefined);
+      setCachedTripId("");
       setIsCacheHydrated(false);
 
       if (!tripId) {
@@ -38,7 +38,7 @@ export function useTripDetails(tripId?: string | null) {
 
       const cached = await getCachedTripById<TripData>(tripId);
       if (!isMounted) return;
-      setCachedTrip(cached);
+      setCachedTrip(cached ?? undefined);
       setCachedTripId(tripId);
       setIsCacheHydrated(true);
     })();
@@ -65,7 +65,7 @@ export function useTripDetails(tripId?: string | null) {
     void upsertCachedTripListItem(listItem);
   }, [tripId, tripQuery.data]);
 
-  const localCachedTrip = cachedTripId === (tripId ?? null) ? cachedTrip : null;
+  const localCachedTrip = cachedTripId === (tripId ?? "") ? cachedTrip : undefined;
   const trip = tripQuery.data ?? localCachedTrip ?? null;
   const isLoadingTrip = Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 
@@ -80,5 +80,6 @@ export function useTripDetails(tripId?: string | null) {
     isErrorTrip: tripQuery.isError,
     tripError: tripQuery.error,
     isTripPast: isTripPastValue,
+    tripId: tripId ?? "",
   };
 }

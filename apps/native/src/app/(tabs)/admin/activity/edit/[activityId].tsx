@@ -79,7 +79,7 @@ export default function AdminEditActivityScreen() {
     const payload: {
       activityId: string;
       title?: string;
-      description?: string | null;
+      description?: string;
     } = { activityId: activity.id };
 
     if (trimmedTitle !== activity.title) {
@@ -87,7 +87,7 @@ export default function AdminEditActivityScreen() {
     }
 
     if (trimmedDescription !== (activity.description ?? "")) {
-      payload.description = trimmedDescription.length > 0 ? trimmedDescription : null;
+      payload.description = trimmedDescription.length > 0 ? trimmedDescription : undefined;
     }
 
     if (Object.keys(payload).length === 1) {

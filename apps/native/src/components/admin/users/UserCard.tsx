@@ -13,7 +13,8 @@ export function UserCard({ user, onEdit }: UserCardProps) {
   const userName = formatDisplayName(user.firstName, user.lastName, user.email) ?? "Unknown User";
   const groupName = user.group?.name ?? "Not selected";
   const isAdmin = user.role === "ADMIN";
-  const bannedUntilLabel = user.bannedUntil ? new Date(user.bannedUntil).toLocaleString() : null;
+  const bannedUntilLabel =
+    user.isBanned && user.bannedUntil ? new Date(user.bannedUntil).toLocaleString() : null;
 
   return (
     <View style={styles.userCard}>
@@ -40,11 +41,11 @@ export function UserCard({ user, onEdit }: UserCardProps) {
         <View style={styles.numberSummary}>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>Wrist #</Text>
-            <Text style={styles.numberValue}>{user.wristNumber ?? "—"}</Text>
+            <Text style={styles.numberValue}>{user.wristNumber || "—"}</Text>
           </View>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>House #</Text>
-            <Text style={styles.numberValue}>{user.houseNumber ?? "—"}</Text>
+            <Text style={styles.numberValue}>{user.houseNumber || "—"}</Text>
           </View>
         </View>
 

@@ -27,8 +27,8 @@ export const activityFeeds = pgTable(
       .references(() => trips.id, { onDelete: "cascade" }),
     activityType: text("activity_type").notNull(),
     title: text("title").notNull(),
-    description: text("description"),
-    imageUrl: text("image_url"),
+    description: text("description").notNull(),
+    imageUrl: text("image_url").notNull(),
     isPinned: boolean("is_pinned").default(false).notNull(),
     isHidden: boolean("is_hidden").default(false).notNull(),
     hiddenByAdmin: varchar("hidden_by_admin", { length: 36 }).references(() => users.id, {

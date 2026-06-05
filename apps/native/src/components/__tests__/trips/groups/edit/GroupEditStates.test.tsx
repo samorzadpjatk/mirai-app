@@ -6,10 +6,10 @@ import { GroupEditPermissionState } from "../../../../trips/groups/edit/GroupEdi
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupEditLoadingState", () => {
-  it("renders loading indicator", () => {
+  it("renders loading state", () => {
     renderWithProviders(<GroupEditLoadingState />);
 
-    expect(screen.getByTestId("group-edit-loading-indicator")).toBeOnTheScreen();
+    expect(screen.getByTestId("group-edit-loading-state")).toBeOnTheScreen();
   });
 });
 

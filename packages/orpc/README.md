@@ -155,16 +155,22 @@ The API includes the following routers:
 - **`coinTransaction`** - Coin transaction operations
 - **`group`** - Group management operations
 - **`location`** - Location management operations
-- **`notificationDelivery`** - Notification delivery operations
 - **`notificationSchedule`** - Notification scheduling operations
-- **`notificationSender`** - Notification sender operations
 - **`notifications`** - Notification operations
 - **`reward`** - Reward management operations
 - **`sponsor`** - Sponsor management operations
 - **`storage`** - File storage operations
-- **`submissionReport`** - Submission reporting operations
 - **`trip`** - Trip management operations
 - **`user`** - User management operations
+
+### Service Router (`@mirai-app/orpc`)
+
+Internal service-to-service routers (not exposed to clients):
+
+- **`notificationDelivery`** - Notification delivery operations
+- **`notificationSender`** - Notification sender operations
+
+These routers are available via the dedicated `/internal/trpc` endpoint and require `serviceAccountProcedure` authentication.
 
 ## Type Safety
 

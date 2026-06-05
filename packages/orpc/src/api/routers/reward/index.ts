@@ -156,7 +156,7 @@ export const rewardRouter = createORPCRouter({
         name: z.string().min(1).optional(),
         description: z.string().min(1).optional(),
         availableQuantity: z.number().min(0).optional(),
-        image: z.string().nullable().optional(),
+        image: z.string().optional(),
         images: z.array(z.string()).optional(),
         coinCost: z.number().min(1).optional(),
       }),

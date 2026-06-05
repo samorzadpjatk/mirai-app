@@ -1,14 +1,22 @@
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { colors } from "~/styles";
+import { StyleSheet, View } from "react-native";
+import { borderRadius, colors, spacing } from "~/styles";
 
 export function ChallengesLoadingState() {
   return (
-    <View testID="challenges-loading-container" style={styles.container}>
-      <ActivityIndicator
-        testID="challenges-loading-indicator"
-        size="large"
-        color={colors.primary}
-      />
+    <View testID="challenges-loading-state" style={styles.container}>
+      {/* Challenge grid placeholders */}
+      <View style={styles.gridRow}>
+        <View style={styles.cardPlaceholder} />
+        <View style={styles.cardPlaceholder} />
+      </View>
+      <View style={styles.gridRow}>
+        <View style={styles.cardPlaceholder} />
+        <View style={styles.cardPlaceholder} />
+      </View>
+      <View style={styles.gridRow}>
+        <View style={styles.cardPlaceholder} />
+        <View style={styles.cardPlaceholder} />
+      </View>
     </View>
   );
 }
@@ -17,7 +25,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  gridRow: {
+    flexDirection: "row",
+    gap: spacing.lg,
+  },
+  cardPlaceholder: {
+    flex: 1,
+    height: 120,
+    backgroundColor: colors.surfaceDark,
+    borderRadius: borderRadius.md,
   },
 });

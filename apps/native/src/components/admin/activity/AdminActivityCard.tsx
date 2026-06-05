@@ -1,32 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { Activity } from "@mirai-app/orpc";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-type ActivityType = "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
-
-interface AdminActivity {
-  id: string;
-  tripId: string;
-  activityType: ActivityType;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  isPinned: boolean;
-  isHidden: boolean;
-  createdAt: Date | string;
-  admin?: { firstName?: string | null; lastName?: string | null } | null;
-  submissionActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  rankChangeActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  userPost?: {
-    author?: {
-      group?: { name?: string | null } | null;
-    } | null;
-  } | null;
-}
+type AdminActivity = Activity;
 
 interface AdminActivityCardProps {
   item: AdminActivity;

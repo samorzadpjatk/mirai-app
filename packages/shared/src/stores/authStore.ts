@@ -48,15 +48,18 @@ export interface SupabaseSession {
 export interface AuthUser {
   id: string;
   authUserId: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  email: string;
+  firstName: string;
+  lastName: string;
   /**
    * Convenience display name derived from first/last, kept for backward compatibility.
    */
-  name: string | null;
-  emailVerified: Date | null;
+  name: string;
+  emailVerified?: Date;
   role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
+  hasName: boolean;
+  hasEmail: boolean;
+  isEmailVerified: boolean;
 }
 
 export interface AuthState {

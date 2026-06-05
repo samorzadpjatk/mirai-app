@@ -4,7 +4,10 @@ import {
   tripInsuranceSteps,
   tripInsurances,
   tripParticipants,
-  tripResources,
+  tripResourceFiles,
+  tripResourceIcons,
+  tripResourceLinks,
+  tripResourceTexts,
   tripSponsors,
   trips,
   users,
@@ -186,12 +189,14 @@ describe("trip router — PGLite integration", () => {
     await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
     await seedTrip(testDb.db, "trip-1", "Resource Trip");
     await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
-    await testDb.db.insert(tripResources).values([
+    await testDb.db.insert(tripResourceLinks).values([
       {
         id: "res-3",
         tripId: "trip-1",
-        type: "LINK",
         label: "Third",
+        type: "link",
+        url: "https://example.com/third",
+        description: "",
         sortOrder: 3,
         createdAt: now(),
         updatedAt: now(),
@@ -199,8 +204,10 @@ describe("trip router — PGLite integration", () => {
       {
         id: "res-1",
         tripId: "trip-1",
-        type: "LINK",
         label: "First",
+        type: "link",
+        url: "https://example.com/first",
+        description: "",
         sortOrder: 1,
         createdAt: now(),
         updatedAt: now(),
@@ -208,9 +215,49 @@ describe("trip router — PGLite integration", () => {
       {
         id: "res-2",
         tripId: "trip-1",
-        type: "LINK",
         label: "Second",
+        type: "link",
+        url: "https://example.com/second",
+        description: "",
         sortOrder: 2,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+    await testDb.db.insert(tripResourceFiles).values([
+      {
+        id: "res-4",
+        tripId: "trip-1",
+        label: "PDF Map",
+        type: "pdf_map",
+        storagePath: "public/maps/map.pdf",
+        fileName: "map.pdf",
+        publicUrl: "https://example.com/map.pdf",
+        sortOrder: 4,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+    await testDb.db.insert(tripResourceTexts).values([
+      {
+        id: "res-5",
+        tripId: "trip-1",
+        label: "SOS",
+        type: "sos",
+        value: "112",
+        sortOrder: 5,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+    await testDb.db.insert(tripResourceIcons).values([
+      {
+        id: "res-6",
+        tripId: "trip-1",
+        label: "Icon",
+        type: "icon",
+        iconName: "alert-circle",
+        sortOrder: 6,
         createdAt: now(),
         updatedAt: now(),
       },
@@ -253,8 +300,23 @@ describe("trip router — PGLite integration", () => {
       { tripId: "trip-1" },
     );
 
-    expect(result.resources).toHaveLength(3);
-    expect(result.resources.map((r) => r.label)).toEqual(["First", "Second", "Third"]);
+    expect(result.resources).toHaveLength(6);
+    expect(result.resources.map((r) => r.label)).toEqual([
+      "First",
+      "Second",
+      "Third",
+      "PDF Map",
+      "SOS",
+      "Icon",
+    ]);
+    expect(result.resources.map((r) => r.type)).toEqual([
+      "link",
+      "link",
+      "link",
+      "pdf_map",
+      "sos",
+      "icon",
+    ]);
     expect(result.insurance).toBeDefined();
     expect(result.insurance.steps.map((s) => s.title)).toEqual(["Find policy", "Call provider"]);
   });

@@ -18,7 +18,7 @@ describe("computeEffectiveChallengeValues", () => {
   it("computes QR_CODE expected value from input", () => {
     const result = computeEffectiveChallengeValues(
       { submissionType: "QR_CODE", qrCodeValue: "ABC123" },
-      { submissionType: "IMAGE", expectedValue: "old" },
+      { submissionType: "IMAGE", qrCodeValue: "old" },
     );
     expect(result.effectiveExpectedValue).toBe("ABC123");
   });
@@ -26,7 +26,7 @@ describe("computeEffectiveChallengeValues", () => {
   it("computes QR_CODE expected value from existing when input missing", () => {
     const result = computeEffectiveChallengeValues(
       { submissionType: "QR_CODE" },
-      { submissionType: "QR_CODE", expectedValue: "EXISTING" },
+      { submissionType: "QR_CODE", qrCodeValue: "EXISTING" },
     );
     expect(result.effectiveExpectedValue).toBe("EXISTING");
   });
@@ -42,7 +42,7 @@ describe("computeEffectiveChallengeValues", () => {
   it("computes TEXT expected value from input", () => {
     const result = computeEffectiveChallengeValues(
       { submissionType: "TEXT", textExpectedPhrase: "hello" },
-      { submissionType: "IMAGE", expectedValue: "old" },
+      { submissionType: "IMAGE", textExpectedPhrase: "old" },
     );
     expect(result.effectiveExpectedValue).toBe("hello");
   });
@@ -50,7 +50,7 @@ describe("computeEffectiveChallengeValues", () => {
   it("computes TEXT expected value from existing when input missing", () => {
     const result = computeEffectiveChallengeValues(
       { submissionType: "TEXT" },
-      { submissionType: "TEXT", expectedValue: "EXISTING" },
+      { submissionType: "TEXT", textExpectedPhrase: "EXISTING" },
     );
     expect(result.effectiveExpectedValue).toBe("EXISTING");
   });
@@ -58,7 +58,7 @@ describe("computeEffectiveChallengeValues", () => {
   it("returns null for non-QR/non-TEXT submission types", () => {
     const result = computeEffectiveChallengeValues(
       { submissionType: "IMAGE" },
-      { submissionType: "IMAGE", expectedValue: "old" },
+      { submissionType: "IMAGE", textExpectedPhrase: "old" },
     );
     expect(result.effectiveExpectedValue).toBeNull();
   });

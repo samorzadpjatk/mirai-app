@@ -8,6 +8,62 @@
       "when": 1778616503826,
       "tag": "20260512200823_cloudy_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780576516313,
+      "tag": "20260604123516_quiet_black_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780578888528,
+      "tag": "20260604131448_friendly_charles_xavier",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780579076520,
+      "tag": "20260604131756_broad_alex_wilder",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780585398335,
+      "tag": "20260604150318_secret_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780586402794,
+      "tag": "20260604152002_flat_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780589196369,
+      "tag": "20260604160636_condemned_living_tribunal",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780592828329,
+      "tag": "20260604170708_quick_warhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780602618032,
+      "tag": "20260604195018_jazzy_loners",
+      "breakpoints": true
     }
   ]
 }

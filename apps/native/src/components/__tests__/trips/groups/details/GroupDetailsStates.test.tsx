@@ -4,10 +4,10 @@ import { GroupNotFoundState } from "../../../../trips/groups/details/GroupNotFou
 import { renderWithProviders } from "../../../helpers/renderWithProviders";
 
 describe("GroupDetailsLoadingState", () => {
-  it("renders loading indicator", () => {
+  it("renders loading state", () => {
     renderWithProviders(<GroupDetailsLoadingState />);
 
-    expect(screen.getByTestId("group-details-loading-indicator")).toBeOnTheScreen();
+    expect(screen.getByTestId("group-details-loading-state")).toBeOnTheScreen();
   });
 });
 

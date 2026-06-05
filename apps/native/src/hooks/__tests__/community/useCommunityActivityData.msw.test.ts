@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
+import { createMockActivity } from "../../../test-utils/activityMocks";
 import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { useCommunityActivityData } from "../../community/useCommunityActivityData";
@@ -20,15 +21,15 @@ describe("useCommunityActivityData (MSW)", () => {
 
   it("should fetch ranking data for rank_change activities", async () => {
     const activities = [
-      {
+      createMockActivity({
         id: "activity-1",
-        activityType: "rank_change" as const,
+        activityType: "rank_change",
         tripId: "trip-1",
         title: "Rank Change",
-        description: null,
-        imageUrl: null,
-        createdAt: "2024-01-01",
-      },
+        description: "",
+        imageUrl: "",
+        createdAt: new Date("2024-01-01"),
+      }),
     ];
 
     server.use(
@@ -54,25 +55,32 @@ describe("useCommunityActivityData (MSW)", () => {
 
   it("should fetch avatar URLs for user_post activities", async () => {
     const activities = [
-      {
+      createMockActivity({
         id: "activity-1",
-        activityType: "user_post" as const,
+        activityType: "user_post",
         tripId: "trip-1",
         title: "User Post",
-        description: null,
-        imageUrl: null,
-        createdAt: "2024-01-01",
+        description: "",
+        imageUrl: "",
+        createdAt: new Date("2024-01-01"),
         userPost: {
+          authorId: "",
           additionalImages: [],
           author: {
+            id: "",
+            userId: "",
+            tripId: "",
+            groupId: null,
             user: {
               id: "user-1",
               firstName: "User",
               lastName: "One",
+              hasAvatar: false,
             },
+            group: null,
           },
         },
-      },
+      }),
     ];
 
     server.use(
@@ -96,20 +104,20 @@ describe("useCommunityActivityData (MSW)", () => {
 
   it("should fetch avatar URLs for admin activities", async () => {
     const activities = [
-      {
+      createMockActivity({
         id: "activity-1",
-        activityType: "custom" as const,
+        activityType: "custom",
         tripId: "trip-1",
         title: "Admin Announcement",
-        description: null,
-        imageUrl: null,
-        createdAt: "2024-01-01",
+        description: "",
+        imageUrl: "",
+        createdAt: new Date("2024-01-01"),
         admin: {
           id: "admin-1",
           firstName: "Admin",
           lastName: "User",
         },
-      },
+      }),
     ];
 
     server.use(
@@ -133,15 +141,15 @@ describe("useCommunityActivityData (MSW)", () => {
 
   it("should handle API errors gracefully", async () => {
     const activities = [
-      {
+      createMockActivity({
         id: "activity-1",
-        activityType: "rank_change" as const,
+        activityType: "rank_change",
         tripId: "trip-1",
         title: "Rank Change",
-        description: null,
-        imageUrl: null,
-        createdAt: "2024-01-01",
-      },
+        description: "",
+        imageUrl: "",
+        createdAt: new Date("2024-01-01"),
+      }),
     ];
 
     server.use(
@@ -165,16 +173,20 @@ describe("useCommunityActivityData (MSW)", () => {
 
   it("should not fetch when no matching activities", () => {
     const activities = [
-      {
+      createMockActivity({
         id: "activity-1",
-        activityType: "user_post" as const,
+        activityType: "user_post",
         tripId: "trip-1",
         title: "User Post",
-        description: null,
-        imageUrl: null,
-        createdAt: "2024-01-01",
-        userPost: null,
-      },
+        description: "",
+        imageUrl: "",
+        createdAt: new Date("2024-01-01"),
+        userPost: {
+          authorId: "",
+          additionalImages: [],
+          author: null,
+        },
+      }),
     ];
 
     const { result } = renderHookWithMSW(() =>

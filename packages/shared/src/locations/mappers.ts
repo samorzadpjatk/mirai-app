@@ -23,8 +23,8 @@ export interface ExpoLocationObject {
 export function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
   return {
     coords: {
-      latitude: dbLocation.latitude ?? 0,
-      longitude: dbLocation.longitude ?? 0,
+      latitude: dbLocation.latitude,
+      longitude: dbLocation.longitude,
       altitude: dbLocation.altitude ?? null,
       accuracy: dbLocation.accuracy ?? null,
       altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,

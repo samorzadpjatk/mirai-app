@@ -4,13 +4,17 @@ export type UserRole = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
 
 export interface PublicUser {
   id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: UserRole;
-  bannedUntil?: string | null;
-  banReason?: string | null;
+  bannedUntil?: string;
+  banReason?: string;
   isBanned?: boolean;
+  emailVerified?: Date;
+  hasName: boolean;
+  hasEmail: boolean;
+  isEmailVerified: boolean;
 }
 
 export const toPublicUser = (
@@ -22,13 +26,22 @@ export const toPublicUser = (
     role: UserRole;
   },
   emailByAuthUserId: Map<string, string | null>,
-): PublicUser => ({
-  id: user.id,
-  firstName: user.firstName ?? null,
-  lastName: user.lastName ?? null,
-  role: user.role,
-  email: user.authUserId ? (emailByAuthUserId.get(user.authUserId) ?? null) : null,
-});
+): PublicUser => {
+  const firstName = user.firstName ?? "";
+  const lastName = user.lastName ?? "";
+  const email = user.authUserId ? (emailByAuthUserId.get(user.authUserId) ?? "") : "";
+
+  return {
+    id: user.id,
+    firstName,
+    lastName,
+    role: user.role,
+    email,
+    hasName: Boolean(firstName.trim() || lastName.trim()),
+    hasEmail: Boolean(email.trim()),
+    isEmailVerified: false,
+  };
+};
 
 export const buildWristNumberConflictMessage = (
   wristNumber: string,

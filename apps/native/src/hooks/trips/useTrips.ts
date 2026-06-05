@@ -11,7 +11,7 @@ import type { TripListItem } from "~/components/trips/list/types";
 import { getCachedTrips, setCachedTrips } from "~/services/storage/selectedTripStorage";
 
 export function useTrips() {
-  const [cachedTrips, setCachedTripsState] = useState<TripListItem[] | null>(null);
+  const [cachedTrips, setCachedTripsState] = useState<TripListItem[]>([]);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
 
   const {

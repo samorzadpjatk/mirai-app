@@ -43,7 +43,7 @@ export const create = async (
           .insert(groups)
           .values({
             name: input.name,
-            description: input.description,
+            description: input.description ?? "",
             image: normalizeGroupImageInput(input.image),
             code,
             tripId: input.tripId,
@@ -822,6 +822,7 @@ export const addCoins = async (
       .values({
         groupId: input.groupId,
         amount: input.amount,
+        reason: "",
         adminId: context.dbUser.id,
       })
       .returning();

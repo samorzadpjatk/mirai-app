@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, avg, count, eq, gte, lte, or, sum } from "drizzle-orm";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../../utils/authEmails";
 import { logger } from "../../../utils/logger";
-import { adminProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../trpc";
 import {
   getDeliveriesInputSchema,
   getDeliveryByNotificationIdInputSchema,
@@ -11,7 +11,7 @@ import {
   getFailedDeliveriesInputSchema,
 } from "./types";
 
-export const getDeliveries = adminProcedure
+export const getDeliveries = serviceAccountProcedure
   .input(getDeliveriesInputSchema)
   .handler(async ({ input, context }) => {
     try {
@@ -77,7 +77,7 @@ export const getDeliveries = adminProcedure
     }
   });
 
-export const getDeliveryByNotificationId = adminProcedure
+export const getDeliveryByNotificationId = serviceAccountProcedure
   .input(getDeliveryByNotificationIdInputSchema)
   .handler(async ({ input, context }) => {
     try {
@@ -144,7 +144,7 @@ export const getDeliveryByNotificationId = adminProcedure
     }
   });
 
-export const getDeliveryStats = adminProcedure
+export const getDeliveryStats = serviceAccountProcedure
   .input(getDeliveryStatsInputSchema)
   .handler(async ({ input, context }) => {
     try {
@@ -222,7 +222,7 @@ export const getDeliveryStats = adminProcedure
     }
   });
 
-export const getFailedDeliveries = adminProcedure
+export const getFailedDeliveries = serviceAccountProcedure
   .input(getFailedDeliveriesInputSchema)
   .handler(async ({ input, context }) => {
     try {

@@ -18,7 +18,7 @@ export const createTrip = async (
     .insert(trips)
     .values({
       name: input.name,
-      description: input.description,
+      description: input.description ?? "",
       startDate: input.startDate,
       endDate: input.endDate,
       backgroundImagePath: input.backgroundImagePath,

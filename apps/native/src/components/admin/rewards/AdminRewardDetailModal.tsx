@@ -57,7 +57,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<
     Record<string, string>
   >({});
-  const [hydratedRewardId, setHydratedRewardId] = useState<string | null>(null);
+  const [hydratedRewardId, setHydratedRewardId] = useState<string>("");
 
   if (reward && hydratedRewardId !== reward.id) {
     setForm({

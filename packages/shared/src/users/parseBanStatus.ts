@@ -1,7 +1,7 @@
 export interface BanStatus {
   banned: boolean;
-  bannedUntil: string | null;
-  reason: string | null;
+  bannedUntil: string;
+  reason: string;
 }
 
 export function parseBanStatus(
@@ -9,12 +9,12 @@ export function parseBanStatus(
   reasonRaw: string | null | undefined,
 ): BanStatus {
   if (!bannedUntilRaw) {
-    return { banned: false, bannedUntil: null, reason: null };
+    return { banned: false, bannedUntil: "", reason: "" };
   }
 
   const bannedUntil = new Date(bannedUntilRaw);
   if (Number.isNaN(bannedUntil.getTime()) || bannedUntil.getTime() <= Date.now()) {
-    return { banned: false, bannedUntil: null, reason: null };
+    return { banned: false, bannedUntil: "", reason: "" };
   }
 
   return {

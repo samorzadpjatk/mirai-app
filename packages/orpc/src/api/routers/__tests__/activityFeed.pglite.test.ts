@@ -2,6 +2,8 @@ import {
   activityFeeds,
   activityReactions,
   challengeActivities,
+  challengeLocation,
+  challengeRecurrence,
   challengeSubmissions,
   challenges,
   groups,
@@ -36,6 +38,7 @@ describe("activityFeed router — PGLite transaction rollback", () => {
     await testDb.db.insert(trips).values({
       id,
       name,
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -65,6 +68,7 @@ describe("activityFeed router — PGLite transaction rollback", () => {
       id,
       tripId,
       name,
+      description: "",
       organizerId,
       code,
       createdAt: now(),
@@ -88,10 +92,26 @@ describe("activityFeed router — PGLite transaction rollback", () => {
       id,
       tripId,
       name,
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "JUDGED_STAFF",
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: id,
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: id,
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
   }
 
@@ -118,6 +138,8 @@ describe("activityFeed router — PGLite transaction rollback", () => {
           tripId: "trip-1",
           activityType: "user_post",
           title: "Post",
+          description: "",
+          imageUrl: "",
           createdAt: now(),
           updatedAt: now(),
         });
@@ -151,6 +173,8 @@ describe("activityFeed router — PGLite transaction rollback", () => {
           tripId: "trip-1",
           activityType: "submission",
           title: "Submission",
+          description: "",
+          imageUrl: "",
           createdAt: now(),
           updatedAt: now(),
         });
@@ -184,6 +208,8 @@ describe("activityFeed router — PGLite transaction rollback", () => {
         tripId: "trip-1",
         activityType: "challenge_event",
         title: "Challenge",
+        description: "",
+        imageUrl: "",
         createdAt: now(),
         updatedAt: now(),
       });
@@ -232,6 +258,7 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
     await testDb.db.insert(trips).values({
       id,
       name,
+      description: "",
       startDate: new Date("2025-06-01"),
       endDate: new Date("2025-06-07"),
       createdAt: now(),
@@ -250,6 +277,7 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
       id,
       tripId,
       name,
+      description: "",
       organizerId,
       code,
       createdAt: now(),
@@ -273,10 +301,26 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
       id,
       tripId,
       name,
+      description: "",
       submissionType: "IMAGE",
       scoringCategory: "JUDGED_STAFF",
       createdAt: now(),
       updatedAt: now(),
+    });
+
+    await testDb.db.insert(challengeRecurrence).values({
+      challengeId: id,
+      isRecurring: false,
+      dailyStartTime: "",
+      dailyEndTime: "",
+      recurringDays: 0,
+      type: "DAILY",
+    });
+
+    await testDb.db.insert(challengeLocation).values({
+      challengeId: id,
+      targetLatitude: 0,
+      targetLongitude: 0,
     });
   }
 
@@ -296,6 +340,8 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
       tripId,
       activityType,
       title,
+      description: "",
+      imageUrl: "",
       createdAt: now(),
       updatedAt: now(),
     });
@@ -308,6 +354,8 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
         tripId: "trip-1",
         activityType: "user_post",
         title: "User Post",
+        description: "",
+        imageUrl: "",
         createdAt: now(),
         updatedAt: now(),
       });
@@ -338,6 +386,8 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
           tripId: "trip-1",
           activityType: "submission",
           title: "Submission",
+          description: "",
+          imageUrl: "",
           createdAt: now(),
           updatedAt: now(),
         });
@@ -372,7 +422,9 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
           id: "af-1",
           tripId: "trip-1",
           activityType: "challenge_event",
-          title: "Challenge Event",
+          title: "Challenge",
+          description: "",
+          imageUrl: "",
           createdAt: now(),
           updatedAt: now(),
         });
@@ -404,8 +456,10 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
         await tx.insert(activityFeeds).values({
           id: "af-1",
           tripId: "trip-1",
-          activityType: "rank_change",
-          title: "Rank Change",
+          activityType: "submission",
+          title: "Submission",
+          description: "",
+          imageUrl: "",
           createdAt: now(),
           updatedAt: now(),
         });

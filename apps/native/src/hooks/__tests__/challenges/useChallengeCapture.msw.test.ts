@@ -108,7 +108,7 @@ describe("useChallengeCapture (MSW)", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.capturedImage).toBeNull();
+    expect(result.current.capturedImage).toBe("");
     expect(result.current.uploadStatus).toBe("idle");
     expect(result.current.uploadProgress.percent).toBeNull();
   });
@@ -167,7 +167,7 @@ describe("useChallengeCapture (MSW)", () => {
       result.current.resetCapture();
     });
 
-    expect(result.current.capturedImage).toBeNull();
+    expect(result.current.capturedImage).toBe("");
     expect(mockAbort).toHaveBeenCalled();
     expect(mockReset).toHaveBeenCalled();
   });
@@ -518,7 +518,7 @@ describe("useChallengeCapture (MSW)", () => {
 
     expect(mockAbort).toHaveBeenCalled();
     expect(mockReset).toHaveBeenCalled();
-    expect(result.current.capturedImage).toBeNull();
+    expect(result.current.capturedImage).toBe("");
   });
 
   it("should resolve file extension from filename", async () => {

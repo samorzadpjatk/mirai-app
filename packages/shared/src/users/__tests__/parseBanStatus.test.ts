@@ -5,24 +5,24 @@ describe("parseBanStatus", () => {
   it("returns not banned when bannedUntilRaw is null", () => {
     expect(parseBanStatus(null, "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 
   it("returns not banned when bannedUntilRaw is undefined", () => {
     expect(parseBanStatus(undefined, "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 
   it("returns not banned when bannedUntilRaw is an empty string", () => {
     expect(parseBanStatus("", "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 
@@ -30,8 +30,8 @@ describe("parseBanStatus", () => {
     const pastDate = new Date(Date.now() - 1000).toISOString();
     expect(parseBanStatus(pastDate, "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 
@@ -39,8 +39,8 @@ describe("parseBanStatus", () => {
     const now = new Date().toISOString();
     expect(parseBanStatus(now, "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 
@@ -55,8 +55,8 @@ describe("parseBanStatus", () => {
   it("returns not banned when date is invalid (NaN)", () => {
     expect(parseBanStatus("not-a-date", "Spam")).toEqual({
       banned: false,
-      bannedUntil: null,
-      reason: null,
+      bannedUntil: "",
+      reason: "",
     });
   });
 

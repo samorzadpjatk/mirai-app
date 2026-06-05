@@ -233,13 +233,21 @@ jobs:
           fi
 
       - name: Collect coverage reports
+        id: collect_coverage
         if: always()
         run: |
           mkdir -p ./coverage
-          find . -path ./node_modules -prune -o -path ./.bun -prune -o -path ./.nx/cache -prune -o -name "lcov.info" -type f -print | while read file; do
-            dir=$(dirname "$file" | sed 's|^\./||' | sed 's|/coverage$||' | tr '/' '_')
-            cp "$file" "./coverage/lcov_${dir}.info"
-            echo "Collected: $file -> ./coverage/lcov_${dir}.info"
+          find . -path ./node_modules -prune -o -path ./.bun -prune -o -path ./.nx/cache -prune -o -path ./coverage -prune -o -name "lcov.info" -type f -print | while read file; do
+            project_dir=$(dirname "$file" | sed 's|^\./||' | sed 's|/coverage$||')
+            safe_dir=$(echo "$project_dir" | tr '/' '_')
+            output_file="./coverage/lcov_${safe_dir}.info"
+
+            # Rewrite SF: lines to prepend the project directory.
+            # Vitest outputs project-relative paths (e.g., SF:src/config.ts).
+            # diff-cover needs workspace-relative paths to match git diff.
+            sed "s|^SF:|SF:${project_dir}/|" "$file" > "$output_file"
+
+            echo "Collected and rewrote: $file -> $output_file"
           done
           ls -la ./coverage/ || echo "No coverage files found"
 
@@ -253,9 +261,21 @@ jobs:
             ./**/coverage/**
           retention-days: 30
 
+      - name: Check for coverage files
+        id: check_coverage
+        if: always()
+        run: |
+          if ls ./coverage/lcov_*.info 1> /dev/null 2>&1; then
+            echo "has_coverage=true" >> $GITHUB_OUTPUT
+            echo "Found coverage files for diff analysis"
+          else
+            echo "has_coverage=false" >> $GITHUB_OUTPUT
+            echo "No coverage files found — skipping diff coverage"
+          fi
+
       - name: Post diff coverage comment
         uses: Affanmir/diff-cover-action@v2
-        if: github.event_name == 'pull_request' && steps.test.outcome == 'success'
+        if: github.event_name == 'pull_request' && steps.check_coverage.outputs.has_coverage == 'true'
         with:
           coverage-files: ./coverage/lcov_*.info
           fail-under: '80'
@@ -288,5 +308,9 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage artifacts uploaded to GitHub Actions" >> $GITHUB_STEP_SUMMARY
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "- PR diff coverage comment posted via diff-cover-action" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.check_coverage.outputs.has_coverage }}" == "true" ]; then
+              echo "- PR diff coverage comment posted via diff-cover-action" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- No coverage files available for diff analysis" >> $GITHUB_STEP_SUMMARY
+            fi
           fi

@@ -31,16 +31,16 @@ export function FormField({
         )}
       </Text>
       {children}
-      {hint && (
+      {hint ? (
         <Text testID="form-field-hint" style={styles.hint}>
           {hint}
         </Text>
-      )}
-      {error && (
+      ) : null}
+      {error ? (
         <Text testID="form-field-error" style={styles.error}>
           {error}
         </Text>
-      )}
+      ) : null}
     </View>
   );
 }
