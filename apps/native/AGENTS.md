@@ -96,6 +96,33 @@ See [Native Code Quality](./../../docs/apps/native/code-quality.md) and [Testing
 - **Mock Removal for UI**: Render real components. Query by descriptive `testID` props.
 - **MSW Patterns**: Use Mock Service Worker for API mocking in component tests. Avoid mocking React Query internals.
 
+## Background Location Patterns
+
+### GPS-Aware Delta Filtering
+
+When filtering location updates to reduce noise while preserving precision:
+
+- **Formula**: `threshold = max(accuracy * 2, 15 meters)` — adaptive to GPS quality
+- **First update always sends**: When `lastSentLocation` is null, send immediately (e.g., after restart)
+- **Use Haversine formula** for distance calculation (Earth radius `6371e3`)
+
+### Hybrid Persistence for Sensitive Data
+
+For data that must survive app restarts but needs instant access:
+
+- **In-memory state**: `lastSentLocation` in `BackgroundTaskState` for zero-I/O filtering
+- **SecureStore backup**: `expo-secure-store` with `WHEN_UNLOCKED_THIS_DEVICE_ONLY` for restart resilience
+- **Fire-and-forget writes**: `void deps.setLastSentLocation()` — never block the background task
+- **Read fallback**: If SecureStore read fails, return `null` → sends one unfiltered update, then resumes filtering
+- **Why SecureStore over AsyncStorage**: GPS coordinates are sensitive data. AsyncStorage is unencrypted, included in backups, and has no TTL.
+
+### Background Task Architecture
+
+- **State**: `isSending` flag prevents concurrent sends; `lastSentLocation` enables filtering
+- **Deps injection**: `getLastSentLocation`, `setLastSentLocation` passed as dependencies for testability
+- **Error handling**: All errors caught and silently ignored — background task must never crash
+- **Hot reload safety**: Catch "has already been defined" errors from `TaskManager.defineTask`
+
 ## Links
 
 [Setup](../../docs/apps/native/setup.md) · [Navigation](../../docs/apps/native/navigation.md) · [Deployment](../../docs/apps/native/deployment.md) · [OTA Updates](../../docs/apps/native/ota-updates.md) · [State Management](../../docs/apps/native/state-management.md) · [Root AGENTS.md](../../AGENTS.md)
