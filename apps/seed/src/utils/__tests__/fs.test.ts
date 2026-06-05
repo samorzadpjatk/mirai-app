@@ -3,7 +3,9 @@ import { dirExists, fileExists, listFilesRecursive, readFile, readTextFile } fro
 
 // Mock Bun global
 
-describe("File System Utilities", () => {
+const isBunRuntime = typeof Bun !== "undefined";
+
+describe.skipIf(isBunRuntime)("File System Utilities", () => {
   let mockBunFile: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

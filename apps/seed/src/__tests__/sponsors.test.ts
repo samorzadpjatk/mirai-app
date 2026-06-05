@@ -1,3 +1,4 @@
+import type { BunFile } from "bun";
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SponsorConfig } from "../types";
 

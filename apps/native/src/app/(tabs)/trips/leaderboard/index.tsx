@@ -27,17 +27,15 @@ export default function LeaderboardScreen() {
   const rankedGroups: RankedGroup[] = useMemo(() => {
     if (!trip?.groups) return [];
 
-    const userGroupId = trip.participants.find(
-      (p: { user: { id: string } }) => p.user.id === currentUser?.id,
-    )?.group?.id;
+    const userGroupId = trip.participants.find((p) => p.user?.id === currentUser?.id)?.group?.id;
 
     const sorted = [...trip.groups]
-      .sort((a, b) => b.coins - a.coins)
+      .sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0))
       .map((group, index) => ({
         id: group.id,
-        name: group.name,
+        name: group.name ?? "",
         image: group.image,
-        coins: group.coins,
+        coins: group.coins ?? 0,
         memberCount: group._count?.participants ?? 0,
         rank: index + 1,
         isCurrentUserGroup: group.id === userGroupId,

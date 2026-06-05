@@ -4,6 +4,7 @@ import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/shared/tr
 import { ORPCError } from "@orpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import {
   resolveGroupImage,
   toClientTrip,
@@ -42,9 +43,9 @@ export const getAll = async (
     };
   }
 
-  const matchTripIds = (t: any, { inArray }: any) => inArray(t.id, tripIds);
-  const excludeDeletedGroups = (g: any, { eq }: any) => eq(g.isDeleted, false);
-  const sortByStartDate = (t: any, { asc }: any) => asc(t.startDate);
+  const matchTripIds: WhereCallback<"trips"> = (t, { inArray }) => inArray(t.id, tripIds);
+  const excludeDeletedGroups: WhereCallback<"groups"> = (g, { eq }) => eq(g.isDeleted, false);
+  const sortByStartDate: OrderByCallback<"trips"> = (t, { asc }) => asc(t.startDate);
 
   const [tripsList, totalRows] = await Promise.all([
     context.db.query.trips.findMany({
@@ -79,10 +80,10 @@ export const getAll = async (
 
 async function fetchTripWithRelations(db: DB, tripId: string) {
   return db.query.trips.findFirst({
-    where: (t: any, { eq }: any) => eq(t.id, tripId),
+    where: (t, { eq }) => eq(t.id, tripId),
     with: {
       groups: {
-        where: (g: any, { eq }: any) => eq(g.isDeleted, false),
+        where: (g, { eq }) => eq(g.isDeleted, false),
       },
       tripSponsors: {
         with: {
@@ -99,12 +100,14 @@ async function fetchTripWithRelations(db: DB, tripId: string) {
   });
 }
 
+type TripWithRelations = Awaited<ReturnType<typeof fetchTripWithRelations>>;
+
 async function buildTripDetail(
-  trip: any,
+  trip: NonNullable<TripWithRelations>,
   supabase: Parameters<typeof buildAuthEmailLookup>[0],
   db: DB,
 ) {
-  const groupIds = trip.groups.map((g: any) => g.id);
+  const groupIds = trip.groups.map((g) => g.id);
   let countMap = new Map<string | null, number>();
   if (groupIds.length > 0) {
     const participantCounts = await db
@@ -120,13 +123,13 @@ async function buildTripDetail(
 
   const emailByAuthUserId = await buildAuthEmailLookup(
     supabase,
-    trip.participants.map((participant: any) => participant.user?.authUserId).filter(Boolean),
+    trip.participants.map((participant) => participant.user?.authUserId).filter(Boolean),
   );
 
   const resolvedGroupImages = new Map<string, string | null | undefined>(
     await Promise.all(
       trip.groups.map(
-        async (group: any) =>
+        async (group) =>
           [group.id as string, await resolveGroupImage(supabase, group.image)] as [
             string,
             string | null | undefined,
@@ -150,7 +153,7 @@ export const getById = async (
   },
   input: { id: string },
 ) => {
-  const matchParticipant = (tp: any, { eq, and }: any) =>
+  const matchParticipant: WhereCallback<"tripParticipants"> = (tp, { eq, and }) =>
     and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.id));
 
   const isParticipant = await context.db.query.tripParticipants.findFirst({
@@ -201,27 +204,26 @@ export const getResources = async (
     throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
   }
 
-  const matchByTripId = (tr: any, { eq }: any) => eq(tr.tripId, input.tripId);
-  const sortBySortOrder = (tr: any, { asc }: any) => asc(tr.sortOrder);
-  const matchTripInsuranceByTripId = (ti: any, { eq }: any) => eq(ti.tripId, input.tripId);
-  const sortByStepNumber = (s: any, { asc }: any) => asc(s.stepNumber);
+  const matchTripInsuranceByTripId: WhereCallback<"tripInsurances"> = (ti, { eq }) =>
+    eq(ti.tripId, input.tripId);
+  const sortByStepNumber: OrderByCallback<"tripInsuranceSteps"> = (s, { asc }) => asc(s.stepNumber);
 
   const [links, files, texts, icons] = await Promise.all([
     context.db.query.tripResourceLinks.findMany({
-      where: matchByTripId,
-      orderBy: sortBySortOrder,
+      where: (tr, { eq }) => eq(tr.tripId, input.tripId),
+      orderBy: (tr, { asc }) => asc(tr.sortOrder),
     }),
     context.db.query.tripResourceFiles.findMany({
-      where: matchByTripId,
-      orderBy: sortBySortOrder,
+      where: (tr, { eq }) => eq(tr.tripId, input.tripId),
+      orderBy: (tr, { asc }) => asc(tr.sortOrder),
     }),
     context.db.query.tripResourceTexts.findMany({
-      where: matchByTripId,
-      orderBy: sortBySortOrder,
+      where: (tr, { eq }) => eq(tr.tripId, input.tripId),
+      orderBy: (tr, { asc }) => asc(tr.sortOrder),
     }),
     context.db.query.tripResourceIcons.findMany({
-      where: matchByTripId,
-      orderBy: sortBySortOrder,
+      where: (tr, { eq }) => eq(tr.tripId, input.tripId),
+      orderBy: (tr, { asc }) => asc(tr.sortOrder),
     }),
   ]);
 

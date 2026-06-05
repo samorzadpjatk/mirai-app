@@ -1,6 +1,5 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { baseConfig, baseCoverageExcludes } from "../../packages/shared/vitest.base.config";
 
 export default mergeConfig(
@@ -13,6 +12,12 @@ export default mergeConfig(
       include: ["src/**/__tests__/**/*.test.ts"],
       coverage: {
         exclude: [...baseCoverageExcludes, "**/__tests__/**"],
+        thresholds: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80,
+        },
       },
     },
     api: {

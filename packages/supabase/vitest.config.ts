@@ -14,7 +14,7 @@ const baseConfig = defineConfig({
   test: {
     globals: true,
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "json", "html", "lcov"],
       thresholds: {
         branches: 80,

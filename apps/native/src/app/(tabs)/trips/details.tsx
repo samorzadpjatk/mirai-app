@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TripBanner } from "~/components/trips/TripBanner";
-import { PartnersSection } from "~/components/trips/details/PartnersSection";
+import { type Partner, PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
@@ -80,9 +80,9 @@ export default function TripDetailsScreen() {
 
           {/* Partners */}
           <PartnersSection
-            sponsors={trip.tripSponsors
-              ?.map((ts: { sponsor: string | null }) => ts.sponsor)
-              .filter(Boolean)}
+            sponsors={
+              trip.tripSponsors?.map((ts) => ts.sponsor).filter(Boolean) as unknown as Partner[]
+            }
           />
 
           {/* Quick Access Grid */}

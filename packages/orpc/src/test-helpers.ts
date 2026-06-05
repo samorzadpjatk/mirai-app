@@ -1,7 +1,7 @@
 import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import type { DB, Role } from "@mirai-app/db";
-import type { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { vi } from "vitest";
+import type { createPgliteTestDb } from "~/db-test-helper";
 
 export type MockSupabase = {
   auth: {
@@ -115,7 +115,13 @@ export function createContext(
     dbUser: { id: string; role: string };
     emails: Record<string, string>;
   }> = {},
-) {
+): {
+  db: Awaited<ReturnType<typeof createPgliteTestDb>>["db"];
+  supabase: MockSupabase;
+  dbUser: { id: string; role: string };
+  accessToken: string;
+  headers: Headers;
+} {
   const dbUser = overrides.dbUser ?? { id: "mod-1", role: "MODERATOR" };
   const supabase = createMockSupabase(overrides.emails ?? {});
   return {

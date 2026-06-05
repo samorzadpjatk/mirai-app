@@ -16,6 +16,7 @@ import {
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
+import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import type { GroupContext } from "./queries";
 import {
   generateFourDigitCode,
@@ -55,7 +56,7 @@ export const create = async (
           throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create group" });
         }
 
-        const matchGroupRowId = (g: any, { eq }: any) => eq(g.id, groupRow.id);
+        const matchGroupRowId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, groupRow.id);
 
         const groupWithOrganizer = await context.db.query.groups.findFirst({
           where: matchGroupRowId,
@@ -144,7 +145,7 @@ export const update = async (
 ) => {
   await ensureTripNotEnded(context.db, input.tripId);
   const { id, tripId, ...updateData } = input;
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, id);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, id);
 
   const group = await context.db.query.groups.findFirst({ where: matchGroupId });
   if (group?.tripId !== tripId || group.isDeleted) {
@@ -199,7 +200,7 @@ export const update = async (
 };
 
 export const deleteGroup = async (context: GroupContext, input: { id: string }) => {
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.id);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.id);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -227,7 +228,7 @@ export const deleteGroup = async (context: GroupContext, input: { id: string }) 
 export const deleteMyGroup = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -258,7 +259,7 @@ export const deleteMyGroup = async (context: GroupContext, input: { groupId: str
 };
 
 export const join = async (context: GroupContext, input: { id: string; tripId: string }) => {
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.id);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.id);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -310,7 +311,7 @@ export const join = async (context: GroupContext, input: { id: string; tripId: s
 export const requestToJoin = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -321,7 +322,7 @@ export const requestToJoin = async (context: GroupContext, input: { groupId: str
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  const matchUserAndTrip = (tp: any, { and, eq }: any) =>
+  const matchUserAndTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
     and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, group.tripId));
 
   const participant = await context.db.query.tripParticipants.findFirst({
@@ -339,7 +340,7 @@ export const requestToJoin = async (context: GroupContext, input: { groupId: str
     throw new ORPCError("BAD_REQUEST", { message: "You are already in a group" });
   }
 
-  const matchUserTripRequest = (gjr: any, { and, eq }: any) =>
+  const matchUserTripRequest: WhereCallback<"groupJoinRequests"> = (gjr, { and, eq }) =>
     and(eq(gjr.tripId, group.tripId), eq(gjr.userId, context.dbUser.id));
 
   const existingRequest = await context.db.query.groupJoinRequests.findFirst({
@@ -373,7 +374,7 @@ export const requestToJoin = async (context: GroupContext, input: { groupId: str
 export const cancelMyJoinRequest = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -384,7 +385,7 @@ export const cancelMyJoinRequest = async (context: GroupContext, input: { groupI
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  const matchGroupTripUser = (gjr: any, { and, eq }: any) =>
+  const matchGroupTripUser: WhereCallback<"groupJoinRequests"> = (gjr, { and, eq }) =>
     and(eq(gjr.groupId, group.id), eq(gjr.tripId, group.tripId), eq(gjr.userId, context.dbUser.id));
 
   const existingRequest = await context.db.query.groupJoinRequests.findFirst({
@@ -406,7 +407,8 @@ export const respondToJoinRequest = async (
   input: { requestId: string; decision: "ACCEPT" | "REJECT" },
 ) => {
   return await context.db.transaction(async (tx) => {
-    const matchRequestId = (gjr: any, { eq }: any) => eq(gjr.id, input.requestId);
+    const matchRequestId: WhereCallback<"groupJoinRequests"> = (gjr, { eq }) =>
+      eq(gjr.id, input.requestId);
 
     const request = await tx.query.groupJoinRequests.findFirst({
       where: matchRequestId,
@@ -442,7 +444,7 @@ export const respondToJoinRequest = async (
       return { status: "REJECTED" as const };
     }
 
-    const matchUserTrip = (tp: any, { and, eq }: any) =>
+    const matchUserTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
       and(eq(tp.userId, request.userId), eq(tp.tripId, request.tripId));
 
     const participant = await tx.query.tripParticipants.findFirst({
@@ -481,7 +483,7 @@ export const assignUserToGroup = async (
   input: { userId: string; tripId: string; groupId: string },
 ) => {
   await ensureTripNotEnded(context.db, input.tripId);
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -530,7 +532,7 @@ export const bulkAssignUsersToGroup = async (
   input: { tripId: string; groupId: string; userIds: string[] },
 ) => {
   await ensureTripNotEnded(context.db, input.tripId);
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -575,7 +577,7 @@ export const bulkAssignUsersToGroup = async (
       );
   });
 
-  const matchTripAndUsers = (tp: any, { and, eq, inArray }: any) =>
+  const matchTripAndUsers: WhereCallback<"tripParticipants"> = (tp, { and, eq, inArray }) =>
     and(eq(tp.tripId, input.tripId), inArray(tp.userId, uniqueUserIds));
 
   const participants = await context.db.query.tripParticipants.findMany({
@@ -612,7 +614,7 @@ export const removeUserFromGroup = async (
 ) => {
   await ensureTripNotEnded(context.db, input.tripId);
   return await context.db.transaction(async (tx) => {
-    const matchUserAndTrip = (tp: any, { and, eq }: any) =>
+    const matchUserAndTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
       and(eq(tp.userId, input.userId), eq(tp.tripId, input.tripId));
 
     const participant = await tx.query.tripParticipants.findFirst({
@@ -624,11 +626,10 @@ export const removeUserFromGroup = async (
       throw new ORPCError("NOT_FOUND", { message: "Participant not found" });
     }
 
-    const matchGroupId = (g: any, { eq }: any) => eq(g.id, participant.groupId!);
-
-    const group = participant.groupId
+    const groupId = participant.groupId;
+    const group = groupId
       ? await tx.query.groups.findFirst({
-          where: matchGroupId,
+          where: (g, { eq }) => eq(g.id, groupId),
           columns: {
             id: true,
             tripId: true,
@@ -679,9 +680,12 @@ export const removeUserFromGroup = async (
           .where(eq(groupJoinRequests.groupId, participant.groupId));
         await tx.update(groups).set({ isDeleted: true }).where(eq(groups.id, participant.groupId));
       } else if (group?.organizerId && participant.userId === group.organizerId) {
-        const matchTripAndGroup = (tp: any, { and, eq }: any) =>
-          and(eq(tp.tripId, input.tripId), eq(tp.groupId, participant.groupId!));
-        const sortByCreatedAt = (tp: any, { asc }: any) => [asc(tp.createdAt)];
+        const groupId = participant.groupId;
+        const matchTripAndGroup: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
+          and(eq(tp.tripId, input.tripId), eq(tp.groupId, groupId));
+        const sortByCreatedAt: OrderByCallback<"tripParticipants"> = (tp, { asc }) => [
+          asc(tp.createdAt),
+        ];
 
         const nextOrganizer = await tx.query.tripParticipants.findFirst({
           where: matchTripAndGroup,
@@ -706,7 +710,7 @@ export const removeUserFromGroup = async (
 export const leaveMyGroup = async (context: GroupContext, input: { groupId: string }) => {
   await ensureTripNotEndedByGroupId(context.db, input.groupId);
 
-  const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+  const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
   const group = await context.db.query.groups.findFirst({
     where: matchGroupId,
@@ -717,7 +721,7 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
     throw new ORPCError("NOT_FOUND", { message: "Group not found" });
   }
 
-  const matchUserAndTrip = (tp: any, { and, eq }: any) =>
+  const matchUserAndTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
     and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, group.tripId));
 
   const membership = await context.db.query.tripParticipants.findFirst({
@@ -761,9 +765,9 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
     });
   }
 
-  const matchOtherMembers = (tp: any, { and, eq, ne }: any) =>
+  const matchOtherMembers: WhereCallback<"tripParticipants"> = (tp, { and, eq, ne }) =>
     and(eq(tp.tripId, group.tripId), eq(tp.groupId, group.id), ne(tp.userId, context.dbUser.id));
-  const sortByCreatedAt = (tp: any, { asc }: any) => [asc(tp.createdAt)];
+  const sortByCreatedAt: OrderByCallback<"tripParticipants"> = (tp, { asc }) => [asc(tp.createdAt)];
 
   const remainingParticipants = await context.db.query.tripParticipants.findMany({
     where: matchOtherMembers,
@@ -802,7 +806,7 @@ export const addCoins = async (
   return await context.db.transaction(async (tx) => {
     const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
-    const matchGroupId = (g: any, { eq }: any) => eq(g.id, input.groupId);
+    const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
 
     const group = await tx.query.groups.findFirst({
       where: matchGroupId,
@@ -831,7 +835,8 @@ export const addCoins = async (
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create transaction" });
     }
 
-    const matchTransactionId = (ct: any, { eq }: any) => eq(ct.id, transaction.id);
+    const matchTransactionId: WhereCallback<"coinTransactions"> = (ct, { eq }) =>
+      eq(ct.id, transaction.id);
 
     const transactionWithGroup = await tx.query.coinTransactions.findFirst({
       where: matchTransactionId,

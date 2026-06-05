@@ -10,7 +10,9 @@ interface Logger {
 }
 
 const defaultLogger: Logger = {
-  info: () => {},
+  info: () => {
+    /* empty */
+  },
   error: (obj, msg) => console.error(msg, obj),
 };
 

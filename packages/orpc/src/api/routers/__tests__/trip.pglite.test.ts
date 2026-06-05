@@ -13,9 +13,9 @@ import {
   users,
 } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import {
   createMockSupabase,
   seedGroup,

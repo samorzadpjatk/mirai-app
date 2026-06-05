@@ -1,8 +1,8 @@
 import { coinTransactions, groups, rewardPurchases, rewards, trips, users } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { canTransitionPurchaseStatus } from "@mirai-app/shared/rewards";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();
@@ -573,10 +573,11 @@ describe("reward router — Drizzle ORM PGLite integration", () => {
       .where(eq(rewardPurchases.id, "purchase-123"));
     const dbPurchase = purchase[0];
 
-    expect(canTransitionPurchaseStatus(dbPurchase.status as any, "ACCEPTED")).toBe(true);
-    expect(canTransitionPurchaseStatus(dbPurchase.status as any, "CANCELLED")).toBe(true);
-    expect(canTransitionPurchaseStatus(dbPurchase.status as any, "DELIVERED")).toBe(false);
-    expect(canTransitionPurchaseStatus(dbPurchase.status as any, "BOUGHT")).toBe(true);
+    const status = dbPurchase.status as RewardPurchaseStatus;
+    expect(canTransitionPurchaseStatus(status, "ACCEPTED")).toBe(true);
+    expect(canTransitionPurchaseStatus(status, "CANCELLED")).toBe(true);
+    expect(canTransitionPurchaseStatus(status, "DELIVERED")).toBe(false);
+    expect(canTransitionPurchaseStatus(status, "BOUGHT")).toBe(true);
 
     expect(canTransitionPurchaseStatus("ACCEPTED", "IN_DELIVERY")).toBe(true);
     expect(canTransitionPurchaseStatus("ACCEPTED", "CANCELLED")).toBe(true);

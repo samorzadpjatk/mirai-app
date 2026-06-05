@@ -2,7 +2,7 @@ import { useAuth, useSession } from "@mirai-app/auth/client";
 import { ORPCError } from "@orpc/client";
 import type { MutationCacheNotifyEvent, QueryCacheNotifyEvent } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { logger } from "../utils/logger";
+import { clientLogger } from "./logger";
 import { queryClient } from "./query-client-factory";
 
 export const isUnauthorizedError = (error: unknown) => {
@@ -40,9 +40,9 @@ export function useUnauthorizedHandler() {
       try {
         await refreshSession();
       } catch (error) {
-        logger.warn(
-          error,
+        clientLogger.warn(
           "[QueryProvider] Refresh session failed after unauthorized, signing out",
+          error,
         );
         await signOut();
       } finally {

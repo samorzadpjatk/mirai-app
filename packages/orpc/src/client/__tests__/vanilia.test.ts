@@ -9,7 +9,7 @@ vi.mock("@orpc/client", () => ({
   createORPCClient: vi.fn(() => ({})),
   DynamicLink: class DynamicLink {
     constructor() {
-      return {} as any;
+      return {} as Record<string, unknown>;
     }
   },
   ORPCError: class ORPCError extends Error {
@@ -178,7 +178,8 @@ describe("WebSocket Client Creation", () => {
     getORPCClient(httpUrl, wsUrl, token);
 
     expect(WebSocket).toHaveBeenCalledWith(wsUrl);
-    const wsUrlArg = (WebSocket as any).mock.calls[0]?.[0] as string;
+    const wsUrlArg = (WebSocket as unknown as { mock: { calls: unknown[][] } }).mock
+      .calls[0]?.[0] as string;
     expect(wsUrlArg).not.toContain("authorization=");
   });
 

@@ -52,7 +52,9 @@ export const seedRewards = async (
         }
         dbUser ??= user;
       }
-    } catch {}
+    } catch (error) {
+      logger.warn(error, `Failed to find user for authUser ${authUser.id}`);
+    }
   }
 
   if (!dbUser) {

@@ -1,8 +1,8 @@
 import { notificationDeliveries, notifications, trips, users } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { buildDeliveryStatus, extractErrorMessage } from "@mirai-app/shared/notifications";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();

@@ -1,9 +1,10 @@
 import { challenges, notificationPushes, notifications, pushSubscriptions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
+import { env } from "bun";
 import { eq } from "drizzle-orm";
 import { Expo } from "expo-server-sdk";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import { seedGroup, seedParticipant, seedTrip, seedUser } from "../../test-helpers";
 import { applyRankingTemplate } from "../../utils/notificationTemplates";
 import { executeWithRetry } from "../../utils/resilience";
@@ -280,7 +281,7 @@ describe("sendMobileNotifications — PGLite", () => {
     vi.mocked(executeWithRetry).mockImplementation(async <T>(fn: RetryFunction<T>): Promise<T> => {
       return await fn();
     });
-    delete process.env.EXPO_ACCESS_TOKEN;
+    delete env.EXPO_ACCESS_TOKEN;
   });
 
   afterAll(async () => {
@@ -386,7 +387,7 @@ describe("sendMobileNotifications — PGLite", () => {
   });
 
   it("should use EXPO_ACCESS_TOKEN when available", async () => {
-    process.env.EXPO_ACCESS_TOKEN = "test-access-token";
+    env.EXPO_ACCESS_TOKEN = "test-access-token";
 
     await seedUser(testDb.db, "admin-1");
     await seedUser(testDb.db, "user-1");

@@ -15,7 +15,7 @@ export default defineConfig({
     globals: true,
     hookTimeout: 30000,
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "json", "html", "lcov"],
       thresholds: {
         branches: 80,

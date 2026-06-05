@@ -1,12 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": ".",
     "composite": true,
-    "types": ["node", "vitest", "bun"]
+    "types": ["vitest", "bun"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"],

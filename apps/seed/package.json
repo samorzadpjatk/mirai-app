@@ -23,8 +23,8 @@
     "db:studio:prod": "cd ../../packages/db && bunx --bun --env-file=../../apps/seed/.env.prod drizzle-kit studio",
     "dev": "bun run --env-file=.env.dev index.ts",
     "prod": "bun run --env-file=.env.prod index.ts",
-    "test": "vitest --run --changed",
-    "test:ci": "vitest run --coverage",
+    "test": "bunx --bun vitest --run --changed",
+    "test:ci": "bunx --bun vitest run --coverage",
     "test:watch": "vitest",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -35,11 +35,12 @@
     "@mirai-app/shared": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
     "csv-parse": "^6.1.0",
+    "drizzle-orm": "^0.45.2",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-istanbul": "^4.1.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
   }

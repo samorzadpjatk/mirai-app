@@ -5,6 +5,7 @@ import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { WhereCallback } from "../utils/drizzle-types";
 import type { RewardPurchaseStatus, userRewardPurchaseStatusSchema } from "./types";
 import { calculateTotalAvailablePoints, normalizeRewardImagesInput } from "./utils";
 
@@ -43,7 +44,7 @@ export const createReward = async (
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create reward" });
   }
 
-  const matchInsertedRewardId = (r: any, ops: any) => ops.eq(r.id, inserted.id);
+  const matchInsertedRewardId: WhereCallback<"rewards"> = (r, { eq }) => eq(r.id, inserted.id);
 
   return await context.db.query.rewards.findFirst({
     where: matchInsertedRewardId,
@@ -97,7 +98,7 @@ export const updateReward = async (
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update reward" });
   }
 
-  const matchUpdatedRewardId = (r: any, ops: any) => ops.eq(r.id, updated.id);
+  const matchUpdatedRewardId: WhereCallback<"rewards"> = (r, { eq }) => eq(r.id, updated.id);
 
   return await context.db.query.rewards.findFirst({
     where: matchUpdatedRewardId,
@@ -130,7 +131,7 @@ export const setRewardHidden = async (
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update reward" });
   }
 
-  const matchUpdatedRewardId = (r: any, ops: any) => ops.eq(r.id, updated.id);
+  const matchUpdatedRewardId: WhereCallback<"rewards"> = (r, { eq }) => eq(r.id, updated.id);
 
   return await context.db.query.rewards.findFirst({
     where: matchUpdatedRewardId,
@@ -169,7 +170,7 @@ export const purchaseReward = async (
   input: { rewardId: string; quantity: number },
 ) => {
   return await context.db.transaction(async (tx) => {
-    const matchRewardId = (r: any, ops: any) => ops.eq(r.id, input.rewardId);
+    const matchRewardId: WhereCallback<"rewards"> = (r, { eq }) => eq(r.id, input.rewardId);
 
     const reward = await tx.query.rewards.findFirst({
       where: matchRewardId,
@@ -189,8 +190,8 @@ export const purchaseReward = async (
       throw new ORPCError("BAD_REQUEST", { message: "Not enough rewards available" });
     }
 
-    const matchUserTripParticipant = (tp: any, ops: any) =>
-      ops.and(ops.eq(tp.userId, context.dbUser.id), ops.eq(tp.tripId, reward.tripId));
+    const matchUserTripParticipant: WhereCallback<"tripParticipants"> = (tp, { eq, and }) =>
+      and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, reward.tripId));
 
     const userParticipant = await tx.query.tripParticipants.findFirst({
       where: matchUserTripParticipant,
@@ -278,7 +279,8 @@ export const purchaseReward = async (
       })
       .returning();
 
-    const matchInsertedPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, insertedPurchase.id);
+    const matchInsertedPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+      eq(rp.id, insertedPurchase.id);
 
     return await tx.query.rewardPurchases.findFirst({
       where: matchInsertedPurchaseId,
@@ -314,7 +316,8 @@ export const updateMyPurchaseStatus = async (
   input: { purchaseId: string; status: z.infer<typeof userRewardPurchaseStatusSchema> },
 ) => {
   return await context.db.transaction(async (tx) => {
-    const matchPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, input.purchaseId);
+    const matchPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+      eq(rp.id, input.purchaseId);
 
     const purchase = await tx.query.rewardPurchases.findFirst({
       where: matchPurchaseId,
@@ -367,7 +370,8 @@ export const updateMyPurchaseStatus = async (
         throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
       }
 
-      const matchUpdatedPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, updated.id);
+      const matchUpdatedPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+        eq(rp.id, updated.id);
 
       return await tx.query.rewardPurchases.findFirst({
         where: matchUpdatedPurchaseId,
@@ -441,7 +445,8 @@ export const updateMyPurchaseStatus = async (
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
     }
 
-    const matchUpdatedPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, updated.id);
+    const matchUpdatedPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+      eq(rp.id, updated.id);
 
     return await tx.query.rewardPurchases.findFirst({
       where: matchUpdatedPurchaseId,
@@ -481,7 +486,8 @@ export const updatePurchaseStatus = async (
   },
 ) => {
   return await context.db.transaction(async (tx) => {
-    const matchPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, input.purchaseId);
+    const matchPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+      eq(rp.id, input.purchaseId);
 
     const purchase = await tx.query.rewardPurchases.findFirst({
       where: matchPurchaseId,
@@ -574,7 +580,8 @@ export const updatePurchaseStatus = async (
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to update purchase" });
     }
 
-    const matchUpdatedPurchaseId = (rp: any, ops: any) => ops.eq(rp.id, updated.id);
+    const matchUpdatedPurchaseId: WhereCallback<"rewardPurchases"> = (rp, { eq }) =>
+      eq(rp.id, updated.id);
 
     return await tx.query.rewardPurchases.findFirst({
       where: matchUpdatedPurchaseId,

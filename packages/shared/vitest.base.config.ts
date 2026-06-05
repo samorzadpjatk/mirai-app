@@ -17,12 +17,12 @@ export const baseConfig = defineConfig({
       optimizer: {
         ssr: {
           enabled: true,
-          include: ["drizzle-orm"],
+          include: ["drizzle-orm", "zod"],
         },
       },
     },
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "json", "html", "lcov"],
       thresholds: {
         branches: 80,

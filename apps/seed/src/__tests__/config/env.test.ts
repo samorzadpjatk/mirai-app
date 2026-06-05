@@ -1,91 +1,88 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("config/env", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    process.env = { ...originalEnv };
     vi.resetModules();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   it("should export env with all required variables", async () => {
-    process.env.SUPABASE_URL = "https://test.supabase.co";
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
-    process.env.SUPABASE_STORAGE_IMAGE_BUCKET = "test-images";
-    process.env.SUPABASE_STORAGE_VIDEO_BUCKET = "test-videos";
-    process.env.SUPABASE_STORAGE_PUBLIC_BUCKET = "test-public";
-    process.env.SEED_GHOST_EMAIL = "ghost@test.com";
-    process.env.SEED_GHOST_PASSWORD = "ghost-password";
-    process.env.DATABASE_URL = "postgresql://localhost:5432/test";
+    vi.stubEnv("SUPABASE_URL", "https://test.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-service-key");
+    vi.stubEnv("SUPABASE_STORAGE_IMAGE_BUCKET", "test-images");
+    vi.stubEnv("SUPABASE_STORAGE_VIDEO_BUCKET", "test-videos");
+    vi.stubEnv("SUPABASE_STORAGE_PUBLIC_BUCKET", "test-public");
+    vi.stubEnv("SEED_GHOST_EMAIL", "ghost@test.com");
+    vi.stubEnv("SEED_GHOST_PASSWORD", "ghost-password");
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/test");
 
-    const { env } = await import("../../config/env");
+    const { env: envConfig } = await import("../../config/env");
 
-    expect(env.supabaseUrl).toBe("https://test.supabase.co");
-    expect(env.serviceRoleKey).toBe("test-service-key");
-    expect(env.imageBucket).toBe("test-images");
-    expect(env.videoBucket).toBe("test-videos");
-    expect(env.publicBucket).toBe("test-public");
-    expect(env.seedGhostEmail).toBe("ghost@test.com");
-    expect(env.seedGhostPassword).toBe("ghost-password");
-    expect(env.databaseUrl).toBe("postgresql://localhost:5432/test");
+    expect(envConfig.supabaseUrl).toBe("https://test.supabase.co");
+    expect(envConfig.serviceRoleKey).toBe("test-service-key");
+    expect(envConfig.imageBucket).toBe("test-images");
+    expect(envConfig.videoBucket).toBe("test-videos");
+    expect(envConfig.publicBucket).toBe("test-public");
+    expect(envConfig.seedGhostEmail).toBe("ghost@test.com");
+    expect(envConfig.seedGhostPassword).toBe("ghost-password");
+    expect(envConfig.databaseUrl).toBe("postgresql://localhost:5432/test");
   });
 
   it("should handle empty string values", async () => {
-    process.env.SUPABASE_URL = "";
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "";
-    process.env.SUPABASE_STORAGE_IMAGE_BUCKET = "";
-    process.env.SUPABASE_STORAGE_VIDEO_BUCKET = "";
-    process.env.SUPABASE_STORAGE_PUBLIC_BUCKET = "";
-    process.env.SEED_GHOST_EMAIL = "";
-    process.env.SEED_GHOST_PASSWORD = "";
-    process.env.DATABASE_URL = "";
+    vi.stubEnv("SUPABASE_URL", "");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
+    vi.stubEnv("SUPABASE_STORAGE_IMAGE_BUCKET", "");
+    vi.stubEnv("SUPABASE_STORAGE_VIDEO_BUCKET", "");
+    vi.stubEnv("SUPABASE_STORAGE_PUBLIC_BUCKET", "");
+    vi.stubEnv("SEED_GHOST_EMAIL", "");
+    vi.stubEnv("SEED_GHOST_PASSWORD", "");
+    vi.stubEnv("DATABASE_URL", "");
 
-    const { env } = await import("../../config/env");
+    const { env: envConfig } = await import("../../config/env");
 
-    expect(env.supabaseUrl).toBe("");
-    expect(env.serviceRoleKey).toBe("");
-    expect(env.imageBucket).toBe("");
-    expect(env.videoBucket).toBe("");
-    expect(env.publicBucket).toBe("");
-    expect(env.seedGhostEmail).toBe("");
-    expect(env.seedGhostPassword).toBe("");
-    expect(env.databaseUrl).toBe("");
+    expect(envConfig.supabaseUrl).toBe("");
+    expect(envConfig.serviceRoleKey).toBe("");
+    expect(envConfig.imageBucket).toBe("");
+    expect(envConfig.videoBucket).toBe("");
+    expect(envConfig.publicBucket).toBe("");
+    expect(envConfig.seedGhostEmail).toBe("");
+    expect(envConfig.seedGhostPassword).toBe("");
+    expect(envConfig.databaseUrl).toBe("");
   });
 
   it("should handle undefined values when env vars are not set", async () => {
-    delete process.env.SUPABASE_URL;
-    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-    delete process.env.DATABASE_URL;
+    vi.stubEnv("SUPABASE_URL", undefined);
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", undefined);
+    vi.stubEnv("DATABASE_URL", undefined);
 
-    const { env } = await import("../../config/env");
+    const { env: envConfig } = await import("../../config/env");
 
-    expect(env.supabaseUrl).toBeUndefined();
-    expect(env.serviceRoleKey).toBeUndefined();
-    expect(env.databaseUrl).toBeUndefined();
+    expect(envConfig.supabaseUrl).toBeUndefined();
+    expect(envConfig.serviceRoleKey).toBeUndefined();
+    expect(envConfig.databaseUrl).toBeUndefined();
   });
 
   it("should handle special characters in env values", async () => {
-    process.env.SUPABASE_URL = "https://test.supabase.co?param=value";
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "key-with-special-chars-!@#$%";
-    process.env.DATABASE_URL = "postgresql://user:pass@host:5432/db?ssl=true";
+    vi.stubEnv("SUPABASE_URL", "https://test.supabase.co?param=value");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "key-with-special-chars-!@#$%");
+    vi.stubEnv("DATABASE_URL", "postgresql://user:pass@host:5432/db?ssl=true");
 
-    const { env } = await import("../../config/env");
+    const { env: envConfig } = await import("../../config/env");
 
-    expect(env.supabaseUrl).toBe("https://test.supabase.co?param=value");
-    expect(env.serviceRoleKey).toBe("key-with-special-chars-!@#$%");
-    expect(env.databaseUrl).toBe("postgresql://user:pass@host:5432/db?ssl=true");
+    expect(envConfig.supabaseUrl).toBe("https://test.supabase.co?param=value");
+    expect(envConfig.serviceRoleKey).toBe("key-with-special-chars-!@#$%");
+    expect(envConfig.databaseUrl).toBe("postgresql://user:pass@host:5432/db?ssl=true");
   });
 
   it("should handle very long values", async () => {
     const longValue = "a".repeat(1000);
-    process.env.SUPABASE_SERVICE_ROLE_KEY = longValue;
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", longValue);
 
-    const { env } = await import("../../config/env");
+    const { env: envConfig } = await import("../../config/env");
 
-    expect(env.serviceRoleKey).toBe(longValue);
+    expect(envConfig.serviceRoleKey).toBe(longValue);
   });
 });

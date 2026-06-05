@@ -3,7 +3,7 @@ import { logger } from "@mirai-app/shared/utils";
 import { serverConfig } from "./config";
 import { createServer } from "./server";
 
-async function main() {
+export async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("Missing DATABASE_URL environment variable");

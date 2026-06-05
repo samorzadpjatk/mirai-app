@@ -1,6 +1,5 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { baseConfig, baseCoverageExcludes } from "../shared/vitest.base.config";
 
 export default mergeConfig(
@@ -39,6 +38,10 @@ export default mergeConfig(
         {
           find: "@mirai-app/shared/utils",
           replacement: path.resolve(__dirname, "../shared/src/utils/index.ts"),
+        },
+        {
+          find: "@mirai-app/db/test-helper",
+          replacement: path.resolve(__dirname, "../db/src/pglite.ts"),
         },
         { find: "@mirai-app/db", replacement: path.resolve(__dirname, "../db/src") },
         { find: "@mirai-app/supabase", replacement: path.resolve(__dirname, "../supabase/src") },

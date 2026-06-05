@@ -1,6 +1,7 @@
 import type { DB } from "@mirai-app/db";
 import { challenges, notificationPushes, tripParticipants } from "@mirai-app/db";
 import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/shared/notifications";
+import { env } from "bun";
 import { and, count, eq } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { logger } from "../utils/logger";
@@ -308,7 +309,7 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
 
-  const expoAccessToken = process.env.EXPO_ACCESS_TOKEN;
+  const expoAccessToken = env.EXPO_ACCESS_TOKEN;
   const expo = new Expo(expoAccessToken ? { accessToken: expoAccessToken } : undefined);
   const messages: ExpoPushMessage[] = [];
   const userByToken = new Map<string, string>();

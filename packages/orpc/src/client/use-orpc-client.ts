@@ -3,7 +3,7 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { RouterUtils } from "@orpc/tanstack-query";
 import { useEffect, useMemo } from "react";
 import type { AppRouter } from "../api/root";
-import { logger } from "../utils/logger";
+import { clientLogger } from "./logger";
 import { getORPCClient } from "./vanilia";
 
 export let orpc: RouterUtils<RouterClient<AppRouter>>;
@@ -29,7 +29,7 @@ export function useORPCClient({
     return () => {
       if (cleanup) {
         cleanup().catch((error) => {
-          logger.error(error, "Error cleaning up WebSocket connection");
+          clientLogger.error("Error cleaning up WebSocket connection", error);
         });
       }
     };

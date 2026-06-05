@@ -334,11 +334,10 @@ describe("CommunityActivityCard", () => {
 
   it("renders with null admin and no userPost", () => {
     const activityNoOwner = createMockActivity({
-      ...baseActivity,
       activityType: "custom",
       admin: null,
       userPost: null,
-    } as any);
+    });
 
     render(<CommunityActivityCard activity={activityNoOwner} />);
     expect(screen.getByText("MIRAI Admin")).toBeOnTheScreen();
@@ -346,10 +345,9 @@ describe("CommunityActivityCard", () => {
 
   it("renders with rank change and no rankChangeActivity", () => {
     const rankChangeNoDetails = createMockActivity({
-      ...baseActivity,
       activityType: "rank_change",
       rankChangeActivity: null,
-    } as any);
+    });
 
     render(<CommunityActivityCard activity={rankChangeNoDetails} />);
     expect(screen.getByText("ranking")).toBeOnTheScreen();
@@ -357,7 +355,6 @@ describe("CommunityActivityCard", () => {
 
   it("renders with submission and no group", () => {
     const submissionNoGroup = createMockActivity({
-      ...baseActivity,
       activityType: "submission",
       submissionActivity: {
         submissionId: "",
@@ -365,7 +362,7 @@ describe("CommunityActivityCard", () => {
         groupId: "",
         hasVideo: false,
         isWinner: false,
-        ranking: null,
+        ranking: 0,
         pointsAwarded: 0,
         currentGroupRank: null,
         challenge: {
@@ -378,7 +375,7 @@ describe("CommunityActivityCard", () => {
         group: null,
         submission: null,
       },
-    } as any);
+    });
 
     render(<CommunityActivityCard activity={submissionNoGroup} />);
     expect(screen.getByText("submission")).toBeOnTheScreen();
@@ -441,10 +438,9 @@ describe("CommunityActivityCard", () => {
 
   it("renders with challenge event and no challengeActivity", () => {
     const challengeEventNoDetails = createMockActivity({
-      ...baseActivity,
       activityType: "challenge_event",
       challengeActivity: null,
-    } as any);
+    });
 
     render(<CommunityActivityCard activity={challengeEventNoDetails} />);
     expect(screen.getByText("challenge")).toBeOnTheScreen();
@@ -452,10 +448,9 @@ describe("CommunityActivityCard", () => {
 
   it("renders with user post and no userPost", () => {
     const userPostNoDetails = createMockActivity({
-      ...baseActivity,
       activityType: "user_post",
       userPost: null,
-    } as any);
+    });
 
     render(<CommunityActivityCard activity={userPostNoDetails} />);
     expect(screen.getByText("post")).toBeOnTheScreen();

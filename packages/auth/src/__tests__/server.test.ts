@@ -1,9 +1,9 @@
 import type { User } from "@mirai-app/db";
 import { users } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/shared/test-utils";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import {
   AuthenticationError,
   AuthorizationError,

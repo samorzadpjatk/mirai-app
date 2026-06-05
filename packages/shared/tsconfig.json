@@ -18,7 +18,7 @@
 
     // Best practices
     "strict": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true, // Required: upstream type issues in drizzle-orm, bun-types, @orpc/shared
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -26,8 +26,8 @@
     "outDir": "dist",
 
     // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
     "types": ["vitest", "bun"]
   },

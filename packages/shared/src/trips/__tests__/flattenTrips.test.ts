@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { flattenTrips } from "../flattenTrips";
 
-interface TestTrip {
-  id: string;
-  name: string;
-}
-
 describe("flattenTrips", () => {
   it("returns null for undefined input", () => {
     expect(flattenTrips(undefined)).toBeNull();

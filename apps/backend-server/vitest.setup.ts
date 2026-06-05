@@ -13,14 +13,14 @@ const shouldSuppress = (message: string): boolean => {
   return suppressedPatterns.some((pattern) => pattern.test(message));
 };
 
-console.log = (...args: any[]) => {
+console.log = (...args: unknown[]) => {
   const message = args[0]?.toString() || "";
   if (!shouldSuppress(message)) {
     originalConsoleLog.apply(console, args);
   }
 };
 
-console.info = (...args: any[]) => {
+console.info = (...args: unknown[]) => {
   const message = args[0]?.toString() || "";
   if (!shouldSuppress(message)) {
     originalConsoleInfo.apply(console, args);

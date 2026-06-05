@@ -6,11 +6,8 @@
     "jsxImportSource": "nativewind",
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
     "paths": {
       "~/*": ["./src/*"],
-      "@mirai-app/orpc": ["../../packages/orpc/src/index.ts"],
-      "@mirai-app/orpc/utils/activityFeed": ["../../packages/orpc/src/utils/activityFeed.ts"]
     },
     "types": ["jest", "@testing-library/jest-native"],
     "allowJs": true

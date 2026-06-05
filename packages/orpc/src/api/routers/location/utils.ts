@@ -99,7 +99,9 @@ export async function ensureUserInActiveTrip(db: DB, userId: string): Promise<vo
       await ensureTripNotEnded(db, membership.trip.id);
       // If we find any active trip, allow the operation
       return;
-    } catch {}
+    } catch {
+      // Trip has ended, continue checking other trips
+    }
   }
 
   // All trips have ended

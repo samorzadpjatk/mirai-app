@@ -23,8 +23,13 @@ describe("mapOverlayStore actions", () => {
 
   describe("selectUser", () => {
     it("should hide users list, collapse list, set follow mode to user, and focus coordinate", () => {
-      const user = { coordinate: [52.2297, 21.0122] as [number, number], id: "1", name: "Test" };
-      mapOverlayStore.getState().selectUser(user as any);
+      const user = {
+        coordinate: [52.2297, 21.0122] as [number, number],
+        id: "1",
+        name: "Test",
+        lastActiveAt: Date.now(),
+      };
+      mapOverlayStore.getState().selectUser(user);
       const state = mapOverlayStore.getState();
       expect(state.showUsersList).toBe(false);
       expect(state.isListExpanded).toBe(false);
@@ -35,7 +40,9 @@ describe("mapOverlayStore actions", () => {
 
   describe("deselectUser", () => {
     it("should set followMode to null", () => {
-      mapOverlayStore.getState().selectUser({ coordinate: [1, 2], id: "1", name: "Test" } as any);
+      mapOverlayStore
+        .getState()
+        .selectUser({ coordinate: [1, 2], id: "1", name: "Test", lastActiveAt: Date.now() });
       mapOverlayStore.getState().deselectUser();
       expect(mapOverlayStore.getState().followMode).toBeNull();
     });
@@ -43,7 +50,9 @@ describe("mapOverlayStore actions", () => {
 
   describe("backToList", () => {
     it("should show users list and clear follow mode", () => {
-      mapOverlayStore.getState().selectUser({ coordinate: [1, 2], id: "1", name: "Test" } as any);
+      mapOverlayStore
+        .getState()
+        .selectUser({ coordinate: [1, 2], id: "1", name: "Test", lastActiveAt: Date.now() });
       mapOverlayStore.getState().backToList();
       const state = mapOverlayStore.getState();
       expect(state.showUsersList).toBe(true);
@@ -120,7 +129,9 @@ describe("mapOverlayStore actions", () => {
 
   describe("recenter", () => {
     it("should set followMode to null and focusedCoordinate when valid", () => {
-      mapOverlayStore.getState().selectUser({ coordinate: [1, 2], id: "1", name: "Test" } as any);
+      mapOverlayStore
+        .getState()
+        .selectUser({ coordinate: [1, 2], id: "1", name: "Test", lastActiveAt: Date.now() });
       mapOverlayStore.getState().recenter([52.2297, 21.0122]);
       const state = mapOverlayStore.getState();
       expect(state.followMode).toBeNull();
@@ -136,7 +147,8 @@ describe("mapOverlayStore actions", () => {
 
     it("should not change state when coordinate has invalid length", () => {
       const before = mapOverlayStore.getState();
-      mapOverlayStore.getState().recenter([52.2297] as any);
+      // @ts-expect-error Testing invalid coordinate length
+      mapOverlayStore.getState().recenter([52.2297]);
       const after = mapOverlayStore.getState();
       expect(after.focusedCoordinate).toBe(before.focusedCoordinate);
     });
@@ -144,8 +156,13 @@ describe("mapOverlayStore actions", () => {
 
   describe("handleMapUserPress", () => {
     it("should set followMode to user and focusedCoordinate", () => {
-      const user = { coordinate: [52.2297, 21.0122] as [number, number], id: "1", name: "Test" };
-      mapOverlayStore.getState().handleMapUserPress(user as any);
+      const user = {
+        coordinate: [52.2297, 21.0122] as [number, number],
+        id: "1",
+        name: "Test",
+        lastActiveAt: Date.now(),
+      };
+      mapOverlayStore.getState().handleMapUserPress(user);
       const state = mapOverlayStore.getState();
       expect(state.followMode).toBe("user");
       expect(state.focusedCoordinate).toEqual([52.2297, 21.0122]);
@@ -169,7 +186,9 @@ describe("mapOverlayStore actions", () => {
 
   describe("setUsers", () => {
     it("should set users", () => {
-      const users = [{ id: "1", name: "Test" }] as any;
+      const users = [
+        { id: "1", name: "Test", coordinate: [1, 2] as [number, number], lastActiveAt: Date.now() },
+      ];
       mapOverlayStore.getState().setUsers(users);
       expect(mapOverlayStore.getState().users).toEqual(users);
     });

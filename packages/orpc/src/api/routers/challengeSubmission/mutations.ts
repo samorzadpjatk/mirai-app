@@ -26,6 +26,7 @@ import {
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { WhereCallback } from "../utils/drizzle-types";
 import type { SubmissionContext } from "./queries";
 import { submissionBaseColumns, submissionWithRelations } from "./types";
 import {
@@ -72,8 +73,8 @@ export const createSubmission = async (
     throw new ORPCError("FORBIDDEN", { message: "Submission window has ended" });
   }
 
-  const matchExistingSubmission = (cs: any, ops: any) =>
-    ops.and(ops.eq(cs.challengeId, resolvedChallengeId), ops.eq(cs.groupId, participantGroupId));
+  const matchExistingSubmission: WhereCallback<"challengeSubmissions"> = (cs, { eq, and }) =>
+    and(eq(cs.challengeId, resolvedChallengeId), eq(cs.groupId, participantGroupId));
 
   const existing = await context.db.query.challengeSubmissions.findFirst({
     where: matchExistingSubmission,
@@ -154,7 +155,8 @@ export const createSubmission = async (
   if (!createdSubmissionId) {
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create submission" });
   }
-  const matchCreatedSubmissionId = (cs: any, ops: any) => ops.eq(cs.id, createdSubmissionId.id);
+  const matchCreatedSubmissionId: WhereCallback<"challengeSubmissions"> = (cs, { eq }) =>
+    eq(cs.id, createdSubmissionId.id);
 
   const submission = await context.db.query.challengeSubmissions.findFirst({
     where: matchCreatedSubmissionId,
@@ -195,8 +197,8 @@ export const updateMineSubmission = async (
   }
 
   const participantGroupId = participant.groupId;
-  const matchMySubmission = (cs: any, ops: any) =>
-    ops.and(ops.eq(cs.id, input.id), ops.eq(cs.groupId, participantGroupId));
+  const matchMySubmission: WhereCallback<"challengeSubmissions"> = (cs, { eq, and }) =>
+    and(eq(cs.id, input.id), eq(cs.groupId, participantGroupId));
 
   const submission = await context.db.query.challengeSubmissions.findFirst({
     where: matchMySubmission,
@@ -397,7 +399,8 @@ export const updateMineSubmission = async (
     },
   );
 
-  const matchUpdatedSubmissionId = (cs: any, ops: any) => ops.eq(cs.id, updatedSubmissionId.id);
+  const matchUpdatedSubmissionId: WhereCallback<"challengeSubmissions"> = (cs, { eq }) =>
+    eq(cs.id, updatedSubmissionId.id);
 
   const enrichedSubmission = await context.db.query.challengeSubmissions.findFirst({
     where: matchUpdatedSubmissionId,
@@ -473,7 +476,8 @@ export const reviewSubmission = async (
     throw new ORPCError("BAD_REQUEST", { message: "Wymagany jest powód odrzucenia" });
   }
 
-  const matchSubmissionId = (cs: any, ops: any) => ops.eq(cs.id, input.id);
+  const matchSubmissionId: WhereCallback<"challengeSubmissions"> = (cs, { eq }) =>
+    eq(cs.id, input.id);
 
   const submission = await context.db.query.challengeSubmissions.findFirst({
     where: matchSubmissionId,
@@ -576,7 +580,8 @@ export const reviewSubmission = async (
       });
     }
 
-    const matchSubmissionId = (cs: any, ops: any) => ops.eq(cs.id, input.id);
+    const matchSubmissionId: WhereCallback<"challengeSubmissions"> = (cs, { eq }) =>
+      eq(cs.id, input.id);
 
     const refreshedForResponse = await tx.query.challengeSubmissions.findFirst({
       where: matchSubmissionId,
@@ -589,7 +594,8 @@ export const reviewSubmission = async (
     }
 
     if (shouldCreateApprovalActivity) {
-      const matchSubmissionActivity = (sa: any, ops: any) => ops.eq(sa.submissionId, input.id);
+      const matchSubmissionActivity: WhereCallback<"submissionActivities"> = (sa, { eq }) =>
+        eq(sa.submissionId, input.id);
 
       const existingSubmissionActivity = await tx.query.submissionActivities.findFirst({
         where: matchSubmissionActivity,

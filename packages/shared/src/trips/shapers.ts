@@ -2,6 +2,8 @@ import { type TripSponsorEntry, filterActiveSponsors } from "./filters";
 
 export interface TripGroupInput {
   id: string;
+  name?: string | null;
+  coins?: number | null;
   image?: string | null;
 }
 
@@ -36,10 +38,14 @@ export interface TripParticipantInput {
 }
 
 export interface ShapedTripParticipantUser {
+  id: string;
   email: string | null;
 }
 
 export interface ShapedTripParticipantGroup {
+  id: string;
+  name?: string | null;
+  coins?: number | null;
   _count: { participants: number };
   image: string | null | undefined;
 }

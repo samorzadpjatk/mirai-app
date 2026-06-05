@@ -1,9 +1,10 @@
 import type { DB, User } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { createRouterClient } from "@orpc/server";
+import { env } from "bun";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import { createContext, createMockSupabase, seedUser } from "../../../test-helpers";
 import { storageRouter } from "../../routers/storage";
 import type { TRPCContext } from "../../trpc";
@@ -69,7 +70,7 @@ describe("storageRouter", () => {
   let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
   let mockSupabase: SupabaseClient;
   let mockUser: User;
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
 
   beforeAll(async () => {
     testDb = await createPgliteTestDb();
@@ -80,11 +81,8 @@ describe("storageRouter", () => {
     await testDb.reset();
 
     // Reset environment variables
-    process.env = {
-      ...originalEnv,
-      SUPABASE_URL: "https://test.supabase.co",
-      SUPABASE_PUBLIC_URL: undefined,
-    };
+    process.env.SUPABASE_URL = "https://test.supabase.co";
+    delete process.env.SUPABASE_PUBLIC_URL;
 
     mockUser = createMockUser({ id: "user-123" });
 
@@ -133,7 +131,16 @@ describe("storageRouter", () => {
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    if (originalEnv.SUPABASE_URL) {
+      process.env.SUPABASE_URL = originalEnv.SUPABASE_URL;
+    } else {
+      delete process.env.SUPABASE_URL;
+    }
+    if (originalEnv.SUPABASE_PUBLIC_URL) {
+      process.env.SUPABASE_PUBLIC_URL = originalEnv.SUPABASE_PUBLIC_URL;
+    } else {
+      delete process.env.SUPABASE_PUBLIC_URL;
+    }
   });
 
   afterAll(async () => {
@@ -219,7 +226,7 @@ describe("storageRouter", () => {
     });
 
     it("should throw INTERNAL_SERVER_ERROR when SUPABASE_URL is missing", async () => {
-      delete process.env.SUPABASE_URL;
+      delete env.SUPABASE_URL;
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -323,7 +330,7 @@ describe("storageRouter", () => {
 
   describe("createPublicUrl", () => {
     it("should create public URL for files-public bucket", async () => {
-      process.env.SUPABASE_PUBLIC_URL = "https://public.supabase.co";
+      env.SUPABASE_PUBLIC_URL = "https://public.supabase.co";
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -362,8 +369,8 @@ describe("storageRouter", () => {
     });
 
     it("should throw INTERNAL_SERVER_ERROR when SUPABASE_URL is missing", async () => {
-      delete process.env.SUPABASE_URL;
-      delete process.env.SUPABASE_PUBLIC_URL;
+      delete env.SUPABASE_URL;
+      delete env.SUPABASE_PUBLIC_URL;
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -376,7 +383,7 @@ describe("storageRouter", () => {
     });
 
     it("should use SUPABASE_PUBLIC_URL when available", async () => {
-      process.env.SUPABASE_PUBLIC_URL = "https://custom-public.supabase.co";
+      env.SUPABASE_PUBLIC_URL = "https://custom-public.supabase.co";
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);
@@ -389,8 +396,8 @@ describe("storageRouter", () => {
     });
 
     it("should fallback to SUPABASE_URL when PUBLIC_URL not set", async () => {
-      delete process.env.SUPABASE_PUBLIC_URL;
-      process.env.SUPABASE_URL = "https://fallback.supabase.co";
+      delete env.SUPABASE_PUBLIC_URL;
+      env.SUPABASE_URL = "https://fallback.supabase.co";
 
       const ctx = createAuthContext(mockUser);
       const caller = createCaller(ctx);

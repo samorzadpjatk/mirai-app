@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createPgliteTestDb } from "../pglite";
 import { trips, users } from "../schema";
-import { createPgliteTestDb } from "../test-helper";
 
 describe("PGLite Test Helper", () => {
   let db: Awaited<ReturnType<typeof createPgliteTestDb>>["db"];
@@ -111,40 +111,43 @@ describe("PGLite Test Helper", () => {
   });
 
   it("should restart sequences on reset", async () => {
-    // Create a temporary table with a serial column
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS "test_serial_table" (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL
-      )
-    `);
-
-    // Create a drizzle table object so reset() can discover and truncate it
-    const { pgTable, serial, text } = await import("drizzle-orm/pg-core");
-    const testSerialTable = pgTable("test_serial_table", {
-      id: serial("id").primaryKey(),
-      name: text("name").notNull(),
+    await db.insert(users).values({
+      id: "seq-test-user",
+      authUserId: "auth-seq",
+      firstName: "Sequence",
+      lastName: "Test",
+      role: "USER",
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
-    try {
-      // Insert rows — serial should auto-increment
-      await db.execute(sql`INSERT INTO "test_serial_table" (name) VALUES ('first')`);
-      await db.execute(sql`INSERT INTO "test_serial_table" (name) VALUES ('second')`);
+    await db.insert(trips).values({
+      id: "seq-test-trip",
+      name: "Sequence Test Trip",
+      description: "Testing sequence restart",
+      startDate: new Date(),
+      endDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-      const beforeReset = await db.execute(sql`SELECT MAX(id) as max_id FROM "test_serial_table"`);
-      expect(beforeReset.rows[0].max_id).toBe(2);
+    const userResult = await db.select().from(users).where(eq(users.id, "seq-test-user"));
+    expect(userResult).toHaveLength(1);
 
-      // Reset — this should truncate the table and restart its sequence
-      await reset([testSerialTable]);
+    const tripResult = await db.select().from(trips).where(eq(trips.id, "seq-test-trip"));
+    expect(tripResult).toHaveLength(1);
 
-      // Insert after reset — sequence should restart at 1
-      const afterReset = await db.execute(sql`
-        INSERT INTO "test_serial_table" (name) VALUES ('after-reset') RETURNING id
-      `);
-      expect(afterReset.rows[0].id).toBe(1);
-    } finally {
-      // Clean up: drop the test table
-      await db.execute(sql`DROP TABLE IF EXISTS "test_serial_table"`);
-    }
+    await reset();
+
+    const userResultAfter = await db.select().from(users).where(eq(users.id, "seq-test-user"));
+    expect(userResultAfter).toHaveLength(0);
+
+    const tripResultAfter = await db.select().from(trips).where(eq(trips.id, "seq-test-trip"));
+    expect(tripResultAfter).toHaveLength(0);
+
+    const allUsers = await db.select().from(users);
+    const allTrips = await db.select().from(trips);
+    expect(allUsers).toHaveLength(0);
+    expect(allTrips).toHaveLength(0);
   });
 });

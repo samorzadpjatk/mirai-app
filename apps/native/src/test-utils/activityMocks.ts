@@ -1,5 +1,7 @@
 import type {
   Activity,
+  BaseActivity,
+  ChallengeEventActivity,
   CustomActivity,
   RankChangeActivity,
   SubmissionActivity,
@@ -121,7 +123,15 @@ export function createMockRankChangeActivity(
   } as RankChangeActivity;
 }
 
-export function createMockActivity(overrides: Partial<Activity> = {}): Activity {
+export type MockActivityInput = Partial<BaseActivity> & {
+  activityType?: Activity["activityType"];
+  submissionActivity?: Partial<SubmissionActivity["submissionActivity"]> | null;
+  rankChangeActivity?: Partial<RankChangeActivity["rankChangeActivity"]> | null;
+  challengeActivity?: Partial<ChallengeEventActivity["challengeActivity"]> | null;
+  userPost?: Partial<UserPostActivity["userPost"]> | null;
+};
+
+export function createMockActivity(overrides: MockActivityInput = {}): Activity {
   const type = overrides.activityType ?? "custom";
   switch (type) {
     case "custom":

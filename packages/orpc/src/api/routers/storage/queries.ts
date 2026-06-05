@@ -8,6 +8,7 @@ import {
   rewriteSignedUrlHost,
 } from "@mirai-app/shared/storage";
 import { ORPCError } from "@orpc/server";
+import { env } from "bun";
 import { getPublicUrl, getResumableEndpoint, resolveStoragePath } from "./utils";
 
 export const createUploadUrl = async (
@@ -89,7 +90,7 @@ export const createDownloadUrl = async (
     });
   }
 
-  const signedUrl = rewriteSignedUrlHost(data.signedUrl, process.env.SUPABASE_PUBLIC_URL);
+  const signedUrl = rewriteSignedUrlHost(data.signedUrl, env.SUPABASE_PUBLIC_URL);
 
   const expiresAt = calculateExpiresAtISO(expiresIn, Date.now());
 

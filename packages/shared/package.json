@@ -32,8 +32,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest --run --changed",
-    "test:ci": "vitest run --coverage",
+    "test": "bunx --bun vitest --run --changed",
+    "test:ci": "bunx --bun vitest run --coverage",
     "test:watch": "vitest",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -43,7 +43,7 @@
     "@mirai-app/db": "workspace:*",
     "@orpc/server": "^1.14.2",
     "@types/react": "~19.2.10",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-istanbul": "^4.1.8",
     "react": "^19.2.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"

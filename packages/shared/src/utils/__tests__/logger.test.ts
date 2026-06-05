@@ -35,15 +35,14 @@ describe("logger", () => {
 
   describe("non-test environment", () => {
     it("creates logger with undefined destination when VITEST is not true", async () => {
-      const originalVitest = process.env.VITEST;
-      delete process.env.VITEST;
+      vi.stubEnv("VITEST", "false");
       vi.resetModules();
 
       try {
         const mod = await import("../../utils/logger");
         expect(mod.logger).toBeDefined();
       } finally {
-        process.env.VITEST = originalVitest;
+        vi.unstubAllEnvs();
         vi.resetModules();
       }
     });

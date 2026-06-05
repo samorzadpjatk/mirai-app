@@ -1,6 +1,5 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { baseConfig } from "../../packages/shared/vitest.base.config";
 
 export default mergeConfig(
@@ -10,6 +9,9 @@ export default mergeConfig(
       environment: "node",
       setupFiles: ["./vitest.setup.ts"],
       include: ["src/**/__tests__/**/*.test.ts"],
+      coverage: {
+        exclude: ["src/utils/fs.ts"],
+      },
     },
     resolve: {
       alias: { "~": path.resolve(__dirname, "./src") },
