@@ -57,6 +57,8 @@ describe("Background Location Task", () => {
       const mockDeps: BackgroundTaskDeps = {
         shouldSend: jest.fn(() => Promise.resolve(true)),
         sendUpdate: jest.fn(() => Promise.resolve()),
+        getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+        setLastSentLocation: jest.fn(() => Promise.resolve()),
       };
 
       initBackgroundLocationTask(mockDeps);
@@ -81,6 +83,8 @@ describe("Background Location Task", () => {
       const mockDeps: BackgroundTaskDeps = {
         shouldSend: jest.fn(() => Promise.resolve(true)),
         sendUpdate: jest.fn(() => Promise.resolve()),
+        getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+        setLastSentLocation: jest.fn(() => Promise.resolve()),
       };
 
       initBackgroundLocationTask(mockDeps);
@@ -104,6 +108,8 @@ describe("Background Location Task", () => {
       const mockDeps: BackgroundTaskDeps = {
         shouldSend: jest.fn(() => Promise.resolve(false)),
         sendUpdate: jest.fn(() => Promise.resolve()),
+        getLastSentLocation: jest.fn(() => Promise.resolve(null)),
+        setLastSentLocation: jest.fn(() => Promise.resolve()),
       };
 
       initBackgroundLocationTask(mockDeps);

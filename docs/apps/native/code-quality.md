@@ -24,7 +24,7 @@
 - `useTrips.ts` — `calculateAllTrips`
 - `useLocationPermissions.ts` — `syncLocationSharingState`, `calculateCanViewOthersLocations`, `executeToggleLocationSharing`, `buildLocationSharingToggle`
 - `backgroundLocationTask.ts` — `handleBackgroundLocationTask`
-- `backgroundLocationTaskUtils.ts` — `toFiniteNumberOrNull`, `toNonNegativeOrNull`, `toHeadingOrNull`
+- `backgroundLocationTaskUtils.ts` — `toFiniteNumberOrUndefined`, `toNonNegativeOrUndefined`, `toHeadingOrUndefined`, `calculateDistance`, `shouldSendLocationUpdate`
 - `useNotifications.ts` — `calculateIsSubscribed`, `calculateIsSubscribedElsewhere`, `buildPermissionAlertButtons`, `getExpoProjectId`, `shouldRequestNotificationPermission`, `buildNotificationPermissionResult`, `executeToggleSubscription`, `buildNotificationActions`
 - `useMapSharing.ts` — `extractSharingUserIds`
 - `useMapLocationStream.ts` — `buildLocationUpdateData`, `buildUserDataFromLocationUser`, `removeUserFromLocations`, `isUnauthorizedError`, `isValidLocationEvent`, `processLocationStreamEvent`

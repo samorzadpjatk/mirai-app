@@ -37,11 +37,20 @@ jest.mock("~/services/storage/storage", () => ({
   },
 }));
 
+import { calculateDistance } from "@mirai-app/shared/utils";
+import type { LocationObject } from "expo-location";
 import {
+  type BackgroundTaskDeps,
+  type BackgroundTaskState,
+  handleBackgroundLocationTask,
+} from "~/services/background/backgroundLocationTask";
+import {
+  MINIMUM_DELTA_METERS,
+  shouldSendLocationUpdate,
   toFiniteNumberOrUndefined,
   toHeadingOrUndefined,
   toNonNegativeOrUndefined,
-} from "~/services/background/backgroundLocationTask";
+} from "~/services/background/backgroundLocationTaskUtils";
 
 describe("toFiniteNumberOrUndefined", () => {
   it("should return the number for valid finite values", () => {
@@ -114,12 +123,92 @@ describe("toHeadingOrUndefined", () => {
   });
 });
 
-import type { LocationObject } from "expo-location";
-import {
-  type BackgroundTaskDeps,
-  type BackgroundTaskState,
-  handleBackgroundLocationTask,
-} from "~/services/background/backgroundLocationTask";
+describe("calculateDistance", () => {
+  it("should return 0 for identical coordinates", () => {
+    const result = calculateDistance(52.2297, 21.0122, 52.2297, 21.0122, "m");
+    expect(result).toBe(0);
+  });
+
+  it("should return ~300km for Warsaw to Krakow", () => {
+    const result = calculateDistance(52.2297, 21.0122, 50.0647, 19.945, "m");
+    expect(result).toBeGreaterThan(250_000);
+    expect(result).toBeLessThan(350_000);
+  });
+});
+
+describe("shouldSendLocationUpdate", () => {
+  const makeLocation = (
+    lat: number,
+    lon: number,
+    accuracy: number | null = null,
+  ): LocationObject => ({
+    coords: {
+      latitude: lat,
+      longitude: lon,
+      altitude: null,
+      accuracy,
+      altitudeAccuracy: null,
+      heading: null,
+      speed: null,
+    },
+    timestamp: Date.now(),
+  });
+
+  it("should return true for first location (lastSent = null)", () => {
+    const newLocation = makeLocation(52.2297, 21.0122, 5);
+    const result = shouldSendLocationUpdate(newLocation, null);
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=5m and delta=8m (below 10m threshold)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.229772, 21.0122, 5);
+    const result = shouldSendLocationUpdate(newLocation, lastSent);
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=5m and delta=15m (above 10m threshold)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.229835, 21.0122, 5);
+    const result = shouldSendLocationUpdate(newLocation, lastSent);
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=100m and delta=150m (below 200m threshold)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.23105, 21.0122, 100);
+    const result = shouldSendLocationUpdate(newLocation, lastSent, 100);
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=100m and delta=250m (above 200m threshold)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.23195, 21.0122, 100);
+    const result = shouldSendLocationUpdate(newLocation, lastSent, 100);
+    expect(result).toBe(true);
+  });
+
+  it("should return false when accuracy=null and delta=10m (falls back to MINIMUM_DELTA_METERS)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.22979, 21.0122);
+    const result = shouldSendLocationUpdate(newLocation, lastSent);
+    expect(result).toBe(false);
+  });
+
+  it("should return true when accuracy=null and delta=20m (above 15m threshold)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.22988, 21.0122);
+    const result = shouldSendLocationUpdate(newLocation, lastSent);
+    expect(result).toBe(true);
+  });
+
+  it("should return true when accuracy=0 and delta=20m (threshold = max(0, 15) = 15m)", () => {
+    const lastSent = makeLocation(52.2297, 21.0122);
+    const newLocation = makeLocation(52.22988, 21.0122, 0);
+    const result = shouldSendLocationUpdate(newLocation, lastSent);
+    expect(result).toBe(true);
+  });
+});
 
 const makeLocation = (latitude: number, longitude: number): LocationObject => ({
   coords: {
@@ -138,10 +227,12 @@ describe("handleBackgroundLocationTask", () => {
   const createMockDeps = () => ({
     shouldSend: jest.fn<() => Promise<boolean>>(),
     sendUpdate: jest.fn<(location: LocationObject) => Promise<void>>(),
+    getLastSentLocation: jest.fn<() => Promise<LocationObject | null>>(),
+    setLastSentLocation: jest.fn<(location: LocationObject) => Promise<void>>(),
   });
 
   it("should return early when error is provided", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
 
     await handleBackgroundLocationTask(undefined, new Error("Task failed"), state, deps);
@@ -151,7 +242,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when already sending", async () => {
-    const state: BackgroundTaskState = { isSending: true };
+    const state: BackgroundTaskState = { isSending: true, lastSentLocation: null };
     const deps = createMockDeps();
 
     await handleBackgroundLocationTask(
@@ -166,7 +257,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when location sharing is disabled", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(false);
 
@@ -183,7 +274,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when no locations provided", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
 
@@ -194,7 +285,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should return early when data is undefined", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
 
@@ -205,10 +296,11 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should send location update for the latest location", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
     deps.sendUpdate.mockResolvedValue(undefined);
+    deps.getLastSentLocation.mockResolvedValue(null);
 
     const locations: [LocationObject, LocationObject] = [
       makeLocation(52.0, 21.0),
@@ -222,10 +314,11 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should handle sendUpdate error gracefully", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockResolvedValue(true);
     deps.sendUpdate.mockRejectedValue(new Error("Network error"));
+    deps.getLastSentLocation.mockResolvedValue(null);
 
     await handleBackgroundLocationTask(
       { locations: [makeLocation(52.23, 21.01)] },
@@ -239,7 +332,7 @@ describe("handleBackgroundLocationTask", () => {
   });
 
   it("should reset isSending even when shouldSend throws", async () => {
-    const state: BackgroundTaskState = { isSending: false };
+    const state: BackgroundTaskState = { isSending: false, lastSentLocation: null };
     const deps = createMockDeps();
     deps.shouldSend.mockRejectedValue(new Error("Storage error"));
 

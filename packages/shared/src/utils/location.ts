@@ -4,10 +4,17 @@
  * @param lon1 Longitude of first point in degrees
  * @param lat2 Latitude of second point in degrees
  * @param lon2 Longitude of second point in degrees
- * @returns Distance in kilometers
+ * @param unit Unit of returned distance: 'km' (default) or 'm'
+ * @returns Distance in specified unit
  */
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the Earth in kilometers
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+  unit: "km" | "m" = "km",
+): number {
+  const R = unit === "m" ? 6371e3 : 6371; // Radius of the Earth in specified unit
   const dLat = toRadians(lat2 - lat1);
   const dLon = toRadians(lon2 - lon1);
 
