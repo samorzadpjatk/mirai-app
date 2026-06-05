@@ -54,7 +54,6 @@
     "@orpc/tanstack-query": "^1.14.2",
     "drizzle-orm": "^0.45.2",
     "expo-server-sdk": "^3.15.0",
-    "pino": "^9.6.0",
     "zod": "^4.3.4"
   },
   "peerDependencies": {

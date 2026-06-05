@@ -75,7 +75,7 @@ export function buildSecurityHeaders(): Record<string, string> {
   };
 }
 
-export interface WsAuthPayload {
+interface WsAuthPayload {
   type?: string;
   payload?: { authorization?: string };
 }
