@@ -1,6 +1,6 @@
 import {
   activityFeeds,
-  challengeLocation,
+  challengeLocationMatch,
   challengeQrCode,
   challengeSubmissions,
   challengeText,
@@ -233,13 +233,13 @@ export const updateMineSubmission = async (
     throw new ORPCError("NOT_FOUND", { message: "Submission not found" });
   }
 
-  const [challengeLocationData] = await context.db
+  const [challengeLocationMatchData] = await context.db
     .select({
-      targetLatitude: challengeLocation.targetLatitude,
-      targetLongitude: challengeLocation.targetLongitude,
+      targetLatitude: challengeLocationMatch.targetLatitude,
+      targetLongitude: challengeLocationMatch.targetLongitude,
     })
-    .from(challengeLocation)
-    .where(eq(challengeLocation.challengeId, submission.challenge.id))
+    .from(challengeLocationMatch)
+    .where(eq(challengeLocationMatch.challengeId, submission.challenge.id))
     .limit(1);
 
   const [challengeTextData] = await context.db
@@ -260,8 +260,8 @@ export const updateMineSubmission = async (
 
   const challengeWithLocation = {
     ...submission.challenge,
-    targetLatitude: challengeLocationData?.targetLatitude ?? 0,
-    targetLongitude: challengeLocationData?.targetLongitude ?? 0,
+    targetLatitude: challengeLocationMatchData?.targetLatitude ?? 0,
+    targetLongitude: challengeLocationMatchData?.targetLongitude ?? 0,
     textExpectedPhrase: challengeTextData?.expectedPhrase ?? null,
     qrCodeValue: challengeQrCodeData?.expectedValue ?? null,
   };

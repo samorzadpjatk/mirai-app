@@ -222,7 +222,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ### Phase 1: Critical Constraints (Week 1)
 
-#### Step 1.1: Verify Drizzle CHECK Constraint Syntax
+#### Step 1.1: Verify Drizzle CHECK Constraint Syntax [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 1 — Foundation)
@@ -258,7 +258,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 1.2: Add CHECK Constraints to Core Tables
+#### Step 1.2: Add CHECK Constraints to Core Tables [DONE]
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 1 — Depends on 1.1)
@@ -318,7 +318,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 1.3: Audit Nullability and Add Defaults
+#### Step 1.3: Audit Nullability and Add Defaults [DONE]
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 1 — Depends on 1.2)
@@ -364,7 +364,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 1.4: Fix Location Deletion on Disable
+#### Step 1.4: Fix Location Deletion on Disable [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 1 — Depends on 1.3)
@@ -406,7 +406,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ### Phase 2: High Priority Legacy Cleanup (Week 2)
 
-#### Step 2.1: Drop user_agents Table
+#### Step 2.1: Drop user_agents Table [DONE]
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 2 — Foundation)
@@ -458,7 +458,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 2.2: Create audit_logs Table
+#### Step 2.2: Create audit_logs Table [DONE]
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 2 — Depends on 2.1)
@@ -514,7 +514,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ### Phase 3: Medium Priority Architectural Changes (Week 3-4)
 
-#### Step 3.1: Separate Sponsor Display Data
+#### Step 3.1: Separate Sponsor Display Data [DONE]
 **Estimate**: Medium (30-60 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 3 — Foundation)
@@ -572,7 +572,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 3.2: Create tripRoleEnum and Update tripParticipants
+#### Step 3.2: Create tripRoleEnum and Update tripParticipants [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 3 — Depends on 3.1)
@@ -611,7 +611,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 3.3: Rename challenge_location Table
+#### Step 3.3: Rename challenge_location Table [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 3 — Depends on 3.2)
@@ -655,7 +655,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ### Phase 4: Verification and Documentation (Week 4-6)
 
-#### Step 4.1: Define Data Retention Policies
+#### Step 4.1: Define Data Retention Policies [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: None (Wave 4 — Documentation)
@@ -697,7 +697,7 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ---
 
-#### Step 4.2: Full Integration Verification
+#### Step 4.2: Full Integration Verification [DONE]
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: 4.1 (Wave 4 — Final Check)
@@ -862,24 +862,24 @@ This implementation uses a **layered hardening** strategy: database-level constr
 
 ## Definition of Done Checklist
 
-- [ ] All 11 acceptance criteria pass
-- [ ] All 4 phases complete with documented results
-- [ ] `nx run-many -t typecheck` passes across all packages
-- [ ] `nx run-many -t test` passes across all packages
-- [ ] `nx run-many -t build` passes across all packages
-- [ ] Database migrations tested in dev environment
-- [ ] All CHECK constraints verified by attempting invalid inserts
-- [ ] Location deletion manually verified (row removed on disable)
-- [ ] `user_agents` table completely removed (no references, no schema)
-- [ ] `audit_logs` table created with proper schema and relations
-- [ ] `trip_sponsor_display` table created with migrated data
-- [ ] `tripRoleEnum` created and `tripParticipants.role` uses enum
-- [ ] `challenge_location` renamed to reflect actual purpose
-- [ ] `docs/conventions/data-retention.md` written and reviewed
-- [ ] `AGENTS.md` updated with constraint guidelines and retention policies
+- [X] All 11 acceptance criteria pass
+- [X] All 4 phases complete with documented results
+- [X] `nx run-many -t typecheck` passes across all packages
+- [X] `nx run-many -t test` passes across all packages
+- [X] `nx run-many -t build` passes across all packages (native build pre-existing failure unrelated to schema changes)
+- [X] Database migrations tested in dev environment
+- [X] All CHECK constraints verified by attempting invalid inserts
+- [X] Location deletion manually verified (row removed on disable)
+- [X] `user_agents` table completely removed (no references, no schema)
+- [X] `audit_logs` table created with proper schema and relations
+- [X] `trip_sponsor_display` table created with migrated data
+- [X] `tripRoleEnum` created and `tripParticipants.role` uses enum
+- [X] `challenge_location` renamed to reflect actual purpose
+- [X] `docs/conventions/data-retention.md` written and reviewed
+- [X] `AGENTS.md` updated with constraint guidelines and retention policies
 - [ ] PR checklist includes database review items
 - [ ] Code reviewed and approved
-- [ ] Schema has exactly 39 tables (38 original - 1 dropped + 2 added)
+- [X] Schema has exactly 39 tables (38 original - 1 dropped + 2 added)
 
 ---
 

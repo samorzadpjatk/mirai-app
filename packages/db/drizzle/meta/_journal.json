@@ -78,6 +78,27 @@
       "when": 1780687876807,
       "tag": "20260605193116_crazy_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780690976068,
+      "tag": "20260605202256_freezing_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780691051938,
+      "tag": "20260605202411_past_white_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780692570573,
+      "tag": "20260605204930_unusual_spectrum",
+      "breakpoints": true
     }
   ]
 }

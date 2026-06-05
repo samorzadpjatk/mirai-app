@@ -2,7 +2,7 @@ import {
   activityFeeds,
   activityReactions,
   challengeActivities,
-  challengeLocation,
+  challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
   challenges,
@@ -108,7 +108,7 @@ describe("activityFeed router — PGLite transaction rollback", () => {
       type: "DAILY",
     });
 
-    await testDb.db.insert(challengeLocation).values({
+    await testDb.db.insert(challengeLocationMatch).values({
       challengeId: id,
       targetLatitude: 0,
       targetLongitude: 0,
@@ -317,7 +317,7 @@ describe("activityFeed router — Drizzle ORM PGLite integration", () => {
       type: "DAILY",
     });
 
-    await testDb.db.insert(challengeLocation).values({
+    await testDb.db.insert(challengeLocationMatch).values({
       challengeId: id,
       targetLatitude: 0,
       targetLongitude: 0,

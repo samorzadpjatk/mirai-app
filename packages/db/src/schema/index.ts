@@ -27,7 +27,7 @@ export {
   submissionReports,
 } from "./challenges";
 export { challengeRecurrence } from "./challengeRecurrence";
-export { challengeLocation } from "./challengeLocation";
+export { challengeLocationMatch } from "./challengeLocationMatch";
 export { challengeText } from "./challengeText";
 export { challengeQrCode } from "./challengeQrCode";
 export {
@@ -49,6 +49,7 @@ export {
 export { locations, locationSharingRequests, locationShares } from "./locations";
 export { rewards, rewardPurchases, coinTransactions } from "./rewards";
 export { sponsors, tripSponsors } from "./sponsors";
+export { tripSponsorDisplay } from "./tripSponsorDisplay";
 export { auditLogs } from "./auditLogs";
 // userAgents removed - telemetry should not be stored in application database
 export {
@@ -65,7 +66,7 @@ export {
   groupJoinRequestsRelations,
   challengesRelations,
   challengeRecurrenceRelations,
-  challengeLocationRelations,
+  challengeLocationMatchRelations,
   challengeTextRelations,
   challengeQrCodeRelations,
   challengeSubmissionsRelations,
@@ -91,6 +92,7 @@ export {
   rewardPurchasesRelations,
   sponsorsRelations,
   tripSponsorsRelations,
+  tripSponsorDisplayRelations,
   auditLogsRelations,
   // userAgentsRelations removed - telemetry table dropped
 } from "./relations";
@@ -104,7 +106,7 @@ import {
   userPosts,
 } from "./activities";
 import { auditLogs } from "./auditLogs";
-import { challengeLocation } from "./challengeLocation";
+import { challengeLocationMatch } from "./challengeLocationMatch";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
 import { challengeText } from "./challengeText";
@@ -125,6 +127,7 @@ import { tripResourceFiles } from "./tripResourceFiles";
 import { tripResourceIcons } from "./tripResourceIcons";
 import { tripResourceLinks } from "./tripResourceLinks";
 import { tripResourceTexts } from "./tripResourceTexts";
+import { tripSponsorDisplay } from "./tripSponsorDisplay";
 import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
 import { users } from "./users";
 
@@ -142,7 +145,7 @@ export const schemaTables = [
   groupJoinRequests,
   challenges,
   challengeRecurrence,
-  challengeLocation,
+  challengeLocationMatch,
   challengeText,
   challengeQrCode,
   challengeSubmissions,
@@ -168,6 +171,7 @@ export const schemaTables = [
   coinTransactions,
   sponsors,
   tripSponsors,
+  tripSponsorDisplay,
   auditLogs,
   // userAgents removed - telemetry table dropped
 ] as const;

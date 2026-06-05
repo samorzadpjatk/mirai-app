@@ -1,5 +1,5 @@
 import {
-  challengeLocation,
+  challengeLocationMatch,
   challengeQrCode,
   challengeSubmissions,
   challengeText,
@@ -105,11 +105,11 @@ export const ensureChallengeInTrip = async (
       thirdPlacePoints: challenges.thirdPlacePoints,
       textExpectedPhrase: challengeText.expectedPhrase,
       qrCodeValue: challengeQrCode.expectedValue,
-      targetLatitude: challengeLocation.targetLatitude,
-      targetLongitude: challengeLocation.targetLongitude,
+      targetLatitude: challengeLocationMatch.targetLatitude,
+      targetLongitude: challengeLocationMatch.targetLongitude,
     })
     .from(challenges)
-    .leftJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
+    .leftJoin(challengeLocationMatch, eq(challenges.id, challengeLocationMatch.challengeId))
     .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
     .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
     .where(and(eq(challenges.id, challengeId), eq(challenges.tripId, tripId)))

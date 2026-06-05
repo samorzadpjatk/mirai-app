@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "trip_sponsor_display_trip_id_sponsor_id_unique" ON "trip_sponsor_display" USING btree ("trip_id","sponsor_id");

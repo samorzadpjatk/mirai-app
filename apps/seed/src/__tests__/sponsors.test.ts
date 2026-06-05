@@ -31,6 +31,10 @@ const tripSponsorsTable = {
   tripId: { name: "tripId" },
   sponsorId: { name: "sponsorId" },
 };
+const tripSponsorDisplayTable = {
+  tripId: { name: "tripId" },
+  sponsorId: { name: "sponsorId" },
+};
 
 const mockSponsorOnConflict = vi.fn().mockResolvedValue(undefined);
 const mockSponsorValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
@@ -40,9 +44,15 @@ const mockTripSponsorValues = vi
   .fn()
   .mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
 
+const mockTripSponsorDisplayOnConflict = vi.fn().mockResolvedValue(undefined);
+const mockTripSponsorDisplayValues = vi
+  .fn()
+  .mockReturnValue({ onConflictDoUpdate: mockTripSponsorDisplayOnConflict });
+
 const mockDbInsert = vi.fn((table: unknown) => {
   if (table === sponsorsTable) return { values: mockSponsorValues };
   if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
+  if (table === tripSponsorDisplayTable) return { values: mockTripSponsorDisplayValues };
   throw new Error("Unknown table");
 });
 
@@ -64,20 +74,26 @@ describe("sponsors", () => {
 
     mockSponsorOnConflict.mockReset().mockResolvedValue(undefined);
     mockTripSponsorOnConflict.mockReset().mockResolvedValue(undefined);
+    mockTripSponsorDisplayOnConflict.mockReset().mockResolvedValue(undefined);
 
     mockSponsorValues.mockClear().mockReturnValue({ onConflictDoUpdate: mockSponsorOnConflict });
     mockTripSponsorValues
       .mockClear()
       .mockReturnValue({ onConflictDoUpdate: mockTripSponsorOnConflict });
+    mockTripSponsorDisplayValues
+      .mockClear()
+      .mockReturnValue({ onConflictDoUpdate: mockTripSponsorDisplayOnConflict });
     mockDbInsert.mockClear().mockImplementation((table: unknown) => {
       if (table === sponsorsTable) return { values: mockSponsorValues };
       if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
+      if (table === tripSponsorDisplayTable) return { values: mockTripSponsorDisplayValues };
       throw new Error("Unknown table");
     });
 
     vi.doMock("@mirai-app/db", () => ({
       sponsors: sponsorsTable,
       tripSponsors: tripSponsorsTable,
+      tripSponsorDisplay: tripSponsorDisplayTable,
       createDb: () => ({ insert: (table: unknown) => mockDbInsert(table) }),
     }));
   });
@@ -198,9 +214,6 @@ describe("sponsors", () => {
         name: "Acme Corp",
         description: "A great sponsor",
         logoPath: "images/sponsors/acme.png",
-        height: 20,
-        offsetX: 5,
-        offsetY: 10,
         isActive: true,
       });
       expect(mockSponsorOnConflict).toHaveBeenCalledWith({
@@ -209,9 +222,6 @@ describe("sponsors", () => {
           name: "Acme Corp",
           description: "A great sponsor",
           logoPath: "images/sponsors/acme.png",
-          height: 20,
-          offsetX: 5,
-          offsetY: 10,
           isActive: true,
         },
       });
@@ -219,7 +229,49 @@ describe("sponsors", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should handle null optional fields", async () => {
+    it("should seed sponsor display data", async () => {
+      const sponsorConfigs: SponsorConfig[] = [
+        {
+          id: "sponsor-1",
+          name: "Acme Corp",
+          description: "A great sponsor",
+          logoPath: "images/sponsors/acme.png",
+          height: 20,
+          offsetX: 5,
+          offsetY: 10,
+        },
+      ];
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {
+        /* noop */
+      });
+
+      const { seedSponsors } = await import("../sponsors");
+      await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
+
+      expect(mockDbInsert).toHaveBeenCalledWith(tripSponsorDisplayTable);
+      expect(mockTripSponsorDisplayValues).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        sponsorId: "sponsor-1",
+        height: 20,
+        offsetX: 5,
+        offsetY: 10,
+      });
+      expect(mockTripSponsorDisplayOnConflict).toHaveBeenCalledWith({
+        target: [tripSponsorDisplayTable.tripId, tripSponsorDisplayTable.sponsorId],
+        set: {
+          tripId: "trip-1",
+          sponsorId: "sponsor-1",
+          height: 20,
+          offsetX: 5,
+          offsetY: 10,
+        },
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle null optional display fields", async () => {
       const sponsorConfigs: SponsorConfig[] = [
         {
           id: "sponsor-1",
@@ -236,14 +288,14 @@ describe("sponsors", () => {
       const { seedSponsors } = await import("../sponsors");
       await seedSponsors("db-url", "trip-1", "dev", sponsorConfigs);
 
-      expect(mockSponsorValues).toHaveBeenCalledWith(
+      expect(mockTripSponsorDisplayValues).toHaveBeenCalledWith(
         expect.objectContaining({
           height: 0,
           offsetX: 0,
           offsetY: 0,
         }),
       );
-      expect(mockSponsorOnConflict).toHaveBeenCalledWith(
+      expect(mockTripSponsorDisplayOnConflict).toHaveBeenCalledWith(
         expect.objectContaining({
           set: expect.objectContaining({
             height: 0,
@@ -307,8 +359,12 @@ describe("sponsors", () => {
       const tripSponsorCalls = mockDbInsert.mock.calls.filter(
         ([table]) => table === tripSponsorsTable,
       );
+      const displayCalls = mockDbInsert.mock.calls.filter(
+        ([table]) => table === tripSponsorDisplayTable,
+      );
       expect(sponsorCalls).toHaveLength(3);
       expect(tripSponsorCalls).toHaveLength(3);
+      expect(displayCalls).toHaveLength(3);
 
       consoleSpy.mockRestore();
     });

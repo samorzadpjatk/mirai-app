@@ -1,9 +1,6 @@
-import { sql } from "drizzle-orm";
 import {
   boolean,
-  check,
   index,
-  integer,
   pgTable,
   text,
   timestamp,
@@ -22,9 +19,6 @@ export const sponsors = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull(),
     logoPath: text("logo_path").notNull(),
-    height: integer("height").default(0).notNull(),
-    offsetX: integer("offset_x").default(0).notNull(),
-    offsetY: integer("offset_y").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -34,9 +28,6 @@ export const sponsors = pgTable(
   (t) => [
     index("sponsors_is_active_idx").on(t.isActive),
     index("sponsors_created_at_idx").on(t.createdAt),
-    check("sponsors_height_positive", sql`${t.height} >= 0`),
-    check("sponsors_offset_x_positive", sql`${t.offsetX} >= 0`),
-    check("sponsors_offset_y_positive", sql`${t.offsetY} >= 0`),
   ],
 );
 

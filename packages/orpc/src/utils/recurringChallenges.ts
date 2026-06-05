@@ -1,5 +1,5 @@
 import {
-  challengeLocation,
+  challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
   challengeText,
@@ -112,8 +112,8 @@ const challengeWithRelationsColumns = {
   dailyEndTime: challengeRecurrence.dailyEndTime,
   isRecurring: challengeRecurrence.isRecurring,
   recurringDays: challengeRecurrence.recurringDays,
-  targetLatitude: challengeLocation.targetLatitude,
-  targetLongitude: challengeLocation.targetLongitude,
+  targetLatitude: challengeLocationMatch.targetLatitude,
+  targetLongitude: challengeLocationMatch.targetLongitude,
   textExpectedPhrase: challengeText.expectedPhrase,
   qrCodeValue: challengeQrCode.expectedValue,
 };
@@ -209,7 +209,7 @@ export const ensureRecurringInstanceForTemplate = async (params: {
     type: "DAILY",
   });
 
-  await params.tx.insert(challengeLocation).values({
+  await params.tx.insert(challengeLocationMatch).values({
     challengeId: created[0].id,
     targetLatitude: template.targetLatitude ?? 0,
     targetLongitude: template.targetLongitude ?? 0,
@@ -318,7 +318,7 @@ export const precreateRecurringInstancesForTemplate = async (params: {
         type: "DAILY",
       });
 
-      await params.tx.insert(challengeLocation).values({
+      await params.tx.insert(challengeLocationMatch).values({
         challengeId: created[0].id,
         targetLatitude: template.targetLatitude ?? 0,
         targetLongitude: template.targetLongitude ?? 0,
@@ -354,7 +354,7 @@ export const ensureRecurringInstancesForTrip = async (params: {
     .select(challengeWithRelationsColumns)
     .from(challenges)
     .innerJoin(challengeRecurrence, eq(challenges.id, challengeRecurrence.challengeId))
-    .innerJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
+    .innerJoin(challengeLocationMatch, eq(challenges.id, challengeLocationMatch.challengeId))
     .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
     .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
     .where(and(eq(challenges.tripId, params.tripId), eq(challengeRecurrence.isRecurring, true)));
@@ -383,7 +383,7 @@ export const resolveRecurringChallengeIdForTrip = async (params: {
     .select(challengeWithRelationsColumns)
     .from(challenges)
     .leftJoin(challengeRecurrence, eq(challenges.id, challengeRecurrence.challengeId))
-    .leftJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
+    .leftJoin(challengeLocationMatch, eq(challenges.id, challengeLocationMatch.challengeId))
     .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
     .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
     .where(and(eq(challenges.id, params.challengeId), eq(challenges.tripId, params.tripId)))

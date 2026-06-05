@@ -22,7 +22,7 @@ export {
   groupJoinRequests,
   challenges,
   challengeRecurrence,
-  challengeLocation,
+  challengeLocationMatch,
   challengeText,
   challengeQrCode,
   challengeSubmissions,
@@ -48,6 +48,7 @@ export {
   coinTransactions,
   sponsors,
   tripSponsors,
+  tripSponsorDisplay,
   auditLogs,
   // userAgents removed - telemetry table dropped
   usersRelations,
@@ -87,6 +88,7 @@ export {
   rewardPurchasesRelations,
   sponsorsRelations,
   tripSponsorsRelations,
+  tripSponsorDisplayRelations,
   auditLogsRelations,
   // userAgentsRelations removed - telemetry table dropped
   schemaTables,
@@ -116,7 +118,7 @@ import type { groupJoinRequests, groups } from "./schema/groups";
 export type Group = typeof groups.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequests.$inferSelect;
 
-import type { challengeLocation } from "./schema/challengeLocation";
+import type { challengeLocationMatch } from "./schema/challengeLocationMatch";
 import type { challengeQrCode } from "./schema/challengeQrCode";
 import type { challengeRecurrence } from "./schema/challengeRecurrence";
 import type { challengeText } from "./schema/challengeText";
@@ -128,7 +130,7 @@ import type {
 } from "./schema/challenges";
 export type Challenge = typeof challenges.$inferSelect;
 export type ChallengeRecurrence = typeof challengeRecurrence.$inferSelect;
-export type ChallengeLocation = typeof challengeLocation.$inferSelect;
+export type ChallengeLocationMatch = typeof challengeLocationMatch.$inferSelect;
 export type ChallengeText = typeof challengeText.$inferSelect;
 export type ChallengeQrCode = typeof challengeQrCode.$inferSelect;
 export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect;
@@ -176,7 +178,9 @@ export type RewardPurchase = typeof rewardPurchases.$inferSelect;
 export type CoinTransaction = typeof coinTransactions.$inferSelect;
 
 import type { sponsors, tripSponsors } from "./schema/sponsors";
+import type { tripSponsorDisplay } from "./schema/tripSponsorDisplay";
 export type Sponsor = typeof sponsors.$inferSelect;
 export type TripSponsor = typeof tripSponsors.$inferSelect;
+export type TripSponsorDisplay = typeof tripSponsorDisplay.$inferSelect;
 
 // UserAgent type removed - telemetry table dropped
