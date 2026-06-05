@@ -31,6 +31,7 @@ import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LAST_SENT_LOCATION_KEY,
+  LAST_SENT_LOCATION_TIMESTAMP_KEY,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
@@ -437,10 +438,14 @@ describe("createBackgroundTaskDeps", () => {
     expect(result).toBe(false);
   });
 
-  it("getLastSentLocation returns parsed LocationObject from SecureStore", async () => {
+  it("getLastSentLocation returns parsed LocationObject from SecureStore when not expired", async () => {
     const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
     const storedLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } };
-    mockGetItemAsync.mockResolvedValue(JSON.stringify(storedLocation));
+    mockGetItemAsync.mockImplementation((key) => {
+      if (key === LAST_SENT_LOCATION_KEY) return Promise.resolve(JSON.stringify(storedLocation));
+      if (key === LAST_SENT_LOCATION_TIMESTAMP_KEY) return Promise.resolve(String(Date.now()));
+      return Promise.resolve(null);
+    });
 
     const factoryDeps = createMockFactoryDeps();
     const deps = createBackgroundTaskDeps(factoryDeps);
@@ -475,7 +480,43 @@ describe("createBackgroundTaskDeps", () => {
     expect(result).toBeNull();
   });
 
-  it("setLastSentLocation stores JSON in SecureStore with correct keychain settings", async () => {
+  it("getLastSentLocation returns null when stored location is expired", async () => {
+    const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
+    const storedLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } };
+    const expiredTimestamp = String(Date.now() - 8 * 24 * 60 * 60 * 1000); // 8 days ago
+    mockGetItemAsync.mockImplementation((key) => {
+      if (key === LAST_SENT_LOCATION_KEY) return Promise.resolve(JSON.stringify(storedLocation));
+      if (key === LAST_SENT_LOCATION_TIMESTAMP_KEY) return Promise.resolve(expiredTimestamp);
+      return Promise.resolve(null);
+    });
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const result = await deps.getLastSentLocation();
+
+    expect(result).toBeNull();
+  });
+
+  it("getLastSentLocation returns location when stored location is within TTL", async () => {
+    const mockGetItemAsync = jest.mocked(SecureStore.getItemAsync);
+    const storedLocation = { coords: { latitude: 52.2297, longitude: 21.0122 } };
+    const recentTimestamp = String(Date.now() - 3 * 24 * 60 * 60 * 1000); // 3 days ago
+    mockGetItemAsync.mockImplementation((key) => {
+      if (key === LAST_SENT_LOCATION_KEY) return Promise.resolve(JSON.stringify(storedLocation));
+      if (key === LAST_SENT_LOCATION_TIMESTAMP_KEY) return Promise.resolve(recentTimestamp);
+      return Promise.resolve(null);
+    });
+
+    const factoryDeps = createMockFactoryDeps();
+    const deps = createBackgroundTaskDeps(factoryDeps);
+
+    const result = await deps.getLastSentLocation();
+
+    expect(result).toEqual(storedLocation);
+  });
+
+  it("setLastSentLocation stores JSON and timestamp in SecureStore with correct keychain settings", async () => {
     const mockSetItemAsync = jest.mocked(SecureStore.setItemAsync);
     mockSetItemAsync.mockResolvedValue();
 
@@ -488,6 +529,11 @@ describe("createBackgroundTaskDeps", () => {
     expect(mockSetItemAsync).toHaveBeenCalledWith(
       LAST_SENT_LOCATION_KEY,
       JSON.stringify(location),
+      { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY },
+    );
+    expect(mockSetItemAsync).toHaveBeenCalledWith(
+      LAST_SENT_LOCATION_TIMESTAMP_KEY,
+      expect.any(String),
       { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY },
     );
   });

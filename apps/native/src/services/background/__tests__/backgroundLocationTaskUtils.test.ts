@@ -1,5 +1,5 @@
+import { calculateDistance } from "@mirai-app/shared/utils";
 import {
-  calculateDistance,
   shouldSendLocationUpdate,
   toFiniteNumberOrUndefined,
   toHeadingOrUndefined,
@@ -61,18 +61,18 @@ describe("toHeadingOrUndefined", () => {
 
 describe("calculateDistance", () => {
   it("should calculate distance between two points", () => {
-    const distance = calculateDistance(52.2297, 21.0122, 52.4064, 16.9252);
+    const distance = calculateDistance(52.2297, 21.0122, 52.4064, 16.9252, "m");
     expect(distance).toBeGreaterThan(0);
     expect(distance).toBeGreaterThan(200000);
     expect(distance).toBeLessThan(300000);
   });
 
   it("should return 0 for same coordinates", () => {
-    expect(calculateDistance(52.2297, 21.0122, 52.2297, 21.0122)).toBe(0);
+    expect(calculateDistance(52.2297, 21.0122, 52.2297, 21.0122, "m")).toBe(0);
   });
 
   it("should calculate distance between Warsaw and Krakow", () => {
-    const distance = calculateDistance(52.2297, 21.0122, 50.0647, 19.945);
+    const distance = calculateDistance(52.2297, 21.0122, 50.0647, 19.945, "m");
     expect(distance).toBeGreaterThan(250000);
     expect(distance).toBeLessThan(300000);
   });

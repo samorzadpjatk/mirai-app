@@ -37,6 +37,7 @@ jest.mock("~/services/storage/storage", () => ({
   },
 }));
 
+import { calculateDistance } from "@mirai-app/shared/utils";
 import type { LocationObject } from "expo-location";
 import {
   type BackgroundTaskDeps,
@@ -45,7 +46,6 @@ import {
 } from "~/services/background/backgroundLocationTask";
 import {
   MINIMUM_DELTA_METERS,
-  calculateDistance,
   shouldSendLocationUpdate,
   toFiniteNumberOrUndefined,
   toHeadingOrUndefined,
@@ -125,12 +125,12 @@ describe("toHeadingOrUndefined", () => {
 
 describe("calculateDistance", () => {
   it("should return 0 for identical coordinates", () => {
-    const result = calculateDistance(52.2297, 21.0122, 52.2297, 21.0122);
+    const result = calculateDistance(52.2297, 21.0122, 52.2297, 21.0122, "m");
     expect(result).toBe(0);
   });
 
   it("should return ~300km for Warsaw to Krakow", () => {
-    const result = calculateDistance(52.2297, 21.0122, 50.0647, 19.945);
+    const result = calculateDistance(52.2297, 21.0122, 50.0647, 19.945, "m");
     expect(result).toBeGreaterThan(250_000);
     expect(result).toBeLessThan(350_000);
   });

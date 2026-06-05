@@ -6,6 +6,8 @@ import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
   LAST_SENT_LOCATION_KEY,
+  LAST_SENT_LOCATION_TIMESTAMP_KEY,
+  LAST_SENT_LOCATION_TTL_DAYS,
   LOCATION_SHARING_SETTINGS_KEY,
 } from "~/services/location/constants";
 
@@ -119,6 +121,17 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
     try {
       const raw = await SecureStore.getItemAsync(LAST_SENT_LOCATION_KEY);
       if (!raw) return null;
+
+      const timestampRaw = await SecureStore.getItemAsync(LAST_SENT_LOCATION_TIMESTAMP_KEY);
+      if (timestampRaw) {
+        const timestamp = Number(timestampRaw);
+        const now = Date.now();
+        const ttlMs = LAST_SENT_LOCATION_TTL_DAYS * 24 * 60 * 60 * 1000;
+        if (now - timestamp > ttlMs) {
+          return null;
+        }
+      }
+
       return JSON.parse(raw) as LocationObject;
     } catch {
       return null;
@@ -128,6 +141,9 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
   async function setLastSentLocation(location: LocationObject): Promise<void> {
     try {
       await SecureStore.setItemAsync(LAST_SENT_LOCATION_KEY, JSON.stringify(location), {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      });
+      await SecureStore.setItemAsync(LAST_SENT_LOCATION_TIMESTAMP_KEY, String(Date.now()), {
         keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
       });
     } catch {

@@ -1,5 +1,5 @@
+import { calculateDistance } from "@mirai-app/shared/utils";
 import { describe, expect, it } from "vitest";
-import { calculateDistance } from "../location-validation";
 
 describe("calculateDistance", () => {
   it("should return 0 for the same point", () => {
