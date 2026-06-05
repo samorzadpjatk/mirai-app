@@ -6,6 +6,7 @@ export {
   submissionStatusEnum,
   locationSharingRequestStatusEnum,
   rewardPurchaseStatusEnum,
+  tripRoleEnum,
 } from "./enums";
 export { users } from "./users";
 export {
@@ -48,7 +49,8 @@ export {
 export { locations, locationSharingRequests, locationShares } from "./locations";
 export { rewards, rewardPurchases, coinTransactions } from "./rewards";
 export { sponsors, tripSponsors } from "./sponsors";
-export { userAgents } from "./userAgents";
+export { auditLogs } from "./auditLogs";
+// userAgents removed - telemetry should not be stored in application database
 export {
   usersRelations,
   tripsRelations,
@@ -89,7 +91,8 @@ export {
   rewardPurchasesRelations,
   sponsorsRelations,
   tripSponsorsRelations,
-  userAgentsRelations,
+  auditLogsRelations,
+  // userAgentsRelations removed - telemetry table dropped
 } from "./relations";
 
 import {
@@ -100,6 +103,7 @@ import {
   submissionActivities,
   userPosts,
 } from "./activities";
+import { auditLogs } from "./auditLogs";
 import { challengeLocation } from "./challengeLocation";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
@@ -122,7 +126,6 @@ import { tripResourceIcons } from "./tripResourceIcons";
 import { tripResourceLinks } from "./tripResourceLinks";
 import { tripResourceTexts } from "./tripResourceTexts";
 import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
-import { userAgents } from "./userAgents";
 import { users } from "./users";
 
 export const schemaTables = [
@@ -165,5 +168,6 @@ export const schemaTables = [
   coinTransactions,
   sponsors,
   tripSponsors,
-  userAgents,
+  auditLogs,
+  // userAgents removed - telemetry table dropped
 ] as const;

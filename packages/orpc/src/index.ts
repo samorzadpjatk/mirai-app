@@ -6,7 +6,6 @@ export {
   adminProcedure,
   serviceAccountProcedure,
   mobileAppProcedure,
-  enableUserAgentTelemetry,
   type TRPCContext,
 } from "./api/trpc";
 

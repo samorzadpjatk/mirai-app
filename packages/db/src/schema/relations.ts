@@ -7,6 +7,7 @@ import {
   submissionActivities,
   userPosts,
 } from "./activities";
+import { auditLogs } from "./auditLogs";
 import { challengeLocation } from "./challengeLocation";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
@@ -29,7 +30,6 @@ import { tripResourceIcons } from "./tripResourceIcons";
 import { tripResourceLinks } from "./tripResourceLinks";
 import { tripResourceTexts } from "./tripResourceTexts";
 import { tripInsuranceSteps, tripInsurances, tripParticipants, trips } from "./trips";
-import { userAgents } from "./userAgents";
 import { users } from "./users";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -532,9 +532,11 @@ export const tripSponsorsRelations = relations(tripSponsors, ({ one }) => ({
   }),
 }));
 
-export const userAgentsRelations = relations(userAgents, ({ one }) => ({
-  user: one(users, {
-    fields: [userAgents.userId],
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  performedBy: one(users, {
+    fields: [auditLogs.performedById],
     references: [users.id],
   }),
 }));
+
+// userAgentsRelations removed - telemetry table dropped

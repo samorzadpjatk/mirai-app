@@ -82,12 +82,14 @@ describe("PGLite Test Helper", () => {
       updatedAt: new Date(),
     });
 
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 86400000);
     await db.insert(trips).values({
       id: "test-trip-1",
       name: "Test Trip",
       description: "A test trip",
-      startDate: new Date(),
-      endDate: new Date(),
+      startDate,
+      endDate,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -121,12 +123,14 @@ describe("PGLite Test Helper", () => {
       updatedAt: new Date(),
     });
 
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 86400000);
     await db.insert(trips).values({
       id: "seq-test-trip",
       name: "Sequence Test Trip",
       description: "Testing sequence restart",
-      startDate: new Date(),
-      endDate: new Date(),
+      startDate,
+      endDate,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

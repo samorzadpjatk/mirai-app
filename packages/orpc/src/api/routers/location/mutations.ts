@@ -81,6 +81,16 @@ export const updateSharingSettings = async (
     });
   }
 
+  // Privacy-by-design: delete location data when user disables sharing
+  if (!isSharingLocation) {
+    await context.db.delete(locations).where(eq(locations.userId, context.dbUser.id));
+    // location_shares will cascade delete automatically via FK onDelete: "cascade"
+    return {
+      isSharingLocation: false,
+      usersToShareWith: [],
+    };
+  }
+
   // Upsert location for user
   const [locationRow] = await context.db
     .insert(locations)

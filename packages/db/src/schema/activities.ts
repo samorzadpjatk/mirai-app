@@ -39,6 +39,7 @@ export const activityFeeds = pgTable(
     createdByAdmin: varchar("created_by_admin", { length: 36 }).references(() => users.id, {
       onDelete: "set null",
     }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())

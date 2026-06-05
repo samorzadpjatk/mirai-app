@@ -5,7 +5,6 @@ vi.mock("@mirai-app/orpc", () => ({
   appRouter: {},
   serviceRouter: {},
   createORPCContext: vi.fn((opts) => opts),
-  enableUserAgentTelemetry: vi.fn(),
   logger: {
     info: vi.fn(),
     error: vi.fn(),

@@ -1,4 +1,14 @@
-import { boolean, index, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { randomUUID } from "../utils/uuid";
 import { rewardPurchaseStatusEnum } from "./enums";
 import { groups } from "./groups";
@@ -28,7 +38,11 @@ export const rewards = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (t) => [index("rewards_trip_id_idx").on(t.tripId)],
+  (t) => [
+    index("rewards_trip_id_idx").on(t.tripId),
+    check("rewards_quantity_positive", sql`${t.availableQuantity} >= 0`),
+    check("rewards_coin_cost_positive", sql`${t.coinCost} >= 0`),
+  ],
 );
 
 export const rewardPurchases = pgTable(
@@ -62,20 +76,24 @@ export const rewardPurchases = pgTable(
   ],
 );
 
-export const coinTransactions = pgTable("coin_transactions", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .$defaultFn(() => randomUUID()),
-  groupId: varchar("group_id", { length: 36 })
-    .notNull()
-    .references(() => groups.id),
-  amount: integer("amount").notNull(),
-  reason: text("reason").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .$onUpdate(() => new Date())
-    .notNull(),
-  adminId: varchar("admin_id", { length: 36 })
-    .notNull()
-    .references(() => users.id),
-});
+export const coinTransactions = pgTable(
+  "coin_transactions",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    groupId: varchar("group_id", { length: 36 })
+      .notNull()
+      .references(() => groups.id),
+    amount: integer("amount").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .$onUpdate(() => new Date())
+      .notNull(),
+    adminId: varchar("admin_id", { length: 36 })
+      .notNull()
+      .references(() => users.id),
+  },
+  (t) => [check("coin_transactions_amount_non_zero", sql`${t.amount} <> 0`)],
+);

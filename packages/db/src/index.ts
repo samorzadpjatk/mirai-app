@@ -8,6 +8,7 @@ export {
   submissionStatusEnum,
   locationSharingRequestStatusEnum,
   rewardPurchaseStatusEnum,
+  tripRoleEnum,
   users,
   trips,
   tripResourceLinks,
@@ -47,7 +48,8 @@ export {
   coinTransactions,
   sponsors,
   tripSponsors,
-  userAgents,
+  auditLogs,
+  // userAgents removed - telemetry table dropped
   usersRelations,
   tripsRelations,
   tripResourceLinksRelations,
@@ -85,7 +87,8 @@ export {
   rewardPurchasesRelations,
   sponsorsRelations,
   tripSponsorsRelations,
-  userAgentsRelations,
+  auditLogsRelations,
+  // userAgentsRelations removed - telemetry table dropped
   schemaTables,
 } from "./schema";
 export { runMigrations } from "./migrate";
@@ -176,5 +179,4 @@ import type { sponsors, tripSponsors } from "./schema/sponsors";
 export type Sponsor = typeof sponsors.$inferSelect;
 export type TripSponsor = typeof tripSponsors.$inferSelect;
 
-import type { userAgents } from "./schema/userAgents";
-export type UserAgent = typeof userAgents.$inferSelect;
+// UserAgent type removed - telemetry table dropped
