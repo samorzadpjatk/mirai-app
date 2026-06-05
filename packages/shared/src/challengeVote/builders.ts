@@ -1,4 +1,4 @@
-import type { ChallengeVote } from "@mirai-app/db";
+import type { ChallengeVote } from "@mirai-app/db/schema";
 
 export interface ChallengeVoteInput {
   submissionId: string;

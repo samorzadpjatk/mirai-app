@@ -1,4 +1,4 @@
-import type { Group } from "@mirai-app/db";
+import type { Group } from "@mirai-app/db/schema";
 
 export interface CoinTransactionInput {
   tripId: string;
