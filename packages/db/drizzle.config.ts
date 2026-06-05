@@ -1,4 +1,3 @@
-import { env } from "bun";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -6,7 +5,7 @@ export default defineConfig({
   schema: "./src/schema/index.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: env.DATABASE_URL ?? "postgresql://localhost:5432/postgres",
+    url: process.env.DATABASE_URL ?? "postgresql://localhost:5432/postgres",
   },
   casing: "snake_case",
   verbose: true,

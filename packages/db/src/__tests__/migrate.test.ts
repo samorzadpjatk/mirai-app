@@ -1,4 +1,3 @@
-import { env } from "bun";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockEnd = vi.fn().mockResolvedValue(undefined);
@@ -25,7 +24,7 @@ vi.mock("drizzle-orm/postgres-js/migrator", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  delete env.MIGRATIONS_FOLDER;
+  delete process.env.MIGRATIONS_FOLDER;
 });
 
 describe("migrate", () => {
@@ -66,7 +65,7 @@ describe("migrate", () => {
     });
 
     it("should run migrations with MIGRATIONS_FOLDER env var", async () => {
-      env.MIGRATIONS_FOLDER = "/env/migrations";
+      process.env.MIGRATIONS_FOLDER = "/env/migrations";
       const { runMigrations } = await import("../migrate");
       const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 
@@ -80,7 +79,7 @@ describe("migrate", () => {
     });
 
     it("should prefer argument over env var", async () => {
-      env.MIGRATIONS_FOLDER = "/env/migrations";
+      process.env.MIGRATIONS_FOLDER = "/env/migrations";
       const { runMigrations } = await import("../migrate");
       const { migrate } = await import("drizzle-orm/postgres-js/migrator");
 

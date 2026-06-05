@@ -35,7 +35,6 @@ module.exports = {
     "^@mirai-app/orpc/client$": "<rootDir>/../../packages/orpc/src/client/index.ts",
     "^@mirai-app/orpc/utils/activityFeed$":
       "<rootDir>/../../packages/orpc/src/utils/activityFeed.ts",
-    "^bun$": "<rootDir>/__mocks__/bun.js",
     "^msw/node$": "<rootDir>/../../node_modules/.bun/msw@2.14.6/node_modules/msw/lib/node/index.js",
   },
   testTimeout: 10000,

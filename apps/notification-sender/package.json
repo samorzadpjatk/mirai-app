@@ -18,6 +18,7 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
+    "@mirai-app/shared": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
     "@mirai-app/orpc": "workspace:*"
   },

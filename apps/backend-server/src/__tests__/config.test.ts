@@ -1,51 +1,48 @@
-import { env } from "bun";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("Server Configuration", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
-    process.env = { ...originalEnv };
+    vi.resetModules();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.resetModules();
   });
 
   describe("Environment Variable Validation", () => {
     it("should throw error when TRPC_SERVER_PORT is missing", async () => {
-      delete env.TRPC_SERVER_PORT;
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
+      vi.stubEnv("TRPC_SERVER_PORT", undefined);
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
+        "Missing required environment variable: TRPC_SERVER_PORT",
       );
     });
 
     it("should throw error when TRPC_SERVER_HOST is missing", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      delete env.TRPC_SERVER_HOST;
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", undefined);
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
+        "Missing required environment variable: TRPC_SERVER_HOST",
       );
     });
 
     it("should throw error when both environment variables are missing", async () => {
-      delete env.TRPC_SERVER_PORT;
-      delete env.TRPC_SERVER_HOST;
+      vi.stubEnv("TRPC_SERVER_PORT", undefined);
+      vi.stubEnv("TRPC_SERVER_HOST", undefined);
 
       await expect(import("../config")).rejects.toThrow(
-        "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
+        "Missing required environment variable: TRPC_SERVER_PORT",
       );
     });
   });
 
   describe("Configuration Object", () => {
     it("should create config with correct port from environment", async () => {
-      env.TRPC_SERVER_PORT = "8080";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "8080");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -53,8 +50,8 @@ describe("Server Configuration", () => {
     });
 
     it("should create config with correct host from environment", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "0.0.0.0";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "0.0.0.0");
 
       const { serverConfig } = await import("../config");
 
@@ -62,8 +59,8 @@ describe("Server Configuration", () => {
     });
 
     it("should always set dev mode to true", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -71,8 +68,8 @@ describe("Server Configuration", () => {
     });
 
     it("should always use /api/trpc as prefix", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -84,8 +81,8 @@ describe("Server Configuration", () => {
 
       for (const port of ports) {
         vi.resetModules();
-        env.TRPC_SERVER_PORT = port;
-        env.TRPC_SERVER_HOST = "127.0.0.1";
+        vi.stubEnv("TRPC_SERVER_PORT", port);
+        vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
         const { serverConfig } = await import("../config");
 
@@ -98,8 +95,8 @@ describe("Server Configuration", () => {
 
       for (const host of hosts) {
         vi.resetModules();
-        env.TRPC_SERVER_PORT = "3000";
-        env.TRPC_SERVER_HOST = host;
+        vi.stubEnv("TRPC_SERVER_PORT", "3000");
+        vi.stubEnv("TRPC_SERVER_HOST", host);
 
         const { serverConfig } = await import("../config");
 
@@ -110,8 +107,8 @@ describe("Server Configuration", () => {
 
   describe("Port Number Conversion", () => {
     it("should convert string port to number", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -120,8 +117,8 @@ describe("Server Configuration", () => {
     });
 
     it("should handle numeric string with leading zeros", async () => {
-      env.TRPC_SERVER_PORT = "03000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "03000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -139,8 +136,8 @@ describe("Server Configuration", () => {
 
       for (const { input, expected } of edgeCases) {
         vi.resetModules();
-        env.TRPC_SERVER_PORT = input;
-        env.TRPC_SERVER_HOST = "127.0.0.1";
+        vi.stubEnv("TRPC_SERVER_PORT", input);
+        vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
         const { serverConfig } = await import("../config");
 
@@ -151,8 +148,8 @@ describe("Server Configuration", () => {
 
   describe("Configuration Structure", () => {
     it("should export serverConfig as ServerOptions type", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -163,8 +160,8 @@ describe("Server Configuration", () => {
     });
 
     it("should have all required ServerOptions properties", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig } = await import("../config");
 
@@ -177,8 +174,8 @@ describe("Server Configuration", () => {
 
   describe("Module Re-import Behavior", () => {
     it("should maintain same values on multiple imports with same env", async () => {
-      env.TRPC_SERVER_PORT = "3000";
-      env.TRPC_SERVER_HOST = "127.0.0.1";
+      vi.stubEnv("TRPC_SERVER_PORT", "3000");
+      vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig: config1 } = await import("../config");
       const { serverConfig: config2 } = await import("../config");
@@ -187,5 +184,3 @@ describe("Server Configuration", () => {
     });
   });
 });
-
-import { vi } from "vitest";

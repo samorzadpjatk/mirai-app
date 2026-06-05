@@ -1,5 +1,4 @@
 import { logger } from "@mirai-app/orpc";
-import { env } from "bun";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Create mock functions at module level
@@ -61,87 +60,79 @@ vi.mock("@mirai-app/orpc", () => ({
   },
 }));
 
-describe("Notification Sender - Environment Validation", () => {
-  const originalEnv = process.env;
+function setEnvVars() {
+  vi.stubEnv("TRPC_HOST", "localhost:2022");
+  vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
+  vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
+}
 
+describe("Notification Sender - Environment Validation", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
-    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
-    mockRemoveChannel.mockResolvedValue(undefined);
-    mockCleanup.mockResolvedValue(undefined);
+    vi.unstubAllEnvs();
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   it("should throw error when TRPC_HOST is missing", async () => {
-    delete env.TRPC_HOST;
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
+    vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
     const { main } = await import("../index");
-    expect(() => main()).toThrow("Missing env: TRPC_HOST");
+    expect(() => main()).toThrow("Missing required environment variable: TRPC_HOST");
   });
 
   it("should throw error when SUPABASE_URL is missing", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    delete env.SUPABASE_URL;
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
+    vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
     const { main } = await import("../index");
-    expect(() => main()).toThrow("Missing env: SUPABASE_URL");
+    expect(() => main()).toThrow("Missing required environment variable: SUPABASE_URL");
   });
 
   it("should throw error when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
-    delete env.SUPABASE_SERVICE_ROLE_KEY;
+    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
+    vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
     const { main } = await import("../index");
-    expect(() => main()).toThrow("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+    expect(() => main()).toThrow(
+      "Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY",
+    );
   });
 
   it("should throw error when SERVICE_ACCOUNT_TOKEN is missing", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    delete env.SERVICE_ACCOUNT_TOKEN;
+    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
 
     const { main } = await import("../index");
-    expect(() => main()).toThrow("Missing env: SERVICE_ACCOUNT_TOKEN");
+    expect(() => main()).toThrow("Missing required environment variable: SERVICE_ACCOUNT_TOKEN");
   });
 });
 
 describe("Notification Sender - Main Error Handling", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
-    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
-    mockRemoveChannel.mockResolvedValue(undefined);
-    mockCleanup.mockResolvedValue(undefined);
+    vi.unstubAllEnvs();
   });
 
   afterEach(() => {
     process.removeAllListeners("SIGINT");
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   it("should throw errors from main function", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     mockCreateSupabaseClient.mockImplementationOnce(() => {
       throw new Error("Supabase connection failed");
@@ -152,10 +143,7 @@ describe("Notification Sender - Main Error Handling", () => {
   });
 
   it("should handle non-Error exceptions in main", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     mockCreateSupabaseClient.mockImplementationOnce(() => {
       throw new Error("string error");
@@ -167,28 +155,20 @@ describe("Notification Sender - Main Error Handling", () => {
 });
 
 describe("Notification Sender - Client Initialization", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
-    mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
-    mockRemoveChannel.mockResolvedValue(undefined);
-    mockCleanup.mockResolvedValue(undefined);
+    vi.unstubAllEnvs();
   });
 
   afterEach(() => {
     process.removeAllListeners("SIGINT");
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   it("should create supabase client with correct parameters", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -203,10 +183,7 @@ describe("Notification Sender - Client Initialization", () => {
   });
 
   it("should create oRPC client with correct parameters", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -220,10 +197,7 @@ describe("Notification Sender - Client Initialization", () => {
   });
 
   it("should create supabase channel for Notification table", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -234,12 +208,10 @@ describe("Notification Sender - Client Initialization", () => {
 });
 
 describe("Notification Sender - Subscribe Callback", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
+    vi.unstubAllEnvs();
     mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
     mockRemoveChannel.mockResolvedValue(undefined);
     mockCleanup.mockResolvedValue(undefined);
@@ -247,7 +219,7 @@ describe("Notification Sender - Subscribe Callback", () => {
 
   afterEach(() => {
     process.removeAllListeners("SIGINT");
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -257,10 +229,7 @@ describe("Notification Sender - Subscribe Callback", () => {
       subscribeCallback = callback;
     });
 
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -278,10 +247,7 @@ describe("Notification Sender - Subscribe Callback", () => {
       subscribeCallback = callback;
     });
 
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -301,12 +267,10 @@ describe("Notification Sender - Subscribe Callback", () => {
 });
 
 describe("Notification Sender - SIGINT Handling", () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env = { ...originalEnv };
+    vi.unstubAllEnvs();
     mockChannelOn.mockReturnValue({ subscribe: mockChannelSubscribe });
     mockRemoveChannel.mockResolvedValue(undefined);
     mockCleanup.mockResolvedValue(undefined);
@@ -314,15 +278,12 @@ describe("Notification Sender - SIGINT Handling", () => {
 
   afterEach(() => {
     process.removeAllListeners("SIGINT");
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   it("should have set up SIGINT handler during initialization", async () => {
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -366,11 +327,7 @@ describe("Notification Sender - SIGINT Handling", () => {
       cleanup: mockCleanup.mockResolvedValue(undefined),
     }));
 
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -407,10 +364,7 @@ describe("Notification Sender - SIGINT Handling", () => {
       return process;
     }) as (event: string | symbol, listener: (...args: unknown[]) => void) => NodeJS.Process);
 
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     const { main } = await import("../index");
 
@@ -428,8 +382,6 @@ describe("Notification Sender - SIGINT Handling", () => {
 });
 
 describe("Notification Sender - Notification Processing", () => {
-  const originalEnv = process.env;
-
   async function setupTest(mobileResponse?: {
     total: number;
     sent: number;
@@ -438,16 +390,13 @@ describe("Notification Sender - Notification Processing", () => {
   }) {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
 
     const processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {
       /* noop */
     }) as (code?: string | number | null) => never);
 
-    process.env = { ...originalEnv };
-    env.TRPC_HOST = "localhost:2022";
-    env.SUPABASE_URL = "http://localhost:8000";
-    env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
-    env.SERVICE_ACCOUNT_TOKEN = "test-token";
+    setEnvVars();
 
     mockChannelOn.mockReturnValue({ subscribe: vi.fn() });
     mockTrackDeliveryStart.mockResolvedValue(undefined);
@@ -480,7 +429,7 @@ describe("Notification Sender - Notification Processing", () => {
 
   afterEach(() => {
     process.removeAllListeners("SIGINT");
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 

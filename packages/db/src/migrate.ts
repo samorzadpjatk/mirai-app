@@ -1,4 +1,3 @@
-import { env } from "bun";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
@@ -36,7 +35,7 @@ export async function runMigrations(
   logger?: Logger,
 ): Promise<void> {
   const log = logger ?? defaultLogger;
-  const folder = migrationsFolder ?? env.MIGRATIONS_FOLDER ?? DEFAULT_MIGRATIONS_FOLDER;
+  const folder = migrationsFolder ?? process.env.MIGRATIONS_FOLDER ?? DEFAULT_MIGRATIONS_FOLDER;
 
   log.info({ folder }, "Starting database migrations");
   const start = Date.now();

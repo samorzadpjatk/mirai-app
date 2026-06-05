@@ -1,23 +1,18 @@
 import { logger } from "@mirai-app/orpc";
 import { getServiceORPCClient } from "@mirai-app/orpc/client";
+import { requireEnv } from "@mirai-app/shared/utils";
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
-import { env } from "bun";
 
 interface NotificationRow {
   id: string;
 }
 
 export function main() {
-  const TRPC_HOST = env.TRPC_HOST;
-  const SUPABASE_URL = env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-  const SERVICE_ACCOUNT_TOKEN = env.SERVICE_ACCOUNT_TOKEN;
-
-  if (!TRPC_HOST) throw new Error("Missing env: TRPC_HOST");
-  if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
-  if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
-  if (!SERVICE_ACCOUNT_TOKEN) throw new Error("Missing env: SERVICE_ACCOUNT_TOKEN");
+  const TRPC_HOST = requireEnv("TRPC_HOST");
+  const SUPABASE_URL = requireEnv("SUPABASE_URL");
+  const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const SERVICE_ACCOUNT_TOKEN = requireEnv("SERVICE_ACCOUNT_TOKEN");
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, undefined, {
     realtime: { params: { eventsPerSecond: 2 } },

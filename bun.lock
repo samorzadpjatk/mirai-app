@@ -131,6 +131,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@mirai-app/orpc": "workspace:*",
+        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
       },
       "devDependencies": {
