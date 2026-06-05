@@ -8,6 +8,7 @@ import {
   tripResourceTexts,
 } from "@mirai-app/db";
 import { logger } from "@mirai-app/shared/utils";
+import type { BunFile } from "bun";
 import { eq, inArray } from "drizzle-orm";
 import yaml from "yaml";
 import { db } from "./config/db";

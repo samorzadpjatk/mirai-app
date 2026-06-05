@@ -33,9 +33,10 @@ export const getMy = async (context: GroupContext, input: { tripId: string }) =>
     where: (tp, { and, eq }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
     columns: { groupId: true },
   });
-  if (!participant?.groupId) return null;
+  const groupId = participant?.groupId;
+  if (!groupId) return null;
   const group = await context.db.query.groups.findFirst({
-    where: (g, { eq }) => eq(g.id, participant.groupId!),
+    where: (g, { eq }) => eq(g.id, groupId),
     with: {
       participants: {
         with: {

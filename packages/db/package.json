@@ -10,22 +10,22 @@
       "default": "./src/index.ts"
     },
     "./test-helper": {
-      "import": "./src/test-helper.ts",
-      "default": "./src/test-helper.ts"
+      "import": "./src/pglite.ts",
+      "default": "./src/pglite.ts"
     }
   },
   "scripts": {
     "clean": "rm -rf node_modules",
     "build": "tsc -b",
-    "db:migrate": "drizzle-kit migrate",
-    "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
+    "db:migrate": "bunx --bun drizzle-kit migrate",
+    "db:generate": "bunx --bun drizzle-kit generate",
+    "db:push": "bunx --bun drizzle-kit push",
+    "db:studio": "bunx --bun drizzle-kit studio",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest --run --changed --passWithNoTests",
-    "test:ci": "vitest run --coverage --passWithNoTests",
+    "test": "bunx --bun vitest --run --changed",
+    "test:ci": "bunx --bun vitest run --coverage",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -33,7 +33,7 @@
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-istanbul": "^4.1.8",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"

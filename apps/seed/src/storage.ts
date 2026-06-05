@@ -1,4 +1,5 @@
 import { logger } from "@mirai-app/shared/utils";
+import type { BunFile } from "bun";
 import { env } from "./config/env";
 import { supabase } from "./config/supabase";
 import { assetsRoot } from "./constants";

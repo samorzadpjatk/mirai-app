@@ -1,7 +1,8 @@
+import { env } from "bun";
 import type { ServerOptions } from "./server";
 
-const serverPort = process.env.TRPC_SERVER_PORT;
-const serverHost = process.env.TRPC_SERVER_HOST;
+const serverPort = env.TRPC_SERVER_PORT;
+const serverHost = env.TRPC_SERVER_HOST;
 
 if (!serverPort || !serverHost) {
   throw new Error("Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.");

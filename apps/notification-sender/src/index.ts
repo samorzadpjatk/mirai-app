@@ -2,16 +2,17 @@ import { logger } from "@mirai-app/orpc";
 import { getServiceORPCClient } from "@mirai-app/orpc/client";
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
+import { env } from "bun";
 
 interface NotificationRow {
   id: string;
 }
 
 export function main() {
-  const TRPC_HOST = process.env.TRPC_HOST;
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const SERVICE_ACCOUNT_TOKEN = process.env.SERVICE_ACCOUNT_TOKEN;
+  const TRPC_HOST = env.TRPC_HOST;
+  const SUPABASE_URL = env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+  const SERVICE_ACCOUNT_TOKEN = env.SERVICE_ACCOUNT_TOKEN;
 
   if (!TRPC_HOST) throw new Error("Missing env: TRPC_HOST");
   if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");

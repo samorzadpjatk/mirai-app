@@ -20,6 +20,11 @@
       "types": "./dist/client/query/index.d.ts",
       "import": "./src/client/query/index.ts",
       "default": "./src/client/query/index.ts"
+    },
+    "./utils/activityFeed": {
+      "types": "./dist/utils/activityFeed.d.ts",
+      "import": "./src/utils/activityFeed.ts",
+      "default": "./src/utils/activityFeed.ts"
     }
   },
   "scripts": {
@@ -27,8 +32,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest --run --changed",
-    "test:ci": "vitest run --coverage",
+    "test": "bunx --bun vitest --run --changed",
+    "test:ci": "bunx --bun vitest run --coverage",
     "test:watch": "vitest",
     "clean": "rm -rf node_modules"
   },
@@ -60,7 +65,6 @@
     "@types/react": "~19.2.10",
     "@types/react-dom": "~19.2.0",
     "@vitest/coverage-istanbul": "^4.1.8",
-    "@vitest/coverage-v8": "^4.1.8",
     "jsdom": "^29.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

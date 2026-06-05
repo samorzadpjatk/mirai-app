@@ -8,6 +8,7 @@
  */
 
 import { os, ORPCError } from "@orpc/server";
+import { env } from "bun";
 
 import { timingSafeEqual } from "crypto";
 import {
@@ -284,7 +285,7 @@ export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
  */
 export const serviceAccountProcedure = baseProcedure.use(async ({ context, next }) => {
   const serviceToken = context.headers.get("x-service-token");
-  const expectedToken = process.env.SERVICE_ACCOUNT_TOKEN;
+  const expectedToken = env.SERVICE_ACCOUNT_TOKEN;
 
   if (!expectedToken) {
     logger.error("SERVICE_ACCOUNT_TOKEN not configured");

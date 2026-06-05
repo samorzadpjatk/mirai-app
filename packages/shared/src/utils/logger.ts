@@ -1,6 +1,7 @@
 import pino from "pino";
 
-const isTestEnv = process.env.VITEST === "true";
+const env = typeof Bun !== "undefined" ? Bun.env : undefined;
+const isTestEnv = env?.VITEST === "true";
 
 /**
  * Shared Pino logger for use across all packages that don't depend on @mirai-app/orpc.
@@ -14,7 +15,7 @@ const isTestEnv = process.env.VITEST === "true";
 export const logger = pino(
   {
     name: "@mirai-app/shared",
-    level: process.env.LOG_LEVEL ?? "info",
+    level: env?.LOG_LEVEL ?? "info",
   },
   isTestEnv
     ? {

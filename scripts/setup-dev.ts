@@ -4,6 +4,7 @@
  * Usage: bun run setup:dev
  */
 
+import { env } from "bun";
 import { spawn } from "child_process";
 import { existsSync } from "fs";
 import { resolve } from "path";
@@ -32,7 +33,7 @@ function run(
     const child = spawn(cmd, args, {
       stdio: "inherit",
       cwd: opts?.cwd,
-      env: { ...process.env, ...opts?.env },
+      env: { ...env as unknown as NodeJS.ProcessEnv, ...opts?.env },
     });
     child.on("close", (code) => {
       if (code === 0) resolve(0);

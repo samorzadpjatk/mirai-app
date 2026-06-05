@@ -46,11 +46,11 @@ export const calculateLeaderboardInfo = (
   };
 };
 
-export const findUserGroup = <T extends { user: { id: string }; group?: Group | null }>(
+export const findUserGroup = <T extends { user?: { id: string } | null; group?: Group | null }>(
   currentUserId: string,
   participants: T[] | undefined,
 ): T | null => {
   if (!participants) return null;
-  const participant = participants.find((p) => p.user.id === currentUserId);
+  const participant = participants.find((p) => p.user?.id === currentUserId);
   return participant ?? null;
 };

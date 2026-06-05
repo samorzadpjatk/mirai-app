@@ -7,6 +7,7 @@ import {
 } from "@mirai-app/orpc";
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+import { env } from "bun";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -123,7 +124,7 @@ export function createServer(opts: ServerOptions) {
   });
 
   if (dev) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:8081"];
+    const allowedOrigins = env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:8081"];
     app.use(
       "*",
       cors({
@@ -227,9 +228,9 @@ export function createServer(opts: ServerOptions) {
               headers.set("x-original-url", data.url);
             }
 
-            const supabaseUrl = process.env.SUPABASE_URL;
-            const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-            const databaseUrl = process.env.DATABASE_URL;
+            const supabaseUrl = env.SUPABASE_URL;
+            const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY;
+            const databaseUrl = env.DATABASE_URL;
 
             if (!supabaseUrl || !supabaseKey) {
               throw new Error(

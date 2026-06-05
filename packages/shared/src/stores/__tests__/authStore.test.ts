@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type AuthChangeEvent,
   type AuthUser,
-  type SupabaseClient,
   type SupabaseSession,
   _resetAuthStoreForTests,
   authStore,

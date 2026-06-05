@@ -12,8 +12,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest --run --changed",
-    "test:ci": "vitest run --coverage",
+    "test": "bunx --bun vitest --run --changed",
+    "test:ci": "bunx --bun vitest run --coverage",
     "test:watch": "vitest",
     "clean": "rm -rf node_modules"
   },
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.7.2",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-istanbul": "^4.1.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
   }

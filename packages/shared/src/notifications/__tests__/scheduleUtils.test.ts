@@ -57,9 +57,9 @@ describe("attachCreatedByEmail", () => {
   });
 
   it("returns schedule as-is when createdBy is undefined", () => {
-    const schedule = { id: "1" };
+    const schedule = {};
     const emailMap = new Map();
-    const result = attachCreatedByEmail(schedule as any, emailMap);
+    const result = attachCreatedByEmail(schedule, emailMap);
     expect(result).toEqual(schedule);
   });
 

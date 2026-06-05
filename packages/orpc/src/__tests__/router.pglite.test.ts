@@ -1,9 +1,9 @@
 import { users } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { createRouterClient } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { createPgliteTestDb } from "~/db-test-helper";
 import { adminProcedure, createORPCRouter, protectedProcedure, publicProcedure } from "../api/trpc";
 import type { TRPCContext } from "../api/trpc";
 import { createContext, createMockSupabase, seedUser } from "../test-helpers";
@@ -113,7 +113,8 @@ describe("oRPC Router Testing Patterns", () => {
 
       const caller = createCaller(ctx);
 
-      await expect(caller.greet({ name: 123 as any })).rejects.toThrow();
+      // @ts-expect-error Testing invalid input type
+      await expect(caller.greet({ name: 123 })).rejects.toThrow();
     });
   });
 
@@ -286,7 +287,7 @@ describe("oRPC Router Testing Patterns", () => {
         dbUser: { id: "admin-1", role: "ADMIN" },
       });
       ctx.accessToken = "admin-token";
-      (ctx as any).db = throwingDb;
+      ctx.db = throwingDb as typeof ctx.db;
 
       const caller = createCaller(ctx);
 

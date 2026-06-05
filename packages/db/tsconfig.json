@@ -1,9 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "lib": ["ESNext", "DOM"],
-    "types": ["vitest", "node"],
+    "types": ["vitest", "bun"],
     "outDir": "dist",
     "rootDir": ".",
     "declaration": true,

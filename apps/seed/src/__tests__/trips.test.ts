@@ -1,4 +1,3 @@
-import { tripParticipants } from "@mirai-app/db";
 import type { SupabaseUser } from "@mirai-app/supabase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { seedTrip } from "../trips";

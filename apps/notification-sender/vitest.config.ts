@@ -1,6 +1,5 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-// eslint-disable-next-line @nx/enforce-module-boundaries
 import { baseConfig } from "../../packages/shared/vitest.base.config";
 
 export default mergeConfig(

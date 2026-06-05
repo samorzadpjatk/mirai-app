@@ -6,10 +6,11 @@ import {
   requireModerator,
 } from "@mirai-app/auth";
 import { userAgents } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { createRouterClient } from "@orpc/server";
 import { ORPCError } from "@orpc/server";
+import { env } from "bun";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import { createMockSupabase } from "../../test-helpers";
 import {
   adminProcedure,
@@ -520,7 +521,7 @@ describe("serviceAccountProcedure", () => {
   };
 
   it("should throw FORBIDDEN when SERVICE_ACCOUNT_TOKEN is not configured", async () => {
-    delete process.env.SERVICE_ACCOUNT_TOKEN;
+    delete env.SERVICE_ACCOUNT_TOKEN;
     const router = createTestRouter();
     const ctx = createTestContext("valid-token");
 
@@ -529,7 +530,7 @@ describe("serviceAccountProcedure", () => {
   });
 
   it("should throw FORBIDDEN when service token is missing", async () => {
-    process.env.SERVICE_ACCOUNT_TOKEN = "expected-token";
+    env.SERVICE_ACCOUNT_TOKEN = "expected-token";
     const router = createTestRouter();
     const ctx = createTestContext();
 
@@ -538,7 +539,7 @@ describe("serviceAccountProcedure", () => {
   });
 
   it("should throw FORBIDDEN when service token is invalid", async () => {
-    process.env.SERVICE_ACCOUNT_TOKEN = "expected-token";
+    env.SERVICE_ACCOUNT_TOKEN = "expected-token";
     const router = createTestRouter();
     const ctx = createTestContext("wrong-token");
 
@@ -547,7 +548,7 @@ describe("serviceAccountProcedure", () => {
   });
 
   it("should succeed with valid service token", async () => {
-    process.env.SERVICE_ACCOUNT_TOKEN = "valid-token";
+    env.SERVICE_ACCOUNT_TOKEN = "valid-token";
     const router = createTestRouter();
     const ctx = createTestContext("valid-token");
 
@@ -556,7 +557,7 @@ describe("serviceAccountProcedure", () => {
   });
 
   it("should throw FORBIDDEN when service token has same length but wrong content", async () => {
-    process.env.SERVICE_ACCOUNT_TOKEN = "expected-token";
+    env.SERVICE_ACCOUNT_TOKEN = "expected-token";
     const router = createTestRouter();
     const ctx = createTestContext("wrong-token!!!");
 
@@ -565,7 +566,7 @@ describe("serviceAccountProcedure", () => {
   });
 
   it("should throw FORBIDDEN when Buffer.from throws unexpectedly", async () => {
-    process.env.SERVICE_ACCOUNT_TOKEN = "expected-token";
+    env.SERVICE_ACCOUNT_TOKEN = "expected-token";
     const router = createTestRouter();
     const ctx = createTestContext("valid-token");
 

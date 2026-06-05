@@ -1,3 +1,4 @@
+import { env } from "bun";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Server Configuration", () => {
@@ -14,8 +15,8 @@ describe("Server Configuration", () => {
 
   describe("Environment Variable Validation", () => {
     it("should throw error when TRPC_SERVER_PORT is missing", async () => {
-      delete process.env.TRPC_SERVER_PORT;
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      delete env.TRPC_SERVER_PORT;
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       await expect(import("../config")).rejects.toThrow(
         "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
@@ -23,8 +24,8 @@ describe("Server Configuration", () => {
     });
 
     it("should throw error when TRPC_SERVER_HOST is missing", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      delete process.env.TRPC_SERVER_HOST;
+      env.TRPC_SERVER_PORT = "3000";
+      delete env.TRPC_SERVER_HOST;
 
       await expect(import("../config")).rejects.toThrow(
         "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
@@ -32,8 +33,8 @@ describe("Server Configuration", () => {
     });
 
     it("should throw error when both environment variables are missing", async () => {
-      delete process.env.TRPC_SERVER_PORT;
-      delete process.env.TRPC_SERVER_HOST;
+      delete env.TRPC_SERVER_PORT;
+      delete env.TRPC_SERVER_HOST;
 
       await expect(import("../config")).rejects.toThrow(
         "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
@@ -43,8 +44,8 @@ describe("Server Configuration", () => {
 
   describe("Configuration Object", () => {
     it("should create config with correct port from environment", async () => {
-      process.env.TRPC_SERVER_PORT = "8080";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "8080";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -52,8 +53,8 @@ describe("Server Configuration", () => {
     });
 
     it("should create config with correct host from environment", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "0.0.0.0";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "0.0.0.0";
 
       const { serverConfig } = await import("../config");
 
@@ -61,8 +62,8 @@ describe("Server Configuration", () => {
     });
 
     it("should always set dev mode to true", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -70,8 +71,8 @@ describe("Server Configuration", () => {
     });
 
     it("should always use /api/trpc as prefix", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -83,8 +84,8 @@ describe("Server Configuration", () => {
 
       for (const port of ports) {
         vi.resetModules();
-        process.env.TRPC_SERVER_PORT = port;
-        process.env.TRPC_SERVER_HOST = "127.0.0.1";
+        env.TRPC_SERVER_PORT = port;
+        env.TRPC_SERVER_HOST = "127.0.0.1";
 
         const { serverConfig } = await import("../config");
 
@@ -97,8 +98,8 @@ describe("Server Configuration", () => {
 
       for (const host of hosts) {
         vi.resetModules();
-        process.env.TRPC_SERVER_PORT = "3000";
-        process.env.TRPC_SERVER_HOST = host;
+        env.TRPC_SERVER_PORT = "3000";
+        env.TRPC_SERVER_HOST = host;
 
         const { serverConfig } = await import("../config");
 
@@ -109,8 +110,8 @@ describe("Server Configuration", () => {
 
   describe("Port Number Conversion", () => {
     it("should convert string port to number", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -119,8 +120,8 @@ describe("Server Configuration", () => {
     });
 
     it("should handle numeric string with leading zeros", async () => {
-      process.env.TRPC_SERVER_PORT = "03000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "03000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -138,8 +139,8 @@ describe("Server Configuration", () => {
 
       for (const { input, expected } of edgeCases) {
         vi.resetModules();
-        process.env.TRPC_SERVER_PORT = input;
-        process.env.TRPC_SERVER_HOST = "127.0.0.1";
+        env.TRPC_SERVER_PORT = input;
+        env.TRPC_SERVER_HOST = "127.0.0.1";
 
         const { serverConfig } = await import("../config");
 
@@ -150,8 +151,8 @@ describe("Server Configuration", () => {
 
   describe("Configuration Structure", () => {
     it("should export serverConfig as ServerOptions type", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -162,8 +163,8 @@ describe("Server Configuration", () => {
     });
 
     it("should have all required ServerOptions properties", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig } = await import("../config");
 
@@ -176,8 +177,8 @@ describe("Server Configuration", () => {
 
   describe("Module Re-import Behavior", () => {
     it("should maintain same values on multiple imports with same env", async () => {
-      process.env.TRPC_SERVER_PORT = "3000";
-      process.env.TRPC_SERVER_HOST = "127.0.0.1";
+      env.TRPC_SERVER_PORT = "3000";
+      env.TRPC_SERVER_HOST = "127.0.0.1";
 
       const { serverConfig: config1 } = await import("../config");
       const { serverConfig: config2 } = await import("../config");

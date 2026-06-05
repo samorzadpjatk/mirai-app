@@ -77,6 +77,7 @@ export default tseslint.config(
       "**/.nx/**",
       "**/coverage/**",
       "**/drizzle/**",
+      "**/vitest.config.ts",
     ],
   },
 );

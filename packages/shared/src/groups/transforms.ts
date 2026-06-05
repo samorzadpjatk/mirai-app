@@ -95,7 +95,7 @@ export function toGroupDetail<
   imageUrl: string | null | undefined,
   participantCount: number,
   approvedSubmissions: ApprovedSubmissionOutput[],
-): Omit<TGroup, "organizer" | "participants" | "image"> & {
+): Omit<TGroup, "organizer" | "participants"> & {
   _count: { participants: number };
   image: string | null | undefined;
   organizer: any | null;
@@ -114,5 +114,5 @@ export function toGroupDetail<
       user: toUserWithEmail(p.user, emailMap),
     })),
     approvedSubmissions,
-  } as any;
+  };
 }

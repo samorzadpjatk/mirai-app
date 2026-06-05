@@ -131,10 +131,11 @@ export const getAllByTrip = async (
     )
     .groupBy(challengeSubmissions.challengeId);
 
-  const myGroupSubmissions = participant?.groupId
+  const groupId = participant?.groupId;
+  const myGroupSubmissions = groupId
     ? await context.db.query.challengeSubmissions.findMany({
         where: (cs, { eq, and, inArray }) =>
-          and(inArray(cs.challengeId, challengeIds), eq(cs.groupId, participant.groupId!)),
+          and(inArray(cs.challengeId, challengeIds), eq(cs.groupId, groupId)),
         columns: {
           challengeId: true,
           status: true,

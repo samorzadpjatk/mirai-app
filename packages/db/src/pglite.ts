@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import type { PGlite as PGliteType } from "@electric-sql/pglite";
+import { pushSchema } from "drizzle-kit/api";
 import { getTableName, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "./schema";
@@ -27,11 +27,8 @@ export type TestDB = ReturnType<typeof createPgliteTestDb>;
 export async function createPgliteTestDb() {
   const client = new PGlite();
   const db = drizzle(client, { schema });
-
-  // Apply schema using drizzle-kit push approach
-  // We use raw SQL to create all tables since we don't have migration files
-  // This is a test database so we don't need to be as precise
-  await pushSchema(client);
+  const { apply } = await pushSchema(schema, drizzle(client));
+  await apply();
 
   return {
     db,
@@ -39,26 +36,13 @@ export async function createPgliteTestDb() {
     cleanup: async () => {
       await client.close();
     },
-    reset: async (extraTables?: (typeof schemaTables)[number][]) => {
+    reset: async () => {
       // Reset all tables for clean state between tests
-      const tablesToReset = extraTables ? [...schemaTables, ...extraTables] : schemaTables;
-      for (const table of tablesToReset) {
+      for (const table of schemaTables) {
         await db.execute(
           sql`TRUNCATE TABLE ${sql.raw(getTableName(table))} RESTART IDENTITY CASCADE`,
         );
       }
     },
   };
-}
-
-/**
- * Pushes the production schema to a PGLite client.
- * Uses drizzle-kit's API to generate and apply the schema.
- */
-async function pushSchema(client: PGliteType) {
-  const { pushSchema: pushSchemaApi } = await import("drizzle-kit/api");
-  const db = drizzle(client, { schema });
-
-  const { apply } = await pushSchemaApi(schema, db as any, undefined, undefined, undefined);
-  await apply();
 }

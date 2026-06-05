@@ -4,7 +4,7 @@ import type { UserLocation } from "~/components/map/UserMap";
 import { useMapSelectedUser } from "../../map/useMapSelectedUser";
 
 describe("useMapSelectedUser", () => {
-  const mockUpdateSharing = jest.fn() as any;
+  const mockUpdateSharing = jest.fn<(ids: string[]) => Promise<void>>();
 
   const mockUsers: UserLocation[] = [
     {

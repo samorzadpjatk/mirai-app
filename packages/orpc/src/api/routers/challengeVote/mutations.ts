@@ -5,6 +5,7 @@ import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
+import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import { voteColumns } from "./types";
 import {
   ensureChallengeVoting,
@@ -109,7 +110,7 @@ export const submitVotes = async (
 
   const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
 
-  const matchSubmissions = (cs: any, { eq, and, inArray }: any) =>
+  const matchSubmissions: WhereCallback<"challengeSubmissions"> = (cs, { eq, and, inArray }) =>
     and(inArray(cs.id, [...uniqueSubmissionIds]), eq(cs.challengeId, input.challengeId));
 
   const submissions = await context.db.query.challengeSubmissions.findMany({
@@ -130,7 +131,7 @@ export const submitVotes = async (
     }
   }
 
-  const matchVoter = (cv: any, { eq, and }: any) =>
+  const matchVoter: WhereCallback<"challengeVotes"> = (cv, { eq, and }) =>
     and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id));
 
   const existingVotes = await context.db.query.challengeVotes.findMany({
@@ -144,7 +145,9 @@ export const submitVotes = async (
     });
   }
 
-  const sortByVotePosition = (cv: any, { asc }: any) => [asc(cv.votePosition)];
+  const sortByVotePosition: OrderByCallback<"challengeVotes"> = (cv, { asc }) => [
+    asc(cv.votePosition),
+  ];
 
   const result = await context.db.transaction(async (tx) => {
     await tx
@@ -197,7 +200,7 @@ export const submitVote = async (
     });
   }
 
-  const matchSubmission = (cs: any, { eq, and }: any) =>
+  const matchSubmission: WhereCallback<"challengeSubmissions"> = (cs, { eq, and }) =>
     and(eq(cs.id, input.submissionId), eq(cs.challengeId, input.challengeId));
 
   const submission = await context.db.query.challengeSubmissions.findFirst({
@@ -213,7 +216,7 @@ export const submitVote = async (
     throw new ORPCError("FORBIDDEN", { message: "Nie mozna glosowac na wlasna grupe" });
   }
 
-  const matchVoter = (cv: any, { eq, and }: any) =>
+  const matchVoter: WhereCallback<"challengeVotes"> = (cv, { eq, and }) =>
     and(eq(cv.challengeId, input.challengeId), eq(cv.voterId, participant.id));
 
   const existingVotes = await context.db.query.challengeVotes.findMany({

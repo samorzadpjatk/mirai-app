@@ -1,10 +1,12 @@
+const bunEnv = typeof Bun !== "undefined" ? Bun.env : undefined;
+
 export const env = {
-  supabaseUrl: process.env.SUPABASE_URL!,
-  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  imageBucket: process.env.SUPABASE_STORAGE_IMAGE_BUCKET!,
-  videoBucket: process.env.SUPABASE_STORAGE_VIDEO_BUCKET!,
-  publicBucket: process.env.SUPABASE_STORAGE_PUBLIC_BUCKET!,
-  seedGhostEmail: process.env.SEED_GHOST_EMAIL!,
-  seedGhostPassword: process.env.SEED_GHOST_PASSWORD!,
-  databaseUrl: process.env.DATABASE_URL!,
+  supabaseUrl: bunEnv?.SUPABASE_URL,
+  serviceRoleKey: bunEnv?.SUPABASE_SERVICE_ROLE_KEY,
+  imageBucket: bunEnv?.SUPABASE_STORAGE_IMAGE_BUCKET ?? "image",
+  videoBucket: bunEnv?.SUPABASE_STORAGE_VIDEO_BUCKET ?? "video",
+  publicBucket: bunEnv?.SUPABASE_STORAGE_PUBLIC_BUCKET ?? "files-public",
+  seedGhostEmail: bunEnv?.SEED_GHOST_EMAIL,
+  seedGhostPassword: bunEnv?.SEED_GHOST_PASSWORD,
+  databaseUrl: bunEnv?.DATABASE_URL,
 };

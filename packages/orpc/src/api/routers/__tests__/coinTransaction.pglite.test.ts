@@ -1,7 +1,7 @@
 import { coinTransactions, groups, tripParticipants, trips, users } from "@mirai-app/db";
-import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { and, count, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createPgliteTestDb } from "~/db-test-helper";
 import {
   getAdditionalInsights,
   getAll,

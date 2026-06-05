@@ -101,13 +101,13 @@ export const fetchChallengesWithRelations = async (
     .leftJoin(challengeLocation, eq(challenges.id, challengeLocation.challengeId))
     .leftJoin(challengeText, eq(challenges.id, challengeText.challengeId))
     .leftJoin(challengeQrCode, eq(challenges.id, challengeQrCode.challengeId))
-    .where(where);
+    .where(where)
+    .$dynamic();
 
-  if (orderBy) return (await (query as any).orderBy(orderBy)) as ChallengeWithRelations[];
-  if (limit) return (await (query as any).limit(limit)) as ChallengeWithRelations[];
-  if (offset !== undefined)
-    return (await (query as any).offset(offset)) as ChallengeWithRelations[];
-  return (await query) as ChallengeWithRelations[];
+  if (orderBy) return await query.orderBy(orderBy);
+  if (limit) return await query.limit(limit);
+  if (offset !== undefined) return await query.offset(offset);
+  return await query;
 };
 
 export const fetchChallengeWithRelations = async (db: DB, where: SQL<unknown> | undefined) => {
