@@ -39,6 +39,7 @@
     "@mirai-app/db": "workspace:*",
     "@mirai-app/shared": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

@@ -1,2 +1,2 @@
-export { createPgliteTestDb } from "../../db/src/pglite.ts";
-export type { TestDB } from "../../db/src/pglite.ts";
+export { createPgliteTestDb } from "@mirai-app/db/test-helper";
+export type { TestDB } from "@mirai-app/db/test-helper";
