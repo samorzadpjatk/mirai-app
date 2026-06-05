@@ -1,3 +1,4 @@
+import { runMigrations } from "@mirai-app/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@mirai-app/db", () => ({
@@ -41,7 +42,6 @@ describe("main entry point", () => {
   it("should run migrations and start server", async () => {
     vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/test");
     delete process.env.MIGRATIONS_FOLDER;
-    const { runMigrations } = await import("@mirai-app/db");
     const { main } = await import("../index");
 
     await main();
@@ -68,7 +68,6 @@ describe("main entry point", () => {
   it("should pass migrations folder from env", async () => {
     vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/test");
     vi.stubEnv("MIGRATIONS_FOLDER", "/custom/migrations");
-    const { runMigrations } = await import("@mirai-app/db");
     const { main } = await import("../index");
 
     await main();
