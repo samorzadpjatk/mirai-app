@@ -220,6 +220,8 @@ jest.mock("expo-router", () => ({
 }));
 ```
 
+> **Note**: The native app uses Jest (`jest.mock`, `jest.fn()`). Other packages in the monorepo use Vitest (`vi.mock`, `vi.fn()`).
+
 ## Common Patterns
 
 ### Testing with Providers
@@ -279,6 +281,8 @@ jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
   }
 });
 ```
+
+> **Note**: The native app uses Jest (`jest.spyOn`, `jest.clearAllMocks()`). Other packages use Vitest (`vi.spyOn`, `vi.clearAllMocks()`).
 
 ### Testing Philosophy: Behavior Over Implementation
 

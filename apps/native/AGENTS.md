@@ -95,6 +95,7 @@ See [Native Code Quality](./../../docs/apps/native/code-quality.md) and [Testing
 - **Pure Function Extraction**: Name with `calculateXxx`, `syncXxx`, `executeXxx`, `buildXxx`, `toXxxOrNull`.
 - **Mock Removal for UI**: Render real components. Query by descriptive `testID` props.
 - **MSW Patterns**: Use Mock Service Worker for API mocking in component tests. Avoid mocking React Query internals.
+- **Hard Rules**: Never mock `@mirai-app/orpc/client` or `@tanstack/react-query`. Use MSW to intercept real HTTP requests. Never mock Drizzle ORM — use PGLite for real database tests.
 
 ## Background Location Patterns
 

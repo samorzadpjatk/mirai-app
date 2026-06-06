@@ -88,6 +88,8 @@ This package follows an **integration-only testing approach**. We don't maintain
 
 This package provides `createPgliteTestDb()` for real database integration testing in other packages. It creates an in-memory PostgreSQL database with the production schema.
 
+**Hard Rule**: Never mock Drizzle ORM (`vi.mock("@mirai-app/db")` or `vi.mock("drizzle-orm")`). Use PGLite for real database integration tests. Mocked ORM has no real transaction semantics, foreign key validation, or rollback behavior.
+
 **Usage pattern:** `beforeAll` create DB, `beforeEach` reset tables, `afterAll` cleanup.
 
 **Reset behavior:** `reset()` truncates all schema tables with `RESTART IDENTITY CASCADE`.

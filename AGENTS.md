@@ -132,6 +132,13 @@ Key rules:
 - **Nulls at the boundary**: Database nulls are normalized to defaults before reaching shared types, router outputs, or UI components. See [docs/conventions/null-safety.md](./docs/conventions/null-safety.md).
 - **No `.default()` for user data**: Database columns holding user-provided content (descriptions, titles, names) must be `.notNull()` **without** `.default()`. System fields (timestamps, booleans, counters) may use `.default()`.
 
+### Testing Hard Rules
+
+- **Never mock oRPC client or TanStack React Query**. Use MSW (Mock Service Worker) to intercept real HTTP requests. Mocked API tests verify the mock, not the code.
+- **Never mock Drizzle ORM**. Use PGLite for real database integration tests. Mocked ORM has no real transaction semantics, foreign key validation, or rollback behavior.
+- **Exception**: `__mocks__/` for native modules (e.g., `expo-location`) that cannot be tested with real implementations.
+- **Test runner**: Native app uses Jest (`jest.mock`). Other packages use Vitest (`vi.mock`).
+
 ## Data Retention
 
 All data retention policies are documented in [docs/conventions/data-retention.md](./docs/conventions/data-retention.md). Key rules for agents:

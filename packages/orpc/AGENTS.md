@@ -72,7 +72,9 @@ Client: `import { orpc } from '@mirai-app/orpc/client'`
 
 ### Transaction Testing Requirements
 
-- **Real PGLite Tests**: All router tests use `@electric-sql/pglite` for real database integration testing. Avoid mocking Drizzle operations where possible.
+- **Real PGLite Tests**: All router tests use `@electric-sql/pglite` for real database integration testing.
+- **Never Mock Drizzle ORM**: `vi.mock("@mirai-app/db")` or `vi.mock("drizzle-orm")` is forbidden. Mocked ORM has no real transaction semantics, foreign key validation, or rollback behavior.
+- **Never Mock oRPC Client or TanStack React Query**: `vi.mock("@mirai-app/orpc/client")` or `vi.mock("@tanstack/react-query")` is forbidden. Use MSW (Mock Service Worker) to intercept real HTTP requests.
 - **Failure-Path Coverage**: Every router must have a test that verifies rollback behavior when an inner operation fails using real `BEGIN...ROLLBACK` transactions.
 - **Performance**: Create the database once per file (`beforeAll`), reset state between tests (`beforeEach`), and clean up once (`afterAll`). This pattern is ~5x faster than creating a DB per test.
 

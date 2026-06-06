@@ -484,10 +484,10 @@ Before merging any test, verify:
 
 ### Component Mock Removal Playbook
 
-**Context**: Mocking shared UI components per test (`jest.mock("~/components/common/ui")`).
+**Context**: Mocking shared UI components per test (`vi.mock("~/components/common/ui")`).
 
 **Steps**:
-1. Delete `jest.mock("~/components/common/ui")` from test file
+1. Delete `vi.mock("~/components/common/ui")` from test file
 2. Add descriptive `testID` props to real components (if missing)
 3. Update test queries: `getByTestId("mock-id")` → `getByTestId("real-component-id")` or `getByText`
 4. Run tests. If component API changed since mock was written, fix the test to match real behavior.
@@ -508,14 +508,14 @@ Before merging any test, verify:
 
 ### Constructor Mock Resilience
 
-**Context**: `jest.clearAllMocks()` in global `beforeEach` resets all mocks including properties on constructor mocks.
+**Context**: `vi.clearAllMocks()` in global `beforeEach` resets all mocks including properties on constructor mocks.
 
-**Anti-pattern**: `mockFileConstructor.downloadFileAsync = jest.fn()` — gets wiped between tests.
+**Anti-pattern**: `mockFileConstructor.downloadFileAsync = vi.fn()` — gets wiped between tests.
 
 **Pattern**: Use `Object.defineProperty` with getter:
 ```javascript
 Object.defineProperty(mockFileConstructor, "downloadFileAsync", {
-  get: () => jest.fn(),
+  get: () => vi.fn(),
   configurable: true,
 });
 ```
@@ -559,6 +559,21 @@ Configuration lives in `knip.json`. Each workspace defines `entry` and `project`
 - **Framework plumbing**: Testing that React Query's `isLoading` flag propagates through your hook.
 - **Mock call counts**: `expect(mockFn).toHaveBeenCalledTimes(1)`.
 
+## Hard Rules
+
+### Never Mock oRPC Client or TanStack React Query
+
+- **Anti-pattern**: `jest.mock("@mirai-app/orpc/client")` (native app) or `vi.mock("@mirai-app/orpc/client")` (other packages).
+- **Why**: These tests verify the mock, not the code. They pass even if the real API contract, cache keys, or error handling is broken.
+- **Pattern**: Use MSW (Mock Service Worker) to intercept real HTTP requests. See [MSW for Native Tests](#msw-for-native-tests).
+
+### Never Mock Drizzle ORM
+
+- **Anti-pattern**: `jest.mock("@mirai-app/db")` (native app) or `vi.mock("@mirai-app/db")` (other packages).
+- **Why**: Mocked ORM returns fake data. No real transaction semantics, no foreign key validation, no rollback testing.
+- **Pattern**: Use PGLite for real database integration tests. See [Real PGLite Testing](#real-pglite-testing).
+- **Exception**: `__mocks__/` for native modules (e.g., `expo-location`) that cannot be tested with real implementations.
+
 ## Running Tests
 
 ```bash
@@ -574,12 +589,17 @@ bun run test:ui
 
 ## Test Runner
 
-### Vitest vs Bun Test Runner
+### Jest vs Vitest vs Bun Test Runner
 
-**Rule**: This monorepo uses Vitest (`vitest run`), NOT Bun's native test runner.
+| Package | Test Runner | Mock API |
+|---------|-------------|----------|
+| Native app (`apps/native`) | Jest (`jest-expo`) | `jest.mock()`, `jest.fn()`, `jest.clearAllMocks()` |
+| Other packages (`packages/*`, `apps/backend-server`) | Vitest (`vitest run`) | `vi.mock()`, `vi.fn()`, `vi.clearAllMocks()` |
 
-- `bun test` → uses Bun's built-in test runner. **DO NOT USE.** It lacks support for `vi.importActual`, `vi.stubGlobal`, `vi.fn().mockRejectedValueOnce()`, and other vitest-specific APIs.
-- `bun run test` → runs `vitest run` per `package.json` script. **ALWAYS USE THIS.**
+**Rule**: Do NOT use Bun's built-in test runner (`bun test`). It lacks support for `vi.importActual`, `vi.stubGlobal`, `vi.fn().mockRejectedValueOnce()`, and other vitest-specific APIs.
+
+- `bun test` → uses Bun's built-in test runner. **DO NOT USE.**
+- `bun run test` → runs `vitest run` (or `jest` for native app) per `package.json` script. **ALWAYS USE THIS.**
 
 **Verification**: If you see `TypeError: vi.importActual is not a function` or `TypeError: vi.stubGlobal is not a function`, you are running `bun test` instead of `bun run test`.
 

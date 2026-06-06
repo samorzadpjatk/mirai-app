@@ -92,6 +92,12 @@ This replaces the previously separate `db-migrations` Docker service. Migration 
 
 See [Testing Conventions](./../../docs/conventions/testing.md) for testing standards.
 
+### Testing Hard Rules
+
+- **Never mock Drizzle ORM**. Use PGLite for real database integration tests. Mocked ORM has no real transaction semantics, foreign key validation, or rollback behavior.
+- **Never mock oRPC client or TanStack React Query**. Use MSW to intercept real HTTP requests. Mocked API tests verify the mock, not the code.
+- **Exception**: `__mocks__/` for native modules that cannot be tested with real implementations.
+
 ### Side Effects at Module Level
 
 - **Avoid**: Setting up global handlers or singletons at module import time.

@@ -320,15 +320,15 @@ it("rolls back on failure", async () => {
 - This pattern is ~5x faster than creating a DB per test
 - 165 PGLite tests run in ~29s instead of ~150s+
 
-### Mocking with Jest
+### Mocking with Vitest
 
 ```typescript
-// jest.setup.js
-jest.mock("@supabase/supabase-js", () => ({
-  createClient: jest.fn(() => ({
+// vitest.setup.ts
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => ({
     auth: {
-      getUser: jest.fn(),
-      getSession: jest.fn(),
+      getUser: vi.fn(),
+      getSession: vi.fn(),
     },
   })),
 }));
@@ -592,12 +592,12 @@ expect(screen.getByTestId("my-card")).toBeTruthy();
 **Solution**: Ensure your mock function is passed to the spy implementation:
 
 ```typescript
-const mockAlert = jest.fn();
+const mockAlert = vi.fn();
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   // CRITICAL: Pass mockAlert to the spy implementation
-  jest.spyOn(Alert, 'alert').mockImplementation(mockAlert);
+  vi.spyOn(Alert, 'alert').mockImplementation(mockAlert);
 });
 
 // Now assertions work
@@ -608,7 +608,7 @@ expect(mockAlert).toHaveBeenCalledWith("Error", "Something went wrong");
 
 ```typescript
 // When Alert.alert is called with buttons that have onPress callbacks
-jest.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
+vi.spyOn(Alert, "alert").mockImplementation((title, message, buttons) => {
   // Find and trigger the destructive/cancel button callback
   const destructiveButton = buttons?.find((b) => b.style === "destructive");
   if (destructiveButton?.onPress) {
@@ -657,7 +657,7 @@ expect(onPress).toHaveBeenCalledTimes(1); // Tests actual behavior
 **Solution**: Convert booleans to strings in your mock:
 
 ```typescript
-jest.mock("~/components/common/ui", () => ({
+vi.mock("~/components/common/ui", () => ({
   ThemedListItem: function ThemedListItem(props: Record<string, unknown>) {
     const React = require("react");
     const { TouchableOpacity } = require("react-native");
@@ -859,14 +859,14 @@ cd apps/native && bun run test --verbose
 5. **Use descriptive names** - tests should read like documentation
 6. **Isolate tests** - each test should be independent and not rely on others
 7. **Clean up resources** - use `afterEach` or `afterAll` to clean up
-8. **Avoid type casts in tests** - use `jest.Mock<>` types instead of `as unknown as`:
+8. **Avoid type casts in tests** - use `vi.Mock<>` types instead of `as unknown as`:
 
 ```typescript
 // Avoid
-const mockFn = jest.fn() as unknown as MockedFunction<() => Promise<string>>;
+const mockFn = vi.fn() as unknown as MockedFunction<() => Promise<string>>;
 
 // Prefer
-const mockFn: jest.Mock<() => Promise<string>> = jest.fn();
+const mockFn: vi.Mock<() => Promise<string>> = vi.fn();
 mockFn.mockResolvedValue("result");
 ```
 
