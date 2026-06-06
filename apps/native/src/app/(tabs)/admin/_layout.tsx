@@ -45,6 +45,13 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="houses/index"
+          options={{
+            title: "Houses",
+            headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
           name="users/new"
           options={{
             title: "Create User",

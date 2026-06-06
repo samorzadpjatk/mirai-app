@@ -237,6 +237,122 @@ export const getAllAdminsNames = async (context: UserContext) => {
   });
 };
 
+export const getMyHouseMates = async (context: UserContext, input: { tripId: string }) => {
+  const myParticipant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq, and }) => and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
+    columns: {
+      houseNumber: true,
+    },
+  });
+
+  if (!myParticipant?.houseNumber) {
+    return null;
+  }
+
+  const rows = await context.db
+    .select()
+    .from(tripParticipants)
+    .innerJoin(users, eq(tripParticipants.userId, users.id))
+    .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
+    .where(
+      and(
+        eq(tripParticipants.tripId, input.tripId),
+        eq(tripParticipants.houseNumber, myParticipant.houseNumber),
+      ),
+    )
+    .orderBy(asc(users.firstName), asc(users.lastName));
+
+  const participants = rows.map(mapParticipantRow);
+
+  const emailByAuthUserId = await buildAuthEmailLookup(
+    context.supabase,
+    participants.map((participant) => participant.user.authUserId),
+  );
+
+  return {
+    houseNumber: myParticipant.houseNumber,
+    mates: participants.map((participant) => ({
+      ...toPublicUser(
+        {
+          ...participant.user,
+          role: participant.user.role as z.infer<typeof roleSchema>,
+        },
+        emailByAuthUserId,
+      ),
+      wristNumber: participant.wristNumber,
+      houseNumber: participant.houseNumber,
+      group: participant.group,
+      tripId: participant.tripId,
+    })),
+  };
+};
+
+export const getTripHouses = async (context: UserContext, input: { tripId: string }) => {
+  const rows = await context.db
+    .select()
+    .from(tripParticipants)
+    .innerJoin(users, eq(tripParticipants.userId, users.id))
+    .leftJoin(groups, eq(tripParticipants.groupId, groups.id))
+    .where(eq(tripParticipants.tripId, input.tripId))
+    .orderBy(asc(tripParticipants.houseNumber), asc(users.firstName), asc(users.lastName));
+
+  const participants = rows.map(mapParticipantRow);
+
+  const emailByAuthUserId = await buildAuthEmailLookup(
+    context.supabase,
+    participants.map((participant) => participant.user.authUserId),
+  );
+
+  const houses = new Map<string, typeof participants>();
+  const unassigned: typeof participants = [];
+
+  for (const participant of participants) {
+    if (participant.houseNumber) {
+      const existing = houses.get(participant.houseNumber) ?? [];
+      existing.push(participant);
+      houses.set(participant.houseNumber, existing);
+    } else {
+      unassigned.push(participant);
+    }
+  }
+
+  const houseList = Array.from(houses.entries())
+    .map(([houseNumber, occupants]) => ({
+      houseNumber,
+      occupants: occupants.map((participant) => ({
+        ...toPublicUser(
+          {
+            ...participant.user,
+            role: participant.user.role as z.infer<typeof roleSchema>,
+          },
+          emailByAuthUserId,
+        ),
+        wristNumber: participant.wristNumber,
+        houseNumber: participant.houseNumber,
+        group: participant.group,
+        tripId: participant.tripId,
+      })),
+    }))
+    .sort((a, b) => a.houseNumber.localeCompare(b.houseNumber));
+
+  return {
+    houses: houseList,
+    unassigned: unassigned.map((participant) => ({
+      ...toPublicUser(
+        {
+          ...participant.user,
+          role: participant.user.role as z.infer<typeof roleSchema>,
+        },
+        emailByAuthUserId,
+      ),
+      wristNumber: participant.wristNumber,
+      houseNumber: participant.houseNumber,
+      group: participant.group,
+      tripId: participant.tripId,
+    })),
+  };
+};
+
 export const searchWithPagination = async (
   context: UserContext,
   input: {

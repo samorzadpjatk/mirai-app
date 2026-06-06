@@ -10,6 +10,7 @@ interface TripQuickAccessGridProps {
   onOpenLeaderboard: () => void;
   onOpenRewards: () => void;
   onOpenInfo: () => void;
+  onOpenHouse: () => void;
 }
 
 export function TripQuickAccessGrid({
@@ -20,6 +21,7 @@ export function TripQuickAccessGrid({
   onOpenLeaderboard,
   onOpenRewards,
   onOpenInfo,
+  onOpenHouse,
 }: TripQuickAccessGridProps) {
   return (
     <View style={styles.gridContainer}>
@@ -30,6 +32,16 @@ export function TripQuickAccessGrid({
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Groups</Text>
           <Text style={styles.gridCardSubtitle}>Team Roster</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenHouse}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="home" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>My House</Text>
+          <Text style={styles.gridCardSubtitle}>Housemates</Text>
         </View>
       </TouchableOpacity>
 

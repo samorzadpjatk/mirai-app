@@ -94,6 +94,7 @@ export default function TripDetailsScreen() {
             onOpenRewards={() => router.push(`/trips/rewards?tripId=${trip.id}`)}
             onOpenLeaderboard={() => router.push(`/trips/leaderboard?tripId=${trip.id}`)}
             onOpenInfo={() => router.push(`/trips/info?tripId=${trip.id}`)}
+            onOpenHouse={() => router.push(`/trips/house?tripId=${trip.id}`)}
           />
 
           {/* Latest News Section */}

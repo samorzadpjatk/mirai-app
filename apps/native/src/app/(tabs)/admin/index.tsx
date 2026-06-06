@@ -42,6 +42,15 @@ const tiles: TileType[] = [
     route: "/admin/users",
   },
   {
+    key: "houses",
+    title: "Houses",
+    subtitle: "House assignments",
+    icon: "home",
+    accent: colors.slate400,
+    accentBg: colors.cardDarkOpacity40,
+    route: "/admin/houses",
+  },
+  {
     key: "groups",
     title: "Groups",
     subtitle: "Teams & roles",

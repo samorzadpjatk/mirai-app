@@ -10,12 +10,14 @@ describe("TripQuickAccessGrid", () => {
     onOpenLeaderboard: jest.fn(),
     onOpenRewards: jest.fn(),
     onOpenInfo: jest.fn(),
+    onOpenHouse: jest.fn(),
   };
 
   it("should render all action cards", () => {
     renderWithProviders(<TripQuickAccessGrid {...defaultProps} />);
 
     expect(screen.getByText("Groups")).toBeOnTheScreen();
+    expect(screen.getByText("My House")).toBeOnTheScreen();
     expect(screen.getByText("Map")).toBeOnTheScreen();
     expect(screen.getByText("Challenges")).toBeOnTheScreen();
     expect(screen.getByText("Rewards")).toBeOnTheScreen();
@@ -27,6 +29,7 @@ describe("TripQuickAccessGrid", () => {
     renderWithProviders(<TripQuickAccessGrid {...defaultProps} />);
 
     expect(screen.getByText("Team Roster")).toBeOnTheScreen();
+    expect(screen.getByText("Housemates")).toBeOnTheScreen();
     expect(screen.getByText("Trip Locations")).toBeOnTheScreen();
     expect(screen.getByText("Daily Quests")).toBeOnTheScreen();
     expect(screen.getByText("Prize Store")).toBeOnTheScreen();
@@ -76,6 +79,14 @@ describe("TripQuickAccessGrid", () => {
 
     fireEvent.press(screen.getByText("Rewards"));
     expect(onOpenRewards).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call onOpenHouse when My House card is pressed", () => {
+    const onOpenHouse = jest.fn();
+    renderWithProviders(<TripQuickAccessGrid {...defaultProps} onOpenHouse={onOpenHouse} />);
+
+    fireEvent.press(screen.getByText("My House"));
+    expect(onOpenHouse).toHaveBeenCalledTimes(1);
   });
 
   it("should call onOpenInfo when Trip Info card is pressed", () => {

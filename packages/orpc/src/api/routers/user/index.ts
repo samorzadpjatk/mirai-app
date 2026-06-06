@@ -27,7 +27,9 @@ import {
   getById,
   getByIdWithGroup,
   getMy,
+  getMyHouseMates,
   getMyWithGroup,
+  getTripHouses,
   getTripParticipant,
   searchWithPagination,
 } from "./queries";
@@ -77,6 +79,22 @@ const handleGetMyWithGroup = async ({
 }) => getMyWithGroup(context, input);
 
 const handleGetMy = async ({ context }: { context: Parameters<typeof getMy>[0] }) => getMy(context);
+
+const handleGetMyHouseMates = async ({
+  context,
+  input,
+}: {
+  context: Parameters<typeof getMyHouseMates>[0];
+  input: Parameters<typeof getMyHouseMates>[1];
+}) => getMyHouseMates(context, input);
+
+const handleGetTripHouses = async ({
+  context,
+  input,
+}: {
+  context: Parameters<typeof getTripHouses>[0];
+  input: Parameters<typeof getTripHouses>[1];
+}) => getTripHouses(context, input);
 
 const handleUpdateAvatar = async ({
   context,
@@ -214,6 +232,14 @@ export const userRouter = createORPCRouter({
     .handler(handleGetMyWithGroup),
 
   getMy: protectedProcedure.handler(handleGetMy),
+
+  getMyHouseMates: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
+    .handler(handleGetMyHouseMates),
+
+  getTripHouses: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .handler(handleGetTripHouses),
 
   updateAvatar: protectedProcedure
     .input(z.object({ hasAvatar: z.boolean() }))
