@@ -19,6 +19,7 @@ export function useGroups(tripId?: string | null) {
         initialPageParam: 0,
         getNextPageParam: getNextGroupPageParam,
         enabled: Boolean(tripId),
+        queryKey: ["groups", tripId, { persist: true }],
       }),
     );
 

@@ -29,6 +29,7 @@ export function useTrips() {
       input: buildTripQueryInput,
       initialPageParam: 0,
       getNextPageParam: getNextTripPageParam,
+      queryKey: ["trips", { persist: true }],
     }),
   );
 

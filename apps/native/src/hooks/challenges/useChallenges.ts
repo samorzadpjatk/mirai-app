@@ -16,6 +16,7 @@ export function useChallenges(tripId?: string | null) {
   const tripQuery = useQuery({
     ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
     enabled: Boolean(tripId),
+    queryKey: ["trip", tripId, { persist: true }],
   });
 
   const challengesQuery = useInfiniteQuery(
@@ -24,6 +25,7 @@ export function useChallenges(tripId?: string | null) {
       initialPageParam: 0,
       getNextPageParam: getNextChallengePageParam,
       enabled: Boolean(tripId),
+      queryKey: ["challenges", tripId, { persist: true }],
     }),
   );
 
