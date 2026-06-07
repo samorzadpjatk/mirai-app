@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { OfflineStatusBar } from "~/components/offline/OfflineStatusBar";
 import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
+import { useQueueProcessor } from "~/hooks/offline/useQueueProcessor";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
 import { registerOfflineSyncTask } from "~/services/background/offlineSyncTask";
 import { resetProcessingState } from "~/services/offline/queueProcessor";
@@ -79,6 +80,8 @@ function App() {
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
+  useQueueProcessor();
+
   const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =
     useExpoUpdates();
 
