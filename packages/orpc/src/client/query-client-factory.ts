@@ -1,10 +1,20 @@
 import { QueryClient } from "@tanstack/react-query";
 
+function isNetworkError(error: unknown): boolean {
+  const statusCode = (error as { status?: number })?.status;
+  if (statusCode === undefined || statusCode === 0) {
+    return true;
+  }
+  return statusCode >= 500;
+}
+
 export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 24 * 60 * 60 * 1000, // 24 hours
+        networkMode: "offlineFirst",
         // Disable aggressive polling; rely on staleTime + manual invalidation
         refetchInterval: false,
         // Disable window focus refetch (mobile apps don't have "windows")
@@ -17,7 +27,7 @@ export function makeQueryClient() {
             return false;
           }
           // Max 3 retries for network/server errors and rate limits
-          return failureCount < 3;
+          return failureCount < 3 && isNetworkError(error);
         },
         retryDelay: (attemptIndex, error) => {
           const statusCode = (error as { status?: number })?.status;
