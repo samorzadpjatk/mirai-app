@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@mirai-app/auth/client";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNotifications } from "~/hooks/notifications";
 import { useLocationContext } from "~/stores/location";
+import { useOfflineQueueStore } from "~/stores/offlineQueueStore";
+import { clearQueue } from "~/services/offline/storage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ProfileActionsSectionProps {
@@ -14,6 +16,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
   const { signOut } = useAuth();
   const router = useRouter();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
+  const { pendingCount, failedMutations, syncStatus } = useOfflineQueueStore();
   const {
     isLocationSharingEnabled,
     isLoading: isLocationLoading,
@@ -169,6 +172,56 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
         <Text style={styles.settingsActionText}>Open system location settings</Text>
       </TouchableOpacity>
 
+      {(pendingCount > 0 || failedMutations.length > 0) && (
+        <View style={styles.syncSection}>
+          <Text style={styles.sectionTitle}>Sync Issues</Text>
+
+          {pendingCount > 0 && (
+            <View style={styles.syncItem}>
+              <Ionicons name="cloud-upload" size={16} color={colors.primary} />
+              <Text style={styles.syncText}>{pendingCount} pending mutation(s)</Text>
+            </View>
+          )}
+
+          {failedMutations.length > 0 && (
+            <>
+              <Text style={styles.syncSubtext}>Failed mutations:</Text>
+              {failedMutations.map((mutation) => (
+                <View key={mutation.id} style={styles.syncItem}>
+                  <Ionicons name="warning" size={16} color="#ef4444" />
+                  <Text style={styles.syncErrorText}>
+                    {mutation.mutationKey}: {mutation.error}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+
+          <TouchableOpacity
+            style={styles.clearQueueButton}
+            onPress={() => {
+              Alert.alert(
+                "Clear Queue",
+                "Remove all pending mutations? This will discard unsaved changes.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Clear",
+                    style: "destructive",
+                    onPress: () => {
+                      void clearQueue();
+                      useOfflineQueueStore.getState().clearFailed();
+                    },
+                  },
+                ],
+              );
+            }}
+          >
+            <Text style={styles.clearQueueText}>Clear Queue</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <TouchableOpacity
         style={[styles.actionButton, styles.dangerButton]}
         onPress={() => void handleSignOut()}
@@ -292,6 +345,47 @@ const styles = StyleSheet.create({
   settingsActionText: {
     color: colors.primary,
     fontSize: typography.xs,
+    fontWeight: typography.medium,
+  },
+  syncSection: {
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  syncItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  syncText: {
+    color: colors.white,
+    fontSize: typography.sm,
+  },
+  syncSubtext: {
+    color: colors.textMuted,
+    fontSize: typography.xs,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  syncErrorText: {
+    color: "#ef4444",
+    fontSize: typography.xs,
+    flex: 1,
+  },
+  clearQueueButton: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    alignItems: "center",
+  },
+  clearQueueText: {
+    color: "#ef4444",
+    fontSize: typography.sm,
     fontWeight: typography.medium,
   },
 });

@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
+import { useOfflineMutation } from "~/hooks/offline/useOfflineMutation";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 const sanitizeNameInput = (value: string) => value.replace(/\d+/g, "");
@@ -95,25 +96,26 @@ export default function EditProfileScreen() {
     resetAvatar,
   ]);
 
-  const updateAvatarMutation = useMutation(
-    orpc.user.updateAvatar.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: userMyQueryOptions.queryKey,
-        });
-      },
-    }),
-  );
+  const updateAvatarMutation = useOfflineMutation({
+    mutationFn: (variables: { hasAvatar: boolean }) => orpc.user.updateAvatar.mutate(variables),
+    mutationKey: "user.updateAvatar",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: userMyQueryOptions.queryKey,
+      });
+    },
+  });
 
-  const updateProfileMutation = useMutation(
-    orpc.user.updateMyProfile.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: userMyQueryOptions.queryKey,
-        });
-      },
-    }),
-  );
+  const updateProfileMutation = useOfflineMutation({
+    mutationFn: (variables: { firstName: string; lastName: string }) =>
+      orpc.user.updateMyProfile.mutate(variables),
+    mutationKey: "user.updateMyProfile",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: userMyQueryOptions.queryKey,
+      });
+    },
+  });
 
   const isUploading = uploadStatus === "uploading";
   const isDownloading = avatarStatus === "loading";

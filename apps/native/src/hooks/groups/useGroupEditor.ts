@@ -1,6 +1,7 @@
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOfflineMutation } from "~/hooks/offline/useOfflineMutation";
 
 export function resolveTripIdForUpdate(
   providedTripId: string | undefined,
@@ -22,27 +23,30 @@ export function useGroupEditor(groupId?: string | null) {
   const groupQuery = useQuery(
     orpc.group.getById.queryOptions({ input: { id: groupId ?? "" }, enabled: !!groupId }),
   );
-  const updateMutation = useMutation(
-    orpc.group.update.mutationOptions({
-      onSuccess: async () => {
-        await invalidateGroupQueries(queryClient);
-      },
-    }),
-  );
-  const assignMutation = useMutation(
-    orpc.group.assignUserToGroup.mutationOptions({
-      onSuccess: async () => {
-        await invalidateGroupQueries(queryClient);
-      },
-    }),
-  );
-  const removeMutation = useMutation(
-    orpc.group.removeUserFromGroup.mutationOptions({
-      onSuccess: async () => {
-        await invalidateGroupQueries(queryClient);
-      },
-    }),
-  );
+  const updateMutation = useOfflineMutation({
+    mutationFn: (variables: { id: string; name?: string; image?: string; tripId: string }) =>
+      orpc.group.update.mutate(variables),
+    mutationKey: "group.update",
+    onSuccess: async () => {
+      await invalidateGroupQueries(queryClient);
+    },
+  });
+  const assignMutation = useOfflineMutation({
+    mutationFn: (variables: { userId: string; tripId: string; groupId: string }) =>
+      orpc.group.assignUserToGroup.mutate(variables),
+    mutationKey: "group.assignUserToGroup",
+    onSuccess: async () => {
+      await invalidateGroupQueries(queryClient);
+    },
+  });
+  const removeMutation = useOfflineMutation({
+    mutationFn: (variables: { userId: string; tripId: string }) =>
+      orpc.group.removeUserFromGroup.mutate(variables),
+    mutationKey: "group.removeUserFromGroup",
+    onSuccess: async () => {
+      await invalidateGroupQueries(queryClient);
+    },
+  });
 
   const updateGroup = async (data: {
     id: string;

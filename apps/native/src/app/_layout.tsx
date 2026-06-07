@@ -4,9 +4,12 @@ import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { OfflineStatusBar } from "~/components/offline/OfflineStatusBar";
 import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
+import { registerOfflineSyncTask } from "~/services/background/offlineSyncTask";
+import { resetProcessingState } from "~/services/offline/queueProcessor";
 import { LocationStoreProvider } from "~/stores/location";
 
 function initNotifications(): void {
@@ -32,10 +35,11 @@ import {
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
-import { QueryProvider, getORPCClient, orpc } from "@mirai-app/orpc/client";
+import { getORPCClient, orpc } from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
+import { QueryProvider } from "~/components/QueryProvider";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import {
   createBackgroundTaskDeps,
@@ -62,6 +66,10 @@ function AutoPushSubscription() {
 
 function App() {
   initNotifications();
+
+  resetProcessingState();
+  void registerOfflineSyncTask();
+
   const backgroundTaskDeps = createBackgroundTaskDeps({
     supabaseClient,
     getORPCClient,
@@ -82,6 +90,7 @@ function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
+      <OfflineStatusBar />
       {!isAuthLoading && hasSession ? <AutoPushSubscription /> : null}
       {!isAuthLoading && (
         <Stack

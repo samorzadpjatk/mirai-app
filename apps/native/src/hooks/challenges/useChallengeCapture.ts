@@ -1,6 +1,7 @@
 import { orpc } from "@mirai-app/orpc/client";
 import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOfflineMutation } from "~/hooks/offline/useOfflineMutation";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -61,13 +62,19 @@ export function useChallengeCapture({ tripId, challengeId }: ChallengeCaptureOpt
   const userQuery = useQuery(
     orpc.user.getMyWithGroup.queryOptions({ input: { tripId: tripId ?? "" }, enabled: !!tripId }),
   );
-  const createSubmissionMutation = useMutation(
-    orpc.challengeSubmission.create.mutationOptions({
-      onSuccess: async () => {
-        await invalidateChallengeQueries(queryClient);
-      },
-    }),
-  );
+  const createSubmissionMutation = useOfflineMutation({
+    mutationFn: (variables: {
+      tripId: string;
+      challengeId: string;
+      imageIds: string[];
+      latitude?: number;
+      longitude?: number;
+    }) => orpc.challengeSubmission.create.mutate(variables),
+    mutationKey: "challengeSubmission.create",
+    onSuccess: async () => {
+      await invalidateChallengeQueries(queryClient);
+    },
+  });
   const deleteSubmissionMutation = useMutation(
     orpc.challengeSubmission.deleteMine.mutationOptions({
       onSuccess: async () => {
