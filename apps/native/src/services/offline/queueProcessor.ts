@@ -1,6 +1,7 @@
 import { useOfflineQueueStore } from "~/stores/offlineQueueStore";
 import { getQueue, updateMutation, removeFromQueue, type QueuedMutation } from "./storage";
 import { classifyError } from "./errorClassifier";
+import { resolveMutation, rejectMutation } from "./resolvers";
 
 const MAX_RETRIES = 3;
 const BACKOFF_DELAYS = [1000, 2000, 4000]; // Exponential backoff
@@ -31,10 +32,11 @@ export async function processQueue(
       try {
         await updateMutation(mutation.id, { status: "retrying" });
 
-        await executeMutation(mutation);
+        const result = await executeMutation(mutation);
 
         await removeFromQueue(mutation.id);
         useOfflineQueueStore.getState().decrementPending();
+        resolveMutation(mutation.id, result);
       } catch (error) {
         const classified = classifyError(error);
         const newRetryCount = mutation.retryCount + 1;
@@ -53,6 +55,7 @@ export async function processQueue(
             error: classified.message,
             timestamp: Date.now(),
           });
+          rejectMutation(mutation.id, new Error(classified.message));
         } else {
           // Retry with backoff
           await updateMutation(mutation.id, {
