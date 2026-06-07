@@ -1,4 +1,24 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+const mockStorage = new Map<string, string>();
+
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn((key: string) => Promise.resolve(mockStorage.get(key) ?? null)),
+    setItem: jest.fn((key: string, value: string) => {
+      mockStorage.set(key, value);
+      return Promise.resolve();
+    }),
+    removeItem: jest.fn((key: string) => {
+      mockStorage.delete(key);
+      return Promise.resolve();
+    }),
+    clear: jest.fn(() => {
+      mockStorage.clear();
+      return Promise.resolve();
+    }),
+  },
+}));
+
 import {
   getQueue,
   addToQueue,
@@ -11,7 +31,7 @@ import {
 
 describe("offline storage", () => {
   beforeEach(() => {
-    void AsyncStorage.clear();
+    mockStorage.clear();
   });
 
   it("should return empty queue when no data", async () => {
@@ -136,7 +156,7 @@ describe("offline storage", () => {
       schemaVersion: "0.0.0", // Old version
     };
 
-    await AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify([invalidEntry]));
+    mockStorage.set(QUEUE_STORAGE_KEY, JSON.stringify([invalidEntry]));
     const queue = await getQueue();
     expect(queue.length).toBe(0);
   });
