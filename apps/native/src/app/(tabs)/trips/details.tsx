@@ -4,12 +4,15 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CacheAgeWarning } from "~/components/offline/CacheAgeWarning";
+import { DownloadForOfflineButton } from "~/components/offline/DownloadForOfflineButton";
 import { TripBanner } from "~/components/trips/TripBanner";
 import { type Partner, PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
+import { useNetworkStatus } from "~/hooks/offline/useNetworkStatus";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { useTripSync } from "~/stores/tripStore";
 import LoadingScreen from "../../../components/LoadingScreen";
@@ -25,6 +28,7 @@ export default function TripDetailsScreen() {
   const tripId = selectedTripId ?? paramTripId;
 
   const { isLoadingUser, trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
+  const { isConnected } = useNetworkStatus();
 
   // Keep trip store in sync with current trip state
   useTripSync();
@@ -74,6 +78,12 @@ export default function TripDetailsScreen() {
             endDate={trip.endDate}
             backgroundImagePath={trip.backgroundImagePath}
           />
+
+          {/* Cache Age Warning */}
+          <CacheAgeWarning cachedAt={trip.updatedAt} isOffline={!isConnected} />
+
+          {/* Download for Offline */}
+          <DownloadForOfflineButton tripId={trip.id} />
 
           {/* Trip Banner */}
           <TripBanner />
