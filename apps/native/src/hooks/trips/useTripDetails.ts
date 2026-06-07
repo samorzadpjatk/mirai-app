@@ -12,7 +12,11 @@ import { isTripPast } from "~/utils/trip";
 export function useTripDetails(tripId?: string | null) {
   const currentUserQuery = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
   const tripQuery = useQuery(
-    orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" }, enabled: !!tripId }),
+    orpc.trip.getById.queryOptions({
+      input: { id: tripId ?? "" },
+      enabled: !!tripId,
+      queryKey: ["trip", tripId, { persist: true }],
+    }),
   );
 
   const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
