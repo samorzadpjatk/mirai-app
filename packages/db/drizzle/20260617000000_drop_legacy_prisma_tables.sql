@@ -14,4 +14,4 @@ DROP TABLE IF EXISTS "User", "Trip", "Group", "TripParticipant", "Event",
 	"NotificationPush", "NotificationDelivery", "PushSubscription",
 	"Reward", "RewardPurchase", "CoinTransaction", "Sponsor",
 	"TripSponsor", "TripResource", "TripInsurance", "TripInsuranceStep",
-	"UserAgent";--> statement-breakpoint
+	"UserAgent" CASCADE;--> statement-breakpoint
