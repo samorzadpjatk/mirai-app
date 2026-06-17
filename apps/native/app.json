@@ -2,7 +2,7 @@
   "expo": {
     "name": "MIRAI",
     "slug": "mirai",
-    "version": "15.8.1",
+    "version": "15.8.2",
     "extra": {
       "eas": {
         "projectId": "f6a5489a-21d3-4cf2-8dec-f98151979b91"

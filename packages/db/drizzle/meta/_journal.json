@@ -99,6 +99,13 @@
       "when": 1780692570573,
       "tag": "20260605204930_unusual_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1781700000000,
+      "tag": "20260617000000_drop_legacy_prisma_tables",
+      "breakpoints": true
     }
   ]
 }
