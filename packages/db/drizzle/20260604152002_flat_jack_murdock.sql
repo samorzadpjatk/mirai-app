@@ -18,7 +18,7 @@ DROP INDEX "challenges_is_recurring_idx";--> statement-breakpoint
 ALTER TABLE "challenge_location" ADD CONSTRAINT "challenge_location_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "challenge_recurrence" ADD CONSTRAINT "challenge_recurrence_challenge_id_challenges_id_fk" FOREIGN KEY ("challenge_id") REFERENCES "public"."challenges"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 INSERT INTO "challenge_recurrence" ("challenge_id", "daily_start_time", "daily_end_time", "is_recurring", "recurring_days", "type")
-SELECT "id", COALESCE("daily_start_time", ''), COALESCE("daily_end_time", ''), COALESCE("is_recurring", false), COALESCE("recurring_days", 0), 'DAILY'
+SELECT "id", COALESCE("daily_start_time", ''), COALESCE("daily_end_time", ''), COALESCE("is_recurring", false), 0, 'DAILY'
 FROM "challenges";--> statement-breakpoint
 INSERT INTO "challenge_location" ("challenge_id", "target_latitude", "target_longitude", "expected_value")
 SELECT "id", COALESCE("target_latitude", 0), COALESCE("target_longitude", 0), COALESCE("expected_value", '')
