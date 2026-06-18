@@ -1,10 +1,7 @@
 import { authStore } from "@mirai-app/shared/stores";
 import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared/stores";
-import { createMockSupabaseClient } from "@mirai-app/shared/test-utils";
 import { renderHook } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthStoreProvider } from "../store/AuthStoreProvider";
 import {
   useAuth,
   useAuthLoading,
@@ -223,101 +220,6 @@ describe("store exports and hooks", () => {
 
         expect(result.current).toBeUndefined();
       });
-    });
-  });
-
-  describe("AuthStoreProvider", () => {
-    it("should be defined as a component", () => {
-      expect(AuthStoreProvider).toBeDefined();
-      expect(typeof AuthStoreProvider).toBe("function");
-    });
-
-    it("should accept all required props", () => {
-      const mockClient = createMockSupabaseClient();
-
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-        supabaseClient: mockClient,
-        storageOptions: {
-          storage: {
-            getItem: vi.fn(),
-            setItem: vi.fn(),
-            removeItem: vi.fn(),
-          },
-        },
-        onUserFetch: vi.fn(),
-      };
-
-      expect(props.supabaseClient).toBeDefined();
-      expect(typeof props.onUserFetch).toBe("function");
-    });
-
-    it("should work with minimal props", () => {
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-      };
-
-      expect(props.supabaseUrl).toBeDefined();
-      expect(props.supabaseKey).toBeDefined();
-    });
-
-    it("should accept custom storage options", () => {
-      const customStorage = {
-        getItem: vi.fn().mockResolvedValue("stored-value"),
-        setItem: vi.fn().mockResolvedValue(undefined),
-        removeItem: vi.fn().mockResolvedValue(undefined),
-      };
-
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-        storageOptions: { storage: customStorage },
-      };
-
-      expect(props.storageOptions?.storage).toBe(customStorage);
-    });
-
-    it("should accept onUserFetch callback", () => {
-      const onUserFetch = vi.fn().mockResolvedValue(mockUser);
-
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-        onUserFetch,
-      };
-
-      expect(typeof props.onUserFetch).toBe("function");
-    });
-  });
-
-  describe("store/index exports", () => {
-    it("should export authStore from @mirai-app/shared", () => {
-      expect(authStore).toBeDefined();
-      expect(authStore.getState).toBeDefined();
-    });
-
-    it("should have all hook exports available", () => {
-      expect(useAuth).toBeDefined();
-      expect(useUser).toBeDefined();
-      expect(useSession).toBeDefined();
-      expect(useIsAuthenticated).toBeDefined();
-      expect(useAuthLoading).toBeDefined();
-      expect(useAuthStore).toBeDefined();
-    });
-
-    it("should have correct function types", () => {
-      expect(typeof useAuth).toBe("function");
-      expect(typeof useUser).toBe("function");
-      expect(typeof useSession).toBe("function");
-      expect(typeof useIsAuthenticated).toBe("function");
-      expect(typeof useAuthLoading).toBe("function");
-      expect(typeof useAuthStore).toBe("function");
     });
   });
 

@@ -351,11 +351,26 @@ describe("createInactivityScheduler", () => {
     expect(scheduler.isActive()).toBe(false);
   });
 
-  it("should create a scheduler with custom interval", () => {
+  it("should create a scheduler with custom interval", async () => {
     const checkFunction = vi.fn().mockResolvedValue({ count: 0 });
     const scheduler = createInactivityScheduler(checkFunction, 10);
 
-    expect(scheduler).toBeDefined();
+    expect(scheduler.isActive()).toBe(false);
+    scheduler.start();
+    expect(logger.info).toHaveBeenCalledWith({ intervalMinutes: 10 }, "Scheduler started");
+
+    // Runs immediately on start
+    await vi.advanceTimersByTimeAsync(0);
+    expect(checkFunction).toHaveBeenCalledTimes(1);
+
+    // Should not fire again before interval
+    await vi.advanceTimersByTimeAsync(9 * 60 * 1000);
+    expect(checkFunction).toHaveBeenCalledTimes(1);
+
+    // Should fire at interval boundary
+    await vi.advanceTimersByTimeAsync(1 * 60 * 1000);
+    expect(checkFunction).toHaveBeenCalledTimes(2);
+    scheduler.stop();
   });
 
   it("should run inactivity check and log results", async () => {

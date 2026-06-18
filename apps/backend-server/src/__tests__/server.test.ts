@@ -62,16 +62,33 @@ afterEach(async () => {
 });
 
 describe("createServer", () => {
-  it("should create server with default options", () => {
-    const { app, start, stop } = createServer({});
-    expect(app).toBeDefined();
-    expect(typeof start).toBe("function");
-    expect(typeof stop).toBe("function");
+  it("should create server with default options", async () => {
+    const { app } = createServer({});
+    const health = await app.request("/health");
+    expect(health.status).toBe(200);
+    expect(await health.text()).toBe("OK");
+    const ping = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(ping.status).not.toBe(404);
   });
 
-  it("should create server with custom options", () => {
+  it("should create server with custom options", async () => {
     const { app } = createServer({ dev: false, port: 8080, prefix: "/custom", host: "0.0.0.0" });
-    expect(app).toBeDefined();
+    const hit = await app.request("/custom/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(hit.status).not.toBe(404);
+    const miss = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(miss.status).toBe(404);
   });
 
   it("should return OK for health check", async () => {
@@ -182,8 +199,12 @@ describe("createServer", () => {
 
   it("should respond to oRPC endpoint", async () => {
     const { app } = createServer({ dev: true, port: 3012, prefix: "/api/orpc", host: "127.0.0.1" });
-    const res = await app.request("/api/orpc");
-    expect([200, 404, 405, 500]).toContain(res.status);
+    const res = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(res.status).not.toBe(404);
   });
 
   it("should handle custom prefix", async () => {
@@ -193,8 +214,18 @@ describe("createServer", () => {
       prefix: "/custom/orpc",
       host: "127.0.0.1",
     });
-    const res = await app.request("/custom/orpc");
-    expect([200, 404, 405, 500]).toContain(res.status);
+    const res = await app.request("/custom/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(res.status).not.toBe(404);
+    const defaultMiss = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(defaultMiss.status).toBe(404);
   });
 
   it("should handle requests with custom headers", async () => {
@@ -212,7 +243,7 @@ describe("createServer", () => {
   it("should handle HEAD requests", async () => {
     const { app } = createServer({ dev: true, port: 3015, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { method: "HEAD" });
-    expect([200, 404]).toContain(res.status);
+    expect(res.status).toBe(200);
   });
 
   it("should stop gracefully even if not started", async () => {
@@ -222,6 +253,7 @@ describe("createServer", () => {
       prefix: "/api/orpc",
       host: "127.0.0.1",
     });
+    await expect(stop()).resolves.not.toThrow();
     await expect(stop()).resolves.not.toThrow();
   });
 });

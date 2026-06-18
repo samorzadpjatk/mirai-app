@@ -70,11 +70,6 @@ describe("mapHooks", () => {
       expect(result.current).toBe("dark");
     });
 
-    it("should select actions from store", () => {
-      const { result } = renderHook(() => useMapStore((state) => state.selectUser));
-      expect(typeof result.current).toBe("function");
-    });
-
     it("should call selectUser action through store", () => {
       const { result } = renderHook(() => useMapStore((state) => state.selectUser));
 
@@ -232,23 +227,6 @@ describe("mapHooks", () => {
       expect(firstRender.deselectUser).toBe(secondRender.deselectUser);
       expect(firstRender.backToList).toBe(secondRender.backToList);
       expect(firstRender.toggleListExpansion).toBe(secondRender.toggleListExpansion);
-    });
-
-    it("should return object with all expected actions", () => {
-      const { result } = renderHook(() => useMapActions());
-
-      expect(typeof result.current.selectUser).toBe("function");
-      expect(typeof result.current.deselectUser).toBe("function");
-      expect(typeof result.current.backToList).toBe("function");
-      expect(typeof result.current.toggleListExpansion).toBe("function");
-      expect(typeof result.current.collapseList).toBe("function");
-      expect(typeof result.current.setShowManageModal).toBe("function");
-      expect(typeof result.current.setFollowMode).toBe("function");
-      expect(typeof result.current.setFocusedCoordinate).toBe("function");
-      expect(typeof result.current.toggleTheme).toBe("function");
-      expect(typeof result.current.recenter).toBe("function");
-      expect(typeof result.current.handleMapUserPress).toBe("function");
-      expect(typeof result.current.handleMapPress).toBe("function");
     });
 
     it("should call selectUser through useMapActions", () => {

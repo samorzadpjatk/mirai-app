@@ -7,7 +7,6 @@ import { createPgliteTestDb } from "~/db-test-helper";
 import {
   AuthenticationError,
   AuthorizationError,
-  getServerUser,
   getSession,
   hasRequiredRole,
   mapDatabaseUserToAuthUser,
@@ -68,17 +67,7 @@ describe("server exports", () => {
     });
   });
 
-  describe("getServerUser", () => {
-    it("should be exported as a function", () => {
-      expect(typeof getServerUser).toBe("function");
-    });
-  });
-
   describe("mapDatabaseUserToAuthUser", () => {
-    it("should be exported as a function", () => {
-      expect(typeof mapDatabaseUserToAuthUser).toBe("function");
-    });
-
     it("should map database user to auth user correctly", () => {
       const dbUser = {
         id: "db-123",
@@ -156,10 +145,6 @@ describe("server exports", () => {
   });
 
   describe("parseRolesFromToken", () => {
-    it("should be exported as a function", () => {
-      expect(typeof parseRolesFromToken).toBe("function");
-    });
-
     it("should return empty array when token is undefined", () => {
       const result = parseRolesFromToken(undefined);
       expect(result).toEqual([]);
@@ -188,10 +173,6 @@ describe("server exports", () => {
   });
 
   describe("hasRequiredRole", () => {
-    it("should be exported as a function", () => {
-      expect(typeof hasRequiredRole).toBe("function");
-    });
-
     it("should return true when required role is in groups", () => {
       const result = hasRequiredRole(["admin", "user"], "admin");
       expect(result).toBe(true);
@@ -214,10 +195,6 @@ describe("server exports", () => {
   });
 
   describe("syncUserToDatabase", () => {
-    it("should be exported as a function", () => {
-      expect(typeof syncUserToDatabase).toBe("function");
-    });
-
     it("should sync user with default role", async () => {
       const mockSupabaseUser = {
         id: "auth-123",
@@ -357,50 +334,6 @@ describe("server exports", () => {
       );
     });
   });
-
-  describe("type exports", () => {
-    it("should have DatabaseUser type structure", () => {
-      const dbUser = {
-        id: "db-123",
-        authUserId: "auth-123",
-        email: "test@example.com",
-        name: "Test User",
-        hasAvatar: true,
-        wristNumber: "W001",
-        houseNumber: "H001",
-        role: "USER",
-        groupId: "group-123",
-        emailVerified: new Date(),
-      };
-
-      expect(dbUser.id).toBe("db-123");
-      expect(dbUser.role).toBe("USER");
-    });
-
-    it("should have Role type with valid values", () => {
-      const roles = ["USER", "ADMIN", "MODERATOR", "SERVICE"] as const;
-      expect(roles).toContain("USER");
-      expect(roles).toContain("ADMIN");
-      expect(roles).toContain("MODERATOR");
-      expect(roles).toContain("SERVICE");
-    });
-
-    it("should have AuthState type structure", () => {
-      const authState = {
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-      };
-
-      expect(authState.isAuthenticated).toBe(false);
-    });
-
-    it("should have SignInWithOtpOptions type structure", () => {
-      const options = { email: "test@example.com" };
-      expect(options.email).toBe("test@example.com");
-    });
-  });
 });
 
 describe("server exports with database", () => {
@@ -443,10 +376,6 @@ describe("server exports with database", () => {
   }
 
   describe("getSession", () => {
-    it("should be exported as a function", () => {
-      expect(typeof getSession).toBe("function");
-    });
-
     it("should return null when no supabase user found", async () => {
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: null },
@@ -491,10 +420,6 @@ describe("server exports with database", () => {
   });
 
   describe("requireAuth", () => {
-    it("should be exported as a function", () => {
-      expect(typeof requireAuth).toBe("function");
-    });
-
     it("should throw AuthenticationError when no session", async () => {
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: null },
@@ -561,10 +486,6 @@ describe("server exports with database", () => {
   });
 
   describe("requireAdmin", () => {
-    it("should be exported as a function", () => {
-      expect(typeof requireAdmin).toBe("function");
-    });
-
     it("should throw AuthorizationError when user is not admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
       await seedUser({ role: "USER" });
@@ -602,10 +523,6 @@ describe("server exports with database", () => {
   });
 
   describe("requireModerator", () => {
-    it("should be exported as a function", () => {
-      expect(typeof requireModerator).toBe("function");
-    });
-
     it("should throw AuthorizationError when user is not moderator or admin", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
       await seedUser({ role: "USER" });

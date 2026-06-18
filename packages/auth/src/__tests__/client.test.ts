@@ -1,10 +1,8 @@
 import { authStore } from "@mirai-app/shared/stores";
 import type { AuthStore, AuthUser, SupabaseSession } from "@mirai-app/shared/stores";
 import { renderHook } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  AuthStoreProvider,
   useAuth,
   useAuthLoading,
   useIsAuthenticated,
@@ -43,14 +41,6 @@ const initialAuthState: Partial<AuthStore> = {
 describe("client exports", () => {
   beforeEach(() => {
     authStore.setState(initialAuthState);
-  });
-
-  describe("authStore export", () => {
-    it("should export authStore from @mirai-app/shared", () => {
-      expect(authStore).toBeDefined();
-      expect(authStore.getState).toBeDefined();
-      expect(authStore.subscribe).toBeDefined();
-    });
   });
 
   describe("useAuth hook", () => {
@@ -196,11 +186,6 @@ describe("client exports", () => {
   });
 
   describe("useLoginForm hook", () => {
-    it("should be exported as a function", () => {
-      expect(useLoginForm).toBeDefined();
-      expect(typeof useLoginForm).toBe("function");
-    });
-
     it("should initialize with empty state", () => {
       const { result } = renderHook(() => useLoginForm());
 
@@ -208,65 +193,6 @@ describe("client exports", () => {
       expect(result.current.formState.isLoading).toBe(false);
       expect(result.current.formState.isSent).toBe(false);
       expect(result.current.formState.error).toBeNull();
-    });
-  });
-
-  describe("AuthStoreProvider component", () => {
-    it("should be defined as a component", () => {
-      expect(AuthStoreProvider).toBeDefined();
-      expect(typeof AuthStoreProvider).toBe("function");
-    });
-
-    it("should accept required props", () => {
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-        supabaseClient: undefined,
-        storageOptions: {
-          storage: {
-            getItem: vi.fn(),
-            setItem: vi.fn(),
-            removeItem: vi.fn(),
-          },
-        },
-        onUserFetch: vi.fn(),
-      };
-
-      expect(props.children).toBeNull();
-      expect(props.supabaseUrl).toBe("https://test.supabase.co");
-      expect(typeof props.onUserFetch).toBe("function");
-    });
-
-    it("should handle minimal props", () => {
-      const props = {
-        children: null as ReactNode,
-        supabaseUrl: "https://test.supabase.co",
-        supabaseKey: "test-key",
-      };
-
-      expect(props.supabaseUrl).toBeDefined();
-      expect(props.supabaseKey).toBeDefined();
-    });
-  });
-
-  describe("type exports", () => {
-    it("should have proper type definitions", () => {
-      const loginFormData: { email: string } = { email: "test@example.com" };
-      const loginFormState: {
-        email: string;
-        isLoading: boolean;
-        isSent: boolean;
-        error: string | null;
-      } = {
-        email: "test@example.com",
-        isLoading: false,
-        isSent: false,
-        error: null,
-      };
-
-      expect(loginFormData.email).toBe("test@example.com");
-      expect(loginFormState.isLoading).toBe(false);
     });
   });
 });
