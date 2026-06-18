@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as ServerModule from "../server";
 
-const { loggerError } = vi.hoisted(() => ({ loggerError: vi.fn() }));
+const { loggerError, createOrpcContextSpy } = vi.hoisted(() => ({
+  loggerError: vi.fn(),
+  createOrpcContextSpy: vi.fn((opts) => opts),
+}));
 
 // Real oRPC HTTP handler is exercised against a real (fixture) router built
 // with the genuine `os` builder. We do NOT mock @orpc/server, @orpc/server/fetch,
@@ -14,7 +17,7 @@ vi.mock("@mirai-app/orpc", async () => {
   return {
     appRouter,
     serviceRouter: {},
-    createORPCContext: vi.fn((opts) => opts),
+    createORPCContext: createOrpcContextSpy,
     logger: {
       info: vi.fn(),
       error: loggerError,
@@ -269,10 +272,9 @@ describe("HTTP oRPC handler", () => {
   });
 
   it("builds the oRPC context from request headers and env config", async () => {
-    const { createORPCContext } = await import("@mirai-app/orpc");
     const { app } = createServer({ dev: true, port: 3105, prefix: "/api/orpc", host: "127.0.0.1" });
     await post(app, "/api/orpc/ping");
-    expect(createORPCContext).toHaveBeenCalledWith(
+    expect(createOrpcContextSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         databaseUrl: "postgres://user:pass@localhost:5432/db",
         supabaseUrl: "http://localhost:54321",
