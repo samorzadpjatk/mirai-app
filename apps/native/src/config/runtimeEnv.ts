@@ -19,7 +19,16 @@ export const createRuntimeEnv = (env: RuntimeEnvInput) => {
   return { SUPABASE_URL, SUPABASE_ANON_KEY, TRPC_HTTP_URL, TRPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL };
 };
 
-const runtimeEnv = createRuntimeEnv(process.env);
+// EXPO_PUBLIC_* vars are inlined by babel-preset-expo ONLY when referenced as
+// static `process.env.EXPO_PUBLIC_X` dot-notation. Passing `process.env` into a
+// function (env.EXPO_PUBLIC_X) defeats inlining -> undefined in release builds
+// -> throw at import -> RCTFatal startup crash. Reference each var statically here.
+const runtimeEnv = createRuntimeEnv({
+  EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  EXPO_PUBLIC_TRPC_API_URL: process.env.EXPO_PUBLIC_TRPC_API_URL,
+  EXPO_PUBLIC_PRIVACY_POLICY_URL: process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
+});
 
 export const SUPABASE_URL = runtimeEnv.SUPABASE_URL;
 export const SUPABASE_ANON_KEY = runtimeEnv.SUPABASE_ANON_KEY;
