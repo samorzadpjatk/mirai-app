@@ -22,6 +22,15 @@ export interface ServerOptions {
   host?: string;
 }
 
+function createOnErrorCallback(dev: boolean, source: string) {
+  return (error: unknown): void => {
+    logger.error(error, `${source} error`);
+    if (!dev && !(error instanceof ORPCError)) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
+    }
+  };
+}
+
 export function createServer(opts: ServerOptions) {
   const dev = opts.dev ?? true;
   const port = opts.port ?? 3000;
@@ -82,14 +91,7 @@ export function createServer(opts: ServerOptions) {
   // this mount is required for normal queries/mutations. Without it every
   // request falls through to Hono's default 404 ("Not Found").
   const rpcHandler = new RPCHandler(appRouter, {
-    interceptors: [
-      onError((error): void => {
-        logger.error(error, "RPC HTTP handler error");
-        if (!dev && !(error instanceof ORPCError)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
-        }
-      }),
-    ],
+    interceptors: [onError(createOnErrorCallback(dev, "RPC HTTP handler"))],
   });
 
   app.use(`${prefix}/*`, async (c, next) => {
@@ -99,12 +101,6 @@ export function createServer(opts: ServerOptions) {
         : new Proxy(c.req.raw, {
             get(target, prop) {
               switch (prop) {
-                case "arrayBuffer":
-                  return () => c.req.arrayBuffer();
-                case "blob":
-                  return () => c.req.blob();
-                case "formData":
-                  return () => c.req.formData();
                 case "json":
                   return () => c.req.json();
                 case "text":
@@ -146,25 +142,11 @@ export function createServer(opts: ServerOptions) {
   const servicePrefix = "/internal/orpc";
 
   const wsRpcHandler = new BunWsRPCHandler(appRouter, {
-    interceptors: [
-      onError((error): void => {
-        logger.error(error, "RPC WebSocket handler error");
-        if (!dev && !(error instanceof ORPCError)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
-        }
-      }),
-    ],
+    interceptors: [onError(createOnErrorCallback(dev, "RPC WebSocket handler"))],
   });
 
   const serviceWsRpcHandler = new BunWsRPCHandler(serviceRouter, {
-    interceptors: [
-      onError((error): void => {
-        logger.error(error, "Service RPC WebSocket handler error");
-        if (!dev && !(error instanceof ORPCError)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
-        }
-      }),
-    ],
+    interceptors: [onError(createOnErrorCallback(dev, "Service RPC WebSocket handler"))],
   });
 
   const { start, stop } = createBunServer({

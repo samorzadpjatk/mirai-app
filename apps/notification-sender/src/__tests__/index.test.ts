@@ -203,7 +203,11 @@ describe("Notification Sender - Client Initialization", () => {
 
     await main();
 
-    expect(mockChannelOn).toBeDefined();
+    expect(mockChannelOn).toHaveBeenCalledWith(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "Notification" },
+      expect.any(Function),
+    );
   });
 });
 
@@ -289,7 +293,7 @@ describe("Notification Sender - SIGINT Handling", () => {
 
     await main();
 
-    expect(mockChannelSubscribe).toBeDefined();
+    expect(process.listeners("SIGINT").length).toBeGreaterThan(0);
   });
 
   it("should remove channel and cleanup on SIGINT", async () => {

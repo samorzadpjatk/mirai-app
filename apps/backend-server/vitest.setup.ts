@@ -1,5 +1,9 @@
 import { vi } from "vitest";
 
+if (typeof (globalThis as { Bun?: unknown }).Bun === "undefined") {
+  vi.stubGlobal("Bun", { serve: vi.fn() });
+}
+
 // Suppress expected console output during tests
 const originalConsoleLog = console.log;
 const originalConsoleInfo = console.info;

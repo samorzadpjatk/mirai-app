@@ -178,9 +178,13 @@ describe("Server Configuration", () => {
       vi.stubEnv("ORPC_SERVER_HOST", "127.0.0.1");
 
       const { serverConfig: config1 } = await import("../config");
+      vi.resetModules();
       const { serverConfig: config2 } = await import("../config");
 
-      expect(config1).toBe(config2);
+      expect(config2.port).toBe(config1.port);
+      expect(config2.host).toBe(config1.host);
+      expect(config2.dev).toBe(config1.dev);
+      expect(config2.prefix).toBe(config1.prefix);
     });
   });
 });
