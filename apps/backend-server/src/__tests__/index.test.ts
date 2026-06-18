@@ -15,7 +15,7 @@ vi.mock("@mirai-app/shared/utils", () => ({
 }));
 
 vi.mock("../config", () => ({
-  serverConfig: { dev: true, port: 3000, prefix: "/api/trpc", host: "127.0.0.1" },
+  serverConfig: { dev: true, port: 3000, prefix: "/api/orpc", host: "127.0.0.1" },
 }));
 
 const createServerMock = vi.fn(() => ({
@@ -57,8 +57,8 @@ describe("main entry point", () => {
 
   it("should throw when DATABASE_URL is missing", async () => {
     vi.stubEnv("DATABASE_URL", undefined);
-    vi.stubEnv("TRPC_SERVER_PORT", "3000");
-    vi.stubEnv("TRPC_SERVER_HOST", "127.0.0.1");
+    vi.stubEnv("ORPC_SERVER_PORT", "3000");
+    vi.stubEnv("ORPC_SERVER_HOST", "127.0.0.1");
     delete process.env.MIGRATIONS_FOLDER;
 
     const { main } = await import("../index");

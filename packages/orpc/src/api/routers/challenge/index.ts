@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { adminProcedure, createORPCRouter, protectedProcedure } from "../../trpc";
+import { adminProcedure, createORPCRouter, protectedProcedure } from "../../orpc";
 import { createChallenge, deleteChallenge, forceCloseVoting, updateChallenge } from "./mutations";
 import { getAll, getAllByTrip, getById } from "./queries";
 import { MAX_PEER_VOTING_DURATION_HOURS, MAX_RECURRING_DAYS, challengeImageSchema } from "./types";

@@ -4,7 +4,7 @@ import {
   createORPCRouter,
   moderatorProcedure,
   protectedProcedure,
-} from "../../trpc";
+} from "../../orpc";
 import {
   addCoins,
   assignUserToGroup,

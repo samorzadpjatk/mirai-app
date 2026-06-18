@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { createPgliteTestDb } from "~/db-test-helper";
-import { adminProcedure, createORPCRouter, protectedProcedure, publicProcedure } from "../api/trpc";
-import type { TRPCContext } from "../api/trpc";
+import { adminProcedure, createORPCRouter, protectedProcedure, publicProcedure } from "../api/orpc";
+import type { RequestContext } from "../api/orpc";
 import { createContext, createMockSupabase, seedUser } from "../test-helpers";
 
 /**
@@ -76,7 +76,7 @@ const testRouter = createORPCRouter({
 });
 
 // Create caller for testing
-const createCaller = (ctx: TRPCContext) => createRouterClient(testRouter, { context: ctx });
+const createCaller = (ctx: RequestContext) => createRouterClient(testRouter, { context: ctx });
 
 describe("oRPC Router Testing Patterns", () => {
   describe("Public Procedures", () => {
@@ -165,7 +165,7 @@ describe("oRPC Router Testing Patterns", () => {
         supabase,
         headers: new Headers({ Authorization: "Bearer test-token" }),
         accessToken: "test-token",
-      } as TRPCContext;
+      } as RequestContext;
 
       const caller = createCaller(ctx);
 

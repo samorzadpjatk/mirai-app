@@ -19,8 +19,8 @@ import {
   protectedProcedure,
   publicProcedure,
   serviceAccountProcedure,
-} from "../trpc";
-import type { TRPCContext } from "../trpc";
+} from "../orpc";
+import type { RequestContext } from "../orpc";
 
 describe("createORPCContext token extraction", () => {
   const baseOpts = {
@@ -160,9 +160,9 @@ describe("publicProcedure with telemetry disabled", () => {
       test: publicProcedure.handler(() => "ok"),
     });
 
-  const createTestContext = (): TRPCContext => ({
-    db: {} as TRPCContext["db"],
-    supabase: createMockSupabase() as TRPCContext["supabase"],
+  const createTestContext = (): RequestContext => ({
+    db: {} as RequestContext["db"],
+    supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers(),
     accessToken: null,
   });
@@ -220,9 +220,9 @@ describe("protectedProcedure", () => {
       test: protectedProcedure.handler(() => "ok"),
     });
 
-  const createTestContext = (accessToken: string | null): TRPCContext => ({
+  const createTestContext = (accessToken: string | null): RequestContext => ({
     db: testDb.db,
-    supabase: createMockSupabase() as TRPCContext["supabase"],
+    supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers(),
     accessToken,
   });
@@ -260,9 +260,9 @@ describe("moderatorProcedure", () => {
       test: moderatorProcedure.handler(() => "ok"),
     });
 
-  const createTestContext = (accessToken: string | null): TRPCContext => ({
+  const createTestContext = (accessToken: string | null): RequestContext => ({
     db: testDb.db,
-    supabase: createMockSupabase() as TRPCContext["supabase"],
+    supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers(),
     accessToken,
   });
@@ -308,9 +308,9 @@ describe("adminProcedure", () => {
       test: adminProcedure.handler(() => "ok"),
     });
 
-  const createTestContext = (accessToken: string | null): TRPCContext => ({
+  const createTestContext = (accessToken: string | null): RequestContext => ({
     db: testDb.db,
-    supabase: createMockSupabase() as TRPCContext["supabase"],
+    supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers(),
     accessToken,
   });
@@ -362,14 +362,14 @@ describe("serviceAccountProcedure", () => {
       test: serviceAccountProcedure.handler(() => "ok"),
     });
 
-  const createTestContext = (serviceToken?: string): TRPCContext => {
+  const createTestContext = (serviceToken?: string): RequestContext => {
     const headers = new Headers();
     if (serviceToken) {
       headers.set("x-service-token", serviceToken);
     }
     return {
       db: testDb.db,
-      supabase: createMockSupabase() as TRPCContext["supabase"],
+      supabase: createMockSupabase() as RequestContext["supabase"],
       headers,
       accessToken: null,
     };

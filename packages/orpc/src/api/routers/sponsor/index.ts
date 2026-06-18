@@ -1,4 +1,4 @@
-import { adminProcedure, createORPCRouter, publicProcedure } from "../../trpc";
+import { adminProcedure, createORPCRouter, publicProcedure } from "../../orpc";
 import { addToTrip, create, deleteSponsor, removeFromTrip, update } from "./mutations";
 import { getAll, getById, getByTripId } from "./queries";
 import {

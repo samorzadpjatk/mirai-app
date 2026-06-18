@@ -98,13 +98,13 @@ export function applyReactionSummaryToFeed(
   });
 }
 
-export function buildCommunityFeedQueryFn(selectedTripId: string | null, trpcClient: typeof orpc) {
+export function buildCommunityFeedQueryFn(selectedTripId: string | null, orpcClient: typeof orpc) {
   return async ({ pageParam }: { pageParam: FeedCursor }): Promise<FeedPageData> => {
     if (!selectedTripId) {
       return buildEmptyFeedPageData();
     }
 
-    return (await trpcClient.activityFeed.getByTrip.call({
+    return (await orpcClient.activityFeed.getByTrip.call({
       tripId: selectedTripId,
       page: 1,
       pageSize: 30,
@@ -140,13 +140,13 @@ export const useCommunityFeed = ({
   focusActivityId,
 }: UseCommunityFeedProps) => {
   const queryClient = useQueryClient();
-  const trpcClient = orpc;
+  const orpcClient = orpc;
 
   const feedQueryKey = useMemo(() => buildCommunityFeedQueryKey(selectedTripId), [selectedTripId]);
 
   const queryFn = useMemo(
-    () => buildCommunityFeedQueryFn(selectedTripId, trpcClient),
-    [selectedTripId, trpcClient],
+    () => buildCommunityFeedQueryFn(selectedTripId, orpcClient),
+    [selectedTripId, orpcClient],
   );
 
   const feedQuery = useInfiniteQuery({
@@ -159,7 +159,7 @@ export const useCommunityFeed = ({
 
   const { mutateAsync: toggleHeart } = useMutation({
     mutationFn: async ({ activityId }: { activityId: string }) => {
-      return await trpcClient.activityFeed.toggleReaction.call({
+      return await orpcClient.activityFeed.toggleReaction.call({
         activityId,
         reactionType: "heart",
       });

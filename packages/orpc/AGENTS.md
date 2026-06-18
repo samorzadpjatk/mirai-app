@@ -66,7 +66,7 @@ Client: `import { orpc } from '@mirai-app/orpc/client'`
 ### Router File Size Limits
 
 - **Rule**: Router files >1000 lines violate SRP. Split into directory-based modules: `{router}/types.ts`, `{router}/utils.ts`, `{router}/queries.ts`, `{router}/mutations.ts`, `{router}/index.ts`.
-- **Import path fix when moving deeper**: `../../api/trpc` → `../../trpc`, `../../utils/` → `../../../utils/`.
+- **Import path fix when moving deeper**: `../../api/orpc` → `../../orpc`, `../../utils/` → `../../../utils/`.
 - **Verification after split**: Run `tsc --noEmit` in the package, then `bun run test`.
 - **Never add new code to files >1000 lines** without first extracting into smaller modules.
 

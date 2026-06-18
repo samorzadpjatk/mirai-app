@@ -91,7 +91,7 @@ export function buildTusUploadOptions(
 }
 
 export const useFileUpload = () => {
-  const trpcClient = orpc;
+  const orpcClient = orpc;
   const supabase = useSupabaseClient();
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>({
@@ -141,7 +141,7 @@ export const useFileUpload = () => {
           throw new Error("File not found");
         }
         const contentType = input.contentType;
-        const uploadTicket = await trpcClient.storage.createUploadUrl.call({
+        const uploadTicket = await orpcClient.storage.createUploadUrl.call({
           storagePath: input.storagePath,
           upsert: input.upsert,
         });
@@ -187,7 +187,7 @@ export const useFileUpload = () => {
                   attempt += 1;
                   void tusUpload.abort().then(async () => {
                     try {
-                      const refreshedTicket = await trpcClient.storage.createUploadUrl.call({
+                      const refreshedTicket = await orpcClient.storage.createUploadUrl.call({
                         storagePath: input.storagePath,
                       });
                       void (
@@ -278,7 +278,7 @@ export const useFileUpload = () => {
         uploadRef.current = null;
       }
     },
-    [abort, supabase.auth, trpcClient.storage.createUploadUrl, urlStorage],
+    [abort, supabase.auth, orpcClient.storage.createUploadUrl, urlStorage],
   );
   return {
     upload,

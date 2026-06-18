@@ -1,6 +1,6 @@
 import type { DB } from "@mirai-app/db";
 import { z } from "zod";
-import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../trpc";
+import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../orpc";
 import {
   createReward,
   deleteReward,

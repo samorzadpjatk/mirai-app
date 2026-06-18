@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, avg, count, eq, gte, lte, or, sum } from "drizzle-orm";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../../utils/authEmails";
 import { logger } from "../../../utils/logger";
-import { serviceAccountProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../orpc";
 import {
   getDeliveriesInputSchema,
   getDeliveryByNotificationIdInputSchema,

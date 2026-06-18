@@ -31,11 +31,11 @@ bun add @tanstack/react-query @orpc/client @orpc/tanstack-query
 ### Server-Side
 
 ```typescript
-import { appRouter, createCaller, createTRPCContext } from "@mirai-app/orpc";
+import { appRouter, createCaller, createRequestContext } from "@mirai-app/orpc";
 
 // In API route
 export const POST = async (req: Request) => {
-  const context = await createTRPCContext({
+  const context = await createRequestContext({
     headers: req.headers,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
     supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -87,7 +87,7 @@ function MyComponent() {
 packages/orpc/
 ├── src/
 │   ├── api/              # Server-side routers
-│   │   ├── trpc.ts       # oRPC initialization and procedures
+│   │   ├── orpc.ts       # oRPC initialization and procedures
 │   │   ├── root.ts       # Main router combining all sub-routers
 │   │   └── routers/      # Individual feature routers
 │   ├── client/           # Client-side utilities
@@ -114,8 +114,8 @@ Server-side utilities and type definitions:
 import { 
   appRouter,
   createCaller,
-  createTRPCContext,
-  createTRPCRouter,
+  createRequestContext,
+  createORPCRouter,
   publicProcedure,
   protectedProcedure,
   type AppRouter
@@ -170,7 +170,7 @@ Internal service-to-service routers (not exposed to clients):
 - **`notificationDelivery`** - Notification delivery operations
 - **`notificationSender`** - Notification sender operations
 
-These routers are available via the dedicated `/internal/trpc` endpoint and require `serviceAccountProcedure` authentication.
+These routers are available via the dedicated `/internal/orpc` endpoint and require `serviceAccountProcedure` authentication.
 
 ## Type Safety
 
@@ -178,7 +178,7 @@ Full end-to-end type safety from server to client:
 
 ```typescript
 // Server defines the type
-export const userRouter = createTRPCRouter({
+export const userRouter = createORPCRouter({
   getMy: protectedProcedure.handler(async ({ context }) => {
     return await context.db.user.findUnique({
       where: { id: context.session.user.id }

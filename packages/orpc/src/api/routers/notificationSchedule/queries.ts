@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, count, eq, gte, ilike, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
-import { moderatorProcedure } from "../../trpc";
+import { moderatorProcedure } from "../../orpc";
 import { filterSchema, paginationSchema } from "./types";
 import { attachCreatedByEmail } from "./utils";
 

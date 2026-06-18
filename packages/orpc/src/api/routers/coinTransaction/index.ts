@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../trpc";
+import { createORPCRouter, moderatorProcedure, protectedProcedure } from "../../orpc";
 import {
   getAdditionalInsights,
   getAll,
