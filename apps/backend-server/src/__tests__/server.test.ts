@@ -74,14 +74,14 @@ describe("createServer", () => {
   });
 
   it("should return OK for health check", async () => {
-    const { app } = createServer({ dev: true, port: 3001, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3001, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health");
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("OK");
   });
 
   it("should include security headers", async () => {
-    const { app } = createServer({ dev: true, port: 3002, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3002, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health");
     expect(res.headers.get("x-frame-options")).toBe("DENY");
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
@@ -92,14 +92,14 @@ describe("createServer", () => {
   });
 
   it("should include CORS headers in dev mode", async () => {
-    const { app } = createServer({ dev: true, port: 3003, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3003, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:8081" } });
     expect(res.status).toBe(200);
     expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8081");
   });
 
   it("should reject disallowed origins in dev mode", async () => {
-    const { app } = createServer({ dev: true, port: 3004, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3004, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:3000" } });
     expect(res.status).toBe(200);
     expect(res.headers.get("access-control-allow-origin")).toBeNull();
@@ -109,7 +109,7 @@ describe("createServer", () => {
     const { app } = createServer({
       dev: false,
       port: 3005,
-      prefix: "/api/trpc",
+      prefix: "/api/orpc",
       host: "127.0.0.1",
     });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:3000" } });
@@ -117,8 +117,8 @@ describe("createServer", () => {
   });
 
   it("should handle OPTIONS preflight", async () => {
-    const { app } = createServer({ dev: true, port: 3006, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3006, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "OPTIONS",
       headers: { Origin: "http://localhost:8081", "Access-Control-Request-Method": "GET" },
     });
@@ -126,14 +126,14 @@ describe("createServer", () => {
   });
 
   it("should return 404 for unknown routes", async () => {
-    const { app } = createServer({ dev: true, port: 3007, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3007, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/unknown-route");
     expect(res.status).toBe(404);
   });
 
   it("should reject payloads over 10MB", async () => {
-    const { app } = createServer({ dev: true, port: 3008, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3008, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Content-Length": String(11 * 1024 * 1024) },
       body: JSON.stringify({}),
@@ -143,8 +143,8 @@ describe("createServer", () => {
   });
 
   it("should allow payloads under 10MB", async () => {
-    const { app } = createServer({ dev: true, port: 3009, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3009, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Content-Length": "100" },
       body: JSON.stringify({}),
@@ -153,7 +153,7 @@ describe("createServer", () => {
   });
 
   it("should rate limit after too many requests", async () => {
-    const { app } = createServer({ dev: true, port: 3010, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3010, prefix: "/api/orpc", host: "127.0.0.1" });
     const ip = "192.168.1.100";
 
     for (let i = 0; i < 601; i++) {
@@ -167,21 +167,21 @@ describe("createServer", () => {
   });
 
   it("should rate limit auth endpoints separately", async () => {
-    const { app } = createServer({ dev: true, port: 3011, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3011, prefix: "/api/orpc", host: "127.0.0.1" });
     const ip = "192.168.1.200";
 
     for (let i = 0; i < 31; i++) {
-      await app.request("/api/trpc", { headers: { "x-forwarded-for": ip } });
+      await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
     }
 
-    const res = await app.request("/api/trpc", { headers: { "x-forwarded-for": ip } });
+    const res = await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
     expect(res.status).toBe(429);
     expect(await res.text()).toBe("Too Many Requests");
   });
 
   it("should respond to oRPC endpoint", async () => {
-    const { app } = createServer({ dev: true, port: 3012, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc");
+    const { app } = createServer({ dev: true, port: 3012, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc");
     expect([200, 404, 405, 500]).toContain(res.status);
   });
 
@@ -189,15 +189,15 @@ describe("createServer", () => {
     const { app } = createServer({
       dev: true,
       port: 3013,
-      prefix: "/custom/trpc",
+      prefix: "/custom/orpc",
       host: "127.0.0.1",
     });
-    const res = await app.request("/custom/trpc");
+    const res = await app.request("/custom/orpc");
     expect([200, 404, 405, 500]).toContain(res.status);
   });
 
   it("should handle requests with custom headers", async () => {
-    const { app } = createServer({ dev: true, port: 3014, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3014, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", {
       headers: {
         "X-Custom-Header": "custom-value",
@@ -209,7 +209,7 @@ describe("createServer", () => {
   });
 
   it("should handle HEAD requests", async () => {
-    const { app } = createServer({ dev: true, port: 3015, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3015, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { method: "HEAD" });
     expect([200, 404]).toContain(res.status);
   });
@@ -218,7 +218,7 @@ describe("createServer", () => {
     const { stop } = createServer({
       dev: true,
       port: 3016,
-      prefix: "/api/trpc",
+      prefix: "/api/orpc",
       host: "127.0.0.1",
     });
     await expect(stop()).resolves.not.toThrow();

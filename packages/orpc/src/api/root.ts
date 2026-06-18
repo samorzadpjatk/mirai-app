@@ -1,5 +1,5 @@
 import { createRouterClient } from "@orpc/server";
-import type { TRPCContext } from "../api/trpc";
+import type { RequestContext } from "../api/orpc";
 import { activityFeedRouter } from "./routers/activityFeed";
 import { challengeRouter } from "./routers/challenge";
 import { challengeSubmissionRouter } from "./routers/challengeSubmission";
@@ -36,4 +36,4 @@ export const appRouter = {
 
 export type AppRouter = typeof appRouter;
 
-export const createCaller = (context: TRPCContext) => createRouterClient(appRouter, { context });
+export const createCaller = (context: RequestContext) => createRouterClient(appRouter, { context });

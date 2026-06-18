@@ -5,7 +5,7 @@ import { renderWithProviders } from "../helpers/renderWithProviders";
 
 jest.mock("@mirai-app/orpc", () => ({
   api: {},
-  createTRPCClient: jest.fn(),
+  createORPCClient: jest.fn(),
   createQueryClient: jest.fn(),
 }));
 

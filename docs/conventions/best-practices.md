@@ -119,7 +119,7 @@ Specs now describe new behavior
 - **Status**: ✅ Fixed. All module-level side effects refactored into `init*()` functions:
   - `apps/native/src/app/_layout.tsx` — notification handlers initialized explicitly
   - `apps/native/src/services/background/backgroundLocationTask.ts` — accepts dependencies via parameter injection
-  - `packages/orpc/src/api/trpc.ts` — telemetry moved to explicit initialization
+  - `packages/orpc/src/api/orpc.ts` — telemetry moved to explicit initialization
 
 ### Console Logging as Error Handling
 

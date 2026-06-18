@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@mirai-app/supabase";
 import { REALTIME_CHANNEL_STATES, type RealtimeChannel } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
-import { tracked } from "~/api/trpc";
+import { tracked } from "~/api/orpc";
 import { calculateDistance } from "../../../utils/location-validation";
 import { logger } from "../../../utils/logger";
 import type { FriendLocationEvent, LocationWithUser, SharingUser } from "./types";

@@ -34,7 +34,7 @@ import { QueryProvider, getORPCClient, orpc } from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
+import { ORPC_HTTP_URL, ORPC_WS_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
 import {
   createBackgroundTaskDeps,
   initBackgroundLocationTask,
@@ -63,8 +63,8 @@ function App() {
   const backgroundTaskDeps = createBackgroundTaskDeps({
     supabaseClient,
     getORPCClient,
-    httpUrl: TRPC_HTTP_URL,
-    wsUrl: TRPC_WS_URL,
+    httpUrl: ORPC_HTTP_URL,
+    wsUrl: ORPC_WS_URL,
   });
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
@@ -190,7 +190,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SupabaseProvider client={supabaseClient}>
-          <QueryProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+          <QueryProvider httpUrl={ORPC_HTTP_URL} wsUrl={ORPC_WS_URL}>
             <AuthStoreProviderWrapper>
               <LocationStoreProvider>
                 <App />

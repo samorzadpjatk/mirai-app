@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createORPCRouter, protectedProcedure } from "../../trpc";
+import { createORPCRouter, protectedProcedure } from "../../orpc";
 import { createDownloadUrl, createPublicUrl, createUploadUrl } from "./queries";
 
 const handleCreateUploadUrl = async ({

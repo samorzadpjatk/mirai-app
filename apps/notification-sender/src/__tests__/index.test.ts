@@ -61,7 +61,7 @@ vi.mock("@mirai-app/orpc", () => ({
 }));
 
 function setEnvVars() {
-  vi.stubEnv("TRPC_HOST", "localhost:2022");
+  vi.stubEnv("ORPC_HOST", "localhost:2022");
   vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
   vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
@@ -79,17 +79,17 @@ describe("Notification Sender - Environment Validation", () => {
     vi.restoreAllMocks();
   });
 
-  it("should throw error when TRPC_HOST is missing", async () => {
+  it("should throw error when ORPC_HOST is missing", async () => {
     vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
     vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
     const { main } = await import("../index");
-    expect(() => main()).toThrow("Missing required environment variable: TRPC_HOST");
+    expect(() => main()).toThrow("Missing required environment variable: ORPC_HOST");
   });
 
   it("should throw error when SUPABASE_URL is missing", async () => {
-    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("ORPC_HOST", "localhost:2022");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
     vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
@@ -98,7 +98,7 @@ describe("Notification Sender - Environment Validation", () => {
   });
 
   it("should throw error when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
-    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("ORPC_HOST", "localhost:2022");
     vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
     vi.stubEnv("SERVICE_ACCOUNT_TOKEN", "test-token");
 
@@ -109,7 +109,7 @@ describe("Notification Sender - Environment Validation", () => {
   });
 
   it("should throw error when SERVICE_ACCOUNT_TOKEN is missing", async () => {
-    vi.stubEnv("TRPC_HOST", "localhost:2022");
+    vi.stubEnv("ORPC_HOST", "localhost:2022");
     vi.stubEnv("SUPABASE_URL", "http://localhost:8000");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
 
@@ -190,8 +190,8 @@ describe("Notification Sender - Client Initialization", () => {
     await main();
 
     expect(mockGetORPCClient).toHaveBeenCalledWith(
-      "http://localhost:2022/internal/trpc",
-      "ws://localhost:2022/internal/trpc",
+      "http://localhost:2022/internal/orpc",
+      "ws://localhost:2022/internal/orpc",
       "test-token",
     );
   });

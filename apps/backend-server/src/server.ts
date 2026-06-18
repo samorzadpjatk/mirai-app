@@ -1,6 +1,7 @@
-import { appRouter, logger, serviceRouter } from "@mirai-app/orpc";
+import { appRouter, createORPCContext, logger, serviceRouter } from "@mirai-app/orpc";
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
+import { RPCHandler } from "@orpc/server/fetch";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunServer } from "./bun-server";
@@ -11,6 +12,7 @@ import {
   createRateLimiter,
   getAllowedOrigins,
   getClientIp,
+  getWsEnvConfig,
 } from "./utils";
 
 export interface ServerOptions {
@@ -23,7 +25,7 @@ export interface ServerOptions {
 export function createServer(opts: ServerOptions) {
   const dev = opts.dev ?? true;
   const port = opts.port ?? 3000;
-  const prefix = opts.prefix ?? "/trpc";
+  const prefix = opts.prefix ?? "/api/orpc";
   const host = opts.host ?? "127.0.0.1";
 
   const { checkRateLimit } = createRateLimiter();
@@ -75,9 +77,73 @@ export function createServer(opts: ServerOptions) {
     );
   }
 
+  // HTTP oRPC handler. Non-streaming procedures from the client travel over
+  // plain HTTP (the WebSocket link is only used for streaming procedures), so
+  // this mount is required for normal queries/mutations. Without it every
+  // request falls through to Hono's default 404 ("Not Found").
+  const rpcHandler = new RPCHandler(appRouter, {
+    interceptors: [
+      onError((error): void => {
+        logger.error(error, "RPC HTTP handler error");
+        if (!dev && !(error instanceof ORPCError)) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Internal server error" });
+        }
+      }),
+    ],
+  });
+
+  app.use(`${prefix}/*`, async (c, next) => {
+    const request =
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? c.req.raw
+        : new Proxy(c.req.raw, {
+            get(target, prop) {
+              switch (prop) {
+                case "arrayBuffer":
+                  return () => c.req.arrayBuffer();
+                case "blob":
+                  return () => c.req.blob();
+                case "formData":
+                  return () => c.req.formData();
+                case "json":
+                  return () => c.req.json();
+                case "text":
+                  return () => c.req.text();
+                default:
+                  return Reflect.get(target, prop, target) as unknown;
+              }
+            },
+          });
+
+    const { supabaseUrl, supabaseKey, databaseUrl } = getWsEnvConfig();
+
+    const headers = new Headers(c.req.raw.headers);
+    if (c.req.url) {
+      headers.set("x-original-url", c.req.url);
+    }
+
+    const context = createORPCContext({
+      headers,
+      databaseUrl,
+      supabaseUrl,
+      supabaseKey,
+    });
+
+    const { matched, response } = await rpcHandler.handle(request, {
+      prefix: prefix as `/${string}`,
+      context,
+    });
+
+    if (matched) {
+      return response;
+    }
+
+    await next();
+  });
+
   app.get("/health", (c) => c.text("OK"));
 
-  const servicePrefix = "/internal/trpc";
+  const servicePrefix = "/internal/orpc";
 
   const wsRpcHandler = new BunWsRPCHandler(appRouter, {
     interceptors: [

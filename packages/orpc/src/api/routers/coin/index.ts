@@ -1,4 +1,4 @@
-import { createORPCRouter, moderatorProcedure } from "../../trpc";
+import { createORPCRouter, moderatorProcedure } from "../../orpc";
 import { addCoins, removeCoins } from "./mutations";
 import { coinTransactionInputSchema } from "./types";
 
