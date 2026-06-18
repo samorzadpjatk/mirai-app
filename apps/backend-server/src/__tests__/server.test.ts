@@ -1,37 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as ServerModule from "../server";
 
-vi.mock("@mirai-app/orpc", () => ({
-  appRouter: {},
-  serviceRouter: {},
-  createORPCContext: vi.fn((opts) => opts),
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
+const { loggerError } = vi.hoisted(() => ({ loggerError: vi.fn() }));
 
-vi.mock("@orpc/server", () => ({
-  ORPCError: class ORPCError extends Error {
-    code: string;
-    constructor(code: string, opts?: { message?: string }) {
-      super(opts?.message);
-      this.code = code;
-    }
-  },
-  onError:
-    (fn: (error: unknown, ctx: { next: () => Promise<unknown> }) => Promise<unknown>) =>
-    async (ctx: { next: () => Promise<unknown> }) => {
-      try {
-        return await ctx.next();
-      } catch (error) {
-        await fn(error, ctx);
-        throw error;
-      }
+// Real oRPC HTTP handler is exercised against a real (fixture) router built
+// with the genuine `os` builder. We do NOT mock @orpc/server, @orpc/server/fetch,
+// onError, or the RPCHandler — the test drives actual request routing,
+// serialization and the error interceptor end to end. Only the WebSocket
+// transport (bun-ws) and the Bun server boot are stubbed, since neither is the
+// subject under test here.
+vi.mock("@mirai-app/orpc", async () => {
+  const { appRouter } = await import("./fixtures/orpc-fixture");
+  return {
+    appRouter,
+    serviceRouter: {},
+    createORPCContext: vi.fn((opts) => opts),
+    logger: {
+      info: vi.fn(),
+      error: loggerError,
+      warn: vi.fn(),
+      debug: vi.fn(),
     },
-}));
+  };
+});
 
 vi.mock("@orpc/server/bun-ws", () => ({
   RPCHandler: class MockRPCHandler {
@@ -47,10 +38,17 @@ vi.mock("./bun-server", () => ({
   })),
 }));
 
+const stubOrpcEnv = () => {
+  vi.stubEnv("SUPABASE_URL", "http://localhost:54321");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+  vi.stubEnv("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+};
+
 let createServer: typeof ServerModule.createServer;
 
 beforeEach(async () => {
   vi.resetModules();
+  stubOrpcEnv();
   const serverModule = await import("../server");
   createServer = serverModule.createServer;
 });
@@ -222,5 +220,64 @@ describe("createServer", () => {
       host: "127.0.0.1",
     });
     await expect(stop()).resolves.not.toThrow();
+  });
+});
+
+describe("HTTP oRPC handler", () => {
+  const post = (
+    app: { request: (path: string, init?: RequestInit) => Response | Promise<Response> },
+    path: string,
+  ) =>
+    app.request(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
+      body: "",
+    });
+
+  it("routes a POST to a matched procedure and returns its response", async () => {
+    const { app } = createServer({ dev: true, port: 3101, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/ping");
+    // Matched -> the handler's response is returned, not Hono's 404 fallthrough.
+    expect(res.status).not.toBe(404);
+  });
+
+  it("falls through to 404 for an unmatched oRPC path", async () => {
+    const { app } = createServer({ dev: true, port: 3102, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/does-not-exist");
+    expect(res.status).toBe(404);
+  });
+
+  it("logs and surfaces an error when a procedure throws in production", async () => {
+    loggerError.mockClear();
+    const { app } = createServer({
+      dev: false,
+      port: 3103,
+      prefix: "/api/orpc",
+      host: "127.0.0.1",
+    });
+    const res = await post(app, "/api/orpc/boom");
+    expect(res.status).not.toBe(404);
+    expect(loggerError).toHaveBeenCalled();
+  });
+
+  it("logs the error in dev without masking it", async () => {
+    loggerError.mockClear();
+    const { app } = createServer({ dev: true, port: 3104, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/boom");
+    expect(res.status).not.toBe(404);
+    expect(loggerError).toHaveBeenCalled();
+  });
+
+  it("builds the oRPC context from request headers and env config", async () => {
+    const { createORPCContext } = await import("@mirai-app/orpc");
+    const { app } = createServer({ dev: true, port: 3105, prefix: "/api/orpc", host: "127.0.0.1" });
+    await post(app, "/api/orpc/ping");
+    expect(createORPCContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        databaseUrl: "postgres://user:pass@localhost:5432/db",
+        supabaseUrl: "http://localhost:54321",
+        supabaseKey: "service-role-key",
+      }),
+    );
   });
 });
