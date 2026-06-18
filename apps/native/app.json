@@ -2,7 +2,7 @@
   "expo": {
     "name": "MIRAI",
     "slug": "mirai",
-    "version": "15.9.1",
+    "version": "15.9.2",
     "extra": {
       "eas": {
         "projectId": "f6a5489a-21d3-4cf2-8dec-f98151979b91"
@@ -102,12 +102,6 @@
           }
         }
       ]
-    ],
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/f6a5489a-21d3-4cf2-8dec-f98151979b91"
-    }
+    ]
   }
 }

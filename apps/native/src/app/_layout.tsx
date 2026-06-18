@@ -4,9 +4,7 @@ import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
-import { useExpoUpdates } from "~/hooks/useExpoUpdates";
 import { LocationStoreProvider } from "~/stores/location";
 
 function initNotifications(): void {
@@ -71,8 +69,6 @@ function App() {
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
-  const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =
-    useExpoUpdates();
 
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
@@ -129,15 +125,6 @@ function App() {
           </Stack.Protected>
         </Stack>
       )}
-
-      {/* Update Popup */}
-      <UpdatePopup
-        visible={showUpdatePopup}
-        onUpdate={startUpdate}
-        onSkip={skipUpdate}
-        isDownloading={isDownloading}
-        downloadProgress={downloadProgress}
-      />
     </View>
   );
 }
