@@ -96,8 +96,8 @@ describe("createBunServer", () => {
     const { start, stop } = createBunServer({
       port: 3005,
       hostname: "127.0.0.1",
-      prefix: "/api/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/api/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockApp,
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
@@ -130,8 +130,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: -1,
       hostname: "127.0.0.1",
-      prefix: "/api/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/api/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -149,8 +149,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3007,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -160,10 +160,10 @@ describe("createBunServer", () => {
     const serveOptions = getServeOptions(serveSpy);
 
     const mockServer = { upgrade: vi.fn(() => true) };
-    const upgradeReq = new Request("ws://localhost:3007/trpc");
+    const upgradeReq = new Request("ws://localhost:3007/orpc");
     const result = await serveOptions.fetch(upgradeReq, mockServer);
     expect(mockServer.upgrade).toHaveBeenCalledWith(upgradeReq, {
-      data: { url: "ws://localhost:3007/trpc" },
+      data: { url: "ws://localhost:3007/orpc" },
     });
     expect(result).toBeUndefined();
   });
@@ -175,8 +175,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3007,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -186,10 +186,10 @@ describe("createBunServer", () => {
     const serveOptions = getServeOptions(serveSpy);
 
     const mockServer = { upgrade: vi.fn(() => true) };
-    const serviceReq = new Request("ws://localhost:3007/internal/trpc");
+    const serviceReq = new Request("ws://localhost:3007/internal/orpc");
     const result = await serveOptions.fetch(serviceReq, mockServer);
     expect(mockServer.upgrade).toHaveBeenCalledWith(serviceReq, {
-      data: { url: "ws://localhost:3007/internal/trpc" },
+      data: { url: "ws://localhost:3007/internal/orpc" },
     });
     expect(result).toBeUndefined();
   });
@@ -201,8 +201,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3007,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: { fetch: vi.fn(() => new Response("OK")) } as unknown as Hono,
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -229,8 +229,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3041,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -240,7 +240,7 @@ describe("createBunServer", () => {
     const serveOptions = getServeOptions(serveSpy);
 
     const mockWs = {
-      data: { connectionParams: undefined, url: "/trpc", authProcessed: false },
+      data: { connectionParams: undefined, url: "/orpc", authProcessed: false },
       send: vi.fn(),
     };
 
@@ -273,8 +273,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3042,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
@@ -286,7 +286,7 @@ describe("createBunServer", () => {
     const mockWs = {
       data: {
         connectionParams: { authorization: "Bearer test" },
-        url: "/trpc",
+        url: "/orpc",
         authProcessed: true,
       },
       send: vi.fn(),
@@ -294,7 +294,7 @@ describe("createBunServer", () => {
 
     await serveOptions.websocket.message(
       mockWs,
-      JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+      JSON.stringify({ i: 1, p: { u: "/orpc/test", b: {} } }),
     );
 
     expect(mockWsHandler.message).toHaveBeenCalled();
@@ -320,8 +320,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3046,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
@@ -333,7 +333,7 @@ describe("createBunServer", () => {
     const mockWs = {
       data: {
         connectionParams: { authorization: "Bearer test" },
-        url: "/internal/trpc",
+        url: "/internal/orpc",
         authProcessed: true,
       },
       send: vi.fn(),
@@ -341,7 +341,7 @@ describe("createBunServer", () => {
 
     await serveOptions.websocket.message(
       mockWs,
-      JSON.stringify({ i: 1, p: { u: "/internal/trpc/test", b: {} } }),
+      JSON.stringify({ i: 1, p: { u: "/internal/orpc/test", b: {} } }),
     );
 
     expect(mockServiceHandler.message).toHaveBeenCalled();
@@ -367,8 +367,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3047,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
@@ -378,7 +378,7 @@ describe("createBunServer", () => {
     const serveOptions = getServeOptions(serveSpy);
 
     const mockWs = {
-      data: { url: "/internal/trpc" },
+      data: { url: "/internal/orpc" },
     };
 
     serveOptions.websocket.close(mockWs);
@@ -405,8 +405,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3048,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler,
       serviceWsRpcHandler: mockServiceHandler,
@@ -416,7 +416,7 @@ describe("createBunServer", () => {
     const serveOptions = getServeOptions(serveSpy);
 
     const mockWs = {
-      data: { url: "/trpc" },
+      data: { url: "/orpc" },
     };
 
     serveOptions.websocket.close(mockWs);
@@ -434,8 +434,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3043,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -447,7 +447,7 @@ describe("createBunServer", () => {
     const mockWs = {
       data: {
         connectionParams: { authorization: "Bearer test" },
-        url: "/trpc",
+        url: "/orpc",
         authProcessed: true,
       },
       send: vi.fn(),
@@ -456,7 +456,7 @@ describe("createBunServer", () => {
     await expect(
       serveOptions.websocket.message(
         mockWs,
-        JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+        JSON.stringify({ i: 1, p: { u: "/orpc/test", b: {} } }),
       ),
     ).rejects.toThrow("Missing Supabase credentials");
   });
@@ -472,8 +472,8 @@ describe("createBunServer", () => {
     const { start } = createBunServer({
       port: 3044,
       hostname: "127.0.0.1",
-      prefix: "/trpc",
-      servicePrefix: "/internal/trpc",
+      prefix: "/orpc",
+      servicePrefix: "/internal/orpc",
       app: mockHono(),
       wsRpcHandler: mockWsHandler(),
       serviceWsRpcHandler: mockWsHandler(),
@@ -485,7 +485,7 @@ describe("createBunServer", () => {
     const mockWs = {
       data: {
         connectionParams: { authorization: "Bearer test" },
-        url: "/trpc",
+        url: "/orpc",
         authProcessed: true,
       },
       send: vi.fn(),
@@ -494,7 +494,7 @@ describe("createBunServer", () => {
     await expect(
       serveOptions.websocket.message(
         mockWs,
-        JSON.stringify({ i: 1, p: { u: "/trpc/test", b: {} } }),
+        JSON.stringify({ i: 1, p: { u: "/orpc/test", b: {} } }),
       ),
     ).rejects.toThrow("Missing database credentials");
   });

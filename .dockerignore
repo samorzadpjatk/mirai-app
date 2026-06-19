@@ -41,12 +41,10 @@ docs/
 environment/
 docker-compose*.yml
 
-# Include workspace manifests so Bun lockfile validation passes,
-# but exclude their source since they're not needed for backend builds
-apps/native/*
-!apps/native/package.json
-apps/seed/*
-!apps/seed/package.json
+# Backend builds don't need native/seed workspaces
+# bun install without --frozen-lockfile skips missing workspace dirs
+apps/native/
+apps/seed/
 
 # Expo / Mobile
 .expo/

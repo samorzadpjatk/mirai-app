@@ -187,7 +187,7 @@ interface ORPCClientError {
 ### Custom Error Formatter
 
 ```typescript
-// packages/orpc/src/api/trpc.ts
+// packages/orpc/src/api/orpc.ts
 import { os, ORPCError } from "@orpc/server";
 
 // oRPC error handling is configured on the handler/server side
@@ -225,7 +225,7 @@ const rpcHandler = new RPCHandler(appRouter, {
 ## Global Error Handler
 
 ```typescript
-// packages/orpc/src/api/trpc.ts
+// packages/orpc/src/api/orpc.ts
 // Global error handling is done via RPCHandler interceptors
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [

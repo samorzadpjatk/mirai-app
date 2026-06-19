@@ -68,7 +68,7 @@ export interface ORPCContext {
   accessToken: string | null;
 }
 
-export interface TRPCContext extends ORPCContext, Record<string, unknown> {}
+export interface RequestContext extends ORPCContext, Record<string, unknown> {}
 
 // On the backend we use a single SERVICE_ROLE Supabase client (singleton).
 // Follow the Drizzle pattern: a module-level lazy-initialized singleton so we avoid adding globals.
@@ -90,7 +90,7 @@ export const createORPCContext = (opts: {
   supabaseUrl: string;
   supabaseKey: string;
   connectionParams?: Record<string, string>;
-}): TRPCContext => {
+}): RequestContext => {
   supabase ??= createSupabaseClient(opts.supabaseUrl, opts.supabaseKey, undefined, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -270,5 +270,5 @@ export const serviceAccountProcedure = baseProcedure.use(async ({ context, next 
 
 export const createORPCRouter = <T extends Record<string, unknown>>(routes: T): T => routes;
 
-// Shim for tRPC's tracked() subscription helper (oRPC subscriptions yield directly)
+// Shim for oRPC's tracked() subscription helper (oRPC subscriptions yield directly)
 export const tracked = <T>(_connectionId: string, data: T): T => data;

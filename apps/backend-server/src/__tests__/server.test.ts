@@ -1,37 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as ServerModule from "../server";
 
-vi.mock("@mirai-app/orpc", () => ({
-  appRouter: {},
-  serviceRouter: {},
-  createORPCContext: vi.fn((opts) => opts),
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  },
+const { loggerError, createOrpcContextSpy } = vi.hoisted(() => ({
+  loggerError: vi.fn(),
+  createOrpcContextSpy: vi.fn((opts) => opts),
 }));
 
-vi.mock("@orpc/server", () => ({
-  ORPCError: class ORPCError extends Error {
-    code: string;
-    constructor(code: string, opts?: { message?: string }) {
-      super(opts?.message);
-      this.code = code;
-    }
-  },
-  onError:
-    (fn: (error: unknown, ctx: { next: () => Promise<unknown> }) => Promise<unknown>) =>
-    async (ctx: { next: () => Promise<unknown> }) => {
-      try {
-        return await ctx.next();
-      } catch (error) {
-        await fn(error, ctx);
-        throw error;
-      }
+// Real oRPC HTTP handler is exercised against a real (fixture) router built
+// with the genuine `os` builder. We do NOT mock @orpc/server, @orpc/server/fetch,
+// onError, or the RPCHandler — the test drives actual request routing,
+// serialization and the error interceptor end to end. Only the WebSocket
+// transport (bun-ws) and the Bun server boot are stubbed, since neither is the
+// subject under test here.
+vi.mock("@mirai-app/orpc", async () => {
+  const { appRouter } = await import("./fixtures/orpc-fixture");
+  return {
+    appRouter,
+    serviceRouter: {},
+    createORPCContext: createOrpcContextSpy,
+    logger: {
+      info: vi.fn(),
+      error: loggerError,
+      warn: vi.fn(),
+      debug: vi.fn(),
     },
-}));
+  };
+});
 
 vi.mock("@orpc/server/bun-ws", () => ({
   RPCHandler: class MockRPCHandler {
@@ -47,10 +41,17 @@ vi.mock("./bun-server", () => ({
   })),
 }));
 
+const stubOrpcEnv = () => {
+  vi.stubEnv("SUPABASE_URL", "http://localhost:54321");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+  vi.stubEnv("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+};
+
 let createServer: typeof ServerModule.createServer;
 
 beforeEach(async () => {
   vi.resetModules();
+  stubOrpcEnv();
   const serverModule = await import("../server");
   createServer = serverModule.createServer;
 });
@@ -61,27 +62,44 @@ afterEach(async () => {
 });
 
 describe("createServer", () => {
-  it("should create server with default options", () => {
-    const { app, start, stop } = createServer({});
-    expect(app).toBeDefined();
-    expect(typeof start).toBe("function");
-    expect(typeof stop).toBe("function");
+  it("should create server with default options", async () => {
+    const { app } = createServer({});
+    const health = await app.request("/health");
+    expect(health.status).toBe(200);
+    expect(await health.text()).toBe("OK");
+    const ping = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(ping.status).not.toBe(404);
   });
 
-  it("should create server with custom options", () => {
+  it("should create server with custom options", async () => {
     const { app } = createServer({ dev: false, port: 8080, prefix: "/custom", host: "0.0.0.0" });
-    expect(app).toBeDefined();
+    const hit = await app.request("/custom/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(hit.status).not.toBe(404);
+    const miss = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(miss.status).toBe(404);
   });
 
   it("should return OK for health check", async () => {
-    const { app } = createServer({ dev: true, port: 3001, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3001, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health");
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("OK");
   });
 
   it("should include security headers", async () => {
-    const { app } = createServer({ dev: true, port: 3002, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3002, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health");
     expect(res.headers.get("x-frame-options")).toBe("DENY");
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
@@ -92,14 +110,14 @@ describe("createServer", () => {
   });
 
   it("should include CORS headers in dev mode", async () => {
-    const { app } = createServer({ dev: true, port: 3003, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3003, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:8081" } });
     expect(res.status).toBe(200);
     expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8081");
   });
 
   it("should reject disallowed origins in dev mode", async () => {
-    const { app } = createServer({ dev: true, port: 3004, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3004, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:3000" } });
     expect(res.status).toBe(200);
     expect(res.headers.get("access-control-allow-origin")).toBeNull();
@@ -109,7 +127,7 @@ describe("createServer", () => {
     const { app } = createServer({
       dev: false,
       port: 3005,
-      prefix: "/api/trpc",
+      prefix: "/api/orpc",
       host: "127.0.0.1",
     });
     const res = await app.request("/health", { headers: { Origin: "http://localhost:3000" } });
@@ -117,8 +135,8 @@ describe("createServer", () => {
   });
 
   it("should handle OPTIONS preflight", async () => {
-    const { app } = createServer({ dev: true, port: 3006, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3006, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "OPTIONS",
       headers: { Origin: "http://localhost:8081", "Access-Control-Request-Method": "GET" },
     });
@@ -126,14 +144,14 @@ describe("createServer", () => {
   });
 
   it("should return 404 for unknown routes", async () => {
-    const { app } = createServer({ dev: true, port: 3007, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3007, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/unknown-route");
     expect(res.status).toBe(404);
   });
 
   it("should reject payloads over 10MB", async () => {
-    const { app } = createServer({ dev: true, port: 3008, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3008, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Content-Length": String(11 * 1024 * 1024) },
       body: JSON.stringify({}),
@@ -143,8 +161,8 @@ describe("createServer", () => {
   });
 
   it("should allow payloads under 10MB", async () => {
-    const { app } = createServer({ dev: true, port: 3009, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc", {
+    const { app } = createServer({ dev: true, port: 3009, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Content-Length": "100" },
       body: JSON.stringify({}),
@@ -153,7 +171,7 @@ describe("createServer", () => {
   });
 
   it("should rate limit after too many requests", async () => {
-    const { app } = createServer({ dev: true, port: 3010, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3010, prefix: "/api/orpc", host: "127.0.0.1" });
     const ip = "192.168.1.100";
 
     for (let i = 0; i < 601; i++) {
@@ -167,37 +185,51 @@ describe("createServer", () => {
   });
 
   it("should rate limit auth endpoints separately", async () => {
-    const { app } = createServer({ dev: true, port: 3011, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3011, prefix: "/api/orpc", host: "127.0.0.1" });
     const ip = "192.168.1.200";
 
     for (let i = 0; i < 31; i++) {
-      await app.request("/api/trpc", { headers: { "x-forwarded-for": ip } });
+      await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
     }
 
-    const res = await app.request("/api/trpc", { headers: { "x-forwarded-for": ip } });
+    const res = await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
     expect(res.status).toBe(429);
     expect(await res.text()).toBe("Too Many Requests");
   });
 
   it("should respond to oRPC endpoint", async () => {
-    const { app } = createServer({ dev: true, port: 3012, prefix: "/api/trpc", host: "127.0.0.1" });
-    const res = await app.request("/api/trpc");
-    expect([200, 404, 405, 500]).toContain(res.status);
+    const { app } = createServer({ dev: true, port: 3012, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(res.status).not.toBe(404);
   });
 
   it("should handle custom prefix", async () => {
     const { app } = createServer({
       dev: true,
       port: 3013,
-      prefix: "/custom/trpc",
+      prefix: "/custom/orpc",
       host: "127.0.0.1",
     });
-    const res = await app.request("/custom/trpc");
-    expect([200, 404, 405, 500]).toContain(res.status);
+    const res = await app.request("/custom/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(res.status).not.toBe(404);
+    const defaultMiss = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "",
+    });
+    expect(defaultMiss.status).toBe(404);
   });
 
   it("should handle requests with custom headers", async () => {
-    const { app } = createServer({ dev: true, port: 3014, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3014, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", {
       headers: {
         "X-Custom-Header": "custom-value",
@@ -209,18 +241,77 @@ describe("createServer", () => {
   });
 
   it("should handle HEAD requests", async () => {
-    const { app } = createServer({ dev: true, port: 3015, prefix: "/api/trpc", host: "127.0.0.1" });
+    const { app } = createServer({ dev: true, port: 3015, prefix: "/api/orpc", host: "127.0.0.1" });
     const res = await app.request("/health", { method: "HEAD" });
-    expect([200, 404]).toContain(res.status);
+    expect(res.status).toBe(200);
   });
 
   it("should stop gracefully even if not started", async () => {
     const { stop } = createServer({
       dev: true,
       port: 3016,
-      prefix: "/api/trpc",
+      prefix: "/api/orpc",
       host: "127.0.0.1",
     });
     await expect(stop()).resolves.not.toThrow();
+    await expect(stop()).resolves.not.toThrow();
+  });
+});
+
+describe("HTTP oRPC handler", () => {
+  const post = (
+    app: { request: (path: string, init?: RequestInit) => Response | Promise<Response> },
+    path: string,
+  ) =>
+    app.request(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
+      body: "",
+    });
+
+  it("routes a POST to a matched procedure and returns its response", async () => {
+    const { app } = createServer({ dev: true, port: 3101, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/ping");
+    // Matched -> the handler's response is returned, not Hono's 404 fallthrough.
+    expect(res.status).not.toBe(404);
+  });
+
+  it("falls through to 404 for an unmatched oRPC path", async () => {
+    const { app } = createServer({ dev: true, port: 3102, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/does-not-exist");
+    expect(res.status).toBe(404);
+  });
+
+  it("logs and surfaces an error when a procedure throws in production", async () => {
+    loggerError.mockClear();
+    const { app } = createServer({
+      dev: false,
+      port: 3103,
+      prefix: "/api/orpc",
+      host: "127.0.0.1",
+    });
+    const res = await post(app, "/api/orpc/boom");
+    expect(res.status).not.toBe(404);
+    expect(loggerError).toHaveBeenCalled();
+  });
+
+  it("logs the error in dev without masking it", async () => {
+    loggerError.mockClear();
+    const { app } = createServer({ dev: true, port: 3104, prefix: "/api/orpc", host: "127.0.0.1" });
+    const res = await post(app, "/api/orpc/boom");
+    expect(res.status).not.toBe(404);
+    expect(loggerError).toHaveBeenCalled();
+  });
+
+  it("builds the oRPC context from request headers and env config", async () => {
+    const { app } = createServer({ dev: true, port: 3105, prefix: "/api/orpc", host: "127.0.0.1" });
+    await post(app, "/api/orpc/ping");
+    expect(createOrpcContextSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        databaseUrl: "postgres://user:pass@localhost:5432/db",
+        supabaseUrl: "http://localhost:54321",
+        supabaseKey: "service-role-key",
+      }),
+    );
   });
 });

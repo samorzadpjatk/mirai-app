@@ -12,7 +12,7 @@ Client (Native/Web)
      ▼
 Hono Server (Bun.serve)
      ├── /health         # Health check
-     ├── /api/trpc/*     # oRPC procedures (HTTP + WebSocket)
+     ├── /api/orpc/*     # oRPC procedures (HTTP + WebSocket)
      └── /ws             # WebSocket
 ```
 
@@ -21,14 +21,14 @@ Hono Server (Bun.serve)
 ```
 appRouter (packages/orpc/src/api)
 ├── user
-│   ├── list        # GET /trpc/user.list
-│   ├── getById     # GET /trpc/user.getById
-│   ├── create      # POST /trpc/user.create
-│   └── update      # POST /trpc/user.update
+│   ├── list        # GET /orpc/user.list
+│   ├── getById     # GET /orpc/user.getById
+│   ├── create      # POST /orpc/user.create
+│   └── update      # POST /orpc/user.update
 ├── event
-│   ├── list        # GET /trpc/event.list
-│   ├── getById     # GET /trpc/event.getById
-│   └── create      # POST /trpc/event.create
+│   ├── list        # GET /orpc/event.list
+│   ├── getById     # GET /orpc/event.getById
+│   └── create      # POST /orpc/event.create
 └── ...
 ```
 
@@ -36,22 +36,22 @@ appRouter (packages/orpc/src/api)
 
 | Procedure Type | HTTP Method | URL Pattern |
 |----------------|-------------|-------------|
-| Query | GET | `/api/trpc/[router].[procedure]` |
-| Mutation | POST | `/api/trpc/[router].[procedure]` |
-| Subscription | WS | `/api/trpc/[router].[procedure]` |
+| Query | GET | `/api/orpc/[router].[procedure]` |
+| Mutation | POST | `/api/orpc/[router].[procedure]` |
+| Subscription | WS | `/api/orpc/[router].[procedure]` |
 
 ## Request Format
 
 ### Query
 
 ```http
-GET /api/trpc/user.list?batch=1&input={}
+GET /api/orpc/user.list?batch=1&input={}
 ```
 
 ### Mutation
 
 ```http
-POST /api/trpc/user.create
+POST /api/orpc/user.create
 Content-Type: application/json
 
 {
@@ -167,7 +167,7 @@ export const appRouter = os.contract({
 });
 ```
 
-Access: `/api/trpc/v1.user.list`, `/api/trpc/v2.user.list`
+Access: `/api/orpc/v1.user.list`, `/api/orpc/v2.user.list`
 
 ## Rate Limiting
 

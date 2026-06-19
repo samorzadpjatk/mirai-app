@@ -9,7 +9,7 @@ interface UseCommunityActivityDataProps {
 }
 
 export const useCommunityActivityData = ({ activities }: UseCommunityActivityDataProps) => {
-  const trpcClient = orpc;
+  const orpcClient = orpc;
 
   // Get unique trip IDs for rank change activities
   const rankingTripIds = useMemo(() => {
@@ -43,7 +43,7 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
       if (rankingTripIds.length === 0) return {};
 
       const queries = rankingTripIds.map((tripId) =>
-        trpcClient.group.ranking
+        orpcClient.group.ranking
           .call({ tripId })
           .then((data) => ({ tripId, data: data.data }))
           .catch(() => ({ tripId, data: [] })),
@@ -77,7 +77,7 @@ export const useCommunityActivityData = ({ activities }: UseCommunityActivityDat
       if (avatarUserIds.length === 0) return {};
 
       const queries = avatarUserIds.map((userId) =>
-        trpcClient.storage.createDownloadUrl
+        orpcClient.storage.createDownloadUrl
           .call({
             storagePath: `avatar/${userId}.jpg`,
             expiresInSeconds: 60 * 60,

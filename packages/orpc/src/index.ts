@@ -6,8 +6,8 @@ export {
   adminProcedure,
   serviceAccountProcedure,
   mobileAppProcedure,
-  type TRPCContext,
-} from "./api/trpc";
+  type RequestContext,
+} from "./api/orpc";
 
 export { appRouter, createCaller, type AppRouter } from "./api/root";
 export { serviceRouter, createServiceCaller, type ServiceRouter } from "./api/service-root";

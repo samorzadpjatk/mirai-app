@@ -19,8 +19,8 @@ import {
   seedTrip,
   seedUser,
 } from "../../../test-helpers";
+import type { RequestContext } from "../../orpc";
 import { notificationRouter } from "../../routers/notifications";
-import type { TRPCContext } from "../../trpc";
 
 // ── Mocks ──────────────────────────────────────────────────────────────
 
@@ -97,12 +97,12 @@ vi.mock("../../../services/notificationService", () => ({
 function createAuthContext(
   db: DB,
   overrides: { userId?: string; role?: string; firstName?: string; lastName?: string } = {},
-): TRPCContext {
+): RequestContext {
   const userId = overrides.userId ?? "user-123";
   const role = overrides.role ?? "USER";
   return {
     db,
-    supabase: createMockSupabase() as TRPCContext["supabase"],
+    supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers({ Authorization: "Bearer test-token" }),
     accessToken: "test-token",
     user: { id: "auth-123" },
@@ -241,7 +241,7 @@ describe("notifications router — PGLite transaction rollback", () => {
 // ── Drizzle ORM PGLite integration ─────────────────────────────────────
 
 describe("notifications router — Drizzle ORM PGLite integration", () => {
-  function createCaller(ctx: TRPCContext) {
+  function createCaller(ctx: RequestContext) {
     return createRouterClient(notificationRouter, { context: ctx });
   }
 

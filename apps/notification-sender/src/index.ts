@@ -9,7 +9,7 @@ interface NotificationRow {
 }
 
 export function main() {
-  const TRPC_HOST = requireEnv("TRPC_HOST");
+  const ORPC_HOST = requireEnv("ORPC_HOST");
   const SUPABASE_URL = requireEnv("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
   const SERVICE_ACCOUNT_TOKEN = requireEnv("SERVICE_ACCOUNT_TOKEN");
@@ -19,8 +19,8 @@ export function main() {
   });
 
   const { client, cleanup } = getServiceORPCClient(
-    `http://${TRPC_HOST}/internal/trpc`,
-    `ws://${TRPC_HOST}/internal/trpc`,
+    `http://${ORPC_HOST}/internal/orpc`,
+    `ws://${ORPC_HOST}/internal/orpc`,
     SERVICE_ACCOUNT_TOKEN,
   );
 

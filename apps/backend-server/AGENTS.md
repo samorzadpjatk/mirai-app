@@ -52,14 +52,14 @@ This replaces the previously separate `db-migrations` Docker service. Migration 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `/api/trpc/*` | oRPC procedures (HTTP + WebSocket) |
+| `/api/orpc/*` | oRPC procedures (HTTP + WebSocket) |
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `TRPC_SERVER_PORT` | Server port | - |
-| `TRPC_SERVER_HOST` | Server host | - |
+| `ORPC_SERVER_PORT` | Server port | - |
+| `ORPC_SERVER_HOST` | Server host | - |
 | `DATABASE_URL` | PostgreSQL URL | - |
 | `SUPABASE_URL` | Supabase URL | - |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service key | - |

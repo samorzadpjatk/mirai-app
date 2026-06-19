@@ -4,7 +4,7 @@ import type { GroupMember } from "../../../trips/groups/details/GroupMemberList"
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 jest.mock("@mirai-app/orpc/client", () => ({
-  useTRPC: () => ({
+  useORPCClient: () => ({
     storage: {
       createDownloadUrl: {
         queryOptions: () => ({

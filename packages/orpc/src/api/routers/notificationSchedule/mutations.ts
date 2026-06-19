@@ -12,7 +12,7 @@ import {
   validateScheduleTime,
 } from "../../../utils/notificactionSchedule-validation";
 import { getDailyRankingScheduleTemplate } from "../../../utils/notificationTemplates";
-import { adminProcedure } from "../../trpc";
+import { adminProcedure } from "../../orpc";
 import { notificationScheduleCreateSchema, notificationScheduleUpdateSchema } from "./types";
 import {
   attachCreatedByEmail,

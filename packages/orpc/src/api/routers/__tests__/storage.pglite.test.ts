@@ -6,8 +6,8 @@ import { env } from "bun";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { createContext, createMockSupabase, seedUser } from "../../../test-helpers";
+import type { RequestContext } from "../../orpc";
 import { storageRouter } from "../../routers/storage";
-import type { TRPCContext } from "../../trpc";
 
 vi.mock("../../../utils/storage", () => ({
   normalizeSupabaseStoragePath: vi.fn().mockImplementation((value: string) => {
@@ -50,7 +50,7 @@ vi.mock("@mirai-app/auth", () => ({
   }),
 }));
 
-const createCaller = (ctx: TRPCContext) => createRouterClient(storageRouter, { context: ctx });
+const createCaller = (ctx: RequestContext) => createRouterClient(storageRouter, { context: ctx });
 
 // Helper to create mock user
 const createMockUser = (overrides: Partial<User> = {}): User => ({
@@ -148,7 +148,7 @@ describe("storageRouter", () => {
   });
 
   // Helper to create authenticated context
-  const createAuthContext = (user: User, token = "test-token"): TRPCContext => ({
+  const createAuthContext = (user: User, token = "test-token"): RequestContext => ({
     db: testDb.db,
     supabase: mockSupabase,
     headers: new Headers({ Authorization: `Bearer ${token}` }),

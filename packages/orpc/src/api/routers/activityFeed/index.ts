@@ -5,7 +5,7 @@ import {
   createORPCRouter,
   moderatorProcedure,
   protectedProcedure,
-} from "../../trpc";
+} from "../../orpc";
 import { enrichActivities } from "./enrichment";
 import {
   createChallengeActivity,

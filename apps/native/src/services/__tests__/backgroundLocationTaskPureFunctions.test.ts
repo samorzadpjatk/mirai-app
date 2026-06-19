@@ -3,8 +3,8 @@ import { describe, expect, it, jest } from "@jest/globals";
 jest.mock("~/config/runtimeEnv", () => ({
   SUPABASE_URL: "https://test.supabase.co",
   SUPABASE_ANON_KEY: "test-key",
-  TRPC_HTTP_URL: "http://localhost:2022",
-  TRPC_WS_URL: "ws://localhost:2022",
+  ORPC_HTTP_URL: "http://localhost:2022",
+  ORPC_WS_URL: "ws://localhost:2022",
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({

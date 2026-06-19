@@ -30,8 +30,8 @@ cp environment/.env.dev.example environment/.env.dev
 
 Required variables:
 ```bash
-TRPC_SERVER_PORT=2022
-TRPC_SERVER_HOST=0.0.0.0
+ORPC_SERVER_PORT=2022
+ORPC_SERVER_HOST=0.0.0.0
 DATABASE_URL=postgresql://...
 SUPABASE_URL=https://...
 SUPABASE_SERVICE_ROLE_KEY=...
@@ -188,8 +188,8 @@ Ensure these are set in production:
 
 ```bash
 NODE_ENV=production
-TRPC_SERVER_PORT=2022
-TRPC_SERVER_HOST=0.0.0.0
+ORPC_SERVER_PORT=2022
+ORPC_SERVER_HOST=0.0.0.0
 DATABASE_URL=postgresql://...
 ```
 
