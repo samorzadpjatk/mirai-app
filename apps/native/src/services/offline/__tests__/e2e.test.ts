@@ -2,18 +2,30 @@ import { processQueue } from "../queueProcessor";
 import { addToQueue, clearQueue, getQueue } from "../storage";
 import { useOfflineQueueStore } from "~/stores/offlineQueueStore";
 
+const mockStorage = new Map<string, string>();
+
 jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: jest.fn((key: string) => Promise.resolve(mockStorage.get(key) ?? null)),
+    setItem: jest.fn((key: string, value: string) => {
+      mockStorage.set(key, value);
+      return Promise.resolve();
+    }),
+    removeItem: jest.fn((key: string) => {
+      mockStorage.delete(key);
+      return Promise.resolve();
+    }),
+    clear: jest.fn(() => {
+      mockStorage.clear();
+      return Promise.resolve();
+    }),
   },
 }));
 
 describe("offline E2E flow", () => {
   beforeEach(() => {
+    mockStorage.clear();
     useOfflineQueueStore.setState({
       pendingCount: 0,
       failedMutations: [],
@@ -175,6 +187,8 @@ describe("offline E2E flow", () => {
 
     const queue = await getQueue();
     const failed = queue.find((m) => m.id === "fail-1");
-    expect(failed?.status).toBe("failed");
+    // 500 errors are retryable, so after first failure it's pending with retryCount=1
+    expect(failed?.status).toBe("pending");
+    expect(failed?.retryCount).toBe(1);
   });
 });

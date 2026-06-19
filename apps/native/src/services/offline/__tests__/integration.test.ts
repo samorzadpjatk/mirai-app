@@ -2,18 +2,30 @@ import { processQueue } from "../queueProcessor";
 import { addToQueue, clearQueue, getQueue } from "../storage";
 import { useOfflineQueueStore } from "~/stores/offlineQueueStore";
 
+const mockStorage = new Map<string, string>();
+
 jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn(),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: jest.fn((key: string) => Promise.resolve(mockStorage.get(key) ?? null)),
+    setItem: jest.fn((key: string, value: string) => {
+      mockStorage.set(key, value);
+      return Promise.resolve();
+    }),
+    removeItem: jest.fn((key: string) => {
+      mockStorage.delete(key);
+      return Promise.resolve();
+    }),
+    clear: jest.fn(() => {
+      mockStorage.clear();
+      return Promise.resolve();
+    }),
   },
 }));
 
 describe("offline integration", () => {
   beforeEach(() => {
+    mockStorage.clear();
     useOfflineQueueStore.setState({
       pendingCount: 0,
       failedMutations: [],
@@ -86,8 +98,9 @@ describe("offline integration", () => {
 
     const queue = await getQueue();
     const mutation = queue.find((m) => m.id === "validation-error");
-    // Validation errors should be removed from queue
-    expect(mutation).toBeUndefined();
+    // Validation errors should be marked as failed (not retried)
+    expect(mutation?.status).toBe("failed");
+    expect(mutation?.error).toBe("Validation failed");
   });
 
   it("should handle server error with retry", async () => {
@@ -101,19 +114,28 @@ describe("offline integration", () => {
     });
 
     let attempts = 0;
-    await processQueue(async () => {
+    const executeMutation = async () => {
       attempts++;
       const error = new Error("Server error");
       (error as { status?: number }).status = 500;
       throw error;
-    });
+    };
 
-    expect(attempts).toBeGreaterThanOrEqual(3);
+    // Attempt 1: retryCount becomes 1
+    await processQueue(executeMutation);
+
+    // Attempt 2: retryCount becomes 2
+    await processQueue(executeMutation);
+
+    // Attempt 3: retryCount becomes 3, marked as failed
+    await processQueue(executeMutation);
+
+    expect(attempts).toBe(3);
 
     const queue = await getQueue();
     const mutation = queue.find((m) => m.id === "server-error");
     expect(mutation?.status).toBe("failed");
-    expect(mutation?.retryCount).toBeGreaterThanOrEqual(3);
+    expect(mutation?.retryCount).toBe(3);
   });
 
   it("should process queue in FIFO order", async () => {

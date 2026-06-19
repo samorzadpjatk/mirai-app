@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { classifyError } from "~/services/offline/errorClassifier";
+import { registerMutationExecutor } from "~/services/offline/executorRegistry";
+import { registerResolver } from "~/services/offline/resolvers";
 import { addToQueue } from "~/services/offline/storage";
 import { useOfflineQueueStore } from "~/stores/offlineQueueStore";
 import { useNetworkStatus } from "./useNetworkStatus";
@@ -27,6 +29,11 @@ export function useOfflineMutation<TData, TError, TVariables>({
   const queryClient = useQueryClient();
   const { isConnected } = useNetworkStatus();
   const { incrementPending } = useOfflineQueueStore();
+
+  // Register the mutation executor so the queue processor can execute it later
+  useEffect(() => {
+    registerMutationExecutor(mutationKey, mutationFn as (variables: unknown) => Promise<unknown>);
+  }, [mutationKey, mutationFn]);
 
   const baseMutation = useMutation({
     mutationFn,
@@ -72,15 +79,9 @@ export function useOfflineMutation<TData, TError, TVariables>({
 
           incrementPending();
 
-          // Return a promise that resolves when the mutation is eventually processed
+          // Return a promise that resolves when the queue processor finishes the mutation
           return new Promise<TData>((resolve, reject) => {
-            // The queue processor will handle this later
-            // For now, we return a pending promise
-            // In a real implementation, you'd want to track this and resolve/reject
-            // when the queue processor finishes
-            setTimeout(() => {
-              reject(new Error("Mutation queued for offline sync"));
-            }, 0);
+            registerResolver<TData>(queuedMutation.id, resolve, reject);
           });
         }
 

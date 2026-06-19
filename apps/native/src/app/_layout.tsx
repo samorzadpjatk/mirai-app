@@ -5,6 +5,7 @@ import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { OfflineStatusBar } from "~/components/offline/OfflineStatusBar";
+import { useQueueProcessor } from "~/hooks/offline/useQueueProcessor";
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import { registerOfflineSyncTask } from "~/services/background/offlineSyncTask";
 import { resetProcessingState } from "~/services/offline/queueProcessor";
@@ -77,6 +78,7 @@ function App() {
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
+  useQueueProcessor();
 
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
