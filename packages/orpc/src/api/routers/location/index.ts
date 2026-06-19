@@ -4,7 +4,7 @@ import {
   locationDataSchema,
   longitudeSchema,
 } from "../../../utils/location-validation";
-import { createORPCRouter, protectedProcedure } from "../../trpc";
+import { createORPCRouter, protectedProcedure } from "../../orpc";
 import {
   acceptLocationSharingRequest,
   addUserToSharing,

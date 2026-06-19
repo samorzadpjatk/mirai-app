@@ -3,8 +3,8 @@ import { describe, expect, it } from "@jest/globals";
 interface RuntimeEnv {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
-  TRPC_HTTP_URL: string;
-  TRPC_WS_URL: string;
+  ORPC_HTTP_URL: string;
+  ORPC_WS_URL: string;
   PRIVACY_POLICY_PUBLIC_URL: string;
 }
 
@@ -18,19 +18,19 @@ const getEnvString = (value: unknown, name: string): string => {
 const createRuntimeEnv = (env: Record<string, unknown>): RuntimeEnv => {
   const SUPABASE_URL = getEnvString(env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
   const SUPABASE_ANON_KEY = getEnvString(env.EXPO_PUBLIC_SUPABASE_ANON_KEY, "SUPABASE_ANON_KEY");
-  const TRPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
-  const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
+  const ORPC_HTTP_URL = getEnvString(env.EXPO_PUBLIC_ORPC_API_URL, "ORPC_HTTP_URL");
+  const ORPC_WS_URL = ORPC_HTTP_URL.replace(/^http/, "ws");
   const PRIVACY_POLICY_PUBLIC_URL = getEnvString(
     env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
     "PRIVACY_POLICY_PUBLIC_URL",
   );
-  return { SUPABASE_URL, SUPABASE_ANON_KEY, TRPC_HTTP_URL, TRPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL };
+  return { SUPABASE_URL, SUPABASE_ANON_KEY, ORPC_HTTP_URL, ORPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL };
 };
 
 const baseEnv: Record<string, string | undefined> = {
   EXPO_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
   EXPO_PUBLIC_SUPABASE_ANON_KEY: "test-key",
-  EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000",
+  EXPO_PUBLIC_ORPC_API_URL: "http://localhost:3000",
   EXPO_PUBLIC_PRIVACY_POLICY_URL: "http://localhost/privacy",
 };
 
@@ -77,54 +77,54 @@ describe("runtimeEnv", () => {
     });
   });
 
-  describe("TRPC_HTTP_URL", () => {
-    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is missing", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: undefined };
+  describe("ORPC_HTTP_URL", () => {
+    it("should throw error when EXPO_PUBLIC_ORPC_API_URL is missing", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: undefined };
 
-      expect(() => createRuntimeEnv(env)).toThrow("Missing TRPC_HTTP_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing ORPC_HTTP_URL environment variable");
     });
 
-    it("should throw error when EXPO_PUBLIC_TRPC_API_URL is empty string", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "" };
+    it("should throw error when EXPO_PUBLIC_ORPC_API_URL is empty string", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "" };
 
-      expect(() => createRuntimeEnv(env)).toThrow("Missing TRPC_HTTP_URL environment variable");
+      expect(() => createRuntimeEnv(env)).toThrow("Missing ORPC_HTTP_URL environment variable");
     });
 
-    it("should successfully parse valid TRPC_HTTP_URL", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000" };
+    it("should successfully parse valid ORPC_HTTP_URL", () => {
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "http://localhost:3000" };
 
       const runtimeEnv = createRuntimeEnv(env);
-      expect(runtimeEnv.TRPC_HTTP_URL).toBe("http://localhost:3000");
+      expect(runtimeEnv.ORPC_HTTP_URL).toBe("http://localhost:3000");
     });
   });
 
-  describe("TRPC_WS_URL", () => {
+  describe("ORPC_WS_URL", () => {
     it("should convert http URL to ws URL", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:3000" };
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "http://localhost:3000" };
 
       const runtimeEnv = createRuntimeEnv(env);
-      expect(runtimeEnv.TRPC_WS_URL).toBe("ws://localhost:3000");
+      expect(runtimeEnv.ORPC_WS_URL).toBe("ws://localhost:3000");
     });
 
     it("should convert https URL to wss URL", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com" };
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "https://api.example.com" };
 
       const runtimeEnv = createRuntimeEnv(env);
-      expect(runtimeEnv.TRPC_WS_URL).toBe("wss://api.example.com");
+      expect(runtimeEnv.ORPC_WS_URL).toBe("wss://api.example.com");
     });
 
     it("should handle URLs with paths", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com/trpc" };
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "https://api.example.com/orpc" };
 
       const runtimeEnv = createRuntimeEnv(env);
-      expect(runtimeEnv.TRPC_WS_URL).toBe("wss://api.example.com/trpc");
+      expect(runtimeEnv.ORPC_WS_URL).toBe("wss://api.example.com/orpc");
     });
 
     it("should handle URLs with ports", () => {
-      const env = { ...baseEnv, EXPO_PUBLIC_TRPC_API_URL: "http://localhost:2022/api" };
+      const env = { ...baseEnv, EXPO_PUBLIC_ORPC_API_URL: "http://localhost:2022/api" };
 
       const runtimeEnv = createRuntimeEnv(env);
-      expect(runtimeEnv.TRPC_WS_URL).toBe("ws://localhost:2022/api");
+      expect(runtimeEnv.ORPC_WS_URL).toBe("ws://localhost:2022/api");
     });
   });
 
@@ -172,7 +172,7 @@ describe("runtimeEnv", () => {
       const env = {
         EXPO_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
         EXPO_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
-        EXPO_PUBLIC_TRPC_API_URL: "https://api.example.com/trpc",
+        EXPO_PUBLIC_ORPC_API_URL: "https://api.example.com/orpc",
         EXPO_PUBLIC_PRIVACY_POLICY_URL: "https://example.com/privacy",
       };
 
@@ -180,8 +180,8 @@ describe("runtimeEnv", () => {
 
       expect(runtimeEnv.SUPABASE_URL).toBe("https://test.supabase.co");
       expect(runtimeEnv.SUPABASE_ANON_KEY).toBe("test-anon-key");
-      expect(runtimeEnv.TRPC_HTTP_URL).toBe("https://api.example.com/trpc");
-      expect(runtimeEnv.TRPC_WS_URL).toBe("wss://api.example.com/trpc");
+      expect(runtimeEnv.ORPC_HTTP_URL).toBe("https://api.example.com/orpc");
+      expect(runtimeEnv.ORPC_WS_URL).toBe("wss://api.example.com/orpc");
       expect(runtimeEnv.PRIVACY_POLICY_PUBLIC_URL).toBe("https://example.com/privacy");
     });
   });

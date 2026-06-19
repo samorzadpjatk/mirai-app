@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { adminProcedure, createORPCRouter, protectedProcedure } from "../../trpc";
+import { adminProcedure, createORPCRouter, protectedProcedure } from "../../orpc";
 import { createTrip, deleteTrip, updateTrip } from "./mutations";
 import { getAll, getById, getByIdAdmin, getResources } from "./queries";
 

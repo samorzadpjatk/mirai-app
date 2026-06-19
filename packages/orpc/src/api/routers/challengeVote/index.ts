@@ -4,7 +4,7 @@ import {
   createORPCRouter,
   moderatorProcedure,
   protectedProcedure,
-} from "../../trpc";
+} from "../../orpc";
 import { forceEndJudgedStaffVoting, submitVote, submitVotes } from "./mutations";
 import { getByChallenge, getJudgedStaffProgress, getMyByChallenge } from "./queries";
 

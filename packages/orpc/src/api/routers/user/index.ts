@@ -5,7 +5,7 @@ import {
   moderatorProcedure,
   protectedProcedure,
   publicProcedure,
-} from "../../trpc";
+} from "../../orpc";
 import {
   banUserUntil,
   createUser,

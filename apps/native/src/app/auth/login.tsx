@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
-import { PRIVACY_POLICY_PUBLIC_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
+import { ORPC_HTTP_URL, ORPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL } from "~/config/runtimeEnv";
 import { useFileDownload } from "~/hooks/files";
 import { colors } from "~/styles";
 import Logo from "../../components/Logo";
@@ -64,7 +64,7 @@ export default function LoginScreen() {
     if (!token) {
       return { banned: false, bannedUntil: "", reason: "" };
     }
-    const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL, token);
+    const { client, cleanup } = getORPCClient(ORPC_HTTP_URL, ORPC_WS_URL, token);
     try {
       return await client.user.getBanStatus({});
     } finally {
@@ -73,7 +73,7 @@ export default function LoginScreen() {
   };
 
   const checkBanStatusByEmail = async () => {
-    const { client, cleanup } = getORPCClient(TRPC_HTTP_URL, TRPC_WS_URL);
+    const { client, cleanup } = getORPCClient(ORPC_HTTP_URL, ORPC_WS_URL);
     try {
       return await client.user.getBanStatusByEmail({ email });
     } finally {

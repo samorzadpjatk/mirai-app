@@ -390,13 +390,19 @@ describe("createSupabaseClient", () => {
       );
     });
 
-    it("should handle when globalThis is undefined (edge case)", () => {
-      // This tests the getGlobalLocalStorage function when globalThis might be undefined
-      // In practice, this shouldn't happen in normal Node.js/Vitest environments
-      const result = createSupabaseClient(mockUrl, mockKey);
+    it("should use in-memory storage when globalThis is undefined", () => {
+      const originalLocalStorage = globalThis.localStorage;
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = undefined;
 
-      expect(result).toBeDefined();
-      expect(createBaseSupabaseClient).toHaveBeenCalled();
+      createSupabaseClient(mockUrl, mockKey);
+
+      const callArgs = vi.mocked(createBaseSupabaseClient).mock.calls[0]!;
+      const options = callArgs[2] as SupabaseClientOptions;
+
+      expect(options.auth?.storage).toBeDefined();
+      expect(options.auth?.storage).not.toBe(originalLocalStorage);
+
+      (globalThis as { localStorage?: StorageAdapter }).localStorage = originalLocalStorage;
     });
   });
 });

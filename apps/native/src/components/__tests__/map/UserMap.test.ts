@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { buildFilteredUsers, getActivityOpacity } from "~/components/map/UserMap";
 import type { UserLocation } from "~/components/map/UserMap";
 
@@ -30,8 +30,17 @@ describe("getActivityOpacity", () => {
   });
 
   it("should default to Date.now() when now is not provided", () => {
-    const result = getActivityOpacity(Date.now());
-    expect(result).toBe(1);
+    // Pin Date.now() so the default `now` parameter and the call-site timestamp
+    // are identical; otherwise sub-millisecond drift between the two Date.now()
+    // evaluations makes the opacity 0.9999… and the exact assertion flaky.
+    const spy = jest.spyOn(Date, "now").mockReturnValue(now);
+    try {
+      const result = getActivityOpacity(now);
+      expect(result).toBe(1);
+      expect(spy).toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

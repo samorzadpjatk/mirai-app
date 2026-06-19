@@ -8,8 +8,6 @@ CREATE TABLE "trip_sponsor_display" (
 );
 --> statement-breakpoint
 ALTER TABLE "sponsors" DROP CONSTRAINT "sponsors_height_positive";--> statement-breakpoint
-ALTER TABLE "sponsors" DROP CONSTRAINT "sponsors_offset_x_positive";--> statement-breakpoint
-ALTER TABLE "sponsors" DROP CONSTRAINT "sponsors_offset_y_positive";--> statement-breakpoint
 ALTER TABLE "trip_sponsor_display" ADD CONSTRAINT "trip_sponsor_display_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trip_sponsor_display" ADD CONSTRAINT "trip_sponsor_display_sponsor_id_sponsors_id_fk" FOREIGN KEY ("sponsor_id") REFERENCES "public"."sponsors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 INSERT INTO "trip_sponsor_display" ("id", "trip_id", "sponsor_id", "height", "offset_x", "offset_y")

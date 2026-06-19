@@ -1,4 +1,4 @@
-import { createORPCRouter } from "../../trpc";
+import { createORPCRouter } from "../../orpc";
 import {
   getDeliveries,
   getDeliveryByNotificationId,

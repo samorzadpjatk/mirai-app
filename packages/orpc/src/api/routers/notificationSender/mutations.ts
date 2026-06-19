@@ -3,7 +3,7 @@ import { buildDeliveryStatus, extractErrorMessage } from "@mirai-app/shared/noti
 import { eq } from "drizzle-orm";
 import { sendMobileNotifications } from "../../../services/notificationService";
 import { logger } from "../../../utils/logger";
-import { serviceAccountProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../orpc";
 import {
   SendMobileNotificationsInput,
   TrackDeliveryCompleteInput,

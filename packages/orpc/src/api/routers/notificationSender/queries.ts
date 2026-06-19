@@ -1,4 +1,4 @@
-import { serviceAccountProcedure } from "../../trpc";
+import { serviceAccountProcedure } from "../../orpc";
 import type { InactivityCheckResult } from "./types";
 
 export const checkInactiveUsers = serviceAccountProcedure.handler(() => {

@@ -1,9 +1,6 @@
 source "https://rubygems.org"
 
-# TODO: Switch back to released fastlane once PR #30042 is merged and released.
-# PR upgrades jwt gem dependency to include v3 series (fixes CVE-2026-45363).
-# See: https://github.com/fastlane/fastlane/pull/30042
-gem "fastlane", git: "https://github.com/sidbhatt11/fastlane.git", branch: "upgrade-gem-jwt"
+gem "fastlane"
 
 gem "jwt", ">= 3.2.0"
 gem "googleauth", "~> 1.16"

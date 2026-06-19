@@ -390,7 +390,7 @@ describe("Backend Server API", () => {
     const { app, stop } = createServer({
       dev: true,
       port: 3001,
-      prefix: "/api/trpc",
+      prefix: "/api/orpc",
       host: "127.0.0.1",
     });
 

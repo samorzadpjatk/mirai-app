@@ -4,9 +4,7 @@ import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
-import { useExpoUpdates } from "~/hooks/useExpoUpdates";
 import { LocationStoreProvider } from "~/stores/location";
 
 function initNotifications(): void {
@@ -36,7 +34,7 @@ import { QueryProvider, getORPCClient, orpc } from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
+import { ORPC_HTTP_URL, ORPC_WS_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
 import {
   createBackgroundTaskDeps,
   initBackgroundLocationTask,
@@ -65,14 +63,12 @@ function App() {
   const backgroundTaskDeps = createBackgroundTaskDeps({
     supabaseClient,
     getORPCClient,
-    httpUrl: TRPC_HTTP_URL,
-    wsUrl: TRPC_WS_URL,
+    httpUrl: ORPC_HTTP_URL,
+    wsUrl: ORPC_WS_URL,
   });
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
-  const { showUpdatePopup, startUpdate, skipUpdate, isDownloading, downloadProgress } =
-    useExpoUpdates();
 
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
@@ -129,15 +125,6 @@ function App() {
           </Stack.Protected>
         </Stack>
       )}
-
-      {/* Update Popup */}
-      <UpdatePopup
-        visible={showUpdatePopup}
-        onUpdate={startUpdate}
-        onSkip={skipUpdate}
-        isDownloading={isDownloading}
-        downloadProgress={downloadProgress}
-      />
     </View>
   );
 }
@@ -203,7 +190,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SupabaseProvider client={supabaseClient}>
-          <QueryProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+          <QueryProvider httpUrl={ORPC_HTTP_URL} wsUrl={ORPC_WS_URL}>
             <AuthStoreProviderWrapper>
               <LocationStoreProvider>
                 <App />

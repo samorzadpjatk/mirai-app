@@ -13,7 +13,6 @@ ALTER TABLE "locations" ADD CONSTRAINT "locations_latitude_valid" CHECK ("locati
 ALTER TABLE "locations" ADD CONSTRAINT "locations_longitude_valid" CHECK ("locations"."longitude" BETWEEN -180 AND 180);--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_quantity_positive" CHECK ("rewards"."available_quantity" >= 0);--> statement-breakpoint
 ALTER TABLE "rewards" ADD CONSTRAINT "rewards_coin_cost_positive" CHECK ("rewards"."coin_cost" >= 0);--> statement-breakpoint
+UPDATE "sponsors" SET "height" = 0 WHERE "height" < 0;--> statement-breakpoint
 ALTER TABLE "sponsors" ADD CONSTRAINT "sponsors_height_positive" CHECK ("sponsors"."height" >= 0);--> statement-breakpoint
-ALTER TABLE "sponsors" ADD CONSTRAINT "sponsors_offset_x_positive" CHECK ("sponsors"."offset_x" >= 0);--> statement-breakpoint
-ALTER TABLE "sponsors" ADD CONSTRAINT "sponsors_offset_y_positive" CHECK ("sponsors"."offset_y" >= 0);--> statement-breakpoint
 ALTER TABLE "trips" ADD CONSTRAINT "trips_dates_valid" CHECK ("trips"."end_date" > "trips"."start_date");

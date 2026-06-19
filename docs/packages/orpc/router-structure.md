@@ -187,7 +187,7 @@ packages/orpc/src/api/routers/{name}/
 ```
 
 **Import path fixes when moving from flat file to directory**:
-- `../../api/trpc` → `../../trpc` (drop `api/` because we're already inside `api/`)
+- `../../api/orpc` → `../../orpc` (drop `api/` because we're already inside `api/`)
 - `../../utils/*` → `../../../utils/*` (one extra level up)
 - `../../services/*` → `../../../services/*`
 
