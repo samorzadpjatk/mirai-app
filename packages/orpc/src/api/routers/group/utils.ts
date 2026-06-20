@@ -1,8 +1,8 @@
-import { resolveStorageUrl } from "@mirai-app/shared/storage";
+import { resolveStorageUrl } from "@mirai-app/common/storage";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";
-export { toUserWithEmail } from "@mirai-app/shared/groups";
+export { toUserWithEmail } from "@mirai-app/common/groups";
 
 export const batchEmailLookup = async (
   supabase: SupabaseClient,

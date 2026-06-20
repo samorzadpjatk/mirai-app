@@ -1,4 +1,4 @@
-import { resolveStorageUrl } from "@mirai-app/shared/storage";
+import { resolveStorageUrl } from "@mirai-app/common/storage";
 
 export const resolveGroupImage = resolveStorageUrl;
 

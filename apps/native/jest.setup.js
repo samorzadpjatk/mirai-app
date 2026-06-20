@@ -18,7 +18,8 @@ if (typeof window === 'undefined') {
   }
 }
 
-import { server } from "./src/test-utils/msw/server";
+import { createDownloadUrlHandler } from "./src/test-utils/msw/handlers";
+import { orpcBatchHandler, server } from "./src/test-utils/msw/server";
 
 // Mock WebSocket for oRPC client initialization in tests
 class MockWebSocket {
@@ -53,6 +54,12 @@ class MockWebSocket {
 }
 globalThis.WebSocket = MockWebSocket;
 
+function applyDefaultHandlers() {
+  server.use(orpcBatchHandler, createDownloadUrlHandler());
+}
+
+applyDefaultHandlers();
+
 // Start MSW server before all tests
 beforeAll(() => {
   // Ensure window.addEventListener is available before starting MSW
@@ -70,6 +77,7 @@ beforeAll(() => {
 // Reset handlers after each test
 afterEach(() => {
   server.resetHandlers();
+  applyDefaultHandlers();
 });
 
 // Close MSW server after all tests

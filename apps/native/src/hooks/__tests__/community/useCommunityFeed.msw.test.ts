@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, waitFor } from "@testing-library/react-native";
+import { createCommunityFullHandler } from "../../../test-utils/msw/handlers";
 import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { useCommunityFeed } from "../../community/useCommunityFeed";
+import { buildCommunityFeedQueryKey, useCommunityFeed } from "../../community/useCommunityFeed";
 
 const baseActivity = {
   tripId: "trip-1",
@@ -13,48 +14,56 @@ const baseActivity = {
 };
 
 const mockFeedPage = {
-  activities: [
-    {
-      id: "activity-1",
-      title: "Activity One",
-      ...baseActivity,
-      reactionsSummary: {
-        total: 5,
-        counts: { heart: 5, fire: 0, clap: 0, star: 0 },
-        myReactions: [],
+  feed: {
+    activities: [
+      {
+        id: "activity-1",
+        title: "Activity One",
+        ...baseActivity,
+        reactionsSummary: {
+          total: 5,
+          counts: { heart: 5, fire: 0, clap: 0, star: 0 },
+          myReactions: [],
+        },
       },
-    },
-    {
-      id: "activity-2",
-      title: "Activity Two",
-      ...baseActivity,
-      activityType: "user_post" as const,
-      reactionsSummary: {
-        total: 3,
-        counts: { heart: 3, fire: 0, clap: 0, star: 0 },
-        myReactions: ["heart"],
+      {
+        id: "activity-2",
+        title: "Activity Two",
+        ...baseActivity,
+        activityType: "user_post" as const,
+        reactionsSummary: {
+          total: 3,
+          counts: { heart: 3, fire: 0, clap: 0, star: 0 },
+          myReactions: ["heart"],
+        },
       },
-    },
-    {
-      id: "activity-3",
-      title: "Activity Three",
-      ...baseActivity,
-      activityType: "rank_change" as const,
-      reactionsSummary: {
-        total: 1,
-        counts: { heart: 1, fire: 0, clap: 0, star: 0 },
-        myReactions: [],
+      {
+        id: "activity-3",
+        title: "Activity Three",
+        ...baseActivity,
+        activityType: "rank_change" as const,
+        reactionsSummary: {
+          total: 1,
+          counts: { heart: 1, fire: 0, clap: 0, star: 0 },
+          myReactions: [],
+        },
       },
+    ],
+    pagination: {
+      total: 3,
+      page: 1,
+      pageSize: 30,
+      totalPages: 1,
+      hasMore: false,
     },
-  ],
-  pagination: {
-    total: 3,
-    page: 1,
-    pageSize: 30,
-    totalPages: 1,
-    hasMore: false,
+    nextCursor: null,
   },
-  nextCursor: null,
+  ranking: {
+    data: [],
+    currentDate: "2024-01-01T00:00:00.000Z",
+  },
+  activeChallenges: [],
+  avatarUrls: {},
 };
 
 describe("useCommunityFeed (MSW)", () => {
@@ -63,8 +72,8 @@ describe("useCommunityFeed (MSW)", () => {
     jest.clearAllMocks();
   });
 
-  it("should return feedQuery, filteredActivities, and handleToggleHeart", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+  it("should return feedQuery, filteredActivities, rankingData, avatarUrls and handleToggleHeart", async () => {
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
@@ -76,11 +85,13 @@ describe("useCommunityFeed (MSW)", () => {
 
     expect(result.current.feedQuery).toBeDefined();
     expect(result.current.filteredActivities).toBeDefined();
+    expect(result.current.rankingData).toBeDefined();
+    expect(result.current.avatarUrls).toBeDefined();
     expect(typeof result.current.handleToggleHeart).toBe("function");
   });
 
   it("should fetch feed data when selectedTripId is provided", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
@@ -100,7 +111,7 @@ describe("useCommunityFeed (MSW)", () => {
 
   it("should be disabled when selectedTripId is null", async () => {
     server.use(
-      createORPCHandler(["activityFeed", "getByTrip"], () => {
+      createCommunityFullHandler(() => {
         throw new Error("Should not be called");
       }),
     );
@@ -115,7 +126,7 @@ describe("useCommunityFeed (MSW)", () => {
   });
 
   it("should apply optimistic update when handleToggleHeart is called", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result, queryClient } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
@@ -125,10 +136,10 @@ describe("useCommunityFeed (MSW)", () => {
       expect(result.current.feedQuery.isLoading).toBe(false);
     });
 
-    const queryKey = ["community-feed", "trip-1", 30];
+    const queryKey = buildCommunityFeedQueryKey("trip-1")!;
 
     // Verify initial state
-    const initialData = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+    const initialData = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
     expect(initialData?.pages[0]!.activities[0]!.reactionsSummary!.total).toBe(5);
     expect(initialData?.pages[0]!.activities[0]!.reactionsSummary!.myReactions).toEqual([]);
 
@@ -151,12 +162,14 @@ describe("useCommunityFeed (MSW)", () => {
 
     // Wait for optimistic update to be applied
     await waitFor(() => {
-      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
       const activity = data?.pages[0]!.activities.find((a) => a.id === "activity-1");
       return activity?.reactionsSummary!.total === 6;
     });
 
-    const optimisticData = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+    const optimisticData = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(
+      queryKey,
+    );
     const optimisticActivity = optimisticData?.pages[0]!.activities.find(
       (a) => a.id === "activity-1",
     );
@@ -173,14 +186,14 @@ describe("useCommunityFeed (MSW)", () => {
     });
 
     await waitFor(() => {
-      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
       const activity = data?.pages[0]!.activities.find((a) => a.id === "activity-1");
       return activity?.reactionsSummary!.total === 6;
     });
   });
 
   it("should rollback optimistic update on mutation error", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result, queryClient } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
@@ -190,10 +203,10 @@ describe("useCommunityFeed (MSW)", () => {
       expect(result.current.feedQuery.isLoading).toBe(false);
     });
 
-    const queryKey = ["community-feed", "trip-1", 30];
+    const queryKey = buildCommunityFeedQueryKey("trip-1")!;
 
     // Verify initial state
-    const initialData = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+    const initialData = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
     expect(initialData?.pages[0]!.activities[0]!.reactionsSummary!.total).toBe(5);
 
     // Mock toggleReaction to throw
@@ -209,7 +222,9 @@ describe("useCommunityFeed (MSW)", () => {
       }),
     ).rejects.toThrow("Failed to toggle reaction");
 
-    const rolledBackData = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+    const rolledBackData = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(
+      queryKey,
+    );
     const rolledBackActivity = rolledBackData?.pages[0]!.activities.find(
       (a) => a.id === "activity-1",
     );
@@ -221,7 +236,7 @@ describe("useCommunityFeed (MSW)", () => {
   });
 
   it("should apply server reactionsSummary on mutation success", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result, queryClient } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
@@ -231,7 +246,7 @@ describe("useCommunityFeed (MSW)", () => {
       expect(result.current.feedQuery.isLoading).toBe(false);
     });
 
-    const queryKey = ["community-feed", "trip-1", 30];
+    const queryKey = buildCommunityFeedQueryKey("trip-1")!;
 
     const serverReactionSummary = {
       total: 10,
@@ -253,18 +268,18 @@ describe("useCommunityFeed (MSW)", () => {
 
     // Wait for success to be applied
     await waitFor(() => {
-      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+      const data = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
       const activity = data?.pages[0]!.activities.find((a) => a.id === "activity-1");
       return activity?.reactionsSummary!.total === 10;
     });
 
-    const successData = queryClient.getQueryData<{ pages: (typeof mockFeedPage)[] }>(queryKey);
+    const successData = queryClient.getQueryData<{ pages: (typeof mockFeedPage.feed)[] }>(queryKey);
     const successActivity = successData?.pages[0]!.activities.find((a) => a.id === "activity-1");
     expect(successActivity?.reactionsSummary).toEqual(serverReactionSummary);
   });
 
   it("should filter activities by selectedFilter", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result } = renderHookWithMSW(() =>
       useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "user_post" }),
@@ -280,7 +295,7 @@ describe("useCommunityFeed (MSW)", () => {
   });
 
   it("should move focusActivityId to the front of filtered activities", async () => {
-    server.use(createORPCHandler(["activityFeed", "getByTrip"], () => mockFeedPage));
+    server.use(createCommunityFullHandler(() => mockFeedPage));
 
     const { result } = renderHookWithMSW(() =>
       useCommunityFeed({
@@ -302,16 +317,21 @@ describe("useCommunityFeed (MSW)", () => {
 
   it("should handle empty feed", async () => {
     server.use(
-      createORPCHandler(["activityFeed", "getByTrip"], () => ({
-        activities: [],
-        pagination: {
-          total: 0,
-          page: 1,
-          pageSize: 30,
-          totalPages: 0,
-          hasMore: false,
+      createCommunityFullHandler(() => ({
+        feed: {
+          activities: [],
+          pagination: {
+            total: 0,
+            page: 1,
+            pageSize: 30,
+            totalPages: 0,
+            hasMore: false,
+          },
+          nextCursor: null,
         },
-        nextCursor: null,
+        ranking: { data: [], currentDate: "2024-01-01T00:00:00.000Z" },
+        activeChallenges: [],
+        avatarUrls: {},
       })),
     );
 
@@ -328,10 +348,13 @@ describe("useCommunityFeed (MSW)", () => {
 
   it("should handle feed with hasMore for pagination", async () => {
     server.use(
-      createORPCHandler(["activityFeed", "getByTrip"], () => ({
+      createCommunityFullHandler(() => ({
         ...mockFeedPage,
-        pagination: { ...mockFeedPage.pagination, hasMore: true },
-        nextCursor: { id: "cursor-1", createdAt: "2024-01-01", isPinned: false },
+        feed: {
+          ...mockFeedPage.feed,
+          pagination: { ...mockFeedPage.feed.pagination, hasMore: true },
+          nextCursor: { id: "cursor-1", createdAt: "2024-01-01", isPinned: false },
+        },
       })),
     );
 

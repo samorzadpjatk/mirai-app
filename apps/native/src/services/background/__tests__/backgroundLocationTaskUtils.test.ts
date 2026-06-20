@@ -1,4 +1,4 @@
-import { calculateDistance } from "@mirai-app/shared/utils";
+import { calculateDistance } from "@mirai-app/common/utils";
 import {
   shouldSendLocationUpdate,
   toFiniteNumberOrUndefined,

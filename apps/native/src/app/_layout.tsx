@@ -31,13 +31,13 @@ import {
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
+import { formatDisplayName } from "@mirai-app/common/users";
 import {
   QueryProvider,
   cleanupBackgroundORPCClient,
   getBackgroundORPCClient,
   orpc,
 } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { ORPC_HTTP_URL, ORPC_WS_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";

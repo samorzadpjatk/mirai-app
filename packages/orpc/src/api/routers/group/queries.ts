@@ -1,11 +1,11 @@
-import { groups, tripParticipants } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import {
   buildParticipantCountMap,
   calculatePagination,
   canViewJoinRequests,
   mapApprovedSubmissions,
-} from "@mirai-app/shared/groups";
+} from "@mirai-app/common/groups";
+import { groups, tripParticipants } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";

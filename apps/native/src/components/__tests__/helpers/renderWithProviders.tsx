@@ -1,3 +1,4 @@
+import { useORPCClient } from "@mirai-app/orpc/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react-native";
 import type React from "react";
@@ -7,6 +8,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 interface WrapperProps {
   children: ReactNode;
 }
+
+const TEST_HTTP_URL = "http://localhost:9999";
+const TEST_WS_URL = "ws://localhost:9999";
 
 // Create a fresh QueryClient for each test
 const createTestQueryClient = () =>
@@ -18,6 +22,11 @@ const createTestQueryClient = () =>
       },
     },
   });
+
+function ORPCClientInitializer() {
+  useORPCClient({ httpUrl: TEST_HTTP_URL, wsUrl: TEST_WS_URL, enableBatch: false });
+  return null;
+}
 
 /**
  * Wrapper component that provides all necessary providers for component tests
@@ -33,6 +42,7 @@ const ProvidersWrapper: React.FC<WrapperProps> = ({ children }) => {
           frame: { x: 0, y: 0, width: 390, height: 844 },
         }}
       >
+        <ORPCClientInitializer />
         {children}
       </SafeAreaProvider>
     </QueryClientProvider>

@@ -1,9 +1,9 @@
-import { STANDARD_BUCKETS } from "@mirai-app/shared/storage";
+import { STANDARD_BUCKETS } from "@mirai-app/common/storage";
 import {
   buildPublicObjectUrl,
   buildResumableUrl,
   validateKnownBucket,
-} from "@mirai-app/shared/storage";
+} from "@mirai-app/common/storage";
 import { ORPCError } from "@orpc/server";
 import { env } from "bun";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";

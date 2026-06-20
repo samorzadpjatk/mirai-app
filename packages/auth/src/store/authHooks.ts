@@ -5,7 +5,7 @@ import {
   type AuthUser,
   type SupabaseSession,
   authStore,
-} from "@mirai-app/shared/stores";
+} from "@mirai-app/common/stores";
 import { useStore } from "zustand";
 
 /**

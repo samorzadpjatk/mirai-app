@@ -1,7 +1,7 @@
+import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/common/test-utils";
+import { logger } from "@mirai-app/common/utils";
 import type { User } from "@mirai-app/db";
 import { users } from "@mirai-app/db";
-import { createMockSupabaseClient, createMockSupabaseUser } from "@mirai-app/shared/test-utils";
-import { logger } from "@mirai-app/shared/utils";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,7 +20,7 @@ import {
   syncUserToDatabase,
 } from "../authServer";
 
-vi.mock("@mirai-app/shared/utils", () => ({
+vi.mock("@mirai-app/common/utils", () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("@mirai-app/shared/utils", () => ({
   },
 }));
 
-vi.mock("@mirai-app/shared/users", () => ({
+vi.mock("@mirai-app/common/users", () => ({
   formatDisplayName: (
     firstName?: string | null,
     lastName?: string | null,

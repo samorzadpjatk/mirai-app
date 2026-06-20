@@ -32,9 +32,9 @@
       "name": "@mirai-app/backend-server",
       "version": "1.0.0",
       "dependencies": {
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/db": "workspace:*",
         "@mirai-app/orpc": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@orpc/server": "^1.14.2",
         "hono": "^4.12.18",
       },
@@ -55,8 +55,8 @@
         "@expo/vector-icons": "^15.0.3",
         "@maplibre/maplibre-react-native": "^10.4.2",
         "@mirai-app/auth": "workspace:*",
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/orpc": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
         "@react-native-async-storage/async-storage": "^2.2.0",
         "@react-native-community/datetimepicker": "8.6.0",
@@ -129,8 +129,8 @@
       "name": "@mirai-app/notification-sender",
       "version": "0.1.0",
       "dependencies": {
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/orpc": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
       },
       "devDependencies": {
@@ -143,8 +143,8 @@
     "apps/seed": {
       "name": "@mirai-app/seed",
       "dependencies": {
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/db": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
         "csv-parse": "^6.1.0",
         "drizzle-orm": "^0.45.2",
@@ -161,8 +161,8 @@
       "name": "@mirai-app/auth",
       "version": "0.1.0",
       "dependencies": {
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/db": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "zustand": "^5.0.11",
@@ -178,6 +178,23 @@
       },
       "peerDependencies": {
         "react": "^19.2.0",
+      },
+    },
+    "packages/common": {
+      "name": "@mirai-app/common",
+      "dependencies": {
+        "drizzle-orm": "^0.45.2",
+        "pino": "^9.6.0",
+        "zustand": "^5.0.11",
+      },
+      "devDependencies": {
+        "@mirai-app/db": "workspace:*",
+        "@orpc/server": "^1.14.2",
+        "@types/react": "~19.2.10",
+        "@vitest/coverage-istanbul": "^4.1.8",
+        "react": "^19.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.1.8",
       },
     },
     "packages/db": {
@@ -199,8 +216,8 @@
       "version": "1.0.0",
       "dependencies": {
         "@mirai-app/auth": "workspace:*",
+        "@mirai-app/common": "workspace:*",
         "@mirai-app/db": "workspace:*",
-        "@mirai-app/shared": "workspace:*",
         "@mirai-app/supabase": "workspace:*",
         "@orpc/client": "^1.14.2",
         "@orpc/server": "^1.14.2",
@@ -225,23 +242,6 @@
       "peerDependencies": {
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-      },
-    },
-    "packages/shared": {
-      "name": "@mirai-app/shared",
-      "dependencies": {
-        "drizzle-orm": "^0.45.2",
-        "pino": "^9.6.0",
-        "zustand": "^5.0.11",
-      },
-      "devDependencies": {
-        "@mirai-app/db": "workspace:*",
-        "@orpc/server": "^1.14.2",
-        "@types/react": "~19.2.10",
-        "@vitest/coverage-istanbul": "^4.1.8",
-        "react": "^19.2.0",
-        "typescript": "^5.9.3",
-        "vitest": "^4.1.8",
       },
     },
     "packages/supabase": {
@@ -880,6 +880,8 @@
 
     "@mirai-app/backend-server": ["@mirai-app/backend-server@workspace:apps/backend-server"],
 
+    "@mirai-app/common": ["@mirai-app/common@workspace:packages/common"],
+
     "@mirai-app/db": ["@mirai-app/db@workspace:packages/db"],
 
     "@mirai-app/native": ["@mirai-app/native@workspace:apps/native"],
@@ -889,8 +891,6 @@
     "@mirai-app/orpc": ["@mirai-app/orpc@workspace:packages/orpc"],
 
     "@mirai-app/seed": ["@mirai-app/seed@workspace:apps/seed"],
-
-    "@mirai-app/shared": ["@mirai-app/shared@workspace:packages/shared"],
 
     "@mirai-app/supabase": ["@mirai-app/supabase@workspace:packages/supabase"],
 

@@ -34,7 +34,7 @@ We follow the **Functional Core, Imperative Shell** pattern with **Manual Depend
 
 | Layer | Responsibility | Test Strategy |
 |-------|--------------|---------------|
-| `packages/shared/src/*` | Pure functions (no side effects) | Real data unit tests (Vitest) |
+| `packages/common/src/*` | Pure functions (no side effects) | Real data unit tests (Vitest) |
 | `packages/orpc/src/api/routers/` | Thin shells: validate → pure fn → return | PGLite integration tests (Vitest) |
 | `apps/native/src/hooks/` | Thin shells: call pure functions + oRPC client | MSW + real client tests (Jest) |
 | `apps/native/src/services/background/` | Task logic with injected dependencies | Fake dependency tests (Jest) |
@@ -53,7 +53,7 @@ bun run test
 
 ```bash
 # Vitest packages
-cd packages/shared && bun run test
+cd packages/common && bun run test
 
 # Jest (native app)
 cd apps/native && bun run test
@@ -89,7 +89,7 @@ Vitest is used for all Node.js applications and utility packages:
 - `apps/notification-sender`
 - `apps/seed`
 - `packages/auth`
-- `packages/shared`
+- `packages/common`
 - `packages/supabase`
 - `packages/orpc`
 
@@ -146,7 +146,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     "^~/(.*)$": "<rootDir>/src/$1",
-    "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
+    "^@mirai-app/common$": "<rootDir>/../../packages/common/index.ts",
     // ... other workspace aliases
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
@@ -264,10 +264,10 @@ describe("Auth Tests", () => {
 
 ### Pure Function Testing (Preferred)
 
-Extract pure business logic to `packages/shared/src/` and test with real data:
+Extract pure business logic to `packages/common/src/` and test with real data:
 
 ```typescript
-// packages/shared/src/challenges/queryBuilders.ts
+// packages/common/src/challenges/queryBuilders.ts
 export function buildChallengeQueryInput(tripId: string | null, pageParam: number) {
   return { tripId: tripId ?? "", pagination: { limit: 30, offset: pageParam || 0 } };
 }
@@ -474,7 +474,7 @@ The monorepo uses **Nx affected graph analysis** for change-based testing rather
 | Jest `--changedSince` | Single Jest project | ❌ Only sees files within one project | Single-package repos |
 | Jest `--onlyChanged` | Single Jest project | ❌ Same limitation | Local quick checks |
 
-**Example:** Changing `packages/shared/src/trips/flattenTrips.ts` requires re-running tests in `apps/native` (which depends on `packages/shared`). Nx `affected` detects this automatically. Jest `--changedSince` would miss it entirely because it only tracks files within the `apps/native` Jest project.
+**Example:** Changing `packages/common/src/trips/flattenTrips.ts` requires re-running tests in `apps/native` (which depends on `packages/common`). Nx `affected` detects this automatically. Jest `--changedSince` would miss it entirely because it only tracks files within the `apps/native` Jest project.
 
 ### Default `test` Scripts: Optimized for Local Development
 
@@ -719,7 +719,7 @@ expect(element.props.style).toMatchObject({ backgroundColor: "red" }); // Flexib
 resolve: {
   alias: {
     "~": path.resolve(__dirname, "./src"),
-    "@mirai-app/shared": path.resolve(__dirname, "../../packages/shared/src"),
+    "@mirai-app/common": path.resolve(__dirname, "../../packages/common/src"),
   },
 }
 ```
@@ -727,7 +727,7 @@ resolve: {
 ```javascript
 // Jest
 moduleNameMapper: {
-  "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
+  "^@mirai-app/common$": "<rootDir>/../../packages/common/index.ts",
 }
 ```
 

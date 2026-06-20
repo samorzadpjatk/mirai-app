@@ -1,5 +1,5 @@
+import { buildDeliveryStats } from "@mirai-app/common/notifications";
 import { notificationDeliveries, notifications, trips, users } from "@mirai-app/db";
-import { buildDeliveryStats } from "@mirai-app/shared/notifications";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { getColorForPoints, getIconForChallenge } from "./challengeStyles";
 
@@ -111,65 +112,67 @@ export function ChallengeHeroCard({
 
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.heroContainer, isSelected && styles.heroSelected]}>
-        <ImageBackground
-          source={imageUrl ? { uri: imageUrl } : undefined}
-          style={[styles.heroImage, !imageUrl && { backgroundColor: heroFallbackColor }]}
-          imageStyle={styles.heroImageRadius}
-          resizeMode="cover"
+      <View
+        style={[
+          styles.heroContainer,
+          isSelected && styles.heroSelected,
+          !imageUrl && { backgroundColor: heroFallbackColor },
+        ]}
+      >
+        {imageUrl ? (
+          <CachedImage source={{ uri: imageUrl }} style={styles.heroImage} contentFit="cover" />
+        ) : null}
+        <LinearGradient
+          colors={["rgba(10,11,13,0.08)", "rgba(10,11,13,0.36)", "rgba(10,11,13,0.9)"]}
+          style={styles.heroOverlay}
         >
-          <LinearGradient
-            colors={["rgba(10,11,13,0.08)", "rgba(10,11,13,0.36)", "rgba(10,11,13,0.9)"]}
-            style={styles.heroOverlay}
-          >
-            <View style={styles.heroTopRow}>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    borderColor: `${statusColor}66`,
-                  },
-                ]}
-              >
-                <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+          <View style={styles.heroTopRow}>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  borderColor: `${statusColor}66`,
+                },
+              ]}
+            >
+              <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+            </View>
+            <View style={styles.pointsStack}>
+              <View style={styles.pointsBadge}>
+                <Text style={styles.pointsText}>{points} pts</Text>
               </View>
-              <View style={styles.pointsStack}>
-                <View style={styles.pointsBadge}>
-                  <Text style={styles.pointsText}>{points} pts</Text>
+              {hasPodium && (
+                <View style={styles.podiumInline}>
+                  {podiumItems.map((item) => (
+                    <View
+                      key={item.place}
+                      style={[
+                        styles.podiumChip,
+                        {
+                          borderColor: item.borderColor,
+                          backgroundColor: item.backgroundColor,
+                        },
+                      ]}
+                    >
+                      <Ionicons name="medal-outline" size={10} color={item.iconColor} />
+                      <Text style={styles.podiumPlaceText}>{item.place}</Text>
+                      <Text style={styles.podiumPointsText}>{item.points}</Text>
+                    </View>
+                  ))}
                 </View>
-                {hasPodium && (
-                  <View style={styles.podiumInline}>
-                    {podiumItems.map((item) => (
-                      <View
-                        key={item.place}
-                        style={[
-                          styles.podiumChip,
-                          {
-                            borderColor: item.borderColor,
-                            backgroundColor: item.backgroundColor,
-                          },
-                        ]}
-                      >
-                        <Ionicons name="medal-outline" size={10} color={item.iconColor} />
-                        <Text style={styles.podiumPlaceText}>{item.place}</Text>
-                        <Text style={styles.podiumPointsText}>{item.points}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
+              )}
             </View>
+          </View>
 
-            <View style={styles.heroBottom}>
-              <View style={[styles.iconWrapper, { backgroundColor: `${iconColor}20` }]}>
-                <Ionicons name={icon} size={22} color={iconColor} />
-              </View>
-              <Text numberOfLines={2} style={styles.title}>
-                {name}
-              </Text>
+          <View style={styles.heroBottom}>
+            <View style={[styles.iconWrapper, { backgroundColor: `${iconColor}20` }]}>
+              <Ionicons name={icon} size={22} color={iconColor} />
             </View>
-          </LinearGradient>
-        </ImageBackground>
+            <Text numberOfLines={2} style={styles.title}>
+              {name}
+            </Text>
+          </View>
+        </LinearGradient>
       </View>
 
       <View style={styles.metaGrid}>
@@ -204,6 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   heroContainer: {
+    position: "relative",
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
@@ -218,14 +222,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   heroImage: {
-    height: 300,
-    width: "100%",
-  },
-  heroImageRadius: {
-    borderRadius: borderRadius.xl,
+    position: "absolute",
+    inset: 0,
   },
   heroOverlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     padding: spacing.lg,
     justifyContent: "space-between",
   },

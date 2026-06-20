@@ -1,11 +1,17 @@
+import { filterActivities, toggleHeartSummary } from "@mirai-app/common/feed";
 import { orpc } from "@mirai-app/orpc/client";
-import { filterActivities, toggleHeartSummary } from "@mirai-app/shared/feed";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type {
   ActivityFilter,
   CommunityFeedActivity,
 } from "~/components/community/CommunityActivityCard";
+import type { RankedGroup } from "~/components/trips/leaderboard/types";
 
 export type { CommunityFeedActivity };
 
@@ -25,6 +31,8 @@ export interface FeedPageData {
     hasMore?: boolean;
   };
   nextCursor?: FeedCursor;
+  ranking?: RankedGroup[];
+  avatarUrls?: Record<string, string | null>;
 }
 
 export interface UseCommunityFeedProps {
@@ -44,6 +52,8 @@ export function buildEmptyFeedPageData(): FeedPageData {
       hasMore: false,
     },
     nextCursor: null,
+    ranking: [],
+    avatarUrls: {},
   };
 }
 
@@ -98,26 +108,61 @@ export function applyReactionSummaryToFeed(
   });
 }
 
+function mapCommunityFullToFeedPageData(page: {
+  feed: {
+    activities: CommunityFeedActivity[];
+    pagination: FeedPageData["pagination"];
+    nextCursor: FeedCursor;
+  };
+  ranking: {
+    data: Array<{
+      id: string;
+      name: string;
+      image: string | null;
+      coins: number;
+      participants: { user?: { id: string } }[];
+    }>;
+  };
+  avatarUrls: Record<string, string | null>;
+}): FeedPageData {
+  return {
+    activities: page.feed.activities,
+    pagination: page.feed.pagination,
+    nextCursor: page.feed.nextCursor,
+    ranking: page.ranking.data.map((group, index) => ({
+      id: group.id,
+      name: group.name,
+      image: group.image ?? null,
+      coins: group.coins,
+      memberCount: group.participants.length,
+      rank: index + 1,
+      isCurrentUserGroup: false,
+    })),
+    avatarUrls: page.avatarUrls,
+  };
+}
+
 export function buildCommunityFeedQueryFn(selectedTripId: string | null, orpcClient: typeof orpc) {
   return async ({ pageParam }: { pageParam: FeedCursor }): Promise<FeedPageData> => {
     if (!selectedTripId) {
       return buildEmptyFeedPageData();
     }
 
-    return (await orpcClient.activityFeed.getByTrip.call({
+    const page = await orpcClient.community.getCommunityFull.call({
       tripId: selectedTripId,
-      page: 1,
       pageSize: 30,
       cursor: pageParam ?? undefined,
-    })) as FeedPageData;
+    });
+
+    return mapCommunityFullToFeedPageData(page);
   };
 }
 
 export function buildCommunityFeedQueryKey(
   selectedTripId: string | null,
-): readonly [string, string, number] | null {
+): [string, string, number] | null {
   if (!selectedTripId) return null;
-  return ["community-feed", selectedTripId, 30] as const;
+  return ["community-feed", selectedTripId, 30];
 }
 
 export function buildCommunityFeedActivities(
@@ -149,8 +194,14 @@ export const useCommunityFeed = ({
     [selectedTripId, orpcClient],
   );
 
-  const feedQuery = useInfiniteQuery({
-    queryKey: feedQueryKey ?? ["community-feed-disabled"],
+  const feedQuery = useInfiniteQuery<
+    FeedPageData,
+    Error,
+    InfiniteData<FeedPageData>,
+    unknown[],
+    FeedCursor
+  >({
+    queryKey: feedQueryKey ?? (["community-feed-disabled"] as [string]),
     enabled: Boolean(selectedTripId && feedQueryKey),
     initialPageParam: null as FeedCursor,
     queryFn,
@@ -203,9 +254,23 @@ export const useCommunityFeed = ({
     [activities, selectedFilter, focusActivityId],
   );
 
+  const rankingData = useMemo<Record<string, RankedGroup[]>>(
+    () => ({
+      [selectedTripId ?? ""]: feedQuery.data?.pages[0]?.ranking ?? [],
+    }),
+    [feedQuery.data?.pages, selectedTripId],
+  );
+
+  const avatarUrls = useMemo<Record<string, string | null>>(
+    () => feedQuery.data?.pages[0]?.avatarUrls ?? {},
+    [feedQuery.data?.pages],
+  );
+
   return {
     feedQuery,
     filteredActivities,
     handleToggleHeart,
+    rankingData,
+    avatarUrls,
   };
 };

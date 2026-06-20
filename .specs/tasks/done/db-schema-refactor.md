@@ -620,7 +620,7 @@ This implementation uses a **dual API surface** pattern with clear separation be
 |------|-------------|--------|------------|
 | Existing data in `events` table | Low | High | Run `SELECT COUNT(*) FROM events` before migration; if >0, archive to backup table |
 | Native app references undetected | Low | Medium | Full-text search in `apps/native` for `events` or `userEvents` strings |
-| Other packages reference types | Low | Medium | Check `packages/shared` for `Event` or `UserEvent` type usage |
+| Other packages reference types | Low | Medium | Check `packages/common` for `Event` or `UserEvent` type usage |
 | Notification-sender breaks | Medium | High | Integration test after endpoint change; verify token is passed correctly |
 | Client type bundle bloat | Low | Medium | Verify `orpc` client instance only includes `appRouter` |
 | Service token exposure | Medium | High | Use `x-service-token` header (not query params). Rotate tokens periodically |

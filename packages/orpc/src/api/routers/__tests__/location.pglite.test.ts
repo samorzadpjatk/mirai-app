@@ -1,5 +1,5 @@
+import { toExpoLocation } from "@mirai-app/common/locations";
 import { locationShares, locationSharingRequests, locations, users } from "@mirai-app/db";
-import { toExpoLocation } from "@mirai-app/shared/locations";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

@@ -1,6 +1,6 @@
 import { afterEach, vi } from "vitest";
 
-vi.mock("@mirai-app/shared/utils", () => ({
+vi.mock("@mirai-app/common/utils", () => ({
   logger: {
     info: vi.fn((...args: unknown[]) => console.log(...args)),
     error: vi.fn((...args: unknown[]) => console.error(...args)),

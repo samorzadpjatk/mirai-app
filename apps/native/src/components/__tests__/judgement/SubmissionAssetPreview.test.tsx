@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react-native";
 import React from "react";
 import { Text, View } from "react-native";
 import { useFileDownload } from "~/hooks/files";
@@ -121,9 +122,7 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render nothing when no assets exist", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("idle", null))
-      .mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
 
     const { queryByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionNoAssets} />,
@@ -132,32 +131,28 @@ describe("SubmissionAssetPreview", () => {
     expect(queryByText("Video submission")).toBeNull();
   });
 
-  it("should render image loading state", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("loading", null))
-      .mockReturnValueOnce(createState("idle", null));
+  it("should render image fallback while loading", () => {
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
 
-    const { getByTestId } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
     );
-    expect(getByTestId("image-loading")).toBeTruthy();
+    expect(getByText("Image unavailable")).toBeTruthy();
+    expect(getByText("image")).toBeTruthy();
   });
 
-  it("should render image when file is available", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
-      .mockReturnValueOnce(createState("idle", null));
+  it("should render image when file is available", async () => {
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
 
     const { getAllByTestId } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
     );
-    expect(getAllByTestId("image").length).toBeGreaterThan(0);
+
+    await waitFor(() => expect(getAllByTestId("image").length).toBeGreaterThan(0));
   });
 
   it("should render image unavailable state", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("error", null))
-      .mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValue(createState("error", null));
 
     const { getAllByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
@@ -167,9 +162,9 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render image count badge for multiple images", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
-      .mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValue(
+      createState("success", { uri: "file://downloaded-image.jpg" }),
+    );
 
     const { getByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithMultipleImages} />,
@@ -179,9 +174,9 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should not render badge for single image", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
-      .mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValue(
+      createState("success", { uri: "file://downloaded-image.jpg" }),
+    );
 
     const { queryByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
@@ -190,9 +185,9 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render video player when video is available", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("idle", null))
-      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-video.mp4" }));
+    mockUseFileDownload.mockReturnValue(
+      createState("success", { uri: "file://downloaded-video.mp4" }),
+    );
 
     const { getByTestId } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
@@ -201,9 +196,7 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render video loading state", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("idle", null))
-      .mockReturnValueOnce(createState("loading", null));
+    mockUseFileDownload.mockReturnValue(createState("loading", null));
 
     const { getByTestId } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
@@ -212,9 +205,7 @@ describe("SubmissionAssetPreview", () => {
   });
 
   it("should render video placeholder when no video file", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("idle", null))
-      .mockReturnValueOnce(createState("idle", null));
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
 
     const { getByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithVideo} />,
@@ -223,14 +214,14 @@ describe("SubmissionAssetPreview", () => {
     expect(getByText("play-circle")).toBeTruthy();
   });
 
-  it("should open fullscreen image when image is pressed", () => {
-    mockUseFileDownload
-      .mockReturnValueOnce(createState("success", { uri: "file://downloaded-image.jpg" }))
-      .mockReturnValueOnce(createState("idle", null));
+  it("should open fullscreen image when image is pressed", async () => {
+    mockUseFileDownload.mockReturnValue(createState("idle", null));
 
     const { getAllByTestId } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
     );
+
+    await waitFor(() => expect(getAllByTestId("image").length).toBeGreaterThan(0));
     const pressable = getAllByTestId("image")[0]?.parent;
     expect(pressable).toBeTruthy();
   });

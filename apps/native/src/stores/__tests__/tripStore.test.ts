@@ -216,8 +216,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: true,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -242,8 +240,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -258,8 +254,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: true,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -280,8 +274,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: undefined,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -305,8 +297,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: undefined,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -328,8 +318,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -351,8 +339,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: true,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -374,8 +360,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -404,8 +388,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: false,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,
@@ -425,8 +407,6 @@ describe("tripStore", () => {
       mockUseTripDetails.mockReturnValue({
         isTripPast: true,
         isLoadingTrip: false,
-        currentUser: null,
-        isLoadingUser: false,
         trip: null,
         refetchTrip: createMockRefetch(),
         isErrorTrip: false,

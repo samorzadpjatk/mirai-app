@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
@@ -24,11 +25,11 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
 
       <View style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}>
         {group.image ? (
-          <Image
+          <CachedImage
             testID="group-image"
             source={{ uri: group.image }}
             style={styles.avatarImage}
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>

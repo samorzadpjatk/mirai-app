@@ -1,13 +1,4 @@
 import {
-  type DB,
-  challengeLocationMatch,
-  challengeQrCode,
-  challengeRecurrence,
-  challengeSubmissions,
-  challengeText,
-  challenges,
-} from "@mirai-app/db";
-import {
   computeEffectiveChallengeValues,
   inferPeerVotingDurationHours,
   inferRecurringDaysFromWindow,
@@ -18,7 +9,16 @@ import {
   resolveVotingTimes,
   validatePeerVotingTimeline,
   validateRecurringTimeline,
-} from "@mirai-app/shared/challenges";
+} from "@mirai-app/common/challenges";
+import {
+  type DB,
+  challengeLocationMatch,
+  challengeQrCode,
+  challengeRecurrence,
+  challengeSubmissions,
+  challengeText,
+  challenges,
+} from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq } from "drizzle-orm";
 import {

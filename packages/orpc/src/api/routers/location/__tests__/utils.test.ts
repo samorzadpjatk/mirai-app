@@ -1,5 +1,5 @@
+import { toExpoLocation } from "@mirai-app/common/locations";
 import type { Location as DbLocation } from "@mirai-app/db";
-import { toExpoLocation } from "@mirai-app/shared/locations";
 import { describe, expect, it } from "vitest";
 import { getUserAvatarPath } from "../utils";
 

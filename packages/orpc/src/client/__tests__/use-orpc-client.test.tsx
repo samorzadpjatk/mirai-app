@@ -54,6 +54,7 @@ describe("useORPCClient", () => {
       "http://localhost:3000",
       "ws://localhost:3000",
       "test-token",
+      undefined,
     );
   });
 

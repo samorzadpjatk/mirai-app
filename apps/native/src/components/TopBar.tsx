@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "./common/CachedImage";
 
 interface TopBarProps {
   user?: {
@@ -33,10 +34,11 @@ export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress
         {isAuthenticated && user && (
           <View className="flex-row items-center justify-center gap-2">
             {user.image ? (
-              <Image
+              <CachedImage
                 source={{ uri: user.image }}
                 className="w-8 h-8 rounded-full"
                 accessibilityLabel="User avatar"
+                contentFit="cover"
               />
             ) : (
               <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center">

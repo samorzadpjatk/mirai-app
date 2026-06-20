@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@mirai-app/db": "workspace:*",
-    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/common": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
     "csv-parse": "^6.1.0",
     "drizzle-orm": "^0.45.2",

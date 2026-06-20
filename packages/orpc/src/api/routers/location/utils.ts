@@ -1,6 +1,6 @@
+import { toExpoLocation } from "@mirai-app/common/locations";
 import type { DB, Location as DbLocation } from "@mirai-app/db";
 import { tripParticipants } from "@mirai-app/db";
-import { toExpoLocation } from "@mirai-app/shared/locations";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, inArray, ne } from "drizzle-orm";

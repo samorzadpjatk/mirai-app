@@ -1,3 +1,5 @@
+import { buildUpdateActivityData, validateActivityVisibility } from "@mirai-app/common/feed";
+import { normalizeImageReference } from "@mirai-app/common/storage";
 import {
   activityFeeds,
   activityReactions,
@@ -7,8 +9,6 @@ import {
   userPosts,
 } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { buildUpdateActivityData, validateActivityVisibility } from "@mirai-app/shared/feed";
-import { normalizeImageReference } from "@mirai-app/shared/storage";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { enrichActivities } from "./enrichment";

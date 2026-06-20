@@ -152,7 +152,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 
 import { orpc } from '@mirai-app/orpc/client';
-import { colors } from '@mirai-app/shared/design-tokens';
+import { colors } from '@mirai-app/common/design-tokens';
 
 import { UserCard } from './components/UserCard';
 import type { User } from './types';

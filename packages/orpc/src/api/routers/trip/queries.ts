@@ -1,9 +1,14 @@
+import { buildParticipantCountMap, calculatePagination } from "@mirai-app/common/groups";
+import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/common/trips";
 import { type DB, tripParticipants, trips } from "@mirai-app/db";
-import { buildParticipantCountMap, calculatePagination } from "@mirai-app/shared/groups";
-import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/shared/trips";
 import { ORPCError } from "@orpc/server";
 import { eq, inArray, sql } from "drizzle-orm";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { getActivitiesPage } from "../activityFeed/queries";
+import type { Activity } from "../activityFeed/types";
+import { getAllByTrip as getAllChallengesByTrip } from "../challenge/queries";
+import { getAll as getAllGroups } from "../group/queries";
+import { getByTripId as getSponsorsByTripId } from "../sponsor/queries";
 import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import {
   resolveGroupImage,
@@ -171,6 +176,49 @@ export const getById = async (
   }
 
   return buildTripDetail(trip, context.supabase, context.db);
+};
+
+export const getByIdFull = async (
+  context: {
+    db: DB;
+    dbUser: { id: string; role: string };
+    supabase: Parameters<typeof buildAuthEmailLookup>[0];
+  },
+  input: { id: string },
+): Promise<{
+  trip: Awaited<ReturnType<typeof getById>>;
+  groups: Awaited<ReturnType<typeof getAllGroups>>["groups"];
+  challenges: Awaited<ReturnType<typeof getAllChallengesByTrip>>["challenges"];
+  sponsors: Awaited<ReturnType<typeof getSponsorsByTripId>>;
+  latestNews: Activity[];
+}> => {
+  const trip = await getById(context, input);
+
+  const [groups, challenges, sponsors, feed] = await Promise.all([
+    getAllGroups(
+      { db: context.db, supabase: context.supabase, dbUser: context.dbUser },
+      { tripId: input.id },
+    ),
+    getAllChallengesByTrip(
+      { db: context.db, supabase: context.supabase, dbUser: context.dbUser },
+      { tripId: input.id },
+    ),
+    getSponsorsByTripId({ db: context.db }, { tripId: input.id }),
+    getActivitiesPage({
+      context,
+      tripId: input.id,
+      page: 1,
+      pageSize: 30,
+      includeHidden: false,
+    }),
+  ]);
+
+  const latestNews = feed.activities.filter(
+    (activity): activity is Extract<Activity, { activityType: "custom" }> =>
+      activity.activityType === "custom",
+  );
+
+  return { trip, groups: groups.groups, challenges: challenges.challenges, sponsors, latestNews };
 };
 
 export const getByIdAdmin = async (

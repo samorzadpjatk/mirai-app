@@ -1,13 +1,16 @@
-import { Image } from "expo-image";
 import type React from "react";
-import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 
 interface UserAvatarProps {
   /**
    * User's avatar URL. If null/undefined, shows initials.
    */
   imageUrl?: string | null;
+  /**
+   * Supabase storage path for the avatar. Takes precedence over imageUrl.
+   */
+  storagePath?: string | null;
   /**
    * User's full name (e.g., "John Doe").
    * Used to extract initials if no image.
@@ -64,26 +67,45 @@ function getColorFromName(name: string): string {
   return colors[index]!;
 }
 
-export const UserAvatar: React.FC<UserAvatarProps> = ({ imageUrl, name, size = 38 }) => {
-  const [hasImageError, setHasImageError] = useState(false);
-  const hasImage = imageUrl && imageUrl.trim().length > 0;
-
-  if (hasImage && !hasImageError) {
-    return (
-      <Image
-        testID="user-avatar-image"
-        source={{ uri: imageUrl }}
-        style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
-        contentFit="cover"
-        onError={() => setHasImageError(true)}
-      />
-    );
-  }
-
-  // Show initials with generated color
+export const UserAvatar: React.FC<UserAvatarProps> = ({
+  imageUrl,
+  storagePath,
+  name,
+  size = 38,
+}) => {
   const initials = getInitials(name);
   const bgColor = getColorFromName(name);
   const fontSize = size * 0.4; // 40% of size
+  const hasRemoteImage = Boolean(storagePath) || Boolean(imageUrl?.trim());
+
+  if (hasRemoteImage) {
+    return (
+      <CachedImage
+        testID="user-avatar-image"
+        source={imageUrl ? { uri: imageUrl } : undefined}
+        storagePath={storagePath ?? undefined}
+        style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
+        contentFit="cover"
+        fallback={
+          <View
+            style={[
+              styles.initialsContainer,
+              {
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: bgColor,
+              },
+            ]}
+          >
+            <Text testID="user-avatar-initials-text" style={[styles.initialsText, { fontSize }]}>
+              {initials}
+            </Text>
+          </View>
+        }
+      />
+    );
+  }
 
   return (
     <View

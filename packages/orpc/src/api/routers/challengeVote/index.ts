@@ -6,7 +6,12 @@ import {
   protectedProcedure,
 } from "../../orpc";
 import { forceEndJudgedStaffVoting, submitVote, submitVotes } from "./mutations";
-import { getByChallenge, getJudgedStaffProgress, getMyByChallenge } from "./queries";
+import {
+  getByChallenge,
+  getJudgedStaffProgress,
+  getJudgedStaffProgressByTrip,
+  getMyByChallenge,
+} from "./queries";
 
 const handleGetMyByChallenge = async ({
   context,
@@ -31,6 +36,14 @@ const handleGetJudgedStaffProgress = async ({
   context: Parameters<typeof getJudgedStaffProgress>[0];
   input: Parameters<typeof getJudgedStaffProgress>[1];
 }) => getJudgedStaffProgress(context, input);
+
+const handleGetJudgedStaffProgressByTrip = async ({
+  context,
+  input,
+}: {
+  context: Parameters<typeof getJudgedStaffProgressByTrip>[0];
+  input: Parameters<typeof getJudgedStaffProgressByTrip>[1];
+}) => getJudgedStaffProgressByTrip(context, input);
 
 const handleForceEndJudgedStaffVoting = async ({
   context,
@@ -68,6 +81,10 @@ export const challengeVoteRouter = createORPCRouter({
   getJudgedStaffProgress: adminProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .handler(handleGetJudgedStaffProgress),
+
+  getJudgedStaffProgressByTrip: adminProcedure
+    .input(z.object({ tripId: z.string() }))
+    .handler(handleGetJudgedStaffProgressByTrip),
 
   forceEndJudgedStaffVoting: adminProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))

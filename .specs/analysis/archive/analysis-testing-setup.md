@@ -96,7 +96,7 @@ This analysis identifies all changes needed to add comprehensive unit testing to
 }
 ```
 
-### 1.8 Packages - Shared (`/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/package.json`)
+### 1.8 Packages - Shared (`/Users/rafalopilowski/Projekty/migration/pjapp/packages/common/package.json`)
 **Status:** ❌ NO test script
 **Action:**
 - Add test scripts
@@ -366,7 +366,7 @@ vi.mock('@mirai-app/db', () => ({
 }));
 ```
 
-**File:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/vitest.config.ts`
+**File:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/common/vitest.config.ts`
 ```typescript
 import { defineConfig } from 'vitest/config';
 import path from 'path';
@@ -463,7 +463,7 @@ export default defineConfig({
 ```
 
 ### 3.8 Shared Package.json
-**Path:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/package.json`
+**Path:** `/Users/rafalopilowski/Projekty/migration/pjapp/packages/common/package.json`
 **Add to scripts:**
 ```json
 "test": "vitest run --coverage",
@@ -595,7 +595,7 @@ packages/auth/
 
 ### 6.6 Shared Package
 ```
-packages/shared/
+packages/common/
 ├── src/
 │   ├── storage/
 │   │   └── __tests__/
@@ -625,7 +625,7 @@ shared ────┘
 ```
 
 ### 7.2 Testing Order (for CI)
-1. `packages/shared` - No dependencies
+1. `packages/common` - No dependencies
 2. `packages/supabase` - No dependencies
 3. `packages/db` - Depends on supabase
 4. `packages/auth` - Depends on db, supabase, shared
@@ -689,7 +689,7 @@ shared ────┘
 6. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/orpc/vitest.config.ts`
 7. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/auth/vitest.config.ts`
 8. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/auth/vitest.setup.ts`
-9. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/vitest.config.ts`
+9. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/common/vitest.config.ts`
 
 ### Files to Modify (9 files)
 1. `/Users/rafalopilowski/Projekty/migration/pjapp/package.json` - Add test scripts
@@ -697,7 +697,7 @@ shared ────┘
 3. `/Users/rafalopilowski/Projekty/migration/pjapp/apps/notification-sender/package.json` - Update test script
 4. `/Users/rafalopilowski/Projekty/migration/pjapp/apps/seed/package.json` - Add vitest deps and scripts
 5. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/auth/package.json` - Add vitest deps and scripts
-6. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/shared/package.json` - Add vitest deps and scripts
+6. `/Users/rafalopilowski/Projekty/migration/pjapp/packages/common/package.json` - Add vitest deps and scripts
 7. `/Users/rafalopilowski/Projekty/migration/pjapp/turbo.json` - Enhance test task
 8. `/Users/rafalopilowski/Projekty/migration/pjapp/.github/workflows/ci.yml` - Add test execution
 
@@ -715,7 +715,7 @@ shared ────┘
 3. CI workflow - Add test execution
 
 ### Phase 2: Packages (Independent)
-4. packages/shared - Add vitest config
+4. packages/common - Add vitest config
 5. packages/auth - Add vitest config + mocks
 6. packages/orpc - Add vitest config
 
@@ -743,7 +743,7 @@ bun run test:ci
 
 # Run tests for specific package
 cd packages/auth && bun run test
-cd packages/shared && bun run test
+cd packages/common && bun run test
 cd packages/orpc && bun run test
 cd packages/supabase && bun run test
 

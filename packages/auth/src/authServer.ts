@@ -1,7 +1,7 @@
+import type { AuthUser } from "@mirai-app/common/stores";
+import { formatDisplayName } from "@mirai-app/common/users";
+import { logger } from "@mirai-app/common/utils";
 import type { DB, Role, User } from "@mirai-app/db";
-import type { AuthUser } from "@mirai-app/shared/stores";
-import { formatDisplayName } from "@mirai-app/shared/users";
-import { logger } from "@mirai-app/shared/utils";
 import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 
 interface MinimalBuffer {

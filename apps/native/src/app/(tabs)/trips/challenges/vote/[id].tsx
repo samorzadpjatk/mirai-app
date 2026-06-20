@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CachedImage } from "~/components/common/CachedImage";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { useTripDetails } from "~/hooks/trips";
@@ -120,7 +120,11 @@ function SubmissionImageCard({
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : data?.signedUrl ? (
-          <Image source={{ uri: data.signedUrl }} style={styles.voteImage} />
+          <CachedImage
+            source={{ uri: data.signedUrl }}
+            style={styles.voteImage}
+            contentFit="cover"
+          />
         ) : (
           <View style={styles.voteImageFallback}>
             <Text style={styles.voteImageFallbackText}>

@@ -1,5 +1,5 @@
+import { logger } from "@mirai-app/common/utils";
 import { runMigrations } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import { serverConfig } from "./config";
 import { createServer } from "./server";
 

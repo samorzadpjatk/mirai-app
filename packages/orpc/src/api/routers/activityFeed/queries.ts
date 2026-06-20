@@ -1,11 +1,11 @@
-import { activityFeeds, activityReactions } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import {
   buildActivityWhere,
   emptyReactionCounts,
   getActivityColumns,
   getActivityRelationTree,
-} from "@mirai-app/shared/feed";
+} from "@mirai-app/common/feed";
+import { activityFeeds, activityReactions } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import { enrichActivities } from "./enrichment";

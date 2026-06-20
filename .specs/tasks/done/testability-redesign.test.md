@@ -14,11 +14,11 @@ This task executes a 15-week incremental redesign of the MIRAI monorepo's testin
 The redesign addresses critical gaps: business logic mixed with data access in 174-508 line oRPC router mutations, tightly coupled native hooks importing orpc clients directly, an untestable background task with module-level client creation, a 190-line QueryProvider god component, zero transaction rollback testing, 858 lines of mock setup in orpc alone, and no real database integration strategy.
 
 **Scope**:
-- **Included**: Pure function extraction to `@mirai-app/shared`, real PGLite integration tests, test infrastructure cleanup, incremental router-by-router refactoring, background task decoupling, QueryProvider decomposition, MSW setup for native hooks, dead code removal, documentation updates
+- **Included**: Pure function extraction to `@mirai-app/common`, real PGLite integration tests, test infrastructure cleanup, incremental router-by-router refactoring, background task decoupling, QueryProvider decomposition, MSW setup for native hooks, dead code removal, documentation updates
 - **Excluded**: Jest → Vitest migration (jest-expo is required), DI container libraries (tsyringe/inversify), Repository layer over Drizzle, Service layer over oRPC client, Platform adapters for simple APIs, 15-session big-bang rewrite
 
 **User Scenarios**:
-1. **Primary Flow**: Developer writes pure business logic in `packages/shared/src/core/`, tests with real data in 30-60 seconds, integrates into thin hook/router shells, verifies with `nx run @mirai-app/shared:test`
+1. **Primary Flow**: Developer writes pure business logic in `packages/common/src/core/`, tests with real data in 30-60 seconds, integrates into thin hook/router shells, verifies with `nx run @mirai-app/common:test`
 2. **Integration Flow**: Developer writes router mutation, tests with real PGLite database using `BEGIN...ROLLBACK`, verifies with `nx run @mirai-app/orpc:test`
 3. **Native Flow**: Developer writes React hook, tests against MSW-intercepted oRPC API with real query client, verifies with `nx run @mirai-app/native:test`
 4. **Error Handling**: Test failures provide clear real-data diffs (no mock call chain debugging), CI runs full suite in ~3 minutes, coverage never drops below 80%
@@ -31,7 +31,7 @@ This redesign uses a **Functional Core, Imperative Shell** architecture with **M
 
 | Layer | Responsibility | Test Strategy | Example |
 |-------|--------------|---------------|---------|
-| `packages/shared/src/core/` | Pure functions (no side effects) | Real data unit tests (Vitest) | `buildTripQueryInput`, `calculateAllTrips` |
+| `packages/common/src/core/` | Pure functions (no side effects) | Real data unit tests (Vitest) | `buildTripQueryInput`, `calculateAllTrips` |
 | `packages/orpc/src/api/routers/` | Thin shells: validate → call pure function → return | PGLite integration tests (Vitest) | `coin.create`, `user.update` |
 | `apps/native/src/hooks/` | Thin shells: call pure functions + orpc client | MSW + real client tests (Jest) | `useTrips`, `useGroups` |
 | `apps/native/src/services/background/` | Task logic with injected dependencies | Fake dependency tests (Jest) | `backgroundLocationTask` |
@@ -39,7 +39,7 @@ This redesign uses a **Functional Core, Imperative Shell** architecture with **M
 
 ### Key Architectural Decisions
 
-1. **Functional Core, Imperative Shell**: Extract all pure business logic to `packages/shared/src/core/`. Hooks, routers, and components become thin shells that call pure functions. This enables testing with real data (no mocks) and reduces test LOC by ~75%.
+1. **Functional Core, Imperative Shell**: Extract all pure business logic to `packages/common/src/core/`. Hooks, routers, and components become thin shells that call pure functions. This enables testing with real data (no mocks) and reduces test LOC by ~75%.
 
 2. **Manual Dependency Injection**: Pass dependencies via constructor/function parameters. No singleton imports inside business logic. The background task accepts `{ supabaseClient, orpcClient }` instead of creating them at module level.
 
@@ -86,7 +86,7 @@ This redesign uses a **Functional Core, Imperative Shell** architecture with **M
 ### Target Directory Structure
 
 ```
-packages/shared/
+packages/common/
 ├── src/
 │   ├── core/                    # Pure functions (no side effects)
 │   │   ├── buildTripQueryInput.ts
@@ -147,20 +147,20 @@ apps/native/
 **Create (~40 files)**:
 | File | Purpose |
 |------|---------|
-| `packages/shared/src/core/buildTripQueryInput.ts` | Pure query input builder |
-| `packages/shared/src/core/buildGroupQueryInput.ts` | Pure query input builder |
-| `packages/shared/src/core/buildChallengeQueryInput.ts` | Pure query input builder |
-| `packages/shared/src/core/calculateAllTrips.ts` | Pure trip calculation logic |
-| `packages/shared/src/core/getNextGroupPageParam.ts` | Pure pagination logic |
-| `packages/shared/src/core/getNextTripPageParam.ts` | Pure pagination logic |
-| `packages/shared/src/core/getNextChallengePageParam.ts` | Pure pagination logic |
-| `packages/shared/src/core/calculateRewardProgress.ts` | Pure reward calculation |
-| `packages/shared/src/core/buildChallengeFilter.ts` | Pure filter builder |
-| `packages/shared/src/core/validateUserRegistration.ts` | Pure validation logic |
-| `packages/shared/src/core/calculateTripScore.ts` | Pure score calculation |
-| `packages/shared/src/factories/*.factory.ts` | Test data factories |
-| `packages/shared/vitest.shared.config.ts` | Shared Vitest base config |
-| `packages/shared/testing/setup.ts` | Unified console suppression |
+| `packages/common/src/core/buildTripQueryInput.ts` | Pure query input builder |
+| `packages/common/src/core/buildGroupQueryInput.ts` | Pure query input builder |
+| `packages/common/src/core/buildChallengeQueryInput.ts` | Pure query input builder |
+| `packages/common/src/core/calculateAllTrips.ts` | Pure trip calculation logic |
+| `packages/common/src/core/getNextGroupPageParam.ts` | Pure pagination logic |
+| `packages/common/src/core/getNextTripPageParam.ts` | Pure pagination logic |
+| `packages/common/src/core/getNextChallengePageParam.ts` | Pure pagination logic |
+| `packages/common/src/core/calculateRewardProgress.ts` | Pure reward calculation |
+| `packages/common/src/core/buildChallengeFilter.ts` | Pure filter builder |
+| `packages/common/src/core/validateUserRegistration.ts` | Pure validation logic |
+| `packages/common/src/core/calculateTripScore.ts` | Pure score calculation |
+| `packages/common/src/factories/*.factory.ts` | Test data factories |
+| `packages/common/vitest.shared.config.ts` | Shared Vitest base config |
+| `packages/common/testing/setup.ts` | Unified console suppression |
 | `packages/orpc/src/client/query-client-factory.ts` | Query client factory |
 | `packages/orpc/src/client/auth-token-provider.tsx` | Auth token sync component |
 | `packages/orpc/src/client/use-websocket.ts` | WebSocket lifecycle hook |
@@ -196,17 +196,17 @@ apps/native/
 
 ### Functional Requirements
 
-- [x] **Pure Function Extraction — Part 1**: `buildGroupQueryInput`, `getNextGroupPageParam`, `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips`, `buildChallengeQueryInput`, `getNextChallengePageParam` extracted to `packages/shared/src/{groups,trips,challenges}/queryBuilders.ts` with 27 real-data Vitest tests
+- [x] **Pure Function Extraction — Part 1**: `buildGroupQueryInput`, `getNextGroupPageParam`, `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips`, `buildChallengeQueryInput`, `getNextChallengePageParam` extracted to `packages/common/src/{groups,trips,challenges}/queryBuilders.ts` with 27 real-data Vitest tests
   - Given: Business logic was inline in native hooks
   - When: Pure functions are extracted and tested with real data
-  - Then: `nx run @mirai-app/shared:test` passes 251/251 tests, `nx run @mirai-app/native:test` passes 225/225 tests
+  - Then: `nx run @mirai-app/common:test` passes 251/251 tests, `nx run @mirai-app/native:test` passes 225/225 tests
 
-- [x] **Pure Function Extraction — Part 2**: `calculateRewardProgress`, `buildChallengeFilter`, `validateUserRegistration`, `calculateTripScore`, `buildNotificationSchedule` extracted to `packages/shared/src/core/` with real-data tests
+- [x] **Pure Function Extraction — Part 2**: `calculateRewardProgress`, `buildChallengeFilter`, `validateUserRegistration`, `calculateTripScore`, `buildNotificationSchedule` extracted to `packages/common/src/core/` with real-data tests
   - Given: Additional business logic remains inline in hooks/routers
   - When: Pure functions are extracted and tested with real data
   - Then: All shared tests pass, hooks refactored to thin shells
 
-- [x] **Test Infrastructure Cleanup**: Mock factories deduplicated into `packages/shared/src/test-utils/`, shared Vitest config created, console suppression unified
+- [x] **Test Infrastructure Cleanup**: Mock factories deduplicated into `packages/common/src/test-utils/`, shared Vitest config created, console suppression unified
   - Given: 858-line `packages/orpc/vitest.setup.ts` and 146-line `apps/native/jest.setup.js`
   - When: Infrastructure is deduplicated and unified
   - Then: `vitest.setup.ts` shrinks to ~300 lines, `jest.setup.js` shrinks to ~100 lines
@@ -284,21 +284,21 @@ apps/native/
 **Parallel with**: None (Wave 1 - Foundation)
 
 **Success Criteria**:
-- `buildGroupQueryInput`, `getNextGroupPageParam`, `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips`, `buildChallengeQueryInput`, `getNextChallengePageParam` extracted to `packages/shared/src/{groups,trips,challenges}/queryBuilders.ts`
+- `buildGroupQueryInput`, `getNextGroupPageParam`, `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips`, `buildChallengeQueryInput`, `getNextChallengePageParam` extracted to `packages/common/src/{groups,trips,challenges}/queryBuilders.ts`
 - 27 real-data Vitest tests written (9 + 11 + 7)
-- Hooks `useGroups`, `useTrips`, `useChallenges` refactored to thin shells importing from `@mirai-app/shared`
+- Hooks `useGroups`, `useTrips`, `useChallenges` refactored to thin shells importing from `@mirai-app/common`
 - `DBChallenge` duplication in `useChallenges.ts` eliminated
-- `nx run @mirai-app/shared:test` passes 251/251 tests
+- `nx run @mirai-app/common:test` passes 251/251 tests
 - `nx run @mirai-app/native:test` passes 225/225 tests
 
 **Subtasks**:
-1. Extract `buildGroupQueryInput` and `getNextGroupPageParam` to `packages/shared/src/groups/queryBuilders.ts`
-2. Extract `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips` to `packages/shared/src/trips/queryBuilders.ts`
-3. Extract `buildChallengeQueryInput`, `getNextChallengePageParam` to `packages/shared/src/challenges/queryBuilders.ts`
+1. Extract `buildGroupQueryInput` and `getNextGroupPageParam` to `packages/common/src/groups/queryBuilders.ts`
+2. Extract `buildTripQueryInput`, `getNextTripPageParam`, `calculateAllTrips` to `packages/common/src/trips/queryBuilders.ts`
+3. Extract `buildChallengeQueryInput`, `getNextChallengePageParam` to `packages/common/src/challenges/queryBuilders.ts`
 4. Write 27 real-data Vitest tests for all extracted functions
-5. Refactor `useGroups`, `useTrips`, `useChallenges` to import from `@mirai-app/shared`
+5. Refactor `useGroups`, `useTrips`, `useChallenges` to import from `@mirai-app/common`
 6. Eliminate `DBChallenge` duplication in `useChallenges.ts`
-7. Verify `nx run @mirai-app/shared:test` and `nx run @mirai-app/native:test`
+7. Verify `nx run @mirai-app/common:test` and `nx run @mirai-app/native:test`
 
 **Blockers**: None
 
@@ -326,17 +326,17 @@ apps/native/
 **Parallel with**: Step B.1 (Wave 2 - Independent tracks)
 
 **Success Criteria**:
-- `calculateRewardProgress`, `buildChallengeFilter`, `validateUserRegistration`, `calculateTripScore`, `buildNotificationSchedule` extracted to `packages/shared/src/core/`
+- `calculateRewardProgress`, `buildChallengeFilter`, `validateUserRegistration`, `calculateTripScore`, `buildNotificationSchedule` extracted to `packages/common/src/core/`
 - Real-data tests written for all extracted functions
-- Mock factories deduplicated into `packages/shared/src/test-utils/`
-- Shared Vitest config `packages/shared/vitest.shared.config.ts` created
-- `nx run @mirai-app/shared:test` and `nx run @mirai-app/orpc:test` pass
+- Mock factories deduplicated into `packages/common/src/test-utils/`
+- Shared Vitest config `packages/common/vitest.shared.config.ts` created
+- `nx run @mirai-app/common:test` and `nx run @mirai-app/orpc:test` pass
 
 **Subtasks**:
 1. Extract remaining pure functions from hooks and routers
 2. Write real-data tests for each extraction
 3. Move `createMockSupabaseClient`, `createMockDb`, `createMockContext` from `packages/orpc/vitest.setup.ts` to shared test utilities
-4. Create `packages/shared/vitest.shared.config.ts` base config
+4. Create `packages/common/vitest.shared.config.ts` base config
 5. Delete duplicate factories from orpc setup
 6. Verify all test suites pass
 
@@ -369,14 +369,14 @@ apps/native/
 **Parallel with**: Step A.2 (Wave 2)
 
 **Success Criteria**:
-- `packages/shared/src/test-utils/` contains `createMockSupabaseClient`, `createMockDb`, `createMockContext`
-- `packages/shared/vitest.shared.config.ts` created with base coverage thresholds
-- `packages/shared/testing/setup.ts` provides unified console suppression
+- `packages/common/src/test-utils/` contains `createMockSupabaseClient`, `createMockDb`, `createMockContext`
+- `packages/common/vitest.shared.config.ts` created with base coverage thresholds
+- `packages/common/testing/setup.ts` provides unified console suppression
 - `packages/orpc/vitest.setup.ts` reduced from 858 to ~300 lines
 - `apps/native/jest.setup.js` reduced from 146 to ~100 lines
 
 **Subtasks**:
-1. Create `packages/shared/src/test-utils/` directory
+1. Create `packages/common/src/test-utils/` directory
 2. Move mock factories from orpc setup to shared
 3. Create shared Vitest config with coverage thresholds
 4. Create unified console suppression setup
@@ -412,7 +412,7 @@ apps/native/
 
 **Success Criteria**:
 - Simplest router (`coin` or `sponsor`) selected
-- All pure logic extracted to `packages/shared/src/core/`
+- All pure logic extracted to `packages/common/src/core/`
 - Real PGLite transaction test added (rollback on failure)
 - Mock-heavy tests rewritten with real data
 - Router coverage reaches 80%+
@@ -543,7 +543,7 @@ apps/native/
 
 **Success Criteria**:
 - `sponsor`, `challengeVote`, `submissionReport` routers refactored
-- Pure functions extracted to `packages/shared/src/core/`
+- Pure functions extracted to `packages/common/src/core/`
 - PGLite transaction tests added for each router
 - Mock-heavy tests replaced with real-data tests
 - `nx run @mirai-app/orpc:test` passes
@@ -747,7 +747,7 @@ apps/native/
 **Success Criteria**:
 - `packages/orpc/vitest.setup.ts` reduced from 858 to <200 lines
 - `createMockDb()`, `createMockContext()`, manual mock construction deleted
-- Shared mock utilities imported from `packages/shared/src/test-utils/`
+- Shared mock utilities imported from `packages/common/src/test-utils/`
 - `nx run @mirai-app/orpc:test` passes
 
 **Subtasks**:
@@ -1078,7 +1078,7 @@ A.1 → A.2 → C.1 → C.2 → E.1 → E.2 → E.3 → E.4 → E.5 → E.6 → 
 - [x] All 19 routers refactored with pure functions + PGLite tests
 - [x] `packages/orpc/vitest.setup.ts` reduced from 858 to <200 lines
 - [x] `apps/native/jest.setup.js` reduced from 146 to ~100 lines
-- [x] 27+ pure functions extracted to `packages/shared/src/core/`
+- [x] 27+ pure functions extracted to `packages/common/src/core/`
 - [x] `backgroundLocationTask.ts` fully decoupled with DI
 - [x] QueryProvider decomposed into 4 focused files
 - [x] MSW configured for native tests, 60-80% of hook tests rewritten

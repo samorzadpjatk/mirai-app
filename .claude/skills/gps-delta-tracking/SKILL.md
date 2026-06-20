@@ -148,4 +148,4 @@ If filtering is too aggressive:
 
 ## Deduplication Note
 
-`calculateDistance` may already exist in other packages (e.g., `@mirai-app/shared`). Consider extracting to a shared utility to avoid duplication.
+`calculateDistance` may already exist in other packages (e.g., `@mirai-app/common`). Consider extracting to a shared utility to avoid duplication.

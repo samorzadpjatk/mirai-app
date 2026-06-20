@@ -524,28 +524,31 @@ describe("useAdminUsers (MSW)", () => {
   it("should handle pagination", async () => {
     server.use(
       createORPCHandler(["group", "getAll"], () => []),
-      createORPCHandler(["user", "searchWithPagination"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              users: [
+                {
+                  id: "user-1",
+                  firstName: "John",
+                  lastName: "Doe",
+                  email: "john@example.com",
+                  role: "USER",
+                  tripId: "trip-123",
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
           return {
-            users: [
-              {
-                id: "user-1",
-                firstName: "John",
-                lastName: "Doe",
-                email: "john@example.com",
-                role: "USER",
-                tripId: "trip-123",
-              },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
+            users: [],
+            pagination: { hasMore: false, offset, limit: 30 },
           };
-        }
-        return {
-          users: [],
-          pagination: { hasMore: false, offset, limit: 30 },
-        };
-      }),
+        },
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers(tripId, "", "firstName"));
@@ -681,27 +684,30 @@ describe("useAdminUsers (MSW)", () => {
 
     server.use(
       createORPCHandler(["group", "getAll"], () => []),
-      createORPCHandler(["user", "searchWithPagination"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
-          return {
-            users: [
-              {
-                id: "user-1",
-                firstName: "John",
-                lastName: "Doe",
-                email: "john@example.com",
-                role: "USER",
-                tripId: "trip-123",
-              },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
-          };
-        }
-        return new Promise((resolve) => {
-          resolveNextPage = resolve;
-        });
-      }),
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              users: [
+                {
+                  id: "user-1",
+                  firstName: "John",
+                  lastName: "Doe",
+                  email: "john@example.com",
+                  role: "USER",
+                  tripId: "trip-123",
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
+          return new Promise((resolve) => {
+            resolveNextPage = resolve;
+          });
+        },
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers(tripId, "", "firstName"));
@@ -731,37 +737,40 @@ describe("useAdminUsers (MSW)", () => {
   it("should flatten multiple pages", async () => {
     server.use(
       createORPCHandler(["group", "getAll"], () => []),
-      createORPCHandler(["user", "searchWithPagination"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
+      createORPCHandler(
+        ["user", "searchWithPagination"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              users: [
+                {
+                  id: "user-1",
+                  firstName: "John",
+                  lastName: "Doe",
+                  email: "john@example.com",
+                  role: "USER",
+                  tripId: "trip-123",
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
           return {
             users: [
               {
-                id: "user-1",
-                firstName: "John",
-                lastName: "Doe",
-                email: "john@example.com",
-                role: "USER",
+                id: "user-2",
+                firstName: "Jane",
+                lastName: "Smith",
+                email: "jane@example.com",
+                role: "ADMIN",
                 tripId: "trip-123",
               },
             ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
+            pagination: { hasMore: false, offset, limit: 30 },
           };
-        }
-        return {
-          users: [
-            {
-              id: "user-2",
-              firstName: "Jane",
-              lastName: "Smith",
-              email: "jane@example.com",
-              role: "ADMIN",
-              tripId: "trip-123",
-            },
-          ],
-          pagination: { hasMore: false, offset, limit: 30 },
-        };
-      }),
+        },
+      ),
     );
 
     const { result } = renderHookWithMSW(() => useAdminUsers(tripId, "", "firstName"));

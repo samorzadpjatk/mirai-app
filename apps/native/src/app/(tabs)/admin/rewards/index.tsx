@@ -7,7 +7,6 @@ import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   RefreshControl,
   ScrollView,
   Text,
@@ -19,6 +18,7 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { CachedImage } from "~/components/common/CachedImage";
 import {
   useAdminRewards,
   useRewardPurchaseHistory,
@@ -749,7 +749,7 @@ export default function AdminRewardsPage() {
                       }}
                     >
                       {(reward.signedImageUrl ?? reward.image) && (
-                        <Image
+                        <CachedImage
                           source={{ uri: reward.signedImageUrl ?? reward.image ?? undefined }}
                           style={{
                             width: 72,
@@ -757,7 +757,7 @@ export default function AdminRewardsPage() {
                             borderRadius: 12,
                             backgroundColor: "#0b1a1a",
                           }}
-                          resizeMode="cover"
+                          contentFit="cover"
                         />
                       )}
                       <View style={{ flex: 1, minWidth: 0 }}>

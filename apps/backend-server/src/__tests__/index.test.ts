@@ -5,7 +5,7 @@ vi.mock("@mirai-app/db", () => ({
   runMigrations: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@mirai-app/shared/utils", () => ({
+vi.mock("@mirai-app/common/utils", () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),

@@ -1,4 +1,4 @@
-# @mirai-app/shared
+# @mirai-app/common
 
 Shared utilities and types used across the MIRAI app monorepo.
 
@@ -16,7 +16,7 @@ This package contains common functionality that is shared between different appl
 ## Structure
 
 ```
-packages/shared/
+packages/common/
 ├── src/
 │   ├── challengeSubmissions/  # Challenge submission validation & points
 │   ├── challengeVote/         # Challenge vote builders and validators
@@ -57,7 +57,7 @@ bun install
 ## Usage
 
 ```typescript
-import { sharedUtility, SharedType } from "@mirai-app/shared";
+import { sharedUtility, SharedType } from "@mirai-app/common";
 
 // Example usage
 const result = sharedUtility.someFunction();
@@ -126,7 +126,7 @@ import {
   userBuilder,
   resetMocks,
   flushPromises
-} from '@mirai-app/shared/test-utils';
+} from '@mirai-app/common/test-utils';
 
 describe('MyComponent', () => {
   beforeEach(() => {

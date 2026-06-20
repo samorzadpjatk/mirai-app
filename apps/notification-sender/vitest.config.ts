@@ -1,6 +1,6 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-import { baseConfig } from "../../packages/shared/vitest.base.config";
+import { baseConfig } from "../../packages/common/vitest.base.config";
 
 export default mergeConfig(
   baseConfig,
@@ -15,71 +15,71 @@ export default mergeConfig(
       alias: [
         { find: "~", replacement: path.resolve(__dirname, "../../packages/orpc/src") },
         {
-          find: "@mirai-app/shared/test-utils",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/test-utils/index.ts"),
+          find: "@mirai-app/common/test-utils",
+          replacement: path.resolve(__dirname, "../../packages/common/src/test-utils/index.ts"),
         },
         {
-          find: "@mirai-app/shared/challenges",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/challenges/index.ts"),
+          find: "@mirai-app/common/challenges",
+          replacement: path.resolve(__dirname, "../../packages/common/src/challenges/index.ts"),
         },
         {
-          find: "@mirai-app/shared/feed",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/feed/index.ts"),
+          find: "@mirai-app/common/feed",
+          replacement: path.resolve(__dirname, "../../packages/common/src/feed/index.ts"),
         },
         {
-          find: "@mirai-app/shared/groups",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/groups/index.ts"),
+          find: "@mirai-app/common/groups",
+          replacement: path.resolve(__dirname, "../../packages/common/src/groups/index.ts"),
         },
         {
-          find: "@mirai-app/shared/stores",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/stores/index.ts"),
+          find: "@mirai-app/common/stores",
+          replacement: path.resolve(__dirname, "../../packages/common/src/stores/index.ts"),
         },
         {
-          find: "@mirai-app/shared/trips",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/trips/index.ts"),
+          find: "@mirai-app/common/trips",
+          replacement: path.resolve(__dirname, "../../packages/common/src/trips/index.ts"),
         },
         {
-          find: "@mirai-app/shared/users",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/users/index.ts"),
+          find: "@mirai-app/common/users",
+          replacement: path.resolve(__dirname, "../../packages/common/src/users/index.ts"),
         },
         {
-          find: "@mirai-app/shared/storage",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/storage/index.ts"),
+          find: "@mirai-app/common/storage",
+          replacement: path.resolve(__dirname, "../../packages/common/src/storage/index.ts"),
         },
         {
-          find: "@mirai-app/shared/utils",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/utils/index.ts"),
+          find: "@mirai-app/common/utils",
+          replacement: path.resolve(__dirname, "../../packages/common/src/utils/index.ts"),
         },
         {
-          find: "@mirai-app/shared/utils/location",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/utils/location.ts"),
+          find: "@mirai-app/common/utils/location",
+          replacement: path.resolve(__dirname, "../../packages/common/src/utils/location.ts"),
         },
         {
-          find: "@mirai-app/shared/tripInfo",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/tripInfo/index.ts"),
+          find: "@mirai-app/common/tripInfo",
+          replacement: path.resolve(__dirname, "../../packages/common/src/tripInfo/index.ts"),
         },
         {
-          find: "@mirai-app/shared/rewards",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/rewards/index.ts"),
+          find: "@mirai-app/common/rewards",
+          replacement: path.resolve(__dirname, "../../packages/common/src/rewards/index.ts"),
         },
         {
-          find: "@mirai-app/shared/coins",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/coins/index.ts"),
+          find: "@mirai-app/common/coins",
+          replacement: path.resolve(__dirname, "../../packages/common/src/coins/index.ts"),
         },
         {
-          find: "@mirai-app/shared/challengeSubmissions",
+          find: "@mirai-app/common/challengeSubmissions",
           replacement: path.resolve(
             __dirname,
-            "../../packages/shared/src/challengeSubmissions/index.ts",
+            "../../packages/common/src/challengeSubmissions/index.ts",
           ),
         },
         {
-          find: "@mirai-app/shared/locations",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/locations/index.ts"),
+          find: "@mirai-app/common/locations",
+          replacement: path.resolve(__dirname, "../../packages/common/src/locations/index.ts"),
         },
         {
-          find: "@mirai-app/shared/notifications",
-          replacement: path.resolve(__dirname, "../../packages/shared/src/notifications/index.ts"),
+          find: "@mirai-app/common/notifications",
+          replacement: path.resolve(__dirname, "../../packages/common/src/notifications/index.ts"),
         },
         {
           find: "@mirai-app/auth",

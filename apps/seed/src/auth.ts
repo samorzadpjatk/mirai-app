@@ -1,4 +1,4 @@
-import { logger } from "@mirai-app/shared/utils";
+import { logger } from "@mirai-app/common/utils";
 import { env } from "./config/env";
 import { supabase } from "./config/supabase";
 import type { AuthUserByEmail } from "./types";

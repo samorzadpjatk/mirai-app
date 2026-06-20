@@ -63,7 +63,7 @@ Systematically convert all 204 Biome lint warnings across the MIRAI monorepo to 
 - PR: #3
 
 #### Step 4: `noForEach` (10 violations)
-- Files: `packages/shared/src/notifications/deliveryUtils.ts`, `packages/orpc/src/utils/notificationTemplates.ts`, `apps/native/src/map/index.tsx`
+- Files: `packages/common/src/notifications/deliveryUtils.ts`, `packages/orpc/src/utils/notificationTemplates.ts`, `apps/native/src/map/index.tsx`
 - Action: Convert `forEach` to `for...of` (many auto-fixable)
 - Command: `bunx biome check . --write --max-diagnostics=1000`
 - Verification: `bun run lint` + tests
@@ -94,7 +94,7 @@ Systematically convert all 204 Biome lint warnings across the MIRAI monorepo to 
 - Packages: orpc (120+), shared (15), native (1)
 - Action: Replace `any` with `unknown`, specific types, or proper generics
 - Strategy:
-  1. `packages/shared` (15 violations) — foundational, affects all packages
+  1. `packages/common` (15 violations) — foundational, affects all packages
   2. `apps/native` (1 violation) — quick win
   3. `packages/orpc` (120+ violations) — split into 3 PRs
 - Use `// biome-ignore` with TODO for genuinely dynamic data (API responses)
@@ -107,7 +107,7 @@ Systematically convert all 204 Biome lint warnings across the MIRAI monorepo to 
 |---------|---------|-------|
 | `packages/orpc` | 143 | 0 |
 | `apps/native` | 30 | 0 |
-| `packages/shared` | 19 | 0 |
+| `packages/common` | 19 | 0 |
 | `apps/seed` | 9 | 0 |
 | `packages/db` | 3 | 0 |
 | **Total** | **204** | **0** |

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { adminProcedure, createORPCRouter, protectedProcedure } from "../../orpc";
 import { createTrip, deleteTrip, updateTrip } from "./mutations";
-import { getAll, getById, getByIdAdmin, getResources } from "./queries";
+import { getAll, getById, getByIdAdmin, getByIdFull, getResources } from "./queries";
 
 const handleGetAll = async ({
   context,
@@ -18,6 +18,14 @@ const handleGetById = async ({
   context: Parameters<typeof getById>[0];
   input: Parameters<typeof getById>[1];
 }) => getById(context, input);
+
+const handleGetByIdFull = async ({
+  context,
+  input,
+}: {
+  context: Parameters<typeof getByIdFull>[0];
+  input: Parameters<typeof getByIdFull>[1];
+}) => getByIdFull(context, input);
 
 const handleGetByIdAdmin = async ({
   context,
@@ -75,6 +83,7 @@ export const tripRouter = createORPCRouter({
     )
     .handler(handleGetAll),
   getById: protectedProcedure.input(z.object({ id: z.string() })).handler(handleGetById),
+  getByIdFull: protectedProcedure.input(z.object({ id: z.string() })).handler(handleGetByIdFull),
   getByIdAdmin: adminProcedure.input(z.object({ id: z.string() })).handler(handleGetByIdAdmin),
   getResources: protectedProcedure
     .input(z.object({ tripId: z.string() }))

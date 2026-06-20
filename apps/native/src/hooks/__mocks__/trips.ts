@@ -21,8 +21,6 @@ export const mockUseTrips = jest.fn(() => ({
 }));
 
 export const mockUseTripDetails = jest.fn((_tripId?: string | null) => ({
-  currentUser: null as { id: string; firstName: string; lastName: string; role: string } | null,
-  isLoadingUser: false,
   trip: null as {
     id: string;
     name: string;
@@ -37,6 +35,7 @@ export const mockUseTripDetails = jest.fn((_tripId?: string | null) => ({
   isErrorTrip: false,
   tripError: null as Error | null,
   isTripPast: false,
+  tripId: "",
 }));
 
 export const mockUseSelectedTrip = jest.fn(() => ({

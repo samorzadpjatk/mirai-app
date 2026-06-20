@@ -1,6 +1,6 @@
 # Migrate Trip Info from Hardcoded to Dynamic DB Data
 
-Move all hardcoded trip-specific values from `apps/native/src/app/(tabs)/trips/info.tsx` into new fully-relational DB tables (`TripResource`, `TripInsurance`, `TripInsuranceStep`), expose them via a dedicated oRPC query, seed them from YAML, define shared types in `packages/shared`, and consume them dynamically in the native app.
+Move all hardcoded trip-specific values from `apps/native/src/app/(tabs)/trips/info.tsx` into new fully-relational DB tables (`TripResource`, `TripInsurance`, `TripInsuranceStep`), expose them via a dedicated oRPC query, seed them from YAML, define shared types in `packages/common`, and consume them dynamically in the native app.
 
 ## Hardcoded values to migrate
 
@@ -97,9 +97,9 @@ export const tripRelations = relations(trip, ({ many, one }) => ({
 }));
 ```
 
-### 2. Shared types (`packages/shared`)
+### 2. Shared types (`packages/common`)
 
-New file `packages/shared/src/tripInfo/types.ts` — exported from the package index:
+New file `packages/common/src/tripInfo/types.ts` — exported from the package index:
 
 ```ts
 // Resource type constants
@@ -313,7 +313,7 @@ resources: []
 |---|---|
 | **DB** | `packages/db/src/schema.ts` — add `tripResource`, `tripInsurance`, `tripInsuranceStep` tables + trip relations (with `storagePath` field) |
 | **Migration** | `packages/db/drizzle/` — generate and apply Drizzle migration |
-| **Shared** | new `packages/shared/src/tripInfo/types.ts` + re-export from index |
+| **Shared** | new `packages/common/src/tripInfo/types.ts` + re-export from index |
 | **oRPC** | `packages/orpc/src/api/routers/trip.ts` — add `getResources` procedure |
 | **Seed types** | `apps/seed/src/types.ts` — add `info?`, `TripResourceConfig` (with `storagePath`), `TripInsuranceConfig`, `TripInfoConfig` |
 | **Seed logic** | new `apps/seed/src/tripInfo.ts` (uploads files to Supabase Storage for `storagePath` resources) |

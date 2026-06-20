@@ -145,7 +145,7 @@ React Native has a critical difference from web React: falsy values (`""`, `0`) 
 - New feature development (only state handling of existing screens)
 - Performance optimization beyond skeleton standardization
 - Internationalization (i18n) of empty/error state messages
-- Changes to `packages/auth/`, `packages/shared/`, `packages/supabase/`
+- Changes to `packages/auth/`, `packages/common/`, `packages/supabase/`
 - Database schema or API contract changes
 - Notification sender (`apps/notification-sender/`)
 - Seed CLI (`apps/seed/`)

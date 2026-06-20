@@ -1,5 +1,5 @@
+import { logger } from "@mirai-app/common/utils";
 import { closeDb } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import { runSeed } from "./src/seed";
 
 try {

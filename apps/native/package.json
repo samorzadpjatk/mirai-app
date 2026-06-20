@@ -40,7 +40,7 @@
     "@expo/vector-icons": "^15.0.3",
     "@maplibre/maplibre-react-native": "^10.4.2",
     "@mirai-app/auth": "workspace:*",
-    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/common": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
     "@mirai-app/orpc": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",

@@ -1,5 +1,5 @@
 {
-  "name": "@mirai-app/shared",
+  "name": "@mirai-app/common",
   "nx": {
     "tags": [
       "type:package",

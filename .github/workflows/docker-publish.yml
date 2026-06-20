@@ -10,7 +10,7 @@ on:
       - 'apps/notification-sender/**'
       - 'packages/db/**'
       - 'packages/auth/**'
-      - 'packages/shared/**'
+      - 'packages/common/**'
       - 'packages/orpc/**'
       - 'packages/supabase/**'
       - 'apps/*/Dockerfile'

@@ -38,7 +38,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | `apps/seed` | **Vitest** | CLI tool testing, no special requirements |
 | `packages/orpc` | **Vitest** | tRPC router testing, needs fast iteration |
 | `packages/auth` | **Vitest** | Authentication logic testing, requires mocking Supabase/DB |
-| `packages/shared` | **Vitest** | Utility function testing, simplest setup |
+| `packages/common` | **Vitest** | Utility function testing, simplest setup |
 | `packages/supabase` | **Vitest** | Already configured ✅ |
 | `packages/db` | **Optional** | Typically tested via integration tests; skip for unit tests |
 
@@ -96,7 +96,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 ```
 
 **Execution Order** (based on dependency graph):
-1. `packages/shared` (no deps)
+1. `packages/common` (no deps)
 2. `packages/supabase` (no deps)
 3. `packages/db` (depends on supabase)
 4. `packages/auth` (depends on db, supabase, shared)
@@ -128,8 +128,8 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | `packages/orpc/vitest.config.ts` | Vitest configuration |
 | `packages/auth/vitest.config.ts` | Vitest configuration |
 | `packages/auth/vitest.setup.ts` | Vitest setup with DB/Supabase mocks |
-| `packages/shared/vitest.config.ts` | Vitest configuration |
-| `packages/shared/src/__tests__/example.test.ts` | Example passing test |
+| `packages/common/vitest.config.ts` | Vitest configuration |
+| `packages/common/src/__tests__/example.test.ts` | Example passing test |
 | `packages/auth/src/__tests__/example.test.ts` | Example passing test |
 | `apps/native/src/__tests__/example.test.tsx` | Example passing test |
 
@@ -141,7 +141,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | `apps/notification-sender/package.json` | Update test script with coverage |
 | `apps/seed/package.json` | Add vitest deps, test scripts |
 | `packages/auth/package.json` | Add vitest deps, test scripts |
-| `packages/shared/package.json` | Add vitest deps, test scripts |
+| `packages/common/package.json` | Add vitest deps, test scripts |
 | `turbo.json` | Add `dependsOn: ["^build"]` to test task |
 | `.github/workflows/ci.yml` | Add test execution step |
 | `README.md` | Add testing documentation |
@@ -288,15 +288,15 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 **Parallel with**: 2.1, 2.2, 2.3 (Wave 3 - Independent Package Setup)
 
 **Success Criteria**:
-- Common mock utilities created in `packages/shared/src/testing/`
+- Common mock utilities created in `packages/common/src/testing/`
 - Mock factories for Supabase, Prisma, Expo modules
 - Reusable test helpers exported
 
 **Subtasks**:
-1. Create `packages/shared/src/testing/` directory
+1. Create `packages/common/src/testing/` directory
 2. Create `mock-factories.ts` with common mocks
 3. Create `test-helpers.ts` with utilities
-4. Export from `packages/shared/src/index.ts`
+4. Export from `packages/common/src/index.ts`
 
 **Blockers**:
 - Step 1.2 complete
@@ -350,14 +350,14 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 
 ---
 
-#### Step 2.2: Configure packages/shared
+#### Step 2.2: Configure packages/common
 **Estimate**: Small (15-30 min)  
 **Agent**: sonnet  
 **Parallel with**: 2.1, 2.3, 1.3 (Wave 3 - Independent Package Setup)
 
 **Success Criteria**:
-- `packages/shared/vitest.config.ts` created with TypeScript support
-- `packages/shared/package.json` has test script with vitest
+- `packages/common/vitest.config.ts` created with TypeScript support
+- `packages/common/package.json` has test script with vitest
 - At least one example test exists and passes
 - Running `bun run test` executes successfully
 
@@ -439,7 +439,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 6. Run test to verify setup
 
 **Blockers**:
-- Step 2.2 complete (packages/shared)
+- Step 2.2 complete (packages/common)
 - Step 2.1 complete (packages/supabase)
 
 **Risks**:
@@ -635,7 +635,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 **Blockers**:
 - Step 3.1 complete (packages/auth)
 - Step 3.2 complete (packages/orpc)
-- Step 2.2 complete (packages/shared)
+- Step 2.2 complete (packages/common)
 - Step 2.1 complete (packages/supabase)
 
 **Risks**:
@@ -780,7 +780,7 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 | 1.2 | Turborepo Pipeline Configuration | Medium | 4.0/5.0 | 1 | Correctness, Integration |
 | 1.3 | Shared Test Utilities Package | Medium | 4.0/5.0 | 1 | Quality, Testing |
 | 2.1 | Verify packages/supabase | Low | 3.5/5.0 | 1 | Correctness, Testing |
-| 2.2 | Configure packages/shared | Medium | 4.0/5.0 | 1 | Correctness, Quality, Testing |
+| 2.2 | Configure packages/common | Medium | 4.0/5.0 | 1 | Correctness, Quality, Testing |
 | 2.3 | Configure packages/db | Low | 3.5/5.0 | 1 | Correctness |
 | 3.1 | Configure packages/auth | High | 4.0/5.0 | 2 | All except Integration |
 | 3.2 | Configure packages/orpc | High | 4.0/5.0 | 2 | All except Integration |
@@ -856,9 +856,9 @@ This implementation uses a **dual test runner strategy** optimized for each proj
 |-------|------|---------|--------|-------|----------|--------------|---------------|
 | 1 | 1.1 | Root | N/A | haiku | Tiny | None | None |
 | 1 | 1.2 | Root | N/A | haiku | Small | 1.1 | None |
-| 1 | 1.3 | packages/shared | N/A | sonnet | Small | 1.2 | 2.1, 2.2, 2.3 |
+| 1 | 1.3 | packages/common | N/A | sonnet | Small | 1.2 | 2.1, 2.2, 2.3 |
 | 2 | 2.1 | packages/supabase | Vitest | haiku | Tiny | 1.2 | 1.3, 2.2, 2.3 |
-| 2 | 2.2 | packages/shared | Vitest | sonnet | Small | 1.2 | 1.3, 2.1, 2.3 |
+| 2 | 2.2 | packages/common | Vitest | sonnet | Small | 1.2 | 1.3, 2.1, 2.3 |
 | 2 | 2.3 | packages/db | N/A | haiku | Tiny | 1.2 | 1.3, 2.1, 2.2 |
 | 3 | 3.1 | packages/auth | Vitest | sonnet | Medium | 2.2, 2.1 | None |
 | 3 | 3.2 | packages/orpc | Vitest | sonnet | Medium | 3.1 | None |

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { commonStyles } from "~/styles/commonStyles";
 import {
   getRewardAvailabilityColor,
@@ -50,7 +51,7 @@ export default function RewardCard({
     >
       <TouchableOpacity activeOpacity={0.85} onPress={() => onPress(reward)}>
         {rewardPrimaryImage ? (
-          <Image
+          <CachedImage
             source={{ uri: rewardPrimaryImage }}
             style={{
               width: "100%",
@@ -58,7 +59,7 @@ export default function RewardCard({
               borderRadius: 8,
               marginBottom: 12,
             }}
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <View

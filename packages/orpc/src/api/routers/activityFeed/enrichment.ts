@@ -1,6 +1,6 @@
+import { emptyReactionCounts } from "@mirai-app/common/feed";
 import { activityReactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { emptyReactionCounts } from "@mirai-app/shared/feed";
 import { count, inArray } from "drizzle-orm";
 import { resolveSignedUrl } from "./storage";
 import type { Activity, RawActivityWithRelations } from "./types";

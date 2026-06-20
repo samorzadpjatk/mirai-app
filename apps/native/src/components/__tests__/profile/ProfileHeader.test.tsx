@@ -5,25 +5,8 @@ import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderWithMSW } from "../../../test-utils/msw/test-wrapper";
 import { ProfileHeader } from "../../profile/ProfileHeader";
 
-// Mock download function that returns a resolved promise
-const mockDownload = jest.fn(() => Promise.resolve({ uri: "file://avatar.jpg" }));
-const mockReset = jest.fn();
-const mockAbort = jest.fn();
-
-const mockUseFileDownload = jest.fn(() => ({
-  download: mockDownload,
-  status: "idle",
-  file: null as { uri: string } | null,
-  reset: mockReset,
-  abort: mockAbort,
-}));
-
 jest.mock("expo-router", () => ({
   useFocusEffect: jest.fn(),
-}));
-
-jest.mock("~/hooks/files", () => ({
-  useFileDownload: () => mockUseFileDownload(),
 }));
 
 jest.mock("expo-image", () => ({
@@ -36,13 +19,6 @@ jest.mock("expo-image", () => ({
 describe("ProfileHeader", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseFileDownload.mockReturnValue({
-      download: mockDownload,
-      status: "idle",
-      file: null,
-      reset: mockReset,
-      abort: mockAbort,
-    });
   });
 
   it("should render with default state when no user data", () => {
@@ -168,42 +144,9 @@ describe("ProfileHeader", () => {
       })),
     );
 
-    mockUseFileDownload.mockReturnValue({
-      download: mockDownload,
-      status: "success",
-      file: { uri: "file://avatar.jpg" },
-      reset: mockReset,
-      abort: mockAbort,
-    });
-
     const { getByTestId } = renderWithMSW(<ProfileHeader />);
 
     await waitFor(() => expect(getByTestId("profile-image")).toBeTruthy());
-  });
-
-  it("should show loading text when avatar is downloading", async () => {
-    server.use(
-      createORPCHandler(["user", "getMy"], () => ({
-        id: "user-1",
-        firstName: "John",
-        lastName: "Doe",
-        hasAvatar: true,
-        role: "USER",
-        updatedAt: new Date(),
-      })),
-    );
-
-    mockUseFileDownload.mockReturnValue({
-      download: mockDownload,
-      status: "loading",
-      file: null,
-      reset: mockReset,
-      abort: mockAbort,
-    });
-
-    const { getByText } = renderWithMSW(<ProfileHeader />);
-
-    await waitFor(() => expect(getByText("Loading...")).toBeTruthy());
   });
 
   it("should handle single name", async () => {

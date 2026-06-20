@@ -1,16 +1,7 @@
-import { screen, userEvent } from "@testing-library/react-native";
+import { screen, userEvent, waitFor } from "@testing-library/react-native";
 import { NotificationsHeader } from "../../../notifications/NotificationsHeader";
 import { type Partner, PartnersSection } from "../../../trips/details/PartnersSection";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
-
-jest.mock("~/hooks/partners/usePartnerImageDownload", () => ({
-  usePartnerImageDownload: jest.fn(() => ({
-    imageUrl: "https://example.com/partner-logo.png",
-    isLoading: false,
-    error: null,
-    status: "success",
-  })),
-}));
 
 jest.mock("expo-router", () => {
   const mockPush = jest.fn();
@@ -68,6 +59,7 @@ describe("PartnersSection", () => {
 
     expect(screen.getByText("Partners")).toBeOnTheScreen();
 
+    await waitFor(() => expect(screen.getByTestId("partner-logo")).toBeOnTheScreen());
     await user.press(screen.getByTestId("partner-logo"));
     expect(useMockPush()).toHaveBeenCalledWith("/trips/partners/partner-1");
   });

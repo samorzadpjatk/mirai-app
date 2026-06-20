@@ -1,3 +1,4 @@
+import { logger } from "@mirai-app/common/utils";
 import type { TripInsurance, TripInsuranceStep } from "@mirai-app/db";
 import {
   tripInsuranceSteps,
@@ -7,7 +8,6 @@ import {
   tripResourceLinks,
   tripResourceTexts,
 } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import type { BunFile } from "bun";
 import { eq, inArray } from "drizzle-orm";
 import yaml from "yaml";

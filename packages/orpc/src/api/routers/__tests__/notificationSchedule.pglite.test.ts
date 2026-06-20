@@ -1,5 +1,5 @@
+import { normalizeScheduleWindow } from "@mirai-app/common/notifications";
 import { notificationSchedules, trips, users } from "@mirai-app/db";
-import { normalizeScheduleWindow } from "@mirai-app/shared/notifications";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

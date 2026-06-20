@@ -1,15 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { useFileDownload } from "~/hooks/files";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ExistingSubmission {
@@ -53,26 +44,6 @@ export function ExistingSubmissionCard({
 }: ExistingSubmissionCardProps) {
   const hasImage = submission.imageIds.length > 0;
   const canWithdraw = submission.status !== "APPROVED";
-  const { download, status: imageStatus, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!hasImage) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({
-      storagePath: submission.imageIds[0] ?? "",
-    }).catch(() => {
-      // Object might not be available yet right after submission creation.
-      // Keep the card visible and show the fallback state instead of throwing.
-    });
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, hasImage, reset, submission.imageIds]);
 
   const handleWithdrawPress = () => {
     Alert.alert("Withdraw submission", "Are you sure you want to withdraw this submission?", [
@@ -102,29 +73,26 @@ export function ExistingSubmissionCard({
 
       {hasImage && (
         <View style={styles.imageWrapper}>
-          {imageStatus === "loading" ? (
-            <View style={styles.imageLoading}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : file?.uri ? (
-            <Image
-              source={{ uri: file.uri }}
-              style={styles.image}
-              resizeMode="contain"
-              accessibilityLabel="Submission preview"
-            />
-          ) : localPreviewUri ? (
-            <Image
+          {localPreviewUri ? (
+            <CachedImage
               source={{ uri: localPreviewUri }}
               style={styles.image}
-              resizeMode="contain"
+              contentFit="contain"
               accessibilityLabel="Submission preview"
             />
           ) : (
-            <View style={styles.imageLoading}>
-              <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
-              <Text style={styles.imageFallback}>Image unavailable</Text>
-            </View>
+            <CachedImage
+              storagePath={submission.imageIds[0] ?? undefined}
+              style={styles.image}
+              contentFit="contain"
+              accessibilityLabel="Submission preview"
+              fallback={
+                <View style={styles.imageLoading}>
+                  <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
+                  <Text style={styles.imageFallback}>Image unavailable</Text>
+                </View>
+              }
+            />
           )}
         </View>
       )}

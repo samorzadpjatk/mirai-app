@@ -1,3 +1,3 @@
-// Judgement store moved to @mirai-app/shared
-export type { ReviewStatus, Submission } from "@mirai-app/shared/stores";
+// Judgement store moved to @mirai-app/common
+export type { ReviewStatus, Submission } from "@mirai-app/common/stores";
 export { useJudgement } from "./useJudgement";

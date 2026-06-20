@@ -1,4 +1,4 @@
-import { noop } from "@mirai-app/shared/test-utils";
+import { noop } from "@mirai-app/common/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Set up console spy BEFORE importing the module under test

@@ -10,7 +10,7 @@ import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
-import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
+import { useSelectedTrip, useTripByIdFull } from "~/hooks/trips";
 import { useTripSync } from "~/stores/tripStore";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
@@ -24,7 +24,7 @@ export default function TripDetailsScreen() {
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { isLoadingUser, trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
+  const { trip, isLoadingTrip, isTripPast } = useTripByIdFull(tripId);
 
   // Keep trip store in sync with current trip state
   useTripSync();
@@ -35,7 +35,7 @@ export default function TripDetailsScreen() {
     }
   }, [isLoading, session, router]);
 
-  if (isLoadingUser || isLoadingTrip || isLoadingSelectedTrip) {
+  if (isLoading || isLoadingTrip || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading..." />;
   }
 

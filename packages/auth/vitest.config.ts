@@ -1,6 +1,6 @@
 import path from "path";
 import { defineConfig, mergeConfig } from "vitest/config";
-import { baseConfig, baseCoverageExcludes } from "../shared/vitest.base.config";
+import { baseConfig, baseCoverageExcludes } from "../common/vitest.base.config";
 
 export default mergeConfig(
   baseConfig,
@@ -24,20 +24,20 @@ export default mergeConfig(
     resolve: {
       alias: [
         {
-          find: "@mirai-app/shared/test-utils",
-          replacement: path.resolve(__dirname, "../shared/src/test-utils/index.ts"),
+          find: "@mirai-app/common/test-utils",
+          replacement: path.resolve(__dirname, "../common/src/test-utils/index.ts"),
         },
         {
-          find: "@mirai-app/shared/stores",
-          replacement: path.resolve(__dirname, "../shared/src/stores/index.ts"),
+          find: "@mirai-app/common/stores",
+          replacement: path.resolve(__dirname, "../common/src/stores/index.ts"),
         },
         {
-          find: "@mirai-app/shared/users",
-          replacement: path.resolve(__dirname, "../shared/src/users/index.ts"),
+          find: "@mirai-app/common/users",
+          replacement: path.resolve(__dirname, "../common/src/users/index.ts"),
         },
         {
-          find: "@mirai-app/shared/utils",
-          replacement: path.resolve(__dirname, "../shared/src/utils/index.ts"),
+          find: "@mirai-app/common/utils",
+          replacement: path.resolve(__dirname, "../common/src/utils/index.ts"),
         },
         {
           find: "@mirai-app/db/test-helper",

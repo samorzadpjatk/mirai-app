@@ -11,6 +11,6 @@
     { "path": "../../packages/db" },
     { "path": "../../packages/supabase" },
     { "path": "../../packages/orpc" },
-    { "path": "../../packages/shared" }
+    { "path": "../../packages/common" }
   ]
 }

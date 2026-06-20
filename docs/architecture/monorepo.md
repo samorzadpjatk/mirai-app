@@ -101,7 +101,7 @@ The `^` prefix means "upstream dependencies must complete this task first." Nx c
 
 1. **Single Responsibility**: Each package has one clear purpose
 2. **Dependency Direction**: Apps depend on packages, never the reverse
-3. **Shared Code**: Common code goes in `packages/shared/`
+3. **Shared Code**: Common code goes in `packages/common/`
 4. **No Circular Dependencies**: The dependency graph must be acyclic
 
 ## Performance Considerations

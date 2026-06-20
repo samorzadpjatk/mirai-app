@@ -192,14 +192,14 @@ const client = createORPCClient({
 - No structured error correlation
 - Errors caught and either shown via `Alert.alert()` or silently swallowed
 
-### 2.4 Shared Packages (packages/shared)
+### 2.4 Shared Packages (packages/common)
 
-**Files:** `packages/shared/src/utils/logger.ts`
+**Files:** `packages/common/src/utils/logger.ts`
 
 ```typescript
 // Current: Pino logger with no correlation utilities
 export const logger = pino({
-  name: "@mirai-app/shared",
+  name: "@mirai-app/common",
   level: process.env.LOG_LEVEL || "info",
 });
 ```
@@ -278,8 +278,8 @@ Native App (Expo/React Native)
 
 | Layer | File | Change |
 |-------|------|--------|
-| **Shared** | `packages/shared/src/utils/traceId.ts` | **New** — `generateTraceId()`, `getTraceId()`, `setTraceId()` using AsyncLocalStorage |
-| **Shared** | `packages/shared/src/utils/correlatedError.ts` | **New** — `CorrelatedError` class with `traceId` field |
+| **Shared** | `packages/common/src/utils/traceId.ts` | **New** — `generateTraceId()`, `getTraceId()`, `setTraceId()` using AsyncLocalStorage |
+| **Shared** | `packages/common/src/utils/correlatedError.ts` | **New** — `CorrelatedError` class with `traceId` field |
 | **oRPC Context** | `packages/orpc/src/api/trpc.ts` | Add `traceId` to context; extract from headers/connectionParams |
 | **oRPC Client** | `packages/orpc/src/client/vanilia.ts` | Add `x-trace-id` header to HTTP requests; add `traceId` to WebSocket connectionParams |
 | **oRPC Logger** | `packages/orpc/src/utils/logger.ts` | Add `trace_id` to Pino mixin via AsyncLocalStorage |
@@ -291,9 +291,9 @@ Native App (Expo/React Native)
 
 ### 3.3 Code Examples
 
-**Trace ID Utilities (packages/shared):**
+**Trace ID Utilities (packages/common):**
 ```typescript
-// packages/shared/src/utils/traceId.ts
+// packages/common/src/utils/traceId.ts
 import { AsyncLocalStorage } from "async_hooks";
 
 const traceIdStorage = new AsyncLocalStorage<string>();
@@ -314,7 +314,7 @@ export function setTraceId<T>(traceId: string, fn: () => T): T {
 **Pino Logger with Trace ID (packages/orpc):**
 ```typescript
 // packages/orpc/src/utils/logger.ts
-import { getTraceId } from "@mirai-app/shared";
+import { getTraceId } from "@mirai-app/common";
 
 export const logger = pino({
   name: "@mirai-app/orpc",
@@ -329,7 +329,7 @@ export const logger = pino({
 **Hono Middleware (apps/backend-server):**
 ```typescript
 // apps/backend-server/src/server.ts
-import { setTraceId, getTraceId, generateTraceId } from "@mirai-app/shared";
+import { setTraceId, getTraceId, generateTraceId } from "@mirai-app/common";
 
 app.use(async (c, next) => {
   const traceId = c.req.header("x-trace-id") || generateTraceId();
@@ -354,7 +354,7 @@ export const createTRPCContext = async (opts: {
 **Native Client with Trace ID (apps/native):**
 ```typescript
 // apps/native/src/services/QueryProvider.tsx
-import { generateTraceId } from "@mirai-app/shared";
+import { generateTraceId } from "@mirai-app/common";
 
 const traceId = generateTraceId();
 
@@ -422,7 +422,7 @@ const httpClient = createORPCClient({
 ### 4.2 Phase 2: Short-Term (Observability Foundation)
 
 1. **Add Trace ID Correlation**
-   - Implement `packages/shared/src/utils/traceId.ts`
+   - Implement `packages/common/src/utils/traceId.ts`
    - Add Hono middleware to extract/generate `x-trace-id`
    - Add `traceId` to oRPC context
    - Pass `traceId` in native app client headers/connectionParams

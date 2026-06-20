@@ -1,4 +1,3 @@
-import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
 import {
   buildLeaveResult,
   calculateNextOrganizer,
@@ -7,7 +6,8 @@ import {
   canUpdateGroup,
   canViewJoinRequests,
   isUserInGroup,
-} from "@mirai-app/shared/groups";
+} from "@mirai-app/common/groups";
+import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";
 import {

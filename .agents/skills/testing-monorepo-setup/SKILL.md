@@ -60,7 +60,7 @@ bun add -D vitest @vitest/coverage-v8
 cd packages/auth
 bun add -D vitest @vitest/coverage-v8
 
-cd packages/shared
+cd packages/common
 bun add -D vitest @vitest/coverage-v8
 
 cd packages/db
@@ -467,7 +467,7 @@ describe("user router", () => {
 ### Utility Function Test
 
 ```typescript
-// packages/shared/src/utils/__tests__/formatDate.test.ts
+// packages/common/src/utils/__tests__/formatDate.test.ts
 import { describe, it, expect } from "vitest";
 import { formatDate } from "../formatDate";
 

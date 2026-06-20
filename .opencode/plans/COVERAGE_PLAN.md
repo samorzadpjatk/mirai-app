@@ -45,7 +45,7 @@ coverage: {
 }
 ```
 
-#### packages/shared (vitest.config.ts)
+#### packages/common (vitest.config.ts)
 **Current:** Basic config without thresholds
 **Update:** Add full coverage configuration matching auth package
 
@@ -91,7 +91,7 @@ import { join } from 'path';
 
 const packages = [
   'packages/auth',
-  'packages/shared',
+  'packages/common',
   'packages/orpc',
   'packages/supabase',
   'apps/backend-server',
@@ -143,7 +143,7 @@ execSync(
 ```bash
 # Run to verify setup
 cd packages/auth && bun run test:coverage
-cd packages/shared && bun run test:coverage
+cd packages/common && bun run test:coverage
 # ... for each package
 
 # Verify coverage reports generated
@@ -348,7 +348,7 @@ bun run test:coverage
 
 ---
 
-## Phase 3: packages/shared (11 files, 7 business logic)
+## Phase 3: packages/common (11 files, 7 business logic)
 
 **Duration:** 4-5 days
 **Priority:** HIGH - Shared utilities and stores
@@ -422,7 +422,7 @@ describe('authStore', () => {
 ### 3.4 Verification
 
 ```bash
-cd packages/shared
+cd packages/common
 bun run test:coverage
 # Verify: lines >= 80%, functions >= 80%, branches >= 75%
 ```
@@ -1168,7 +1168,7 @@ jobs:
 |---------|--------|---------|--------------|
 | auth | 90% | `cd packages/auth && bun run test:coverage` | lines >= 90% |
 | supabase | 85% | `cd packages/supabase && bun run test:coverage` | lines >= 85% |
-| shared | 80% | `cd packages/shared && bun run test:coverage` | lines >= 80% |
+| shared | 80% | `cd packages/common && bun run test:coverage` | lines >= 80% |
 | orpc | 80% | `cd packages/orpc && bun run test:coverage` | lines >= 80% |
 | backend-server | 85% | `cd apps/backend-server && bun run test:coverage` | lines >= 85% |
 | notification-sender | 80% | `cd apps/notification-sender && bun run test:coverage` | lines >= 80% |

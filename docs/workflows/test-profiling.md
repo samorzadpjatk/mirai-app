@@ -8,7 +8,7 @@ The monorepo uses a dual test runner strategy:
 
 | Runner | Packages | Config |
 |--------|----------|--------|
-| **Vitest** | 8 packages (backend-server, notification-sender, seed, orpc, db, auth, shared, supabase) | `vitest.config.ts` merging `packages/shared/vitest.base.config.ts` |
+| **Vitest** | 8 packages (backend-server, notification-sender, seed, orpc, db, auth, shared, supabase) | `vitest.config.ts` merging `packages/common/vitest.base.config.ts` |
 | **Jest** | 1 package (`apps/native`) | `jest.config.cjs` with `jest-expo` preset |
 
 Both runners use change-based testing locally (`--changed` / `--onlyChanged`) for speed. CI runs full suites via `test:ci` targets.

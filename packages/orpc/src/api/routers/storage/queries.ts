@@ -6,7 +6,7 @@ import {
   classifyStorageError,
   isPublicBucket,
   rewriteSignedUrlHost,
-} from "@mirai-app/shared/storage";
+} from "@mirai-app/common/storage";
 import { ORPCError } from "@orpc/server";
 import { env } from "bun";
 import { getPublicUrl, getResumableEndpoint, resolveStoragePath } from "./utils";

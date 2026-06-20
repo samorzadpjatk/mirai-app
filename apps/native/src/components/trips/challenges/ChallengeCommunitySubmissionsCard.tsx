@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -13,7 +12,7 @@ import {
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFileDownload } from "~/hooks/files";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { formatDate } from "~/utils/format";
 
@@ -334,22 +333,6 @@ function SubmissionTile({
   onPress: () => void;
 }) {
   const imagePath = submission.imageIds[0] ?? "";
-  const { download, status, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!imagePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: imagePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, imagePath, reset]);
-
   const placeStyle = rank ? placeStyleMap[rank] : undefined;
 
   return (
@@ -363,17 +346,16 @@ function SubmissionTile({
       ]}
     >
       <View style={styles.tileImageWrap}>
-        {status === "loading" ? (
-          <View style={styles.tileFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.tileImage} resizeMode="contain" />
-        ) : (
-          <View style={styles.tileFallback}>
-            <Ionicons name="image-outline" size={16} color={colors.textMuted} />
-          </View>
-        )}
+        <CachedImage
+          storagePath={imagePath}
+          style={styles.tileImage}
+          contentFit="contain"
+          fallback={
+            <View style={styles.tileFallback}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          }
+        />
       </View>
 
       {mode === "podium" && (
@@ -397,38 +379,22 @@ function FullscreenSubmissionSlide({
   topInset: number;
 }) {
   const imagePath = submission.imageIds[0] ?? "";
-  const { download, status, file, reset, abort } = useFileDownload();
   const placeStyle =
     typeof submission.ranking === "number" ? placeStyleMap[submission.ranking] : undefined;
-
-  useEffect(() => {
-    if (!imagePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: imagePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, imagePath, reset]);
 
   return (
     <View style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}>
       <View style={styles.fullscreenImageWrap}>
-        {status === "loading" ? (
-          <View style={styles.fullscreenFallback}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.fullscreenImage} resizeMode="contain" />
-        ) : (
-          <View style={styles.fullscreenFallback}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
-          </View>
-        )}
+        <CachedImage
+          storagePath={imagePath}
+          style={styles.fullscreenImage}
+          contentFit="contain"
+          fallback={
+            <View style={styles.fullscreenFallback}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          }
+        />
       </View>
 
       <View style={styles.fullscreenMeta}>
