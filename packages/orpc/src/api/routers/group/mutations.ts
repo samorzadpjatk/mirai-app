@@ -428,7 +428,7 @@ export const respondToJoinRequest = async (
       throw new ORPCError("NOT_FOUND", { message: "Join request not found" });
     }
 
-    await ensureTripNotEnded(context.db, request.tripId);
+    await ensureTripNotEnded(tx, request.tripId);
 
     const respondCheck = canViewJoinRequests(request.group.organizerId, context.dbUser.id);
     if (respondCheck.error) {

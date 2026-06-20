@@ -81,4 +81,16 @@ describe("useORPCClient", () => {
     render(<TestComponent httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000" />);
     expect(typeof orpc.user.getMy.mutationOptions).toBe("function");
   });
+
+  it("should handle cleanup being undefined on unmount", () => {
+    vi.mocked(getORPCClient).mockReturnValueOnce({
+      client: { user: { getMy: vi.fn().mockResolvedValue({}) } },
+      cleanup: undefined,
+    } as unknown as ReturnType<typeof getORPCClient>);
+
+    const { unmount } = render(
+      <TestComponent httpUrl="http://localhost:3000" wsUrl="ws://localhost:3000" />,
+    );
+    expect(() => unmount()).not.toThrow();
+  });
 });

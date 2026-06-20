@@ -362,4 +362,47 @@ describe("coinTransaction router — PGLite integration", () => {
     expect(result[0]?.totalAmount).toBe(45);
     expect(result[0]?.count).toBe(3);
   });
+
+  it("getAdditionalInsights returns null when admin user not found in users table", async () => {
+    await seedUser("admin-1", "auth-1", "Alice", "Smith");
+    await seedTrip("trip-1", "Test Trip");
+    await seedGroup("group-a", "trip-1", "Group A", "admin-1", "CODEA");
+    await seedCoinTransaction("tx-1", "group-a", 10, "admin-1", "Bonus");
+    await seedCoinTransaction("tx-2", "group-a", 20, "admin-1", "Reward");
+
+    await testDb.db.execute(sql`SET session_replication_role = 'replica'`);
+    await testDb.db.delete(users).where(eq(users.id, "admin-1"));
+    await testDb.db.execute(sql`SET session_replication_role = 'origin'`);
+
+    const result = await getAdditionalInsights(
+      { db: testDb.db, dbUser: { id: "user-1" } },
+      { tripId: "trip-1" },
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it("getCoinTransactions without groupId returns all trip transactions", async () => {
+    await seedBaseData();
+
+    const result = await getCoinTransactions(
+      { db: testDb.db, dbUser: { id: "user-1" } },
+      { tripId: "trip-1", limit: 10 },
+    );
+
+    expect(result).toHaveLength(5);
+  });
+
+  it("getCoinTransactions without groupId returns empty array when no groups exist for trip", async () => {
+    await seedUser("user-1", "auth-1", "Alice", "Smith");
+    await seedTrip("trip-1", "Empty Trip");
+    await seedParticipant("tp-1", "user-1", "trip-1");
+
+    const result = await getCoinTransactions(
+      { db: testDb.db, dbUser: { id: "user-1" } },
+      { tripId: "trip-1", limit: 10 },
+    );
+
+    expect(result).toEqual([]);
+  });
 });

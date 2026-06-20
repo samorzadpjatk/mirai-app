@@ -7,10 +7,13 @@ import {
   trips,
   users,
 } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
+import { sendMobileNotifications } from "../../../../services/notificationService";
 import { createContext } from "../../../../test-helpers";
+import { sendNotification, sendRankingUpdate } from "../../../../utils/notifications";
 import {
   deleteNotification,
   retryNotification,
@@ -431,6 +434,38 @@ describe("notifications mutations", () => {
         "No failed pushes to retry",
       );
     });
+
+    it("retries failed pushes and returns retry result", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      await testDb.db.insert(notifications).values({
+        id: "notif-1",
+        userId: "user-1",
+        createdById: "user-1",
+        title: "Test",
+        body: "Test",
+        url: "https://example.com",
+        tripId: "trip-1",
+        createdAt: new Date(),
+      });
+      await testDb.db.insert(notificationPushes).values({
+        notificationId: "notif-1",
+        targetUserId: "user-1",
+        status: "failed",
+        failureReason: "test error",
+      });
+
+      const result = await retryNotification(ctx, { notificationId: "notif-1" });
+
+      expect(result.notificationId).toBe("notif-1");
+      expect(result.retriedCount).toBe(1);
+
+      const pushes = await testDb.db.select().from(notificationPushes);
+      expect(pushes[0]?.status).toBe("pending");
+      expect(pushes[0]?.failureReason).toBeNull();
+    });
   });
 
   describe("deleteNotification", () => {
@@ -456,6 +491,190 @@ describe("notifications mutations", () => {
 
       const notifs = await testDb.db.select().from(notifications);
       expect(notifs).toHaveLength(0);
+    });
+  });
+
+  describe("subscribe error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when db insert fails with Error (FK violation)", async () => {
+      // Don't seed the user — FK violation on pushSubscriptions.userId
+      const ctx = createContext(testDb, {
+        dbUser: { id: "nonexistent-user", role: "USER" },
+      });
+
+      await expect(subscribe(ctx, { token: "token-fk" })).rejects.toThrow(ORPCError);
+      await expect(subscribe(ctx, { token: "token-fk" })).rejects.toThrow(
+        "Failed to save push subscription",
+      );
+    });
+
+    it("wraps non-Error throws in Error instance", async () => {
+      const mockReturning = vi.fn().mockRejectedValue("not an error");
+      const mockOnConflict = vi.fn(() => ({ returning: mockReturning }));
+      const mockValues = vi.fn(() => ({ onConflictDoUpdate: mockOnConflict }));
+      const mockInsert = vi.fn(() => ({ values: mockValues }));
+      const mockDb = { insert: mockInsert } as unknown as DB;
+
+      const ctx = { db: mockDb, dbUser: { id: "user-1" } };
+
+      await expect(subscribe(ctx, { token: "token" })).rejects.toThrow(ORPCError);
+      await expect(subscribe(ctx, { token: "token" })).rejects.toThrow(
+        "Failed to save push subscription: not an error",
+      );
+    });
+  });
+
+  describe("unsubscribe error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when db delete fails with non-ORPCError", async () => {
+      const mockReturning = vi.fn().mockRejectedValue(new Error("DB delete failed"));
+      const mockWhere = vi.fn(() => ({ returning: mockReturning }));
+      const mockDelete = vi.fn(() => ({ where: mockWhere }));
+      const mockDb = { delete: mockDelete } as unknown as DB;
+
+      const ctx = { db: mockDb, dbUser: { id: "user-1" } };
+
+      await expect(unsubscribe(ctx, { token: "token" })).rejects.toThrow(ORPCError);
+      await expect(unsubscribe(ctx, { token: "token" })).rejects.toThrow(
+        "Failed to remove push subscription",
+      );
+    });
+  });
+
+  describe("unsubscribeAll error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when db delete fails with non-ORPCError", async () => {
+      const mockReturning = vi.fn().mockRejectedValue(new Error("DB delete failed"));
+      const mockWhere = vi.fn(() => ({ returning: mockReturning }));
+      const mockDelete = vi.fn(() => ({ where: mockWhere }));
+      const mockDb = { delete: mockDelete } as unknown as DB;
+
+      const ctx = { db: mockDb, dbUser: { id: "user-1" } };
+
+      await expect(unsubscribeAll(ctx)).rejects.toThrow(ORPCError);
+      await expect(unsubscribeAll(ctx)).rejects.toThrow("Failed to remove all push subscriptions");
+    });
+  });
+
+  describe("sendToGroup error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when sendNotification fails with non-ORPCError", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      await seedGroup("group-1", "trip-1", "Team A", "user-1");
+      await seedParticipant("tp-1", "user-1", "trip-1", "group-1");
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      vi.mocked(sendNotification).mockRejectedValueOnce(new Error("send failed"));
+
+      await expect(
+        sendToGroup(ctx, {
+          tripId: "trip-1",
+          groupId: "group-1",
+          title: "Test",
+          body: "Test body",
+          url: "https://example.com",
+        }),
+      ).rejects.toThrow("Failed to send notification to group");
+    });
+  });
+
+  describe("sendToAll error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when sendNotification fails with non-ORPCError", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      await seedParticipant("tp-1", "user-1", "trip-1");
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      vi.mocked(sendNotification).mockRejectedValueOnce(new Error("send failed"));
+
+      await expect(
+        sendToAll(ctx, {
+          tripId: "trip-1",
+          title: "Test",
+          body: "Test body",
+          url: "https://example.com",
+        }),
+      ).rejects.toThrow("Failed to send notification to all users");
+    });
+  });
+
+  describe("sendRankingUpdateToGroups error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when sendRankingUpdate fails with non-ORPCError", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      vi.mocked(sendRankingUpdate).mockRejectedValueOnce(new Error("ranking failed"));
+
+      await expect(sendRankingUpdateToGroups(ctx, { tripId: "trip-1" })).rejects.toThrow(
+        "Failed to send ranking update notifications",
+      );
+    });
+  });
+
+  describe("sendNewMemberToGroup error handling", () => {
+    it("wraps non-Error throws in Error instance", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      await seedUser("user-2", "USER");
+      await seedGroup("group-1", "trip-1", "Team A", "user-1");
+      await seedParticipant("tp-1", "user-1", "trip-1", "group-1");
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      vi.mocked(sendNotification).mockRejectedValueOnce("not an error");
+
+      await expect(
+        sendNewMemberToGroup(ctx, {
+          tripId: "trip-1",
+          groupId: "group-1",
+          userId: "user-2",
+        }),
+      ).rejects.toThrow("Failed to send new member notification to group");
+    });
+  });
+
+  describe("retryNotification error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when sendMobileNotifications fails with non-ORPCError", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("user-1", "USER");
+      await testDb.db.insert(notifications).values({
+        id: "notif-1",
+        userId: "user-1",
+        createdById: "user-1",
+        title: "Test",
+        body: "Test",
+        url: "https://example.com",
+        tripId: "trip-1",
+        createdAt: new Date(),
+      });
+      await testDb.db.insert(notificationPushes).values({
+        notificationId: "notif-1",
+        targetUserId: "user-1",
+        status: "failed",
+        failureReason: "test error",
+      });
+
+      const ctx = createContext(testDb, { dbUser: { id: "user-1", role: "ADMIN" } });
+
+      vi.mocked(sendMobileNotifications).mockRejectedValueOnce(new Error("push failed"));
+
+      await expect(retryNotification(ctx, { notificationId: "notif-1" })).rejects.toThrow(
+        "Failed to retry notification",
+      );
+    });
+  });
+
+  describe("deleteNotification error handling", () => {
+    it("throws INTERNAL_SERVER_ERROR when db delete fails with non-ORPCError", async () => {
+      const mockWhere = vi.fn().mockRejectedValue(new Error("DB delete failed"));
+      const mockDelete = vi.fn(() => ({ where: mockWhere }));
+      const mockDb = { delete: mockDelete } as unknown as DB;
+
+      const ctx = { db: mockDb, dbUser: { id: "user-1" } };
+
+      await expect(deleteNotification(ctx, { notificationId: "notif-1" })).rejects.toThrow(
+        ORPCError,
+      );
+      await expect(deleteNotification(ctx, { notificationId: "notif-1" })).rejects.toThrow(
+        "Failed to delete notification",
+      );
     });
   });
 });
