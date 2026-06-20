@@ -17,6 +17,11 @@ describe("makeQueryClient configuration", () => {
     expect(defaultedOptions.refetchInterval).toBe(false);
   });
 
+  it("should not refetch on mount", () => {
+    const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
+    expect(defaultedOptions.refetchOnMount).toBe(false);
+  });
+
   it("should have staleTime of 60 seconds", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
     expect(defaultedOptions.staleTime).toBe(60 * 1000);

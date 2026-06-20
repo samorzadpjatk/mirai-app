@@ -1,6 +1,7 @@
 import { AuthStoreProvider } from "@mirai-app/auth/client";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -30,7 +31,12 @@ import {
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
-import { QueryProvider, getORPCClient, orpc } from "@mirai-app/orpc/client";
+import {
+  QueryProvider,
+  cleanupBackgroundORPCClient,
+  getBackgroundORPCClient,
+  orpc,
+} from "@mirai-app/orpc/client";
 import { formatDisplayName } from "@mirai-app/shared/users";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
@@ -62,13 +68,19 @@ function App() {
   initNotifications();
   const backgroundTaskDeps = createBackgroundTaskDeps({
     supabaseClient,
-    getORPCClient,
+    getORPCClient: getBackgroundORPCClient,
     httpUrl: ORPC_HTTP_URL,
     wsUrl: ORPC_WS_URL,
   });
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
+
+  useEffect(() => {
+    return () => {
+      void cleanupBackgroundORPCClient();
+    };
+  }, []);
 
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;

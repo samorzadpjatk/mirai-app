@@ -1,135 +1,166 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  AUTH_RATE_LIMIT,
-  GLOBAL_RATE_LIMIT,
+  DEFAULT_AUTH_BUCKET_CAPACITY,
+  DEFAULT_AUTH_REFILL_INTERVAL_MS,
+  DEFAULT_IP_BUCKET_CAPACITY,
+  DEFAULT_IP_REFILL_INTERVAL_MS,
+  DEFAULT_USER_BUCKET_CAPACITY,
+  DEFAULT_USER_REFILL_INTERVAL_MS,
   RATE_LIMIT_WINDOW_MS,
+  RateLimiter,
   TEN_MB,
   buildSecurityHeaders,
-  checkRateLimit,
   createCorsOrigin,
   createRateLimiter,
   getAllowedOrigins,
   getClientIp,
   getWsEnvConfig,
+  hashAccessToken,
   parseWsAuthMessage,
 } from "../utils";
 
 describe("getClientIp", () => {
-  it("should return first IP from x-forwarded-for", () => {
-    const headers = { "x-forwarded-for": "192.168.1.1, 10.0.0.1" };
-    expect(getClientIp(headers)).toBe("192.168.1.1");
+  it("should pick the rightmost non-internal IP from x-forwarded-for", () => {
+    const headers = {
+      "x-forwarded-for": "192.168.1.1, 10.0.0.1, 203.0.113.5",
+    };
+    expect(getClientIp(headers)).toBe("203.0.113.5");
   });
 
-  it("should return x-real-ip when x-forwarded-for is missing", () => {
-    const headers = { "x-real-ip": "192.168.1.2" };
-    expect(getClientIp(headers)).toBe("192.168.1.2");
+  it("should skip private ranges and loopback", () => {
+    const headers = {
+      "x-forwarded-for": "127.0.0.1, 10.0.0.2, 203.0.113.7, 192.168.0.1",
+    };
+    expect(getClientIp(headers)).toBe("203.0.113.7");
+  });
+
+  it("should fall back to x-real-ip when x-forwarded-for is all internal", () => {
+    const headers = {
+      "x-forwarded-for": "192.168.1.1, 10.0.0.1",
+      "x-real-ip": "203.0.113.7",
+    };
+    expect(getClientIp(headers)).toBe("203.0.113.7");
   });
 
   it("should return unknown when both headers are missing", () => {
     expect(getClientIp({})).toBe("unknown");
   });
 
-  it("should handle empty x-forwarded-for", () => {
+  it("should return unknown for empty x-forwarded-for", () => {
     const headers = { "x-forwarded-for": "" };
     expect(getClientIp(headers)).toBe("unknown");
   });
 
-  it("should trim whitespace from forwarded IP", () => {
-    const headers = { "x-forwarded-for": "  192.168.1.3  " };
-    expect(getClientIp(headers)).toBe("192.168.1.3");
+  it("should trim whitespace and ignore ports", () => {
+    const headers = { "x-forwarded-for": "  192.168.1.1:8080 , 203.0.113.9  " };
+    expect(getClientIp(headers)).toBe("203.0.113.9");
+  });
+
+  it("should treat ::1 as internal", () => {
+    const headers = { "x-forwarded-for": "::1, 203.0.113.10" };
+    expect(getClientIp(headers)).toBe("203.0.113.10");
   });
 });
 
-describe("checkRateLimit", () => {
-  it("should allow first request", () => {
-    const store = new Map();
-    const result = checkRateLimit(store, "192.168.1.1", false, 1000);
-    expect(result).toEqual({ allowed: true, retryAfter: 0 });
-    expect(store.get("192.168.1.1:global")).toEqual({
-      count: 1,
-      resetTime: 1000 + RATE_LIMIT_WINDOW_MS,
+describe("RateLimiter", () => {
+  it("should allow requests up to capacity in a burst", () => {
+    const limiter = new RateLimiter({
+      ip: { capacity: 3, refillInterval: 1000 },
     });
+
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: false, retryAfter: 1 });
   });
 
-  it("should allow requests under global limit", () => {
-    const store = new Map();
-    for (let i = 0; i < GLOBAL_RATE_LIMIT - 1; i++) {
-      checkRateLimit(store, "192.168.1.1", false, 1000);
-    }
-    const result = checkRateLimit(store, "192.168.1.1", false, 1000);
-    expect(result).toEqual({ allowed: true, retryAfter: 0 });
+  it("should refill tokens over time", () => {
+    const limiter = new RateLimiter({
+      ip: { capacity: 2, refillInterval: 1000 },
+    });
+
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: false, retryAfter: 1 });
+
+    expect(limiter.check("ip", "1.1.1.1", 1000)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 1000)).toEqual({ allowed: false, retryAfter: 1 });
   });
 
-  it("should block requests over global limit", () => {
-    const store = new Map();
-    for (let i = 0; i < GLOBAL_RATE_LIMIT; i++) {
-      checkRateLimit(store, "192.168.1.1", false, 1000);
-    }
-    const result = checkRateLimit(store, "192.168.1.1", false, 1000);
-    expect(result).toEqual({ allowed: false, retryAfter: 60 });
+  it("should report correct retryAfter in seconds until next refill tick", () => {
+    const limiter = new RateLimiter({
+      ip: { capacity: 1, refillInterval: 5000 },
+    });
+
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 500)).toEqual({ allowed: false, retryAfter: 5 });
   });
 
-  it("should reset counter after window expires", () => {
-    const store = new Map();
-    checkRateLimit(store, "192.168.1.1", false, 1000);
-    const result = checkRateLimit(store, "192.168.1.1", false, 1000 + RATE_LIMIT_WINDOW_MS + 1);
-    expect(result).toEqual({ allowed: true, retryAfter: 0 });
-    expect(store.get("192.168.1.1:global")?.count).toBe(1);
+  it("should isolate per-user and per-IP buckets", () => {
+    const limiter = new RateLimiter({
+      ip: { capacity: 1, refillInterval: 1000 },
+      user: { capacity: 1, refillInterval: 1000 },
+    });
+
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: false, retryAfter: 1 });
+
+    expect(limiter.check("user", "user-a", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("user", "user-b", 0)).toEqual({ allowed: true, retryAfter: 0 });
+
+    expect(limiter.check("user", "user-a", 0)).toEqual({ allowed: false, retryAfter: 1 });
   });
 
-  it("should allow auth requests under auth limit", () => {
-    const store = new Map();
-    for (let i = 0; i < AUTH_RATE_LIMIT - 1; i++) {
-      checkRateLimit(store, "192.168.1.1", true, 1000);
-    }
-    const result = checkRateLimit(store, "192.168.1.1", true, 1000);
-    expect(result).toEqual({ allowed: true, retryAfter: 0 });
+  it("should support a separate auth bucket keyed by IP", () => {
+    const limiter = new RateLimiter({
+      ip: { capacity: 10, refillInterval: 1000 },
+      auth: { capacity: 2, refillInterval: 2000 },
+    });
+
+    expect(limiter.check("auth", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("auth", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
+    expect(limiter.check("auth", "1.1.1.1", 0)).toEqual({ allowed: false, retryAfter: 2 });
+
+    expect(limiter.check("ip", "1.1.1.1", 0)).toEqual({ allowed: true, retryAfter: 0 });
   });
 
-  it("should block auth requests over auth limit", () => {
-    const store = new Map();
-    for (let i = 0; i < AUTH_RATE_LIMIT; i++) {
-      checkRateLimit(store, "192.168.1.1", true, 1000);
-    }
-    const result = checkRateLimit(store, "192.168.1.1", true, 1000);
-    expect(result).toEqual({ allowed: false, retryAfter: 60 });
-  });
-
-  it("should track global and auth limits separately", () => {
-    const store = new Map();
-    for (let i = 0; i < AUTH_RATE_LIMIT; i++) {
-      checkRateLimit(store, "192.168.1.1", true, 1000);
-    }
-    const authResult = checkRateLimit(store, "192.168.1.1", true, 1000);
-    expect(authResult.allowed).toBe(false);
-
-    const nonAuthResult = checkRateLimit(store, "192.168.1.1", false, 1000);
-    expect(nonAuthResult.allowed).toBe(true);
-  });
-
-  it("should use custom limits", () => {
-    const store = new Map();
-    const result = checkRateLimit(store, "192.168.1.1", false, 1000, 10000, 5, 2);
-    expect(result).toEqual({ allowed: true, retryAfter: 0 });
-
-    const blocked = checkRateLimit(store, "192.168.1.1", false, 1000, 10000, 1, 2);
-    expect(blocked).toEqual({ allowed: false, retryAfter: 10 });
+  it("should allow missing bucket type without limits", () => {
+    const limiter = new RateLimiter({ ip: { capacity: 1, refillInterval: 1000 } });
+    expect(limiter.check("user", "user-a", 0)).toEqual({ allowed: true, retryAfter: 0 });
   });
 });
 
 describe("createRateLimiter", () => {
-  it("should create rate limiter with state", () => {
+  it("should create a RateLimiter with production defaults", () => {
     const limiter = createRateLimiter();
-    expect(limiter.checkRateLimit("192.168.1.1", false)).toEqual({ allowed: true, retryAfter: 0 });
+
+    for (let index = 0; index < DEFAULT_IP_BUCKET_CAPACITY; index++) {
+      expect(limiter.check("ip", "1.1.1.1").allowed).toBe(true);
+    }
+    expect(limiter.check("ip", "1.1.1.1").allowed).toBe(false);
+
+    for (let index = 0; index < DEFAULT_USER_BUCKET_CAPACITY; index++) {
+      expect(limiter.check("user", "user-1").allowed).toBe(true);
+    }
+    expect(limiter.check("user", "user-1").allowed).toBe(false);
+  });
+});
+
+describe("hashAccessToken", () => {
+  it("should return a hex sha256 hash for a token", async () => {
+    const token = "any-token-value";
+    const result = await hashAccessToken(token);
+    expect(result).toHaveLength(64);
+    expect(result).toMatch(/^[0-9a-f]+$/);
+    expect(await hashAccessToken(token)).toBe(result);
   });
 
-  it("should block after limit is reached", () => {
-    const limiter = createRateLimiter();
-    for (let i = 0; i < GLOBAL_RATE_LIMIT; i++) {
-      limiter.checkRateLimit("192.168.1.1", false);
-    }
-    const result = limiter.checkRateLimit("192.168.1.1", false);
-    expect(result.allowed).toBe(false);
+  it("should return different hashes for different tokens", async () => {
+    expect(await hashAccessToken("token-a")).not.toBe(await hashAccessToken("token-b"));
+  });
+
+  it("should return null for a missing token", async () => {
+    expect(await hashAccessToken(null)).toBeNull();
   });
 });
 
@@ -322,7 +353,8 @@ describe("constants", () => {
   it("should have correct constant values", () => {
     expect(TEN_MB).toBe(10 * 1024 * 1024);
     expect(RATE_LIMIT_WINDOW_MS).toBe(60000);
-    expect(GLOBAL_RATE_LIMIT).toBe(600);
-    expect(AUTH_RATE_LIMIT).toBe(30);
+    expect(DEFAULT_IP_BUCKET_CAPACITY).toBe(1200);
+    expect(DEFAULT_USER_BUCKET_CAPACITY).toBe(400);
+    expect(DEFAULT_AUTH_BUCKET_CAPACITY).toBe(30);
   });
 });

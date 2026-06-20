@@ -107,28 +107,6 @@ export async function invalidateGroupQueries(
 }
 
 /**
- * Helper for admin-related cascading invalidation
- */
-export async function invalidateAdminQueries(
-  queryClient: ReturnType<typeof useQueryClient>,
-  domains?: (keyof Omit<typeof QUERY_GROUPS, "REWARDS" | "REWARDS_ADMIN">)[],
-) {
-  const groups = domains
-    ? domains.flatMap((domain) => QUERY_GROUPS[domain])
-    : [
-        ...QUERY_GROUPS.ADMIN,
-        ...QUERY_GROUPS.USER_DATA,
-        ...QUERY_GROUPS.GROUPS,
-        ...QUERY_GROUPS.TRIPS,
-        ...QUERY_GROUPS.CHALLENGES,
-        ...QUERY_GROUPS.SCHEDULES,
-        ...QUERY_GROUPS.TRANSACTIONS,
-      ];
-
-  await invalidateCascadingQueries(queryClient, groups);
-}
-
-/**
  * Helper for transaction-related cascading invalidation
  */
 export async function invalidateTransactionQueries(

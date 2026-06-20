@@ -2,6 +2,7 @@ import { appRouter, createORPCContext, logger, serviceRouter } from "@mirai-app/
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler as BunWsRPCHandler } from "@orpc/server/bun-ws";
 import { RPCHandler } from "@orpc/server/fetch";
+import { BatchHandlerPlugin } from "@orpc/server/plugins";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunServer } from "./bun-server";
@@ -13,6 +14,7 @@ import {
   getAllowedOrigins,
   getClientIp,
   getWsEnvConfig,
+  hashAccessToken,
 } from "./utils";
 
 export interface ServerOptions {
@@ -37,7 +39,7 @@ export function createServer(opts: ServerOptions) {
   const prefix = opts.prefix ?? "/api/orpc";
   const host = opts.host ?? "127.0.0.1";
 
-  const { checkRateLimit } = createRateLimiter();
+  const limiter = createRateLimiter();
   const app = new Hono();
 
   app.use("*", async (c, next) => {
@@ -54,8 +56,7 @@ export function createServer(opts: ServerOptions) {
       "x-real-ip": c.req.header("x-real-ip"),
     };
     const ip = getClientIp(headers);
-    const path = new URL(c.req.url).pathname;
-    const { allowed, retryAfter } = checkRateLimit(ip, path.startsWith(prefix));
+    const { allowed, retryAfter } = limiter.check("ip", ip);
 
     if (!allowed) {
       c.header("Retry-After", String(retryAfter));
@@ -90,8 +91,33 @@ export function createServer(opts: ServerOptions) {
   // plain HTTP (the WebSocket link is only used for streaming procedures), so
   // this mount is required for normal queries/mutations. Without it every
   // request falls through to Hono's default 404 ("Not Found").
+  const checkUserRateLimit = async (accessToken: string | null): Promise<void> => {
+    const tokenKey = await hashAccessToken(accessToken);
+
+    if (!tokenKey) {
+      return;
+    }
+
+    const { allowed, retryAfter } = limiter.check("user", tokenKey);
+
+    if (!allowed) {
+      throw new ORPCError("TOO_MANY_REQUESTS", {
+        status: 429,
+        data: { retryAfter },
+        message: "Too Many Requests",
+      });
+    }
+  };
+
   const rpcHandler = new RPCHandler(appRouter, {
-    interceptors: [onError(createOnErrorCallback(dev, "RPC HTTP handler"))],
+    plugins: [new BatchHandlerPlugin()],
+    interceptors: [
+      async ({ context, next }) => {
+        await checkUserRateLimit(context.accessToken);
+        return next();
+      },
+      onError(createOnErrorCallback(dev, "RPC HTTP handler")),
+    ],
   });
 
   app.use(`${prefix}/*`, async (c, next) => {
@@ -142,11 +168,25 @@ export function createServer(opts: ServerOptions) {
   const servicePrefix = "/internal/orpc";
 
   const wsRpcHandler = new BunWsRPCHandler(appRouter, {
-    interceptors: [onError(createOnErrorCallback(dev, "RPC WebSocket handler"))],
+    plugins: [new BatchHandlerPlugin()],
+    interceptors: [
+      async ({ context, next }) => {
+        await checkUserRateLimit(context.accessToken);
+        return next();
+      },
+      onError(createOnErrorCallback(dev, "RPC WebSocket handler")),
+    ],
   });
 
   const serviceWsRpcHandler = new BunWsRPCHandler(serviceRouter, {
-    interceptors: [onError(createOnErrorCallback(dev, "Service RPC WebSocket handler"))],
+    plugins: [new BatchHandlerPlugin()],
+    interceptors: [
+      async ({ context, next }) => {
+        await checkUserRateLimit(context.accessToken);
+        return next();
+      },
+      onError(createOnErrorCallback(dev, "Service RPC WebSocket handler")),
+    ],
   });
 
   const { start, stop } = createBunServer({

@@ -1,69 +1,202 @@
-export interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
+export const TEN_MB = 10 * 1024 * 1024;
+
+export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+export const DEFAULT_IP_BUCKET_CAPACITY = 1200;
+export const DEFAULT_IP_REFILL_INTERVAL_MS = Math.ceil(
+  RATE_LIMIT_WINDOW_MS / DEFAULT_IP_BUCKET_CAPACITY,
+);
+
+export const DEFAULT_USER_BUCKET_CAPACITY = 400;
+export const DEFAULT_USER_REFILL_INTERVAL_MS = Math.ceil(
+  RATE_LIMIT_WINDOW_MS / DEFAULT_USER_BUCKET_CAPACITY,
+);
+
+export const DEFAULT_AUTH_BUCKET_CAPACITY = 30;
+export const DEFAULT_AUTH_REFILL_INTERVAL_MS = Math.ceil(
+  RATE_LIMIT_WINDOW_MS / DEFAULT_AUTH_BUCKET_CAPACITY,
+);
 
 export interface RateLimitResult {
   allowed: boolean;
   retryAfter: number;
 }
 
-export const TEN_MB = 10 * 1024 * 1024;
-export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-export const GLOBAL_RATE_LIMIT = 600;
-export const AUTH_RATE_LIMIT = 30;
-
-export function getClientIp(headers: Record<string, string | undefined>): string {
-  const forwarded = headers["x-forwarded-for"];
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() ?? "unknown";
-  }
-  return headers["x-real-ip"] ?? "unknown";
+export interface BucketConfig {
+  capacity: number;
+  refillInterval: number;
 }
 
-export function checkRateLimit(
-  store: Map<string, RateLimitEntry>,
-  ip: string,
-  isAuthEndpoint: boolean,
-  now: number = Date.now(),
-  windowMs: number = RATE_LIMIT_WINDOW_MS,
-  globalLimit: number = GLOBAL_RATE_LIMIT,
-  authLimit: number = AUTH_RATE_LIMIT,
-): RateLimitResult {
-  const globalKey = `${ip}:global`;
-  const globalEntry = store.get(globalKey);
+export interface RateLimiterOptions {
+  ip?: BucketConfig;
+  user?: BucketConfig;
+  auth?: BucketConfig;
+}
 
-  if (!globalEntry || now > globalEntry.resetTime) {
-    store.set(globalKey, { count: 1, resetTime: now + windowMs });
-  } else if (globalEntry.count >= globalLimit) {
-    const retryAfter = Math.ceil((globalEntry.resetTime - now) / 1000);
-    return { allowed: false, retryAfter };
-  } else {
-    globalEntry.count++;
+export type BucketType = "ip" | "user" | "auth";
+
+interface BucketState {
+  tokens: number;
+  lastRefill: number;
+}
+
+function stripPort(ip: string): string {
+  const trimmed = ip.trim();
+
+  if (trimmed.startsWith("[") && trimmed.includes("]")) {
+    const closingBracketIndex = trimmed.indexOf("]");
+    return trimmed.slice(1, closingBracketIndex);
   }
 
-  if (isAuthEndpoint) {
-    const authKey = `${ip}:auth`;
-    const authEntry = store.get(authKey);
+  const lastColonIndex = trimmed.lastIndexOf(":");
+  const firstColonIndex = trimmed.indexOf(":");
 
-    if (!authEntry || now > authEntry.resetTime) {
-      store.set(authKey, { count: 1, resetTime: now + windowMs });
-    } else if (authEntry.count >= authLimit) {
-      return { allowed: false, retryAfter: Math.ceil((authEntry.resetTime - now) / 1000) };
-    } else {
-      authEntry.count++;
+  if (lastColonIndex !== -1 && firstColonIndex === lastColonIndex) {
+    const candidate = trimmed.slice(0, lastColonIndex);
+    if (/^[0-9.]+$/.test(candidate)) {
+      return candidate;
     }
   }
 
-  return { allowed: true, retryAfter: 0 };
+  return trimmed;
+}
+
+function isInternalIp(ip: string): boolean {
+  const host = stripPort(ip).toLowerCase();
+
+  if (host === "::1" || host === "localhost" || host.startsWith("127.")) {
+    return true;
+  }
+
+  if (host.startsWith("10.")) {
+    return true;
+  }
+
+  if (host.startsWith("192.168.")) {
+    return true;
+  }
+
+  if (host.startsWith("172.")) {
+    const secondOctet = Number(host.split(".")[1]);
+    if (!Number.isNaN(secondOctet) && secondOctet >= 16 && secondOctet <= 31) {
+      return true;
+    }
+  }
+
+  if (host.startsWith("fc") || host.startsWith("fd")) {
+    return true;
+  }
+
+  return false;
+}
+
+export function getClientIp(headers: Record<string, string | undefined>): string {
+  const forwarded = headers["x-forwarded-for"];
+
+  if (forwarded) {
+    const ips = forwarded
+      .split(",")
+      .map((ip) => ip.trim())
+      .filter(Boolean);
+
+    for (let index = ips.length - 1; index >= 0; index--) {
+      const ip = ips[index];
+      if (ip && !isInternalIp(ip)) {
+        return ip;
+      }
+    }
+  }
+
+  const realIp = headers["x-real-ip"];
+  if (realIp) {
+    return realIp.trim();
+  }
+
+  return "unknown";
+}
+
+export async function hashAccessToken(token: string | null): Promise<string | null> {
+  if (!token) {
+    return null;
+  }
+
+  // Rate-limit by token hash instead of decoded `sub` so we never rely on
+  // unverified JWT contents. Each token gets its own stable bucket.
+  const encoder = new TextEncoder();
+  const buffer = await crypto.subtle.digest("SHA-256", encoder.encode(token));
+  const bytes = new Uint8Array(buffer);
+
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export class RateLimiter {
+  private readonly buckets = new Map<BucketType, Map<string, BucketState>>();
+
+  constructor(private readonly options: RateLimiterOptions) {}
+
+  check(type: BucketType, key: string, now = Date.now()): RateLimitResult {
+    const config = this.options[type];
+
+    if (!config) {
+      return { allowed: true, retryAfter: 0 };
+    }
+
+    let typeBuckets = this.buckets.get(type);
+
+    if (!typeBuckets) {
+      typeBuckets = new Map<string, BucketState>();
+      this.buckets.set(type, typeBuckets);
+    }
+
+    let bucket = typeBuckets.get(key);
+
+    if (!bucket) {
+      bucket = { tokens: config.capacity - 1, lastRefill: now };
+      typeBuckets.set(key, bucket);
+      return { allowed: true, retryAfter: 0 };
+    }
+
+    const elapsed = now - bucket.lastRefill;
+
+    if (elapsed > 0 && bucket.tokens < config.capacity) {
+      const tokensToAdd = Math.floor(elapsed / config.refillInterval);
+
+      if (tokensToAdd > 0) {
+        bucket.tokens = Math.min(config.capacity, bucket.tokens + tokensToAdd);
+        bucket.lastRefill += tokensToAdd * config.refillInterval;
+      }
+    }
+
+    if (bucket.tokens >= 1) {
+      bucket.tokens -= 1;
+      return { allowed: true, retryAfter: 0 };
+    }
+
+    const deficit = 1 - bucket.tokens;
+    const waitMs = deficit * config.refillInterval;
+    const retryAfter = Math.max(1, Math.ceil(waitMs / 1000));
+
+    return { allowed: false, retryAfter };
+  }
 }
 
 export function createRateLimiter() {
-  const store = new Map<string, RateLimitEntry>();
-  return {
-    checkRateLimit: (ip: string, isAuthEndpoint: boolean) =>
-      checkRateLimit(store, ip, isAuthEndpoint),
-  };
+  return new RateLimiter({
+    ip: {
+      capacity: DEFAULT_IP_BUCKET_CAPACITY,
+      refillInterval: DEFAULT_IP_REFILL_INTERVAL_MS,
+    },
+    user: {
+      capacity: DEFAULT_USER_BUCKET_CAPACITY,
+      refillInterval: DEFAULT_USER_REFILL_INTERVAL_MS,
+    },
+    auth: {
+      capacity: DEFAULT_AUTH_BUCKET_CAPACITY,
+      refillInterval: DEFAULT_AUTH_REFILL_INTERVAL_MS,
+    },
+  });
 }
 
 export function buildSecurityHeaders(): Record<string, string> {
