@@ -12,6 +12,6 @@
   "references": [
     { "path": "../../packages/db" },
     { "path": "../../packages/orpc" },
-    { "path": "../../packages/shared" }
+    { "path": "../../packages/common" }
   ]
 }

@@ -22,7 +22,7 @@
   "dependencies": {
     "@mirai-app/db": "workspace:*",
     "@mirai-app/orpc": "workspace:*",
-    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/common": "workspace:*",
     "@orpc/server": "^1.14.2",
     "hono": "^4.12.18"
   },

@@ -18,7 +18,7 @@ Authentication utilities and state management for the MIRAI application. Provide
 
 - **State Management**: Zustand + Jotai
 - **Validation**: Zod
-- **Dependencies**: `@mirai-app/db`, `@mirai-app/supabase`, `@mirai-app/shared`
+- **Dependencies**: `@mirai-app/db`, `@mirai-app/supabase`, `@mirai-app/common`
 
 ## Development Commands
 
@@ -47,7 +47,7 @@ cd packages/auth && bun run dev
 
 - `@mirai-app/db` - Database client for user data
 - `@mirai-app/supabase` - Supabase client for auth
-- `@mirai-app/shared` - Shared utilities
+- `@mirai-app/common` - Shared utilities
 
 ### External
 

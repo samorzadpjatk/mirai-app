@@ -1,4 +1,4 @@
-import { logger } from "@mirai-app/shared/utils";
+import { logger } from "@mirai-app/common/utils";
 import { loadAuthUsers } from "./auth";
 import { env } from "./config/env";
 import { assetsRoot } from "./constants";

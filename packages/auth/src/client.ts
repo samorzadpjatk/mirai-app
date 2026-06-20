@@ -10,8 +10,8 @@ export {
 export { useLoginForm } from "./hooks/useLoginForm";
 export type { LoginFormData, LoginFormState, UseLoginFormResult } from "./hooks/useLoginForm";
 
-// Zustand store (moved to @mirai-app/shared)
-export { authStore } from "@mirai-app/shared/stores";
+// Zustand store (moved to @mirai-app/common)
+export { authStore } from "@mirai-app/common/stores";
 export type {
   AuthStore,
   AuthActions,
@@ -19,7 +19,7 @@ export type {
   AuthUser,
   SupabaseClient,
   SupabaseSession,
-} from "@mirai-app/shared/stores";
+} from "@mirai-app/common/stores";
 export { AuthStoreProvider } from "./store/AuthStoreProvider";
 export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 

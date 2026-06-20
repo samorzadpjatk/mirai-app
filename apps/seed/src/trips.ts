@@ -1,6 +1,6 @@
+import { logger } from "@mirai-app/common/utils";
 import type { Role } from "@mirai-app/db";
 import { tripParticipants, trips, users } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import type { BunFile } from "bun";
 import { eq } from "drizzle-orm";
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";

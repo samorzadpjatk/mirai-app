@@ -1,4 +1,4 @@
-import { requireEnv } from "@mirai-app/shared/utils";
+import { requireEnv } from "@mirai-app/common/utils";
 import type { ServerOptions } from "./server";
 
 const serverPort = requireEnv("ORPC_SERVER_PORT");

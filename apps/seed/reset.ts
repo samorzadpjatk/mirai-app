@@ -1,3 +1,4 @@
+import { logger } from "@mirai-app/common/utils";
 import { closeDb } from "@mirai-app/db";
 import {
   coinTransactions,
@@ -14,7 +15,6 @@ import {
   tripSponsors,
   trips,
 } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import { db } from "./src/config/db";
 import { env } from "./src/config/env";
 import { supabase } from "./src/config/supabase";

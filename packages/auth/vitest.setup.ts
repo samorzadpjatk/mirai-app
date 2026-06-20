@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { _resetAuthStoreForTests } from "@mirai-app/shared/stores";
+import { _resetAuthStoreForTests } from "@mirai-app/common/stores";
 
 // Mock @mirai-app/supabase
 vi.mock("@mirai-app/supabase", () => {

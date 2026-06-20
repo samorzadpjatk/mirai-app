@@ -1,4 +1,4 @@
-# @mirai-app/shared - Agent Guide
+# @mirai-app/common - Agent Guide
 
 > **Inherited Conventions**: See [root AGENTS.md](../../AGENTS.md) for monorepo conventions, build system, and development workflow.
 
@@ -74,12 +74,12 @@ bun run test:watch
   - `feed/reactions.ts` — `toggleHeartSummary`, `emptyReactionSummary`
   - `trips/leaderboard.ts` — `calculateLeaderboardInfo`, `findUserGroup`
   - `users/banUtils.ts` — `parseBanStatus`, `isUserBanned`
-- **Deduplication rule**: Before extracting, `grep` for similar logic across `apps/` and `packages/`. If the same transformation exists in 2+ places, extract once to `packages/shared` and import everywhere.
+- **Deduplication rule**: Before extracting, `grep` for similar logic across `apps/` and `packages/`. If the same transformation exists in 2+ places, extract once to `packages/common` and import everywhere.
 - **Coverage Target**: 100% real-data coverage for all pure functions. No mocks needed — pass real objects and assert on outputs.
 
 See [Testing Conventions](./../../docs/conventions/testing.md) for full testing standards.
 
 ## Links
 
-- [Utilities documentation](../../docs/packages/shared/utilities.md)
+- [Utilities documentation](../../docs/packages/common/utilities.md)
 - [Root AGENTS.md](../../AGENTS.md)

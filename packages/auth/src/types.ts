@@ -1,4 +1,4 @@
-import type { AuthUser } from "@mirai-app/shared/stores";
+import type { AuthUser } from "@mirai-app/common/stores";
 import type { SupabaseSession } from "@mirai-app/supabase";
 
 export interface DatabaseUser {

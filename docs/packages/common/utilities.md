@@ -2,14 +2,14 @@
 
 ## Overview
 
-The `@mirai-app/shared` package provides common utilities and design tokens used across the MIRAI application.
+The `@mirai-app/common` package provides common utilities and design tokens used across the MIRAI application.
 
 ## Design Tokens
 
 ### Colors
 
 ```typescript
-import { colors } from '@mirai-app/shared/design-tokens';
+import { colors } from '@mirai-app/common/design-tokens';
 
 // Usage
 const primaryColor = colors.primary;
@@ -27,7 +27,7 @@ Available tokens:
 ### Spacing
 
 ```typescript
-import { spacing } from '@mirai-app/shared/design-tokens';
+import { spacing } from '@mirai-app/common/design-tokens';
 
 // Usage
 const padding = spacing.md;  // 16px
@@ -45,7 +45,7 @@ Available tokens:
 ### Typography
 
 ```typescript
-import { typography } from '@mirai-app/shared/design-tokens';
+import { typography } from '@mirai-app/common/design-tokens';
 
 // Usage
 const headingStyle = typography.h1;
@@ -63,7 +63,7 @@ Available tokens:
 ### Date Formatting
 
 ```typescript
-import { formatDate, formatRelativeTime } from '@mirai-app/shared';
+import { formatDate, formatRelativeTime } from '@mirai-app/common';
 
 formatDate(new Date(), 'short');     // "Jan 1, 2024"
 formatDate(new Date(), 'long');      // "January 1, 2024"
@@ -73,7 +73,7 @@ formatRelativeTime(new Date());      // "2 hours ago"
 ### String Utilities
 
 ```typescript
-import { slugify, truncate, capitalize } from '@mirai-app/shared';
+import { slugify, truncate, capitalize } from '@mirai-app/common';
 
 slugify('Hello World');       // "hello-world"
 truncate('Long text...', 10); // "Long te..."
@@ -83,7 +83,7 @@ capitalize('hello');          // "Hello"
 ### Validation
 
 ```typescript
-import { isValidEmail, isValidUrl } from '@mirai-app/shared';
+import { isValidEmail, isValidUrl } from '@mirai-app/common';
 
 isValidEmail('user@example.com');  // true
 isValidUrl('https://example.com');  // true
@@ -94,7 +94,7 @@ isValidUrl('https://example.com');  // true
 ### Jotai Atoms
 
 ```typescript
-import { atomWithQuery } from '@mirai-app/shared';
+import { atomWithQuery } from '@mirai-app/common';
 
 // Create an atom that fetches data
 const userAtom = atomWithQuery((get) => ({
@@ -106,7 +106,7 @@ const userAtom = atomWithQuery((get) => ({
 ### Zustand Store Helpers
 
 ```typescript
-import { createStore } from '@mirai-app/shared';
+import { createStore } from '@mirai-app/common';
 
 const useStore = createStore((set) => ({
   count: 0,
@@ -119,7 +119,7 @@ const useStore = createStore((set) => ({
 ### API Endpoints
 
 ```typescript
-import { API_ENDPOINTS } from '@mirai-app/shared';
+import { API_ENDPOINTS } from '@mirai-app/common';
 
 // Usage
 fetch(API_ENDPOINTS.users);
@@ -128,7 +128,7 @@ fetch(API_ENDPOINTS.users);
 ### Error Messages
 
 ```typescript
-import { ERROR_MESSAGES } from '@mirai-app/shared';
+import { ERROR_MESSAGES } from '@mirai-app/common';
 
 // Usage
 showToast(ERROR_MESSAGES.networkError);
@@ -139,7 +139,7 @@ showToast(ERROR_MESSAGES.networkError);
 1. **Use design tokens** instead of hardcoding values
 2. **Import from specific paths** when tree-shaking matters:
    ```typescript
-   import { colors } from '@mirai-app/shared/design-tokens/colors';
+   import { colors } from '@mirai-app/common/design-tokens/colors';
    ```
 3. **Don't add app-specific logic** here - keep it truly shared
 4. **Keep functions pure** for easier testing

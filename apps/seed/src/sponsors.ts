@@ -1,6 +1,6 @@
+import { logger } from "@mirai-app/common/utils";
 import type { Sponsor, TripSponsor, TripSponsorDisplay } from "@mirai-app/db";
 import { sponsors, tripSponsorDisplay, tripSponsors } from "@mirai-app/db";
-import { logger } from "@mirai-app/shared/utils";
 import yaml from "yaml";
 import { db } from "./config/db";
 import type { SeedEnv, SponsorConfig } from "./types";
