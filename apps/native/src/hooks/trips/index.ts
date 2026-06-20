@@ -1,4 +1,4 @@
-export { useTripByIdFull, useTripDetails } from "./useTripDetails";
+export { useTripDetails } from "./useTripDetails";
 export { useSelectedTrip } from "./useSelectedTrip";
 export { useTrips } from "./useTrips";
 export { useTripResources } from "./useTripResources";
