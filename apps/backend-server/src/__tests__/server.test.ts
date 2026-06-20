@@ -1,9 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as ServerModule from "../server";
 
+const extractAccessToken = (headers: Headers): string | null => {
+  const authorization = headers.get("authorization") ?? headers.get("Authorization");
+  if (!authorization) {
+    return null;
+  }
+
+  const [, token] = authorization.split(" ");
+  return token ?? null;
+};
+
 const { loggerError, createOrpcContextSpy } = vi.hoisted(() => ({
   loggerError: vi.fn(),
-  createOrpcContextSpy: vi.fn((opts) => opts),
+  createOrpcContextSpy: vi.fn((opts) => ({
+    ...opts,
+    accessToken: extractAccessToken(opts.headers),
+    db: {},
+    supabase: {},
+  })),
 }));
 
 // Real oRPC HTTP handler is exercised against a real (fixture) router built
@@ -172,9 +187,9 @@ describe("createServer", () => {
 
   it("should rate limit after too many requests", async () => {
     const { app } = createServer({ dev: true, port: 3010, prefix: "/api/orpc", host: "127.0.0.1" });
-    const ip = "192.168.1.100";
+    const ip = "203.0.113.100";
 
-    for (let i = 0; i < 601; i++) {
+    for (let i = 0; i < 1201; i++) {
       await app.request("/health", { headers: { "x-forwarded-for": ip } });
     }
 
@@ -184,17 +199,34 @@ describe("createServer", () => {
     expect(await res.text()).toBe("Too Many Requests");
   });
 
-  it("should rate limit auth endpoints separately", async () => {
+  it("should rate limit authenticated oRPC requests per user", async () => {
     const { app } = createServer({ dev: true, port: 3011, prefix: "/api/orpc", host: "127.0.0.1" });
-    const ip = "192.168.1.200";
+    const ip = "203.0.113.200";
+    const userId = "rate-limit-user";
+    const accessToken = `header.${Buffer.from(JSON.stringify({ sub: userId })).toString("base64url")}.signature`;
 
-    for (let i = 0; i < 31; i++) {
-      await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
+    for (let i = 0; i < 401; i++) {
+      await app.request("/api/orpc/ping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-forwarded-for": ip,
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: "",
+      });
     }
 
-    const res = await app.request("/api/orpc", { headers: { "x-forwarded-for": ip } });
+    const res = await app.request("/api/orpc/ping", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": ip,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: "",
+    });
     expect(res.status).toBe(429);
-    expect(await res.text()).toBe("Too Many Requests");
   });
 
   it("should respond to oRPC endpoint", async () => {

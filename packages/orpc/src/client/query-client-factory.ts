@@ -9,6 +9,7 @@ export function makeQueryClient() {
         refetchInterval: false,
         // Disable window focus refetch (mobile apps don't have "windows")
         refetchOnWindowFocus: false,
+        refetchOnMount: false,
         // Retry with exponential backoff and jitter; don't retry on 4xx client errors
         retry: (failureCount, error) => {
           const statusCode = (error as { status?: number })?.status;

@@ -1,11 +1,12 @@
-import { DynamicLink, ORPCError, createORPCClient } from "@orpc/client";
+import { type ClientContext, DynamicLink, createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
+import { BatchLinkPlugin } from "@orpc/client/plugins";
 import { RPCLink as WSLink } from "@orpc/client/websocket";
 import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../api/root";
 import type { ServiceRouter } from "../api/service-root";
 
-const createWsConnection = (wsUrl: string, authorizationToken?: string, serviceToken?: string) => {
+const createWsConnection = (wsUrl: string, authorizationToken?: string, _serviceToken?: string) => {
   const ws = new WebSocket(wsUrl) as WebSocket & {
     addEventListener?: typeof WebSocket.prototype.addEventListener;
     send?: typeof WebSocket.prototype.send;
@@ -51,28 +52,29 @@ const createWsConnection = (wsUrl: string, authorizationToken?: string, serviceT
   return ws;
 };
 
-const isRetryableError = (error: unknown): boolean => {
-  if (error instanceof ORPCError) {
-    return error.status >= 500;
-  }
-  if (error instanceof Error) {
-    return error.name === "FetchError" || error.name === "TypeError";
-  }
-  return false;
-};
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+type ClientContextShape = ClientContext;
 
 const STREAMING_PROCEDURES = new Set([
   "location/getFriendsLocationsStream",
   "location/updateLocationStream",
 ]);
 
+const createBatchPlugin = () =>
+  new BatchLinkPlugin<ClientContextShape>({
+    groups: [
+      {
+        condition: () => true,
+        context: {},
+      },
+    ],
+    exclude: ({ path }) => STREAMING_PROCEDURES.has(path.join("/")),
+  });
+
 const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: string) => {
   const ws = wsUrl ? createWsConnection(wsUrl, authorizationToken) : null;
   const wsLink = ws ? new WSLink({ websocket: ws }) : null;
 
-  const httpLink = new RPCLink({
+  const httpLink = new RPCLink<ClientContextShape>({
     url: httpUrl,
     headers() {
       const headers: Record<string, string> = {};
@@ -81,24 +83,11 @@ const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: str
       }
       return headers;
     },
-    interceptors: [
-      async (ctx) => {
-        let attempts = 0;
-        while (true) {
-          try {
-            return await ctx.next(ctx);
-          } catch (error) {
-            attempts++;
-            if (attempts >= 5 || !isRetryableError(error)) throw error;
-            await delay(Math.min(1000 * 2 ** attempts, 30_000));
-          }
-        }
-      },
-    ],
+    plugins: [createBatchPlugin()],
   });
 
   const link = wsLink
-    ? new DynamicLink((_options, path) => {
+    ? new DynamicLink<ClientContextShape>((_options, path) => {
         const pathKey = path.join("/");
         if (STREAMING_PROCEDURES.has(pathKey)) {
           return wsLink;
@@ -120,11 +109,79 @@ const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: str
   };
 };
 
+type ClientBundle = {
+  client: RouterClient<AppRouter>;
+  cleanup: () => Promise<void>;
+};
+
+export function createPersistentORPCClient(
+  httpUrl: string,
+  wsUrl?: string,
+  authorizationToken?: string,
+): ClientBundle & { reconnect: () => ClientBundle } {
+  let current = getORPCClient(httpUrl, wsUrl, authorizationToken);
+
+  const reconnect = () => {
+    void current.cleanup();
+    current = getORPCClient(httpUrl, wsUrl, authorizationToken);
+    return current;
+  };
+
+  return {
+    ...current,
+    reconnect,
+  };
+}
+
+type SingletonBundle = ClientBundle & {
+  httpUrl: string;
+  wsUrl: string;
+  authorizationToken: string | undefined;
+};
+
+let backgroundSingleton: SingletonBundle | null = null;
+
+export function getBackgroundORPCClient(
+  httpUrl: string,
+  wsUrl: string,
+  authorizationToken?: string,
+): ClientBundle {
+  if (
+    backgroundSingleton &&
+    backgroundSingleton.httpUrl === httpUrl &&
+    backgroundSingleton.wsUrl === wsUrl &&
+    backgroundSingleton.authorizationToken === authorizationToken
+  ) {
+    return backgroundSingleton;
+  }
+
+  if (backgroundSingleton) {
+    void backgroundSingleton.cleanup();
+  }
+
+  const instance = getORPCClient(httpUrl, wsUrl, authorizationToken);
+  backgroundSingleton = {
+    ...instance,
+    httpUrl,
+    wsUrl,
+    authorizationToken,
+  };
+
+  return backgroundSingleton;
+}
+
+export async function cleanupBackgroundORPCClient(): Promise<void> {
+  if (backgroundSingleton) {
+    await backgroundSingleton.cleanup();
+    backgroundSingleton = null;
+  }
+}
+
 const getServiceORPCClient = (httpUrl: string, wsUrl?: string, serviceToken?: string) => {
   const ws = wsUrl ? createWsConnection(wsUrl, undefined, serviceToken) : null;
   const wsLink = ws ? new WSLink({ websocket: ws }) : null;
 
-  const httpLink = new RPCLink({
+  const httpLink = new RPCLink<ClientContextShape>({
     url: httpUrl,
     headers() {
       const headers: Record<string, string> = {};
@@ -133,20 +190,7 @@ const getServiceORPCClient = (httpUrl: string, wsUrl?: string, serviceToken?: st
       }
       return headers;
     },
-    interceptors: [
-      async (ctx) => {
-        let attempts = 0;
-        while (true) {
-          try {
-            return await ctx.next(ctx);
-          } catch (error) {
-            attempts++;
-            if (attempts >= 5 || !isRetryableError(error)) throw error;
-            await delay(Math.min(1000 * 2 ** attempts, 30_000));
-          }
-        }
-      },
-    ],
+    plugins: [createBatchPlugin()],
   });
 
   const link = wsLink ? wsLink : httpLink;

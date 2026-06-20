@@ -242,20 +242,22 @@ describe("HTTP Link Configuration", () => {
     expect(headersFn?.()).toEqual({});
   });
 
-  it("should configure retry interceptor", () => {
+  it("should configure BatchLinkPlugin instead of a retry interceptor", () => {
     const httpUrl = "http://localhost:3000";
     const wsUrl = "ws://localhost:3000";
 
     getORPCClient(httpUrl, wsUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    expect(callArgs).toHaveProperty("interceptors");
-    expect(Array.isArray(callArgs.interceptors)).toBe(true);
-    expect(callArgs.interceptors).toHaveLength(1);
+    expect(callArgs).not.toHaveProperty("interceptors");
+    expect(callArgs).toHaveProperty("plugins");
+    expect(Array.isArray(callArgs.plugins)).toBe(true);
+    expect(callArgs.plugins).toHaveLength(1);
+    expect(callArgs.plugins[0]?.constructor.name).toBe("BatchLinkPlugin");
   });
 });
 
-describe("Retry Interceptor", () => {
+describe("Batch Link Plugin", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     RPCLinkFetch.mockImplementation(function () {
@@ -264,330 +266,27 @@ describe("Retry Interceptor", () => {
     WSLink.mockImplementation(function () {
       return {};
     });
-    vi.useFakeTimers();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it("should register a single BatchLinkPlugin on normal HTTP links", () => {
+    const httpUrl = "http://localhost:3000";
+    const wsUrl = "ws://localhost:3000";
+
+    getORPCClient(httpUrl, wsUrl);
+
+    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
+    expect(callArgs?.plugins).toHaveLength(1);
+    expect(callArgs?.plugins[0]?.constructor.name).toBe("BatchLinkPlugin");
   });
 
-  it("should retry on ORPCError with status >= 500", async () => {
+  it("should register a single BatchLinkPlugin when no websocket URL is provided", () => {
     const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
 
-    getORPCClient(httpUrl, wsUrl);
+    getORPCClient(httpUrl);
 
     const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 3) {
-        return Promise.reject(serverError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-    await vi.advanceTimersByTimeAsync(6000);
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(3);
-  }, 60_000);
-
-  it("should retry on FetchError", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const fetchError = new Error("Fetch error");
-    fetchError.name = "FetchError";
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 2) {
-        return Promise.reject(fetchError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-    await vi.advanceTimersByTimeAsync(2000);
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(2);
-  }, 60_000);
-
-  it("should not retry after max attempts", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
-
-    const nextFn = vi.fn().mockRejectedValue(serverError);
-
-    const promise = interceptor({ next: nextFn, path: "test" }).catch(() => {});
-    await vi.advanceTimersByTimeAsync(31_000);
-    await promise;
-    expect(nextFn).toHaveBeenCalledTimes(5);
-  }, 60_000);
-
-  it("should not retry non-retryable errors", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const clientError = new Error("Client error");
-
-    const nextFn = vi.fn().mockRejectedValue(clientError);
-
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow("Client error");
-    expect(nextFn).toHaveBeenCalledTimes(1);
+    expect(callArgs?.plugins).toHaveLength(1);
   });
-
-  it("should not retry ORPCError with status 400 (client error)", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const clientError = new ORPCError("BAD_REQUEST", { status: 400 });
-
-    const nextFn = vi.fn().mockRejectedValue(clientError);
-
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow();
-    expect(nextFn).toHaveBeenCalledTimes(1);
-  });
-
-  it("should not retry ORPCError with status 499 (client error boundary)", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const clientError = new ORPCError("BAD_REQUEST", { status: 499 });
-
-    const nextFn = vi.fn().mockRejectedValue(clientError);
-
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow();
-    expect(nextFn).toHaveBeenCalledTimes(1);
-  });
-
-  it("should retry on TypeError (network failure)", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const typeError = new TypeError("Network request failed");
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 2) {
-        return Promise.reject(typeError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-    await vi.advanceTimersByTimeAsync(2000);
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(2);
-  }, 60_000);
-
-  it("should not retry on plain Error (non-retryable)", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const plainError = new Error("Some random error");
-
-    const nextFn = vi.fn().mockRejectedValue(plainError);
-
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toThrow("Some random error");
-    expect(nextFn).toHaveBeenCalledTimes(1);
-  });
-
-  it("should not retry on non-Error object", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const nonError = { message: "Not an error" };
-
-    const nextFn = vi.fn().mockRejectedValue(nonError);
-
-    await expect(interceptor({ next: nextFn, path: "test" })).rejects.toBe(nonError);
-    expect(nextFn).toHaveBeenCalledTimes(1);
-  });
-
-  it("should retry on ORPCError with status 502 (Bad Gateway)", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const serverError = new ORPCError("BAD_GATEWAY", { status: 502 });
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 2) {
-        return Promise.reject(serverError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-    await vi.advanceTimersByTimeAsync(2000);
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(2);
-  }, 60_000);
-
-  it("should use exponential backoff with increasing delays", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 3) {
-        return Promise.reject(serverError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-
-    await vi.advanceTimersByTimeAsync(2000);
-    await vi.advanceTimersByTimeAsync(4000);
-
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(3);
-  }, 60_000);
-
-  it("should cap delay at 30 seconds", async () => {
-    const httpUrl = "http://localhost:3000";
-    const wsUrl = "ws://localhost:3000";
-
-    getORPCClient(httpUrl, wsUrl);
-
-    const callArgs = RPCLinkFetch.mock.calls[0]?.[0];
-    const interceptor = callArgs?.interceptors[0] as (ctx: {
-      next: typeof vi.fn;
-      path: string;
-    }) => Promise<unknown>;
-
-    const { ORPCError } = await import("@orpc/client");
-    const serverError = new ORPCError("INTERNAL_SERVER_ERROR", { status: 500 });
-
-    let attempts = 0;
-    const nextFn = vi.fn().mockImplementation(() => {
-      attempts++;
-      if (attempts < 5) {
-        return Promise.reject(serverError);
-      }
-      return Promise.resolve("success");
-    });
-
-    const promise = interceptor({ next: nextFn, path: "test" });
-
-    await vi.advanceTimersByTimeAsync(30_000);
-    await vi.advanceTimersByTimeAsync(30_000);
-    await vi.advanceTimersByTimeAsync(30_000);
-    await vi.advanceTimersByTimeAsync(30_000);
-
-    const result = await promise;
-    expect(result).toBe("success");
-    expect(nextFn).toHaveBeenCalledTimes(5);
-  }, 60_000);
 });
 
 describe("createWsConnection", () => {

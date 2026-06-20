@@ -2,7 +2,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QUERY_GROUPS,
-  invalidateAdminQueries,
   invalidateCascadingQueries,
   invalidateChallengeQueries,
   invalidateFileQueries,
@@ -277,51 +276,6 @@ describe("invalidateGroupQueries", () => {
     await invalidateGroupQueries(mockQueryClient as MockQueryClientType);
 
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledTimes(3);
-  });
-});
-
-describe("invalidateAdminQueries", () => {
-  let mockQueryClient: MockQueryClient;
-
-  beforeEach(() => {
-    mockQueryClient = createMockQueryClient();
-    vi.clearAllMocks();
-  });
-
-  it("should invalidate all admin-related queries when no domains specified", async () => {
-    await invalidateAdminQueries(mockQueryClient as MockQueryClientType);
-
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledTimes(10);
-  });
-
-  it("should invalidate only specified domains", async () => {
-    await invalidateAdminQueries(mockQueryClient as MockQueryClientType, ["USER_DATA", "GROUPS"]);
-
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledTimes(3);
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      predicate: expect.any(Function),
-    });
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      predicate: expect.any(Function),
-    });
-  });
-
-  it("should handle single domain", async () => {
-    await invalidateAdminQueries(mockQueryClient as MockQueryClientType, ["TRIPS"]);
-
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledTimes(1);
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      predicate: expect.any(Function),
-    });
-  });
-
-  it("should handle CHALLENGES domain", async () => {
-    await invalidateAdminQueries(mockQueryClient as MockQueryClientType, ["CHALLENGES"]);
-
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledTimes(1);
-    expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      predicate: expect.any(Function),
-    });
   });
 });
 

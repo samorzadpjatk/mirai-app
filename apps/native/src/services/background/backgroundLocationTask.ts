@@ -88,6 +88,49 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
     return sharingEnabled === "true" && backgroundEnabled === "true";
   }
 
+  const MAX_QUEUED_LOCATIONS = 10;
+  const QUEUE_FLUSH_INTERVAL_MS = 60 * 1000;
+
+  type LocationPayload = {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    altitude?: number;
+    altitudeAccuracy?: number;
+    heading?: number;
+    speed?: number;
+  };
+
+  type QueuedLocation = {
+    payload: LocationPayload;
+    enqueuedAt: number;
+  };
+
+  const locationQueue: QueuedLocation[] = [];
+
+  async function flushLocationQueue(client: {
+    location: { updateLocation: (input: LocationPayload) => Promise<unknown> };
+  }): Promise<void> {
+    let index = 0;
+    while (index < locationQueue.length) {
+      const item = locationQueue[index];
+      if (!item) {
+        break;
+      }
+      if (Date.now() - item.enqueuedAt < QUEUE_FLUSH_INTERVAL_MS) {
+        index += 1;
+        continue;
+      }
+
+      try {
+        await client.location.updateLocation(item.payload);
+        locationQueue.splice(index, 1);
+      } catch {
+        index += 1;
+      }
+    }
+  }
+
   async function sendUpdate(location: LocationObject): Promise<void> {
     const accessToken = await getAccessToken();
     if (!accessToken) {
@@ -100,20 +143,27 @@ export function createBackgroundTaskDeps(deps: BackgroundTaskFactoryDeps): Backg
       return;
     }
 
-    const { client, cleanup } = deps.getORPCClient(deps.httpUrl, deps.wsUrl, accessToken);
+    const payload: LocationPayload = {
+      latitude,
+      longitude,
+      accuracy: toNonNegativeOrUndefined(location.coords.accuracy),
+      altitude: toFiniteNumberOrUndefined(location.coords.altitude),
+      altitudeAccuracy: toNonNegativeOrUndefined(location.coords.altitudeAccuracy),
+      heading: toHeadingOrUndefined(location.coords.heading),
+      speed: toNonNegativeOrUndefined(location.coords.speed),
+    };
+
+    const { client } = deps.getORPCClient(deps.httpUrl, deps.wsUrl, accessToken);
+
+    await flushLocationQueue(client);
 
     try {
-      await client.location.updateLocation({
-        latitude,
-        longitude,
-        accuracy: toNonNegativeOrUndefined(location.coords.accuracy),
-        altitude: toFiniteNumberOrUndefined(location.coords.altitude),
-        altitudeAccuracy: toNonNegativeOrUndefined(location.coords.altitudeAccuracy),
-        heading: toHeadingOrUndefined(location.coords.heading),
-        speed: toNonNegativeOrUndefined(location.coords.speed),
-      });
-    } finally {
-      await cleanup();
+      await client.location.updateLocation(payload);
+    } catch {
+      if (locationQueue.length >= MAX_QUEUED_LOCATIONS) {
+        locationQueue.shift();
+      }
+      locationQueue.push({ payload, enqueuedAt: Date.now() });
     }
   }
 

@@ -6,7 +6,6 @@ export {
   invalidateChallengeQueries,
   invalidateUserQueries,
   invalidateGroupQueries,
-  invalidateAdminQueries,
   invalidateTransactionQueries,
   invalidateNotificationQueries,
   invalidateLocationQueries,
