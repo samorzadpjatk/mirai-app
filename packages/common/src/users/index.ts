@@ -5,6 +5,7 @@ export { buildUserSearchWhere } from "./buildUserSearchWhere";
 export { filterParticipantsByEmail, sortParticipants } from "./filterParticipants";
 export { formatDisplayName } from "./formatDisplayName";
 export { getInitials } from "./getInitials";
+export { hasAdminAccess } from "./hasAdminAccess";
 export type { ParticipantRow, MappedParticipant } from "./mapParticipantRow";
 export { mapParticipantRow } from "./mapParticipantRow";
 export { normalizeEmail } from "./normalizeEmail";
