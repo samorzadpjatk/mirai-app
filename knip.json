@@ -25,7 +25,7 @@
       "project": ["src/**/*.ts", "src/**/*.tsx"],
       "ignoreDependencies": ["pino"]
     },
-    "packages/shared": {
+    "packages/common": {
       "project": ["src/**/*.ts"]
     },
     "packages/supabase": {

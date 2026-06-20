@@ -208,7 +208,7 @@ Brief description of what this package does.
 
 ## Dependencies
 
-- `@mirai-app/shared` - Shared utilities
+- `@mirai-app/common` - Shared utilities
 
 ## Development Commands
 

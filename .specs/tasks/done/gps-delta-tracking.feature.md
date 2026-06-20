@@ -56,7 +56,7 @@ Implement adaptive delta filtering based on GPS accuracy to reduce noise updates
 - Backend changes (no changes to oRPC router or database)
 - UI changes (map display remains unchanged)
 - `expo-location` configuration changes (`distanceInterval: 25`, `Accuracy.Balanced` remain as-is)
-- Deduplication of `calculateDistance` into `@mirai-app/shared` (future refactor)
+- Deduplication of `calculateDistance` into `@mirai-app/common` (future refactor)
 
 ## Architecture Overview
 
@@ -417,7 +417,7 @@ All three are constants in `backgroundLocationTaskUtils.ts` — one-line changes
 - **No changes to the `expo-location` configuration** — `distanceInterval: 25`, `deferredUpdatesDistance: 25`, `Accuracy.Balanced` remain as-is. The filtering is an additional layer.
 - **No backend changes required** — the server receives the same `updateLocation` calls, just fewer of them.
 - **No UI changes** — friends on the map see the same data quality, just with less noise.
-- **The `calculateDistance` function is duplicated** in `packages/shared/src/utils/location.ts` and `packages/orpc/src/utils/location-validation.ts`. Adding a third copy in `backgroundLocationTaskUtils.ts` is acceptable for now (it's a pure function, 10 lines), but a future refactor should deduplicate these into `@mirai-app/shared`.
+- **The `calculateDistance` function is duplicated** in `packages/common/src/utils/location.ts` and `packages/orpc/src/utils/location-validation.ts`. Adding a third copy in `backgroundLocationTaskUtils.ts` is acceptable for now (it's a pure function, 10 lines), but a future refactor should deduplicate these into `@mirai-app/common`.
 
 ## References
 

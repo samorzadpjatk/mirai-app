@@ -20,10 +20,10 @@ Testing patterns and conventions for the MIRAI monorepo.
 
 ### Functional Core, Imperative Shell
 
-Extract pure business logic to `packages/shared/src/` (domain directories like `challenges/`, `trips/`, `groups/`). Hooks, routers, and components become thin shells.
+Extract pure business logic to `packages/common/src/` (domain directories like `challenges/`, `trips/`, `groups/`). Hooks, routers, and components become thin shells.
 
 ```typescript
-// packages/shared/src/challenges/queryBuilders.ts
+// packages/common/src/challenges/queryBuilders.ts
 export function buildChallengeQueryInput(tripId: string | null, pageParam: number) {
   return { tripId: tripId ?? "", pagination: { limit: 30, offset: pageParam || 0 } };
 }
@@ -33,7 +33,7 @@ Test with real data, no mocks:
 
 ```typescript
 import { describe, it, expect } from "vitest";
-import { buildChallengeQueryInput } from "@mirai-app/shared/challenges";
+import { buildChallengeQueryInput } from "@mirai-app/common/challenges";
 
 describe("buildChallengeQueryInput", () => {
   it("defaults null tripId to empty string", () => {
@@ -101,7 +101,7 @@ describe("calculateTotal", () => {
 
 ## Shared Test Infrastructure
 
-All packages extend `packages/shared/vitest.base.config.ts`:
+All packages extend `packages/common/vitest.base.config.ts`:
 
 ```typescript
 import { defineConfig } from "vitest/config";
@@ -129,7 +129,7 @@ export default mergeConfig(baseConfig, defineConfig({
 }));
 ```
 
-Shared utilities live in `packages/shared/src/test-utils/`:
+Shared utilities live in `packages/common/src/test-utils/`:
 
 ```typescript
 import {
@@ -138,15 +138,15 @@ import {
   userBuilder,
   resetMocks,
   flushPromises,
-} from "@mirai-app/shared/test-utils";
+} from "@mirai-app/common/test-utils";
 ```
 
 ## Test Data Factories
 
-Use builders from `packages/shared/src/test-utils/test-data-builders.ts`:
+Use builders from `packages/common/src/test-utils/test-data-builders.ts`:
 
 ```typescript
-import { userBuilder, tripBuilder, createBuilder } from "@mirai-app/shared/test-utils";
+import { userBuilder, tripBuilder, createBuilder } from "@mirai-app/common/test-utils";
 
 const user = userBuilder.with("name", "Jane").withMany({ email: "jane@example.com" }).build();
 const trips = tripBuilder.buildMany(3);
@@ -525,7 +525,7 @@ Object.defineProperty(mockFileConstructor, "downloadFileAsync", {
 Move from mock tests to real tests incrementally, one router or hook at a time.
 
 1. **Keep old tests running** while writing new tests. Do not delete until new tests pass.
-2. **Extract pure functions first** — zero risk, immediate value. See `packages/shared/src/challenges/queryBuilders.ts`.
+2. **Extract pure functions first** — zero risk, immediate value. See `packages/common/src/challenges/queryBuilders.ts`.
 3. **Add real PGLite tests** for transaction-heavy routers. See `packages/orpc/src/api/routers/__tests__/challenge.pglite.test.ts`.
 4. **Replace hook mock tests with MSW** — rewrite one describe block at a time.
 5. **Coverage ratchet** — ensure coverage never drops below current level during migration.

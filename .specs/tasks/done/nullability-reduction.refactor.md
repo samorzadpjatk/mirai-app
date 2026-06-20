@@ -113,8 +113,8 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 | `packages/orpc/src/utils/location-validation.ts` | Remove `.nullable()` from 7 `.optional().nullable()` chains |
 | `packages/orpc/src/api/routers/activityFeed/index.ts` | Remove `.nullable()` from `description`, use discriminated union |
 | `packages/orpc/src/api/routers/reward/index.ts` | Remove `.nullable()` from `image` |
-| `packages/shared/src/users/participantResult.ts` | `PublicUser` fields from `\| null` to `string` with defaults |
-| `packages/shared/src/stores/authStore.ts` | `AuthUser` fields from `\| null` to `string` with defaults |
+| `packages/common/src/users/participantResult.ts` | `PublicUser` fields from `\| null` to `string` with defaults |
+| `packages/common/src/stores/authStore.ts` | `AuthUser` fields from `\| null` to `string` with defaults |
 | `apps/native/src/hooks/trips/useTrips.ts` | `useState<TripListItem[]>([])` instead of `null` |
 | `apps/native/src/hooks/trips/useTripDetails.ts` | `useState<string>("")` instead of `string \| null` |
 | `apps/native/src/app/auth/login.tsx` | `useState<string>("")` for error states |
@@ -153,9 +153,9 @@ This implementation uses a **layered boundary normalization** strategy: each lay
   - Then: Zero matches found in `packages/orpc`
 
 - [ ] **Shared Type Normalization**: `PublicUser` and `AuthUser` interfaces have no `| null` string fields, all consumers updated
-  - Given: `packages/shared/src/users/participantResult.ts` and `authStore.ts` are updated
+  - Given: `packages/common/src/users/participantResult.ts` and `authStore.ts` are updated
   - When: `nx run-many -t typecheck` runs
-  - Then: No TypeScript errors in `packages/shared`, `packages/orpc`, or `apps/native`
+  - Then: No TypeScript errors in `packages/common`, `packages/orpc`, or `apps/native`
 
 - [ ] **Native useState Defaults**: All identified `useState<X | null>(null)` patterns use proper defaults (`[]`, `""`, `0`, discriminated unions)
   - Given: `apps/native` hooks and components are updated
@@ -258,8 +258,8 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 **Parallel with**: 1.1, 1.3 (Wave 1 — Quick Wins)
 
 **Success Criteria**:
-- `packages/shared/src/users/participantResult.ts`: `PublicUser` fields from `| null` to `string` with defaults
-- `packages/shared/src/stores/authStore.ts`: `AuthUser` string fields from `| null` to `string` with defaults
+- `packages/common/src/users/participantResult.ts`: `PublicUser` fields from `| null` to `string` with defaults
+- `packages/common/src/stores/authStore.ts`: `AuthUser` string fields from `| null` to `string` with defaults
 - Add `hasName`, `hasEmail`, `isEmailVerified` derived booleans
 - All consumers in `apps/native` and `packages/orpc` updated
 - `nx run-many -t typecheck` passes across affected packages
@@ -267,7 +267,7 @@ This implementation uses a **layered boundary normalization** strategy: each lay
 **Subtasks**:
 1. Update `PublicUser` interface: remove `| null`, add derived booleans
 2. Update `AuthUser` interface: remove `| null`, add derived booleans
-3. Create `toPublicUser` mapper function in `packages/shared`
+3. Create `toPublicUser` mapper function in `packages/common`
 4. Update all consumers in `packages/orpc` (queries, routers)
 5. Update all consumers in `apps/native` (components, hooks)
 6. Run typecheck across affected packages

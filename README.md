@@ -48,7 +48,7 @@ It contains:
   - [`@mirai-app/auth`](packages/auth/) - Authentication logic
   - [`@mirai-app/db`](packages/db/) - Drizzle database client
   - [`@mirai-app/orpc`](packages/orpc/) - oRPC routers and client
-  - [`@mirai-app/shared`](packages/shared/) - Shared utilities
+  - [`@mirai-app/common`](packages/common/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
 
 📖 **Testing**: See [TESTING.md](TESTING.md) for comprehensive testing documentation. We use Vitest for most packages and Jest for the native app.

@@ -165,7 +165,7 @@ import { z } from 'zod';
 
 // 2. Internal packages
 import { orpc } from '@mirai-app/orpc/client';
-import { colors } from '@mirai-app/shared/design-tokens';
+import { colors } from '@mirai-app/common/design-tokens';
 
 // 3. Relative imports
 import { Button } from './components/Button';

@@ -8,7 +8,7 @@ Following OpenAI's guidance, AGENTS.md files will be layered from the repository
 
 - Create a root `AGENTS.md` file documenting overall monorepo structure and conventions
 - Create individual `AGENTS.md` files in each app directory (`apps/native`, `apps/backend-server`, `apps/notification-sender`, `apps/seed`)
-- Create individual `AGENTS.md` files in each package directory (`packages/auth`, `packages/db`, `packages/shared`, `packages/supabase`, `packages/orpc`)
+- Create individual `AGENTS.md` files in each package directory (`packages/auth`, `packages/db`, `packages/common`, `packages/supabase`, `packages/orpc`)
 - Support `AGENTS.override.md` files in nested directories for temporary team-specific overrides without modifying base files
 - Create a `docs/` folder with structured documentation referenced by all AGENTS.md files
 - Establish cross-references between AGENTS.md files and the docs folder

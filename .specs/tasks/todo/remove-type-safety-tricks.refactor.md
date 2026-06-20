@@ -39,7 +39,7 @@ Remove configuration-level bypasses that hide missing coverage and dead code:
 - Remove `--passWithNoTests` from all `package.json` test scripts and add minimum smoke tests
 - Fix 5 `eslint-disable` directives in vitest configs by moving shared config to a proper workspace package
 - Fix 1 `biome-ignore` in seed types by relocating to a `.d.ts` types directory
-- Enable `noUnusedLocals` and `noUnusedParameters` in `apps/seed/tsconfig.json` and `packages/shared/tsconfig.json`, cleaning up dead code and prefixing intentional unused params with `_`
+- Enable `noUnusedLocals` and `noUnusedParameters` in `apps/seed/tsconfig.json` and `packages/common/tsconfig.json`, cleaning up dead code and prefixing intentional unused params with `_`
 
 **Phase 2: Production Empty Catch Blocks (Week 1-2)**
 Eliminate silent failures in production code (16 files in `apps/native/src/components/`, `hooks/`, `app/`):
@@ -51,18 +51,18 @@ Eliminate silent failures in production code (16 files in `apps/native/src/compo
 Replace `any` in production API routers with proper Drizzle types (6 files in `packages/orpc/src/api/routers/`):
 - Extract a shared typed helper for Drizzle query builder callbacks into `packages/orpc/src/api/routers/utils/drizzle-types.ts`
 - Apply to `group/mutations.ts` (30+ instances), `trip/queries.ts` (15+), `reward/mutations.ts` (12+), `challengeSubmission/mutations.ts` (7+), `challengeVote/mutations.ts` (7+), `challenge/utils.ts` (4 `as any`)
-- Fix `packages/shared/src/groups/transforms.ts` (3 `any` instances) using generic constraints
+- Fix `packages/common/src/groups/transforms.ts` (3 `any` instances) using generic constraints
 
 **Phase 4: Test File Cleanup (Week 3)**
 Remove `as any`, `!`, and empty catches from tests (12 files with `as any`, 5 files with `!`, 12 MSW test files with `.catch(() => {})`):
-- Use typed mock factories from `packages/shared/src/test-utils/mock-factories.ts`
+- Use typed mock factories from `packages/common/src/test-utils/mock-factories.ts`
 - Use `jest.MockedFunction<>` for mock types
 - Use `expect(x).toBeDefined()` before `expect(x!.y).toBe(...)`
 - Define proper `MapUser` / `Coordinate` types for map store tests
 
 **Phase 5: `skipLibCheck` Removal (Week 4)**
 Remove `skipLibCheck: true` from 4 tsconfig files:
-- Files: `apps/seed/tsconfig.json`, `apps/native/tsconfig.json`, `packages/orpc/tsconfig.test-check.json`, `packages/shared/tsconfig.json`
+- Files: `apps/seed/tsconfig.json`, `apps/native/tsconfig.json`, `packages/orpc/tsconfig.test-check.json`, `packages/common/tsconfig.json`
 - **Risk:** `apps/native/tsconfig.json` may need to keep due to React Native ecosystem type issues — evaluate after removal
 - Resolution hierarchy: Upgrade dependency → patch upstream → local `.d.ts` shim (last resort)
 
@@ -77,7 +77,7 @@ Remove `skipLibCheck: true` from 4 tsconfig files:
    - Backend: Pino logger with structured logging
    - Tests: Explicit suppression only when testing error paths; otherwise use `.rejects`
 
-4. **Test Fixture Type Safety:** Test files are not exempt. Use typed builder patterns in `packages/shared/src/test-utils/mock-factories.ts` to ensure mock data is fully typed, eliminating the need for `as any` in tests.
+4. **Test Fixture Type Safety:** Test files are not exempt. Use typed builder patterns in `packages/common/src/test-utils/mock-factories.ts` to ensure mock data is fully typed, eliminating the need for `as any` in tests.
 
 5. **`@ts-expect-error` Policy:** The 3 `@ts-expect-error` instances in `packages/orpc/src/api/routers/__tests__/storage.pglite.test.ts` are **legitimate** (testing validation error paths). Keep them but add explicit comments linking to the test purpose. All other `@ts-expect-error` / `@ts-ignore` must be removed.
 
@@ -90,19 +90,19 @@ Remove `skipLibCheck: true` from 4 tsconfig files:
 | `--passWithNoTests` | 3 scripts | `package.json`, `packages/db/package.json`, `apps/native/package.json` | Phase 1 |
 | `eslint-disable` | 5 | 5 `vitest.config.ts` files | Phase 1 |
 | `biome-ignore` | 1 | `apps/seed/src/types/bun-types.d.ts` | Phase 1 |
-| `noUnusedLocals/Parameters` | 2 tsconfigs | `apps/seed/tsconfig.json`, `packages/shared/tsconfig.json` | Phase 1 |
+| `noUnusedLocals/Parameters` | 2 tsconfigs | `apps/seed/tsconfig.json`, `packages/common/tsconfig.json` | Phase 1 |
 | Empty catch (production) | 16 files | `apps/native/src/components/**/*.tsx`, `apps/native/src/hooks/**/*.ts`, `apps/native/src/app/**/*.tsx` | Phase 2 |
 | `any` in ORPC routers | 6 files | `packages/orpc/src/api/routers/{group,trip,reward,chSubmission,chVote,challenge}/` | Phase 3 |
 | `as any` in tests | 12 files | Various `**/__tests__/**/*.test.ts` | Phase 4 |
 | `!` in tests | 5 files | `apps/native/src/hooks/__tests__/**/*.test.ts` | Phase 4 |
 | Empty catch (tests) | 12 files | `apps/native/src/hooks/__tests__/admin/*.test.ts` | Phase 4 |
-| `skipLibCheck` | 4 tsconfigs | `apps/seed/tsconfig.json`, `apps/native/tsconfig.json`, `packages/orpc/tsconfig.test-check.json`, `packages/shared/tsconfig.json` | Phase 5 |
-| `shared/src/groups/transforms.ts` | 1 | `packages/shared/src/groups/transforms.ts` | Phase 3 |
-| `shared/test-utils/mock-factories.ts` | 1 | `packages/shared/src/test-utils/mock-factories.ts` | Phase 4 |
+| `skipLibCheck` | 4 tsconfigs | `apps/seed/tsconfig.json`, `apps/native/tsconfig.json`, `packages/orpc/tsconfig.test-check.json`, `packages/common/tsconfig.json` | Phase 5 |
+| `shared/src/groups/transforms.ts` | 1 | `packages/common/src/groups/transforms.ts` | Phase 3 |
+| `shared/test-utils/mock-factories.ts` | 1 | `packages/common/src/test-utils/mock-factories.ts` | Phase 4 |
 
 **New Files to Create:**
 1. `packages/orpc/src/api/routers/utils/drizzle-types.ts` — Shared typed helpers for Drizzle query builder callbacks
-2. `packages/shared/src/test-utils/typed-builders.ts` — Typed test fixture builders (optional, if mock-factories refactor is insufficient)
+2. `packages/common/src/test-utils/typed-builders.ts` — Typed test fixture builders (optional, if mock-factories refactor is insufficient)
 
 ### Risk Mitigation
 
@@ -111,7 +111,7 @@ Remove `skipLibCheck: true` from 4 tsconfig files:
 | React Native `skipLibCheck` removal breaks build | Evaluate carefully; may need to keep with documented justification |
 | Drizzle type changes break runtime queries | Add integration tests for each refactored router before changing types |
 | Empty catch logging adds noise | Use appropriate log levels (warn for user-facing, debug for internal) |
-| Test `as any` removal requires large fixture changes | Start with `packages/shared/src/test-utils/mock-factories.ts` to propagate fixes |
+| Test `as any` removal requires large fixture changes | Start with `packages/common/src/test-utils/mock-factories.ts` to propagate fixes |
 | `--passWithNoTests` removal causes CI failure | Add 1 smoke test per affected package before removing flag |
 
 ## Implementation Process
@@ -155,7 +155,7 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
   - `grep -r "biome-ignore" apps/ packages/` returns 0 results
 - **Subtasks:**
   1. Identify 5 `eslint-disable @nx/enforce-module-boundaries` in vitest configs
-  2. Extract shared vitest config to `packages/shared/vitest.config.base.ts` or adjust `nx.json` boundaries
+  2. Extract shared vitest config to `packages/common/vitest.config.base.ts` or adjust `nx.json` boundaries
   3. Move `apps/seed/src/types/bun-types.d.ts` to proper `.d.ts` directory (biome ignores `.d.ts` by default)
   4. Run `nx run-many -t lint` to verify zero suppressions
 - **Blockers:** None (can parallelize with Step 1)
@@ -164,12 +164,12 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
 
 #### Step 3: Enable `noUnusedLocals` and `noUnusedParameters`
 - **Goal:** Catch dead code and unused parameters at compile time
-- **Output:** `apps/seed` and `packages/shared` tsconfigs have strict flags enabled; all unused code cleaned
+- **Output:** `apps/seed` and `packages/common` tsconfigs have strict flags enabled; all unused code cleaned
 - **Success Criteria:**
-  - `tsc --noEmit` passes for `apps/seed` and `packages/shared`
+  - `tsc --noEmit` passes for `apps/seed` and `packages/common`
   - Zero `_`-unprefixed unused parameters in those packages
 - **Subtasks:**
-  1. Enable `noUnusedLocals: true` in `apps/seed/tsconfig.json` and `packages/shared/tsconfig.json`
+  1. Enable `noUnusedLocals: true` in `apps/seed/tsconfig.json` and `packages/common/tsconfig.json`
   2. Enable `noUnusedParameters: true` in same files
   3. Remove dead code (unused imports, variables)
   4. Prefix intentional unused params with `_`
@@ -217,7 +217,7 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
 
 #### Step 6: Fix `any` in ORPC Routers
 - **Goal:** Replace all `any` in production API routers with proper Drizzle types
-- **Output:** 6 router files use typed callbacks; `packages/shared/src/groups/transforms.ts` uses generic constraints
+- **Output:** 6 router files use typed callbacks; `packages/common/src/groups/transforms.ts` uses generic constraints
 - **Success Criteria:**
   - `grep -r "any" packages/orpc/src/api/routers/` returns ≤5 results (documented exceptions)
   - `grep -r "as any" packages/orpc/src/api/routers/` returns 0 results
@@ -229,7 +229,7 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
   4. Apply to `challengeSubmission/mutations.ts` (7+ instances)
   5. Apply to `challengeVote/mutations.ts` (7+ instances)
   6. Fix `challenge/utils.ts` (4 `as any`)
-  7. Fix `packages/shared/src/groups/transforms.ts` (3 `any` with generic constraints)
+  7. Fix `packages/common/src/groups/transforms.ts` (3 `any` with generic constraints)
   8. Add integration tests for each refactored router before changing types
 - **Blockers:** Step 5 (typed helper must exist first)
 - **Risks:**
@@ -249,7 +249,7 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
   - All affected test suites pass
 - **Subtasks:**
   1. Audit 12 test files with `as any`
-  2. Refactor `packages/shared/src/test-utils/mock-factories.ts` to provide fully typed builders
+  2. Refactor `packages/common/src/test-utils/mock-factories.ts` to provide fully typed builders
   3. Replace `as any` with typed mock factories or `jest.MockedFunction<>`
   4. Define proper `MapUser` / `Coordinate` types for map store tests
   5. Run affected test suites
@@ -297,12 +297,12 @@ The refactor is decomposed into **4 macro-phases** with **12 ordered implementat
 - **Goal:** Enable full type checking of all dependencies
 - **Output:** 4 tsconfig files no longer have `skipLibCheck: true`; all compile errors fixed
 - **Success Criteria:**
-  - `grep -r "skipLibCheck" apps/seed/tsconfig.json apps/native/tsconfig.json packages/orpc/tsconfig.test-check.json packages/shared/tsconfig.json` returns 0 results
+  - `grep -r "skipLibCheck" apps/seed/tsconfig.json apps/native/tsconfig.json packages/orpc/tsconfig.test-check.json packages/common/tsconfig.json` returns 0 results
   - `tsc --noEmit` passes for all 4 packages
 - **Subtasks:**
   1. Remove `skipLibCheck: true` from `apps/seed/tsconfig.json`
   2. Remove from `packages/orpc/tsconfig.test-check.json`
-  3. Remove from `packages/shared/tsconfig.json`
+  3. Remove from `packages/common/tsconfig.json`
   4. Remove from `apps/native/tsconfig.json` (evaluate carefully; may need documented justification to keep)
   5. Fix any `.d.ts` errors using resolution hierarchy: upgrade → patch upstream → local shim
   6. Verify `tsc --noEmit` for each package

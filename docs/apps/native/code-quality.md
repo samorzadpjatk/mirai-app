@@ -10,9 +10,9 @@
 
 **Problem**: 40+ hook test files mock React Query and assert the hook returns mocked data. These tests pass even if actual API integration, caching, or error handling is broken.
 
-**Rule**: Stop writing mock-verification hook tests. Extract pure domain logic into `@mirai-app/shared` and test with real data. Keep hooks as thin React Query shells.
+**Rule**: Stop writing mock-verification hook tests. Extract pure domain logic into `@mirai-app/common` and test with real data. Keep hooks as thin React Query shells.
 
-**Extracted to `packages/shared`** (reused across packages):
+**Extracted to `packages/common`** (reused across packages):
 - `useCommunityFeed.ts` — `toggleHeartSummary`, `filterActivities`
 - `useTrips.ts` — `flattenTrips`
 - `useChallenges.ts` — `mapChallengeToListItem`, `calculateLeaderboardInfo`, `findUserGroup`
@@ -81,7 +81,7 @@
 
 ## Functional Core, Imperative Shell
 
-- Extract domain logic from hooks to `@mirai-app/shared` as pure functions.
+- Extract domain logic from hooks to `@mirai-app/common` as pure functions.
 - Hooks remain thin React Query shells.
 - If a hook test file exceeds 200 lines mocking React Query, the hook contains extractable domain logic.
 

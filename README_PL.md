@@ -51,7 +51,7 @@ Znajduje się w nim:
   - [`@mirai-app/auth`](packages/auth/) - Logika autoryzacji
   - [`@mirai-app/db`](packages/db/) - Klient Drizzle bazy danych
   - [`@mirai-app/orpc`](packages/orpc/) - Routery oRPC i klient
-  - [`@mirai-app/shared`](packages/shared/) - Współdzielone utilities
+  - [`@mirai-app/common`](packages/common/) - Współdzielone utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Konfiguracja klienta Supabase
 
 📖 **Testowanie**: Zobacz [TESTING.md](TESTING.md) dla kompleksowej dokumentacji testowania. Używamy Vitest dla większości pakietów i Jest dla aplikacji natywnej.

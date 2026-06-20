@@ -22,9 +22,9 @@
 - [x] 2.6 Create `docs/packages/db/drizzle.md` documenting Drizzle schema and client usage
 - [x] 2.7 Create `docs/packages/db/migrations.md` documenting migration workflows and best practices
 - [x] 2.8 Create `docs/packages/db/schema.md` documenting schema design conventions
-- [x] 2.9 Create `packages/shared/AGENTS.md` documenting shared utilities package
-- [x] 2.10 Add "Inherited Conventions" section to packages/shared/AGENTS.md referencing root AGENTS.md
-- [x] 2.11 Create `docs/packages/shared/utilities.md` documenting shared utility functions
+- [x] 2.9 Create `packages/common/AGENTS.md` documenting shared utilities package
+- [x] 2.10 Add "Inherited Conventions" section to packages/common/AGENTS.md referencing root AGENTS.md
+- [x] 2.11 Create `docs/packages/common/utilities.md` documenting shared utility functions
 - [x] 2.12 Create `packages/supabase/AGENTS.md` documenting Supabase client configuration
 - [x] 2.13 Add "Inherited Conventions" section to packages/supabase/AGENTS.md referencing root AGENTS.md
 - [x] 2.14 Create `docs/packages/supabase/client.md` documenting Supabase client setup and usage

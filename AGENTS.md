@@ -102,7 +102,7 @@ This project uses OpenAI's layered AGENTS.md discovery pattern. Files concatenat
 - [apps/seed/AGENTS.md](./apps/seed/AGENTS.md) - Database seeding CLI
 - [packages/auth/AGENTS.md](./packages/auth/AGENTS.md) - Authentication utilities
 - [packages/db/AGENTS.md](./packages/db/AGENTS.md) - Drizzle database client
-- [packages/shared/AGENTS.md](./packages/shared/AGENTS.md) - Shared utilities
+- [packages/common/AGENTS.md](./packages/common/AGENTS.md) - Shared utilities
 - [packages/supabase/AGENTS.md](./packages/supabase/AGENTS.md) - Supabase client
 - [packages/orpc/AGENTS.md](./packages/orpc/AGENTS.md) - oRPC routers
 
@@ -124,7 +124,7 @@ Detailed documentation lives in `docs/` folder:
 See [Testing Conventions](./docs/conventions/testing.md) and [Best Practices](./docs/conventions/best-practices.md) for detailed standards.
 
 Key rules:
-- **Test behavior, not implementation.** Extract pure domain logic to `@mirai-app/shared` for real-data testing.
+- **Test behavior, not implementation.** Extract pure domain logic to `@mirai-app/common` for real-data testing.
 - **File size limits**: Router files >1000 lines must split into `queries.ts`, `mutations.ts`, `utils.ts`.
 - **No module-level side effects**: Use explicit `init()` functions.
 - **No `console.*` in production**: Use Pino (backend) or Sentry (native).

@@ -31,7 +31,7 @@ Uruchom testy dla pakietów, które zmodyfikowałeś:
 bun run test
 
 # Uruchom testy dla konkretnego pakietu
-cd packages/shared && bun run test
+cd packages/common && bun run test
 cd apps/backend-server && bun run test
 
 # Uruchom testy w trybie watch podczas developmentu
@@ -39,7 +39,7 @@ bun run test:watch
 ```
 
 **Kiedy uruchomić pełny zestaw testów:**
-- Zmiany w `packages/shared` (współdzielone narzędzia wpływają na wszystkie pakiety)
+- Zmiany w `packages/common` (współdzielone narzędzia wpływają na wszystkie pakiety)
 - Zmiany w `packages/auth` (autentykacja wpływa na wiele aplikacji)
 - Zmiany w `packages/orpc` (routery oRPC wpływają na backend i aplikację natywną)
 - Każdy refactoring, który może mieć wpływ między pakietami

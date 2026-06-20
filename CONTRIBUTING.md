@@ -31,7 +31,7 @@ Run tests for any packages you modified:
 bun run test
 
 # Run tests for a specific package
-cd packages/shared && bun run test
+cd packages/common && bun run test
 cd apps/backend-server && bun run test
 
 # Run tests in watch mode during development
@@ -39,7 +39,7 @@ bun run test:watch
 ```
 
 **When to run the full test suite:**
-- Changes to `packages/shared` (shared utilities affect all packages)
+- Changes to `packages/common` (shared utilities affect all packages)
 - Changes to `packages/auth` (authentication affects multiple apps)
 - Changes to `packages/orpc` (oRPC routers affect backend and native)
 - Any refactoring that could have cross-package impact

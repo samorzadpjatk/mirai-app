@@ -103,8 +103,8 @@ This migration uses a **phased approach** to minimize risk and ensure all tests 
 | File | Changes |
 |------|---------|
 | `packages/db/src/index.ts` | Add `createPgliteTestDb` export |
-| `packages/shared/src/test-utils/mock-factories.ts` | Add `MockSupabaseClient` type |
-| `packages/shared/src/test-utils/test-helpers.ts` | Add `Mock` type |
+| `packages/common/src/test-utils/mock-factories.ts` | Add `MockSupabaseClient` type |
+| `packages/common/src/test-utils/test-helpers.ts` | Add `Mock` type |
 | 15 test files | Replace SQLite helpers with PGLite |
 | 11 test files | Replace mock-based tests with PGLite |
 | 6 auth/supabase test files | Remove `as unknown as` casts |
@@ -456,7 +456,7 @@ This migration uses a **phased approach** to minimize risk and ensure all tests 
 - All auth tests pass
 
 **Subtasks**:
-1. Use `MockSupabaseClient` type from `@mirai-app/shared`
+1. Use `MockSupabaseClient` type from `@mirai-app/common`
 2. Remove `mockSupabaseClient as unknown as SupabaseClient` casts
 3. Verify tests pass
 
@@ -485,7 +485,7 @@ This migration uses a **phased approach** to minimize risk and ensure all tests 
 - All supabase tests pass
 
 **Subtasks**:
-1. Update `SupabaseClient` type to use interface from `@mirai-app/shared`
+1. Update `SupabaseClient` type to use interface from `@mirai-app/common`
 2. Remove all `as unknown as` casts
 3. Verify tests pass
 

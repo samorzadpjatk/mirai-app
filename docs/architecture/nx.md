@@ -199,7 +199,7 @@ nx graph
 ### Dependency Graph
 
 ```
-packages/shared
+packages/common
      |
      ▼
 packages/auth ──┐
@@ -216,7 +216,7 @@ packages/supabase─┘      |
 ### Build Pipeline
 
 ```
-1. Build packages/shared
+1. Build packages/common
 2. Build packages/auth, packages/db, packages/supabase (parallel)
 3. Build packages/orpc
 4. Build apps/* (parallel)

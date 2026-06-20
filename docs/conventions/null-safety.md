@@ -73,7 +73,7 @@ export const locationDataSchema = z.object({
 
 **Current:**
 ```typescript
-// packages/shared/src/users/participantResult.ts
+// packages/common/src/users/participantResult.ts
 export interface PublicUser {
   id: string;
   firstName: string | null;  // leaks null into every component
@@ -193,7 +193,7 @@ return {
 
 **Recommended:**
 ```typescript
-// packages/shared/src/challenges/challengeMappers.ts
+// packages/common/src/challenges/challengeMappers.ts
 export const toChallengeDto = (dbChallenge: typeof challenges.$inferSelect) => ({
   id: dbChallenge.id,
   name: dbChallenge.name,
@@ -212,7 +212,7 @@ export type ChallengeDto = ReturnType<typeof toChallengeDto>;
 
 Then in the router:
 ```typescript
-import { toChallengeDto } from "@mirai-app/shared/challenges";
+import { toChallengeDto } from "@mirai-app/common/challenges";
 
 const challenge = await db.query.challenges.findFirst({ ... });
 if (!challenge) throw new ORPCError("NOT_FOUND");
@@ -261,8 +261,8 @@ return <FlatList data={submissions} renderItem={...} />;
 |---|------|-------|--------|
 | 1.1 | **Eliminate all `.optional().nullable()`** → normalize to `.optional()` or `.nullable().transform()` | `location-validation.ts`, `reward/index.ts`, `activityFeed/index.ts` | 2 hrs |
 | 1.2 | **Add ESLint rule** banning `.optional().nullable()` and `.nullable().optional()` | `.eslintrc` or `eslint.config.js` | 1 hr |
-| 1.3 | **Normalize `PublicUser` and `AuthUser`** → `string` instead of `string \| null` for names/email | `packages/shared/src/users/participantResult.ts`, `stores/authStore.ts` | 3 hrs |
-| 1.4 | **Normalize `MapUserLocation`** → `string` with defaults | `packages/shared/src/stores/mapStore.ts` | 1 hr |
+| 1.3 | **Normalize `PublicUser` and `AuthUser`** → `string` instead of `string \| null` for names/email | `packages/common/src/users/participantResult.ts`, `stores/authStore.ts` | 3 hrs |
+| 1.4 | **Normalize `MapUserLocation`** → `string` with defaults | `packages/common/src/stores/mapStore.ts` | 1 hr |
 | 1.5 | **Fix downstream fallbacks** after shared-type changes | `apps/native` components using `?? ""` on user names | 2 hrs |
 
 **Expected outcome:** ~50 `??` expressions removed from UI layer; `PublicUser` consumers no longer defensively coalesce names.
@@ -273,7 +273,7 @@ return <FlatList data={submissions} renderItem={...} />;
 |---|------|-------|--------|
 | 2.1 | **Audit DB schema** — decide which nullable columns should have `.default().notNull()` | `packages/db/src/schema/*.ts` | 4 hrs |
 | 2.2 | **Write migration** for any column changed from nullable → notNull | `packages/db/drizzle/` | 2 hrs |
-| 2.3 | **Create boundary mappers** for high-nullability tables (`challenges`, `challengeSubmissions`, `locations`, `activityFeeds`) | `packages/shared/src/challenges/`, `locations/`, `feed/` | 8 hrs |
+| 2.3 | **Create boundary mappers** for high-nullability tables (`challenges`, `challengeSubmissions`, `locations`, `activityFeeds`) | `packages/common/src/challenges/`, `locations/`, `feed/` | 8 hrs |
 | 2.4 | **Refactor frontend state** — replace `useState<T \| null>(null)` with `useState<T \| undefined>()` where `null` is not a meaningful value | `apps/native/src/hooks/`, `components/` | 6 hrs |
 | 2.5 | **Move query fallbacks into `select`** hooks | `apps/native/src/hooks/` | 4 hrs |
 
@@ -285,7 +285,7 @@ return <FlatList data={submissions} renderItem={...} />;
 |---|------|-------|--------|
 | 3.1 | **Document "Nulls at the Boundary" rule** in `docs/conventions/null-safety.md` | docs | 2 hrs |
 | 3.2 | **Add PR checklist item** — "Did you normalize nulls at the API boundary?" | `.github/pull_request_template.md` | 30 min |
-| 3.3 | **TypeScript helper types** — `Nullable<T>`, `Present<T>`, `Boundary<T>` | `packages/shared/src/types/` | 2 hrs |
+| 3.3 | **TypeScript helper types** — `Nullable<T>`, `Present<T>`, `Boundary<T>` | `packages/common/src/types/` | 2 hrs |
 | 3.4 | **Periodic audit** — quarterly grep for new `.optional().nullable()` and `\| null` proliferation | CI script | 1 hr |
 
 ---
@@ -355,7 +355,7 @@ interface ActivityFeedDto {
 1. **`.optional()`** alone for optional Zod fields (yields `T | undefined`).
 2. **`.nullable().transform(v => v ?? default)`** when you must accept `null` from a client.
 3. **`undefined`** for "not present" in TypeScript APIs and React state.
-4. **Boundary mappers** (`toXxxDto`) in `packages/shared` — one place for normalization logic.
+4. **Boundary mappers** (`toXxxDto`) in `packages/common` — one place for normalization logic.
 5. **`.notNull().default(...)`** in Drizzle when the column should always have a value.
 6. **Discriminated unions** for complex UI state instead of `T | null`.
 7. **`select` in React Query** hooks to normalize data before it reaches components.
