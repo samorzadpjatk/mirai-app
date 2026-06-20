@@ -1,7 +1,9 @@
-import type { DB } from "@mirai-app/db";
+import { activityFeeds, tripParticipants, trips, users } from "@mirai-app/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { getActivitiesCursorPage, getActivitiesPage } from "../queries";
+
+type DB = Awaited<ReturnType<typeof createPgliteTestDb>>["db"];
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 
@@ -20,7 +22,7 @@ afterAll(async () => {
 const now = () => new Date();
 
 async function seedUser(db: DB, id: string) {
-  await db.insert((await import("@mirai-app/db")).users).values({
+  await db.insert(users).values({
     id,
     authUserId: `auth-${id}`,
     firstName: "User",
@@ -31,7 +33,7 @@ async function seedUser(db: DB, id: string) {
 }
 
 async function seedTrip(db: DB, id: string) {
-  await db.insert((await import("@mirai-app/db")).trips).values({
+  await db.insert(trips).values({
     id,
     name: "Trip",
     description: "",
@@ -49,7 +51,7 @@ async function seedParticipant(
   tripId: string,
   groupId?: string,
 ) {
-  await db.insert((await import("@mirai-app/db")).tripParticipants).values({
+  await db.insert(tripParticipants).values({
     id,
     userId,
     tripId,
@@ -66,7 +68,7 @@ async function seedActivity(
   activityType: string,
   opts?: { createdAt?: Date },
 ) {
-  await db.insert((await import("@mirai-app/db")).activityFeeds).values({
+  await db.insert(activityFeeds).values({
     id,
     tripId,
     activityType,

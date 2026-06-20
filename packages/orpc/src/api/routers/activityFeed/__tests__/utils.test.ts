@@ -1,6 +1,6 @@
-import type { DB } from "@mirai-app/db";
+import { groups, tripParticipants, trips, users } from "@mirai-app/db";
+import { createPgliteTestDb } from "@mirai-app/db/test-helper";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createPgliteTestDb } from "~/db-test-helper";
 import {
   ensureTripExists,
   ensureTripParticipant,
@@ -91,8 +91,6 @@ describe("optionalImageReferenceSchema", () => {
 
 describe("ensureTripParticipant", () => {
   it("returns participant when user is a participant", async () => {
-    const { tripParticipants, trips, users, groups } = await import("@mirai-app/db");
-
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Trip",
@@ -158,7 +156,6 @@ describe("ensureTripParticipant", () => {
 
 describe("ensureTripExists", () => {
   it("returns trip when it exists", async () => {
-    const { trips } = await import("@mirai-app/db");
     await testDb.db.insert(trips).values({
       id: "trip-1",
       name: "Test Trip",

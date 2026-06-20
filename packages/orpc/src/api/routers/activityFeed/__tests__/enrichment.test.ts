@@ -1,10 +1,26 @@
-import { activityFeeds } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
+import {
+  activityFeeds,
+  activityReactions,
+  challengeActivities,
+  challengeLocationMatch,
+  challengeRecurrence,
+  challengeSubmissions,
+  challenges,
+  groups,
+  rankChangeActivities,
+  submissionActivities,
+  tripParticipants,
+  trips,
+  userPosts,
+  users,
+} from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { enrichActivities } from "../enrichment";
 import type { RawActivityWithRelations } from "../types";
+
+type DB = Awaited<ReturnType<typeof createPgliteTestDb>>["db"];
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 
@@ -25,7 +41,7 @@ afterAll(async () => {
 const now = () => new Date();
 
 async function seedUser(db: DB, id: string) {
-  await db.insert((await import("@mirai-app/db")).users).values({
+  await db.insert(users).values({
     id,
     authUserId: `auth-${id}`,
     firstName: "User",
@@ -36,7 +52,7 @@ async function seedUser(db: DB, id: string) {
 }
 
 async function seedTrip(db: DB, id: string) {
-  await db.insert((await import("@mirai-app/db")).trips).values({
+  await db.insert(trips).values({
     id,
     name: "Trip",
     description: "",
@@ -48,7 +64,7 @@ async function seedTrip(db: DB, id: string) {
 }
 
 async function seedGroup(db: DB, id: string, tripId: string, organizerId: string) {
-  await db.insert((await import("@mirai-app/db")).groups).values({
+  await db.insert(groups).values({
     id,
     tripId,
     name: "Group",
@@ -68,7 +84,7 @@ async function seedParticipant(
   tripId: string,
   groupId?: string,
 ) {
-  await db.insert((await import("@mirai-app/db")).tripParticipants).values({
+  await db.insert(tripParticipants).values({
     id,
     userId,
     tripId,
@@ -79,7 +95,7 @@ async function seedParticipant(
 }
 
 async function seedActivity(db: DB, id: string, tripId: string, activityType: string) {
-  await db.insert((await import("@mirai-app/db")).activityFeeds).values({
+  await db.insert(activityFeeds).values({
     id,
     tripId,
     activityType,
@@ -161,8 +177,6 @@ describe("enrichActivities", () => {
 
   it("enriches custom activity with reactions and cached image", async () => {
     const ctx = await makeContext(testDb.db);
-    const { activityFeeds, activityReactions, users, trips, groups, tripParticipants } =
-      await import("@mirai-app/db");
 
     await seedUser(testDb.db, "user-1");
     await seedUser(testDb.db, "user-2");
@@ -181,10 +195,7 @@ describe("enrichActivities", () => {
       { id: "r3", activityId: "af-1", userId: "user-3", reactionType: "fire", createdAt: now() },
     ]);
 
-    const feeds = await testDb.db
-      .select()
-      .from(activityFeeds)
-      .where((af) => eq(af.id, "af-1"));
+    const feeds = await fetchActivityWithRelations(testDb.db, ["af-1"]);
     const enriched = await enrichActivities(ctx, feeds as unknown as RawActivityWithRelations[]);
 
     expect(enriched.length).toBe(1);
@@ -197,7 +208,6 @@ describe("enrichActivities", () => {
   });
 
   it("enriches user_post with full author + group (truthy branch)", async () => {
-    const { userPosts } = await import("@mirai-app/db");
     const ctx = await makeContext(testDb.db);
 
     await seedUser(testDb.db, "user-1");
@@ -238,14 +248,6 @@ describe("enrichActivities", () => {
   });
 
   it("enriches submission with full relations (truthy branch with group/challenge/submission)", async () => {
-    const {
-      submissionActivities,
-      challenges,
-      challengeActivities,
-      challengeRecurrence,
-      challengeLocationMatch,
-      challengeSubmissions,
-    } = await import("@mirai-app/db");
     const ctx = await makeContext(testDb.db);
 
     await seedUser(testDb.db, "user-1");
@@ -319,8 +321,6 @@ describe("enrichActivities", () => {
   });
 
   it("enriches challenge_event with challenge data", async () => {
-    const { challenges, challengeActivities, challengeRecurrence, challengeLocationMatch } =
-      await import("@mirai-app/db");
     const ctx = await makeContext(testDb.db);
 
     await seedUser(testDb.db, "user-1");
@@ -371,7 +371,6 @@ describe("enrichActivities", () => {
   });
 
   it("enriches rank_change with group data", async () => {
-    const { rankChangeActivities } = await import("@mirai-app/db");
     const ctx = await makeContext(testDb.db);
 
     await seedUser(testDb.db, "user-1");
@@ -408,10 +407,7 @@ describe("enrichActivities", () => {
     await seedTrip(testDb.db, "trip-1");
     await seedActivity(testDb.db, "af-1", "trip-1", "custom");
 
-    const feeds = await testDb.db
-      .select()
-      .from(activityFeeds)
-      .where((af) => eq(af.id, "af-1"));
+    const feeds = await fetchActivityWithRelations(testDb.db, ["af-1"]);
     const enriched = await enrichActivities(ctx, feeds as unknown as RawActivityWithRelations[]);
 
     expect(enriched[0].activityType).toBe("custom");
@@ -426,10 +422,7 @@ describe("enrichActivities", () => {
     await seedTrip(testDb.db, "trip-1");
     await seedActivity(testDb.db, "af-1", "trip-1", "user_post");
 
-    const feeds = await testDb.db
-      .select()
-      .from(activityFeeds)
-      .where((af) => eq(af.id, "af-1"));
+    const feeds = await fetchActivityWithRelations(testDb.db, ["af-1"]);
     const enriched = await enrichActivities(ctx, feeds as unknown as RawActivityWithRelations[]);
 
     expect(enriched[0].activityType).toBe("user_post");
@@ -446,10 +439,7 @@ describe("enrichActivities", () => {
     await seedTrip(testDb.db, "trip-1");
     await seedActivity(testDb.db, "af-1", "trip-1", "submission");
 
-    const feeds = await testDb.db
-      .select()
-      .from(activityFeeds)
-      .where((af) => eq(af.id, "af-1"));
+    const feeds = await fetchActivityWithRelations(testDb.db, ["af-1"]);
     const enriched = await enrichActivities(ctx, feeds as unknown as RawActivityWithRelations[]);
 
     expect(enriched[0].activityType).toBe("submission");
@@ -474,7 +464,6 @@ describe("enrichActivities", () => {
     await seedTrip(testDb.db, "trip-1");
 
     // Manually insert with an unknown activityType
-    const { activityFeeds } = await import("@mirai-app/db");
     await testDb.db.insert(activityFeeds).values({
       id: "af-1",
       tripId: "trip-1",
