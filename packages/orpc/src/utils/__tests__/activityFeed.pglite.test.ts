@@ -18,14 +18,18 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import {
+  DEFAULT_PEER_VOTING_DURATION_HOURS,
   captureTripRankingSnapshot,
   createChallengeCompletionWithWinnersById,
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
   createRankChangeActivities,
   finalizeVotingChallengesToCompletedWithFeed,
+  formatSubmissionDeadline,
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
   promoteVisibleChallengesToActiveWithFeed,
+  resolvePeerVotingDurationHours,
+  resolvePodiumPoints,
 } from "../activityFeed";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
@@ -1081,5 +1085,501 @@ describe("createRankChangeActivities", () => {
 
     const feeds = await testDb.db.select().from(activityFeeds);
     expect(feeds).toHaveLength(0);
+  });
+});
+
+// ─── Pure function tests ───
+
+describe("resolvePeerVotingDurationHours", () => {
+  it("returns default when both times are null", () => {
+    expect(resolvePeerVotingDurationHours(null, null)).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
+  });
+
+  it("returns default when votingStartTime is undefined", () => {
+    expect(resolvePeerVotingDurationHours(undefined, new Date())).toBe(
+      DEFAULT_PEER_VOTING_DURATION_HOURS,
+    );
+  });
+
+  it("returns default when votingEndTime is undefined", () => {
+    expect(resolvePeerVotingDurationHours(new Date(), undefined)).toBe(
+      DEFAULT_PEER_VOTING_DURATION_HOURS,
+    );
+  });
+
+  it("returns default when duration is zero", () => {
+    const time = new Date("2025-06-10T12:00:00Z");
+    expect(resolvePeerVotingDurationHours(time, time)).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
+  });
+
+  it("returns default when end is before start", () => {
+    expect(
+      resolvePeerVotingDurationHours(
+        new Date("2025-06-10T12:00:00Z"),
+        new Date("2025-06-10T11:00:00Z"),
+      ),
+    ).toBe(DEFAULT_PEER_VOTING_DURATION_HOURS);
+  });
+
+  it("returns at least 1 hour for sub-hour duration", () => {
+    expect(
+      resolvePeerVotingDurationHours(
+        new Date("2025-06-10T12:00:00Z"),
+        new Date("2025-06-10T12:30:00Z"),
+      ),
+    ).toBe(1);
+  });
+
+  it("returns computed hours for multi-hour duration", () => {
+    expect(
+      resolvePeerVotingDurationHours(
+        new Date("2025-06-10T12:00:00Z"),
+        new Date("2025-06-11T12:00:00Z"),
+      ),
+    ).toBe(24);
+  });
+});
+
+describe("formatSubmissionDeadline", () => {
+  it("returns placeholder for null", () => {
+    expect(formatSubmissionDeadline(null)).toBe("zakończenia etapu zgłoszeń");
+  });
+
+  it("returns formatted date for valid date", () => {
+    const result = formatSubmissionDeadline(new Date("2025-06-10T12:00:00Z"));
+    expect(result).toMatch(/\d{2}\.\d{2}\.\d{4}/);
+  });
+});
+
+describe("resolvePodiumPoints", () => {
+  const challenge = {
+    basePoints: 100,
+    firstPlacePoints: 300,
+    secondPlacePoints: 200,
+    thirdPlacePoints: 150,
+  };
+
+  it("returns firstPlacePoints for ranking 1", () => {
+    expect(resolvePodiumPoints(challenge, 1)).toBe(300);
+  });
+
+  it("returns secondPlacePoints for ranking 2", () => {
+    expect(resolvePodiumPoints(challenge, 2)).toBe(200);
+  });
+
+  it("returns thirdPlacePoints for ranking 3", () => {
+    expect(resolvePodiumPoints(challenge, 3)).toBe(150);
+  });
+
+  it("returns basePoints for ranking > 3 (default case)", () => {
+    expect(resolvePodiumPoints(challenge, 4)).toBe(100);
+  });
+
+  it("returns basePoints for ranking 0 (default case)", () => {
+    expect(resolvePodiumPoints(challenge, 0)).toBe(100);
+  });
+
+  it("falls back to basePoints when firstPlacePoints is null", () => {
+    expect(resolvePodiumPoints({ ...challenge, firstPlacePoints: null }, 1)).toBe(100);
+  });
+
+  it("falls back to basePoints when secondPlacePoints is null", () => {
+    expect(resolvePodiumPoints({ ...challenge, secondPlacePoints: null }, 2)).toBe(100);
+  });
+
+  it("falls back to basePoints when thirdPlacePoints is null", () => {
+    expect(resolvePodiumPoints({ ...challenge, thirdPlacePoints: null }, 3)).toBe(100);
+  });
+});
+
+// ─── Extended branch coverage tests ───
+
+describe("createChallengeStatusActivityById - event type branches", () => {
+  it("creates completed event with default description and current timestamp", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1");
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      description: "  trimmed description  ",
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", { status: "APPROVED" });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeStatusActivityById({
+        tx,
+        challengeId: "challenge-1",
+        eventType: "completed",
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const feeds = await testDb.db.select().from(activityFeeds);
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0].description).toBe("Voting has ended");
+
+    const challengeActs = await testDb.db.select().from(challengeActivities);
+    expect(challengeActs).toHaveLength(1);
+    expect(challengeActs[0].eventType).toBe("completed");
+    expect(challengeActs[0].endTime).toBeInstanceOf(Date);
+    expect(challengeActs[0].submissionCount).toBe(1);
+    expect(challengeActs[0].submissionType).toBeNull();
+    expect(challengeActs[0].basePoints).toBeNull();
+  });
+});
+
+describe("createChallengeCompletionWithWinnersById - extended branches", () => {
+  it("handles 4+ submissions with index >= 3 (nextRanking null, PENDING not approved)", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 100);
+    await seedGroup("group-2", "trip-1", "admin-1", "Team B", 80);
+    await seedGroup("group-3", "trip-1", "admin-1", "Team C", 60);
+    await seedGroup("group-4", "trip-1", "admin-1", "Team D", 50);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      basePoints: 100,
+      firstPlacePoints: 300,
+      secondPlacePoints: 200,
+      thirdPlacePoints: 150,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "APPROVED",
+      voteCount: 10,
+      voteScore: 9.5,
+    });
+    await seedSubmission("sub-2", "challenge-1", "group-2", {
+      status: "APPROVED",
+      voteCount: 8,
+      voteScore: 8.0,
+    });
+    await seedSubmission("sub-3", "challenge-1", "group-3", {
+      status: "APPROVED",
+      voteCount: 5,
+      voteScore: 5.0,
+    });
+    await seedSubmission("sub-4", "challenge-1", "group-4", {
+      status: "PENDING",
+      voteCount: 2,
+      voteScore: 2.0,
+      awardedPoints: 50,
+      ranking: null,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const sub4 = await testDb.db.query.challengeSubmissions.findFirst({
+      where: eq(challengeSubmissions.id, "sub-4"),
+    });
+    expect(sub4?.status).toBe("PENDING");
+    expect(sub4?.awardedPoints).toBe(0);
+
+    const group4 = await testDb.db.query.groups.findFirst({
+      where: eq(groups.id, "group-4"),
+    });
+    expect(group4?.coins).toBe(0);
+
+    const txns = await testDb.db
+      .select()
+      .from(coinTransactions)
+      .where(eq(coinTransactions.groupId, "group-4"));
+    expect(txns).toHaveLength(1);
+    expect(txns[0].amount).toBe(-50);
+    expect(txns[0].reason).not.toContain("#");
+  });
+
+  it("approves pending submissions for JUDGED_STAFF scoring", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 0);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "JUDGED_STAFF",
+      basePoints: 100,
+      firstPlacePoints: 300,
+      secondPlacePoints: 200,
+      thirdPlacePoints: 150,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "PENDING",
+      voteCount: 0,
+      voteScore: 0,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const submission = await testDb.db.query.challengeSubmissions.findFirst({
+      where: eq(challengeSubmissions.id, "sub-1"),
+    });
+    expect(submission?.status).toBe("APPROVED");
+    expect(submission?.ranking).toBe(1);
+    expect(submission?.awardedPoints).toBe(300);
+  });
+
+  it("approves pending submissions for PEER_VOTING with nextRanking != null", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 0);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      basePoints: 100,
+      firstPlacePoints: 300,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "PENDING",
+      voteCount: 5,
+      voteScore: 5.0,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const submission = await testDb.db.query.challengeSubmissions.findFirst({
+      where: eq(challengeSubmissions.id, "sub-1"),
+    });
+    expect(submission?.status).toBe("APPROVED");
+  });
+
+  it("skips updates when submissions already have correct ranking and points", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 300);
+    await seedGroup("group-2", "trip-1", "admin-1", "Team B", 200);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      basePoints: 100,
+      firstPlacePoints: 300,
+      secondPlacePoints: 200,
+      thirdPlacePoints: 150,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "APPROVED",
+      voteCount: 10,
+      voteScore: 9.5,
+      awardedPoints: 300,
+      ranking: 1,
+    });
+    await seedSubmission("sub-2", "challenge-1", "group-2", {
+      status: "APPROVED",
+      voteCount: 8,
+      voteScore: 8.0,
+      awardedPoints: 200,
+      ranking: 2,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const group1 = await testDb.db.query.groups.findFirst({
+      where: eq(groups.id, "group-1"),
+    });
+    expect(group1?.coins).toBe(300);
+
+    const group2 = await testDb.db.query.groups.findFirst({
+      where: eq(groups.id, "group-2"),
+    });
+    expect(group2?.coins).toBe(200);
+
+    const txns = await testDb.db.select().from(coinTransactions);
+    expect(txns).toHaveLength(0);
+  });
+
+  it("uses coinTransactionActorId for rank change when createdByAdmin is not provided", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 80);
+    await seedGroup("group-2", "trip-1", "admin-1", "Team B", 100);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      basePoints: 100,
+      firstPlacePoints: 300,
+      secondPlacePoints: 200,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "APPROVED",
+      voteCount: 10,
+      voteScore: 9.5,
+    });
+    await seedSubmission("sub-2", "challenge-1", "group-2", {
+      status: "APPROVED",
+      voteCount: 8,
+      voteScore: 8.0,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+      });
+    });
+
+    const rankFeeds = await testDb.db
+      .select()
+      .from(activityFeeds)
+      .where(eq(activityFeeds.activityType, "rank_change"));
+    expect(rankFeeds).toHaveLength(1);
+    expect(rankFeeds[0].createdByAdmin).toBe("admin-1");
+  });
+
+  it("resolves actor via fallback query when no privileged users exist", async () => {
+    await seedTrip("trip-1");
+    await seedUser("user-1", "USER");
+    await seedGroup("group-1", "trip-1", "user-1", "Team A", 80);
+    await seedGroup("group-2", "trip-1", "user-1", "Team B", 100);
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      basePoints: 100,
+      firstPlacePoints: 300,
+      secondPlacePoints: 200,
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "APPROVED",
+      voteCount: 10,
+      voteScore: 9.5,
+    });
+    await seedSubmission("sub-2", "challenge-1", "group-2", {
+      status: "APPROVED",
+      voteCount: 8,
+      voteScore: 8.0,
+    });
+
+    await testDb.db.transaction(async (tx) => {
+      await createChallengeCompletionWithWinnersById({
+        tx,
+        challengeId: "challenge-1",
+      });
+    });
+
+    const txns = await testDb.db.select().from(coinTransactions);
+    expect(txns.length).toBeGreaterThanOrEqual(1);
+    expect(txns.every((t) => t.adminId === "user-1")).toBe(true);
+  });
+});
+
+describe("createRankChangeActivities - extended branches", () => {
+  it("creates rank change with only movedUp when top group is deleted", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1", "Team A", 100);
+    await seedGroup("group-2", "trip-1", "admin-1", "Team B", 200);
+    await testDb.db.update(groups).set({ isDeleted: true }).where(eq(groups.id, "group-1"));
+
+    const previousSnapshot = new Map([
+      ["group-1", { rank: 1, coins: 100, name: "Team A", image: null }],
+      ["group-2", { rank: 2, coins: 50, name: "Team B", image: null }],
+    ]);
+
+    await testDb.db.transaction(async (tx) => {
+      await createRankChangeActivities({
+        tx,
+        tripId: "trip-1",
+        previousSnapshot,
+        createdByAdmin: "admin-1",
+      });
+    });
+
+    const feeds = await testDb.db.select().from(activityFeeds);
+    expect(feeds).toHaveLength(1);
+    expect(feeds[0].activityType).toBe("rank_change");
+    expect(feeds[0].description).toContain("⬆️");
+    expect(feeds[0].description).not.toContain("⬇️");
+  });
+});
+
+describe("promoteActivePeerVotingChallengesToVotingPhaseWithFeed - filter by id", () => {
+  it("filters by id when provided", async () => {
+    await seedTrip("trip-1");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1");
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "ACTIVE",
+      scoringCategory: "PEER_VOTING",
+      endTime: new Date(Date.now() - 1000 * 60),
+    });
+    await seedChallenge("challenge-2", "trip-1", {
+      status: "ACTIVE",
+      scoringCategory: "PEER_VOTING",
+      endTime: new Date(Date.now() - 1000 * 60),
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", { status: "APPROVED" });
+    await seedSubmission("sub-2", "challenge-2", "group-1", { status: "APPROVED" });
+
+    const votingIds = await testDb.db.transaction(async (tx) => {
+      return promoteActivePeerVotingChallengesToVotingPhaseWithFeed({
+        tx,
+        where: { id: "challenge-1" },
+      });
+    });
+
+    expect(votingIds).toHaveLength(1);
+    expect(votingIds[0]).toBe("challenge-1");
+  });
+});
+
+describe("finalizeVotingChallengesToCompletedWithFeed - filter by tripId", () => {
+  it("filters by tripId when provided", async () => {
+    await seedTrip("trip-1");
+    await seedTrip("trip-2");
+    await seedUser("admin-1", "ADMIN");
+    await seedGroup("group-1", "trip-1", "admin-1");
+    await seedGroup("group-2", "trip-2", "admin-1");
+    await seedChallenge("challenge-1", "trip-1", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      votingEndTime: new Date(Date.now() - 1000 * 60),
+    });
+    await seedChallenge("challenge-2", "trip-2", {
+      status: "VOTING_PHASE",
+      scoringCategory: "PEER_VOTING",
+      votingEndTime: new Date(Date.now() - 1000 * 60),
+    });
+    await seedSubmission("sub-1", "challenge-1", "group-1", {
+      status: "APPROVED",
+      voteCount: 1,
+      voteScore: 1,
+    });
+    await seedSubmission("sub-2", "challenge-2", "group-2", {
+      status: "APPROVED",
+      voteCount: 1,
+      voteScore: 1,
+    });
+
+    const completed = await testDb.db.transaction(async (tx) => {
+      return finalizeVotingChallengesToCompletedWithFeed({
+        tx,
+        where: { tripId: "trip-1" },
+      });
+    });
+
+    expect(completed).toHaveLength(1);
+    expect(completed[0]).toBe("challenge-1");
   });
 });

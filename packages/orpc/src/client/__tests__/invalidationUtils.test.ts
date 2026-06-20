@@ -393,6 +393,54 @@ describe("invalidateTripQueries", () => {
   });
 });
 
+describe("predicate matching", () => {
+  let mockQueryClient: MockQueryClient;
+
+  beforeEach(() => {
+    mockQueryClient = createMockQueryClient();
+    vi.clearAllMocks();
+  });
+
+  it("matches flat query keys", async () => {
+    await invalidateCascadingQueries(mockQueryClient as MockQueryClientType, [["reward"]]);
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (query: {
+      queryKey: unknown[];
+    }) => boolean;
+
+    expect(predicate({ queryKey: ["reward", "list"] })).toBe(true);
+    expect(predicate({ queryKey: ["reward"] })).toBe(true);
+  });
+
+  it("matches nested query keys", async () => {
+    await invalidateCascadingQueries(mockQueryClient as MockQueryClientType, [["reward"]]);
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (query: {
+      queryKey: unknown[];
+    }) => boolean;
+
+    expect(predicate({ queryKey: [["reward"]] })).toBe(true);
+    expect(predicate({ queryKey: [["reward"], "extra"] })).toBe(true);
+  });
+
+  it("rejects non-array keys", async () => {
+    await invalidateCascadingQueries(mockQueryClient as MockQueryClientType, [["reward"]]);
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (query: {
+      queryKey: unknown;
+    }) => boolean;
+
+    expect(predicate({ queryKey: "reward" })).toBe(false);
+  });
+
+  it("rejects query keys with different prefix", async () => {
+    await invalidateCascadingQueries(mockQueryClient as MockQueryClientType, [["reward"]]);
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (query: {
+      queryKey: unknown[];
+    }) => boolean;
+
+    expect(predicate({ queryKey: ["user", "profile"] })).toBe(false);
+    expect(predicate({ queryKey: [["user"]] })).toBe(false);
+  });
+});
+
 describe("invalidateFileQueries", () => {
   let mockQueryClient: MockQueryClient;
 

@@ -690,7 +690,7 @@ export const createRankChangeActivities = async (params: {
   if (movedUp) {
     movementParts.push(`⬆️ ${movedUp.group.name}: #${movedUp.previousRank} -> #${movedUp.newRank}`);
   }
-  if (movedDown && movedDown.group.id !== movedUp?.group.id) {
+  if (movedDown) {
     movementParts.push(
       `⬇️ ${movedDown.group.name}: #${movedDown.previousRank} -> #${movedDown.newRank}`,
     );

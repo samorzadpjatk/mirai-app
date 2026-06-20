@@ -270,6 +270,30 @@ describe("authEmails", () => {
       );
     });
 
+    it("should handle null email in summary", async () => {
+      mockSupabase.auth.admin.getUserById.mockResolvedValue({
+        data: {
+          user: {
+            id: "user-1",
+            email: null,
+            banned_until: null,
+            app_metadata: {},
+          },
+        },
+        error: null,
+      });
+
+      const result = await buildAuthUserSummaryLookup(mockSupabase, ["user-1"]);
+      const summary = result.get("user-1");
+
+      expect(summary).toEqual({
+        email: "",
+        bannedUntil: "",
+        banReason: "",
+        isBanned: false,
+      });
+    });
+
     it("should deduplicate user IDs", async () => {
       mockSupabase.auth.admin.getUserById.mockResolvedValue({
         data: {

@@ -46,6 +46,14 @@ describe("validateUrlProtocol", () => {
   it("should reject invalid URL formats", () => {
     expect(() => validateUrlProtocol("not-a-url")).toThrow(ORPCError);
   });
+
+  it("should reject custom protocol when not in allowed list", () => {
+    expect(() => validateUrlProtocol("ftp://example.com", ["http:", "https:"])).toThrow(ORPCError);
+  });
+
+  it("should not throw for whitespace-only strings", () => {
+    expect(() => validateUrlProtocol("   ")).not.toThrow();
+  });
 });
 
 describe("isValidHttpUrl", () => {

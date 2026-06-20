@@ -577,6 +577,76 @@ describe("challengeVote utils", () => {
       });
       expect(updated?.status).toBe("COMPLETED");
     });
+
+    it("does not finalize when challenge status is not ACTIVE or VOTING_PHASE", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("admin-1", "ADMIN");
+      await seedUser("user-1", "USER");
+      await seedGroup("group-1", "trip-1", "Team A", "admin-1");
+      await seedGroup("group-2", "trip-1", "Team B", "admin-1");
+      await seedChallenge("challenge-1", "trip-1", {
+        scoringCategory: "JUDGED_STAFF",
+        status: "COMPLETED",
+      });
+      await seedSubmission("sub-1", "challenge-1", "group-1");
+      await seedSubmission("sub-2", "challenge-1", "group-2");
+      await seedParticipant("tp-a1", "admin-1", "trip-1", "group-1");
+      await seedParticipant("tp-u1", "user-1", "trip-1", "group-1");
+      await seedVote("vote-1", "challenge-1", "sub-1", "tp-a1", 1, 10);
+      await seedVote("vote-2", "challenge-1", "sub-2", "tp-a1", 2, 5);
+
+      const result = await maybeFinalizeJudgedStaffVoting(
+        { db: testDb.db },
+        {
+          challenge: {
+            id: "challenge-1",
+            tripId: "trip-1",
+            status: "COMPLETED",
+            scoringCategory: "JUDGED_STAFF",
+            endTime: new Date(),
+          },
+          createdByAdminId: "admin-1",
+        },
+      );
+
+      expect(result.progress?.allAdminsVoted).toBe(true);
+      expect(result.finalized).toBe(false);
+    });
+
+    it("does not finalize when challenge status is CANCELLED", async () => {
+      await seedTrip("trip-1", "Test Trip");
+      await seedUser("admin-1", "ADMIN");
+      await seedUser("user-1", "USER");
+      await seedGroup("group-1", "trip-1", "Team A", "admin-1");
+      await seedGroup("group-2", "trip-1", "Team B", "admin-1");
+      await seedChallenge("challenge-1", "trip-1", {
+        scoringCategory: "JUDGED_STAFF",
+        status: "CANCELLED",
+      });
+      await seedSubmission("sub-1", "challenge-1", "group-1");
+      await seedSubmission("sub-2", "challenge-1", "group-2");
+      await seedParticipant("tp-a1", "admin-1", "trip-1", "group-1");
+      await seedParticipant("tp-u1", "user-1", "trip-1", "group-1");
+      await seedVote("vote-1", "challenge-1", "sub-1", "tp-a1", 1, 10);
+      await seedVote("vote-2", "challenge-1", "sub-2", "tp-a1", 2, 5);
+
+      const result = await maybeFinalizeJudgedStaffVoting(
+        { db: testDb.db },
+        {
+          challenge: {
+            id: "challenge-1",
+            tripId: "trip-1",
+            status: "CANCELLED",
+            scoringCategory: "JUDGED_STAFF",
+            endTime: new Date(),
+          },
+          createdByAdminId: "admin-1",
+        },
+      );
+
+      expect(result.progress?.allAdminsVoted).toBe(true);
+      expect(result.finalized).toBe(false);
+    });
   });
 
   describe("validateJudgedStaffVotePayload", () => {
