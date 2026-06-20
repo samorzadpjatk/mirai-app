@@ -58,6 +58,7 @@ jest.mock("~/hooks/trips", () => ({
     isLoadingSelectedTrip: false,
     setSelectedTripId: jest.fn(),
   })),
+  useAutoSelectFirstTrip: jest.fn(),
 }));
 
 jest.mock("~/hooks/community/useCommunityFeed", () => ({
