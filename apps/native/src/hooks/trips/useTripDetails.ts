@@ -2,7 +2,7 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { isTripPast } from "~/utils/trip";
 
-export function useTripByIdFull(tripId?: string | null) {
+export function useTripDetails(tripId?: string | null) {
   const enabled = Boolean(tripId);
   const query = useQuery(
     orpc.trip.getByIdFull.queryOptions({
@@ -24,5 +24,3 @@ export function useTripByIdFull(tripId?: string | null) {
     tripId: tripId ?? "",
   };
 }
-
-export const useTripDetails = useTripByIdFull;

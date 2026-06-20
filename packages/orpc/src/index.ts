@@ -43,3 +43,11 @@ export type {
   SubmissionSnippet,
   RawActivityWithRelations,
 } from "./api/routers/activityFeed/types";
+
+export type {
+  TripDetail,
+  TripDetailGroup,
+  TripDetailParticipant,
+  TripDetailSponsor,
+  TripDetailTripSponsor,
+} from "./api/routers/trip/types";

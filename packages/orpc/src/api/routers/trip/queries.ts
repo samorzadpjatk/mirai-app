@@ -10,6 +10,7 @@ import { getAllByTrip as getAllChallengesByTrip } from "../challenge/queries";
 import { getAll as getAllGroups } from "../group/queries";
 import { getByTripId as getSponsorsByTripId } from "../sponsor/queries";
 import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
+import type { TripDetail } from "./types";
 import {
   resolveGroupImage,
   toClientTrip,
@@ -111,7 +112,7 @@ async function buildTripDetail(
   trip: NonNullable<TripWithRelations>,
   supabase: Parameters<typeof buildAuthEmailLookup>[0],
   db: DB,
-) {
+): Promise<TripDetail> {
   const groupIds = trip.groups.map((g) => g.id);
   let countMap = new Map<string | null, number>();
   if (groupIds.length > 0) {
@@ -147,7 +148,7 @@ async function buildTripDetail(
   return {
     ...normalizedTrip,
     ...buildTripDetailResponse(normalizedTrip, countMap, emailByAuthUserId, resolvedGroupImages),
-  };
+  } as TripDetail;
 }
 
 export const getById = async (
@@ -157,7 +158,7 @@ export const getById = async (
     supabase: Parameters<typeof buildAuthEmailLookup>[0];
   },
   input: { id: string },
-) => {
+): Promise<TripDetail> => {
   const matchParticipant: WhereCallback<"tripParticipants"> = (tp, { eq, and }) =>
     and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.id));
 
@@ -186,7 +187,7 @@ export const getByIdFull = async (
   },
   input: { id: string },
 ): Promise<{
-  trip: Awaited<ReturnType<typeof getById>>;
+  trip: TripDetail;
   groups: Awaited<ReturnType<typeof getAllGroups>>["groups"];
   challenges: Awaited<ReturnType<typeof getAllChallengesByTrip>>["challenges"];
   sponsors: Awaited<ReturnType<typeof getSponsorsByTripId>>;
