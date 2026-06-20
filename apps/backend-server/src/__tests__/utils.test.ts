@@ -133,16 +133,17 @@ describe("RateLimiter", () => {
 describe("createRateLimiter", () => {
   it("should create a RateLimiter with production defaults", () => {
     const limiter = createRateLimiter();
+    const now = Date.now();
 
     for (let index = 0; index < DEFAULT_IP_BUCKET_CAPACITY; index++) {
-      expect(limiter.check("ip", "1.1.1.1").allowed).toBe(true);
+      expect(limiter.check("ip", "1.1.1.1", now).allowed).toBe(true);
     }
-    expect(limiter.check("ip", "1.1.1.1").allowed).toBe(false);
+    expect(limiter.check("ip", "1.1.1.1", now).allowed).toBe(false);
 
     for (let index = 0; index < DEFAULT_USER_BUCKET_CAPACITY; index++) {
-      expect(limiter.check("user", "user-1").allowed).toBe(true);
+      expect(limiter.check("user", "user-1", now).allowed).toBe(true);
     }
-    expect(limiter.check("user", "user-1").allowed).toBe(false);
+    expect(limiter.check("user", "user-1", now).allowed).toBe(false);
   });
 });
 
