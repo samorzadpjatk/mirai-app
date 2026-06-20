@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -69,12 +69,6 @@ export default function CommunityScreen() {
 
   const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
   const [hasDismissedAutoPicker, setHasDismissedAutoPicker] = useState(false);
-
-  useEffect(() => {
-    if (!isLoadingSession && !session) {
-      router.replace("/auth/login");
-    }
-  }, [isLoadingSession, session, router]);
 
   const selectedTrip = useMemo(() => {
     if (!selectedTripId) return null;
@@ -247,7 +241,7 @@ export default function CommunityScreen() {
   }
 
   if (!session) {
-    return null;
+    return <Redirect href="/auth/login" />;
   }
 
   return (
