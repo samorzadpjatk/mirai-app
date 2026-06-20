@@ -140,6 +140,7 @@ vi.mock("../config/db", () => ({
 describe("tripInfo", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUpload.mockResolvedValue({ error: null });
     mockGetPublicUrl.mockReturnValue({ data: { publicUrl: "https://cdn.example.com/file.pdf" } });
     mockSelectFromWhere.mockResolvedValue([]);
   });

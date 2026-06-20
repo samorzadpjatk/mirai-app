@@ -188,15 +188,21 @@ describe("createServer", () => {
   it("should rate limit after too many requests", async () => {
     const { app } = createServer({ dev: true, port: 3010, prefix: "/api/orpc", host: "127.0.0.1" });
     const ip = "203.0.113.100";
+    const now = Date.now();
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
 
-    for (let i = 0; i < 1201; i++) {
-      await app.request("/health", { headers: { "x-forwarded-for": ip } });
+    try {
+      for (let i = 0; i < 1201; i++) {
+        await app.request("/health", { headers: { "x-forwarded-for": ip } });
+      }
+
+      const res = await app.request("/health", { headers: { "x-forwarded-for": ip } });
+      expect(res.status).toBe(429);
+      expect(res.headers.get("retry-after")).toBeTruthy();
+      expect(await res.text()).toBe("Too Many Requests");
+    } finally {
+      dateNowSpy.mockRestore();
     }
-
-    const res = await app.request("/health", { headers: { "x-forwarded-for": ip } });
-    expect(res.status).toBe(429);
-    expect(res.headers.get("retry-after")).toBeTruthy();
-    expect(await res.text()).toBe("Too Many Requests");
   });
 
   it("should rate limit authenticated oRPC requests per user", async () => {
@@ -204,9 +210,23 @@ describe("createServer", () => {
     const ip = "203.0.113.200";
     const userId = "rate-limit-user";
     const accessToken = `header.${Buffer.from(JSON.stringify({ sub: userId })).toString("base64url")}.signature`;
+    const now = Date.now();
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
 
-    for (let i = 0; i < 401; i++) {
-      await app.request("/api/orpc/ping", {
+    try {
+      for (let i = 0; i < 401; i++) {
+        await app.request("/api/orpc/ping", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-forwarded-for": ip,
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: "",
+        });
+      }
+
+      const res = await app.request("/api/orpc/ping", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,18 +235,10 @@ describe("createServer", () => {
         },
         body: "",
       });
+      expect(res.status).toBe(429);
+    } finally {
+      dateNowSpy.mockRestore();
     }
-
-    const res = await app.request("/api/orpc/ping", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-forwarded-for": ip,
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: "",
-    });
-    expect(res.status).toBe(429);
   });
 
   it("should respond to oRPC endpoint", async () => {
