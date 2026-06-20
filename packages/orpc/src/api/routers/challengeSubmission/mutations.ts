@@ -1,4 +1,9 @@
 import {
+  resolveAwardedPoints,
+  shouldAutoApproveSubmission,
+  validateSubmissionPayload,
+} from "@mirai-app/common/challengeSubmissions";
+import {
   activityFeeds,
   challengeLocationMatch,
   challengeQrCode,
@@ -10,11 +15,6 @@ import {
   submissionActivities,
 } from "@mirai-app/db";
 import type { ChallengeSubmission, DB } from "@mirai-app/db";
-import {
-  resolveAwardedPoints,
-  shouldAutoApproveSubmission,
-  validateSubmissionPayload,
-} from "@mirai-app/shared/challengeSubmissions";
 import { ORPCError } from "@orpc/server";
 import { and, eq, lte, sql } from "drizzle-orm";
 import {

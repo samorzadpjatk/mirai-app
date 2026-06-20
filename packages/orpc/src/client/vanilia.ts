@@ -70,7 +70,12 @@ const createBatchPlugin = () =>
     exclude: ({ path }) => STREAMING_PROCEDURES.has(path.join("/")),
   });
 
-const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: string) => {
+const getORPCClient = (
+  httpUrl: string,
+  wsUrl?: string,
+  authorizationToken?: string,
+  enableBatch = true,
+) => {
   const ws = wsUrl ? createWsConnection(wsUrl, authorizationToken) : null;
   const wsLink = ws ? new WSLink({ websocket: ws }) : null;
 
@@ -83,7 +88,7 @@ const getORPCClient = (httpUrl: string, wsUrl?: string, authorizationToken?: str
       }
       return headers;
     },
-    plugins: [createBatchPlugin()],
+    plugins: enableBatch ? [createBatchPlugin()] : undefined,
   });
 
   const link = wsLink

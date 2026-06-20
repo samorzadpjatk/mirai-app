@@ -1,5 +1,5 @@
+import { buildDeliveryStatus, extractErrorMessage } from "@mirai-app/common/notifications";
 import { notificationDeliveries } from "@mirai-app/db";
-import { buildDeliveryStatus, extractErrorMessage } from "@mirai-app/shared/notifications";
 import { eq } from "drizzle-orm";
 import { sendMobileNotifications } from "../../../services/notificationService";
 import { logger } from "../../../utils/logger";

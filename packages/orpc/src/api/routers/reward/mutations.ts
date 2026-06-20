@@ -1,6 +1,6 @@
+import { calculateRewardProgress } from "@mirai-app/common/rewards";
+import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/common/rewards";
 import { type DB, coinTransactions, groups, rewardPurchases, rewards } from "@mirai-app/db";
-import { calculateRewardProgress } from "@mirai-app/shared/rewards";
-import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/shared/rewards";
 import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import type { z } from "zod";

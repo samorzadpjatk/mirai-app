@@ -47,3 +47,26 @@ export const getJudgedStaffProgress = async (
     ...progress,
   };
 };
+
+export const getJudgedStaffProgressByTrip = async (
+  context: { db: DB },
+  input: { tripId: string },
+) => {
+  const tripChallenges = await context.db.query.challenges.findMany({
+    where: (c, { eq, and }) =>
+      and(eq(c.tripId, input.tripId), eq(c.scoringCategory, "JUDGED_STAFF")),
+    columns: { id: true, tripId: true },
+  });
+
+  const progressEntries = await Promise.all(
+    tripChallenges.map(async (challenge) => {
+      const progress = await getJudgedStaffVotingProgress(context, {
+        challengeId: challenge.id,
+        tripId: challenge.tripId,
+      });
+      return [challenge.id, progress] as [string, typeof progress];
+    }),
+  );
+
+  return Object.fromEntries(progressEntries);
+};

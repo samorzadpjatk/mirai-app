@@ -1,4 +1,4 @@
-import { noop } from "@mirai-app/shared/test-utils";
+import { noop } from "@mirai-app/common/test-utils";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildAuthEmailLookup, buildAuthUserSummaryLookup, resolveAuthEmail } from "../authEmails";

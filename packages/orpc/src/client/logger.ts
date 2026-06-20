@@ -1,4 +1,4 @@
-import { createClientLogger } from "@mirai-app/shared/utils";
+import { createClientLogger } from "@mirai-app/common/utils";
 
 /**
  * Lightweight client-side logger for React Native.

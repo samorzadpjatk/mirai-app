@@ -12,14 +12,16 @@ export function useORPCClient({
   httpUrl,
   wsUrl,
   authToken,
+  enableBatch,
 }: {
   httpUrl: string;
   wsUrl?: string;
   authToken?: string;
+  enableBatch?: boolean;
 }) {
   const { client, cleanup } = useMemo(
-    () => getORPCClient(httpUrl, wsUrl, authToken),
-    [authToken, httpUrl, wsUrl],
+    () => getORPCClient(httpUrl, wsUrl, authToken, enableBatch),
+    [authToken, httpUrl, wsUrl, enableBatch],
   );
 
   const orpcUtils = useMemo(() => createTanstackQueryUtils(client), [client]);

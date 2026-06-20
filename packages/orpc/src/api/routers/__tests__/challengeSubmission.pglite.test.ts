@@ -1,4 +1,8 @@
 import {
+  resolveAwardedPoints,
+  validateSubmissionPayload,
+} from "@mirai-app/common/challengeSubmissions";
+import {
   challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
@@ -8,10 +12,6 @@ import {
   trips,
   users,
 } from "@mirai-app/db";
-import {
-  resolveAwardedPoints,
-  validateSubmissionPayload,
-} from "@mirai-app/shared/challengeSubmissions";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

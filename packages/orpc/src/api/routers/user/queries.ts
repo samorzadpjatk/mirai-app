@@ -1,5 +1,3 @@
-import { groups, tripParticipants, users } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import {
   buildPagination,
   buildUserSearchWhere,
@@ -8,7 +6,9 @@ import {
   normalizeEmail,
   parseBanStatus,
   sortParticipants,
-} from "@mirai-app/shared/users";
+} from "@mirai-app/common/users";
+import { groups, tripParticipants, users } from "@mirai-app/db";
+import type { DB } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, eq, sql } from "drizzle-orm";

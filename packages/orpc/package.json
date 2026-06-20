@@ -46,7 +46,7 @@
   "dependencies": {
     "@mirai-app/auth": "workspace:*",
     "@mirai-app/db": "workspace:*",
-    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/common": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
     "@tanstack/react-query": "^5.90.19",
     "@orpc/client": "^1.14.2",

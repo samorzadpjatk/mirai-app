@@ -1,8 +1,8 @@
+import { buildPaginationBounds, mapSubscriptionStatus } from "@mirai-app/common/notifications";
 import { notificationPushes, notifications } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
-import { buildPaginationBounds, mapSubscriptionStatus } from "@mirai-app/shared/notifications";
 import { ORPCError } from "@orpc/server";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 export type NotificationContext = {
   db: DB;
@@ -56,6 +56,20 @@ export const getAllMy = async (
       totalPages,
     },
   };
+};
+
+export const getUnreadCount = async (context: NotificationContext) => {
+  const [result] = await context.db
+    .select({ count: count() })
+    .from(notificationPushes)
+    .where(
+      and(
+        eq(notificationPushes.targetUserId, context.dbUser.id),
+        eq(notificationPushes.status, "pending"),
+      ),
+    );
+
+  return { unreadCount: result?.count ?? 0 };
 };
 
 export const getAll = async (

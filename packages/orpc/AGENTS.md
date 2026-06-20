@@ -45,7 +45,7 @@ bun run test:watch
 
 - `@mirai-app/auth` - Authentication utilities
 - `@mirai-app/db` - Database client
-- `@mirai-app/shared` - Shared utilities
+- `@mirai-app/common` - Shared utilities
 - `@mirai-app/supabase` - Supabase client
 
 ### External

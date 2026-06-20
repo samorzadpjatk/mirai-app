@@ -19,7 +19,7 @@ import {
   unsubscribe,
   unsubscribeAll,
 } from "./mutations";
-import { getAll, getAllMy, getSubscriptionStatus } from "./queries";
+import { getAll, getAllMy, getSubscriptionStatus, getUnreadCount } from "./queries";
 
 const handleSubscribe = async ({
   context,
@@ -56,6 +56,12 @@ const handleGetAllMy = async ({
   context: Parameters<typeof getAllMy>[0];
   input: Parameters<typeof getAllMy>[1];
 }) => getAllMy(context, input);
+
+const handleGetUnreadCount = async ({
+  context,
+}: {
+  context: Parameters<typeof getUnreadCount>[0];
+}) => getUnreadCount(context);
 
 const handleGetAll = async ({
   context,
@@ -154,6 +160,8 @@ export const notificationRouter = createORPCRouter({
       }),
     )
     .handler(handleGetAllMy),
+
+  getUnreadCount: protectedProcedure.handler(handleGetUnreadCount),
 
   getAll: adminProcedure
     .input(

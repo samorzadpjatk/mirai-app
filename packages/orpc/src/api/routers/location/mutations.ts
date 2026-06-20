@@ -1,5 +1,5 @@
+import { toExpoLocation } from "@mirai-app/common/locations";
 import { locationShares, locationSharingRequests, locations } from "@mirai-app/db";
-import { toExpoLocation } from "@mirai-app/shared/locations";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";

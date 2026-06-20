@@ -2,7 +2,7 @@ import {
   getNextScheduledStartDate,
   normalizeScheduleWindow,
   toOptionalString,
-} from "@mirai-app/shared/notifications";
+} from "@mirai-app/common/notifications";
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import type { ScheduledNotificationTemplate } from "../../../utils/notificationTemplates";
 

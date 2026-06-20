@@ -1,5 +1,5 @@
+import { extractActiveSponsors } from "@mirai-app/common/sponsors";
 import type { DB } from "@mirai-app/db";
-import { extractActiveSponsors } from "@mirai-app/shared/sponsors";
 import { ORPCError } from "@orpc/server";
 
 export type SponsorContext = {

@@ -1,3 +1,4 @@
+import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/common/storage";
 import {
   type Challenge,
   type DB,
@@ -7,7 +8,6 @@ import {
   challengeText,
   challenges,
 } from "@mirai-app/db";
-import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/shared/storage";
 import { and, eq, getTableColumns, lte, notInArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {

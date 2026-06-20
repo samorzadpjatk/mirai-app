@@ -1,5 +1,5 @@
+import { canTransitionPurchaseStatus } from "@mirai-app/common/rewards";
 import { coinTransactions, groups, rewardPurchases, rewards, trips, users } from "@mirai-app/db";
-import { canTransitionPurchaseStatus } from "@mirai-app/shared/rewards";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
