@@ -81,7 +81,8 @@ describe("recurringChallenges", () => {
     dailyEndTime: "18:00",
     targetLatitude: null,
     targetLongitude: null,
-    expectedValue: null,
+    textExpectedPhrase: null,
+    qrCodeValue: null,
     autoApprove: false,
     createdAt: new Date("2024-01-01"),
     isRecurring: true,
@@ -354,6 +355,102 @@ describe("recurringChallenges", () => {
 
       expect(mockTx.challenge.create).toHaveBeenCalled();
     });
+
+    it("should use current date when now is not provided", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue({
+        id: "existing-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({
+        startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      });
+
+      const result = await ensureRecurringInstanceForTemplate({
+        tx: mockTx,
+        template,
+      });
+
+      expect(result).toEqual({ id: "existing-1", status: "ACTIVE", created: false });
+    });
+
+    it("should proceed when template endTime is null", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue({
+        id: "existing-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({ endTime: null });
+
+      const result = await ensureRecurringInstanceForTemplate({
+        tx: mockTx,
+        template,
+        now: new Date("2024-01-02T12:00:00"),
+      });
+
+      expect(result).toEqual({ id: "existing-1", status: "ACTIVE", created: false });
+    });
+
+    it("should insert challengeText when textExpectedPhrase is set", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({ textExpectedPhrase: "expected phrase" });
+
+      await ensureRecurringInstanceForTemplate({
+        tx: mockTx,
+        template,
+        now: new Date("2024-01-02T12:00:00"),
+      });
+
+      expect(mockTx.insert).toHaveBeenCalledTimes(4);
+    });
+
+    it("should insert challengeQrCode when qrCodeValue is set", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({ qrCodeValue: "qr-value" });
+
+      await ensureRecurringInstanceForTemplate({
+        tx: mockTx,
+        template,
+        now: new Date("2024-01-02T12:00:00"),
+      });
+
+      expect(mockTx.insert).toHaveBeenCalledTimes(4);
+    });
+
+    it("should insert both challengeText and challengeQrCode when both are set", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({
+        textExpectedPhrase: "expected phrase",
+        qrCodeValue: "qr-value",
+      });
+
+      await ensureRecurringInstanceForTemplate({
+        tx: mockTx,
+        template,
+        now: new Date("2024-01-02T12:00:00"),
+      });
+
+      expect(mockTx.insert).toHaveBeenCalledTimes(5);
+    });
   });
 
   describe("precreateRecurringInstancesForTemplate", () => {
@@ -485,6 +582,90 @@ describe("recurringChallenges", () => {
 
       expect(mockTx.challenge.create).toHaveBeenCalled();
     });
+
+    it("should use createdAt as fallback when both endTime and startTime are null", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({
+        startTime: null,
+        endTime: null,
+        createdAt: new Date("2024-01-01"),
+      });
+
+      await precreateRecurringInstancesForTemplate({
+        tx: mockTx,
+        template,
+      });
+
+      expect(mockTx.challenge.create).toHaveBeenCalled();
+    });
+
+    it("should skip result when created[0] is null", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue(null);
+
+      const template = createMockTemplate({
+        startTime: new Date("2024-01-01"),
+        endTime: new Date("2024-01-01"),
+      });
+
+      const result = await precreateRecurringInstancesForTemplate({
+        tx: mockTx,
+        template,
+      });
+
+      expect(result).toEqual([]);
+    });
+
+    it("should insert challengeText when textExpectedPhrase is set", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({
+        startTime: new Date("2024-01-01"),
+        endTime: new Date("2024-01-01"),
+        textExpectedPhrase: "expected phrase",
+      });
+
+      await precreateRecurringInstancesForTemplate({
+        tx: mockTx,
+        template,
+      });
+
+      expect(mockTx.insert).toHaveBeenCalledTimes(4);
+    });
+
+    it("should insert challengeQrCode when qrCodeValue is set", async () => {
+      mockTx.challenge.findFirst.mockResolvedValue(null);
+
+      mockTx.challenge.create.mockResolvedValue({
+        id: "new-1",
+        status: "ACTIVE",
+      });
+
+      const template = createMockTemplate({
+        startTime: new Date("2024-01-01"),
+        endTime: new Date("2024-01-01"),
+        qrCodeValue: "qr-value",
+      });
+
+      await precreateRecurringInstancesForTemplate({
+        tx: mockTx,
+        template,
+      });
+
+      expect(mockTx.insert).toHaveBeenCalledTimes(4);
+    });
   });
 
   describe("ensureRecurringInstancesForTrip", () => {
@@ -515,6 +696,19 @@ describe("recurringChallenges", () => {
 
     it("should return empty array when no recurring templates exist", async () => {
       mockTx.challenge.findMany.mockResolvedValue([]);
+
+      const result = await ensureRecurringInstancesForTrip({
+        tx: mockTx,
+        tripId: "trip-1",
+      });
+
+      expect(result).toEqual([]);
+    });
+
+    it("should return empty array when precreate returns empty for all templates", async () => {
+      mockTx.challenge.findMany.mockResolvedValue([
+        createMockTemplate({ id: "template-1", status: "HIDDEN" }),
+      ]);
 
       const result = await ensureRecurringInstancesForTrip({
         tx: mockTx,

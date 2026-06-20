@@ -3,7 +3,7 @@ import { activityReactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import { count, inArray } from "drizzle-orm";
 import { resolveSignedUrl } from "./storage";
-import type { Activity, RawActivityWithRelations } from "./types";
+import type { Activity, ActivityType, RawActivityWithRelations } from "./types";
 import {
   toClientActivity,
   toClientChallengeActivity,
@@ -131,7 +131,9 @@ export const enrichActivities = async (
         },
       });
 
-      switch (activity.activityType) {
+      const activityType = activity.activityType as ActivityType;
+
+      switch (activityType) {
         case "custom": {
           return {
             ...base,
@@ -276,7 +278,6 @@ export const enrichActivities = async (
         }
 
         default: {
-          // Fallback for unknown activity types — treat as custom
           return {
             ...base,
             activityType: "custom" as const,
