@@ -1,4 +1,5 @@
 import { useAuth } from "@mirai-app/auth/client";
+import type { TripDetailTripSponsor } from "@mirai-app/orpc";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -10,7 +11,7 @@ import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
-import { useSelectedTrip, useTripByIdFull } from "~/hooks/trips";
+import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { useTripSync } from "~/stores/tripStore";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
@@ -24,7 +25,7 @@ export default function TripDetailsScreen() {
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { trip, isLoadingTrip, isTripPast } = useTripByIdFull(tripId);
+  const { trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
 
   // Keep trip store in sync with current trip state
   useTripSync();
@@ -50,6 +51,22 @@ export default function TripDetailsScreen() {
       </View>
     );
   }
+
+  const sponsors = trip.tripSponsors
+    .map((ts: TripDetailTripSponsor): Partner | null => {
+      const s = ts.sponsor;
+      if (!s) return null;
+      return {
+        id: s.id,
+        name: s.name,
+        logoPath: s.logoPath,
+        description: s.description,
+        height: null,
+        offsetX: null,
+        offsetY: null,
+      };
+    })
+    .filter((s): s is Partner => Boolean(s));
 
   return (
     <>
@@ -79,11 +96,7 @@ export default function TripDetailsScreen() {
           <TripBanner />
 
           {/* Partners */}
-          <PartnersSection
-            sponsors={
-              trip.tripSponsors?.map((ts) => ts.sponsor).filter(Boolean) as unknown as Partner[]
-            }
-          />
+          <PartnersSection sponsors={sponsors} />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid

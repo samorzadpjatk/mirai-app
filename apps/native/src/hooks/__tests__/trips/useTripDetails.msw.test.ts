@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "@jest/globals";
 import { waitFor } from "@testing-library/react-native";
 import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { useTripByIdFull } from "../../trips/useTripDetails";
+import { useTripDetails } from "../../trips/useTripDetails";
 
 function createFullTripResponse(trip: unknown) {
   return {
@@ -24,14 +24,14 @@ const mockTrip = {
   groups: [{ id: "group-1", name: "Group 1" }],
 };
 
-describe("useTripByIdFull (MSW)", () => {
+describe("useTripDetails (MSW)", () => {
   beforeEach(() => {
     server.resetHandlers();
     server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(mockTrip)));
   });
 
   it("should return trip details when API returns data", async () => {
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-1"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-1"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -51,7 +51,7 @@ describe("useTripByIdFull (MSW)", () => {
   });
 
   it("should return null when no tripId provided", async () => {
-    const { result } = renderHookWithMSW(() => useTripByIdFull(null));
+    const { result } = renderHookWithMSW(() => useTripDetails(null));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -64,7 +64,7 @@ describe("useTripByIdFull (MSW)", () => {
   });
 
   it("should handle empty string tripId", async () => {
-    const { result } = renderHookWithMSW(() => useTripByIdFull(""));
+    const { result } = renderHookWithMSW(() => useTripDetails(""));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -79,7 +79,7 @@ describe("useTripByIdFull (MSW)", () => {
   it("should show loading state while fetching", async () => {
     server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(mockTrip)));
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-loading"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-loading"));
 
     expect(result.current.isLoadingTrip).toBe(true);
 
@@ -101,7 +101,7 @@ describe("useTripByIdFull (MSW)", () => {
 
     server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(pastTrip)));
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-past"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-past"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -124,7 +124,7 @@ describe("useTripByIdFull (MSW)", () => {
       createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(futureTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-future"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-future"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -136,7 +136,7 @@ describe("useTripByIdFull (MSW)", () => {
   });
 
   it("should expose refetchTrip function", async () => {
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-refetch"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-refetch"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -159,7 +159,7 @@ describe("useTripByIdFull (MSW)", () => {
       createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(minimalTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-min"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-min"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -175,7 +175,7 @@ describe("useTripByIdFull (MSW)", () => {
   it("should handle API returning null trip", async () => {
     server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(null)));
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-null"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-null"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -202,7 +202,7 @@ describe("useTripByIdFull (MSW)", () => {
       createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(multiGroupTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-multi"));
+    const { result } = renderHookWithMSW(() => useTripDetails("trip-multi"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);

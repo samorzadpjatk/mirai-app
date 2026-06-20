@@ -22,7 +22,7 @@ export interface RateLimitResult {
   retryAfter: number;
 }
 
-export interface BucketConfig {
+interface BucketConfig {
   capacity: number;
   refillInterval: number;
 }
