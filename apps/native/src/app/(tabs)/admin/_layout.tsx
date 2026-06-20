@@ -1,3 +1,4 @@
+import { hasAdminAccess } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -8,8 +9,7 @@ const backgroundColor = "#17181c";
 export default function AdminLayout() {
   const { data: user } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
-  // Check if user has admin role based on the user object
-  const hasAdminAccess = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isAdmin = hasAdminAccess(user?.role);
   const headerBackgroundColor = colors.backgroundDark;
   const headerTintColor = colors.textPrimary;
   return (
@@ -29,7 +29,7 @@ export default function AdminLayout() {
       }}
     >
       {/* Protected admin routes - only accessible to users with admin or moderator role */}
-      <Stack.Protected guard={hasAdminAccess}>
+      <Stack.Protected guard={isAdmin}>
         <Stack.Screen
           name="index"
           options={{

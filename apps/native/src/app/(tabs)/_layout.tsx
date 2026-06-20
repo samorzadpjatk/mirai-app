@@ -1,4 +1,5 @@
 import { useUser } from "@mirai-app/auth/client";
+import { hasAdminAccess } from "@mirai-app/common/users";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useColorScheme } from "react-native";
@@ -15,8 +16,6 @@ export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark" || colorScheme === null;
   const user = useUser();
-
-  const hasAdminAccess = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
   const backgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
   const activeColor = colors.accentColor;
@@ -51,12 +50,10 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Icon sf="person.fill" md="person" />
           <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
-        {hasAdminAccess && (
-          <NativeTabs.Trigger name="admin">
-            <NativeTabs.Trigger.Icon sf="gearshape.fill" md="settings" />
-            <NativeTabs.Trigger.Label>Admin</NativeTabs.Trigger.Label>
-          </NativeTabs.Trigger>
-        )}
+        <NativeTabs.Trigger name="admin" hidden={!hasAdminAccess(user?.role)}>
+          <NativeTabs.Trigger.Icon sf="gearshape.fill" md="settings" />
+          <NativeTabs.Trigger.Label>Admin</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
     </ThemeProvider>
   );
