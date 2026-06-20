@@ -152,13 +152,19 @@ export async function seedUser(
   });
 }
 
-export async function seedTrip(db: DB, id: string, name: string, description?: string) {
+export async function seedTrip(
+  db: DB,
+  id: string,
+  name: string,
+  description?: string,
+  endDate?: Date,
+) {
   await db.insert(trips).values({
     id,
     name,
     description: description ?? "",
     startDate: new Date("2025-06-01"),
-    endDate: new Date("2025-06-07"),
+    endDate: endDate ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     createdAt: new Date(),
     updatedAt: new Date(),
   });
