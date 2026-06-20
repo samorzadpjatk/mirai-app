@@ -34,7 +34,7 @@ import {
 } from "~/components/common/ui";
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useHomeFull } from "~/hooks/home";
-import { useSelectedTrip } from "~/hooks/trips";
+import { useAutoSelectFirstTrip, useSelectedTrip } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
 
 type ActivityFilter = "all" | Activity["activityType"];
@@ -69,6 +69,8 @@ export default function CommunityScreen() {
 
   const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
   const [hasDismissedAutoPicker, setHasDismissedAutoPicker] = useState(false);
+
+  useAutoSelectFirstTrip(trips, hasDismissedAutoPicker);
 
   useEffect(() => {
     if (!isLoadingSession && !session) {
