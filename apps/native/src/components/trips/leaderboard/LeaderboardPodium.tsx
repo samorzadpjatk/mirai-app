@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
@@ -52,7 +53,11 @@ function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
           ]}
         >
           {group.image ? (
-            <Image source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
+            <CachedImage
+              source={{ uri: group.image }}
+              style={styles.avatarImage}
+              contentFit="cover"
+            />
           ) : (
             <Text style={[styles.avatarText, { color: medalColor }]}>{group.name.charAt(0)}</Text>
           )}

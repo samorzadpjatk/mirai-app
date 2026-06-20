@@ -1,12 +1,11 @@
 import { useAuth } from "@mirai-app/auth/client";
+import { formatDisplayName } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName } from "@mirai-app/shared/users";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { UserMap } from "~/components/map/UserMap";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
-import { useFileDownload } from "~/hooks/files";
 import { useMapUsers } from "~/hooks/map";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
@@ -20,12 +19,12 @@ function MapScreenContent({
   onLocationUpdate,
   currentUserId,
   currentUserName,
-  currentUserAvatarUrl,
+  currentUserAvatarStoragePath,
 }: {
   onLocationUpdate: (coords: { longitude: number; latitude: number }) => void;
   currentUserId?: string;
   currentUserName?: string;
-  currentUserAvatarUrl?: string | null;
+  currentUserAvatarStoragePath?: string | null;
 }) {
   const { users, handleMapUserPress, onMapPress, mapTheme, focusedCoordinate } =
     useMapOverlayStore();
@@ -42,7 +41,7 @@ function MapScreenContent({
         mapTheme={mapTheme}
         currentUserId={currentUserId}
         currentUserName={currentUserName}
-        currentUserAvatarUrl={currentUserAvatarUrl}
+        currentUserAvatarStoragePath={currentUserAvatarStoragePath}
         overlay={<MapScreenOverlay />}
       />
     </View>
@@ -80,36 +79,9 @@ export default function MapScreen() {
     isRemovingUser,
   } = useMapSharing(true, selectedTripId);
   const { sendLocation } = useMapActions();
-  const {
-    download: downloadAvatar,
-    file: avatarFile,
-    reset: resetAvatar,
-    abort: abortAvatar,
-  } = useFileDownload();
   const avatarStoragePath = currentUser?.id ? `avatar/${currentUser.id}.jpg` : null;
   const currentUserName =
     formatDisplayName(currentUser?.firstName, currentUser?.lastName) ?? undefined;
-
-  useEffect(() => {
-    if (!currentUser?.hasAvatar || !avatarStoragePath) {
-      resetAvatar();
-      return;
-    }
-
-    resetAvatar();
-    void downloadAvatar({ storagePath: avatarStoragePath, skipCache: true });
-
-    return () => {
-      abortAvatar();
-    };
-  }, [
-    abortAvatar,
-    avatarStoragePath,
-    currentUser?.hasAvatar,
-    currentUser?.updatedAt,
-    downloadAvatar,
-    resetAvatar,
-  ]);
 
   // Build users array with only other users (current user handled by UserMap directly)
   const users = useMapUsers({
@@ -166,7 +138,7 @@ export default function MapScreen() {
       }}
       currentUserId={currentUser?.id}
       currentUserName={currentUserName && currentUserName.length > 0 ? currentUserName : undefined}
-      currentUserAvatarUrl={avatarFile?.uri ?? null}
+      currentUserAvatarStoragePath={currentUser?.hasAvatar ? avatarStoragePath : null}
     />
   );
 }

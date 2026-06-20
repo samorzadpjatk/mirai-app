@@ -1,10 +1,10 @@
-import { orpc } from "@mirai-app/orpc/client";
 import {
   buildGroupQueryInput,
   filterGroupsBySearch,
   flattenGroups,
   getNextGroupPageParam,
-} from "@mirai-app/shared/groups";
+} from "@mirai-app/common/groups";
+import { orpc } from "@mirai-app/orpc/client";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import type { GroupListItem } from "~/components/trips/groups/types";

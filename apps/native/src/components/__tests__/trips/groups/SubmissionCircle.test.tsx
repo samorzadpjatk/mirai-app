@@ -1,29 +1,6 @@
-import { fireEvent } from "@testing-library/react-native";
+import { fireEvent, waitFor } from "@testing-library/react-native";
+import SubmissionCircle from "../../../trips/groups/details/SubmissionCircle";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
-
-const mockDownload = jest.fn(() => Promise.resolve());
-const mockReset = jest.fn();
-const mockAbort = jest.fn();
-
-let mockFileDownloadReturn: {
-  download: jest.Mock;
-  status: string;
-  file: { uri: string } | null;
-  reset: jest.Mock;
-  abort: jest.Mock;
-} = {
-  download: mockDownload,
-  status: "idle",
-  file: null,
-  reset: mockReset,
-  abort: mockAbort,
-};
-
-jest.mock("~/hooks/files", () => ({
-  useFileDownload: () => mockFileDownloadReturn,
-}));
-
-const SubmissionCircle = require("../../../trips/groups/details/SubmissionCircle").default;
 
 const baseSubmission = (overrides = {}) => ({
   submissionId: "sub-1",
@@ -37,13 +14,6 @@ const baseSubmission = (overrides = {}) => ({
 describe("SubmissionCircle", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFileDownloadReturn = {
-      download: mockDownload,
-      status: "idle",
-      file: null,
-      reset: mockReset,
-      abort: mockAbort,
-    };
   });
 
   it("renders challenge title", () => {
@@ -64,50 +34,27 @@ describe("SubmissionCircle", () => {
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it("shows loading indicator when downloading", () => {
-    mockFileDownloadReturn = {
-      download: mockDownload,
-      status: "loading",
-      file: null,
-      reset: mockReset,
-      abort: mockAbort,
-    };
-
+  it("shows loading indicator while image url is loading", () => {
     const { getByTestId } = renderWithProviders(
       <SubmissionCircle submission={baseSubmission()} onPress={jest.fn()} />,
     );
 
+    expect(getByTestId("image-fallback")).toBeTruthy();
     expect(getByTestId("loading-indicator")).toBeTruthy();
   });
 
-  it("renders image when file is loaded", () => {
-    mockFileDownloadReturn = {
-      download: mockDownload,
-      status: "success",
-      file: { uri: "file:///path/to/image.jpg" },
-      reset: mockReset,
-      abort: mockAbort,
-    };
-
+  it("renders image when url resolves", async () => {
     const { getByTestId } = renderWithProviders(
       <SubmissionCircle submission={baseSubmission()} onPress={jest.fn()} />,
     );
 
-    expect(getByTestId("submission-image")).toBeTruthy();
+    await waitFor(() => expect(getByTestId("submission-image")).toBeTruthy());
   });
 
   it("shows fallback when no image path", () => {
-    mockFileDownloadReturn = {
-      download: mockDownload,
-      status: "idle",
-      file: null,
-      reset: mockReset,
-      abort: mockAbort,
-    };
-
     const { getByTestId } = renderWithProviders(
       <SubmissionCircle
-        submission={baseSubmission({ imageStoragePath: "" })}
+        submission={baseSubmission({ imageStoragePath: null })}
         onPress={jest.fn()}
       />,
     );

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
 
 interface GroupDetailsHeroProps {
@@ -12,11 +13,11 @@ export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
     <View testID="group-details-hero" style={[styles.heroCard, shadows.primaryGlow]}>
       {imageUrl ? (
         <>
-          <Image
+          <CachedImage
             testID="group-hero-image"
             source={{ uri: imageUrl }}
             style={styles.heroImage}
-            resizeMode="cover"
+            contentFit="cover"
           />
           <View style={styles.heroGradient} />
         </>

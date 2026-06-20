@@ -2,10 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripNewsSectionProps {
@@ -135,7 +135,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
               ) : null}
 
               {item.imageUrl ? (
-                <Image
+                <CachedImage
                   source={{ uri: item.imageUrl }}
                   style={styles.newsImage}
                   contentFit="cover"

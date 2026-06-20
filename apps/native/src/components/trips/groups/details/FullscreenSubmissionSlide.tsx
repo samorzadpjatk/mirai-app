@@ -1,8 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useFileDownload } from "~/hooks/files";
+import { CachedImage } from "~/components/common/CachedImage";
 import { colors, spacing, typography } from "~/styles";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
 
@@ -26,42 +23,27 @@ export function formatDateTime(approvedAt: string | Date): string {
 }
 
 export default function FullscreenSubmissionSlide({ submission, width, height, topInset }: Props) {
-  const { download, status, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!submission.imageStoragePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, reset, submission.imageStoragePath]);
-
   return (
     <View
       testID="fullscreen-slide"
       style={[styles.fullscreenSlide, { width, minHeight: height - (topInset + 92) }]}
     >
       <View style={styles.fullscreenImageWrap}>
-        {status === "loading" ? (
-          <View testID="loading-indicator" style={styles.fullscreenFallback}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image
+        {submission.imageStoragePath ? (
+          <CachedImage
             testID="fullscreen-image"
-            source={{ uri: file.uri }}
+            storagePath={submission.imageStoragePath}
             style={styles.fullscreenImage}
             contentFit="contain"
+            fallback={
+              <View testID="image-fallback" style={styles.fullscreenFallback}>
+                <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
+              </View>
+            }
           />
         ) : (
           <View testID="image-fallback" style={styles.fullscreenFallback}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+            <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
           </View>
         )}
       </View>

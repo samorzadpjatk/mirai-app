@@ -1,5 +1,5 @@
+import { formatDisplayName, getInitials } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
-import { formatDisplayName, getInitials } from "@mirai-app/shared/users";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";

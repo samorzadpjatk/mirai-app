@@ -68,8 +68,13 @@ describe("RewardsView", () => {
     server.use(
       createORPCHandler(["reward", "getByTrip"], () => []),
       createORPCHandler(["group", "getMy"], () => null),
-      createORPCHandler(["trip", "getById"], () => null),
-      createORPCHandler(["user", "getMy"], () => null),
+      createORPCHandler(["trip", "getByIdFull"], () => ({
+        trip: null,
+        groups: [],
+        challenges: [],
+        sponsors: [],
+        latestNews: [],
+      })),
     );
   });
 

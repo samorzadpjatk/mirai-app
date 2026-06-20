@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { GroupListItem } from "./types";
 
@@ -20,11 +21,11 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
     >
       <View style={styles.groupImageContainer}>
         {group.image ? (
-          <Image
+          <CachedImage
             testID="group-image"
             source={{ uri: group.image }}
             style={styles.groupImage}
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <View testID="image-placeholder" style={styles.groupImagePlaceholder}>

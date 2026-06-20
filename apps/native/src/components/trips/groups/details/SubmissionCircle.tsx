@@ -1,8 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useFileDownload } from "~/hooks/files";
+import { CachedImage } from "~/components/common/CachedImage";
 import { colors } from "~/styles";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
 
@@ -12,22 +9,6 @@ interface Props {
 }
 
 export default function SubmissionCircle({ submission, onPress }: Props) {
-  const { download, status, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!submission.imageStoragePath) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageStoragePath }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, reset, submission.imageStoragePath]);
-
   return (
     <TouchableOpacity
       testID="submission-circle"
@@ -36,20 +17,21 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
       onPress={onPress}
     >
       <View style={styles.imageWrap}>
-        {status === "loading" ? (
-          <View testID="loading-indicator" style={styles.imageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : file?.uri ? (
-          <Image
+        {submission.imageStoragePath ? (
+          <CachedImage
             testID="submission-image"
-            source={{ uri: file.uri }}
+            storagePath={submission.imageStoragePath}
             style={styles.image}
             contentFit="cover"
+            fallback={
+              <View testID="image-fallback" style={styles.imageFallback}>
+                <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
+              </View>
+            }
           />
         ) : (
           <View testID="image-fallback" style={styles.imageFallback}>
-            <Ionicons name="image-outline" size={18} color={colors.textMuted} />
+            <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
           </View>
         )}
       </View>

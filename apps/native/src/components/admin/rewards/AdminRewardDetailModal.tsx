@@ -1,15 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/components/common/ui";
 import { useFileUpload } from "~/hooks/files";
 import {
@@ -279,7 +272,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
             <ScrollView style={{ padding: 0 }}>
               {previewImage && (
                 <View style={{ marginBottom: spacing.lg }}>
-                  <Image
+                  <CachedImage
                     testID="reward-image"
                     source={{ uri: previewImage }}
                     style={{
@@ -288,7 +281,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                       borderRadius: borderRadius.md,
                       backgroundColor: colors.cardDark,
                     }}
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                   <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
                     <TouchableOpacity

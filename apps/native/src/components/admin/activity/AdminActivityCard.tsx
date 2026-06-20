@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type AdminActivity = Activity;
@@ -78,7 +79,7 @@ export function AdminActivityCard({
       ) : null}
 
       {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.cardImagePreview} />
+        <CachedImage source={{ uri: item.imageUrl }} style={styles.cardImagePreview} />
       ) : null}
 
       <View style={styles.actions}>

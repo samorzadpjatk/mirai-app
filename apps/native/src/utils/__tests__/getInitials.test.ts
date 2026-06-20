@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { getInitials } from "@mirai-app/shared/users";
+import { getInitials } from "@mirai-app/common/users";
 
 describe("getInitials", () => {
   it("should return initials from first and last name", () => {

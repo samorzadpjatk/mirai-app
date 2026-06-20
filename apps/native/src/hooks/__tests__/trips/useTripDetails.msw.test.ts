@@ -1,32 +1,37 @@
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { waitFor } from "@testing-library/react-native";
 import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { useTripDetails } from "../../trips/useTripDetails";
+import { useTripByIdFull } from "../../trips/useTripDetails";
 
-describe("useTripDetails (MSW)", () => {
-  beforeEach(async () => {
-    await AsyncStorage.clear();
+function createFullTripResponse(trip: unknown) {
+  return {
+    trip,
+    groups: [],
+    challenges: [],
+    sponsors: [],
+    latestNews: [],
+  };
+}
+
+const mockTrip = {
+  id: "trip-1",
+  name: "API Trip",
+  description: "API Description",
+  startDate: "2024-02-01",
+  endDate: "2024-02-10",
+  backgroundImagePath: "/path/to/api-image.jpg",
+  groups: [{ id: "group-1", name: "Group 1" }],
+};
+
+describe("useTripByIdFull (MSW)", () => {
+  beforeEach(() => {
+    server.resetHandlers();
+    server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(mockTrip)));
   });
 
   it("should return trip details when API returns data", async () => {
-    const mockTrip = {
-      id: "trip-1",
-      name: "API Trip",
-      description: "API Description",
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
-      backgroundImagePath: "/path/to/api-image.jpg",
-      groups: [{ id: "group-1", name: "Group 1" }],
-    };
-
-    server.use(
-      createORPCHandler(["trip", "getById"], () => mockTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
-
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-1"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-1"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -46,12 +51,10 @@ describe("useTripDetails (MSW)", () => {
   });
 
   it("should return null when no tripId provided", async () => {
-    server.use(createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })));
-
-    const { result } = renderHookWithMSW(() => useTripDetails(null));
+    const { result } = renderHookWithMSW(() => useTripByIdFull(null));
 
     await waitFor(() => {
-      expect(result.current.isLoadingUser).toBe(false);
+      expect(result.current.isLoadingTrip).toBe(false);
     });
 
     expect(result.current.trip).toBeNull();
@@ -61,12 +64,10 @@ describe("useTripDetails (MSW)", () => {
   });
 
   it("should handle empty string tripId", async () => {
-    server.use(createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })));
-
-    const { result } = renderHookWithMSW(() => useTripDetails(""));
+    const { result } = renderHookWithMSW(() => useTripByIdFull(""));
 
     await waitFor(() => {
-      expect(result.current.isLoadingUser).toBe(false);
+      expect(result.current.isLoadingTrip).toBe(false);
     });
 
     expect(result.current.trip).toBeNull();
@@ -75,53 +76,32 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.tripId).toBe("");
   });
 
-  it("should show loading states while fetching", async () => {
-    const mockTrip = {
-      id: "trip-loading",
-      name: "Loading Trip",
-      description: "Description",
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
-      backgroundImagePath: null,
-      groups: [],
-    };
+  it("should show loading state while fetching", async () => {
+    server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(mockTrip)));
 
-    server.use(
-      createORPCHandler(["trip", "getById"], () => mockTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-loading"));
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-loading"));
-
-    expect(result.current.isLoadingUser).toBe(true);
     expect(result.current.isLoadingTrip).toBe(true);
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
     });
 
-    expect(result.current.isLoadingUser).toBe(false);
     expect(result.current.trip).toEqual(mockTrip);
     expect(result.current.tripId).toBe("trip-loading");
   });
 
   it("should determine if trip is past", async () => {
     const pastTrip = {
+      ...mockTrip,
       id: "trip-past",
-      name: "Past Trip",
-      description: "Description",
       startDate: "2020-01-01",
       endDate: "2020-01-10",
-      backgroundImagePath: null,
-      groups: [],
     };
 
-    server.use(
-      createORPCHandler(["trip", "getById"], () => pastTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
+    server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(pastTrip)));
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-past"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-past"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -134,21 +114,17 @@ describe("useTripDetails (MSW)", () => {
 
   it("should determine if trip is not past (future trip)", async () => {
     const futureTrip = {
+      ...mockTrip,
       id: "trip-future",
-      name: "Future Trip",
-      description: "Description",
       startDate: "2099-01-01",
       endDate: "2099-01-10",
-      backgroundImagePath: null,
-      groups: [],
     };
 
     server.use(
-      createORPCHandler(["trip", "getById"], () => futureTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
+      createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(futureTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-future"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-future"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -159,51 +135,8 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.tripId).toBe("trip-future");
   });
 
-  it("should return current user data", async () => {
-    const mockUser = { id: "user-1", name: "John Doe", email: "john@example.com" };
-    const mockTrip = {
-      id: "trip-user",
-      name: "Trip",
-      description: "Description",
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
-      backgroundImagePath: null,
-      groups: [],
-    };
-
-    server.use(
-      createORPCHandler(["trip", "getById"], () => mockTrip),
-      createORPCHandler(["user", "getMy"], () => mockUser),
-    );
-
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-user"));
-
-    await waitFor(() => {
-      expect(result.current.isLoadingUser).toBe(false);
-    });
-
-    expect(result.current.currentUser).toEqual(mockUser);
-    expect(result.current.isLoadingUser).toBe(false);
-    expect(result.current.tripId).toBe("trip-user");
-  });
-
   it("should expose refetchTrip function", async () => {
-    const mockTrip = {
-      id: "trip-refetch",
-      name: "Trip",
-      description: "Description",
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
-      backgroundImagePath: null,
-      groups: [],
-    };
-
-    server.use(
-      createORPCHandler(["trip", "getById"], () => mockTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
-
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-refetch"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-refetch"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -215,21 +148,18 @@ describe("useTripDetails (MSW)", () => {
 
   it("should handle trip with minimal data", async () => {
     const minimalTrip = {
+      ...mockTrip,
       id: "trip-min",
-      name: "Minimal Trip",
       description: null,
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
       backgroundImagePath: null,
       groups: [],
     };
 
     server.use(
-      createORPCHandler(["trip", "getById"], () => minimalTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
+      createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(minimalTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-min"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-min"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -242,32 +172,24 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.tripId).toBe("trip-min");
   });
 
-  it("should handle both APIs returning null", async () => {
-    server.use(
-      createORPCHandler(["trip", "getById"], () => null),
-      createORPCHandler(["user", "getMy"], () => null),
-    );
+  it("should handle API returning null trip", async () => {
+    server.use(createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(null)));
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-null"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-null"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
     });
 
     expect(result.current.trip).toBeNull();
-    expect(result.current.currentUser).toBeNull();
-    expect(result.current.isLoadingUser).toBe(false);
     expect(result.current.isLoadingTrip).toBe(false);
     expect(result.current.tripId).toBe("trip-null");
   });
 
   it("should handle trip with multiple groups", async () => {
-    const mockTrip = {
+    const multiGroupTrip = {
+      ...mockTrip,
       id: "trip-multi",
-      name: "Multi Group Trip",
-      description: "Description",
-      startDate: "2024-02-01",
-      endDate: "2024-02-10",
       backgroundImagePath: "/image.jpg",
       groups: [
         { id: "group-1", name: "Group 1" },
@@ -277,11 +199,10 @@ describe("useTripDetails (MSW)", () => {
     };
 
     server.use(
-      createORPCHandler(["trip", "getById"], () => mockTrip),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
+      createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(multiGroupTrip)),
     );
 
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-multi"));
+    const { result } = renderHookWithMSW(() => useTripByIdFull("trip-multi"));
 
     await waitFor(() => {
       expect(result.current.isLoadingTrip).toBe(false);
@@ -291,36 +212,5 @@ describe("useTripDetails (MSW)", () => {
     expect(result.current.trip?.groups[0]!.name).toBe("Group 1");
     expect(result.current.trip?.groups[2]!.name).toBe("Group 3");
     expect(result.current.tripId).toBe("trip-multi");
-  });
-
-  it("should fall back to cached trip when API returns null", async () => {
-    const cachedTrip = {
-      id: "trip-cached",
-      name: "Cached Trip",
-      description: "Cached Description",
-      startDate: "2024-01-01",
-      endDate: "2024-01-10",
-      backgroundImagePath: null,
-      groups: [],
-    };
-
-    await AsyncStorage.setItem(
-      "trip.details.cache.v1",
-      JSON.stringify({ "trip-cached": cachedTrip }),
-    );
-
-    server.use(
-      createORPCHandler(["trip", "getById"], () => null),
-      createORPCHandler(["user", "getMy"], () => ({ id: "user-1", name: "Test User" })),
-    );
-
-    const { result } = renderHookWithMSW(() => useTripDetails("trip-cached"));
-
-    await waitFor(() => {
-      expect(result.current.isLoadingTrip).toBe(false);
-    });
-
-    expect(result.current.trip).toEqual(cachedTrip);
-    expect(result.current.tripId).toBe("trip-cached");
   });
 });

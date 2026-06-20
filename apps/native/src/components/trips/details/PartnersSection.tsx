@@ -1,15 +1,13 @@
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { colors, spacing, typography } from "~/styles";
 
 function PartnerLogo({ sponsor }: { sponsor: Partner }) {
-  const { imageUrl } = usePartnerImageDownload(sponsor.logoPath);
-
   return (
-    <Image
+    <CachedImage
       testID="partner-logo"
-      source={imageUrl ? { uri: imageUrl } : undefined}
+      storagePath={sponsor.logoPath}
       style={[
         styles.logo,
         sponsor.height ? { height: sponsor.height } : undefined,
@@ -22,6 +20,7 @@ function PartnerLogo({ sponsor }: { sponsor: Partner }) {
             }
           : undefined,
       ]}
+      contentFit="contain"
     />
   );
 }

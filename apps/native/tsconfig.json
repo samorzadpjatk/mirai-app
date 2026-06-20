@@ -15,7 +15,7 @@
   "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
   "exclude": ["**/node_modules/**", "dist/**", ".expo/**", "coverage/**"],
   "references": [
-    { "path": "../../packages/shared" },
+    { "path": "../../packages/common" },
     { "path": "../../packages/supabase" },
     { "path": "../../packages/auth" },
     { "path": "../../packages/orpc" }

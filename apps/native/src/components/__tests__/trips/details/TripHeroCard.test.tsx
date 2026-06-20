@@ -2,10 +2,6 @@ import { screen } from "@testing-library/react-native";
 import { TripHeroCard } from "../../../trips/details/TripHeroCard";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 
-jest.mock("~/hooks/trips/useTripBackgroundImageDownload", () => ({
-  useTripBackgroundImageDownload: () => ({ imageUrl: null }),
-}));
-
 describe("TripHeroCard", () => {
   it("should render trip name", () => {
     renderWithProviders(

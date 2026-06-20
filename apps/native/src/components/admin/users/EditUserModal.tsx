@@ -1,4 +1,4 @@
-import { formatDisplayName } from "@mirai-app/shared/users";
+import { formatDisplayName } from "@mirai-app/common/users";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { DateTimePickerModal, FormField, ThemedTextInput } from "~/components/common/ui";

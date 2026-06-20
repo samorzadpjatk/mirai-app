@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
-import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import miraiLogo from "../../../../assets/mirai_logo.png";
 import type { TripListItem } from "./types";
@@ -34,11 +34,11 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
 
 export function TripCard({ trip, onPress }: TripCardProps) {
   const status = getTripStatus(trip.startDate, trip.endDate);
-  const { imageUrl } = useTripBackgroundImageDownload(trip.backgroundImagePath);
   const isPast = status === "Past";
+  const hasBackgroundImage = Boolean(trip.backgroundImagePath);
 
   // Don't render the image background if no URL is available
-  if (!imageUrl) {
+  if (!hasBackgroundImage) {
     return (
       <TouchableOpacity
         style={[styles.tripCard, styles.tripCardNoImage, isPast && styles.pastTripCard]}
@@ -70,31 +70,30 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <ImageBackground
-        source={{ uri: imageUrl }}
+      <CachedImage
+        storagePath={trip.backgroundImagePath ?? undefined}
         style={styles.tripImageBackground}
-        imageStyle={styles.tripImage}
-      >
-        <View style={styles.tripOverlay} />
-        <View style={styles.tripLogoBadge}>
-          <Image source={miraiLogo} style={styles.tripLogo} contentFit="contain" />
-        </View>
-        <View style={styles.tripContent}>
-          <View style={styles.badgeRow}>
-            <View style={styles.tripBadge}>
-              <Text style={styles.tripBadgeText}>{status}</Text>
-            </View>
+        contentFit="cover"
+      />
+      <View style={styles.tripOverlay} />
+      <View style={styles.tripLogoBadge}>
+        <Image source={miraiLogo} style={styles.tripLogo} contentFit="contain" />
+      </View>
+      <View style={styles.tripContent}>
+        <View style={styles.badgeRow}>
+          <View style={styles.tripBadge}>
+            <Text style={styles.tripBadgeText}>{status}</Text>
           </View>
-          <Text style={styles.tripTitle}>{trip.name}</Text>
-          {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
-          <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
-          {trip.groups && trip.groups.length > 0 && (
-            <Text style={styles.tripGroups}>
-              {trip.groups.length} {trip.groups.length === 1 ? "group" : "groups"}
-            </Text>
-          )}
         </View>
-      </ImageBackground>
+        <Text style={styles.tripTitle}>{trip.name}</Text>
+        {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
+        <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
+        {trip.groups && trip.groups.length > 0 && (
+          <Text style={styles.tripGroups}>
+            {trip.groups.length} {trip.groups.length === 1 ? "group" : "groups"}
+          </Text>
+        )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -116,10 +115,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
   },
   tripImageBackground: {
-    width: "100%",
-    minHeight: 180,
-  },
-  tripImage: {
+    position: "absolute",
+    inset: 0,
     borderRadius: borderRadius.md,
   },
   tripOverlay: {

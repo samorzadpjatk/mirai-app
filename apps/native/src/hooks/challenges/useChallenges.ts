@@ -1,12 +1,12 @@
-import { orpc } from "@mirai-app/orpc/client";
 import {
   type DBChallenge,
   buildChallengeQueryInput,
   countCompletedChallenges,
   getNextChallengePageParam,
   mapChallengeToListItem,
-} from "@mirai-app/shared/challenges";
-import { calculateLeaderboardInfo, findUserGroup } from "@mirai-app/shared/trips";
+} from "@mirai-app/common/challenges";
+import { calculateLeaderboardInfo, findUserGroup } from "@mirai-app/common/trips";
+import { orpc } from "@mirai-app/orpc/client";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";

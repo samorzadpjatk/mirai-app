@@ -37,7 +37,7 @@ jest.mock("~/services/storage/storage", () => ({
   },
 }));
 
-import { calculateDistance } from "@mirai-app/shared/utils";
+import { calculateDistance } from "@mirai-app/common/utils";
 import type { LocationObject } from "expo-location";
 import {
   type BackgroundTaskDeps,

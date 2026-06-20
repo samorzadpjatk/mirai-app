@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useFileDownload } from "~/hooks/files";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
@@ -80,21 +79,6 @@ export function SubmissionReviewCard({
   const hasText = textContent.length > 0;
   const statusMeta = getStatusMeta(submission.status);
   const reviewerName = formatPersonName(submission.reviewedBy);
-  const { download, status: imageStatus, file, reset, abort } = useFileDownload();
-
-  useEffect(() => {
-    if (!hasImage) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageIds[0] ?? "" }).catch(() => undefined);
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, hasImage, reset, submission.imageIds]);
 
   return (
     <View style={styles.card}>
@@ -125,18 +109,16 @@ export function SubmissionReviewCard({
 
       {hasImage ? (
         <View style={styles.mediaWrap}>
-          {imageStatus === "loading" ? (
-            <View style={styles.mediaFallback}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : file?.uri ? (
-            <Image source={{ uri: file.uri }} style={styles.mediaImage} />
-          ) : (
-            <View style={styles.mediaFallback}>
-              <Ionicons name="image-outline" size={20} color={colors.textMuted} />
-              <Text style={styles.mediaFallbackText}>Image unavailable</Text>
-            </View>
-          )}
+          <CachedImage
+            storagePath={submission.imageIds[0] ?? undefined}
+            style={styles.mediaImage}
+            contentFit="cover"
+            fallback={
+              <View style={styles.mediaFallback}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            }
+          />
         </View>
       ) : null}
 

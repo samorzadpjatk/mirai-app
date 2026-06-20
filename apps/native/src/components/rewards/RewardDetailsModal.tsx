@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { commonStyles } from "~/styles/commonStyles";
 import {
   getRewardAvailabilityColor,
@@ -78,7 +79,7 @@ export default function RewardDetailsModal({
                 }}
               >
                 {images.map((imageUri, index) => (
-                  <Image
+                  <CachedImage
                     key={`${imageUri}-${index}`}
                     source={{ uri: imageUri }}
                     style={{
@@ -87,7 +88,8 @@ export default function RewardDetailsModal({
                       borderRadius: 12,
                       backgroundColor: "#0f2323",
                     }}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="none"
                   />
                 ))}
               </ScrollView>

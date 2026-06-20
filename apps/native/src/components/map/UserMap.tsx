@@ -22,6 +22,8 @@ export interface UserLocation {
   address?: string;
   /** Optional avatar image URL */
   avatarUrl?: string | null;
+  /** Optional Supabase storage path for the avatar */
+  avatarStoragePath?: string | null;
   /** ISO string or millis since epoch */
   lastActiveAt: string | number;
 }
@@ -83,9 +85,13 @@ export interface UserMapProps {
    */
   currentUserName?: string;
   /**
-   * Current logged-in user's avatar URL.
+   * Current user avatar URL shown on the map.
    */
   currentUserAvatarUrl?: string | null;
+  /**
+   * Current user avatar storage path shown on the map.
+   */
+  currentUserAvatarStoragePath?: string | null;
 }
 
 // Map style configuration (base style + optional raster overlays)
@@ -220,6 +226,7 @@ export function buildFilteredUsers(
   currentUserLocation: [number, number] | null,
   currentUserName: string | undefined,
   currentUserAvatarUrl: string | null | undefined,
+  currentUserAvatarStoragePath: string | null | undefined,
   canViewOthersLocations: boolean,
   canShareOwnLocation: boolean,
 ): UserLocation[] {
@@ -237,6 +244,7 @@ export function buildFilteredUsers(
       name: currentUserName,
       coordinate: currentUserLocation,
       avatarUrl: currentUserAvatarUrl ?? null,
+      avatarStoragePath: currentUserAvatarStoragePath ?? null,
       lastActiveAt: now,
     };
     displayUsers = [currentUser, ...displayUsers];
@@ -259,6 +267,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   currentUserId,
   currentUserName,
   currentUserAvatarUrl,
+  currentUserAvatarStoragePath,
 }) => {
   // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef>(null);
@@ -285,6 +294,7 @@ export const UserMap: React.FC<UserMapProps> = ({
         currentUserLocation,
         currentUserName,
         currentUserAvatarUrl,
+        currentUserAvatarStoragePath,
         canViewOthersLocations,
         canShareOwnLocation,
       ),
@@ -295,6 +305,7 @@ export const UserMap: React.FC<UserMapProps> = ({
       currentUserLocation,
       currentUserName,
       currentUserAvatarUrl,
+      currentUserAvatarStoragePath,
       canViewOthersLocations,
       canShareOwnLocation,
     ],
@@ -402,7 +413,12 @@ export const UserMap: React.FC<UserMapProps> = ({
           >
             <View style={styles.avatarShadow}>
               <View style={styles.avatarBorder}>
-                <UserAvatar name={user.name} size={34} imageUrl={user.avatarUrl} />
+                <UserAvatar
+                  name={user.name}
+                  size={34}
+                  imageUrl={user.avatarUrl}
+                  storagePath={user.avatarStoragePath}
+                />
               </View>
             </View>
           </PointAnnotation>

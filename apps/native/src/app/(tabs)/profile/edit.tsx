@@ -4,10 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCameraPermissions } from "expo-camera";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +19,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
-import { useFileDownload, useFileUpload } from "~/hooks/files";
+import { CachedImage } from "~/components/common/CachedImage";
+import { useFileUpload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 const sanitizeNameInput = (value: string) => value.replace(/\d+/g, "");
@@ -54,46 +54,10 @@ export default function EditProfileScreen() {
     progress: uploadProgress,
     reset: resetUpload,
   } = useFileUpload();
-  const {
-    download: downloadAvatar,
-    status: avatarStatus,
-    file: avatarFile,
-    reset: resetAvatar,
-    abort: abortAvatar,
-  } = useFileDownload();
-
   const avatarStoragePath = useMemo(() => {
     if (!currentUser?.id) return null;
     return `avatar/${currentUser.id}.jpg`;
   }, [currentUser?.id]);
-
-  const refreshAvatar = useCallback(
-    async (skipCache = false) => {
-      if (!avatarStoragePath) return;
-      resetAvatar();
-      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(() => undefined);
-    },
-    [avatarStoragePath, downloadAvatar, resetAvatar],
-  );
-
-  useEffect(() => {
-    if (!currentUser?.hasAvatar || !avatarStoragePath) {
-      resetAvatar();
-      return;
-    }
-
-    void refreshAvatar(true);
-    return () => {
-      abortAvatar();
-    };
-  }, [
-    abortAvatar,
-    avatarStoragePath,
-    currentUser?.hasAvatar,
-    currentUser?.updatedAt,
-    refreshAvatar,
-    resetAvatar,
-  ]);
 
   const updateAvatarMutation = useMutation(
     orpc.user.updateAvatar.mutationOptions({
@@ -116,12 +80,7 @@ export default function EditProfileScreen() {
   );
 
   const isUploading = uploadStatus === "uploading";
-  const isDownloading = avatarStatus === "loading";
-  const isBusy = isUploading || isDownloading || isPicking || isCameraOpen;
-  const remoteAvatarUri = avatarFile?.uri
-    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
-    : null;
-  const avatarUri = localAvatarPreviewUri || remoteAvatarUri;
+  const isBusy = isUploading || isPicking || isCameraOpen;
 
   const uploadAvatarAsset = useCallback(
     async (asset: UploadAsset) => {
@@ -138,9 +97,8 @@ export default function EditProfileScreen() {
       });
 
       await updateAvatarMutation.mutateAsync({ hasAvatar: true });
-      await refreshAvatar(true);
     },
-    [avatarStoragePath, currentUser?.id, refreshAvatar, resetUpload, updateAvatarMutation, upload],
+    [avatarStoragePath, currentUser?.id, resetUpload, updateAvatarMutation, upload],
   );
 
   const pickAvatarFromLibrary = useCallback(async () => {
@@ -269,19 +227,21 @@ export default function EditProfileScreen() {
             onPress={handleChangePhoto}
             disabled={isBusy}
           >
-            {avatarUri ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.image}
-                contentFit="cover"
-                cachePolicy="none"
-              />
-            ) : (
-              <View style={styles.placeholder}>
-                <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
-                <Text style={styles.placeholderText}>No photo selected</Text>
-              </View>
-            )}
+            <CachedImage
+              source={localAvatarPreviewUri ? { uri: localAvatarPreviewUri } : undefined}
+              storagePath={
+                !localAvatarPreviewUri && currentUser?.hasAvatar ? avatarStoragePath : null
+              }
+              cacheKey={currentUser?.updatedAt?.toISOString() ?? null}
+              fallback={
+                <View style={styles.placeholder}>
+                  <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+                  <Text style={styles.placeholderText}>No photo selected</Text>
+                </View>
+              }
+              style={styles.image}
+              contentFit="cover"
+            />
 
             <View style={styles.badge}>
               {isUploading ? (
@@ -296,7 +256,9 @@ export default function EditProfileScreen() {
               ) : (
                 <>
                   <Ionicons name="camera-outline" size={16} color={colors.white} />
-                  <Text style={styles.badgeText}>{avatarUri ? "Change Photo" : "Add Photo"}</Text>
+                  <Text style={styles.badgeText}>
+                    {localAvatarPreviewUri || currentUser?.hasAvatar ? "Change Photo" : "Add Photo"}
+                  </Text>
                 </>
               )}
             </View>

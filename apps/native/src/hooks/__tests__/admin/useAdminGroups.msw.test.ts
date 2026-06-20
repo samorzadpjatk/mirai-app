@@ -331,30 +331,33 @@ describe("useAdminGroups (MSW)", () => {
 
   it("should handle pagination", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
+      createORPCHandler(
+        ["group", "getAll"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              groups: [
+                {
+                  id: "group-1",
+                  name: "Group A",
+                  description: null,
+                  image: null,
+                  code: "CODEA",
+                  coins: 100,
+                  organizer: null,
+                  participants: [],
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
           return {
-            groups: [
-              {
-                id: "group-1",
-                name: "Group A",
-                description: null,
-                image: null,
-                code: "CODEA",
-                coins: 100,
-                organizer: null,
-                participants: [],
-              },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
+            groups: [],
+            pagination: { hasMore: false, offset, limit: 30 },
           };
-        }
-        return {
-          groups: [],
-          pagination: { hasMore: false, offset, limit: 30 },
-        };
-      }),
+        },
+      ),
       createORPCHandler(["user", "getAll"], () => []),
     );
 
@@ -435,29 +438,32 @@ describe("useAdminGroups (MSW)", () => {
     let resolveNextPage: (value: unknown) => void;
 
     server.use(
-      createORPCHandler(["group", "getAll"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
-          return {
-            groups: [
-              {
-                id: "group-1",
-                name: "Group A",
-                description: null,
-                image: null,
-                code: "CODEA",
-                coins: 100,
-                organizer: null,
-                participants: [],
-              },
-            ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
-          };
-        }
-        return new Promise((resolve) => {
-          resolveNextPage = resolve;
-        });
-      }),
+      createORPCHandler(
+        ["group", "getAll"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              groups: [
+                {
+                  id: "group-1",
+                  name: "Group A",
+                  description: null,
+                  image: null,
+                  code: "CODEA",
+                  coins: 100,
+                  organizer: null,
+                  participants: [],
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
+          return new Promise((resolve) => {
+            resolveNextPage = resolve;
+          });
+        },
+      ),
       createORPCHandler(["user", "getAll"], () => []),
     );
 
@@ -487,41 +493,44 @@ describe("useAdminGroups (MSW)", () => {
 
   it("should flatten multiple pages", async () => {
     server.use(
-      createORPCHandler(["group", "getAll"], ({ pagination }) => {
-        const offset = pagination?.offset ?? 0;
-        if (offset === 0) {
+      createORPCHandler(
+        ["group", "getAll"],
+        ({ pagination }: { pagination?: { offset?: number } }) => {
+          const offset = pagination?.offset ?? 0;
+          if (offset === 0) {
+            return {
+              groups: [
+                {
+                  id: "group-1",
+                  name: "Group A",
+                  description: null,
+                  image: null,
+                  code: "CODEA",
+                  coins: 100,
+                  organizer: null,
+                  participants: [],
+                },
+              ],
+              pagination: { hasMore: true, offset: 0, limit: 30 },
+            };
+          }
           return {
             groups: [
               {
-                id: "group-1",
-                name: "Group A",
+                id: "group-2",
+                name: "Group B",
                 description: null,
                 image: null,
-                code: "CODEA",
-                coins: 100,
+                code: "CODEB",
+                coins: 200,
                 organizer: null,
                 participants: [],
               },
             ],
-            pagination: { hasMore: true, offset: 0, limit: 30 },
+            pagination: { hasMore: false, offset, limit: 30 },
           };
-        }
-        return {
-          groups: [
-            {
-              id: "group-2",
-              name: "Group B",
-              description: null,
-              image: null,
-              code: "CODEB",
-              coins: 200,
-              organizer: null,
-              participants: [],
-            },
-          ],
-          pagination: { hasMore: false, offset, limit: 30 },
-        };
-      }),
+        },
+      ),
       createORPCHandler(["user", "getAll"], () => []),
     );
 

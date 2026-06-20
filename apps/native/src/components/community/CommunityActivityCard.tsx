@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
-import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
@@ -339,7 +339,16 @@ export const CommunityActivityCard = React.memo(
           >
             <View style={styles.avatarFrame}>
               {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+                <CachedImage
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  fallback={
+                    <View style={styles.avatarFallback}>
+                      <Text style={styles.avatarFallbackText}>{getInitials(owner.name)}</Text>
+                    </View>
+                  }
+                />
               ) : (
                 <View style={styles.avatarFallback}>
                   <Text style={styles.avatarFallbackText}>{getInitials(owner.name)}</Text>
@@ -375,7 +384,7 @@ export const CommunityActivityCard = React.memo(
           </View>
         ) : cardImage ? (
           <TouchableOpacity style={styles.mediaWrap} onPress={handleMediaPress}>
-            <Image source={{ uri: cardImage }} style={styles.mediaImage} contentFit="cover" />
+            <CachedImage source={{ uri: cardImage }} style={styles.mediaImage} contentFit="cover" />
           </TouchableOpacity>
         ) : null}
 

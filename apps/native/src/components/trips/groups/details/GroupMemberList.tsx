@@ -1,8 +1,6 @@
-import { orpc } from "@mirai-app/orpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export interface GroupMember {
@@ -19,24 +17,13 @@ interface GroupMemberListProps {
 }
 
 function MemberAvatar({ member }: { member: GroupMember }) {
-  const avatarQuery = useQuery({
-    ...orpc.storage.createDownloadUrl.queryOptions({
-      input: {
-        storagePath: member.avatarStoragePath ?? "",
-        expiresInSeconds: 60 * 60,
-      },
-    }),
-    enabled: Boolean(member.avatarStoragePath),
-    staleTime: 15 * 60 * 1000,
-    retry: false,
-  });
-
-  if (avatarQuery.data?.signedUrl) {
+  if (member.avatarStoragePath) {
     return (
-      <Image
-        source={{ uri: avatarQuery.data.signedUrl }}
+      <CachedImage
+        storagePath={member.avatarStoragePath}
         style={styles.avatarImage}
         contentFit="cover"
+        fallback={<Text style={styles.avatarText}>{member.initials}</Text>}
       />
     );
   }

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, type TextStyle, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { Text, type TextStyle, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type Challenge, ChallengeStatus } from "../../types/challenges";
 
@@ -276,10 +277,10 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                       marginLeft: -4,
                     }}
                   >
-                    <Image
+                    <CachedImage
                       source={{ uri: avatar }}
                       style={{ width: "100%", height: "100%" }}
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                   </View>
                 ))}

@@ -1,4 +1,4 @@
-import { calculateDistance } from "@mirai-app/shared/utils";
+import { calculateDistance } from "@mirai-app/common/utils";
 
 export function toFiniteNumberOrUndefined(value: unknown): number | undefined {
   if (typeof value !== "number" || !Number.isFinite(value)) {

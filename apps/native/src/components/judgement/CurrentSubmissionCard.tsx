@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Text, View, type ViewStyle } from "react-native";
 import Animated, { type AnimatedStyle } from "react-native-reanimated";
+import { CachedImage } from "~/components/common/CachedImage";
 import { SubmissionAssetPreview } from "~/components/judgement/SubmissionAssetPreview";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
@@ -35,7 +35,7 @@ const CurrentSubmissionCard = ({
       <View style={viewStyles.cardHeader}>
         <View style={viewStyles.groupAvatar}>
           {submission.group.image ? (
-            <Image
+            <CachedImage
               source={{ uri: submission.group.image }}
               style={viewStyles.groupAvatarImage}
               contentFit="cover"

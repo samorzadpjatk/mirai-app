@@ -67,6 +67,7 @@ describe("buildFilteredUsers", () => {
       null,
       undefined,
       null,
+      null,
       false,
       false,
     );
@@ -80,6 +81,7 @@ describe("buildFilteredUsers", () => {
       undefined,
       null,
       undefined,
+      null,
       null,
       true,
       false,
@@ -95,6 +97,7 @@ describe("buildFilteredUsers", () => {
       null,
       undefined,
       null,
+      null,
       true,
       false,
     );
@@ -109,6 +112,7 @@ describe("buildFilteredUsers", () => {
       [21, 52],
       "Me",
       "https://example.com/avatar.jpg",
+      null,
       true,
       true,
     );
@@ -118,13 +122,14 @@ describe("buildFilteredUsers", () => {
       name: "Me",
       coordinate: [21, 52],
       avatarUrl: "https://example.com/avatar.jpg",
+      avatarStoragePath: null,
       lastActiveAt: now,
     });
     expect(result[1]).toEqual(activeUser);
   });
 
   it("should not prepend current user when missing required fields", () => {
-    const result = buildFilteredUsers([activeUser], now, "me", null, "Me", null, true, true);
+    const result = buildFilteredUsers([activeUser], now, "me", null, "Me", null, null, true, true);
     expect(result).toEqual([activeUser]);
   });
 });

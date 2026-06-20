@@ -1,14 +1,13 @@
 import { useLocalSearchParams } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
-import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
+import { CachedImage } from "~/components/common/CachedImage";
 import { useSponsorById } from "~/hooks/sponsors/useSponsors";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export default function PartnerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: sponsor, isLoading, error } = useSponsorById(id ?? "");
-  const { imageUrl } = usePartnerImageDownload(sponsor?.logoPath);
 
   if (isLoading) {
     return <LoadingScreen message="Loading sponsor..." />;
@@ -26,7 +25,11 @@ export default function PartnerDetailScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoWrapper}>
-          <Image source={imageUrl ? { uri: imageUrl } : undefined} style={styles.logo} />
+          <CachedImage
+            storagePath={sponsor?.logoPath ?? undefined}
+            style={styles.logo}
+            contentFit="contain"
+          />
         </View>
 
         <Text style={styles.name}>{sponsor.name}</Text>

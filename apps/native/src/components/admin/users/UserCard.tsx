@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName } from "@mirai-app/shared/users";
+import { formatDisplayName } from "@mirai-app/common/users";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { User } from "~/hooks/admin/useAdminUsers";
 import { borderRadius, colors, spacing, typography } from "~/styles";

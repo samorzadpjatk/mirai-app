@@ -5,14 +5,6 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 
 const noop = (): void => void 0;
 
-jest.mock("~/hooks/trips/useTripBackgroundImageDownload", () => ({
-  useTripBackgroundImageDownload: () => ({ imageUrl: null }),
-}));
-
-jest.mock("expo-image", () => ({
-  Image: "Image",
-}));
-
 const mockTrip: TripListItem = {
   id: "1",
   name: "Summer Adventure",

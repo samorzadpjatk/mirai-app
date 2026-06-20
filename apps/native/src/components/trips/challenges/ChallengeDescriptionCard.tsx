@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeDescriptionCardProps {
@@ -13,10 +14,10 @@ export function ChallengeDescriptionCard({ description, imageUrl }: ChallengeDes
         {description ?? "Complete this challenge to earn points for your group!"}
       </Text>
       {imageUrl ? (
-        <Image
+        <CachedImage
           source={{ uri: imageUrl }}
           style={styles.image}
-          resizeMode="cover"
+          contentFit="cover"
           testID="challenge-image"
           accessibilityLabel="Challenge image"
         />

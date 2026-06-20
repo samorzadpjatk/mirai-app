@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { useFileDownload } from "~/hooks/files";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
@@ -15,13 +15,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const videoContainerRef = useRef<View>(null);
   const [isVideoFullyVisible, setIsVideoFullyVisible] = useState(false);
   const [isFullscreenImageVisible, setIsFullscreenImageVisible] = useState(false);
-  const {
-    download: downloadImage,
-    status: imageStatus,
-    file: imageFile,
-    reset: resetImage,
-    abort: abortImage,
-  } = useFileDownload();
+  const firstImageStoragePath = submission.imageIds[0] ?? null;
   const {
     download: downloadVideo,
     status: videoStatus,
@@ -47,30 +41,10 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     });
   }, [height, width]);
 
-  useEffect(() => {
-    if (!hasImage) {
-      resetImage();
-      return;
-    }
-
-    resetImage();
-    void downloadImage({
-      storagePath: submission.imageIds[0] ?? "",
-      skipCache: true,
-    }).catch(() => {
-      // Submission metadata can arrive before the file is reachable in storage.
-      // The UI already handles missing image with a fallback state.
-    });
-
-    return () => {
-      abortImage();
-    };
-  }, [abortImage, downloadImage, hasImage, resetImage, submission.imageIds]);
-
   const openFullscreenImage = useCallback(() => {
-    if (!imageFile?.uri) return;
+    if (!firstImageStoragePath) return;
     setIsFullscreenImageVisible(true);
-  }, [imageFile?.uri]);
+  }, [firstImageStoragePath]);
 
   const closeFullscreenImage = useCallback(() => {
     setIsFullscreenImageVisible(false);
@@ -113,24 +87,20 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     return (
       <>
         <View style={viewStyles.mediaWrapper}>
-          {imageStatus === "loading" ? (
-            <View style={viewStyles.mediaLoading}>
-              <ActivityIndicator testID="image-loading" size="small" color={colors.primary} />
-            </View>
-          ) : imageFile?.uri ? (
-            <Pressable onPress={openFullscreenImage}>
-              <Image
-                source={{ uri: imageFile.uri }}
-                style={viewStyles.mediaImage}
-                contentFit="cover"
-              />
-            </Pressable>
-          ) : (
-            <View style={viewStyles.mediaLoading}>
-              <Ionicons name="image" size={36} color={colors.textSecondary} />
-              <Text style={textStyles.videoLabel}>Image unavailable</Text>
-            </View>
-          )}
+          <Pressable onPress={openFullscreenImage}>
+            <CachedImage
+              testID="submission-preview-image"
+              storagePath={firstImageStoragePath ?? undefined}
+              style={viewStyles.mediaImage}
+              contentFit="cover"
+              fallback={
+                <View style={viewStyles.mediaLoading}>
+                  <Ionicons name="image" size={36} color={colors.textSecondary} />
+                  <Text style={textStyles.videoLabel}>Image unavailable</Text>
+                </View>
+              }
+            />
+          </Pressable>
           {submission.imageIds.length > 1 && (
             <View style={viewStyles.mediaBadge}>
               <Ionicons name="images" size={14} color={colors.white} />
@@ -149,18 +119,18 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
             <Pressable style={viewStyles.fullscreenImageClose} onPress={closeFullscreenImage}>
               <Ionicons name="close" size={24} color={colors.white} />
             </Pressable>
-            {imageFile?.uri ? (
-              <Image
-                source={{ uri: imageFile.uri }}
-                style={viewStyles.fullscreenImage}
-                contentFit="contain"
-              />
-            ) : (
-              <View style={viewStyles.mediaLoading}>
-                <Ionicons name="image" size={36} color={colors.textSecondary} />
-                <Text style={textStyles.videoLabel}>Image unavailable</Text>
-              </View>
-            )}
+            <CachedImage
+              testID="fullscreen-image"
+              storagePath={firstImageStoragePath ?? undefined}
+              style={viewStyles.fullscreenImage}
+              contentFit="contain"
+              fallback={
+                <View style={viewStyles.mediaLoading}>
+                  <Ionicons name="image" size={36} color={colors.textSecondary} />
+                  <Text style={textStyles.videoLabel}>Image unavailable</Text>
+                </View>
+              }
+            />
           </View>
         </Modal>
       </>

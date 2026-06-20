@@ -1,11 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useFileDownload } from "~/hooks/files";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 const getRoleColor = (role: string) => {
@@ -61,20 +59,21 @@ const getRoleBadgeStyle = (role: string) => {
   }
 };
 
+function buildAvatarFallback(initials: string) {
+  return (
+    <View style={styles.avatarFallback}>
+      <Text style={styles.avatarLargeText}>{initials}</Text>
+    </View>
+  );
+}
+
 export function ProfileHeader() {
   const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
-  const {
-    download: downloadAvatar,
-    status: avatarStatus,
-    file: avatarFile,
-    reset: resetAvatar,
-    abort: abortAvatar,
-  } = useFileDownload();
 
   const avatarStoragePath = useMemo(() => {
-    if (!currentUser?.id) return null;
+    if (!currentUser?.id || !currentUser.hasAvatar) return null;
     return `avatar/${currentUser.id}.jpg`;
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.hasAvatar]);
 
   const first = currentUser?.firstName;
   const last = currentUser?.lastName;
@@ -82,62 +81,22 @@ export function ProfileHeader() {
   const initials = `${first?.charAt(0) ?? ""}${last?.charAt(0) ?? ""}`;
   const roleColor = getRoleColor(roleValue);
   const roleBadgeStyle = getRoleBadgeStyle(roleValue);
-  const isDownloading = avatarStatus === "loading";
-  const avatarUri = avatarFile?.uri
-    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
-    : null;
-
-  const refreshAvatar = useCallback(
-    async (skipCache = false) => {
-      if (!avatarStoragePath) return;
-      resetAvatar();
-      await downloadAvatar({ storagePath: avatarStoragePath, skipCache }).catch(() => undefined);
-    },
-    [avatarStoragePath, downloadAvatar, resetAvatar],
-  );
-
-  useEffect(() => {
-    if (!currentUser?.hasAvatar || !avatarStoragePath) {
-      resetAvatar();
-      return;
-    }
-
-    void refreshAvatar();
-
-    return () => {
-      abortAvatar();
-    };
-  }, [
-    abortAvatar,
-    avatarStoragePath,
-    currentUser?.hasAvatar,
-    currentUser?.updatedAt,
-    refreshAvatar,
-    resetAvatar,
-  ]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!currentUser?.hasAvatar || !avatarStoragePath) return;
-      void refreshAvatar(true);
-    }, [avatarStoragePath, currentUser?.hasAvatar, refreshAvatar]),
-  );
+  const updatedAtValue = currentUser?.updatedAt;
+  const avatarCacheKey = updatedAtValue === undefined ? "no-avatar" : String(updatedAtValue);
 
   return (
     <View testID="profile-header" style={styles.profileHeader}>
       <View style={styles.avatarLarge}>
-        {avatarUri ? (
-          <Image
-            source={{ uri: avatarUri }}
+        {avatarStoragePath ? (
+          <CachedImage
+            storagePath={avatarStoragePath}
+            cacheKey={avatarCacheKey}
             style={styles.avatarImage}
             contentFit="cover"
-            cachePolicy="none"
+            fallback={buildAvatarFallback(initials)}
           />
         ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarLargeText}>{initials}</Text>
-            {isDownloading ? <Text style={styles.avatarLoadingText}>Loading...</Text> : null}
-          </View>
+          buildAvatarFallback(initials)
         )}
       </View>
 
@@ -190,10 +149,6 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: typography.bold,
     color: colors.primary,
-  },
-  avatarLoadingText: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
   },
   userName: {
     fontSize: typography.xxl,

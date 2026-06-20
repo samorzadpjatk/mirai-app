@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
-import { useInfiniteQuery, useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -386,22 +386,12 @@ export default function AdminChallengesScreen() {
     });
   }, [challenges, selectedStatusFilter, selectedTypeFilter, nameFilter]);
 
-  const judgedStaffChallengesForProgress = useMemo(
-    () => filteredChallenges.filter((challenge) => challenge.scoringCategory === "JUDGED_STAFF"),
-    [filteredChallenges],
-  );
-
-  const judgedStaffProgressQueries = useQueries({
-    queries: judgedStaffChallengesForProgress.map((challenge) => ({
-      ...orpc.challengeVote.getJudgedStaffProgress.queryOptions({
-        input: {
-          challengeId: challenge.id,
-          tripId,
-        },
-      }),
-      enabled: Boolean(tripId),
-      staleTime: 5 * 60 * 1000,
-    })),
+  const { data: judgedStaffProgressByTrip } = useQuery({
+    ...orpc.challengeVote.getJudgedStaffProgressByTrip.queryOptions({
+      input: { tripId },
+    }),
+    enabled: Boolean(tripId),
+    staleTime: 5 * 60 * 1000,
   });
 
   const judgedStaffProgressByChallengeId = useMemo(() => {
@@ -414,19 +404,18 @@ export default function AdminChallengesScreen() {
       }
     >();
 
-    judgedStaffChallengesForProgress.forEach((challenge, index) => {
-      const data = judgedStaffProgressQueries[index]?.data;
-      if (!data) return;
+    if (!judgedStaffProgressByTrip) return map;
 
-      map.set(challenge.id, {
+    for (const [challengeId, data] of Object.entries(judgedStaffProgressByTrip)) {
+      map.set(challengeId, {
         votedAdmins: data.votedAdmins,
         totalAdmins: data.totalAdmins,
         pendingAdmins: data.pendingAdmins,
       });
-    });
+    }
 
     return map;
-  }, [judgedStaffChallengesForProgress, judgedStaffProgressQueries]);
+  }, [judgedStaffProgressByTrip]);
 
   if (isLoading) {
     return (

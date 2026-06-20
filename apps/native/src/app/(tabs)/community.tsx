@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -15,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CachedImage } from "~/components/common/CachedImage";
 
 import {
   CommunityActivityCard,
@@ -32,10 +32,9 @@ import {
   FilterChipRow,
   TripPickerModal,
 } from "~/components/common/ui";
-import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
-import { useSelectedTrip, useTrips } from "~/hooks/trips";
-import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { useHomeFull } from "~/hooks/home";
+import { useSelectedTrip } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
 
 type ActivityFilter = "all" | Activity["activityType"];
@@ -65,7 +64,7 @@ export default function CommunityScreen() {
     isFetchingNextPage: isFetchingMoreTrips,
     fetchNextPage: fetchMoreTrips,
     refetch: refetchTrips,
-  } = useTrips();
+  } = useHomeFull();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
 
   const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
@@ -82,9 +81,7 @@ export default function CommunityScreen() {
     return trips.find((trip) => trip.id === selectedTripId) ?? null;
   }, [selectedTripId, trips]);
 
-  const { imageUrl: tripImageUrl } = useTripBackgroundImageDownload(
-    selectedTrip?.backgroundImagePath,
-  );
+  const tripImageStoragePath = selectedTrip?.backgroundImagePath ?? null;
 
   const shouldAutoOpenTripPicker =
     trips.length > 0 && (!selectedTripId || !selectedTrip) && !hasDismissedAutoPicker;
@@ -110,15 +107,12 @@ export default function CommunityScreen() {
       : params.focusActivityId?.[0];
   }, [params.focusActivityId]);
 
-  const { feedQuery, filteredActivities, handleToggleHeart } = useCommunityFeed({
-    selectedTripId: selectedTrip?.id ?? null,
-    selectedFilter,
-    focusActivityId,
-  });
-
-  const { rankingData, avatarUrls } = useCommunityActivityData({
-    activities: filteredActivities,
-  });
+  const { feedQuery, filteredActivities, handleToggleHeart, rankingData, avatarUrls } =
+    useCommunityFeed({
+      selectedTripId: selectedTrip?.id ?? null,
+      selectedFilter,
+      focusActivityId,
+    });
 
   const handleSelectFilter = useCallback(
     (filter: ActivityFilter) => {
@@ -280,9 +274,9 @@ export default function CommunityScreen() {
             onPress={handleOpenTripPicker}
             activeOpacity={0.8}
           >
-            {tripImageUrl ? (
-              <Image
-                source={{ uri: tripImageUrl }}
+            {tripImageStoragePath ? (
+              <CachedImage
+                storagePath={tripImageStoragePath}
                 style={styles.tripTileImage}
                 contentFit="cover"
               />

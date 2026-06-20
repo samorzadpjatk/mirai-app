@@ -73,7 +73,7 @@ bun run release:ios:submit
 
 ### Internal
 
-`@mirai-app/auth` · `@mirai-app/shared` · `@mirai-app/supabase` · `@mirai-app/orpc`
+`@mirai-app/auth` · `@mirai-app/common` · `@mirai-app/supabase` · `@mirai-app/orpc`
 
 ### Key External
 
@@ -91,7 +91,7 @@ bun run release:ios:submit
 See [Native Code Quality](./../../docs/apps/native/code-quality.md) and [Testing Conventions](./../../docs/conventions/testing.md) for detailed standards. Key rules:
 
 - **Bundle Budget**: Every KB matters for OTA. Verify dependencies >5KB replace existing ones.
-- **Hook Test Anti-Patterns**: Stop mock-verification hook tests. Extract pure domain logic to `@mirai-app/shared`.
+- **Hook Test Anti-Patterns**: Stop mock-verification hook tests. Extract pure domain logic to `@mirai-app/common`.
 - **Pure Function Extraction**: Name with `calculateXxx`, `syncXxx`, `executeXxx`, `buildXxx`, `toXxxOrNull`.
 - **Mock Removal for UI**: Render real components. Query by descriptive `testID` props.
 - **MSW Patterns**: Use Mock Service Worker for API mocking in component tests. Avoid mocking React Query internals.

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { formatDisplayName } from "@mirai-app/shared/users";
+import { formatDisplayName } from "@mirai-app/common/users";
 import type React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";

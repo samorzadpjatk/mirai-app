@@ -1,6 +1,5 @@
-import { orpc } from "@mirai-app/orpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -19,31 +18,21 @@ export function SubmissionImageCard({
   onPress,
   disabled = false,
 }: SubmissionImageCardProps) {
-  const { data, isLoading } = useQuery({
-    ...orpc.storage.createDownloadUrl.queryOptions({
-      input: {
-        storagePath: submission.imagePath,
-      },
-    }),
-    enabled: !!submission.imagePath,
-  });
-
   const content = (
     <View style={styles.voteCard}>
       <View style={styles.voteImageWrap}>
-        {isLoading ? (
-          <View style={styles.voteImageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : data?.signedUrl ? (
-          <Image source={{ uri: data.signedUrl }} style={styles.voteImage} />
-        ) : (
-          <View style={styles.voteImageFallback}>
-            <Text style={styles.voteImageFallbackText}>
-              {submission.groupName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <CachedImage
+          storagePath={submission.imagePath ?? undefined}
+          style={styles.voteImage}
+          contentFit="cover"
+          fallback={
+            <View style={styles.voteImageFallback}>
+              <Text style={styles.voteImageFallbackText}>
+                {submission.groupName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          }
+        />
       </View>
       <View style={styles.voteCardBody}>
         <Text style={styles.voteCardTitle}>{title}</Text>
