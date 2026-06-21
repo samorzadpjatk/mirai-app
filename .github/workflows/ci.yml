@@ -46,6 +46,59 @@ env:
   NX_BAIL: true
 
 jobs:
+  detect-changes:
+    name: Detect Critical Changes
+    runs-on: ubuntu-latest
+    outputs:
+      is_critical: ${{ steps.detect.outputs.is_critical }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch base branch for change detection
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          git fetch origin ${{ github.base_ref }}
+
+      - name: Detect critical path changes
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "is_critical=false" >> $GITHUB_OUTPUT
+            echo "## ✅ No Critical Path Detection Needed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Push to main always runs the full suite." >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          CRITICAL_FILES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -E '^(packages/auth/|packages/db/src/schema/|packages/db/drizzle/)' || true)
+
+          if [ -n "$CRITICAL_FILES" ]; then
+            echo "is_critical=true" >> $GITHUB_OUTPUT
+            echo "## ⚠️ Critical Path Changes Detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Changes to the following critical paths were detected:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$CRITICAL_FILES" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "All test shards will run the full suite via nx run-many instead of nx affected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "is_critical=false" >> $GITHUB_OUTPUT
+            echo "## ✅ No Critical Path Changes" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No critical paths changed. Test shards will use nx affected for incremental testing." >> $GITHUB_STEP_SUMMARY
+          fi
+
   lint:
     name: Lint & Format Check
     runs-on: ubuntu-latest
@@ -199,8 +252,13 @@ jobs:
           fi
 
   test:
-    name: Test Suite
+    name: Test Suite (${{ matrix.shard }})
+    needs: detect-changes
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [native, common, orpc, rest]
     permissions:
       contents: read
       pull-requests: write
@@ -223,43 +281,103 @@ jobs:
       - name: Setup monorepo environment
         uses: ./.github/actions/setup-monorepo
 
+      - name: Determine projects for shard
+        id: projects
+        run: |
+          case "${{ matrix.shard }}" in
+            native)
+              PROJECTS="@mirai-app/native"
+              EXCLUDE=""
+              ;;
+            common)
+              PROJECTS="@mirai-app/common"
+              EXCLUDE=""
+              ;;
+            orpc)
+              PROJECTS="@mirai-app/orpc"
+              EXCLUDE=""
+              ;;
+            rest)
+              PROJECTS=""
+              EXCLUDE="@mirai-app/native,@mirai-app/common,@mirai-app/orpc,@mirai-app/monorepo"
+              ;;
+          esac
+          echo "projects=$PROJECTS" >> $GITHUB_OUTPUT
+          echo "exclude=$EXCLUDE" >> $GITHUB_OUTPUT
+          echo "Shard: ${{ matrix.shard }} | projects=$PROJECTS | exclude=$EXCLUDE"
+
       - name: Run tests
         id: test
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bunx nx affected -t test:ci --base=origin/${{ github.base_ref }}
+          IS_PR="${{ github.event_name == 'pull_request' }}"
+          IS_CRITICAL="${{ needs.detect-changes.outputs.is_critical }}"
+          PROJECTS="${{ steps.projects.outputs.projects }}"
+          EXCLUDE="${{ steps.projects.outputs.exclude }}"
+
+          if [ "$IS_PR" = "true" ] && [ "$IS_CRITICAL" != "true" ]; then
+            CMD="bunx nx affected -t test:ci --base=origin/${{ github.base_ref }}"
           else
-            bunx nx run-many -t test:ci --exclude=@mirai-app/monorepo
+            CMD="bunx nx run-many -t test:ci"
           fi
 
-      - name: Collect coverage reports
-        id: collect_coverage
+          if [ -n "$PROJECTS" ]; then
+            CMD="$CMD --projects=$PROJECTS"
+          fi
+          if [ -n "$EXCLUDE" ]; then
+            CMD="$CMD --exclude=$EXCLUDE"
+          fi
+
+          echo "Running: $CMD"
+          eval "$CMD"
+
+      - name: Upload coverage artifacts
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.shard }}
+          path: ./**/coverage/**
+          retention-days: 7
+
+  coverage-report:
+    name: Coverage Report
+    needs: [detect-changes, test]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: ./all-coverage
+          merge-multiple: false
+
+      - name: Collect and merge coverage
+        id: collect_coverage
         run: |
           mkdir -p ./coverage
-          find . -path ./node_modules -prune -o -path ./.bun -prune -o -path ./.nx/cache -prune -o -path ./coverage -prune -o -name "lcov.info" -type f -print | while read file; do
-            project_dir=$(dirname "$file" | sed 's|^\./||' | sed 's|/coverage$||')
+
+          find ./all-coverage/ -type f -name "lcov.info" | while read -r file; do
+            # Strip the all-coverage artifact prefix and remove the trailing coverage/lcov.info
+            # so project_dir is the project root (e.g., apps/native) and SF: lines can be made workspace-relative.
+            project_dir=$(echo "$file" | sed -E 's|^\./all-coverage/[^/]+/||; s|/coverage/lcov\.info$||')
             safe_dir=$(echo "$project_dir" | tr '/' '_')
             output_file="./coverage/lcov_${safe_dir}.info"
 
-            # Rewrite SF: lines to prepend the project directory.
-            # Vitest outputs project-relative paths (e.g., SF:src/config.ts).
-            # diff-cover needs workspace-relative paths to match git diff.
             sed "s|^SF:|SF:${project_dir}/|" "$file" > "$output_file"
-
-            echo "Collected and rewrote: $file -> $output_file"
+            echo "Collected $file -> $output_file"
           done
-          ls -la ./coverage/ || echo "No coverage files found"
 
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-reports
-          path: |
-            ./coverage/**
-            ./**/coverage/**
-          retention-days: 30
+          ls -la ./coverage/ || echo "No coverage files found"
 
       - name: Check for coverage files
         id: check_coverage
@@ -283,34 +401,71 @@ jobs:
           create-annotations: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate test job summary
+      - name: Generate coverage summary
         if: always()
         run: |
-          MODE="${{ github.event_name == 'pull_request' && 'affected (incremental)' || 'run-many (full)' }}"
-          echo "## Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          MODE="${{ github.event_name == 'pull_request' && (needs.detect-changes.outputs.is_critical == 'true' && 'run-many (full, critical paths changed)' || 'affected (incremental)') || 'run-many (full)' }}"
+          CRITICAL="${{ needs.detect-changes.outputs.is_critical }}"
+
+          echo "## Coverage Report Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Event | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mode | $MODE |" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | ${{ steps.test.outcome == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "| Critical paths changed | ${{ needs.detect-changes.outputs.is_critical == 'true' && 'Yes' || 'No' }} |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Critical paths changed | N/A (push to main) |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| Shards | 4 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.test.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ steps.test.outcome }}" == "success" ]; then
-            echo "### ✅ Tests Passed" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ steps.test.outcome }}" == "failure" ]; then
-            echo "### ❌ Tests Failed" >> $GITHUB_STEP_SUMMARY
-            echo "Check step logs for failing test details." >> $GITHUB_STEP_SUMMARY
-            echo "::error::Test suite failed"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "### Per-Project Coverage Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Project | Lines Covered | Total Lines | Coverage % | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---------|---------------|-------------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+            shopt -s nullglob
+            for lcov_file in ./coverage/lcov_*.info; do
+              [ -f "$lcov_file" ] || continue
+
+              project_name=${lcov_file#./coverage/lcov_}
+              project_name=${project_name%.info}
+              project_name=$(echo "$project_name" | tr '_' '/')
+
+              total_lines=0
+              covered_lines=0
+              while IFS= read -r line; do
+                data=${line#DA:}
+                hits=${data##*,}
+                if [ "$hits" -gt 0 ] 2>/dev/null; then
+                  covered_lines=$((covered_lines + 1))
+                fi
+                total_lines=$((total_lines + 1))
+              done < <(grep '^DA:' "$lcov_file")
+
+              if [ "$total_lines" -gt 0 ]; then
+                coverage_pct=$(awk -v c="$covered_lines" -v t="$total_lines" 'BEGIN { printf "%.2f", (c/t)*100 }')
+                if awk -v p="$coverage_pct" 'BEGIN { exit !(p >= 80) }'; then
+                  status="✅"
+                else
+                  status="❌"
+                fi
+                echo "| $project_name | $covered_lines | $total_lines | $coverage_pct% | $status |" >> $GITHUB_STEP_SUMMARY
+              fi
+            done
+            shopt -u nullglob
+
+            echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
+          echo "### Coverage Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Coverage Reports" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Coverage artifacts uploaded to GitHub Actions" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            if [ "${{ steps.check_coverage.outputs.has_coverage }}" == "true" ]; then
-              echo "- PR diff coverage comment posted via diff-cover-action" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- No coverage files available for diff analysis" >> $GITHUB_STEP_SUMMARY
-            fi
+          if [ "${{ steps.check_coverage.outputs.has_coverage }}" = "true" ]; then
+            echo "- Coverage files collected and processed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- No coverage files available for reporting" >> $GITHUB_STEP_SUMMARY
           fi

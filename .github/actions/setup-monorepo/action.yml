@@ -22,9 +22,11 @@ runs:
           */*/node_modules
           apps/*/node_modules
           packages/*/node_modules
-        key: ${{ runner.os }}-bun-v2-${{ github.event_name }}-${{ hashFiles('bun.lock') }}
+        # Key by lockfile hash only — deps are identical across PR/push events.
+        # v3: removed event_name to allow cross-PR cache reuse.
+        key: ${{ runner.os }}-bun-v3-${{ hashFiles('bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-bun-v2-${{ github.event_name }}-
+          ${{ runner.os }}-bun-v3-
 
     - name: Install dependencies
       run: bun install --frozen-lockfile
@@ -34,6 +36,11 @@ runs:
       uses: actions/cache@v5.0.5
       with:
         path: .nx/cache
-        key: ${{ runner.os }}-nx-${{ github.event_name }}-${{ github.sha }}
+        # NX's internal cache is content-addressable (keyed by task input hash).
+        # The GHA cache is just storage — key by config that affects ALL tasks.
+        # v3: replaced github.sha (unique per commit, defeated reuse) with
+        # hash of bun.lock + nx.json + all package.json files.
+        # This enables cross-PR cache hits when config hasn't changed.
+        key: ${{ runner.os }}-nx-v3-${{ hashFiles('bun.lock', 'nx.json', '**/package.json') }}
         restore-keys: |
-          ${{ runner.os }}-nx-${{ github.event_name }}--
+          ${{ runner.os }}-nx-v3-

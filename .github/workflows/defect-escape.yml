@@ -1,0 +1,237 @@
+name: Defect Escape Analysis
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Number of days to analyze'
+        required: false
+        default: 7
+        type: number
+      threshold:
+        description: 'Escape rate threshold (%) that triggers a tracking issue'
+        required: false
+        default: 10
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DAYS_BACK: ${{ github.event.inputs.days_back || 7 }}
+      THRESHOLD: ${{ github.event.inputs.threshold || 10 }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Verify GitHub CLI
+        run: |
+          set -e
+          if ! command -v gh >/dev/null 2>&1; then
+            echo "GitHub CLI not found; installing..."
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+            sudo apt-get update
+            sudo apt-get install -y gh
+          fi
+          gh --version
+
+      - name: Collect metrics and generate report
+        run: |
+          set -e
+
+          CUTOFF=$(date -u -d "${DAYS_BACK} days ago" +%Y-%m-%dT%H:%M:%SZ)
+          THREE_DAYS=$((3 * 86400))
+          TODAY=$(date -u +%Y-%m-%d)
+          REPORT_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          # Ensure tracking label exists; ignore if it already does.
+          gh label create defect-escape-report \
+            --description "Automated defect escape tracking" \
+            --color FFA500 2>/dev/null || true
+
+          # Ensure a bug label exists if we want to use it; presence is optional.
+          gh label create bug \
+            --description "Something isn't working" \
+            --color d73a4a 2>/dev/null || true
+
+          # Collect merged PRs in the analysis window; continue with empty results on failure.
+          set +e
+          prs_json=$(gh pr list \
+            --state merged \
+            --limit 100 \
+            --json number,title,mergedAt,author,labels \
+            --jq "[.[] | select(.mergedAt > \"${CUTOFF}\")]" 2>/dev/null)
+          if [ $? -ne 0 ] || [ -z "$prs_json" ]; then
+            prs_json="[]"
+          fi
+
+          # Collect bug issues. Prefer the "bug" label, but fall back to title keywords if the label yields no results.
+          bug_query_output=$(gh issue list \
+            --state all \
+            --label bug \
+            --limit 100 \
+            --json number,title,createdAt,author,labels,body \
+            --jq "[.[] | select(.createdAt > \"${CUTOFF}\")]" 2>/dev/null)
+
+          if [ $? -ne 0 ] || [ -z "$bug_query_output" ] || [ "$bug_query_output" = "[]" ]; then
+            bug_query_output=$(gh issue list \
+              --state all \
+              --limit 100 \
+              --search "bug OR error OR crash OR broken OR fail in:title" \
+              --json number,title,createdAt,author,labels,body \
+              --jq "[.[] | select(.createdAt > \"${CUTOFF}\")]" 2>/dev/null)
+          fi
+          set -e
+
+          if [ -z "$bug_query_output" ]; then
+            bugs_json="[]"
+          else
+            bugs_json="$bug_query_output"
+          fi
+
+          total_prs=$(echo "$prs_json" | jq 'length')
+          total_bugs=$(echo "$bugs_json" | jq 'length')
+
+          # Correlate potential escaped defects: bug opened within 3 days of a merged PR.
+          escaped_json=$(jq -n \
+            --argjson prs "$prs_json" \
+            --argjson bugs "$bugs_json" \
+            --argjson three "$THREE_DAYS" \
+            '
+            [
+              $bugs[] as $bug |
+              {
+                bug: $bug,
+                matches: [
+                  $prs[] as $pr |
+                  select(
+                    (($bug.createdAt | fromdateiso8601) >= ($pr.mergedAt | fromdateiso8601)) and
+                    (($bug.createdAt | fromdateiso8601) - ($pr.mergedAt | fromdateiso8601) <= $three)
+                  ) |
+                  { pr, dt: (($bug.createdAt | fromdateiso8601) - ($pr.mergedAt | fromdateiso8601)) }
+                ]
+              }
+            ]
+            | map(select(.matches | length > 0))
+            | map(.matches |= sort_by(.dt))
+            | map({
+                bug_number: .bug.number,
+                bug_title: .bug.title,
+                bug_author: .bug.author.login,
+                bug_created: .bug.createdAt,
+                pr_number: .matches[0].pr.number,
+                pr_title: .matches[0].pr.title,
+                pr_author: .matches[0].pr.author.login,
+                pr_merged: .matches[0].pr.mergedAt,
+                reasons: [
+                  "opened within 3 days of PR #\(.matches[0].pr.number)",
+                  (if .bug.author.login == .matches[0].pr.author.login then "same author as PR" else null end),
+                  (if (((.bug.body // "") + " " + .bug.title) | test("(^|[^0-9])#\(.matches[0].pr.number)([^0-9]|$)")) then "references PR #\(.matches[0].pr.number)" else null end)
+                ] | map(select(. != null))
+              })
+          ')
+
+          escaped_count=$(echo "$escaped_json" | jq 'length')
+
+          if [ "$total_prs" -eq 0 ]; then
+            escape_rate="0"
+          else
+            escape_rate=$(awk -v e="$escaped_count" -v p="$total_prs" 'BEGIN { printf "%.2f", (e / p) * 100 }')
+          fi
+
+          # Build the markdown report.
+          {
+            echo "## Defect Escape Analysis Report"
+            echo ""
+            echo "- **Report date:** ${REPORT_DATE}"
+            echo "- **Analysis window:** last ${DAYS_BACK} days (since ${CUTOFF})"
+            echo "- **Threshold:** ${THRESHOLD}%"
+            echo ""
+
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Total PRs merged | ${total_prs} |"
+            echo "| Total bug issues opened | ${total_bugs} |"
+            echo "| Potential escaped defects | ${escaped_count} |"
+            echo "| Defect escape rate | ${escape_rate}% |"
+            echo ""
+
+            if awk -v rate="$escape_rate" -v th="$THRESHOLD" 'BEGIN { exit !(rate > th) }'; then
+              echo "⚠️ Escape rate (${escape_rate}%) exceeds the ${THRESHOLD}% threshold."
+            else
+              echo "✅ Escape rate (${escape_rate}%) is within the ${THRESHOLD}% threshold."
+            fi
+            echo ""
+
+            if [ "$total_prs" -eq 0 ]; then
+              echo "*No PRs merged in the last ${DAYS_BACK} days.*"
+              echo ""
+            else
+              echo "### Merged PRs"
+              echo ""
+              echo "| # | Title | Author | Merged At |"
+              echo "| --- | --- | --- | --- |"
+              echo "$prs_json" | jq -r '.[] | "| #\(.number) | \(.title) | @\(.author.login) | \(.mergedAt) |"'
+              echo ""
+            fi
+
+            if [ "$total_bugs" -eq 0 ]; then
+              echo "*No bug issues found — great!*"
+              echo ""
+            else
+              echo "### Bug issues opened"
+              echo ""
+              echo "| # | Title | Author | Opened At |"
+              echo "| --- | --- | --- | --- |"
+              echo "$bugs_json" | jq -r '.[] | "| #\(.number) | \(.title) | @\(.author.login) | \(.createdAt) |"'
+              echo ""
+            fi
+
+            if [ "$escaped_count" -eq 0 ]; then
+              echo "*No potential escaped defects detected.*"
+              echo ""
+            else
+              echo "### Potential escaped defects"
+              echo ""
+              echo "| Bug | PR | Correlation |"
+              echo "| --- | --- | --- |"
+              echo "$escaped_json" | jq -r '.[] | "| #\(.bug_number) \(.bug_title) | #\(.pr_number) \(.pr_title) | \(.reasons | join(", ")) |"'
+              echo ""
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Create or update tracking issue if the escape rate exceeds the threshold.
+          if awk -v rate="$escape_rate" -v th="$THRESHOLD" 'BEGIN { exit !(rate > th) }'; then
+            set +e
+            existing=$(gh issue list \
+              --label defect-escape-report \
+              --state open \
+              --json number \
+              --jq '.[0].number' 2>/dev/null)
+            set -e
+
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" \
+                --title "Weekly Defect Escape Report (${TODAY})" \
+                --body-file "$GITHUB_STEP_SUMMARY"
+            else
+              gh issue create \
+                --title "Weekly Defect Escape Report (${TODAY})" \
+                --body-file "$GITHUB_STEP_SUMMARY" \
+                --label defect-escape-report
+            fi
+          fi
