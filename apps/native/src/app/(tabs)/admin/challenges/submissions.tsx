@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   RefreshControl,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingScreen from "~/components/LoadingScreen";
 import {
   type SubmissionItem,
   SubmissionReviewCard,
@@ -178,11 +178,7 @@ export default function ChallengeSubmissionsScreen() {
   }
 
   if (submissionsQuery.isLoading || challengeQuery.isLoading) {
-    return (
-      <View style={styles.centeredScreen}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading submissions..." />;
   }
 
   if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {

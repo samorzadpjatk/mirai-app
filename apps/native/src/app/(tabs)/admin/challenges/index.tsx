@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LoadingScreen from "~/components/LoadingScreen";
 import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
@@ -83,12 +84,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
   },
   scrollView: {
     flex: 1,
@@ -418,11 +413,7 @@ export default function AdminChallengesScreen() {
   }, [judgedStaffProgressByTrip]);
 
   if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading challenges..." />;
   }
 
   return (

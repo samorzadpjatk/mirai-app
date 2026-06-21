@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
 import { colors, spacing, typography } from "../../../../styles";
@@ -115,8 +116,17 @@ export default function AdminTransactionsScreen() {
 
       {isLoading || groupsLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading transactions...</Text>
+          <Skeleton.Group testID="transactions-loading-skeleton">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`transaction-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={80}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList
@@ -175,8 +185,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     marginTop: spacing.md,

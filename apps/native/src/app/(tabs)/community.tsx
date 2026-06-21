@@ -22,6 +22,7 @@ import {
 } from "~/components/community/CommunityActivityCard";
 
 import LoadingScreen from "~/components/LoadingScreen";
+import { Skeleton } from "~/components/ui/Skeleton";
 
 import { useAuth } from "@mirai-app/auth/client";
 import { Logo } from "~/components";
@@ -302,9 +303,18 @@ export default function CommunityScreen() {
         ) : null}
 
         {selectedTrip && feedQuery.isLoading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingStateText}>Loading feed...</Text>
+          <View style={styles.feedSkeleton}>
+            <Skeleton.Group testID="community-feed-loading-skeleton">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton
+                  // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                  key={`feed-skeleton-${index}`}
+                  variant="box"
+                  width="100%"
+                  height={200}
+                />
+              ))}
+            </Skeleton.Group>
           </View>
         ) : null}
 
@@ -473,6 +483,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: spacing.md,
     paddingVertical: spacing.xl,
+  },
+  feedSkeleton: {
+    gap: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   loadingStateText: {
     color: colors.textSecondary,

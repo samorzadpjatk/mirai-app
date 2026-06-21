@@ -1,8 +1,9 @@
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, StatusBar, Text, TouchableOpacity, View } from "react-native";
+import { StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingScreen from "~/components/LoadingScreen";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { textStyles, viewStyles } from "~/styles/judgement";
@@ -34,11 +35,7 @@ export default function ChallengeJudgementScreen() {
   }
 
   if (challengeQuery.isLoading) {
-    return (
-      <View style={[viewStyles.container, viewStyles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading challenge..." />;
   }
 
   if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {

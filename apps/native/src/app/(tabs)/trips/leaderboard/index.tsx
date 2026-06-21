@@ -2,8 +2,9 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingScreen from "~/components/LoadingScreen";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
@@ -48,18 +49,7 @@ export default function LeaderboardScreen() {
   const restOfGroups = rankedGroups.slice(3);
 
   if (!tripId || tripLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.backgroundDark,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Loading leaderboard..." />;
   }
 
   if (!trip) {
