@@ -44,7 +44,7 @@ describe("PrimaryLoadingButton", () => {
     );
 
     expect(screen.queryByText("Loading")).toBeNull();
-    expect(screen.getByTestId("button-loading-indicator")).toBeOnTheScreen();
+    expect(screen.getByTestId("button-loading-skeleton-0")).toBeOnTheScreen();
   });
 
   it("should have disabled prop when isLoading is true", () => {

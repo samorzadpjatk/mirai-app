@@ -23,7 +23,7 @@ describe("CreateGroupButton", () => {
     renderWithProviders(<CreateGroupButton isSubmitting={true} onPress={jest.fn()} />);
 
     expect(screen.queryByText("Create Group")).toBeNull();
-    expect(screen.getByTestId("create-group-button-loading-indicator")).toBeTruthy();
+    expect(screen.getByTestId("create-group-button-loading-skeleton-0")).toBeTruthy();
   });
 
   it("should be disabled when isSubmitting is true", () => {

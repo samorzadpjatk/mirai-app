@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   type StyleProp,
   StyleSheet,
   Text,
@@ -7,6 +6,7 @@ import {
   TouchableOpacity,
   type ViewStyle,
 } from "react-native";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
 
 interface PrimaryLoadingButtonProps {
@@ -41,10 +41,12 @@ export function PrimaryLoadingButton({
       activeOpacity={activeOpacity}
     >
       {isLoading ? (
-        <ActivityIndicator
-          testID={`${testID}-loading-indicator`}
-          size="small"
-          color={colors.backgroundDark}
+        <Skeleton.Line
+          count={1}
+          height={typography.base}
+          style={styles.skeletonContainer}
+          testID={`${testID}-loading-skeleton`}
+          width="75%"
         />
       ) : (
         <Text style={[styles.buttonText, textStyle]}>{label}</Text>
@@ -65,5 +67,8 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     fontWeight: typography.bold,
     color: colors.backgroundDark,
+  },
+  skeletonContainer: {
+    alignItems: "center",
   },
 });
