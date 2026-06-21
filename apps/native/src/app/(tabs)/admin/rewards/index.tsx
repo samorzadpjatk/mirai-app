@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { CachedImage } from "~/components/common/CachedImage";
+import { Skeleton } from "~/components/ui/Skeleton";
 import {
   useAdminRewards,
   useRewardPurchaseHistory,
@@ -327,11 +327,12 @@ export default function AdminRewardsPage() {
                 </Text>
               </View>
             ) : purchasesLoading ? (
-              <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
-                <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
-                  Loading purchases...
-                </Text>
-              </View>
+              <Skeleton.Group style={{ flex: 1, padding: 16, gap: 12 }}>
+                <Skeleton.Line count={1} height={20} width="40%" />
+                <Skeleton height={100} variant="box" width="100%" />
+                <Skeleton height={100} variant="box" width="100%" />
+                <Skeleton height={100} variant="box" width="100%" />
+              </Skeleton.Group>
             ) : (
               <View style={{ gap: 12, paddingBottom: 20 }}>
                 <ScrollView
@@ -503,7 +504,12 @@ export default function AdminRewardsPage() {
                               }}
                             >
                               {updatePurchaseStatus.isPending ? (
-                                <ActivityIndicator size="small" color="#22c55e" />
+                                <Skeleton
+                                  colors={{ base: "#22c55e", highlight: "#86efac" }}
+                                  height={16}
+                                  variant="circle"
+                                  width={16}
+                                />
                               ) : (
                                 <Ionicons
                                   name="checkmark-circle-outline"
@@ -656,7 +662,7 @@ export default function AdminRewardsPage() {
                   <View
                     style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
                   >
-                    <ActivityIndicator size="small" color="#00ced1" />
+                    <Skeleton height={16} variant="line" width={120} />
                     <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
                       Loading more purchases...
                     </Text>
@@ -719,11 +725,25 @@ export default function AdminRewardsPage() {
               </Text>
             </View>
           ) : rewardsLoading ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
-              <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
-                Loading rewards...
-              </Text>
-            </View>
+            <Skeleton.Group style={{ flex: 1, padding: 16, gap: 12 }}>
+              <Skeleton.Line count={1} height={20} width="40%" />
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <Skeleton height={72} variant="box" width={72} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Skeleton.Line count={1} height={16} width="70%" />
+                  <Skeleton.Line count={1} height={14} width="90%" />
+                  <Skeleton.Line count={1} height={14} width="50%" />
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <Skeleton height={72} variant="box" width={72} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Skeleton.Line count={1} height={16} width="70%" />
+                  <Skeleton.Line count={1} height={14} width="90%" />
+                  <Skeleton.Line count={1} height={14} width="50%" />
+                </View>
+              </View>
+            </Skeleton.Group>
           ) : (
             <View style={{ gap: 16 }}>
               {rewards && rewards.length > 0 ? (
@@ -884,7 +904,7 @@ export default function AdminRewardsPage() {
                 <View
                   style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}
                 >
-                  <ActivityIndicator size="small" color="#00ced1" />
+                  <Skeleton height={16} variant="line" width={120} />
                   <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
                     Loading more rewards...
                   </Text>

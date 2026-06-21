@@ -1,16 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
 import { commonStyles } from "~/styles/commonStyles";
+import { RewardsHistoryLoadingState } from "./RewardsHistoryLoadingState";
 
 interface Props {
   tripId: string;
@@ -66,9 +60,9 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
   if (isLoading) {
     return (
-      <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>
+      <View style={commonStyles.container} testID="loading-indicator">
+        <RewardsHistoryLoadingState />
+        <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
           Loading claim history...
         </Text>
       </View>
@@ -321,7 +315,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
             {isFetchingNextPage ? (
               <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
-                <ActivityIndicator testID="loading-more-indicator" size="small" color="#00ced1" />
+                <Skeleton height={16} testID="loading-more-indicator" variant="line" width={120} />
                 <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
                   Loading more claim history...
                 </Text>

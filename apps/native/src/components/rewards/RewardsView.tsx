@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import { commonStyles } from "~/styles/commonStyles";
 import RewardCard from "./RewardCard";
 import RewardDetailsModal from "./RewardDetailsModal";
 import RewardPurchaseModal from "./RewardPurchaseModal";
+import { RewardsLoadingState } from "./RewardsLoadingState";
 import type { RewardListItem } from "./types";
 
 interface Props {
@@ -231,9 +231,11 @@ export default function RewardsView({ tripId }: Props) {
 
   if (isLoading) {
     return (
-      <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator testID="loading-indicator" size="large" color="#00ced1" />
-        <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading rewards...</Text>
+      <View style={commonStyles.container} testID="loading-indicator">
+        <RewardsLoadingState />
+        <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+          Loading rewards...
+        </Text>
       </View>
     );
   }
@@ -273,7 +275,6 @@ export default function RewardsView({ tripId }: Props) {
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text style={[commonStyles.h3]}>Rewards</Text>
-            {refreshing ? <ActivityIndicator size="small" color="#00ced1" /> : null}
             {lastRefreshTime && !refreshing && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <Ionicons name="refresh" size={14} color="#10b981" />
