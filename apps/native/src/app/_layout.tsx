@@ -74,7 +74,7 @@ function App() {
   });
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
 
   useEffect(() => {
     return () => {
@@ -82,16 +82,16 @@ function App() {
     };
   }, []);
 
-  // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
   const headerTintColor = colors.textDark;
 
   const hasSession = !!session?.access_token;
+  const isUserResolved = !hasSession || user !== null;
 
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
       {!isAuthLoading && hasSession ? <AutoPushSubscription /> : null}
-      {!isAuthLoading && (
+      {!isAuthLoading && isUserResolved && (
         <Stack
           screenOptions={{
             headerShown: false,

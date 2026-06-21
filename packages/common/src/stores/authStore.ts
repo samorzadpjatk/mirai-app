@@ -280,6 +280,10 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     }
 
     set({ session: data?.session });
+
+    if (data?.session?.user && _onUserFetch) {
+      await fetchAndSetUser(data.session.user.id, set);
+    }
   },
 
   /**
