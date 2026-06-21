@@ -9,10 +9,9 @@ describe("ChallengeLoadingState", () => {
     expect(view).toBeTruthy();
   });
 
-  it("should render placeholder views", () => {
+  it("should render skeleton placeholders", () => {
     renderWithProviders(<ChallengeLoadingState />);
-    const view = screen.getByTestId("challenge-loading-state");
-    expect(view.children.length).toBeGreaterThan(0);
+    expect(screen.getByTestId("challenge-loading-hero")).toBeTruthy();
   });
 
   it("should have flex container styling", () => {

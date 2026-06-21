@@ -1,23 +1,33 @@
 import { StyleSheet, View } from "react-native";
-import { borderRadius, colors, spacing } from "~/styles";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { colors, spacing } from "~/styles";
+
+const CARDS_PER_ROW = 2;
+const ROW_COUNT = 3;
 
 export function ChallengesLoadingState() {
   return (
-    <View testID="challenges-loading-state" style={styles.container}>
-      {/* Challenge grid placeholders */}
-      <View style={styles.gridRow}>
-        <View style={styles.cardPlaceholder} />
-        <View style={styles.cardPlaceholder} />
-      </View>
-      <View style={styles.gridRow}>
-        <View style={styles.cardPlaceholder} />
-        <View style={styles.cardPlaceholder} />
-      </View>
-      <View style={styles.gridRow}>
-        <View style={styles.cardPlaceholder} />
-        <View style={styles.cardPlaceholder} />
-      </View>
-    </View>
+    <Skeleton.Group testID="challenges-loading-state" style={styles.container}>
+      {Array.from({ length: ROW_COUNT }).map((_, rowIndex) => (
+        <View
+          // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows with no stable id
+          key={`challenges-loading-row-${rowIndex}`}
+          style={styles.gridRow}
+        >
+          {Array.from({ length: CARDS_PER_ROW }).map((__, cardIndex) => (
+            <Skeleton
+              // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder cards with no stable id
+              key={`challenges-loading-card-${rowIndex}-${cardIndex}`}
+              height={120}
+              style={styles.flexCard}
+              testID={`challenges-loading-card-${rowIndex}-${cardIndex}`}
+              variant="box"
+              width="100%"
+            />
+          ))}
+        </View>
+      ))}
+    </Skeleton.Group>
   );
 }
 
@@ -32,10 +42,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.lg,
   },
-  cardPlaceholder: {
+  flexCard: {
     flex: 1,
-    height: 120,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
   },
 });

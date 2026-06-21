@@ -9,10 +9,9 @@ describe("GroupsLoadingState", () => {
     expect(view).toBeTruthy();
   });
 
-  it("should render placeholder views", () => {
+  it("should render skeleton card placeholders", () => {
     renderWithProviders(<GroupsLoadingState />);
-    const view = screen.getByTestId("groups-loading-state");
-    expect(view.children.length).toBeGreaterThan(0);
+    expect(screen.getByTestId("groups-loading-card-0")).toBeTruthy();
   });
 
   it("should have centered layout styling", () => {

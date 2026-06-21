@@ -1,21 +1,29 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, spacing } from "~/styles";
 
 export function ChallengeLoadingState() {
   return (
-    <View testID="challenge-loading-state" style={styles.container}>
-      {/* Hero placeholder */}
-      <View style={styles.heroPlaceholder} />
-      {/* Title placeholder */}
-      <View style={styles.titlePlaceholder} />
-      {/* Description placeholder */}
-      <View style={styles.descriptionPlaceholder} />
-      <View style={styles.descriptionPlaceholder} />
-      {/* Submissions placeholder */}
-      <View style={styles.sectionPlaceholder} />
-      <View style={styles.submissionPlaceholder} />
-      <View style={styles.submissionPlaceholder} />
-    </View>
+    <Skeleton.Group testID="challenge-loading-state" style={styles.container}>
+      <Skeleton
+        borderRadius={borderRadius.lg}
+        height={180}
+        testID="challenge-loading-hero"
+        variant="box"
+        width="100%"
+      />
+      <Skeleton height={28} testID="challenge-loading-title" variant="text" width="70%" />
+      <Skeleton.Line count={2} height={16} testID="challenge-loading-description" width="100%" />
+      <Skeleton
+        height={20}
+        style={{ marginTop: spacing.md }}
+        testID="challenge-loading-section"
+        variant="text"
+        width="40%"
+      />
+      <Skeleton height={80} testID="challenge-loading-submission-1" variant="box" width="100%" />
+      <Skeleton height={80} testID="challenge-loading-submission-2" variant="box" width="100%" />
+    </Skeleton.Group>
   );
 }
 
@@ -25,34 +33,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
     padding: spacing.lg,
     gap: spacing.lg,
-  },
-  heroPlaceholder: {
-    height: 180,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.lg,
-  },
-  titlePlaceholder: {
-    height: 28,
-    width: "70%",
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.sm,
-  },
-  descriptionPlaceholder: {
-    height: 16,
-    width: "100%",
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.sm,
-  },
-  sectionPlaceholder: {
-    height: 20,
-    width: "40%",
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.sm,
-    marginTop: spacing.md,
-  },
-  submissionPlaceholder: {
-    height: 80,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
   },
 });
