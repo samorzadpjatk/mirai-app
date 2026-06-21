@@ -163,6 +163,16 @@ export const colors = {
   slateOpacity35: "rgba(148, 163, 184, 0.35)",
   slate300: "#cbd5e1",
 
+  // Admin/rewards specific
+  cardBackground: "#0f2323",
+  cardBorder: "#273a3a",
+  inputBackground: "#0b1a1a",
+  inputBackgroundDisabled: "#0a1414",
+  inputBorderDisabled: "#1f2a2a",
+  amber400: "#fbbf24",
+  blue300: "#93c5fd",
+  green300: "#86efac",
+
   // Overlay colors
   blackOpacity38: "rgba(0, 0, 0, 0.38)",
   blackOpacity12: "rgba(0, 0, 0, 0.12)",

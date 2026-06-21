@@ -4,7 +4,6 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ErrorState } from "~/components/common/ui";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
@@ -160,8 +159,6 @@ export default function GroupDetailsScreen() {
     }),
   );
 
-  const insets = useSafeAreaInsets();
-
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
   }
@@ -289,7 +286,7 @@ export default function GroupDetailsScreen() {
           styles.scrollContent,
           {
             paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
+            paddingBottom: 96,
           },
         ]}
         showsVerticalScrollIndicator={false}

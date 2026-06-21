@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   },
   schedulesList: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: 96,
   },
   emptyContainer: {
     alignItems: "center" as const,

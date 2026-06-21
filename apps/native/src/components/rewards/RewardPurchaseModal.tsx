@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, commonStyles } from "~/styles";
 import { getTotalCost } from "./RewardsView";
 import type { RewardListItem } from "./types";
 
@@ -36,7 +36,7 @@ export default function RewardPurchaseModal({
           style={{
             padding: 24,
             borderBottomWidth: 1,
-            borderBottomColor: "#273a3a",
+            borderBottomColor: colors.cardBorder,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
@@ -44,7 +44,7 @@ export default function RewardPurchaseModal({
         >
           <Text style={[commonStyles.h3]}>Claim reward</Text>
           <TouchableOpacity testID="close-purchase-modal" onPress={onClose}>
-            <Ionicons name="close" size={24} color="#9ca3af" />
+            <Ionicons name="close" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -53,7 +53,12 @@ export default function RewardPurchaseModal({
             <>
               <View style={{ marginBottom: 20 }}>
                 <Text style={[commonStyles.h4, { marginBottom: 8 }]}>{reward.name}</Text>
-                <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 16 }]}>
+                <Text
+                  style={[
+                    commonStyles.textSecondary,
+                    { color: colors.textSecondary, marginBottom: 16 },
+                  ]}
+                >
                   {reward.description}
                 </Text>
 
@@ -65,12 +70,12 @@ export default function RewardPurchaseModal({
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Ionicons name="cash" size={16} color="#fbbf24" />
+                    <Ionicons name="cash" size={16} color={colors.amber400} />
                     <View style={{ alignItems: "flex-start" }}>
                       <Text
                         style={[
                           commonStyles.textPrimary,
-                          { color: "#fbbf24", fontSize: 14, lineHeight: 16 },
+                          { color: colors.amber400, fontSize: 14, lineHeight: 16 },
                         ]}
                       >
                         {reward.coinCost} coins / item
@@ -79,7 +84,7 @@ export default function RewardPurchaseModal({
                         <Text
                           style={[
                             commonStyles.textSecondary,
-                            { color: "#9ca3af", fontSize: 11, lineHeight: 13 },
+                            { color: colors.textSecondary, fontSize: 11, lineHeight: 13 },
                           ]}
                         >
                           {reward.originalCoinCost}% of total points
@@ -88,7 +93,7 @@ export default function RewardPurchaseModal({
                     </View>
                   </View>
 
-                  <Text style={[commonStyles.textPrimary, { color: "#10b981" }]}>
+                  <Text style={[commonStyles.textPrimary, { color: colors.statusCompleted }]}>
                     Available: {reward.availableQuantity} pcs.
                   </Text>
                 </View>
@@ -99,15 +104,15 @@ export default function RewardPurchaseModal({
                 <TextInput
                   testID="quantity-input"
                   style={{
-                    backgroundColor: "#0f2323",
+                    backgroundColor: colors.cardBackground,
                     borderWidth: 1,
-                    borderColor: "#273a3a",
+                    borderColor: colors.cardBorder,
                     borderRadius: 12,
                     padding: 12,
-                    color: "#fff",
+                    color: colors.white,
                   }}
                   placeholder="1"
-                  placeholderTextColor="#6b7280"
+                  placeholderTextColor={colors.gray500}
                   value={quantity}
                   onChangeText={onQuantityChange}
                   keyboardType="numeric"
@@ -116,14 +121,14 @@ export default function RewardPurchaseModal({
 
               <View
                 style={{
-                  backgroundColor: "#1f2937",
+                  backgroundColor: colors.gray800,
                   padding: 16,
                   borderRadius: 12,
                   marginBottom: 24,
                 }}
               >
                 <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>Total cost:</Text>
-                <Text style={[commonStyles.h4, { color: "#fbbf24" }]}>
+                <Text style={[commonStyles.h4, { color: colors.amber400 }]}>
                   {getTotalCost(reward.coinCost, quantity)} coins
                 </Text>
               </View>

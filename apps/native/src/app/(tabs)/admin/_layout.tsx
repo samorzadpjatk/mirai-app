@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { colors } from "~/styles";
 
-const backgroundColor = "#17181c";
+const backgroundColor = colors.backgroundDark;
 
 export default function AdminLayout() {
   const { data: user } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));

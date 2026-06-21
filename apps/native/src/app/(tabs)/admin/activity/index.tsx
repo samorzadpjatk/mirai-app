@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: 96,
     gap: spacing.md,
   },
   skeletonList: {

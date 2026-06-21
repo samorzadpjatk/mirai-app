@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   transactionsList: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: 96,
   },
   listFooter: {
     flexDirection: "row" as const,

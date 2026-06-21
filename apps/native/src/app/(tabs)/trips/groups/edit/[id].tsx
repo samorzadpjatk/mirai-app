@@ -199,7 +199,7 @@ export default function EditGroupScreen() {
           styles.scrollContent,
           {
             paddingTop: spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
+            paddingBottom: 96,
           },
         ]}
         showsVerticalScrollIndicator={false}

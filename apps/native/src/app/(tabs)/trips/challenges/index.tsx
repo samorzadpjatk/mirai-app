@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     paddingTop: spacing.lg, // Space for BackNavbar
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 96,
   },
   loadingMoreWrap: {
     flexDirection: "row",

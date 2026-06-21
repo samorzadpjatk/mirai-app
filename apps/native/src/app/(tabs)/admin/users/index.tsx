@@ -123,7 +123,7 @@ export default function AdminUsersScreen() {
           data={users}
           renderItem={renderUser}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 96 }}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
             if (usersHasNextPage && !usersFetchingNextPage && !usersLoading) {

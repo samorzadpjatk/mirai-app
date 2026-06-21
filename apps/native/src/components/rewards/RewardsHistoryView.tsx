@@ -3,7 +3,7 @@ import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, commonStyles } from "~/styles";
 import { RewardsHistoryLoadingState } from "./RewardsHistoryLoadingState";
 
 interface Props {
@@ -25,11 +25,11 @@ const statusMeta: Record<
   PurchaseStatus,
   { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
-  ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
-  IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
-  CANCELLED: { label: "Cancelled", color: "#ef4444", icon: "close-circle-outline" },
-  DELIVERED: { label: "Delivered", color: "#10b981", icon: "cube-outline" },
+  BOUGHT: { label: "Bought", color: colors.amber400, icon: "receipt-outline" },
+  ACCEPTED: { label: "Accepted", color: colors.success, icon: "checkmark-circle-outline" },
+  IN_DELIVERY: { label: "In delivery", color: colors.sky400, icon: "car-outline" },
+  CANCELLED: { label: "Cancelled", color: colors.danger, icon: "close-circle-outline" },
+  DELIVERED: { label: "Delivered", color: colors.statusCompleted, icon: "cube-outline" },
 };
 
 export default function RewardsHistoryView({ tripId }: Props) {
@@ -77,7 +77,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
           { justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
         ]}
       >
-        <Ionicons name="warning-outline" size={46} color="#ef4444" />
+        <Ionicons name="warning-outline" size={46} color={colors.danger} />
         <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
           Failed to load claim history
         </Text>
@@ -90,6 +90,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
       <ScrollView
         testID="rewards-scroll-view"
         style={{ flex: 1, padding: 16 }}
+        contentContainerStyle={{ paddingBottom: 96 }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         refreshControl={
@@ -98,13 +99,13 @@ export default function RewardsHistoryView({ tripId }: Props) {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor="#00ced1"
+            tintColor={colors.primary}
           />
         }
       >
         {purchases.length === 0 ? (
           <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
-            <Ionicons name="time-outline" size={46} color="#6b7280" />
+            <Ionicons name="time-outline" size={46} color={colors.gray500} />
             <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
               No reward claims yet
             </Text>
@@ -169,10 +170,10 @@ export default function RewardsHistoryView({ tripId }: Props) {
                 <View
                   key={purchase.id}
                   style={{
-                    backgroundColor: "#0f2323",
+                    backgroundColor: colors.cardBackground,
                     borderRadius: 12,
                     borderWidth: 1,
-                    borderColor: "#273a3a",
+                    borderColor: colors.cardBorder,
                     padding: 14,
                     gap: 10,
                   }}
@@ -225,7 +226,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       alignItems: "center",
                     }}
                   >
-                    <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
+                    <Text style={[commonStyles.textSecondary, { color: colors.amber400 }]}>
                       Total: {purchase.totalCost} coins
                     </Text>
                     <Text style={[commonStyles.textSecondary]}>
@@ -243,7 +244,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
                     <View
                       style={{
                         borderWidth: 1,
-                        borderColor: "#38bdf8",
+                        borderColor: colors.sky400,
                         borderRadius: 10,
                         backgroundColor: "rgba(56, 189, 248, 0.14)",
                         paddingHorizontal: 10,
@@ -251,10 +252,12 @@ export default function RewardsHistoryView({ tripId }: Props) {
                         gap: 4,
                       }}
                     >
-                      <Text style={[commonStyles.label, { color: "#38bdf8", letterSpacing: 0.7 }]}>
+                      <Text
+                        style={[commonStyles.label, { color: colors.sky400, letterSpacing: 0.7 }]}
+                      >
                         Pickup details
                       </Text>
-                      <Text style={[commonStyles.textSecondary, { color: "#dbeafe" }]}>
+                      <Text style={[commonStyles.textSecondary, { color: colors.blue100 }]}>
                         {purchase.collectionMethod}
                       </Text>
                     </View>
@@ -267,7 +270,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       style={{
                         alignSelf: "flex-start",
                         borderWidth: 1,
-                        borderColor: "#38bdf8",
+                        borderColor: colors.sky400,
                         borderRadius: 999,
                         backgroundColor: "rgba(56, 189, 248, 0.16)",
                         paddingHorizontal: 12,
@@ -278,8 +281,10 @@ export default function RewardsHistoryView({ tripId }: Props) {
                         opacity: isUpdating ? 0.6 : 1,
                       }}
                     >
-                      <Ionicons name="hand-left-outline" size={14} color="#38bdf8" />
-                      <Text style={[commonStyles.label, { color: "#38bdf8", letterSpacing: 0.7 }]}>
+                      <Ionicons name="hand-left-outline" size={14} color={colors.sky400} />
+                      <Text
+                        style={[commonStyles.label, { color: colors.sky400, letterSpacing: 0.7 }]}
+                      >
                         I want to pick up
                       </Text>
                     </TouchableOpacity>
@@ -292,7 +297,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
                       style={{
                         alignSelf: "flex-start",
                         borderWidth: 1,
-                        borderColor: "#ef4444",
+                        borderColor: colors.danger,
                         borderRadius: 999,
                         backgroundColor: "rgba(239, 68, 68, 0.14)",
                         paddingHorizontal: 12,
@@ -303,8 +308,10 @@ export default function RewardsHistoryView({ tripId }: Props) {
                         opacity: isUpdating ? 0.6 : 1,
                       }}
                     >
-                      <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                      <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.7 }]}>
+                      <Ionicons name="close-circle-outline" size={14} color={colors.danger} />
+                      <Text
+                        style={[commonStyles.label, { color: colors.danger, letterSpacing: 0.7 }]}
+                      >
                         Cancel claim
                       </Text>
                     </TouchableOpacity>

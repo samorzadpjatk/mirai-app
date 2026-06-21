@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 96,
   },
   listFooter: {
     marginTop: spacing.md,

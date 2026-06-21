@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingTop: 0,
-    paddingBottom: spacing.md,
+    paddingBottom: 96,
   },
   usersList: {
     flex: 1,

@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 96,
     gap: 16,
   },
   errorTitle: {

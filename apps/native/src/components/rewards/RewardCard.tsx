@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, commonStyles } from "~/styles";
 import {
   getRewardAvailabilityColor,
   getRewardAvailabilityText,
@@ -40,8 +40,8 @@ export default function RewardCard({
     <View
       testID={`reward-card-${reward.id}`}
       style={{
-        width: "48%",
-        backgroundColor: "#0f2323",
+        width: "100%",
+        backgroundColor: colors.cardBackground,
         borderWidth: 2,
         borderColor: getRewardBorderColor(justRefreshed, reward.isOutOfStock),
         borderRadius: 12,
@@ -69,13 +69,13 @@ export default function RewardCard({
               borderRadius: 8,
               marginBottom: 12,
               borderWidth: 1,
-              borderColor: "#273a3a",
-              backgroundColor: "#0b1a1a",
+              borderColor: colors.cardBorder,
+              backgroundColor: colors.inputBackground,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons name="gift-outline" size={36} color="#6b7280" />
+            <Ionicons name="gift-outline" size={36} color={colors.gray500} />
           </View>
         )}
 
@@ -84,14 +84,14 @@ export default function RewardCard({
           <Text
             numberOfLines={3}
             ellipsizeMode="tail"
-            style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 6 }]}
+            style={[commonStyles.textSecondary, { color: colors.textSecondary, marginBottom: 6 }]}
           >
             {reward.description}
           </Text>
           <Text
             style={[
               commonStyles.textSecondary,
-              { color: "#00ced1", fontSize: 11, marginBottom: 8 },
+              { color: colors.primary, fontSize: 11, marginBottom: 8 },
             ]}
           >
             Tap to read full description
@@ -105,12 +105,12 @@ export default function RewardCard({
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="cash" size={16} color="#fbbf24" />
+              <Ionicons name="cash" size={16} color={colors.amber400} />
               <View style={{ alignItems: "flex-start" }}>
                 <Text
                   style={[
                     commonStyles.textPrimary,
-                    { color: "#fbbf24", fontSize: 12, lineHeight: 14 },
+                    { color: colors.amber400, fontSize: 12, lineHeight: 14 },
                   ]}
                 >
                   {reward.coinCost} coins
@@ -119,7 +119,7 @@ export default function RewardCard({
                   <Text
                     style={[
                       commonStyles.textSecondary,
-                      { color: "#9ca3af", fontSize: 10, lineHeight: 12 },
+                      { color: colors.textSecondary, fontSize: 10, lineHeight: 12 },
                     ]}
                   >
                     {reward.originalCoinCost}% of total points

@@ -175,10 +175,7 @@ export default function TripInfoScreen() {
       <View style={styles.container}>
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={[
-            styles.contentContainer,
-            { paddingBottom: spacing.xxxl * 2 + insets.bottom },
-          ]}
+          contentContainerStyle={[styles.contentContainer, { paddingBottom: 96 }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}
@@ -830,7 +827,7 @@ const styles = StyleSheet.create({
   },
   insuranceContent: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 96,
     gap: spacing.md,
   },
   insuranceActions: {

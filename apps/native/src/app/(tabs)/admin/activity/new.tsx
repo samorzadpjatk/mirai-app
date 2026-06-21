@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 96,
     gap: spacing.md,
   },
   section: {

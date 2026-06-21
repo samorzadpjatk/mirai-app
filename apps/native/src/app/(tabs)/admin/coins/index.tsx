@@ -295,7 +295,7 @@ export default function AdminCoinsScreen() {
           data={filteredGroups}
           renderItem={renderGroup}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 96 }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: spacing.xxl }}>

@@ -79,7 +79,7 @@ export default function TripDetailsScreen() {
             styles.contentContainer,
             {
               paddingTop: insets.top + spacing.xs,
-              paddingBottom: insets.bottom + spacing.xxxl + spacing.xxl,
+              paddingBottom: 96,
             },
           ]}
         >

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, commonStyles } from "~/styles";
 import {
   getRewardAvailabilityColor,
   getRewardAvailabilityText,
@@ -54,7 +54,7 @@ export default function RewardDetailsModal({
           style={{
             padding: 24,
             borderBottomWidth: 1,
-            borderBottomColor: "#273a3a",
+            borderBottomColor: colors.cardBorder,
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
@@ -62,7 +62,7 @@ export default function RewardDetailsModal({
         >
           <Text style={[commonStyles.h3]}>Reward details</Text>
           <TouchableOpacity testID="close-details-modal" onPress={onClose}>
-            <Ionicons name="close" size={24} color="#9ca3af" />
+            <Ionicons name="close" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -86,7 +86,7 @@ export default function RewardDetailsModal({
                       width: carouselWidth,
                       aspectRatio: 1.2,
                       borderRadius: 12,
-                      backgroundColor: "#0f2323",
+                      backgroundColor: colors.cardBackground,
                     }}
                     contentFit="cover"
                     cachePolicy="none"
@@ -110,7 +110,7 @@ export default function RewardDetailsModal({
                         width: 7,
                         height: 7,
                         borderRadius: 999,
-                        backgroundColor: index === imageIndex ? "#00ced1" : "#4b5563",
+                        backgroundColor: index === imageIndex ? colors.primary : colors.gray600,
                       }}
                     />
                   ))}
@@ -123,7 +123,7 @@ export default function RewardDetailsModal({
           <Text
             style={[
               commonStyles.textPrimary,
-              { color: "#e5e7eb", lineHeight: 22, marginBottom: 20 },
+              { color: colors.gray200, lineHeight: 22, marginBottom: 20 },
             ]}
           >
             {reward.description}
@@ -131,7 +131,7 @@ export default function RewardDetailsModal({
 
           <View
             style={{
-              backgroundColor: "#1f2937",
+              backgroundColor: colors.gray800,
               padding: 16,
               borderRadius: 12,
               marginBottom: 20,
@@ -147,11 +147,16 @@ export default function RewardDetailsModal({
             >
               <Text style={commonStyles.textSecondary}>Price</Text>
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
+                <Text style={[commonStyles.textPrimary, { color: colors.amber400 }]}>
                   {reward.coinCost} coins
                 </Text>
                 {reward.originalCoinCost && (
-                  <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11 }]}>
+                  <Text
+                    style={[
+                      commonStyles.textSecondary,
+                      { color: colors.textSecondary, fontSize: 11 },
+                    ]}
+                  >
                     {reward.originalCoinCost}% of total points
                   </Text>
                 )}

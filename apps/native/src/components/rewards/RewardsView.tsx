@@ -14,7 +14,7 @@ import {
 import { useMyGroup } from "~/hooks/groups";
 import { usePurchaseReward, useRewards } from "~/hooks/rewards";
 import { useTripDetails } from "~/hooks/trips";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, commonStyles } from "~/styles";
 import RewardCard from "./RewardCard";
 import RewardDetailsModal from "./RewardDetailsModal";
 import RewardPurchaseModal from "./RewardPurchaseModal";
@@ -79,15 +79,15 @@ export function getRewardButtonState(
   return {
     disabled: !enabled,
     text,
-    backgroundColor: enabled ? "#00ced1" : "#374151",
+    backgroundColor: enabled ? colors.primary : colors.gray700,
     opacity: enabled ? 1 : 0.5,
   };
 }
 
 export function getRewardBorderColor(justRefreshed: boolean, isOutOfStock: boolean): string {
-  if (justRefreshed && !isOutOfStock) return "#10b981";
-  if (isOutOfStock) return "#ef4444";
-  return "#273a3a";
+  if (justRefreshed && !isOutOfStock) return colors.statusCompleted;
+  if (isOutOfStock) return colors.danger;
+  return colors.cardBorder;
 }
 
 export function getRewardShadowProps(justRefreshed: boolean): {
@@ -97,7 +97,7 @@ export function getRewardShadowProps(justRefreshed: boolean): {
   shadowRadius: number;
 } {
   return {
-    shadowColor: justRefreshed ? "#10b981" : "transparent",
+    shadowColor: justRefreshed ? colors.statusCompleted : "transparent",
     shadowOffset: justRefreshed ? { width: 0, height: 0 } : undefined,
     shadowOpacity: justRefreshed ? 0.3 : 0,
     shadowRadius: justRefreshed ? 4 : 0,
@@ -112,7 +112,7 @@ export function getRewardAvailabilityText(
 }
 
 export function getRewardAvailabilityColor(isOutOfStock: boolean): string {
-  return isOutOfStock ? "#ef4444" : "#10b981";
+  return isOutOfStock ? colors.danger : colors.statusCompleted;
 }
 
 export function getTotalCost(coinCost: number, quantity: string): number {
@@ -243,7 +243,7 @@ export default function RewardsView({ tripId }: Props) {
   if (error) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <Ionicons name="alert-circle" size={48} color="#ef4444" />
+        <Ionicons name="alert-circle" size={48} color={colors.danger} />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
           Failed to load rewards
         </Text>
@@ -254,7 +254,7 @@ export default function RewardsView({ tripId }: Props) {
   if (!safeRewards || safeRewards.length === 0) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <Ionicons name="gift" size={48} color="#6b7280" />
+        <Ionicons name="gift" size={48} color={colors.gray500} />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
           No rewards available for this trip
         </Text>
@@ -277,8 +277,13 @@ export default function RewardsView({ tripId }: Props) {
             <Text style={[commonStyles.h3]}>Rewards</Text>
             {lastRefreshTime && !refreshing && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Ionicons name="refresh" size={14} color="#10b981" />
-                <Text style={[commonStyles.textSecondary, { color: "#10b981", fontSize: 11 }]}>
+                <Ionicons name="refresh" size={14} color={colors.statusCompleted} />
+                <Text
+                  style={[
+                    commonStyles.textSecondary,
+                    { color: colors.statusCompleted, fontSize: 11 },
+                  ]}
+                >
                   Updated{" "}
                   {lastRefreshTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </Text>
@@ -292,26 +297,26 @@ export default function RewardsView({ tripId }: Props) {
               alignItems: "center",
               gap: 8,
               borderWidth: 1,
-              borderColor: "#273a3a",
+              borderColor: colors.cardBorder,
               borderRadius: 999,
               paddingHorizontal: 12,
               paddingVertical: 6,
             }}
           >
-            <Ionicons name="time-outline" size={14} color="#9ca3af" />
+            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
             <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>History</Text>
           </TouchableOpacity>
         </View>
 
         {currentUserGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Ionicons name="people" size={16} color="#00ced1" />
-            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}>
+            <Ionicons name="people" size={16} color={colors.primary} />
+            <Text style={[commonStyles.textPrimary, { color: colors.primary }]}>
               {currentUserGroup.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="cash" size={16} color="#fbbf24" />
-              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
+              <Ionicons name="cash" size={16} color={colors.amber400} />
+              <Text style={[commonStyles.textPrimary, { color: colors.amber400 }]}>
                 {groupCoins} coins
               </Text>
             </View>
@@ -322,21 +327,19 @@ export default function RewardsView({ tripId }: Props) {
       <ScrollView
         testID="rewards-scroll-view"
         style={{ flex: 1, padding: 16 }}
+        contentContainerStyle={{ paddingBottom: 96 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#00ced1"
-            colors={["#00ced1"]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
         <View
           style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            rowGap: 16,
+            gap: 16,
           }}
         >
           {safeRewards.map((reward) => (

@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   groupsList: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingBottom: 96,
   },
   emptyContainer: {
     alignItems: "center" as const,

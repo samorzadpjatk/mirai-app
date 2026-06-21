@@ -64,7 +64,7 @@ export default function LeaderboardScreen() {
           styles.scrollContent,
           {
             paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxxl,
+            paddingBottom: 96,
           },
         ]}
         showsVerticalScrollIndicator={false}

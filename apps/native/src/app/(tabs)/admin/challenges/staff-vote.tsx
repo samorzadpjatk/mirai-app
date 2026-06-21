@@ -294,10 +294,7 @@ export default function AdminChallengeStaffVotingScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxxl + 96 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}
       >
         <Text style={styles.title}>{challenge.name}</Text>
         <Text style={styles.subtitle}>Staff collaborative voting</Text>

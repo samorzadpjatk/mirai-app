@@ -490,10 +490,7 @@ export default function ChallengePeerVotingScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxxl },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}
       >
         <Text style={styles.title}>{challenge.name}</Text>
         <Text style={styles.subtitle}>Peer voting</Text>

@@ -345,7 +345,7 @@ export default function CommunityScreen() {
           styles.listContent,
           {
             paddingTop: spacing.sm,
-            paddingBottom: insets.bottom + 120,
+            paddingBottom: 96,
           },
         ]}
         refreshControl={

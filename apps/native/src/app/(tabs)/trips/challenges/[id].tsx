@@ -428,10 +428,7 @@ export default function ChallengeDetailScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + spacing.xxxl + 96 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Challenge Icon & Status */}

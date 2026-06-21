@@ -86,7 +86,7 @@ export default function TripsScreen() {
           styles.content,
           {
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxxl,
+            paddingBottom: 96,
           },
         ]}
         onScroll={handleScrollLoadMore}
