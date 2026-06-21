@@ -15,10 +15,10 @@ describe("LoadingScreen", () => {
     expect(screen.getByText("Please wait...")).toBeTruthy();
   });
 
-  it("renders activity indicator", () => {
+  it("renders skeleton", () => {
     renderWithProviders(<LoadingScreen />);
 
-    expect(screen.getByLabelText("Loading indicator")).toBeTruthy();
+    expect(screen.getByTestId("loading-screen-skeleton")).toBeTruthy();
   });
 
   it("uses default message when no message prop provided", () => {
