@@ -1,6 +1,7 @@
 import { render } from "@testing-library/react-native";
 import React from "react";
 import { useReducedMotion } from "react-native-reanimated";
+import { spacing } from "~/styles";
 import { Skeleton } from "../../ui/Skeleton";
 
 describe("Skeleton", () => {
@@ -83,6 +84,17 @@ describe("Skeleton", () => {
 
     expect(getByTestId("group")).toBeTruthy();
     expect(getByTestId("group-child")).toBeTruthy();
+  });
+
+  it("Skeleton.Group applies a default gap between skeletons", () => {
+    const { getByTestId } = render(
+      <Skeleton.Group testID="group-with-gap">
+        <Skeleton variant="box" width={50} height={50} testID="child-1" />
+        <Skeleton variant="box" width={50} height={50} testID="child-2" />
+      </Skeleton.Group>,
+    );
+
+    expect(getByTestId("group-with-gap")).toHaveStyle({ gap: spacing.sm });
   });
 
   it("falls back to a static block when reduce motion is enabled", () => {

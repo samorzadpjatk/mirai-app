@@ -224,6 +224,8 @@ export default function ChallengeDetailScreen() {
   const isTextChallenge = challenge.submissionType === "TEXT";
   const hasTargetLocation =
     typeof challenge.targetLatitude === "number" && typeof challenge.targetLongitude === "number";
+  const targetLatitude = challenge.targetLatitude ?? 0;
+  const targetLongitude = challenge.targetLongitude ?? 0;
   const shouldShowTargetLocationCard =
     (challenge.submissionType === "LOCATION" || challenge.submissionType === "IMAGE_LOCATION") &&
     hasTargetLocation;
@@ -269,8 +271,8 @@ export default function ChallengeDetailScreen() {
     const distanceMeters = calculateDistanceMeters(
       latitude,
       longitude,
-      challenge.targetLatitude!,
-      challenge.targetLongitude!,
+      targetLatitude,
+      targetLongitude,
     );
 
     if (distanceMeters > IMAGE_LOCATION_RADIUS_METERS) {
@@ -550,7 +552,7 @@ export default function ChallengeDetailScreen() {
               <MapView mapStyle={MAP_STYLE} style={styles.targetLocationMap}>
                 <Camera
                   defaultSettings={{
-                    centerCoordinate: [challenge.targetLongitude!, challenge.targetLatitude!],
+                    centerCoordinate: [targetLongitude, targetLatitude],
                     zoomLevel: 15,
                   }}
                 />
@@ -570,7 +572,7 @@ export default function ChallengeDetailScreen() {
                 </RasterSource>
                 <PointAnnotation
                   id="challenge-target"
-                  coordinate={[challenge.targetLongitude!, challenge.targetLatitude!]}
+                  coordinate={[targetLongitude, targetLatitude]}
                 >
                   <View style={styles.targetLocationMarker} />
                 </PointAnnotation>

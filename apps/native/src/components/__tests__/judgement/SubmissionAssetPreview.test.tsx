@@ -66,8 +66,10 @@ jest.mock("@expo/vector-icons", () => ({
 }));
 
 jest.mock("expo-image", () => ({
-  Image: ({ source }: ImageProps) =>
-    mockReact.createElement(mockText, { testID: "image" }, source.uri),
+  Image: ({ source }: Partial<ImageProps>) =>
+    source?.uri
+      ? mockReact.createElement(mockText, { testID: "image" }, source.uri)
+      : mockReact.createElement(mockText, { testID: "image" }, "image"),
 }));
 
 jest.mock("expo-video", () => ({
@@ -134,11 +136,11 @@ describe("SubmissionAssetPreview", () => {
   it("should render image fallback while loading", () => {
     mockUseFileDownload.mockReturnValue(createState("idle", null));
 
-    const { getByText } = renderWithProviders(
+    const { getByText, getAllByText } = renderWithProviders(
       <SubmissionAssetPreview submission={mockSubmissionWithImages} />,
     );
     expect(getByText("Image unavailable")).toBeTruthy();
-    expect(getByText("image")).toBeTruthy();
+    expect(getAllByText("image").length).toBeGreaterThan(0);
   });
 
   it("should render image when file is available", async () => {

@@ -19,33 +19,23 @@ function StorageCachedImage({
 }: CachedImageProps & { storagePath: string }) {
   const { data: urlData, isLoading } = useImageUrl(storagePath, cacheKey);
 
-  const resolvedSource = urlData?.signedUrl ? { uri: urlData.signedUrl } : null;
-
-  if (!resolvedSource) {
-    if (fallback) {
-      return <View style={[styles.container, style as StyleProp<ViewStyle>]}>{fallback}</View>;
-    }
-
-    if (isLoading) {
-      return (
-        <View style={[styles.container, style as StyleProp<ViewStyle>]}>
-          <ActivityIndicator />
-        </View>
-      );
-    }
-
-    return null;
-  }
+  const resolvedSource = urlData?.signedUrl ? { uri: urlData.signedUrl } : undefined;
+  const hasSource = Boolean(resolvedSource);
 
   return (
-    <Image
-      source={resolvedSource}
-      style={style}
-      placeholder={placeholder}
-      cachePolicy="memory-disk"
-      transition={200}
-      {...imageProps}
-    />
+    <View style={[styles.container, style as StyleProp<ViewStyle>]}>
+      <Image
+        source={resolvedSource}
+        style={StyleSheet.absoluteFill}
+        placeholder={placeholder}
+        cachePolicy="memory-disk"
+        transition={200}
+        {...imageProps}
+      />
+      {!hasSource && (
+        <View style={styles.overlay}>{fallback ?? (isLoading ? <ActivityIndicator /> : null)}</View>
+      )}
+    </View>
   );
 }
 
@@ -74,5 +64,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

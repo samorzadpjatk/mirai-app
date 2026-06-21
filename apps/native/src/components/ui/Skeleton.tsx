@@ -44,6 +44,7 @@ interface SkeletonGroupProps {
   children: React.ReactNode;
   style?: ViewStyle;
   testID?: string;
+  gap?: number;
 }
 
 interface SkeletonGroupContextValue {
@@ -104,7 +105,6 @@ function SkeletonBase({
   const reducedMotion = useReducedMotion();
 
   const resolvedBase = colorOverrides?.base ?? colors.surfaceDark;
-  const resolvedHighlight = colorOverrides?.highlight ?? colors.whiteOpacity15;
   const resolvedBorderRadius = resolveBorderRadius(variant, width, borderRadiusOverride);
   const resolvedHeight = resolveHeight(variant, height);
 
@@ -196,7 +196,7 @@ function SkeletonBase({
         ]}
       >
         <LinearGradient
-          colors={[resolvedHighlight, resolvedBase, resolvedHighlight]}
+          colors={["transparent", colors.whiteOpacity15, "transparent"]}
           end={{ x: 1, y: 0.5 }}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0.5 }}
@@ -237,7 +237,12 @@ const Skeleton = Object.assign(React.memo(SkeletonBase), {
     );
   }),
 
-  Group: React.memo<SkeletonGroupProps>(function SkeletonGroup({ children, style, testID }) {
+  Group: React.memo<SkeletonGroupProps>(function SkeletonGroup({
+    children,
+    gap = spacing.sm,
+    style,
+    testID,
+  }) {
     const progress = useSharedValue(0);
     const reducedMotion = useReducedMotion();
 
@@ -264,7 +269,7 @@ const Skeleton = Object.assign(React.memo(SkeletonBase), {
     const contextValue = useMemo(() => ({ progress }), [progress]);
 
     return (
-      <View style={style} testID={testID ?? "skeleton-group"}>
+      <View style={[{ gap }, style]} testID={testID ?? "skeleton-group"}>
         <SkeletonGroupContext.Provider value={contextValue}>
           {children}
         </SkeletonGroupContext.Provider>
