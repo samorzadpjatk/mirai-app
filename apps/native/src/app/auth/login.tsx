@@ -7,7 +7,6 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   ScrollView,
@@ -22,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { ORPC_HTTP_URL, ORPC_WS_URL, PRIVACY_POLICY_PUBLIC_URL } from "~/config/runtimeEnv";
 import { useFileDownload } from "~/hooks/files";
 import { colors } from "~/styles";
@@ -421,10 +421,18 @@ export default function LoginScreen() {
       >
         {isPolicyLoading ? (
           <View style={styles.policyModalLoading}>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={[styles.policyText, { marginTop: 12, color: colors.textSecondary }]}>
-              Pobieranie...
-            </Text>
+            <Skeleton.Group testID="policy-loading-skeleton">
+              <Skeleton variant="line" width="80%" height={24} />
+              <Skeleton variant="line" width="100%" />
+              <Skeleton variant="line" width="95%" />
+              <Skeleton variant="line" width="100%" />
+              <Skeleton variant="line" width="90%" />
+              <Skeleton variant="line" width="100%" />
+              <Skeleton variant="line" width="85%" />
+              <Skeleton variant="line" width="95%" />
+              <Skeleton variant="line" width="100%" />
+              <Skeleton variant="line" width="75%" />
+            </Skeleton.Group>
           </View>
         ) : policyPdfUri ? (
           <Pdf
@@ -653,9 +661,8 @@ const styles = StyleSheet.create({
   },
   policyModalLoading: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     padding: 24,
+    gap: 12,
   },
   policyPdf: {
     flex: 1,

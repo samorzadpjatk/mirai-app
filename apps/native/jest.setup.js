@@ -88,7 +88,22 @@ jest.mock("react-native-worklets", () => require("react-native-worklets/src/mock
 jest.mock("react-native-reanimated", () => {
   const Reanimated = require("react-native-reanimated/mock");
   Reanimated.setUpTests();
-  return Reanimated;
+  return {
+    ...Reanimated,
+    useReducedMotion: jest.fn(() => false),
+  };
+});
+
+jest.mock("expo-linear-gradient", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
+  return {
+    __esModule: true,
+    LinearGradient: function LinearGradient({ children, testID }) {
+      return React.createElement(View, { testID: testID ?? "linear-gradient" }, children);
+    },
+  };
 });
 
 jest.mock("react-native-gesture-handler", () => {

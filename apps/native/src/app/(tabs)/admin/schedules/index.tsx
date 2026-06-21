@@ -2,15 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { ScheduleCard } from "~/components/admin/schedules/ScheduleCard";
@@ -19,6 +11,7 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
@@ -218,8 +211,17 @@ export default function AdminSchedulesScreen() {
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading schedules...</Text>
+          <Skeleton.Group testID="schedules-loading-skeleton">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`schedule-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={96}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList
@@ -273,8 +275,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     marginTop: spacing.md,

@@ -182,7 +182,7 @@ describe("ChallengeFormFields", () => {
       />,
     );
 
-    expect(getByTestId("undefined-loading-indicator")).toBeTruthy();
+    expect(getByTestId("undefined-loading-skeleton-0")).toBeTruthy();
   });
 
   it("calls setActiveSelect for submission type", () => {

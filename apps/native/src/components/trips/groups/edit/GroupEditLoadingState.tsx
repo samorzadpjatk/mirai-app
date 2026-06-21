@@ -1,19 +1,43 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, spacing } from "~/styles";
 
 export function GroupEditLoadingState() {
   return (
-    <View testID="group-edit-loading-state" style={styles.container}>
-      {/* Form field placeholders */}
-      <View style={styles.fieldLabelPlaceholder} />
-      <View style={styles.fieldInputPlaceholder} />
-      <View style={styles.fieldLabelPlaceholder} />
-      <View style={styles.fieldInputPlaceholder} />
-      <View style={styles.fieldLabelPlaceholder} />
-      <View style={styles.fieldInputPlaceholder} />
-      {/* Button placeholder */}
-      <View style={styles.buttonPlaceholder} />
-    </View>
+    <Skeleton.Group testID="group-edit-loading-state" style={styles.container}>
+      <Skeleton height={16} testID="group-edit-label-0" variant="text" width="30%" />
+      <Skeleton
+        borderRadius={borderRadius.md}
+        height={48}
+        testID="group-edit-input-0"
+        variant="box"
+        width="100%"
+      />
+      <Skeleton height={16} testID="group-edit-label-1" variant="text" width="30%" />
+      <Skeleton
+        borderRadius={borderRadius.md}
+        height={48}
+        testID="group-edit-input-1"
+        variant="box"
+        width="100%"
+      />
+      <Skeleton height={16} testID="group-edit-label-2" variant="text" width="30%" />
+      <Skeleton
+        borderRadius={borderRadius.md}
+        height={48}
+        testID="group-edit-input-2"
+        variant="box"
+        width="100%"
+      />
+      <Skeleton
+        borderRadius={borderRadius.md}
+        height={48}
+        style={styles.button}
+        testID="group-edit-button"
+        variant="box"
+        width="100%"
+      />
+    </Skeleton.Group>
   );
 }
 
@@ -24,21 +48,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  fieldLabelPlaceholder: {
-    height: 16,
-    width: "30%",
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.sm,
-  },
-  fieldInputPlaceholder: {
-    height: 48,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
-  },
-  buttonPlaceholder: {
-    height: 48,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
+  button: {
     marginTop: spacing.lg,
   },
 });

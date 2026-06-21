@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
 import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import type { Group } from "~/hooks/admin/useAdminGroups";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
@@ -103,8 +104,17 @@ export default function AdminGroupsScreen() {
 
       {groupsLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading groups...</Text>
+          <Skeleton.Group testID="groups-loading-skeleton">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`group-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={80}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList
@@ -184,8 +194,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     marginTop: spacing.md,

@@ -2,10 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Text, TextInput, View } from "react-native";
+import { FlatList, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -269,17 +270,25 @@ export default function AdminCoinsScreen() {
       {renderSearchBar()}
 
       {groupsLoading ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text
-            style={{
-              marginTop: spacing.md,
-              fontSize: typography.base,
-              color: colors.textSecondary,
-            }}
-          >
-            Loading groups...
-          </Text>
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.md,
+            gap: spacing.sm,
+          }}
+        >
+          <Skeleton.Group testID="coins-loading-skeleton">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`coin-group-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={80}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList

@@ -66,6 +66,7 @@ All major UI components are located in `src/components/ui/`:
 - **Actions**: `FloatingActionButton`
 - **Modals**: `MapModalShell`, `MapModalUserItem`
 - **Forms**: Consistent components for forms and input fields
+- **Skeleton**: Loading placeholders (`box`/`text`/`circle`/`line` variants) with convenience exports `Skeleton.Line`, `Skeleton.Group`
 
 ### Domain Structure
 

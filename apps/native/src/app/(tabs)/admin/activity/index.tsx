@@ -4,20 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { EmptyState, FilterChip, FilterChipRow, ThemedTextInput } from "~/components/common/ui";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ActivityType = Activity["activityType"];
@@ -172,9 +165,18 @@ export default function AdminActivityScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.centerSubtitle}>Loading activities...</Text>
+        <View style={styles.skeletonList}>
+          <Skeleton.Group testID="activity-loading-skeleton">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`activity-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={120}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList
@@ -256,6 +258,12 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 120,
+    gap: spacing.md,
+  },
+  skeletonList: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     gap: spacing.md,
   },
   centerState: {

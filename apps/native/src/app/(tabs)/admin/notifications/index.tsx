@@ -27,6 +27,7 @@ import {
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
 import { EmptyState } from "~/components/common/ui";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { type Notification, useAdminNotifications } from "~/hooks/admin/useAdminNotifications";
 import { type NotificationSchedule, useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -314,8 +315,17 @@ export default function AdminNotificationsScreen() {
 
           {areNotificationsLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading notifications...</Text>
+              <Skeleton.Group testID="notifications-loading-skeleton">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Skeleton
+                    // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                    key={`notification-skeleton-${index}`}
+                    variant="box"
+                    width="100%"
+                    height={88}
+                  />
+                ))}
+              </Skeleton.Group>
             </View>
           ) : (
             <FlatList
@@ -532,8 +542,9 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     marginTop: spacing.md,

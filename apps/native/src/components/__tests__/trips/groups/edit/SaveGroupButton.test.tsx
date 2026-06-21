@@ -23,7 +23,7 @@ describe("SaveGroupButton", () => {
     renderWithProviders(<SaveGroupButton isSubmitting={true} onPress={jest.fn()} />);
 
     expect(screen.queryByText("Save Changes")).toBeNull();
-    expect(screen.getByTestId("save-group-button-loading-indicator")).toBeTruthy();
+    expect(screen.getByTestId("save-group-button-loading-skeleton-0")).toBeTruthy();
   });
 
   it("should be disabled when isSubmitting is true", () => {

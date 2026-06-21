@@ -2,14 +2,8 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import LoadingScreen from "~/components/LoadingScreen";
 import { ErrorState } from "~/components/common/ui";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
@@ -57,12 +51,7 @@ export default function NotificationsScreen() {
   };
 
   if (isLoading || isLoadingUser) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#00ced1" />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
-      </View>
-    );
+    return <LoadingScreen message="Loading notifications..." />;
   }
 
   // Don't render if user doesn't have access
@@ -133,18 +122,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     gap: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: "#17181c",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  loadingText: {
-    marginTop: 16,
-    color: "#9ca3af",
-    fontSize: 14,
   },
   errorTitle: {
     color: "#ef4444",

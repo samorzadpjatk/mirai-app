@@ -7,6 +7,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminSearchBar } from "~/components/admin/AdminSearchBar";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { UserCard } from "~/components/admin/users/UserCard";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminUsers } from "~/hooks/admin/useAdminUsers";
 import type { User, UserSearchField } from "~/hooks/admin/useAdminUsers";
 import { colors, spacing } from "~/styles";
@@ -97,8 +98,25 @@ export default function AdminUsersScreen() {
       />
 
       {usersLoading ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.md,
+            gap: spacing.sm,
+          }}
+        >
+          <Skeleton.Group testID="users-loading-skeleton">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton
+                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder rows
+                key={`user-skeleton-${index}`}
+                variant="box"
+                width="100%"
+                height={72}
+              />
+            ))}
+          </Skeleton.Group>
         </View>
       ) : (
         <FlatList

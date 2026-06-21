@@ -1,15 +1,23 @@
-import { StyleSheet, View } from "react-native";
-import { borderRadius, colors, spacing } from "~/styles";
+import { StyleSheet } from "react-native";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { colors, spacing } from "~/styles";
+
+const CARD_COUNT = 4;
 
 export function GroupsLoadingState() {
   return (
-    <View testID="groups-loading-state" style={styles.container}>
-      {/* Group card placeholders */}
-      <View style={styles.cardPlaceholder} />
-      <View style={styles.cardPlaceholder} />
-      <View style={styles.cardPlaceholder} />
-      <View style={styles.cardPlaceholder} />
-    </View>
+    <Skeleton.Group testID="groups-loading-state" style={styles.container}>
+      {Array.from({ length: CARD_COUNT }).map((_, index) => (
+        <Skeleton
+          // biome-ignore lint/suspicious/noArrayIndexKey: deterministic placeholder cards with no stable id
+          key={`groups-loading-card-${index}`}
+          height={100}
+          testID={`groups-loading-card-${index}`}
+          variant="box"
+          width="100%"
+        />
+      ))}
+    </Skeleton.Group>
   );
 }
 
@@ -19,10 +27,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
     padding: spacing.lg,
     gap: spacing.lg,
-  },
-  cardPlaceholder: {
-    height: 100,
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
   },
 });

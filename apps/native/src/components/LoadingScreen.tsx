@@ -1,8 +1,8 @@
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Text, View } from "react-native";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, spacing, typography } from "../styles";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { colors, spacing, typography } from "~/styles";
 
 interface LoadingScreenProps {
   message?: string;
@@ -15,7 +15,19 @@ export default function LoadingScreen({ message = "Loading..." }: LoadingScreenP
       <StatusBar style="auto" />
       <View style={styles.container}>
         <View style={[styles.mainContent, { paddingTop: insets.top + spacing.lg }]}>
-          <ActivityIndicator size="large" color="#00ced1" accessibilityLabel="Loading indicator" />
+          <Skeleton.Group testID="loading-screen-skeleton">
+            <Skeleton
+              colors={{ base: colors.surfaceDark, highlight: colors.primary }}
+              height={80}
+              variant="box"
+              width={80}
+            />
+            <Skeleton.Line
+              colors={{ base: colors.surfaceDark, highlight: colors.primary }}
+              count={2}
+              width={160}
+            />
+          </Skeleton.Group>
           <Text style={styles.message}>{message}</Text>
         </View>
       </View>
