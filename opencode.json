@@ -1,6 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "lsp": true,
   "mcp": {
     "playwright": {
       "type": "local",
@@ -10,32 +9,6 @@
         "@playwright/mcp@latest"
       ]
     },
-    "mobile-mcp": {
-      "type": "local",
-      "command": [
-        "bunx",
-        "-y",
-        "@mobilenext/mobile-mcp@latest"
-      ]
-    },
-    "eslint": {
-      "type": "local",
-      "command": [
-        "bunx",
-        "-y",
-        "@eslint/mcp@latest"
-      ]
-    },
-    "markitdown": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "mcp/markitdown:latest"
-      ]
-    },
     "fetcher": {
       "type": "local",
       "command": [
@@ -43,33 +16,6 @@
         "-y",
         "fetcher-mcp"
       ]
-    },
-    "maestro": {
-      "type": "local",
-      "command": [
-        "maestro",
-        "mcp"
-      ]
-    },
-    "stitch": {
-      "type": "remote",
-      "url": "https://stitch.googleapis.com/mcp",
-      "headers": {
-        "Accept": "application/json",
-        "X-Goog-Api-Key": "{env:STITCH_GOOGLE_API_KEY}"
-      }
-    },
-    "nx-mcp": {
-      "type": "local",
-      "command": [
-        "bunx",
-        "nx",
-        "mcp"
-      ],
-      "enabled": true
     }
-  },
-  "plugin": [
-    "context-mode"
-  ]
+  }
 }
