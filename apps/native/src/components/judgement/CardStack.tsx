@@ -1,7 +1,7 @@
 "use no memo";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Modal, Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Alert, Modal, Pressable, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Extrapolation, interpolate, runOnJS, useAnimatedStyle } from "react-native-reanimated";
 import { ActionBar } from "~/components/judgement/ActionBar";
@@ -20,7 +20,7 @@ interface CardStackProps {
 
 import { calculateSwipeToValue, canSubmitReject } from "./cardStackUtils";
 
-export { canSubmitReject, calculateSwipeToValue };
+export { calculateSwipeToValue, canSubmitReject };
 
 const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const {
@@ -46,6 +46,7 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
     animateRejectSwipe,
   } = useCardAnimations();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset animation when the current submission changes
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;

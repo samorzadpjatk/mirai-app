@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
-  DAY_MS,
-  HOUR_MS,
-  MAX_PEER_VOTING_DURATION_HOURS,
-  MAX_RECURRING_DAYS,
   addDays,
+  DAY_MS,
   endOfDay,
+  HOUR_MS,
   inferPeerVotingDurationHours,
   inferRecurringDaysFromWindow,
+  MAX_PEER_VOTING_DURATION_HOURS,
+  MAX_RECURRING_DAYS,
   resolvePeerVotingTemplateWindow,
   resolveRecurringDays,
   resolveRecurringTemplateWindow,

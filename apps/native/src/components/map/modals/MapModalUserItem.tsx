@@ -24,7 +24,7 @@ export function MapModalUserItem({
 }: MapModalUserItemProps) {
   return (
     <ThemedListItem
-      title={name !== "" ? name : "Unknown"}
+      title={name === "" ? "Unknown" : name}
       subtitle={subtitle}
       leftAvatar={{ name, imageUrl }}
       rightElement={rightElement}

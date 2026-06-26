@@ -1,49 +1,31 @@
 export {
-  createORPCContext,
-  publicProcedure,
-  protectedProcedure,
-  moderatorProcedure,
   adminProcedure,
-  serviceAccountProcedure,
+  createORPCContext,
   mobileAppProcedure,
+  moderatorProcedure,
+  protectedProcedure,
+  publicProcedure,
   type RequestContext,
+  serviceAccountProcedure,
 } from "./api/orpc";
 
-export { appRouter, createCaller, type AppRouter } from "./api/root";
-export { serviceRouter, createServiceCaller, type ServiceRouter } from "./api/service-root";
-export { logger } from "./utils/logger";
-export {
-  DEFAULT_PEER_VOTING_DURATION_HOURS,
-  formatSubmissionDeadline,
-  resolvePeerVotingDurationHours,
-  resolvePodiumPoints,
-  createChallengeCompletionWithWinnersById,
-  createChallengeStatusActivityById,
-  createChallengeStatusActivityFromTransition,
-  promoteVisibleChallengesToActiveWithFeed,
-  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
-  finalizeVotingChallengesToCompletedWithFeed,
-  captureTripRankingSnapshot,
-  createRankChangeActivities,
-} from "./utils/activityFeed";
-
+export { type AppRouter, appRouter, createCaller } from "./api/root";
 export type {
   Activity,
   ActivityType,
-  BaseActivity,
-  CustomActivity,
-  UserPostActivity,
-  SubmissionActivity,
-  ChallengeEventActivity,
-  RankChangeActivity,
-  ReactionsSummary,
   AdminSnippet,
-  GroupSnippet,
+  BaseActivity,
+  ChallengeEventActivity,
   ChallengeSnippet,
-  SubmissionSnippet,
+  CustomActivity,
+  GroupSnippet,
+  RankChangeActivity,
   RawActivityWithRelations,
+  ReactionsSummary,
+  SubmissionActivity,
+  SubmissionSnippet,
+  UserPostActivity,
 } from "./api/routers/activityFeed/types";
-
 export type {
   TripDetail,
   TripDetailGroup,
@@ -51,3 +33,19 @@ export type {
   TripDetailSponsor,
   TripDetailTripSponsor,
 } from "./api/routers/trip/types";
+export { createServiceCaller, type ServiceRouter, serviceRouter } from "./api/service-root";
+export {
+  captureTripRankingSnapshot,
+  createChallengeCompletionWithWinnersById,
+  createChallengeStatusActivityById,
+  createChallengeStatusActivityFromTransition,
+  createRankChangeActivities,
+  DEFAULT_PEER_VOTING_DURATION_HOURS,
+  finalizeVotingChallengesToCompletedWithFeed,
+  formatSubmissionDeadline,
+  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
+  promoteVisibleChallengesToActiveWithFeed,
+  resolvePeerVotingDurationHours,
+  resolvePodiumPoints,
+} from "./utils/activityFeed";
+export { logger } from "./utils/logger";

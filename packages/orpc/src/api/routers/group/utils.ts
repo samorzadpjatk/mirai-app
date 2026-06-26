@@ -2,6 +2,7 @@ import { resolveStorageUrl } from "@mirai-app/common/storage";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../../utils/storage";
+
 export { toUserWithEmail } from "@mirai-app/common/groups";
 
 export const batchEmailLookup = async (
@@ -13,16 +14,16 @@ export const batchEmailLookup = async (
 ) => {
   const allAuthUserIds = new Set<string>();
 
-  groups.forEach((group) => {
+  for (const group of groups) {
     if (group.organizer?.authUserId) {
       allAuthUserIds.add(group.organizer.authUserId);
     }
-    group.participants.forEach((participant) => {
+    for (const participant of group.participants) {
       if (participant.user.authUserId) {
         allAuthUserIds.add(participant.user.authUserId);
       }
-    });
-  });
+    }
+  }
 
   return await buildAuthEmailLookup(supabase, Array.from(allAuthUserIds));
 };
@@ -30,7 +31,7 @@ export const batchEmailLookup = async (
 export const generateFourDigitCode = () => {
   const array = new Uint32Array(1);
   globalThis.crypto.getRandomValues(array);
-  return String(1000 + (array[0]! % 9000));
+  return String(1000 + ((array[0] as number) % 9000));
 };
 
 export const normalizeGroupImageInput = (value: string | undefined) => {

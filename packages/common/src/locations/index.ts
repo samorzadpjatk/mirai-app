@@ -1,2 +1,2 @@
-export { toExpoLocation } from "./mappers";
 export type { ExpoLocationObject } from "./mappers";
+export { toExpoLocation } from "./mappers";

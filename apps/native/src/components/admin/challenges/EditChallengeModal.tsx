@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/components/common/ui";
-import { useAdminChallenges } from "~/hooks/admin";
 import type { AdminChallengeUI } from "~/hooks/admin";
+import { useAdminChallenges } from "~/hooks/admin";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
 

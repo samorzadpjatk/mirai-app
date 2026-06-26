@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import LoadingScreen from "~/components/LoadingScreen";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
+import LoadingScreen from "~/components/LoadingScreen";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { textStyles, viewStyles } from "~/styles/judgement";
 

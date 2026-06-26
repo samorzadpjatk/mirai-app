@@ -15,8 +15,8 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
 import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import type { Group } from "~/hooks/admin/useAdminGroups";
+import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 export default function AdminGroupsScreen() {

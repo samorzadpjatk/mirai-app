@@ -1,10 +1,10 @@
 import type { TransactionDB } from "@mirai-app/db";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  type RecurringTemplate,
   ensureRecurringInstanceForTemplate,
   ensureRecurringInstancesForTrip,
   precreateRecurringInstancesForTemplate,
+  type RecurringTemplate,
   resolveRecurringChallengeIdForTrip,
 } from "../recurringChallenges";
 

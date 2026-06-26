@@ -1,7 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  QUERY_GROUPS,
   invalidateCascadingQueries,
   invalidateChallengeQueries,
   invalidateFileQueries,
@@ -13,6 +12,7 @@ import {
   invalidateTripQueries,
   invalidateUserQueries,
   invalidateWithPredicate,
+  QUERY_GROUPS,
 } from "../invalidationUtils";
 
 interface MockQueryClient {

@@ -1,5 +1,5 @@
-import { users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { users } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";

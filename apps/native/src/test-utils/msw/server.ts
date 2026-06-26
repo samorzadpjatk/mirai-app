@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { HttpResponse, http } from "msw";
 import { setupServer } from "msw/node";
 
 const BASE_URL = "http://localhost:9999";
@@ -176,4 +176,4 @@ export function resetHandlers() {
   server.resetHandlers();
 }
 
-export { http, HttpResponse };
+export { HttpResponse, http };

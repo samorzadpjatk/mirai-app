@@ -191,7 +191,7 @@ export const useCommunityFeed = ({
 
   const queryFn = useMemo(
     () => buildCommunityFeedQueryFn(selectedTripId, orpcClient),
-    [selectedTripId, orpcClient],
+    [selectedTripId],
   );
 
   const feedQuery = useInfiniteQuery<
@@ -242,7 +242,7 @@ export const useCommunityFeed = ({
     },
   });
 
-  const handleToggleHeart = useCallback(buildHandleToggleHeart(toggleHeart), [toggleHeart]);
+  const handleToggleHeart = useCallback(buildHandleToggleHeart(toggleHeart), []);
 
   const activities = useMemo(
     () => buildCommunityFeedActivities(feedQuery.data?.pages),

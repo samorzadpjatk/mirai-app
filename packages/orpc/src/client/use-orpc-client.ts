@@ -1,6 +1,6 @@
 import type { RouterClient } from "@orpc/server";
-import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { RouterUtils } from "@orpc/tanstack-query";
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { useEffect, useMemo } from "react";
 import type { AppRouter } from "../api/root";
 import { clientLogger } from "./logger";

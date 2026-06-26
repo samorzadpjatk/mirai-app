@@ -97,7 +97,7 @@ export function buildUpdateGroupInput(
   return {
     id,
     tripId,
-    ...(name !== undefined ? { name } : {}),
+    ...(name === undefined ? {} : { name }),
     organizerId,
   };
 }

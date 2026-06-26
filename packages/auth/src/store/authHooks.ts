@@ -3,8 +3,8 @@
 import {
   type AuthStore,
   type AuthUser,
-  type SupabaseSession,
   authStore,
+  type SupabaseSession,
 } from "@mirai-app/common/stores";
 import { useStore } from "zustand";
 

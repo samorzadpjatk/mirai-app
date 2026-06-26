@@ -16,8 +16,7 @@ import { env } from "./config/env";
 import { supabase } from "./config/supabase";
 import { assetsRoot } from "./constants";
 import type { SeedEnv, TripInfoConfig, TripResourceConfig } from "./types";
-import { readTextFile } from "./utils/fs";
-import { readFile } from "./utils/fs";
+import { readFile, readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
 
 function isTripResourceConfig(value: unknown): value is TripResourceConfig {

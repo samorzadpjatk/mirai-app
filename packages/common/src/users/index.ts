@@ -1,20 +1,20 @@
+export { buildBanMetadata, calculateBanDuration } from "./banUtils";
 export { buildPagination } from "./buildPagination";
-export { calculateBanDuration, buildBanMetadata } from "./banUtils";
 export type { UserSearchField } from "./buildUserSearchWhere";
 export { buildUserSearchWhere } from "./buildUserSearchWhere";
 export { filterParticipantsByEmail, sortParticipants } from "./filterParticipants";
 export { formatDisplayName } from "./formatDisplayName";
 export { getInitials } from "./getInitials";
 export { hasAdminAccess } from "./hasAdminAccess";
-export type { ParticipantRow, MappedParticipant } from "./mapParticipantRow";
+export type { MappedParticipant, ParticipantRow } from "./mapParticipantRow";
 export { mapParticipantRow } from "./mapParticipantRow";
 export { normalizeEmail } from "./normalizeEmail";
 export type { BanStatus } from "./parseBanStatus";
 export { parseBanStatus } from "./parseBanStatus";
-export type { UserRole, PublicUser } from "./participantResult";
+export type { PublicUser, UserRole } from "./participantResult";
 export {
-  toPublicUser,
-  buildWristNumberConflictMessage,
   assembleParticipantWithUser,
+  buildWristNumberConflictMessage,
+  toPublicUser,
 } from "./participantResult";
 export { validateUserRegistration } from "./validateUserRegistration";

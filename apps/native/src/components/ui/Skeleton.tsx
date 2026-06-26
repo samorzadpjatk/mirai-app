@@ -5,12 +5,12 @@ import Animated, {
   cancelAnimation,
   Easing,
   ReduceMotion,
+  type SharedValue,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
-  type SharedValue,
 } from "react-native-reanimated";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -140,11 +140,7 @@ function SkeletonBase({
     };
   });
 
-  const handleLayout = ({
-    nativeEvent,
-  }: {
-    nativeEvent: { layout: { width: number } };
-  }) => {
+  const handleLayout = ({ nativeEvent }: { nativeEvent: { layout: { width: number } } }) => {
     containerWidth.value = nativeEvent.layout.width;
   };
 

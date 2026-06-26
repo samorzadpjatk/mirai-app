@@ -47,7 +47,7 @@ export function shouldSendLocationUpdate(
 
   const accuracy = newLocation.coords.accuracy;
   const threshold =
-    accuracy != null ? Math.max(accuracy * accuracyMultiplier, minimumDelta) : minimumDelta;
+    accuracy == null ? minimumDelta : Math.max(accuracy * accuracyMultiplier, minimumDelta);
 
   const delta = calculateDistance(
     lastSentLocation.coords.latitude,

@@ -1,6 +1,6 @@
 import { useStore } from "zustand";
-import { locationStore } from "./locationStore";
 import type { LocationPermissionStatus, LocationStore } from "./locationStore";
+import { locationStore } from "./locationStore";
 
 /**
  * Hook to access the full location context (backward-compatible with useLocationContext).

@@ -60,7 +60,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100);
 
   const handleCreate = async () => {
     if (!tripIdToUse || tripIdToUse === "all") {
@@ -266,7 +266,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 contentContainerStyle={{ gap: spacing.sm }}
               >
                 {newReward.images.map((imagePath, index) => (
-                  <View key={`${imagePath}-${index}`} style={{ position: "relative" }}>
+                  <View key={imagePath} style={{ position: "relative" }}>
                     <Image
                       source={{ uri: imagePreviewUris[index] ?? imagePath }}
                       style={{
@@ -316,7 +316,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                         fontSize: typography.xs,
                       }}
                     >
-                      Uploading{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+                      Uploading{imageUploadPercent == null ? "..." : ` ${imageUploadPercent}%`}
                     </Text>
                   </View>
                 ) : (
@@ -348,7 +348,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                       fontSize: typography.xs,
                     }}
                   >
-                    Uploading{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+                    Uploading{imageUploadPercent == null ? "..." : ` ${imageUploadPercent}%`}
                   </Text>
                 </View>
               ) : (

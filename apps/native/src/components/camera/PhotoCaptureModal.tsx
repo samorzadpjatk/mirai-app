@@ -63,7 +63,7 @@ export const buildLensPresetOptions = (lenses: string[]): LensPresetOption[] => 
     .filter((label) => Boolean(picked[label]))
     .map((label) => ({
       label,
-      lens: picked[label]!,
+      lens: picked[label] as string,
     }));
 };
 

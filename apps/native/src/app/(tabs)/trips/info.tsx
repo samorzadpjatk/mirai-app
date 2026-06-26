@@ -14,7 +14,6 @@ import {
   View,
 } from "react-native";
 import Pdf from "react-native-pdf";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { FullScreenModal } from "~/components/common/ui";
 import { useFileDownload } from "~/hooks/files";
@@ -39,7 +38,6 @@ export default function TripInfoScreen() {
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfModalTitle, setPdfModalTitle] = useState("");
   const [pdfModalUri, setPdfModalUri] = useState<string>("");
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const paramTripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const { selectedTripId } = useSelectedTrip();
@@ -73,7 +71,7 @@ export default function TripInfoScreen() {
         });
       }
     }
-  }, [tripId, isLoading, getResource, downloadHero, downloadMapBg]);
+  }, [isLoading, getResource, downloadHero, downloadMapBg]);
 
   // Check if PDFs are downloaded on component mount
   useEffect(() => {
@@ -482,8 +480,8 @@ export default function TripInfoScreen() {
                       <Text style={styles.insuranceLabel}>
                         Podczas rozmowy konieczne będzie podanie:
                       </Text>
-                      {step.requiredInfo.map((info, index) => (
-                        <Text key={index} style={styles.insuranceListItem}>
+                      {step.requiredInfo.map((info) => (
+                        <Text key={`info-${info}`} style={styles.insuranceListItem}>
                           - {info}
                         </Text>
                       ))}

@@ -1,6 +1,6 @@
 import { buildPaginationBounds, mapSubscriptionStatus } from "@mirai-app/common/notifications";
-import { notificationPushes, notifications } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { notificationPushes, notifications } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq } from "drizzle-orm";
 

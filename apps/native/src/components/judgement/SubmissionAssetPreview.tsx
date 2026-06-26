@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { VideoView, useVideoPlayer } from "expo-video";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Modal, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { useFileDownload } from "~/hooks/files";
 import type { Submission } from "~/stores/judgement";

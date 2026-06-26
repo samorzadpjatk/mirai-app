@@ -7,8 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import type { Group } from "~/hooks/admin/useAdminCoins";
+import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export default function AdminCoinsScreen() {

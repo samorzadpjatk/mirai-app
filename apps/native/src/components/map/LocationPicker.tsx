@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { CameraRef } from "@maplibre/maplibre-react-native";
 import {
   Camera,
   MapView,
@@ -6,7 +7,6 @@ import {
   RasterLayer,
   RasterSource,
 } from "@maplibre/maplibre-react-native";
-import type { CameraRef } from "@maplibre/maplibre-react-native";
 import * as Location from "expo-location";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -87,7 +87,7 @@ const MAP_STYLES: Record<"dark" | "light", MapStyleConfig> = {
 
 import { extractCoordinateFromFeature, isPointFeature } from "./locationPickerUtils";
 
-export { isPointFeature, extractCoordinateFromFeature };
+export { extractCoordinateFromFeature, isPointFeature };
 
 export const LocationPicker: React.FC<Props> = ({
   visible,

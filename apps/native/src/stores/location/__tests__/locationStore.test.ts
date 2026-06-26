@@ -4,8 +4,8 @@ import * as Location from "expo-location";
 import { Alert, Linking } from "react-native";
 import * as backgroundLocation from "~/services/location/backgroundLocation";
 import {
-  type ServerSharingUpdater,
   locationStore,
+  type ServerSharingUpdater,
   setLocationServerUpdater,
 } from "../locationStore";
 

@@ -5,7 +5,7 @@ export function aggregateTicketResults(
 ): Map<string, { hasSuccess: boolean; hasFailure: boolean }> {
   const resultByUser = new Map<string, { hasSuccess: boolean; hasFailure: boolean }>();
 
-  tickets
+  const results = tickets
     .map((t, idx) => {
       const token = messages[idx]?.to;
       if (!token || typeof token !== "string") return null;
@@ -14,19 +14,20 @@ export function aggregateTicketResults(
       const statusCode = t.status === "ok" ? 200 : 500;
       return { userId, statusCode };
     })
-    .filter((r): r is { userId: string; statusCode: number } => r !== null)
-    .forEach((r) => {
-      const current = resultByUser.get(r.userId) ?? {
-        hasSuccess: false,
-        hasFailure: false,
-      };
-      if (r.statusCode >= 200 && r.statusCode < 300) {
-        current.hasSuccess = true;
-      } else {
-        current.hasFailure = true;
-      }
-      resultByUser.set(r.userId, current);
-    });
+    .filter((r): r is { userId: string; statusCode: number } => r !== null);
+
+  for (const r of results) {
+    const current = resultByUser.get(r.userId) ?? {
+      hasSuccess: false,
+      hasFailure: false,
+    };
+    if (r.statusCode >= 200 && r.statusCode < 300) {
+      current.hasSuccess = true;
+    } else {
+      current.hasFailure = true;
+    }
+    resultByUser.set(r.userId, current);
+  }
 
   return resultByUser;
 }

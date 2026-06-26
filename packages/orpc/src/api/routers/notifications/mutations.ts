@@ -17,8 +17,8 @@ import {
   sendMobileNotifications,
 } from "../../../services/notificationService";
 import { logger } from "../../../utils/logger";
-import { sendNotification, sendRankingUpdate } from "../../../utils/notifications";
 import type { SendNotificationResult } from "../../../utils/notifications";
+import { sendNotification, sendRankingUpdate } from "../../../utils/notifications";
 import type { NotificationContext } from "./queries";
 
 export const subscribe = async (context: NotificationContext, input: { token: string }) => {

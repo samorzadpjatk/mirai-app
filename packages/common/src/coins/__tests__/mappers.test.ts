@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildAdditionalInsights, mapToMostActiveAdminStats } from "../mappers";
 import type { MostActiveAdminStatRow, RecentTransaction } from "../mappers";
+import { buildAdditionalInsights, mapToMostActiveAdminStats } from "../mappers";
 
 const createMockRow = (
   overrides: Partial<MostActiveAdminStatRow> = {},

@@ -7,7 +7,6 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createBunServer } from "./bun-server";
 import {
-  TEN_MB,
   buildSecurityHeaders,
   createCorsOrigin,
   createRateLimiter,
@@ -15,6 +14,7 @@ import {
   getClientIp,
   getWsEnvConfig,
   hashAccessToken,
+  TEN_MB,
 } from "./utils";
 
 export interface ServerOptions {

@@ -113,7 +113,7 @@ export const prepareChallengeInsert = (
     (recurringWindow?.endTime ?? input.endTime) &&
     peerVotingDurationHours
       ? resolvePeerVotingTemplateWindow({
-          submissionEndTime: recurringWindow?.endTime ?? input.endTime!,
+          submissionEndTime: recurringWindow?.endTime ?? (input.endTime as Date),
           votingDurationHours: peerVotingDurationHours,
         })
       : null;

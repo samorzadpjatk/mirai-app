@@ -6,8 +6,8 @@ import {
 } from "../../../utils/notificactionSchedule-validation";
 
 export {
+  filterSchema,
   notificationScheduleCreateSchema,
   notificationScheduleUpdateSchema,
   paginationSchema,
-  filterSchema,
 };

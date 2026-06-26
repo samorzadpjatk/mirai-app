@@ -2,14 +2,20 @@ import { vi } from "vitest";
 import type { SupabaseClient } from "../stores/authStore";
 
 type MockFn = {
+  // biome-ignore lint/suspicious/noExplicitAny: mock function signatures are intentionally permissive
   (...args: any[]): any;
+  // biome-ignore lint/suspicious/noExplicitAny: mock function signatures are intentionally permissive
   mockResolvedValue(value: any): MockFn;
+  // biome-ignore lint/suspicious/noExplicitAny: mock function signatures are intentionally permissive
   mockReturnValue(value: any): MockFn;
+  // biome-ignore lint/suspicious/noExplicitAny: mock function signatures are intentionally permissive
   mockImplementation(fn: (...args: any[]) => any): MockFn;
+  // biome-ignore lint/suspicious/noExplicitAny: mock function signatures are intentionally permissive
   mockRejectedValue(value: any): MockFn;
 };
 
 type Mockify<T> = {
+  // biome-ignore lint/suspicious/noExplicitAny: mapped mock types are intentionally permissive
   [K in keyof T]: T[K] extends (...args: any[]) => any
     ? MockFn
     : T[K] extends object

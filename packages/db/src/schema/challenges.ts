@@ -19,8 +19,7 @@ import {
   submissionTypeEnum,
 } from "./enums";
 import { groups } from "./groups";
-import { trips } from "./trips";
-import { tripParticipants } from "./trips";
+import { tripParticipants, trips } from "./trips";
 import { users } from "./users";
 
 export const challenges = pgTable(

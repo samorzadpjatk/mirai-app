@@ -64,7 +64,7 @@ function getColorFromName(name: string): string {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   const index = Math.abs(hash) % colors.length;
-  return colors[index]!;
+  return colors[index] as string;
 }
 
 export const UserAvatar: React.FC<UserAvatarProps> = ({

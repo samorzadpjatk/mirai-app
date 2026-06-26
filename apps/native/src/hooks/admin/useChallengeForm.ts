@@ -115,7 +115,7 @@ export function useChallengeForm({
     form.submissionType === "LOCATION" || form.submissionType === "IMAGE_LOCATION";
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100);
 
   // Labels for selects
   const submissionTypeLabel = useMemo(
@@ -169,12 +169,12 @@ export function useChallengeForm({
             thirdPlacePoints: "",
           }
         : {}),
-      ...(value !== "PEER_VOTING"
-        ? {
+      ...(value === "PEER_VOTING"
+        ? {}
+        : {
             votingDurationValue: "",
             votingDurationUnit: "HOURS",
-          }
-        : {}),
+          }),
     }));
   };
 
@@ -186,16 +186,16 @@ export function useChallengeForm({
       return {
         ...prev,
         submissionType: value,
-        ...(value !== "QR_CODE"
-          ? {
+        ...(value === "QR_CODE"
+          ? {}
+          : {
               qrCodeValue: "",
-            }
-          : {}),
-        ...(value !== "TEXT"
-          ? {
+            }),
+        ...(value === "TEXT"
+          ? {}
+          : {
               textExpectedPhrase: "",
-            }
-          : {}),
+            }),
         ...(shouldResetPeerVoting
           ? {
               scoringCategory: "SPEED",
@@ -348,13 +348,13 @@ export function useChallengeForm({
       recurringDays: challenge.isRecurring
         ? inferRecurringDaysFromWindow(challenge.startTime, challenge.endTime)
         : "",
-      basePoints: challenge.basePoints != null ? String(challenge.basePoints) : "",
+      basePoints: challenge.basePoints == null ? "" : String(challenge.basePoints),
       firstPlacePoints:
-        challenge.firstPlacePoints != null ? String(challenge.firstPlacePoints) : "",
+        challenge.firstPlacePoints == null ? "" : String(challenge.firstPlacePoints),
       secondPlacePoints:
-        challenge.secondPlacePoints != null ? String(challenge.secondPlacePoints) : "",
+        challenge.secondPlacePoints == null ? "" : String(challenge.secondPlacePoints),
       thirdPlacePoints:
-        challenge.thirdPlacePoints != null ? String(challenge.thirdPlacePoints) : "",
+        challenge.thirdPlacePoints == null ? "" : String(challenge.thirdPlacePoints),
       status: challenge.status ?? "HIDDEN",
       startTime: challenge.startTime ? new Date(challenge.startTime) : null,
       endTime: challenge.endTime ? new Date(challenge.endTime) : null,

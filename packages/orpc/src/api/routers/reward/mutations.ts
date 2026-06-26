@@ -1,6 +1,9 @@
-import { calculateRewardProgress } from "@mirai-app/common/rewards";
-import { canTransitionPurchaseStatus, serializeRewardImages } from "@mirai-app/common/rewards";
-import { type DB, coinTransactions, groups, rewardPurchases, rewards } from "@mirai-app/db";
+import {
+  calculateRewardProgress,
+  canTransitionPurchaseStatus,
+  serializeRewardImages,
+} from "@mirai-app/common/rewards";
+import { coinTransactions, type DB, groups, rewardPurchases, rewards } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
@@ -75,8 +78,8 @@ export const updateReward = async (
   const { id, ...updateData } = input;
 
   const { image, images, ...restUpdate } = updateData;
-  const hasImagesProp = Object.prototype.hasOwnProperty.call(updateData, "images");
-  const hasImageProp = Object.prototype.hasOwnProperty.call(updateData, "image");
+  const hasImagesProp = Object.hasOwn(updateData, "images");
+  const hasImageProp = Object.hasOwn(updateData, "image");
 
   const [updated] = await context.db
     .update(rewards)

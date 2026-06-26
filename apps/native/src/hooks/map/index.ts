@@ -2,10 +2,10 @@ export { useMapActions } from "./useMapActions";
 export {
   buildLocationUpdateData,
   buildUserDataFromLocationUser,
-  removeUserFromLocations,
   isUnauthorizedError,
   isValidLocationEvent,
   processLocationStreamEvent,
+  removeUserFromLocations,
   useMapLocationStream,
 } from "./useMapLocationStream";
 export { useMapSelectedUser } from "./useMapSelectedUser";

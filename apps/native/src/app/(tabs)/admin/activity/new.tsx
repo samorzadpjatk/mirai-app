@@ -65,7 +65,7 @@ export default function AdminCreateActivityScreen() {
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100);
 
   const handlePickImage = async () => {
     try {
@@ -194,7 +194,7 @@ export default function AdminCreateActivityScreen() {
 
           {isUploadingImage ? (
             <Text style={styles.helperText}>
-              Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              Uploading image{imageUploadPercent == null ? "..." : ` ${imageUploadPercent}%`}
             </Text>
           ) : null}
 

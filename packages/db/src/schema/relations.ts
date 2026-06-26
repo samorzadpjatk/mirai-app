@@ -11,8 +11,8 @@ import { auditLogs } from "./auditLogs";
 import { challengeLocationMatch } from "./challengeLocationMatch";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
+import { challengeSubmissions, challenges, challengeVotes, submissionReports } from "./challenges";
 import { challengeText } from "./challengeText";
-import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
 import { groupJoinRequests, groups } from "./groups";
 import { locationShares, locationSharingRequests, locations } from "./locations";
 import {

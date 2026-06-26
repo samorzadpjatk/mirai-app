@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  judgementStore,
   type ReviewStatus,
   type Submission,
-  judgementStore,
   useJudgementStore,
 } from "../judgementStore";
 

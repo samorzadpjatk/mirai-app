@@ -149,6 +149,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
     })();
   }, [sharingSettings]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: toggle builder captures mutable hook values that must stay fresh
   const toggleLocationSharing = useCallback(
     buildLocationSharingToggle(setIsLocationSharingEnabled, {
       permissionStatus,

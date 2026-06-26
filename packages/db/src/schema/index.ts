@@ -8,104 +8,105 @@ import {
   submissionTypeEnum,
   tripRoleEnum,
 } from "./enums";
-export {
-  roleEnum,
-  submissionTypeEnum,
-  scoringCategoryEnum,
-  challengeStatusEnum,
-  submissionStatusEnum,
-  locationSharingRequestStatusEnum,
-  rewardPurchaseStatusEnum,
-  tripRoleEnum,
-};
-export { users } from "./users";
-export {
-  trips,
-  tripInsurances,
-  tripInsuranceSteps,
-  tripParticipants,
-} from "./trips";
-export { tripResourceLinks } from "./tripResourceLinks";
-export { tripResourceFiles } from "./tripResourceFiles";
-export { tripResourceTexts } from "./tripResourceTexts";
-export { tripResourceIcons } from "./tripResourceIcons";
-export { groups, groupJoinRequests } from "./groups";
-export {
-  challenges,
-  challengeSubmissions,
-  challengeVotes,
-  submissionReports,
-} from "./challenges";
-export { challengeRecurrence } from "./challengeRecurrence";
-export { challengeLocationMatch } from "./challengeLocationMatch";
-export { challengeText } from "./challengeText";
-export { challengeQrCode } from "./challengeQrCode";
+
 export {
   activityFeeds,
   activityReactions,
-  submissionActivities,
   challengeActivities,
   rankChangeActivities,
+  submissionActivities,
   userPosts,
 } from "./activities";
+export { auditLogs } from "./auditLogs";
+export { challengeLocationMatch } from "./challengeLocationMatch";
+export { challengeQrCode } from "./challengeQrCode";
+export { challengeRecurrence } from "./challengeRecurrence";
 export {
+  challengeSubmissions,
+  challenges,
+  challengeVotes,
+  submissionReports,
+} from "./challenges";
+export { challengeText } from "./challengeText";
+export { groupJoinRequests, groups } from "./groups";
+export { locationShares, locationSharingRequests, locations } from "./locations";
+export {
+  notificationDeliveries,
+  notificationPushes,
+  notificationScheduleExecutions,
   notificationSchedules,
   notifications,
-  notificationScheduleExecutions,
-  notificationPushes,
-  notificationDeliveries,
   pushSubscriptions,
 } from "./notifications";
-export { locations, locationSharingRequests, locationShares } from "./locations";
-export { rewards, rewardPurchases, coinTransactions } from "./rewards";
-export { sponsors, tripSponsors } from "./sponsors";
-export { tripSponsorDisplay } from "./tripSponsorDisplay";
-export { auditLogs } from "./auditLogs";
 // userAgents removed - telemetry should not be stored in application database
 export {
-  usersRelations,
-  tripsRelations,
-  tripResourceLinksRelations,
-  tripResourceFilesRelations,
-  tripResourceTextsRelations,
-  tripResourceIconsRelations,
-  tripInsurancesRelations,
-  tripInsuranceStepsRelations,
-  tripParticipantsRelations,
-  groupsRelations,
-  groupJoinRequestsRelations,
-  challengesRelations,
-  challengeRecurrenceRelations,
-  challengeLocationMatchRelations,
-  challengeTextRelations,
-  challengeQrCodeRelations,
-  challengeSubmissionsRelations,
-  challengeVotesRelations,
-  submissionReportsRelations,
   activityFeedsRelations,
   activityReactionsRelations,
-  submissionActivitiesRelations,
+  auditLogsRelations,
   challengeActivitiesRelations,
-  rankChangeActivitiesRelations,
-  userPostsRelations,
+  challengeLocationMatchRelations,
+  challengeQrCodeRelations,
+  challengeRecurrenceRelations,
+  challengeSubmissionsRelations,
+  challengesRelations,
+  challengeTextRelations,
+  challengeVotesRelations,
   coinTransactionsRelations,
+  groupJoinRequestsRelations,
+  groupsRelations,
+  locationSharesRelations,
+  locationSharingRequestsRelations,
+  locationsRelations,
+  notificationDeliveriesRelations,
+  notificationPushesRelations,
+  notificationScheduleExecutionsRelations,
   notificationSchedulesRelations,
   notificationsRelations,
-  notificationScheduleExecutionsRelations,
-  notificationPushesRelations,
-  notificationDeliveriesRelations,
   pushSubscriptionsRelations,
-  locationsRelations,
-  locationSharingRequestsRelations,
-  locationSharesRelations,
-  rewardsRelations,
+  rankChangeActivitiesRelations,
   rewardPurchasesRelations,
+  rewardsRelations,
   sponsorsRelations,
-  tripSponsorsRelations,
+  submissionActivitiesRelations,
+  submissionReportsRelations,
+  tripInsuranceStepsRelations,
+  tripInsurancesRelations,
+  tripParticipantsRelations,
+  tripResourceFilesRelations,
+  tripResourceIconsRelations,
+  tripResourceLinksRelations,
+  tripResourceTextsRelations,
   tripSponsorDisplayRelations,
-  auditLogsRelations,
+  tripSponsorsRelations,
+  tripsRelations,
+  userPostsRelations,
+  usersRelations,
   // userAgentsRelations removed - telemetry table dropped
 } from "./relations";
+export { coinTransactions, rewardPurchases, rewards } from "./rewards";
+export { sponsors, tripSponsors } from "./sponsors";
+export { tripResourceFiles } from "./tripResourceFiles";
+export { tripResourceIcons } from "./tripResourceIcons";
+export { tripResourceLinks } from "./tripResourceLinks";
+export { tripResourceTexts } from "./tripResourceTexts";
+export { tripSponsorDisplay } from "./tripSponsorDisplay";
+export {
+  tripInsuranceSteps,
+  tripInsurances,
+  tripParticipants,
+  trips,
+} from "./trips";
+export { users } from "./users";
+export {
+  challengeStatusEnum,
+  locationSharingRequestStatusEnum,
+  rewardPurchaseStatusEnum,
+  roleEnum,
+  scoringCategoryEnum,
+  submissionStatusEnum,
+  submissionTypeEnum,
+  tripRoleEnum,
+};
 
 import {
   activityFeeds,
@@ -119,8 +120,8 @@ import { auditLogs } from "./auditLogs";
 import { challengeLocationMatch } from "./challengeLocationMatch";
 import { challengeQrCode } from "./challengeQrCode";
 import { challengeRecurrence } from "./challengeRecurrence";
+import { challengeSubmissions, challenges, challengeVotes, submissionReports } from "./challenges";
 import { challengeText } from "./challengeText";
-import { challengeSubmissions, challengeVotes, challenges, submissionReports } from "./challenges";
 import { groupJoinRequests, groups } from "./groups";
 import { locationShares, locationSharingRequests, locations } from "./locations";
 import {

@@ -321,10 +321,7 @@ describe("useMapLocationStream (WebSocket)", () => {
     expect(activeWebSocket).not.toBeNull();
 
     if (activeWebSocket) {
-      activeWebSocket._handleRequest = (request: {
-        i: number;
-        p: { u?: string; b?: unknown };
-      }) => {
+      activeWebSocket._handleRequest = (request: { i: number; p: { u?: string; b?: unknown } }) => {
         const { i } = request;
         const errorResponse = {
           i,

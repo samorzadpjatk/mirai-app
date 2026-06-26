@@ -48,7 +48,7 @@ export function GroupImagePicker({
                 testID="group-image-picker-activity-indicator"
               />
               <Text style={styles.badgeText}>
-                {uploadPercent != null ? `Uploading ${uploadPercent}%` : "Uploading..."}
+                {uploadPercent == null ? "Uploading..." : `Uploading ${uploadPercent}%`}
               </Text>
             </>
           ) : (

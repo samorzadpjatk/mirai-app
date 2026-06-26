@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import type { PreviousUpload, UrlStorage } from "tus-js-client";
+
 type StoredUploadsMap = Record<string, Record<string, PreviousUpload>>;
 const STORAGE_KEY = "tus.uploads.v1";
 const readStore = async (): Promise<StoredUploadsMap> => {

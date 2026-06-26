@@ -5,12 +5,12 @@ import {
   requireAuth,
   requireModerator,
 } from "@mirai-app/auth";
-import { createRouterClient } from "@orpc/server";
-import { ORPCError } from "@orpc/server";
+import { createRouterClient, ORPCError } from "@orpc/server";
 import { env } from "bun";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { createMockSupabase } from "../../test-helpers";
+import type { RequestContext } from "../orpc";
 import {
   adminProcedure,
   createORPCContext,
@@ -20,7 +20,6 @@ import {
   publicProcedure,
   serviceAccountProcedure,
 } from "../orpc";
-import type { RequestContext } from "../orpc";
 
 describe("createORPCContext token extraction", () => {
   const baseOpts = {

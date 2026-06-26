@@ -261,4 +261,4 @@ export const useFileDownload = () => {
     file,
   } as const;
 };
-export type { DownloadInput, DownloadResult, DownloadProgress };
+export type { DownloadInput, DownloadProgress, DownloadResult };

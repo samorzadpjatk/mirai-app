@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  LOCATION_SUBMISSION_RADIUS_METERS,
   assertSubmissionWithinTargetLocation,
+  LOCATION_SUBMISSION_RADIUS_METERS,
   shouldAutoApproveSubmission,
   validateSubmissionPayload,
 } from "../validators";

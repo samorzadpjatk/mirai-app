@@ -43,11 +43,11 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
   };
 
   const permissionModeLabel =
-    permissionStatus !== "granted"
-      ? "Location access: Off"
-      : backgroundPermissionStatus === "granted"
+    permissionStatus === "granted"
+      ? backgroundPermissionStatus === "granted"
         ? "Access mode: Always"
-        : "Access mode: While in use";
+        : "Access mode: While in use"
+      : "Location access: Off";
   const isBackgroundControlDisabled =
     !isLocationSharingEnabled || isLocationLoading || isUpdatingBackgroundLocation;
   const isBackgroundDisplayedOn = isLocationSharingEnabled && isBackgroundLocationEnabled;

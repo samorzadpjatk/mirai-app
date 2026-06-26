@@ -12,11 +12,9 @@ import { useCameraPermissions } from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { QrScannerModal } from "~/components/common";
-import { AppModalFooter, AppModalShell } from "~/components/common/ui";
-import { ThemedTextInput } from "~/components/common/ui";
+import { AppModalFooter, AppModalShell, ThemedTextInput } from "~/components/common/ui";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
 import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges/ChallengeCommunitySubmissionsCard";
 import { ChallengeDescriptionCard } from "~/components/trips/challenges/ChallengeDescriptionCard";
@@ -26,8 +24,7 @@ import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeN
 import { ChallengeTimeLeftCard } from "~/components/trips/challenges/ChallengeTimeLeftCard";
 import { ChallengeUploadProgressCard } from "~/components/trips/challenges/ChallengeUploadProgressCard";
 import { ExistingSubmissionCard } from "~/components/trips/challenges/ExistingSubmissionCard";
-import { useChallengeDetails } from "~/hooks/challenges";
-import { useChallengeCapture } from "~/hooks/challenges";
+import { useChallengeCapture, useChallengeDetails } from "~/hooks/challenges";
 import { deleteCachedDownload } from "~/hooks/files";
 import { useTripDetails } from "~/hooks/trips";
 import { colors, spacing } from "../../../../styles";
@@ -68,7 +65,6 @@ export default function ChallengeDetailScreen() {
   const params = useLocalSearchParams();
   const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const insets = useSafeAreaInsets();
 
   const {
     challenge,
@@ -95,11 +91,11 @@ export default function ChallengeDetailScreen() {
   });
   const isUploading = uploadStatus === "uploading";
   const uploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100);
   const uploadLabel = isUploading
-    ? uploadPercent != null
-      ? `Uploading ${uploadPercent}%`
-      : "Uploading..."
+    ? uploadPercent == null
+      ? "Uploading..."
+      : `Uploading ${uploadPercent}%`
     : undefined;
 
   const submissionQuery = orpc.challengeSubmission.getMyForChallenge.queryOptions({

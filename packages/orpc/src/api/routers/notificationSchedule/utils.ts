@@ -6,7 +6,7 @@ import {
 import { resolveAuthEmail } from "../../../utils/authEmails";
 import type { ScheduledNotificationTemplate } from "../../../utils/notificationTemplates";
 
-export { toOptionalString, normalizeScheduleWindow };
+export { normalizeScheduleWindow, toOptionalString };
 
 export const attachCreatedByEmail = <
   T extends { createdBy?: { authUserId?: string | null } | null },

@@ -50,8 +50,8 @@ export function useMapUsers({
       });
     }
 
-    Object.entries(locationsByUserId ?? {}).forEach(([userId, location]) => {
-      if (userId === currentUserId) return;
+    for (const [userId, location] of Object.entries(locationsByUserId ?? {})) {
+      if (userId === currentUserId) continue;
       const userData = usersData?.[userId];
       next.push({
         id: userId,
@@ -63,7 +63,7 @@ export function useMapUsers({
         lastActiveAt:
           location.updatedAt instanceof Date ? location.updatedAt.getTime() : location.updatedAt,
       });
-    });
+    }
 
     return next;
   }, [

@@ -4,8 +4,8 @@ import {
   challengeLocationMatch,
   challengeRecurrence,
   challengeSubmissions,
-  challengeVotes,
   challenges,
+  challengeVotes,
   coinTransactions,
   groups,
   rankChangeActivities,
@@ -18,12 +18,12 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import {
-  DEFAULT_PEER_VOTING_DURATION_HOURS,
   captureTripRankingSnapshot,
   createChallengeCompletionWithWinnersById,
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
   createRankChangeActivities,
+  DEFAULT_PEER_VOTING_DURATION_HOURS,
   finalizeVotingChallengesToCompletedWithFeed,
   formatSubmissionDeadline,
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,

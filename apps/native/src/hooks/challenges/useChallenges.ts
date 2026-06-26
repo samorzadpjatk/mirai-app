@@ -1,7 +1,7 @@
 import {
-  type DBChallenge,
   buildChallengeQueryInput,
   countCompletedChallenges,
+  type DBChallenge,
   getNextChallengePageParam,
   mapChallengeToListItem,
 } from "@mirai-app/common/challenges";

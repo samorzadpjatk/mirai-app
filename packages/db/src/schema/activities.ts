@@ -12,8 +12,7 @@ import { randomUUID } from "../utils/uuid";
 import { challengeSubmissions, challenges } from "./challenges";
 import { submissionTypeEnum } from "./enums";
 import { groups } from "./groups";
-import { trips } from "./trips";
-import { tripParticipants } from "./trips";
+import { tripParticipants, trips } from "./trips";
 import { users } from "./users";
 
 export const activityFeeds = pgTable(

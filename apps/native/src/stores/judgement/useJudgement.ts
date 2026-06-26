@@ -2,8 +2,8 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { useStore } from "zustand";
-import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
+import { judgementStore } from "./judgementStores";
 
 /**
  * Hook that replaces the old JudgementProvider + useJudgement pattern.

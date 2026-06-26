@@ -15,10 +15,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import LoadingScreen from "~/components/LoadingScreen";
 import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
+import LoadingScreen from "~/components/LoadingScreen";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeItem {

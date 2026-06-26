@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
 import { colors, commonStyles } from "~/styles";

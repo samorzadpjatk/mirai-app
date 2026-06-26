@@ -1,5 +1,5 @@
-import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import type { DB, Role } from "@mirai-app/db";
+import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import { vi } from "vitest";
 import type { createPgliteTestDb } from "~/db-test-helper";
 

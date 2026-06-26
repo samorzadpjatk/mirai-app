@@ -1,14 +1,14 @@
 import { resolveAwardedPoints } from "@mirai-app/common/challengeSubmissions";
+import type { DB, TransactionDB } from "@mirai-app/db";
 import {
   challengeLocationMatch,
   challengeQrCode,
   challengeSubmissions,
-  challengeText,
   challenges,
+  challengeText,
   coinTransactions,
   groups,
 } from "@mirai-app/db";
-import type { DB, TransactionDB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, lte, notInArray, sql } from "drizzle-orm";
 import {

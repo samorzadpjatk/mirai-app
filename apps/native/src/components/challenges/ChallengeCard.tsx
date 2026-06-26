@@ -263,9 +263,9 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
               }}
             >
               <View style={{ flexDirection: "row", marginLeft: -4 }}>
-                {challenge.participantAvatars.slice(0, 2).map((avatar, index) => (
+                {challenge.participantAvatars.slice(0, 2).map((avatar) => (
                   <View
-                    key={index}
+                    key={avatar}
                     style={{
                       width: 24,
                       height: 24,

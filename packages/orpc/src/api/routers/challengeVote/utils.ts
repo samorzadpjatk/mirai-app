@@ -3,8 +3,8 @@ import {
   hasAllRequiredPositions,
   tallyVotes,
 } from "@mirai-app/common/challengeVote";
-import { challengeSubmissions, challenges, tripParticipants, users } from "@mirai-app/db";
 import type { DB, TransactionDB } from "@mirai-app/db";
+import { challengeSubmissions, challenges, tripParticipants, users } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray, ne } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";

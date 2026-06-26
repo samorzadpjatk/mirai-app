@@ -1,5 +1,5 @@
-import { challenges, notificationPushes, notifications, pushSubscriptions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { challenges, notificationPushes, notifications, pushSubscriptions } from "@mirai-app/db";
 import { env } from "bun";
 import { eq } from "drizzle-orm";
 import { Expo } from "expo-server-sdk";

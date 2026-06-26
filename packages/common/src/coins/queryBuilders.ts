@@ -1,6 +1,6 @@
 import { coinTransactions } from "@mirai-app/db/schema";
-import { eq, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 /**
  * Builds a Drizzle where expression for coin transactions.

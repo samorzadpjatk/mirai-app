@@ -8,25 +8,25 @@ import { useMapSelectedUser } from "~/hooks/map";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
 import { useMapOverlayGestures } from "./hooks/useMapOverlayGestures";
 import {
-  type MapTheme,
-  type SharingSettings,
   buildFocusStateFromUser,
   getNextMapTheme,
   isValidCoordinate,
+  type MapTheme,
   removeUserFromSharingSettings,
   removeUserFromSharingUserIds,
+  type SharingSettings,
   shouldCollapseList,
 } from "./mapOverlayStoreUtils";
 
 export type { MapTheme, SharingSettings };
 
 export {
+  buildFocusStateFromUser,
   getNextMapTheme,
   isValidCoordinate,
-  shouldCollapseList,
-  buildFocusStateFromUser,
-  removeUserFromSharingUserIds,
   removeUserFromSharingSettings,
+  removeUserFromSharingUserIds,
+  shouldCollapseList,
 };
 
 export interface ShareableUser {

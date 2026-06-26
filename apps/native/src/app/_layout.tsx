@@ -33,10 +33,10 @@ import {
 import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
 import { formatDisplayName } from "@mirai-app/common/users";
 import {
-  QueryProvider,
   cleanupBackgroundORPCClient,
   getBackgroundORPCClient,
   orpc,
+  QueryProvider,
 } from "@mirai-app/orpc/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";

@@ -11,13 +11,13 @@ import {
   validateRecurringTimeline,
 } from "@mirai-app/common/challenges";
 import {
-  type DB,
   challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
   challengeSubmissions,
-  challengeText,
   challenges,
+  challengeText,
+  type DB,
 } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq } from "drizzle-orm";
@@ -332,7 +332,8 @@ export const updateChallenge = async (
     (recurringWindow?.endTime ?? input.endTime ?? existing.endTime) &&
     peerVotingDurationHours
       ? resolvePeerVotingTemplateWindow({
-          submissionEndTime: recurringWindow?.endTime ?? input.endTime ?? existing.endTime!,
+          submissionEndTime:
+            recurringWindow?.endTime ?? input.endTime ?? (existing.endTime as Date),
           votingDurationHours: peerVotingDurationHours,
         })
       : null;
@@ -413,7 +414,7 @@ export const updateChallenge = async (
       .update(challenges)
       .set({
         name: input.name,
-        description: input.description !== undefined ? (input.description ?? null) : undefined,
+        description: input.description === undefined ? undefined : (input.description ?? null),
         image: normalizeChallengeImageInput(input.image),
         submissionType: input.submissionType,
         scoringCategory: input.scoringCategory,

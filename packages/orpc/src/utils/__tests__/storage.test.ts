@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   IMAGE_BUCKET,
-  PUBLIC_BUCKET,
-  SUPABASE_OBJECT_PREFIXES,
-  VIDEO_BUCKET,
   normalizeSupabaseStoragePath,
+  PUBLIC_BUCKET,
   parseSupabaseStorageObject,
   parseSupabaseStoragePath,
+  SUPABASE_OBJECT_PREFIXES,
+  VIDEO_BUCKET,
 } from "../storage";
 
 describe("storage", () => {

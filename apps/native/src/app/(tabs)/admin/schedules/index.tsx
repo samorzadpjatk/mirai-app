@@ -12,8 +12,8 @@ import {
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
+import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {

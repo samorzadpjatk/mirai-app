@@ -9,7 +9,10 @@ jest.mock("~/components/common/ui/DateTimePickerModal", () => {
     DateTimePickerModal: ({
       onConfirm,
       visible,
-    }: { onConfirm?: (date: Date) => void; visible?: boolean }) =>
+    }: {
+      onConfirm?: (date: Date) => void;
+      visible?: boolean;
+    }) =>
       visible ? (
         <Pressable testID="date-picker-confirm" onPress={() => onConfirm?.(new Date("2099-01-01"))}>
           <Text>Confirm Date</Text>
@@ -25,7 +28,11 @@ jest.mock("~/components/admin/AdminModal", () => {
       children,
       actions,
       visible,
-    }: { children?: React.ReactNode; actions?: React.ReactNode; visible?: boolean }) =>
+    }: {
+      children?: React.ReactNode;
+      actions?: React.ReactNode;
+      visible?: boolean;
+    }) =>
       visible ? (
         <View testID="admin-modal">
           {children}
@@ -36,7 +43,11 @@ jest.mock("~/components/admin/AdminModal", () => {
       title,
       onPress,
       disabled,
-    }: { title?: string; onPress?: () => void; disabled?: boolean }) => (
+    }: {
+      title?: string;
+      onPress?: () => void;
+      disabled?: boolean;
+    }) => (
       <TouchableOpacity testID={`modal-button-${title}`} onPress={onPress} disabled={disabled}>
         <Text>{title}</Text>
       </TouchableOpacity>

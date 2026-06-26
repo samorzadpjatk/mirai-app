@@ -78,9 +78,9 @@ export default function RewardDetailsModal({
                   onImageIndexChange(nextIndex);
                 }}
               >
-                {images.map((imageUri, index) => (
+                {images.map((imageUri) => (
                   <CachedImage
-                    key={`${imageUri}-${index}`}
+                    key={imageUri}
                     source={{ uri: imageUri }}
                     style={{
                       width: carouselWidth,
@@ -104,7 +104,7 @@ export default function RewardDetailsModal({
                 >
                   {images.map((_, index) => (
                     <View
-                      key={`dot-${index}`}
+                      key={`dot-${images[index]}`}
                       testID={`image-dot-${index}`}
                       style={{
                         width: 7,

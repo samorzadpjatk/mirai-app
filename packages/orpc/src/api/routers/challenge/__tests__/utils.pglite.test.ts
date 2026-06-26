@@ -2,8 +2,8 @@ import {
   challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
-  challengeText,
   challenges,
+  challengeText,
   trips,
 } from "@mirai-app/db";
 import { desc, eq, sql } from "drizzle-orm";
@@ -11,8 +11,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import {
   activateVisibleChallenges,
-  fetchChallengeWithRelations,
   fetchChallengesWithRelations,
+  fetchChallengeWithRelations,
   resolveChallengeImage,
   resolveChallengeImages,
   toClientChallenge,

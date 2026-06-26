@@ -94,12 +94,12 @@ function replaceAll(input: string, searchValue: string, replaceValue: string): s
 export function applyRankingTemplate(input: string, values: RankingTemplateValues): string {
   let output = input;
 
-  (Object.keys(PLACEHOLDER_ALIASES) as (keyof RankingTemplateValues)[]).forEach((field) => {
+  for (const field of Object.keys(PLACEHOLDER_ALIASES) as (keyof RankingTemplateValues)[]) {
     const value = values[field];
-    PLACEHOLDER_ALIASES[field].forEach((placeholder) => {
+    for (const placeholder of PLACEHOLDER_ALIASES[field]) {
       output = replaceAll(output, placeholder, value);
-    });
-  });
+    }
+  }
 
   return output;
 }

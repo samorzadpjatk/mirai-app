@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import LoadingScreen from "~/components/LoadingScreen";
 import {
   type SubmissionItem,
   SubmissionReviewCard,
@@ -26,6 +25,7 @@ import {
   FilterChipRow,
   ThemedTextInput,
 } from "~/components/common/ui";
+import LoadingScreen from "~/components/LoadingScreen";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";

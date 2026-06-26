@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from "@jest/globals";
-import { buildFilteredUsers, getActivityOpacity } from "~/components/map/UserMap";
 import type { UserLocation } from "~/components/map/UserMap";
+import { buildFilteredUsers, getActivityOpacity } from "~/components/map/UserMap";
 
 describe("getActivityOpacity", () => {
   const now = 1700000000000;

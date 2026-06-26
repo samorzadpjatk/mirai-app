@@ -1,5 +1,5 @@
-import { groups } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { groups } from "@mirai-app/db";
 import { and, eq } from "drizzle-orm";
 
 /**

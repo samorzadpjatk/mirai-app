@@ -1,6 +1,6 @@
 import { logger } from "@mirai-app/common/utils";
-import { closeDb } from "@mirai-app/db";
 import {
+  closeDb,
   coinTransactions,
   rewardPurchases,
   rewards,

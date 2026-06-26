@@ -1,11 +1,11 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { createMockActivity } from "../../../test-utils/activityMocks";
+import type { FeedPageData } from "../../community/useCommunityFeed";
 import {
   buildCommunityFeedActivities,
   buildCommunityFeedQueryKey,
   buildHandleToggleHeart,
 } from "../../community/useCommunityFeed";
-import type { FeedPageData } from "../../community/useCommunityFeed";
 
 const baseActivity = createMockActivity({
   tripId: "trip-1",

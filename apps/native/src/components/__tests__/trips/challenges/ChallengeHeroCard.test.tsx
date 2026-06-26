@@ -1,6 +1,6 @@
 import React from "react";
-import { Alert, View } from "react-native";
 import type * as ReactNative from "react-native";
+import { Alert, View } from "react-native";
 import { ChallengeHeroCard } from "../../../trips/challenges/ChallengeHeroCard";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
 

@@ -1,8 +1,8 @@
 import { requireEnv } from "@mirai-app/common/utils";
 import { logger } from "@mirai-app/orpc";
 import { getServiceORPCClient } from "@mirai-app/orpc/client";
-import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
+import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 
 interface NotificationRow {
   id: string;

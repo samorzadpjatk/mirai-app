@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLoginForm } from "@mirai-app/auth/client";
-import { useAuth } from "@mirai-app/auth/client";
+import { useAuth, useLoginForm } from "@mirai-app/auth/client";
 import { getORPCClient } from "@mirai-app/orpc/client";
 import { useSupabaseClient } from "@mirai-app/supabase/react";
 import { useRouter } from "expo-router";

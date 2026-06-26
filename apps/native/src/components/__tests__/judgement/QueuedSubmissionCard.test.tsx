@@ -1,8 +1,7 @@
+import { Text } from "react-native";
 import { type Submission } from "~/stores/judgement";
 import { QueuedSubmissionCard } from "../../judgement/QueuedSubmissionCard";
 import { renderWithProviders } from "../helpers/renderWithProviders";
-
-import { Text } from "react-native";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");

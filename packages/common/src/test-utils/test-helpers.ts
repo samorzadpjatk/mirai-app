@@ -34,6 +34,7 @@ export function mockConsole(
     restore: () => {
       for (const method of methods) {
         if (originals[method]) {
+          // biome-ignore lint/style/noNonNullAssertion: restoring the previously saved console method
           console[method] = originals[method]!;
         }
       }

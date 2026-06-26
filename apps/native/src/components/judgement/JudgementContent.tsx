@@ -19,7 +19,7 @@ const JudgementContent = ({ tripId, challengeId }: JudgementContentProps) => {
   useEffect(() => {
     const state = judgementStore.getState();
     state.resetDismissedIds();
-  }, [tripId, challengeId]);
+  }, []);
 
   if (isLoading) {
     return (

@@ -74,7 +74,7 @@ export default function AdminCreateRewardScreen() {
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100);
 
   const handlePickImage = async () => {
     try {
@@ -112,8 +112,8 @@ export default function AdminCreateRewardScreen() {
   const handleSubmit = async () => {
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
-    const parsedCoinCost = Number.parseInt(coinCost);
-    const parsedQuantity = Number.parseInt(availableQuantity);
+    const parsedCoinCost = Number.parseInt(coinCost, 10);
+    const parsedQuantity = Number.parseInt(availableQuantity, 10);
 
     if (!trimmedName) {
       Alert.alert("Validation", "Reward name is required.");
@@ -247,7 +247,7 @@ export default function AdminCreateRewardScreen() {
 
           {isUploadingImage ? (
             <Text style={styles.helperText}>
-              Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              Uploading image{imageUploadPercent == null ? "..." : ` ${imageUploadPercent}%`}
             </Text>
           ) : null}
 

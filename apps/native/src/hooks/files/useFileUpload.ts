@@ -4,6 +4,7 @@ import { File } from "expo-file-system";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
+
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 export interface UploadProgress {
   bytesUploaded: number;
@@ -278,7 +279,7 @@ export const useFileUpload = () => {
         uploadRef.current = null;
       }
     },
-    [abort, supabase.auth, orpcClient.storage.createUploadUrl, urlStorage],
+    [abort, supabase.auth, urlStorage],
   );
   return {
     upload,

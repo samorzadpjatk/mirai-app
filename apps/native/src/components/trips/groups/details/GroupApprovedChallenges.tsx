@@ -1,15 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import {
   FlatList,
   Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  View,
 } from "react-native";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import FullscreenSubmissionSlide, { formatDateTime } from "./FullscreenSubmissionSlide";
@@ -37,8 +37,8 @@ import {
 } from "./groupApprovedChallengesUtils";
 
 export {
-  calculateNextIndexFromScroll,
   calculateBoundedIndex,
+  calculateNextIndexFromScroll,
   canOpenFullscreen,
   needsFullscreenClose,
 };

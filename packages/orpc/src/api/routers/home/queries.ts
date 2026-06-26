@@ -1,8 +1,8 @@
-import { getUnreadCount } from "../notifications/queries";
 import type { NotificationContext } from "../notifications/queries";
+import { getUnreadCount } from "../notifications/queries";
 import { getAll as getAllTrips } from "../trip/queries";
-import { getMy } from "../user/queries";
 import type { UserContext } from "../user/queries";
+import { getMy } from "../user/queries";
 
 export type HomeContext = UserContext & NotificationContext;
 

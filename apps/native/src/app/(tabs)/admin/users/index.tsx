@@ -8,8 +8,8 @@ import { AdminSearchBar } from "~/components/admin/AdminSearchBar";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { UserCard } from "~/components/admin/users/UserCard";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { useAdminUsers } from "~/hooks/admin/useAdminUsers";
 import type { User, UserSearchField } from "~/hooks/admin/useAdminUsers";
+import { useAdminUsers } from "~/hooks/admin/useAdminUsers";
 import { colors, spacing } from "~/styles";
 
 export default function AdminUsersScreen() {

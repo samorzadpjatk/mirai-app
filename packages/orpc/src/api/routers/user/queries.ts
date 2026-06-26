@@ -7,8 +7,8 @@ import {
   parseBanStatus,
   sortParticipants,
 } from "@mirai-app/common/users";
-import { groups, tripParticipants, users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { groups, tripParticipants, users } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, eq, sql } from "drizzle-orm";
@@ -19,7 +19,7 @@ import {
   resolveAuthEmail,
 } from "../../../utils/authEmails";
 import { logger } from "../../../utils/logger";
-import type { SupabaseAdminUser, roleSchema } from "./types";
+import type { roleSchema, SupabaseAdminUser } from "./types";
 import { toPublicUser, toPublicUserWithAuthSummary } from "./utils";
 
 export type UserBaseContext = {

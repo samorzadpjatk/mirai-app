@@ -2,7 +2,7 @@ import { z } from "zod";
 import { adminProcedure, createORPCRouter, protectedProcedure } from "../../orpc";
 import { createChallenge, deleteChallenge, forceCloseVoting, updateChallenge } from "./mutations";
 import { getAll, getAllByTrip, getById } from "./queries";
-import { MAX_PEER_VOTING_DURATION_HOURS, MAX_RECURRING_DAYS, challengeImageSchema } from "./types";
+import { challengeImageSchema, MAX_PEER_VOTING_DURATION_HOURS, MAX_RECURRING_DAYS } from "./types";
 
 const handleGetAll = async ({ context }: { context: Parameters<typeof getAll>[0] }) =>
   getAll(context);

@@ -18,7 +18,7 @@ import {
   toNonNegativeOrUndefined,
 } from "./backgroundLocationTaskUtils";
 
-export { toFiniteNumberOrUndefined, toNonNegativeOrUndefined, toHeadingOrUndefined };
+export { toFiniteNumberOrUndefined, toHeadingOrUndefined, toNonNegativeOrUndefined };
 
 export interface BackgroundTaskState {
   isSending: boolean;

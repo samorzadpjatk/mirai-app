@@ -214,7 +214,7 @@ export function AdminChallengeListCard({
     challenge.scoringCategory !== "JUDGED_STAFF" ||
     (submissionEndTimestamp !== null &&
       Number.isFinite(submissionEndTimestamp) &&
-      submissionEndTimestamp <= new Date().getTime());
+      submissionEndTimestamp <= Date.now());
   const submissionTypeMeta = getSubmissionTypeMeta(challenge.submissionType);
   const scoringMeta = getScoringMeta(challenge.scoringCategory);
 

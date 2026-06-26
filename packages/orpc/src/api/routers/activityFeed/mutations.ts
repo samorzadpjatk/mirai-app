@@ -1,5 +1,6 @@
 import { buildUpdateActivityData, validateActivityVisibility } from "@mirai-app/common/feed";
 import { normalizeImageReference } from "@mirai-app/common/storage";
+import type { DB } from "@mirai-app/db";
 import {
   activityFeeds,
   activityReactions,
@@ -8,12 +9,11 @@ import {
   submissionActivities,
   userPosts,
 } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { enrichActivities } from "./enrichment";
-import { fetchActivityWithRelationsById, getReactionSummary } from "./queries";
 import type { ActivityContext } from "./queries";
+import { fetchActivityWithRelationsById, getReactionSummary } from "./queries";
 import { ensureTripExists, ensureTripParticipant } from "./utils";
 
 export const createCustom = async (

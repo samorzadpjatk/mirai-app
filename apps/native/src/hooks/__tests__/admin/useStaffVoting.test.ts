@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { act, renderHook } from "@testing-library/react-native";
 import {
-  type VotingSubmission,
   pickNextPair,
   rankByRating,
   toPairKey,
   useStaffVoting,
+  type VotingSubmission,
 } from "../../admin/useStaffVoting";
 
 describe("useStaffVoting", () => {

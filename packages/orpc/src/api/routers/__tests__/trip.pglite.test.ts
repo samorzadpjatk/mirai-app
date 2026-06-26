@@ -1,3 +1,4 @@
+import type { DB } from "@mirai-app/db";
 import {
   groups,
   sponsors,
@@ -12,7 +13,6 @@ import {
   trips,
   users,
 } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

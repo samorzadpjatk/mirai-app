@@ -5,14 +5,13 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "~/components/trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEditNotFoundState";
 import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEditPermissionState";
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { useFileUpload } from "~/hooks/files";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
@@ -23,7 +22,6 @@ export default function EditGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const insets = useSafeAreaInsets();
 
   const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
@@ -210,7 +208,7 @@ export default function EditGroupScreen() {
           onPickImage={() => void handlePickImage()}
           isUploading={uploadStatus === "uploading"}
           uploadPercent={
-            uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null
+            uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100)
           }
         />
 

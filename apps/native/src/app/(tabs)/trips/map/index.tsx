@@ -4,14 +4,10 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
-import { UserMap } from "~/components/map/UserMap";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
-import { useMapUsers } from "~/hooks/map";
-import { useMapLocationStream } from "~/hooks/map";
-import { useMapSharing } from "~/hooks/map";
-import { useMapActions } from "~/hooks/map";
-import { useSelectedTrip } from "~/hooks/trips";
-import { useTripDetails } from "~/hooks/trips";
+import { UserMap } from "~/components/map/UserMap";
+import { useMapActions, useMapLocationStream, useMapSharing, useMapUsers } from "~/hooks/map";
+import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { useLocationContext } from "~/stores/location";
 import { mapOverlayStore, setMapOverlayExternals, useMapOverlayStore } from "~/stores/map";
 
@@ -117,7 +113,6 @@ export default function MapScreen() {
     allAvailableUsers,
     sharingSettings,
     isRemovingUser,
-    mapTheme,
     updateSharing,
     removeUser,
     currentCoordinate,

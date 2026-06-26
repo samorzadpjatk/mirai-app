@@ -8,8 +8,8 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  View,
 } from "react-native";
 import { useMyGroup } from "~/hooks/groups";
 import { usePurchaseReward, useRewards } from "~/hooks/rewards";

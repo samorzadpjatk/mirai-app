@@ -13,8 +13,8 @@ export const computeInitialStatus = (
   const shouldActivateImmediately =
     !input.isRecurring &&
     requestedStatus === "VISIBLE" &&
-    Boolean(input.startTime) &&
-    input.startTime! <= now &&
+    input.startTime !== undefined &&
+    input.startTime <= now &&
     (!input.endTime || input.endTime > now);
 
   return shouldActivateImmediately

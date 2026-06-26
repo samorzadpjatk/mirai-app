@@ -11,18 +11,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
-import { type VotingSubmission, useStaffVoting } from "~/hooks/admin/useStaffVoting";
+import { useStaffVoting, type VotingSubmission } from "~/hooks/admin/useStaffVoting";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 export default function AdminChallengeStaffVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const insets = useSafeAreaInsets();
 
   const challengeId =
     typeof params.challengeId === "string" ? params.challengeId : params.challengeId?.[0];
@@ -128,7 +126,7 @@ export default function AdminChallengeStaffVotingScreen() {
   const isSubmissionPhaseEnded =
     submissionEndTimestamp !== null &&
     Number.isFinite(submissionEndTimestamp) &&
-    submissionEndTimestamp <= new Date().getTime();
+    submissionEndTimestamp <= Date.now();
   const canForceEnd =
     challenge?.status !== "COMPLETED" &&
     challenge?.status !== "CANCELLED" &&
@@ -377,7 +375,7 @@ export default function AdminChallengeStaffVotingScreen() {
             <View style={styles.confirmList}>
               {voting.finalTopThree.map((submission, index) => (
                 <SubmissionImageCard
-                  key={`${submission.id}-${index + 1}`}
+                  key={submission.id}
                   submission={submission}
                   title={`#${index + 1}`}
                   subtitle={index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"}

@@ -1,11 +1,11 @@
+import type { DB, TransactionDB } from "@mirai-app/db";
 import {
   challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
-  challengeText,
   challenges,
+  challengeText,
 } from "@mirai-app/db";
-import type { DB, TransactionDB } from "@mirai-app/db";
 import { and, eq, getTableColumns } from "drizzle-orm";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

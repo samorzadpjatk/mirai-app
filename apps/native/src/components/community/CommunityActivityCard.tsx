@@ -425,7 +425,7 @@ export const CommunityActivityCard = React.memo(
     prevProps.activity === nextProps.activity && prevProps.isFocused === nextProps.isFocused,
 );
 
-export type { CommunityFeedActivity, ActivityType, ActivityFilter };
+export type { ActivityFilter, ActivityType, CommunityFeedActivity };
 
 const styles = StyleSheet.create({
   card: {

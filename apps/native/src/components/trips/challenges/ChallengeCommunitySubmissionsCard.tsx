@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import {
   ActivityIndicator,
   FlatList,
@@ -7,10 +8,9 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
   useWindowDimensions,
+  View,
 } from "react-native";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -115,7 +115,7 @@ export function ChallengeCommunitySubmissionsCard({
     () =>
       new Map(
         podiumSubmissions.flatMap((submission) =>
-          submission.ranking != null ? [[submission.ranking, submission] as const] : [],
+          submission.ranking == null ? [] : [[submission.ranking, submission] as const],
         ),
       ),
     [podiumSubmissions],

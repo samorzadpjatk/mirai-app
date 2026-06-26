@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react-native";
 import React from "react";
-import { View } from "react-native";
 import type { ViewProps } from "react-native";
+import { View } from "react-native";
 import { ProgressBar } from "../../challenges/ProgressBar";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 

@@ -44,7 +44,7 @@ export const runSeed = async () => {
       if (trip.sponsors) {
         sponsorConfigs = await loadSponsorConfigs(envRoot, trip.sponsors);
       }
-      await seedSponsors(env.databaseUrl!, seededTrip.id, seedEnv, sponsorConfigs);
+      await seedSponsors(env.databaseUrl as string, seededTrip.id, seedEnv, sponsorConfigs);
     } catch (error) {
       logger.warn(error, `✗ Failed to seed sponsors for trip ${trip.key}`);
     }
@@ -63,7 +63,7 @@ export const runSeed = async () => {
     if (trip.info) {
       try {
         const infoConfig = await loadTripInfoConfig(envRoot, trip.info);
-        await seedTripInfo(env.databaseUrl!, seededTrip.id, seedEnv, infoConfig);
+        await seedTripInfo(env.databaseUrl as string, seededTrip.id, seedEnv, infoConfig);
       } catch (error) {
         logger.warn(error, `✗ Failed to seed trip info for trip ${trip.key}`);
       }

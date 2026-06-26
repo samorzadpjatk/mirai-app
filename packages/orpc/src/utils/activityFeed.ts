@@ -1,3 +1,4 @@
+import type { DB, TransactionDB } from "@mirai-app/db";
 import {
   activityFeeds,
   challengeActivities,
@@ -8,7 +9,6 @@ import {
   rankChangeActivities,
   submissionActivities,
 } from "@mirai-app/db";
-import type { DB, TransactionDB } from "@mirai-app/db";
 import { and, count, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -238,7 +238,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
   const topSubmissions = sortedSubmissions.slice(0, 3);
   const hasPotentialCoinChange = sortedSubmissions.some((submission, index) => {
     const nextRanking = index < 3 ? index + 1 : null;
-    const nextAwardedPoints = nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    const nextAwardedPoints = nextRanking == null ? 0 : resolvePodiumPoints(challenge, nextRanking);
     return (
       submission.ranking !== nextRanking || (submission.awardedPoints ?? 0) !== nextAwardedPoints
     );
@@ -261,7 +261,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
     if (!submission) continue;
 
     const nextRanking = index < 3 ? index + 1 : null;
-    const nextAwardedPoints = nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    const nextAwardedPoints = nextRanking == null ? 0 : resolvePodiumPoints(challenge, nextRanking);
     const currentAwardedPoints = submission.awardedPoints ?? 0;
     const pointsDelta = nextAwardedPoints - currentAwardedPoints;
     const shouldApprove =

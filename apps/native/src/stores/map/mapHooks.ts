@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useStore } from "zustand";
-import { mapStore } from "./mapStore";
 import type { MapStore } from "./mapStore";
+import { mapStore } from "./mapStore";
 
 /**
  * Hook to access the full map store.

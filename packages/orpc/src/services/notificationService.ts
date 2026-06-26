@@ -6,9 +6,9 @@ import { and, count, eq } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { logger } from "../utils/logger";
 import {
-  type RankingTemplateValues,
   applyRankingTemplate,
   containsRankingTemplate,
+  type RankingTemplateValues,
 } from "../utils/notificationTemplates";
 import { executeWithRetry } from "../utils/resilience";
 
@@ -117,13 +117,13 @@ async function getRankingTemplateValuesByUser(
   const groupById = new Map(rankedGroups.map((group) => [group.id, group]));
   const groupRankById = new Map(rankedGroups.map((group, index) => [group.id, index + 1]));
   const groupMembersCountById = new Map<string, number>();
-  participants.forEach((participant) => {
-    if (!participant.groupId) return;
+  for (const participant of participants) {
+    if (!participant.groupId) continue;
     groupMembersCountById.set(
       participant.groupId,
       (groupMembersCountById.get(participant.groupId) ?? 0) + 1,
     );
-  });
+  }
 
   const formattedDate = formatCurrentDate(now);
   const formattedTime = formatCurrentTime(now);
@@ -132,7 +132,7 @@ async function getRankingTemplateValuesByUser(
 
   const valuesByUser = new Map<string, RankingTemplateValues>();
 
-  participants.forEach((participant) => {
+  for (const participant of participants) {
     const groupId = participant.groupId;
     if (!groupId) {
       valuesByUser.set(participant.userId, {
@@ -143,7 +143,7 @@ async function getRankingTemplateValuesByUser(
         currentDate: formattedDate,
         currentTime: formattedTime,
       });
-      return;
+      continue;
     }
 
     const group = groupById.get(groupId);
@@ -161,66 +161,75 @@ async function getRankingTemplateValuesByUser(
       currentDate: formattedDate,
       currentTime: formattedTime,
     });
-  });
+  }
 
   return valuesByUser;
 }
 
-export class NotificationService {
-  /**
-   * Create notifications for common group events
-   */
-  static createCoinsAddedNotification(
-    groupName: string,
-    amount: number,
-    reason: string | undefined,
-  ): NotificationData {
-    let body: string;
-    if (reason) {
-      body = `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
-    } else {
-      body = `Your guild received ${amount} coins!\nClick me to see your balance!`;
-    }
-    return {
-      title: `💰 ${groupName} received coins!`,
-      body: body,
-      url: "/group/my",
-    };
+export function createCoinsAddedNotification(
+  groupName: string,
+  amount: number,
+  reason: string | undefined,
+): NotificationData {
+  let body: string;
+  if (reason) {
+    body = `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
+  } else {
+    body = `Your guild received ${amount} coins!\nClick me to see your balance!`;
   }
-  static createCoinsRemovedNotification(
-    groupName: string,
-    amount: number,
-    reason: string | undefined,
-  ): NotificationData {
-    let body: string;
-    if (reason) {
-      body = `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
-    } else {
-      body = `Your guild lost ${amount} coins!\nClick me to see your balance!`;
-    }
-    return {
-      title: `💸 ${groupName} - Coins Seized`,
-      body: body,
-      url: "/group/my",
-    };
-  }
-
-  static createNewMemberNotification(groupName: string, memberName: string): NotificationData {
-    return {
-      title: `👥 New member in ${groupName}!`,
-      body: `${memberName} joined your guild!`,
-      url: "/group/my",
-    };
-  }
-
-  static createRankingUpdateNotification(groupName: string, newPosition: number): NotificationData {
-    return {
-      title: "🏆 Ranking update!",
-      body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
-      url: "/ranking",
-    };
-  }
+  return {
+    title: `💰 ${groupName} received coins!`,
+    body: body,
+    url: "/group/my",
+  };
 }
+
+export function createCoinsRemovedNotification(
+  groupName: string,
+  amount: number,
+  reason: string | undefined,
+): NotificationData {
+  let body: string;
+  if (reason) {
+    body = `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`;
+  } else {
+    body = `Your guild lost ${amount} coins!\nClick me to see your balance!`;
+  }
+  return {
+    title: `💸 ${groupName} - Coins Seized`,
+    body: body,
+    url: "/group/my",
+  };
+}
+
+export function createNewMemberNotification(
+  groupName: string,
+  memberName: string,
+): NotificationData {
+  return {
+    title: `👥 New member in ${groupName}!`,
+    body: `${memberName} joined your guild!`,
+    url: "/group/my",
+  };
+}
+
+export function createRankingUpdateNotification(
+  groupName: string,
+  newPosition: number,
+): NotificationData {
+  return {
+    title: "🏆 Ranking update!",
+    body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
+    url: "/ranking",
+  };
+}
+
+export const NotificationService = {
+  createCoinsAddedNotification,
+  createCoinsRemovedNotification,
+  createNewMemberNotification,
+  createRankingUpdateNotification,
+};
 
 export async function sendMobileNotifications(db: DB, notificationId: string) {
   const notification = await db.query.notifications.findFirst({

@@ -1,15 +1,15 @@
 import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/common/storage";
 import {
   type Challenge,
-  type DB,
   challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
-  challengeText,
   challenges,
+  challengeText,
+  type DB,
 } from "@mirai-app/db";
-import { and, eq, getTableColumns, lte, notInArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
+import { and, eq, getTableColumns, lte, notInArray } from "drizzle-orm";
 import {
   finalizeVotingChallengesToCompletedWithFeed,
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,

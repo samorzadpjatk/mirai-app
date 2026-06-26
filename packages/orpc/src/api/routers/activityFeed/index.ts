@@ -26,7 +26,7 @@ import {
   getActivitiesCursorPage,
   getActivitiesPage,
 } from "./queries";
-import { CHALLENGE_EVENT_TYPES, REACTION_TYPES, activityCursorSchema } from "./types";
+import { activityCursorSchema, CHALLENGE_EVENT_TYPES, REACTION_TYPES } from "./types";
 import {
   ensureTripExists,
   ensureTripParticipant,

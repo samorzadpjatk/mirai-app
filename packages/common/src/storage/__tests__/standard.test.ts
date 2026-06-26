@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  STANDARD_BUCKETS,
   createStoragePath,
   normalizeBucketName,
   normalizeStoragePath,
   parseStoragePath,
+  STANDARD_BUCKETS,
 } from "../../storage/standard";
 
 describe("Storage Standard Utilities", () => {

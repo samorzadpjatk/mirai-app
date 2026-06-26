@@ -1,12 +1,12 @@
 import { describe, expect, it } from "@jest/globals";
 import { createMockActivity } from "../../../test-utils/activityMocks";
+import type { FeedCursor, FeedPageData } from "../../community/useCommunityFeed";
 import {
   applyReactionSummaryToFeed,
   buildEmptyFeedPageData,
   getNextCommunityFeedPageParam,
   updateActivityReactionsInPages,
 } from "../../community/useCommunityFeed";
-import type { FeedCursor, FeedPageData } from "../../community/useCommunityFeed";
 
 describe("buildEmptyFeedPageData", () => {
   it("should return an empty feed page with default pagination", () => {

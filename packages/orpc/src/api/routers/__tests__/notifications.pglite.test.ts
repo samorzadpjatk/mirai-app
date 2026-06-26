@@ -1,3 +1,4 @@
+import type { DB } from "@mirai-app/db";
 import {
   groups,
   notificationPushes,
@@ -7,7 +8,6 @@ import {
   trips,
   users,
 } from "@mirai-app/db";
-import type { DB } from "@mirai-app/db";
 import { createRouterClient } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";

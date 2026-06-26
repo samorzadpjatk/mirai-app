@@ -4,6 +4,7 @@ import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
   BACKGROUND_LOCATION_TASK_NAME,
 } from "~/services/location/constants";
+
 const BACKGROUND_LOCATION_OPTIONS: Location.LocationTaskOptions = {
   accuracy: Location.Accuracy.Balanced,
   distanceInterval: 25,

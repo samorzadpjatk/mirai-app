@@ -1,5 +1,5 @@
-import { locationShares } from "@mirai-app/db";
 import type { DB, Location as DbLocation } from "@mirai-app/db";
+import { locationShares } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
 import { REALTIME_CHANNEL_STATES, type RealtimeChannel } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
@@ -260,11 +260,13 @@ export async function* getFriendsLocationsStream(
 
   for (const dbLocation of dbLocations) {
     const lw = await toLocationWithUser(context.db, context.supabase, dbLocation);
-    if (radiusKm !== undefined) {
+    if (radiusKm === undefined) {
+      yield tracked(connectionId, { type: "upsert", location: lw });
+    } else {
       if (!dbLocation.latitude || !dbLocation.longitude) continue;
       const dist = calculateDistance(
-        latitude!,
-        longitude!,
+        latitude as number,
+        longitude as number,
         Number(dbLocation.latitude),
         Number(dbLocation.longitude),
       );
@@ -275,8 +277,6 @@ export async function* getFriendsLocationsStream(
           location: { ...lw },
         });
       }
-    } else {
-      yield tracked(connectionId, { type: "upsert", location: lw });
     }
   }
 
@@ -310,12 +310,10 @@ export async function* getFriendsLocationsStream(
                 return;
               }
 
-              if (radiusKm !== undefined) {
-                if (inRadius.has(userId)) {
-                  inRadius.delete(userId);
-                  queue.push({ id: connectionId, type: "delete", userId });
-                }
-              } else {
+              if (radiusKm === undefined) {
+                queue.push({ id: connectionId, type: "delete", userId });
+              } else if (inRadius.has(userId)) {
+                inRadius.delete(userId);
                 queue.push({ id: connectionId, type: "delete", userId });
               }
               break;
@@ -374,7 +372,13 @@ export async function* getFriendsLocationsStream(
 
                     const userId = dbLocation.userId;
 
-                    if (radiusKm !== undefined) {
+                    if (radiusKm === undefined) {
+                      queue.push({
+                        id: connectionId,
+                        type: "upsert",
+                        location,
+                      });
+                    } else {
                       if (!dbLocation.latitude || !dbLocation.longitude) {
                         if (inRadius.delete(userId)) {
                           queue.push({
@@ -387,8 +391,8 @@ export async function* getFriendsLocationsStream(
                       }
 
                       const dist = calculateDistance(
-                        latitude!,
-                        longitude!,
+                        latitude as number,
+                        longitude as number,
                         Number(dbLocation.latitude),
                         Number(dbLocation.longitude),
                       );
@@ -407,12 +411,6 @@ export async function* getFriendsLocationsStream(
                           userId,
                         });
                       }
-                    } else {
-                      queue.push({
-                        id: connectionId,
-                        type: "upsert",
-                        location,
-                      });
                     }
                   });
                 return;
@@ -422,7 +420,13 @@ export async function* getFriendsLocationsStream(
                 (location) => {
                   const userId = newLocation.userId;
 
-                  if (radiusKm !== undefined) {
+                  if (radiusKm === undefined) {
+                    queue.push({
+                      id: connectionId,
+                      type: "upsert",
+                      location,
+                    });
+                  } else {
                     if (!newLocation?.latitude || !newLocation?.longitude) {
                       if (inRadius.delete(userId)) {
                         queue.push({
@@ -435,8 +439,8 @@ export async function* getFriendsLocationsStream(
                     }
 
                     const dist = calculateDistance(
-                      latitude!,
-                      longitude!,
+                      latitude as number,
+                      longitude as number,
                       Number(newLocation.latitude),
                       Number(newLocation.longitude),
                     );
@@ -455,12 +459,6 @@ export async function* getFriendsLocationsStream(
                         userId,
                       });
                     }
-                  } else {
-                    queue.push({
-                      id: connectionId,
-                      type: "upsert",
-                      location,
-                    });
                   }
                 },
               );

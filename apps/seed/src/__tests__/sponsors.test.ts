@@ -1,5 +1,5 @@
 import type { BunFile } from "bun";
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 import type { SponsorConfig } from "../types";
 
 // Stub Bun global for test environment

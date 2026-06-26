@@ -1,7 +1,6 @@
 import type { DB, User } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import { ORPCError } from "@orpc/server";
-import { createRouterClient } from "@orpc/server";
+import { createRouterClient, ORPCError } from "@orpc/server";
 import { env } from "bun";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

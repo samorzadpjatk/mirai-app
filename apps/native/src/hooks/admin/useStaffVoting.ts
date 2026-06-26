@@ -120,7 +120,7 @@ export const useStaffVoting = ({
   const isSubmissionPhaseEnded =
     submissionEndTimestamp !== null &&
     Number.isFinite(submissionEndTimestamp) &&
-    submissionEndTimestamp <= new Date().getTime();
+    submissionEndTimestamp <= Date.now();
 
   const currentLeft = currentPair ? submissionById.get(currentPair[0]) : null;
   const currentRight = currentPair ? submissionById.get(currentPair[1]) : null;

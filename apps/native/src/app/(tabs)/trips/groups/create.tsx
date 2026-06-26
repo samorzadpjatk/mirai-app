@@ -2,11 +2,10 @@ import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { useFileUpload } from "~/hooks/files";
 import { useCreateGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
@@ -17,7 +16,6 @@ export default function CreateGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const insets = useSafeAreaInsets();
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string>("");
@@ -118,7 +116,7 @@ export default function CreateGroupScreen() {
           onPickImage={() => void handlePickImage()}
           isUploading={uploadStatus === "uploading"}
           uploadPercent={
-            uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null
+            uploadProgress.percent == null ? null : Math.round(uploadProgress.percent * 100)
           }
         />
         {/* Create Button at bottom of scroll */}

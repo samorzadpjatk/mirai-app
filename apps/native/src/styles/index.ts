@@ -4,10 +4,10 @@ import { borderRadius as borderRadiusImport, spacing as spacingImport } from "./
 import { typography as typographyImport } from "./typography";
 
 export { colors } from "./colors";
-export { spacing, borderRadius } from "./spacing";
-export { typography } from "./typography";
-export { shadows } from "./shadows";
 export { commonStyles } from "./commonStyles";
+export { shadows } from "./shadows";
+export { borderRadius, spacing } from "./spacing";
+export { typography } from "./typography";
 
 // Re-export everything as theme for convenience
 export const theme = {

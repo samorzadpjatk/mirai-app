@@ -140,7 +140,7 @@ export function ChallengeFormFields({
           {isUploadingImage && (
             <Text style={styles.hint}>
               Uploading image
-              {imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              {imageUploadPercent == null ? "..." : ` ${imageUploadPercent}%`}
             </Text>
           )}
         </FormField>

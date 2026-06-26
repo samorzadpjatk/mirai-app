@@ -2,8 +2,8 @@ import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import React from "react";
 import { Text, View } from "react-native";
 import {
-  PhotoCaptureModal,
   buildLensPresetOptions,
+  PhotoCaptureModal,
   toLensPreset,
 } from "~/components/camera/PhotoCaptureModal";
 import { renderWithProviders } from "../helpers/renderWithProviders";

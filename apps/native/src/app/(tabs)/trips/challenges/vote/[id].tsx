@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "~/components/common/CachedImage";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
@@ -154,7 +153,6 @@ export default function ChallengePeerVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const insets = useSafeAreaInsets();
 
   const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
@@ -358,7 +356,6 @@ export default function ChallengePeerVotingScreen() {
     isLoadingVotes,
     myVotes?.length,
     navigateBackToChallenge,
-    shouldRedirectToChallengeDetails,
     startComparing,
     tripId,
     votingSubmissions.length,
@@ -544,7 +541,7 @@ export default function ChallengePeerVotingScreen() {
             <View style={styles.confirmList}>
               {finalTopThree.map((submission, index) => (
                 <SubmissionImageCard
-                  key={`${submission.id}-${index + 1}`}
+                  key={submission.id}
                   submission={submission}
                   title={`#${index + 1}`}
                   subtitle={index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"}

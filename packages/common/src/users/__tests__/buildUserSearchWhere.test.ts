@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildUserSearchWhere } from "../buildUserSearchWhere";
 import type { UserSearchField } from "../buildUserSearchWhere";
+import { buildUserSearchWhere } from "../buildUserSearchWhere";
 
 describe("buildUserSearchWhere", () => {
   const tripId = "trip-123";

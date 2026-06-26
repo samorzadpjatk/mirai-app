@@ -1,3 +1,4 @@
+import type { CameraRef } from "@maplibre/maplibre-react-native";
 import {
   Camera,
   UserLocation as MapLibreUserLocation,
@@ -7,7 +8,6 @@ import {
   RasterSource,
   VectorSource,
 } from "@maplibre/maplibre-react-native";
-import type { CameraRef } from "@maplibre/maplibre-react-native";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";

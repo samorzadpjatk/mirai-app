@@ -8,8 +8,8 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
+import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import { colors, spacing, typography } from "../../../../styles";
 
 export default function AdminTransactionsScreen() {

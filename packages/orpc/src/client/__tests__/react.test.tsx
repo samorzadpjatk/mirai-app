@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryProvider, orpc, queryClient } from "../query-client";
+import { orpc, QueryProvider, queryClient } from "../query-client";
 
 // Mock auth hooks
 vi.mock("@mirai-app/auth/client", () => {

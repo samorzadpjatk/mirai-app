@@ -1,7 +1,7 @@
+export { resolveAwardedPoints } from "./points";
 export {
-  validateSubmissionPayload,
-  shouldAutoApproveSubmission,
   assertSubmissionWithinTargetLocation,
   LOCATION_SUBMISSION_RADIUS_METERS,
+  shouldAutoApproveSubmission,
+  validateSubmissionPayload,
 } from "./validators";
-export { resolveAwardedPoints } from "./points";

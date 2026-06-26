@@ -1,6 +1,6 @@
 import { logger } from "@mirai-app/orpc";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Scheduler, createInactivityScheduler } from "../scheduler";
+import { createInactivityScheduler, Scheduler } from "../scheduler";
 
 vi.mock("@mirai-app/orpc", () => ({
   logger: {

@@ -99,20 +99,20 @@ export default function AdminEditGroupScreen() {
 
     try {
       await Promise.all([
-        trimmedGroupName !== group.name
-          ? updateGroupMutation.mutateAsync({
+        trimmedGroupName === group.name
+          ? Promise.resolve()
+          : updateGroupMutation.mutateAsync({
               id: groupId,
               tripId: effectiveTripId,
               name: trimmedGroupName,
-            })
-          : Promise.resolve(),
-        selectedOrganizer?.id !== group.organizer?.id
-          ? updateGroupMutation.mutateAsync({
+            }),
+        selectedOrganizer?.id === group.organizer?.id
+          ? Promise.resolve()
+          : updateGroupMutation.mutateAsync({
               id: groupId,
               tripId: effectiveTripId,
               organizerId: selectedOrganizer?.id,
-            })
-          : Promise.resolve(),
+            }),
       ]);
 
       Alert.alert("Success", "Group updated successfully.");

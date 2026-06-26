@@ -1,5 +1,5 @@
 import { buildChallengeFilter } from "@mirai-app/common/challenges";
-import { type DB, challengeRecurrence, challengeSubmissions, challenges } from "@mirai-app/db";
+import { challengeRecurrence, challengeSubmissions, challenges, type DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import {
@@ -29,7 +29,6 @@ export const getAll = async (context: {
 }) => {
   await activateVisibleChallenges(context.db);
 
-  const filter = buildChallengeFilter();
   const challengeRows = await fetchChallengesWithRelations(
     context.db,
     eq(challengeRecurrence.isRecurring, false),

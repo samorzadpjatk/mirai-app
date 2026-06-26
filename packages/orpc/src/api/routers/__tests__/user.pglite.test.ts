@@ -1,5 +1,5 @@
-import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { groups, tripParticipants, trips, users } from "@mirai-app/db";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";

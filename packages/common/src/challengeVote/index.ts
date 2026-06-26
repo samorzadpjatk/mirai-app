@@ -1,15 +1,15 @@
-export {
-  validateVotePayload,
-  validateNoSelfVoting,
-  validateVotePositionConflict,
-  validateVotePositionsRange,
-  resolveRequiredVotePositions,
-} from "./validators";
-export type { ValidationError as VoteValidationError } from "./validators";
+export type { ChallengeVoteInput } from "./builders";
 export {
   buildVoteInsertValues,
-  tallyVotes,
   computeRequiredPositions,
   hasAllRequiredPositions,
+  tallyVotes,
 } from "./builders";
-export type { ChallengeVoteInput } from "./builders";
+export type { ValidationError as VoteValidationError } from "./validators";
+export {
+  resolveRequiredVotePositions,
+  validateNoSelfVoting,
+  validateVotePayload,
+  validateVotePositionConflict,
+  validateVotePositionsRange,
+} from "./validators";

@@ -1,4 +1,4 @@
-import { type ClientContext, DynamicLink, createORPCClient } from "@orpc/client";
+import { type ClientContext, createORPCClient, DynamicLink } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { BatchLinkPlugin } from "@orpc/client/plugins";
 import { RPCLink as WSLink } from "@orpc/client/websocket";

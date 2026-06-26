@@ -3,18 +3,18 @@ import {
   shouldAutoApproveSubmission,
   validateSubmissionPayload,
 } from "@mirai-app/common/challengeSubmissions";
+import type { ChallengeSubmission, DB } from "@mirai-app/db";
 import {
   activityFeeds,
   challengeLocationMatch,
   challengeQrCode,
   challengeSubmissions,
-  challengeText,
   challenges,
+  challengeText,
   coinTransactions,
   groups,
   submissionActivities,
 } from "@mirai-app/db";
-import type { ChallengeSubmission, DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, lte, sql } from "drizzle-orm";
 import {

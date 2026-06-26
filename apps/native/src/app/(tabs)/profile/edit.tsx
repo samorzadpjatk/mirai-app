@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { CachedImage } from "~/components/common/CachedImage";
 import { useFileUpload } from "~/hooks/files";
@@ -32,7 +31,6 @@ interface UploadAsset {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
@@ -248,9 +246,9 @@ export default function EditProfileScreen() {
                 <>
                   <ActivityIndicator size="small" color={colors.white} />
                   <Text style={styles.badgeText}>
-                    {uploadProgress.percent != null
-                      ? `Uploading ${Math.round(uploadProgress.percent * 100)}%`
-                      : "Uploading..."}
+                    {uploadProgress.percent == null
+                      ? "Uploading..."
+                      : `Uploading ${Math.round(uploadProgress.percent * 100)}%`}
                   </Text>
                 </>
               ) : (

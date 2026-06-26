@@ -1,6 +1,6 @@
 import { buildVoteInsertValues, validateVotePayload } from "@mirai-app/common/challengeVote";
-import { challengeVotes, challenges } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
+import { challenges, challengeVotes } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { createChallengeCompletionWithWinnersById } from "../../../utils/activityFeed";

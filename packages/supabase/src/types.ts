@@ -1,12 +1,12 @@
 import { REALTIME_CHANNEL_STATES } from "@supabase/supabase-js";
 
 export type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+  RealtimePostgresInsertPayload,
   Session as SupabaseSession,
   SupabaseClient,
   User as SupabaseUser,
-  RealtimePostgresChangesPayload,
-  RealtimeChannel,
-  RealtimePostgresInsertPayload,
 } from "@supabase/supabase-js";
 
 export { REALTIME_CHANNEL_STATES };

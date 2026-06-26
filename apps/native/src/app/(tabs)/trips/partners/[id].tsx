@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import LoadingScreen from "~/components/LoadingScreen";
 import { CachedImage } from "~/components/common/CachedImage";
+import LoadingScreen from "~/components/LoadingScreen";
 import { useSponsorById } from "~/hooks/sponsors/useSponsors";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -35,8 +35,8 @@ export default function PartnerDetailScreen() {
         <Text style={styles.name}>{sponsor.name}</Text>
 
         <View style={styles.descriptionCard}>
-          {sponsor.description.split("\n\n").map((paragraph, index) => (
-            <Text key={`${index}-${paragraph.slice(0, 20)}`} style={styles.description}>
+          {sponsor.description.split("\n\n").map((paragraph) => (
+            <Text key={paragraph} style={styles.description}>
               {paragraph}
             </Text>
           ))}

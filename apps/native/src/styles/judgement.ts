@@ -347,4 +347,4 @@ const textStyles = StyleSheet.create({
   },
 });
 
-export { viewStyles, textStyles };
+export { textStyles, viewStyles };

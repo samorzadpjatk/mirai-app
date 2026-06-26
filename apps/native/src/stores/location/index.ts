@@ -1,9 +1,9 @@
-export { locationStore, setLocationServerUpdater } from "./locationStore";
+export { LocationStoreProvider } from "./LocationStoreProvider";
+export { useLocationContext, useLocationStore } from "./locationHooks";
 export type {
-  LocationStore,
-  LocationState,
   LocationActions,
   LocationPermissionStatus,
+  LocationState,
+  LocationStore,
 } from "./locationStore";
-export { useLocationContext, useLocationStore } from "./locationHooks";
-export { LocationStoreProvider } from "./LocationStoreProvider";
+export { locationStore, setLocationServerUpdater } from "./locationStore";

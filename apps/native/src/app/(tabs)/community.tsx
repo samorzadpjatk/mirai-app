@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@mirai-app/auth/client";
 import type { Activity } from "@mirai-app/orpc";
 import { LinearGradient } from "expo-linear-gradient";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
@@ -14,18 +15,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CachedImage } from "~/components/common/CachedImage";
-
-import {
-  CommunityActivityCard,
-  type CommunityFeedActivity,
-} from "~/components/community/CommunityActivityCard";
-
-import LoadingScreen from "~/components/LoadingScreen";
-import { Skeleton } from "~/components/ui/Skeleton";
-
-import { useAuth } from "@mirai-app/auth/client";
 import { Logo } from "~/components";
+import { CachedImage } from "~/components/common/CachedImage";
 import {
   EmptyState,
   ErrorState,
@@ -33,6 +24,12 @@ import {
   FilterChipRow,
   TripPickerModal,
 } from "~/components/common/ui";
+import {
+  CommunityActivityCard,
+  type CommunityFeedActivity,
+} from "~/components/community/CommunityActivityCard";
+import LoadingScreen from "~/components/LoadingScreen";
+import { Skeleton } from "~/components/ui/Skeleton";
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useHomeFull } from "~/hooks/home";
 import { useAutoSelectFirstTrip, useSelectedTrip } from "~/hooks/trips";

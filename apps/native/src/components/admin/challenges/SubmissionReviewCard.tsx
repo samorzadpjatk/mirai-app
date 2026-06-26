@@ -154,7 +154,7 @@ export function SubmissionReviewCard({
       ) : null}
 
       <View style={styles.actionsRow}>
-        {submission.status !== "APPROVED" ? (
+        {submission.status === "APPROVED" ? null : (
           <TouchableOpacity
             style={[styles.actionButton, styles.approveButton]}
             onPress={() => onApprove(submission)}
@@ -163,9 +163,9 @@ export function SubmissionReviewCard({
             <Ionicons name="checkmark" size={16} color={colors.backgroundDark} />
             <Text style={styles.approveButtonText}>Set approved</Text>
           </TouchableOpacity>
-        ) : null}
+        )}
 
-        {submission.status !== "REJECTED" ? (
+        {submission.status === "REJECTED" ? null : (
           <TouchableOpacity
             style={[styles.actionButton, styles.rejectButton]}
             onPress={() => onReject(submission)}
@@ -174,7 +174,7 @@ export function SubmissionReviewCard({
             <Ionicons name="close" size={16} color={colors.white} />
             <Text style={styles.rejectButtonText}>Set rejected</Text>
           </TouchableOpacity>
-        ) : null}
+        )}
       </View>
     </View>
   );

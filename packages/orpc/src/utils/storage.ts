@@ -1,7 +1,7 @@
 import {
-  STANDARD_BUCKETS,
   normalizeBucketName,
   normalizeStoragePath,
+  STANDARD_BUCKETS,
 } from "@mirai-app/common/storage";
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
@@ -167,4 +167,4 @@ export const normalizeSupabaseStoragePath = (
   return { bucket, path, storagePath };
 };
 
-export { SUPABASE_OBJECT_PREFIXES, IMAGE_BUCKET, VIDEO_BUCKET, PUBLIC_BUCKET };
+export { IMAGE_BUCKET, PUBLIC_BUCKET, SUPABASE_OBJECT_PREFIXES, VIDEO_BUCKET };
