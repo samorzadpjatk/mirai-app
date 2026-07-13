@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ParticipantUser {
   id: string;
@@ -34,13 +35,15 @@ export function EditMembersPicker({
   organizerId,
   onToggleMember,
 }: EditMembersPickerProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   if (isLoading) {
     return (
       <View testID="edit-members-picker-loading" style={styles.loadingContainer}>
         <ActivityIndicator
           testID="edit-members-picker-indicator"
           size="large"
-          color={colors.primary}
+          color={palette.primary}
         />
       </View>
     );
@@ -104,86 +107,87 @@ export function EditMembersPicker({
   );
 }
 
-const styles = StyleSheet.create({
-  memberListContainer: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  memberListScroll: {
-    maxHeight: 340,
-  },
-  loadingContainer: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  memberItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.textMuted,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  memberAvatarText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberEmail: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    backgroundColor: colors.backgroundDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  checkboxDisabled: {
-    opacity: 0.5,
-  },
-  checkboxInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 3,
-    backgroundColor: colors.backgroundDark,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    memberListContainer: {
+      backgroundColor: colors.cardDark,
+      borderWidth: 1,
+      borderColor: "rgba(48, 54, 61, 1)",
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+    },
+    memberListScroll: {
+      maxHeight: 340,
+    },
+    loadingContainer: {
+      paddingVertical: spacing.xxxl,
+      alignItems: "center",
+    },
+    memberItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    },
+    memberAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.textMuted,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.1)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    memberAvatarText: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    memberInfo: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: colors.white,
+      marginBottom: 2,
+    },
+    memberEmail: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: "rgba(48, 54, 61, 1)",
+      backgroundColor: colors.backgroundDark,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    checkboxSelected: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primary,
+    },
+    checkboxDisabled: {
+      opacity: 0.5,
+    },
+    checkboxInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 3,
+      backgroundColor: colors.backgroundDark,
+    },
+    emptyState: {
+      paddingVertical: spacing.xxxl,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.base,
+      color: colors.textMuted,
+    },
+  });

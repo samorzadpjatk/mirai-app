@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface TripHeroCardProps {
   name: string;
@@ -32,6 +33,7 @@ export function TripHeroCard({
   imageUrl,
   backgroundImagePath,
 }: TripHeroCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const directSource = buildImageSource(imageUrl);
   const hasRemoteSource = Boolean(directSource) || Boolean(backgroundImagePath);
 
@@ -69,58 +71,59 @@ export function TripHeroCard({
   );
 }
 
-const styles = StyleSheet.create({
-  heroCard: {
-    position: "relative",
-    height: 192,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroGradient: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(23, 24, 28, 0.6)",
-    zIndex: 10,
-  },
-  heroContent: {
-    position: "absolute",
-    bottom: spacing.lg,
-    left: spacing.lg,
-    zIndex: 20,
-  },
-  heroBadge: {
-    backgroundColor: colors.primaryOpacity20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    alignSelf: "flex-start",
-    marginBottom: spacing.sm,
-  },
-  heroBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  heroTitle: {
-    fontSize: typography.xxxl + 6,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  heroSubtitle: {
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.primaryOpacity80,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    heroCard: {
+      position: "relative",
+      height: 192,
+      marginTop: spacing.sm,
+      marginBottom: spacing.lg,
+      marginHorizontal: spacing.lg,
+      borderRadius: borderRadius.md,
+      overflow: "hidden",
+      backgroundColor: palette.primaryOpacity20,
+    },
+    heroImage: {
+      width: "100%",
+      height: "100%",
+    },
+    heroGradient: {
+      position: "absolute",
+      inset: 0,
+      backgroundColor: "rgba(23, 24, 28, 0.6)",
+      zIndex: 10,
+    },
+    heroContent: {
+      position: "absolute",
+      bottom: spacing.lg,
+      left: spacing.lg,
+      zIndex: 20,
+    },
+    heroBadge: {
+      backgroundColor: palette.primaryOpacity20,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      alignSelf: "flex-start",
+      marginBottom: spacing.sm,
+    },
+    heroBadgeText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    heroTitle: {
+      fontSize: typography.xxxl + 6,
+      fontWeight: typography.bold,
+      color: palette.white,
+    },
+    heroSubtitle: {
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+      color: palette.primaryOpacity80,
+    },
+  });

@@ -13,6 +13,8 @@ export interface TripConfig {
   rewards?: string;
   sponsors?: string;
   info?: string;
+  /** Per-trip visual theme key (e.g. "PIRATE"); defaults to "DEFAULT". */
+  theme?: string;
 }
 
 export interface CsvUser {

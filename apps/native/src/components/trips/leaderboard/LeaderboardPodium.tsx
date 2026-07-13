@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
 
@@ -18,6 +19,7 @@ interface PodiumPlaceProps {
 }
 
 function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
+  const styles = useThemedStyles(makeStyles);
   if (!group) {
     return (
       <View style={styles.podiumColumn}>
@@ -119,6 +121,7 @@ interface LeaderboardPodiumProps {
 }
 
 export function LeaderboardPodium({ topThree, onPressGroup }: LeaderboardPodiumProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <View style={styles.podiumRow}>
@@ -132,123 +135,124 @@ export function LeaderboardPodium({ topThree, onPressGroup }: LeaderboardPodiumP
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl * 3,
-    paddingBottom: spacing.xl,
-    position: "relative",
-  },
-  podiumRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: spacing.md,
-    height: 280,
-  },
-  firstPlaceOffset: {
-    transform: [{ translateY: -16 }],
-  },
-  podiumColumn: {
-    flex: 1,
-    alignItems: "center",
-  },
-  emptyAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    marginBottom: spacing.md,
-  },
-  emptyPodium: {
-    width: "100%",
-    height: 96,
-    backgroundColor: "rgba(255, 255, 255, 0.02)",
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-  },
-  emptyPodiumTall: {
-    height: 176,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: spacing.md,
-  },
-  avatar: {
-    borderWidth: 2,
-    backgroundColor: colors.cardDark,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarGlow: {
-    shadowColor: MEDAL_COLORS.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: typography.bold,
-  },
-  crownIcon: {
-    position: "absolute",
-    top: -24,
-    left: "50%",
-    transform: [{ translateX: -15 }],
-  },
-  rankBadge: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-  },
-  rankBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-  podium: {
-    width: "100%",
-    backgroundColor: "rgba(28, 31, 33, 0.5)",
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    paddingTop: spacing.lg,
-    alignItems: "center",
-  },
-  medalIcon: {
-    marginBottom: spacing.xs,
-  },
-  podiumName: {
-    fontWeight: typography.bold,
-    color: colors.white,
-    textAlign: "center",
-    paddingHorizontal: spacing.sm,
-  },
-  podiumNameLarge: {
-    fontSize: typography.sm,
-  },
-  podiumNameSmall: {
-    fontSize: typography.xs,
-  },
-  podiumScore: {
-    fontWeight: typography.bold,
-    color: colors.primary,
-    marginTop: spacing.xs,
-  },
-  podiumScoreLarge: {
-    fontSize: typography.lg,
-  },
-  podiumScoreSmall: {
-    fontSize: typography.sm,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl * 3,
+      paddingBottom: spacing.xl,
+      position: "relative",
+    },
+    podiumRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      justifyContent: "center",
+      gap: spacing.md,
+      height: 280,
+    },
+    firstPlaceOffset: {
+      transform: [{ translateY: -16 }],
+    },
+    podiumColumn: {
+      flex: 1,
+      alignItems: "center",
+    },
+    emptyAvatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      marginBottom: spacing.md,
+    },
+    emptyPodium: {
+      width: "100%",
+      height: 96,
+      backgroundColor: "rgba(255, 255, 255, 0.02)",
+      borderTopLeftRadius: borderRadius.xl,
+      borderTopRightRadius: borderRadius.xl,
+    },
+    emptyPodiumTall: {
+      height: 176,
+    },
+    avatarContainer: {
+      position: "relative",
+      marginBottom: spacing.md,
+    },
+    avatar: {
+      borderWidth: 2,
+      backgroundColor: colors.cardDark,
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    avatarImage: {
+      width: "100%",
+      height: "100%",
+    },
+    avatarGlow: {
+      shadowColor: MEDAL_COLORS.gold,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+    },
+    avatarText: {
+      fontSize: 24,
+      fontWeight: typography.bold,
+    },
+    crownIcon: {
+      position: "absolute",
+      top: -24,
+      left: "50%",
+      transform: [{ translateX: -15 }],
+    },
+    rankBadge: {
+      position: "absolute",
+      bottom: -4,
+      right: -4,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+    },
+    rankBadgeText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+    },
+    podium: {
+      width: "100%",
+      backgroundColor: "rgba(28, 31, 33, 0.5)",
+      borderTopLeftRadius: borderRadius.xl,
+      borderTopRightRadius: borderRadius.xl,
+      borderTopWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      paddingTop: spacing.lg,
+      alignItems: "center",
+    },
+    medalIcon: {
+      marginBottom: spacing.xs,
+    },
+    podiumName: {
+      fontWeight: typography.bold,
+      color: colors.white,
+      textAlign: "center",
+      paddingHorizontal: spacing.sm,
+    },
+    podiumNameLarge: {
+      fontSize: typography.sm,
+    },
+    podiumNameSmall: {
+      fontSize: typography.xs,
+    },
+    podiumScore: {
+      fontWeight: typography.bold,
+      color: palette.primary,
+      marginTop: spacing.xs,
+    },
+    podiumScoreLarge: {
+      fontSize: typography.lg,
+    },
+    podiumScoreSmall: {
+      fontSize: typography.sm,
+    },
+  });

@@ -37,6 +37,12 @@ import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useHomeFull } from "~/hooks/home";
 import { useAutoSelectFirstTrip, useSelectedTrip } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
+import {
+  type ThemePalette,
+  TripThemeProvider,
+  useThemedStyles,
+  useTripTheme,
+} from "~/theme/TripThemeProvider";
 
 type ActivityFilter = "all" | Activity["activityType"];
 
@@ -50,6 +56,15 @@ const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
 ];
 
 export default function CommunityScreen() {
+  const { selectedTripId } = useSelectedTrip();
+  return (
+    <TripThemeProvider tripId={selectedTripId}>
+      <CommunityScreenInner />
+    </TripThemeProvider>
+  );
+}
+
+function CommunityScreenInner() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -57,6 +72,8 @@ export default function CommunityScreen() {
     focusActivityId?: string | string[];
   }>();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const {
     trips,
     isLoading: isTripsLoading,
@@ -379,7 +396,7 @@ export default function CommunityScreen() {
         ListFooterComponent={
           feedQuery.isFetchingNextPage ? (
             <View style={styles.listFooterLoading}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator size="small" color={palette.primary} />
               <Text style={styles.listFooterLoadingText}>Loading more...</Text>
             </View>
           ) : null
@@ -400,97 +417,98 @@ export default function CommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  feedList: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  listFooterLoading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  listFooterLoadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  headerWrap: {
-    gap: spacing.xs,
-    marginBottom: 0,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xs,
-  },
-  headerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 1,
-  },
-  logoWrap: {
-    width: 96,
-    height: 96,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tripTile: {
-    width: 130,
-    height: 52,
-    borderRadius: 10,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  tripTileImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  tripTileImagePlaceholder: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.primaryOpacity10,
-  },
-  tripTileOverlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity38,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    gap: 4,
-  },
-  tripTileName: {
-    color: colors.white,
-    fontSize: typography.xs,
-    fontWeight: typography.semibold,
-    flex: 1,
-  },
-  loadingState: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.xl,
-  },
-  feedSkeleton: {
-    gap: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  loadingStateText: {
-    color: colors.textSecondary,
-    fontSize: typography.lg,
-    fontWeight: typography.semibold,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    feedList: {
+      flex: 1,
+    },
+    listContent: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.lg,
+    },
+    listFooterLoading: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    listFooterLoadingText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    headerWrap: {
+      gap: spacing.xs,
+      marginBottom: 0,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xs,
+    },
+    headerTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    brandRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      flexShrink: 1,
+    },
+    logoWrap: {
+      width: 96,
+      height: 96,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tripTile: {
+      width: 130,
+      height: 52,
+      borderRadius: 10,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity12,
+    },
+    tripTileImage: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    tripTileImagePlaceholder: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: palette.primaryOpacity10,
+    },
+    tripTileOverlay: {
+      flex: 1,
+      backgroundColor: colors.blackOpacity38,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 10,
+      gap: 4,
+    },
+    tripTileName: {
+      color: colors.white,
+      fontSize: typography.xs,
+      fontWeight: typography.semibold,
+      flex: 1,
+    },
+    loadingState: {
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
+      paddingVertical: spacing.xl,
+    },
+    feedSkeleton: {
+      gap: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    loadingStateText: {
+      color: colors.textSecondary,
+      fontSize: typography.lg,
+      fontWeight: typography.semibold,
+    },
+  });

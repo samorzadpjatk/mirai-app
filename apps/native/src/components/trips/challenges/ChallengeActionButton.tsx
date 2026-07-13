@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ChallengeActionButtonProps {
   isLoading: boolean;
@@ -17,6 +18,7 @@ export function ChallengeActionButton({
   iconName = "camera",
   disabled = false,
 }: ChallengeActionButtonProps) {
+  const styles = useThemedStyles(makeStyles);
   const buttonLabel = label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
   const isDisabled = isLoading || disabled;
   const iconColor = isDisabled ? colors.textMuted : colors.backgroundDark;
@@ -33,35 +35,36 @@ export function ChallengeActionButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    opacity: 1,
-  },
-  buttonLoading: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.surfaceDark,
-    shadowOpacity: 0,
-    opacity: 0.75,
-  },
-  buttonText: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.xl,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.md,
+      shadowColor: palette.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      opacity: 1,
+    },
+    buttonLoading: {
+      opacity: 0.7,
+    },
+    buttonDisabled: {
+      backgroundColor: colors.surfaceDark,
+      shadowOpacity: 0,
+      opacity: 0.75,
+    },
+    buttonText: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+  });

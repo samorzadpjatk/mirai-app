@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface GroupImagePickerProps {
   imageUri: string | null;
@@ -15,6 +16,7 @@ export function GroupImagePicker({
   isUploading = false,
   uploadPercent = null,
 }: GroupImagePickerProps) {
+  const { palette } = useTripTheme();
   return (
     <View style={styles.container} testID="group-image-picker-container">
       <Text style={styles.label}>Group Image</Text>
@@ -34,7 +36,7 @@ export function GroupImagePicker({
           />
         ) : (
           <View style={styles.placeholder}>
-            <Ionicons name="images-outline" size={28} color={colors.primary} />
+            <Ionicons name="images-outline" size={28} color={palette.primary} />
             <Text style={styles.placeholderText}>No image selected</Text>
           </View>
         )}

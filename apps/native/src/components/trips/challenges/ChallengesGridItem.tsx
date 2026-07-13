@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useTripTheme } from "~/theme/TripThemeProvider";
 import type { ChallengeListItem } from "./types";
 
 interface ChallengesGridItemProps {
@@ -9,8 +10,9 @@ interface ChallengesGridItemProps {
 }
 
 export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemProps) {
+  const { palette } = useTripTheme();
   const isLocked = challenge.status === "locked";
-  const statusMeta = getStatusMeta(challenge.status);
+  const statusMeta = getStatusMeta(challenge.status, palette);
   const submissionTypeMeta = getSubmissionTypeMeta(challenge.submissionType);
   const scoringMeta = getScoringMeta(challenge.scoringCategory);
   const cardStatusStyle =
@@ -116,7 +118,7 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
   );
 }
 
-const getStatusMeta = (status: ChallengeListItem["status"]) => {
+const getStatusMeta = (status: ChallengeListItem["status"], palette: ThemePalette) => {
   switch (status) {
     case "solved":
       return {
@@ -170,9 +172,9 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
     default:
       return {
         label: "Active",
-        textColor: colors.primary,
-        borderColor: `${colors.primary}73`,
-        backgroundColor: `${colors.primary}33`,
+        textColor: palette.primary,
+        borderColor: `${palette.primary}73`,
+        backgroundColor: `${palette.primary}33`,
       };
   }
 };

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface GroupDetailsHeroProps {
   name: string;
@@ -9,6 +10,7 @@ interface GroupDetailsHeroProps {
 }
 
 export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
+  const { palette } = useTripTheme();
   return (
     <View testID="group-details-hero" style={[styles.heroCard, shadows.primaryGlow]}>
       {imageUrl ? (
@@ -23,7 +25,7 @@ export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
         </>
       ) : (
         <View style={styles.heroImagePlaceholder}>
-          <Ionicons name="images-outline" size={40} color={colors.primary} />
+          <Ionicons name="images-outline" size={40} color={palette.primary} />
           <Text style={styles.placeholderText}>No group image</Text>
         </View>
       )}

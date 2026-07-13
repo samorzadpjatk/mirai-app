@@ -1,0 +1,9 @@
+email,firstName,lastName,role
+admin@pjatk.dev,Admin,User,admin
+dev@pjatk.dev,Developer,User,admin
+moderator@pjatk.dev,Moderator,User,moderator
+user@pjatk.dev,Regular,User,user
+student@pjatk.dev,Student,User,user
+staff@pjatk.dev,Staff,User,user
+alice@pjatk.dev,Alice,Johnson,user
+bob@pjatk.dev,Bob,Smith,user
