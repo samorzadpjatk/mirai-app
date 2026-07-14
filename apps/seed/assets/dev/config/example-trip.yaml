@@ -8,3 +8,4 @@ background: images/trips/example-trip/background.jpg
 sponsors: sponsors/example-sponsors.yaml
 rewards: rewards/example-rewards.yaml
 info: info/example-info.yaml
+rooms: rooms/example-rooms.yaml

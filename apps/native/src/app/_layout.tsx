@@ -36,7 +36,7 @@ import {
   QueryProvider,
   cleanupBackgroundORPCClient,
   getBackgroundORPCClient,
-  orpc,
+  getORPCClient,
 } from "@mirai-app/orpc/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
@@ -144,7 +144,22 @@ function App() {
 function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
   const onUserFetch = async () => {
     try {
-      const user = await orpc.user.getMy.call({});
+      // Use a client bound to the current access token directly, instead of the
+      // globally-mutated `orpc` singleton which may still be tokenless when the
+      // auth store triggers this fetch right as the session appears (race -> 401).
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return null;
+
+      const { client, cleanup } = getORPCClient(ORPC_HTTP_URL, undefined, token);
+      let user: Awaited<ReturnType<typeof client.user.getMy>>;
+      try {
+        user = await client.user.getMy({});
+      } finally {
+        await cleanup();
+      }
       if (!user) return null;
 
       const normalizedFirstName = user.firstName ?? "";

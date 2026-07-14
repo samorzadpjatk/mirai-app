@@ -20,6 +20,7 @@ export {
   tripParticipants,
   groups,
   groupJoinRequests,
+  rooms,
   challenges,
   challengeRecurrence,
   challengeLocationMatch,
@@ -62,6 +63,7 @@ export {
   tripParticipantsRelations,
   groupsRelations,
   groupJoinRequestsRelations,
+  roomsRelations,
   challengesRelations,
   challengeSubmissionsRelations,
   challengeVotesRelations,
@@ -117,6 +119,9 @@ export type TripParticipant = typeof tripParticipants.$inferSelect;
 import type { groupJoinRequests, groups } from "./schema/groups";
 export type Group = typeof groups.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequests.$inferSelect;
+
+import type { rooms } from "./schema/rooms";
+export type Room = typeof rooms.$inferSelect;
 
 import type { challengeLocationMatch } from "./schema/challengeLocationMatch";
 import type { challengeQrCode } from "./schema/challengeQrCode";

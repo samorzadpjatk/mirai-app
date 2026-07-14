@@ -5,6 +5,7 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 interface TripQuickAccessGridProps {
   isTripPast?: boolean;
   onOpenGroups: () => void;
+  onOpenRooms: () => void;
   onOpenMap: () => void;
   onOpenChallenges: () => void;
   onOpenLeaderboard: () => void;
@@ -15,6 +16,7 @@ interface TripQuickAccessGridProps {
 export function TripQuickAccessGrid({
   isTripPast,
   onOpenGroups,
+  onOpenRooms,
   onOpenMap,
   onOpenChallenges,
   onOpenLeaderboard,
@@ -30,6 +32,16 @@ export function TripQuickAccessGrid({
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Groups</Text>
           <Text style={styles.gridCardSubtitle}>Team Roster</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenRooms}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="bed" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Rooms</Text>
+          <Text style={styles.gridCardSubtitle}>Who's Where</Text>
         </View>
       </TouchableOpacity>
 

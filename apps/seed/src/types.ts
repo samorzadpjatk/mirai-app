@@ -13,6 +13,13 @@ export interface TripConfig {
   rewards?: string;
   sponsors?: string;
   info?: string;
+  rooms?: string;
+}
+
+export interface RoomConfig {
+  name: string;
+  capacity: number;
+  members?: string[];
 }
 
 export interface CsvUser {

@@ -13,6 +13,7 @@ import { locationRouter } from "./routers/location";
 import { notificationScheduleRouter } from "./routers/notificationSchedule";
 import { notificationRouter } from "./routers/notifications";
 import { rewardRouter } from "./routers/reward";
+import { roomRouter } from "./routers/room";
 import { sponsorRouter } from "./routers/sponsor";
 import { storageRouter } from "./routers/storage";
 import { tripRouter } from "./routers/trip";
@@ -21,6 +22,7 @@ import { userRouter } from "./routers/user";
 export const appRouter = {
   home: homeRouter,
   group: groupRouter,
+  room: roomRouter,
   user: userRouter,
   coin: coinRouter,
   coinTransaction: coinTransactionRouter,

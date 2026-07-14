@@ -5,6 +5,7 @@ import { renderWithProviders } from "../../helpers/renderWithProviders";
 describe("TripQuickAccessGrid", () => {
   const defaultProps = {
     onOpenGroups: jest.fn(),
+    onOpenRooms: jest.fn(),
     onOpenMap: jest.fn(),
     onOpenChallenges: jest.fn(),
     onOpenLeaderboard: jest.fn(),

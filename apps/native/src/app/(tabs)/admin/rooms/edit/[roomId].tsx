@@ -1,0 +1,223 @@
+import { Ionicons } from "@expo/vector-icons";
+import { formatDisplayName } from "@mirai-app/common/users";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import LoadingScreen from "~/components/LoadingScreen";
+import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+
+export default function EditRoomScreen() {
+  const { roomId, tripId } = useLocalSearchParams<{ roomId?: string; tripId?: string }>();
+  const router = useRouter();
+  const { rooms, users, isLoading, updateRoom, deleteRoom, assignUser, removeUser, isMutating } =
+    useAdminRooms(tripId ?? "");
+
+  const room = useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+  const [name, setName] = useState("");
+  const [capacity, setCapacity] = useState("");
+
+  useEffect(() => {
+    if (room) {
+      setName(room.name);
+      setCapacity(String(room.capacity));
+    }
+  }, [room]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+  if (!room) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>Pokój nie istnieje.</Text>
+      </View>
+    );
+  }
+
+  const occupantIds = new Set(room.participants.map((p) => p.user.id));
+
+  const handleSave = async () => {
+    const cap = Number.parseInt(capacity, 10);
+    if (!name.trim() || !Number.isInteger(cap) || cap < 1) {
+      Alert.alert("Błąd", "Podaj nazwę i pojemność ≥ 1.");
+      return;
+    }
+    try {
+      await updateRoom(room.id, name.trim(), cap);
+      Alert.alert("OK", "Zapisano zmiany.");
+    } catch (error) {
+      Alert.alert("Błąd", error instanceof Error ? error.message : "Nie udało się zapisać.");
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert("Usuń pokój", `Usunąć pokój „${room.name}"?`, [
+      { text: "Anuluj", style: "cancel" },
+      {
+        text: "Usuń",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteRoom(room.id);
+            router.back();
+          } catch (error) {
+            Alert.alert("Błąd", error instanceof Error ? error.message : "Nie udało się usunąć.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const toggleUser = async (userId: string) => {
+    try {
+      if (occupantIds.has(userId)) {
+        await removeUser(userId);
+      } else {
+        await assignUser(userId, room.id);
+      }
+    } catch (error) {
+      Alert.alert("Nie można przypisać", error instanceof Error ? error.message : "Wystąpił błąd.");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={users}
+        keyExtractor={(user) => user.id}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.label}>Nazwa</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholderTextColor={colors.gray600}
+            />
+            <Text style={styles.label}>Pojemność</Text>
+            <TextInput
+              style={styles.input}
+              value={capacity}
+              onChangeText={(text) => setCapacity(text.replace(/[^0-9]/g, ""))}
+              keyboardType="number-pad"
+              placeholderTextColor={colors.gray600}
+            />
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[styles.saveBtn, isMutating && styles.disabled]}
+                onPress={handleSave}
+                disabled={isMutating}
+              >
+                <Text style={styles.saveTxt}>Zapisz</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.delBtn, isMutating && styles.disabled]}
+                onPress={handleDelete}
+                disabled={isMutating}
+              >
+                <Text style={styles.delTxt}>Usuń</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.sectionTitle}>
+              Przypisani ({occupantIds.size}/{room.capacity})
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const inRoom = occupantIds.has(item.id);
+          return (
+            <TouchableOpacity
+              style={styles.userRow}
+              onPress={() => toggleUser(item.id)}
+              disabled={isMutating}
+            >
+              <Text style={styles.userName}>
+                {formatDisplayName(item.firstName, item.lastName) ?? item.email ?? "—"}
+              </Text>
+              <Ionicons
+                name={inRoom ? "checkbox" : "square-outline"}
+                size={22}
+                color={inRoom ? colors.primary : colors.textTertiary}
+              />
+            </TouchableOpacity>
+          );
+        }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.backgroundDark },
+  centered: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: { color: colors.textSecondary, fontSize: typography.base },
+  list: { padding: spacing.lg },
+  header: { gap: spacing.sm, marginBottom: spacing.md },
+  label: {
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    color: colors.white,
+    fontSize: typography.base,
+  },
+  actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+  },
+  saveTxt: { fontWeight: typography.bold, color: colors.backgroundDark },
+  delBtn: {
+    flex: 1,
+    backgroundColor: colors.dangerOpacity15,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+  },
+  delTxt: { fontWeight: typography.bold, color: colors.danger },
+  disabled: { opacity: 0.6 },
+  sectionTitle: {
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  userName: { flex: 1, color: colors.white, fontSize: typography.base },
+});
