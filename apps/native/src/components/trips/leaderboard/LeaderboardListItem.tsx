@@ -94,7 +94,7 @@ const makeStyles = (palette: ThemePalette) =>
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

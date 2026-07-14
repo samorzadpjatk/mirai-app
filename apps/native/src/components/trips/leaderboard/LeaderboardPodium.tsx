@@ -180,7 +180,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     avatar: {
       borderWidth: 2,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

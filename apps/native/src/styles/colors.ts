@@ -75,6 +75,12 @@ export const colors = {
   cardDarkOpacity40: "rgba(27, 40, 40, 0.4)",
   cardDarkOpacity70: "rgba(27, 40, 40, 0.7)",
 
+  // Community feed surfaces — themable so the pirate theme can swap teal for wood.
+  feedCardBg: "rgba(16, 34, 34, 0.78)",
+  feedCardHeaderBg: "rgba(12, 20, 24, 0.6)",
+  feedCardMediaBg: "#0f171a",
+  feedAvatarBg: "#0f2627",
+
   backgroundDarkOpacity50: "rgba(23, 24, 28, 0.5)",
   backgroundDarkOpacity80: "rgba(23, 24, 28, 0.8)",
 

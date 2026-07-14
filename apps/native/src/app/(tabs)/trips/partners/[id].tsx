@@ -79,7 +79,7 @@ const makeStyles = (palette: ThemePalette) =>
       textAlign: "center",
     },
     descriptionCard: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.md,
       borderWidth: 1,
       borderColor: palette.primaryOpacity10,

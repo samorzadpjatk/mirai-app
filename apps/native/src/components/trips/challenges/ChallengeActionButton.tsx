@@ -56,7 +56,7 @@ const makeStyles = (palette: ThemePalette) =>
       opacity: 0.7,
     },
     buttonDisabled: {
-      backgroundColor: colors.surfaceDark,
+      backgroundColor: palette.surfaceDark,
       shadowOpacity: 0,
       opacity: 0.75,
     },

@@ -638,7 +638,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.md,
     },
     voteCard: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderWidth: 1,
       borderColor: colors.whiteOpacity8,
       borderRadius: borderRadius.xl,

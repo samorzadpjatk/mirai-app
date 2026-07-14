@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
@@ -44,6 +45,7 @@ export function GroupInfoCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.topRow}>
         <View style={styles.header}>
           <Text style={styles.label}>Your Group</Text>
@@ -82,7 +84,7 @@ const makeStyles = (palette: ThemePalette) =>
       marginBottom: spacing.md,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.05)",

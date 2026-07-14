@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, TextInput, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface MembersSearchBarProps {
   value: string;
@@ -8,6 +9,7 @@ interface MembersSearchBarProps {
 }
 
 export function MembersSearchBar({ value, onChangeText }: MembersSearchBarProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID="members-search-bar-container" style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>
@@ -24,28 +26,30 @@ export function MembersSearchBar({ value, onChangeText }: MembersSearchBarProps)
   );
 }
 
-const styles = StyleSheet.create({
-  searchContainer: {
-    position: "relative",
-    marginBottom: spacing.lg,
-  },
-  searchIconContainer: {
-    position: "absolute",
-    left: spacing.lg,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  searchInput: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    paddingLeft: 48,
-    paddingRight: spacing.lg,
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    searchContainer: {
+      position: "relative",
+      marginBottom: spacing.lg,
+    },
+    searchIconContainer: {
+      position: "absolute",
+      left: spacing.lg,
+      top: 0,
+      bottom: 0,
+      justifyContent: "center",
+      zIndex: 1,
+    },
+    searchInput: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: "rgba(48, 54, 61, 1)",
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      paddingLeft: 48,
+      paddingRight: spacing.lg,
+      color: colors.white,
+      fontSize: typography.sm,
+    },
+  });
+}

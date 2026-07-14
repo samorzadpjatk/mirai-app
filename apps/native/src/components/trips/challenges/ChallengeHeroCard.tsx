@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { getColorForPoints, getIconForChallenge } from "./challengeStyles";
@@ -122,6 +123,7 @@ export function ChallengeHeroCard({
           !imageUrl && { backgroundColor: heroFallbackColor },
         ]}
       >
+        <WoodTexture radius={borderRadius.xl} />
         {imageUrl ? (
           <CachedImage source={{ uri: imageUrl }} style={styles.heroImage} contentFit="cover" />
         ) : null}
@@ -214,7 +216,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     heroContainer: {
       position: "relative",
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: colors.borderWhite10,

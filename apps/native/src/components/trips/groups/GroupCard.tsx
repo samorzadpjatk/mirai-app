@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { GroupListItem } from "./types";
@@ -22,6 +23,7 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
       onPress={() => onPress(group)}
       aria-label={`Group ${group.name}${isMyGroup ? " (Your group)" : ""}`}
     >
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.groupImageContainer}>
         {group.image ? (
           <CachedImage
@@ -58,7 +60,7 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     groupCard: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.05)",
       borderRadius: borderRadius.xl,

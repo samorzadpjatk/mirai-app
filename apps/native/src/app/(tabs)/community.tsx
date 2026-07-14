@@ -269,7 +269,7 @@ function CommunityScreenInner() {
       <StatusBar style="light" />
 
       <LinearGradient
-        colors={[colors.backgroundDark, colors.backgroundDarkAlt]}
+        colors={[colors.backgroundDark, palette.backgroundDarkAlt]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
@@ -62,6 +63,7 @@ export function ExistingSubmissionCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.headerRow}>
         <Text style={styles.title}>Submission sent</Text>
         <View style={[styles.statusPill, { borderColor: getStatusColor(submission.status) }]}>
@@ -131,7 +133,7 @@ export function ExistingSubmissionCard({
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       padding: spacing.lg,
       borderWidth: 1,
@@ -171,7 +173,7 @@ const makeStyles = (palette: ThemePalette) =>
       aspectRatio: 4 / 3,
       borderRadius: borderRadius.lg,
       overflow: "hidden",
-      backgroundColor: colors.surfaceDark,
+      backgroundColor: palette.surfaceDark,
     },
     image: {
       width: "100%",

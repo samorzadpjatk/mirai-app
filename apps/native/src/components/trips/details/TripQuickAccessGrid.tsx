@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
@@ -29,6 +30,7 @@ export function TripQuickAccessGrid({
   return (
     <View style={styles.gridContainer}>
       <TouchableOpacity style={[styles.gridCard, styles.gridCardGlow]} onPress={onOpenGroups}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="grid" size={24} color={palette.primary} />
         </View>
@@ -39,6 +41,7 @@ export function TripQuickAccessGrid({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenRooms}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="bed" size={24} color={palette.primary} />
         </View>
@@ -50,6 +53,7 @@ export function TripQuickAccessGrid({
 
       {!isTripPast && (
         <TouchableOpacity style={styles.gridCard} onPress={onOpenMap}>
+          <WoodTexture radius={borderRadius.md} />
           <View style={styles.gridIconWrapper}>
             <Ionicons name="map" size={24} color={palette.primary} />
           </View>
@@ -61,6 +65,7 @@ export function TripQuickAccessGrid({
       )}
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenChallenges}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="trophy" size={24} color={palette.primary} />
         </View>
@@ -71,6 +76,7 @@ export function TripQuickAccessGrid({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenRewards}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="gift" size={24} color={palette.primary} />
         </View>
@@ -81,6 +87,7 @@ export function TripQuickAccessGrid({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenLeaderboard}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="ribbon" size={24} color={palette.primary} />
         </View>
@@ -91,6 +98,7 @@ export function TripQuickAccessGrid({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenInfo}>
+        <WoodTexture radius={borderRadius.md} />
         <View style={styles.gridIconWrapper}>
           <Ionicons name="information-circle" size={24} color={palette.primary} />
         </View>
@@ -113,7 +121,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     gridCard: {
       width: "48%",
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       padding: spacing.lg,
       borderRadius: borderRadius.md,
       borderWidth: 1,
@@ -129,7 +137,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     gridCardWide: {
       width: "100%",
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       padding: spacing.lg,
       borderRadius: borderRadius.md,
       borderWidth: 1,

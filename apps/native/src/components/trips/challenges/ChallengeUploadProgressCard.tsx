@@ -1,4 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
@@ -15,6 +16,7 @@ export function ChallengeUploadProgressCard({ progress }: ChallengeUploadProgres
 
   return (
     <View testID="upload-progress-card" style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.headerRow}>
         <Text style={styles.title}>Uploading submission</Text>
         <ActivityIndicator
@@ -37,7 +39,7 @@ export function ChallengeUploadProgressCard({ progress }: ChallengeUploadProgres
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       padding: spacing.lg,
       marginBottom: spacing.xl,

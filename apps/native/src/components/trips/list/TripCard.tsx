@@ -115,7 +115,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderRadius: borderRadius.md,
       borderWidth: 1,
       borderColor: palette.primaryOpacity10,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
     },
     tripImageBackground: {
       position: "absolute",

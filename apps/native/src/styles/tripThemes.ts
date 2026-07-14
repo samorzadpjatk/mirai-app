@@ -29,6 +29,18 @@ const piratePalette: ThemePalette = {
   // Accent swaps
   primary: PIRATE_GOLD,
   accentMagenta: PIRATE_RED,
+  // Surface warmth: swap the default teal-green timber for aged ship wood so the
+  // gold accents sit on walnut/oak instead of green (kept dark for readability).
+  cardDark: "#241a12",
+  surfaceDark: "#2a2018",
+  cardDarkOpacity40: "rgba(36, 26, 18, 0.4)",
+  cardDarkOpacity70: "rgba(36, 26, 18, 0.7)",
+  borderDark: "#5a4326",
+  backgroundDarkAlt: "#17100a",
+  feedCardBg: "rgba(36, 26, 18, 0.82)",
+  feedCardHeaderBg: "rgba(26, 18, 11, 0.6)",
+  feedCardMediaBg: "#1a120b",
+  feedAvatarBg: "#241a12",
   // All primary opacity variants regenerated from the gold accent
   primaryOpacity10: hexToRgba(PIRATE_GOLD, 0.1),
   primaryOpacity12: hexToRgba(PIRATE_GOLD, 0.12),

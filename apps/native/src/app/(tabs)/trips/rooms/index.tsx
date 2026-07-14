@@ -4,14 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { EmptyState } from "~/components/common/ui";
 import {
   type GroupMember,
   GroupMemberList,
 } from "~/components/trips/groups/details/GroupMemberList";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export default function RoomsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
 
   const { data, isLoading } = useQuery(
@@ -61,6 +64,7 @@ export default function RoomsScreen() {
 
         return (
           <View style={styles.roomCard}>
+            <WoodTexture radius={borderRadius.md} />
             <View style={styles.roomHeader}>
               <Text style={styles.roomName}>{item.name}</Text>
               <Text style={[styles.roomCapacity, isFull && styles.roomCapacityFull]}>
@@ -79,45 +83,47 @@ export default function RoomsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  emptyWrapper: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-  },
-  roomCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-  },
-  roomHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-  },
-  roomName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  roomCapacity: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  roomCapacityFull: {
-    color: colors.warning,
-  },
-  emptyRoom: {
-    fontSize: typography.sm,
-    color: colors.textTertiary,
-    fontStyle: "italic",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      padding: spacing.lg,
+      gap: spacing.lg,
+    },
+    emptyWrapper: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+      justifyContent: "center",
+    },
+    roomCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      padding: spacing.lg,
+    },
+    roomHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.md,
+    },
+    roomName: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    roomCapacity: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.primary,
+    },
+    roomCapacityFull: {
+      color: colors.warning,
+    },
+    emptyRoom: {
+      fontSize: typography.sm,
+      color: colors.textTertiary,
+      fontStyle: "italic",
+    },
+  });
+}

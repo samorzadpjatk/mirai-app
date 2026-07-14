@@ -47,7 +47,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     statCard: {
       flex: 1,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       padding: spacing.lg,
       borderRadius: borderRadius.xl,
       borderWidth: 1,

@@ -13,6 +13,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { formatDate } from "~/utils/format";
@@ -190,6 +191,7 @@ export function ChallengeCommunitySubmissionsCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.header}>
         <Text style={styles.title}>Groups submissions</Text>
         <Text style={styles.subtitle}>
@@ -428,7 +430,7 @@ function FullscreenSubmissionSlide({
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.08)",
@@ -478,7 +480,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.16)",
       borderRadius: borderRadius.md,
-      backgroundColor: colors.surfaceDark,
+      backgroundColor: palette.surfaceDark,
       overflow: "hidden",
     },
     podiumTile: {
@@ -497,7 +499,7 @@ const makeStyles = (palette: ThemePalette) =>
       overflow: "hidden",
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.1)",
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
     },
     tileImage: {
       width: "100%",
@@ -519,7 +521,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.18)",
       borderRadius: borderRadius.md,
-      backgroundColor: colors.surfaceDark,
+      backgroundColor: palette.surfaceDark,
       padding: 6,
       gap: 6,
       alignItems: "center",
@@ -533,7 +535,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderColor: "rgba(255,255,255,0.1)",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
     },
     podiumPlaceholderText: {
       color: colors.textMuted,

@@ -110,7 +110,7 @@ export function EditMembersPicker({
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     memberListContainer: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderWidth: 1,
       borderColor: "rgba(48, 54, 61, 1)",
       borderRadius: borderRadius.xl,

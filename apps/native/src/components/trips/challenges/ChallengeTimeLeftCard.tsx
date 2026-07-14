@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
@@ -199,6 +200,7 @@ export function ChallengeTimeLeftCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.header}>
         <Text style={styles.title}>{statusTitle}</Text>
         <Text style={styles.phase}>{phaseLabel}</Text>
@@ -252,7 +254,7 @@ export function ChallengeTimeLeftCard({
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       padding: spacing.xl,
       marginBottom: spacing.xl,

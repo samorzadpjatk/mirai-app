@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
@@ -13,6 +14,7 @@ export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageC
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <Text style={styles.title}>Submission sent - pending review</Text>
 
       <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
@@ -35,7 +37,7 @@ export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageC
 const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     container: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       padding: spacing.lg,
       marginBottom: spacing.xl,

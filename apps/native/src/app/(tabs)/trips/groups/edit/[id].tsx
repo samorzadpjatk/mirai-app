@@ -16,10 +16,12 @@ import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton"
 import { useFileUpload } from "~/hooks/files";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { getFileContentType, getFileExtension } from "~/utils/image";
 import { colors, borderRadius as radius, spacing, typography } from "../../../../../styles";
 
 export default function EditGroupScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
@@ -283,117 +285,119 @@ export default function EditGroupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: 100,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  memberSection: {
-    marginBottom: spacing.xl,
-  },
-  memberListContainer: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderZinc700,
-    borderRadius: radius.xl,
-    overflow: "hidden",
-  },
-  memberItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.whiteOpacity5,
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.textMuted,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  memberAvatarText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberMeta: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  removeButton: {
-    backgroundColor: colors.dangerOpacity12,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity50,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  removeButtonDisabled: {
-    opacity: 0.7,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  removeButtonText: {
-    fontSize: 11,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-  deleteButton: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.redOpacity500Background,
-    borderWidth: 1,
-    borderColor: colors.redOpacity500,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  deleteButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: 100,
+    },
+    inputLabel: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+      marginBottom: spacing.sm,
+      marginLeft: spacing.xs,
+    },
+    memberSection: {
+      marginBottom: spacing.xl,
+    },
+    memberListContainer: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: colors.borderZinc700,
+      borderRadius: radius.xl,
+      overflow: "hidden",
+    },
+    memberItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.whiteOpacity5,
+    },
+    memberAvatar: {
+      width: 44,
+      height: 44,
+      borderRadius: radius.full,
+      backgroundColor: colors.textMuted,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    memberAvatarText: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    memberInfo: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: colors.white,
+      marginBottom: 2,
+    },
+    memberMeta: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    removeButton: {
+      backgroundColor: colors.dangerOpacity12,
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity50,
+      borderRadius: radius.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+    },
+    removeButtonDisabled: {
+      opacity: 0.7,
+      borderColor: colors.whiteOpacity12,
+      backgroundColor: colors.whiteOpacity4,
+    },
+    removeButtonText: {
+      fontSize: 11,
+      fontWeight: typography.bold,
+      color: colors.white,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    emptyState: {
+      paddingVertical: spacing.xxxl,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.base,
+      color: colors.textMuted,
+    },
+    deleteButton: {
+      marginTop: spacing.lg,
+      backgroundColor: colors.redOpacity500Background,
+      borderWidth: 1,
+      borderColor: colors.redOpacity500,
+      borderRadius: radius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    deleteButtonText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+  });
+}

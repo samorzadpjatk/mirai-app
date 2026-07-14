@@ -673,7 +673,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     pdfMapContent: {
       flex: 1,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       padding: spacing.xl,
       justifyContent: "space-between",
     },
@@ -703,7 +703,7 @@ const makeStyles = (palette: ThemePalette) =>
     bentoTile: {
       flex: 1,
       aspectRatio: 1,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.05)",
@@ -713,7 +713,7 @@ const makeStyles = (palette: ThemePalette) =>
     whatsappTile: {
       flex: 1,
       aspectRatio: 1,
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: palette.magentaOpacity30,

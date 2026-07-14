@@ -208,7 +208,7 @@ export default function ChallengesScreen() {
             onRefresh={handleRefresh}
             tintColor={colors.white}
             colors={[colors.white]}
-            progressBackgroundColor={colors.cardDarkOpacity70}
+            progressBackgroundColor={palette.cardDarkOpacity70}
           />
         }
       >

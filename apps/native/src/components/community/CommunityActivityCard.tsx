@@ -3,6 +3,7 @@ import type { Activity } from "@mirai-app/orpc";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
@@ -332,6 +333,7 @@ export const CommunityActivityCard = React.memo(
         disabled={!onPress}
         activeOpacity={onPress ? 0.9 : 1}
       >
+        <WoodTexture radius={18} />
         <View style={styles.cardHeader}>
           <TouchableOpacity
             style={styles.ownerRow}
@@ -436,7 +438,7 @@ function makeStyles(palette: ThemePalette) {
       overflow: "hidden",
       borderWidth: 1,
       borderColor: colors.borderWhite10,
-      backgroundColor: "rgba(16, 34, 34, 0.78)",
+      backgroundColor: palette.feedCardBg,
     },
     cardFocused: {
       borderColor: palette.primary,
@@ -455,7 +457,7 @@ function makeStyles(palette: ThemePalette) {
       justifyContent: "space-between",
       paddingHorizontal: spacing.md,
       paddingVertical: spacing.md,
-      backgroundColor: "rgba(12, 20, 24, 0.6)",
+      backgroundColor: palette.feedCardHeaderBg,
     },
     ownerRow: {
       flexDirection: "row",
@@ -471,7 +473,7 @@ function makeStyles(palette: ThemePalette) {
       overflow: "hidden",
       borderWidth: 1,
       borderColor: palette.primaryOpacity30,
-      backgroundColor: "#0f2627",
+      backgroundColor: palette.feedAvatarBg,
     },
     avatarImage: {
       width: "100%",
@@ -510,7 +512,7 @@ function makeStyles(palette: ThemePalette) {
     mediaWrap: {
       width: "100%",
       aspectRatio: 1,
-      backgroundColor: "#0f171a",
+      backgroundColor: palette.feedCardMediaBg,
     },
     mediaImage: {
       width: "100%",

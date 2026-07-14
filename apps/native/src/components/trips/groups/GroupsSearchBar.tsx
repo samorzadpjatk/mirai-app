@@ -27,7 +27,7 @@ export function GroupsSearchBar({ value, onChangeText }: GroupsSearchBarProps) {
   );
 }
 
-const makeStyles = (_palette: ThemePalette) =>
+const makeStyles = (palette: ThemePalette) =>
   StyleSheet.create({
     searchContainer: {
       position: "relative",
@@ -42,7 +42,7 @@ const makeStyles = (_palette: ThemePalette) =>
       zIndex: 1,
     },
     searchInput: {
-      backgroundColor: colors.cardDark,
+      backgroundColor: palette.cardDark,
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.05)",
       borderRadius: borderRadius.xl,
