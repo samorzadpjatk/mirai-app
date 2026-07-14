@@ -40,7 +40,7 @@ export function TripQuickAccessGrid({
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenRooms}>
         <View style={styles.gridIconWrapper}>
-          <Ionicons name="bed" size={24} color={colors.primary} />
+          <Ionicons name="bed" size={24} color={palette.primary} />
         </View>
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Rooms</Text>
