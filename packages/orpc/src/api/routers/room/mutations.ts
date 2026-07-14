@@ -20,9 +20,9 @@ const requireRoomInTrip = async (context: RoomContext, roomId: string, tripId: s
     where: (r, { eq }) => eq(r.id, roomId),
     columns: { id: true, tripId: true, capacity: true, isDeleted: true },
   });
-  if (!room || room.isDeleted) throw new ORPCError("NOT_FOUND", { message: "Pokój nie istnieje" });
+  if (!room || room.isDeleted) throw new ORPCError("NOT_FOUND", { message: "Room not found" });
   if (room.tripId !== tripId)
-    throw new ORPCError("BAD_REQUEST", { message: "Pokój nie z tego wyjazdu" });
+    throw new ORPCError("BAD_REQUEST", { message: "Room does not belong to this trip" });
   return room;
 };
 
@@ -45,13 +45,13 @@ export const update = async (
     where: (r, { eq }) => eq(r.id, input.id),
     columns: { id: true, isDeleted: true },
   });
-  if (!room || room.isDeleted) throw new ORPCError("NOT_FOUND", { message: "Pokój nie istnieje" });
+  if (!room || room.isDeleted) throw new ORPCError("NOT_FOUND", { message: "Room not found" });
 
   if (input.capacity !== undefined) {
     const occupants = await countOccupants(context, input.id);
     if (input.capacity < occupants) {
       throw new ORPCError("CONFLICT", {
-        message: `Pojemność (${input.capacity}) jest mniejsza niż liczba przypisanych osób (${occupants}).`,
+        message: `Capacity (${input.capacity}) is lower than the current number of occupants (${occupants}).`,
       });
     }
   }
@@ -74,7 +74,7 @@ export const deleteRoom = async (context: RoomContext, input: { id: string }) =>
       .set({ isDeleted: true })
       .where(eq(rooms.id, input.id))
       .returning();
-    if (!room) throw new ORPCError("NOT_FOUND", { message: "Pokój nie istnieje" });
+    if (!room) throw new ORPCError("NOT_FOUND", { message: "Room not found" });
     // Detach occupants so they are no longer shown in a deleted room.
     await tx
       .update(tripParticipants)
@@ -93,7 +93,7 @@ export const assignUserToRoom = async (
   // Hard capacity block (exclude the user being (re)assigned so re-assign is idempotent).
   const occupants = await countOccupants(context, input.roomId, input.userId);
   if (occupants >= room.capacity) {
-    throw new ORPCError("CONFLICT", { message: "Pokój jest pełny" });
+    throw new ORPCError("CONFLICT", { message: "Room is full" });
   }
 
   const [participant] = await context.db
@@ -124,7 +124,7 @@ export const bulkAssignUsersToRoom = async (
 
     if (keptOthers + uniqueUserIds.length > room.capacity) {
       throw new ORPCError("CONFLICT", {
-        message: `Pokój pomieści ${room.capacity} osób — próba przypisania ${keptOthers + uniqueUserIds.length}.`,
+        message: `Room holds ${room.capacity} people — attempted to assign ${keptOthers + uniqueUserIds.length}.`,
       });
     }
 
@@ -155,6 +155,6 @@ export const removeUserFromRoom = async (
       and(eq(tripParticipants.userId, input.userId), eq(tripParticipants.tripId, input.tripId)),
     )
     .returning();
-  if (!participant) throw new ORPCError("NOT_FOUND", { message: "Uczestnik nie istnieje" });
+  if (!participant) throw new ORPCError("NOT_FOUND", { message: "Participant not found" });
   return { userId: participant.userId };
 };

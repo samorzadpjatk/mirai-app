@@ -32,8 +32,8 @@ export default function RoomsScreen() {
       <View style={styles.emptyWrapper}>
         <EmptyState
           icon="bed-outline"
-          title="Brak pokoi"
-          subtitle="Dla tego wyjazdu nie utworzono jeszcze żadnych pokoi."
+          title="No rooms"
+          subtitle="No rooms have been created for this trip yet."
         />
       </View>
     );
@@ -50,7 +50,7 @@ export default function RoomsScreen() {
           name:
             formatDisplayName(participant.user.firstName, participant.user.lastName) ??
             participant.user.email ??
-            "Nieznany uczestnik",
+            "Unknown participant",
           initials: getInitials(participant.user.firstName, participant.user.lastName),
           role: "",
           isLeader: false,
@@ -64,13 +64,13 @@ export default function RoomsScreen() {
             <View style={styles.roomHeader}>
               <Text style={styles.roomName}>{item.name}</Text>
               <Text style={[styles.roomCapacity, isFull && styles.roomCapacityFull]}>
-                {item.occupancy}/{item.capacity} łóżek
+                {item.occupancy}/{item.capacity} beds
               </Text>
             </View>
             {members.length > 0 ? (
               <GroupMemberList members={members} />
             ) : (
-              <Text style={styles.emptyRoom}>Pusty pokój</Text>
+              <Text style={styles.emptyRoom}>Empty room</Text>
             )}
           </View>
         );

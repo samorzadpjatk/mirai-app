@@ -27,8 +27,8 @@ export default function AdminRoomsScreen() {
           <View style={styles.emptyWrapper}>
             <EmptyState
               icon="bed-outline"
-              title="Brak pokoi"
-              subtitle="Dodaj pierwszy pokój przyciskiem +."
+              title="No rooms"
+              subtitle="Create your first room with the + button."
             />
           </View>
         }
@@ -45,7 +45,7 @@ export default function AdminRoomsScreen() {
               <View style={styles.cardContent}>
                 <Text style={styles.cardName}>{item.name}</Text>
                 <Text style={[styles.cardSub, isFull && styles.cardSubFull]}>
-                  {item.occupancy}/{item.capacity} łóżek{isFull ? " · pełny" : ""}
+                  {item.occupancy}/{item.capacity} beds{isFull ? " · full" : ""}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />

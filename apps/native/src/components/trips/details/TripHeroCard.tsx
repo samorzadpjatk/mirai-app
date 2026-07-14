@@ -59,6 +59,7 @@ export function TripHeroCard({
         storagePath={backgroundImagePath ?? undefined}
         style={styles.heroImage}
         contentFit="cover"
+        contentPosition="center"
       />
       <View style={styles.heroContent}>
         <View style={styles.heroBadge}>

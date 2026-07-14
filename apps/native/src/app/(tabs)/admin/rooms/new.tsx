@@ -14,42 +14,39 @@ export default function NewRoomScreen() {
   const handleCreate = async () => {
     const cap = Number.parseInt(capacity, 10);
     if (!name.trim()) {
-      Alert.alert("Błąd", "Podaj nazwę pokoju.");
+      Alert.alert("Error", "Enter a room name.");
       return;
     }
     if (!Number.isInteger(cap) || cap < 1) {
-      Alert.alert("Błąd", "Pojemność musi być liczbą ≥ 1.");
+      Alert.alert("Error", "Capacity must be a number ≥ 1.");
       return;
     }
     try {
       await createRoom(name.trim(), cap);
       router.back();
     } catch (error) {
-      Alert.alert(
-        "Błąd",
-        error instanceof Error ? error.message : "Nie udało się utworzyć pokoju.",
-      );
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to create room.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Nazwa pokoju</Text>
+      <Text style={styles.label}>Room name</Text>
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="np. Pokój 101"
+        placeholder="e.g. Room 101"
         placeholderTextColor={colors.gray600}
       />
 
-      <Text style={styles.label}>Pojemność (liczba łóżek)</Text>
+      <Text style={styles.label}>Capacity (beds)</Text>
       <TextInput
         style={styles.input}
         value={capacity}
         onChangeText={(text) => setCapacity(text.replace(/[^0-9]/g, ""))}
         keyboardType="number-pad"
-        placeholder="np. 4"
+        placeholder="e.g. 4"
         placeholderTextColor={colors.gray600}
       />
 
@@ -58,7 +55,7 @@ export default function NewRoomScreen() {
         onPress={handleCreate}
         disabled={isMutating}
       >
-        <Text style={styles.buttonText}>{isMutating ? "Tworzenie..." : "Utwórz pokój"}</Text>
+        <Text style={styles.buttonText}>{isMutating ? "Creating..." : "Create room"}</Text>
       </TouchableOpacity>
     </View>
   );

@@ -30,7 +30,7 @@ export default function EditRoomScreen() {
   if (!room) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.emptyText}>Pokój nie istnieje.</Text>
+        <Text style={styles.emptyText}>Room not found.</Text>
       </View>
     );
   }
@@ -40,29 +40,29 @@ export default function EditRoomScreen() {
   const handleSave = async () => {
     const cap = Number.parseInt(capacity, 10);
     if (!name.trim() || !Number.isInteger(cap) || cap < 1) {
-      Alert.alert("Błąd", "Podaj nazwę i pojemność ≥ 1.");
+      Alert.alert("Error", "Enter a name and capacity ≥ 1.");
       return;
     }
     try {
       await updateRoom(room.id, name.trim(), cap);
-      Alert.alert("OK", "Zapisano zmiany.");
+      Alert.alert("Saved", "Changes saved.");
     } catch (error) {
-      Alert.alert("Błąd", error instanceof Error ? error.message : "Nie udało się zapisać.");
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to save.");
     }
   };
 
   const handleDelete = () => {
-    Alert.alert("Usuń pokój", `Usunąć pokój „${room.name}"?`, [
-      { text: "Anuluj", style: "cancel" },
+    Alert.alert("Delete room", `Delete room "${room.name}"?`, [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Usuń",
+        text: "Delete",
         style: "destructive",
         onPress: async () => {
           try {
             await deleteRoom(room.id);
             router.back();
           } catch (error) {
-            Alert.alert("Błąd", error instanceof Error ? error.message : "Nie udało się usunąć.");
+            Alert.alert("Error", error instanceof Error ? error.message : "Failed to delete.");
           }
         },
       },
@@ -77,7 +77,10 @@ export default function EditRoomScreen() {
         await assignUser(userId, room.id);
       }
     } catch (error) {
-      Alert.alert("Nie można przypisać", error instanceof Error ? error.message : "Wystąpił błąd.");
+      Alert.alert(
+        "Cannot assign",
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
     }
   };
 
@@ -89,14 +92,14 @@ export default function EditRoomScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.label}>Nazwa</Text>
+            <Text style={styles.label}>Name</Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
               placeholderTextColor={colors.gray600}
             />
-            <Text style={styles.label}>Pojemność</Text>
+            <Text style={styles.label}>Capacity</Text>
             <TextInput
               style={styles.input}
               value={capacity}
@@ -110,18 +113,18 @@ export default function EditRoomScreen() {
                 onPress={handleSave}
                 disabled={isMutating}
               >
-                <Text style={styles.saveTxt}>Zapisz</Text>
+                <Text style={styles.saveTxt}>Save</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.delBtn, isMutating && styles.disabled]}
                 onPress={handleDelete}
                 disabled={isMutating}
               >
-                <Text style={styles.delTxt}>Usuń</Text>
+                <Text style={styles.delTxt}>Delete</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.sectionTitle}>
-              Przypisani ({occupantIds.size}/{room.capacity})
+              Assigned ({occupantIds.size}/{room.capacity})
             </Text>
           </View>
         }
