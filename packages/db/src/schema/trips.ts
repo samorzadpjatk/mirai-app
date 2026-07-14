@@ -26,6 +26,9 @@ export const trips = pgTable(
     startDate: timestamp("start_date", { withTimezone: true }).notNull(),
     endDate: timestamp("end_date", { withTimezone: true }).notNull(),
     backgroundImagePath: text("background_image_path"),
+    // Per-trip visual theme key (e.g. "DEFAULT", "PIRATE"). Resolved to a palette
+    // client-side with a fallback, so a plain varchar is preferred over a pgEnum.
+    theme: varchar("theme", { length: 32 }).default("DEFAULT").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())

@@ -14,6 +14,8 @@ export interface TripConfig {
   sponsors?: string;
   info?: string;
   rooms?: string;
+  /** Per-trip visual theme key (e.g. "PIRATE"); defaults to "DEFAULT". */
+  theme?: string;
 }
 
 export interface RoomConfig {

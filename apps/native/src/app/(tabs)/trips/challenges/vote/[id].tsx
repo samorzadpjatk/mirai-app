@@ -15,6 +15,7 @@ import { CachedImage } from "~/components/common/CachedImage";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { borderRadius, colors, spacing, typography } from "../../../../../styles";
 
 type VotingPhase = "comparing" | "confirming" | "done" | "blocked";
@@ -105,6 +106,8 @@ function SubmissionImageCard({
   onPress?: () => void;
   disabled?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const { data, isLoading } = useQuery({
     ...orpc.storage.createDownloadUrl.queryOptions({
       input: { storagePath: submission.imagePath },
@@ -117,7 +120,7 @@ function SubmissionImageCard({
       <View style={styles.voteImageWrap}>
         {isLoading ? (
           <View style={styles.voteImageFallback}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
           </View>
         ) : data?.signedUrl ? (
           <CachedImage
@@ -151,6 +154,8 @@ function SubmissionImageCard({
 }
 
 export default function ChallengePeerVotingScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
@@ -523,7 +528,7 @@ export default function ChallengePeerVotingScreen() {
               </View>
             ) : (
               <View style={styles.centerState}>
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={palette.primary} />
               </View>
             )}
 
@@ -585,195 +590,196 @@ export default function ChallengePeerVotingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    marginTop: -spacing.sm,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontSize: typography.xs,
-  },
-  progressWrap: {
-    gap: spacing.xs,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: colors.whiteOpacity10,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-  },
-  progressLabel: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  pairsWrap: {
-    gap: spacing.md,
-  },
-  voteCard: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  voteImageWrap: {
-    width: "100%",
-    aspectRatio: 16 / 10,
-    backgroundColor: colors.backgroundDarkOpacity45,
-  },
-  voteImage: {
-    width: "100%",
-    height: "100%",
-  },
-  voteImageFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  voteImageFallbackText: {
-    color: colors.textMuted,
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-  },
-  voteCardBody: {
-    padding: spacing.md,
-    gap: 2,
-  },
-  voteCardTitle: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  voteCardGroup: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  voteCardSubtitle: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-  hintText: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  successHint: {
-    color: colors.emerald500,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: typography.bold,
-  },
-  sectionTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  confirmList: {
-    gap: spacing.sm,
-  },
-  actions: {
-    gap: spacing.sm,
-  },
-  actionButton: {
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionPrimary: {
-    backgroundColor: colors.primary,
-  },
-  actionGhost: {
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity20,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  actionPrimaryText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  actionGhostText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.successOpacity35,
-    backgroundColor: colors.successOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  doneTitle: {
-    color: colors.emerald500,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  doneButton: {
-    marginTop: spacing.sm,
-  },
-  blockedCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity35,
-    backgroundColor: colors.dangerOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  blockedTitle: {
-    color: colors.danger,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  blockedText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  centerState: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      gap: spacing.lg,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    subtitle: {
+      marginTop: -spacing.sm,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      fontSize: typography.xs,
+    },
+    progressWrap: {
+      gap: spacing.xs,
+    },
+    progressTrack: {
+      height: 8,
+      borderRadius: 999,
+      backgroundColor: colors.whiteOpacity10,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      backgroundColor: palette.primary,
+    },
+    progressLabel: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    pairsWrap: {
+      gap: spacing.md,
+    },
+    voteCard: {
+      backgroundColor: colors.cardDark,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity8,
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+    },
+    voteImageWrap: {
+      width: "100%",
+      aspectRatio: 16 / 10,
+      backgroundColor: colors.backgroundDarkOpacity45,
+    },
+    voteImage: {
+      width: "100%",
+      height: "100%",
+    },
+    voteImageFallback: {
+      width: "100%",
+      height: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    voteImageFallbackText: {
+      color: colors.textMuted,
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+    },
+    voteCardBody: {
+      padding: spacing.md,
+      gap: 2,
+    },
+    voteCardTitle: {
+      color: palette.primary,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    voteCardGroup: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    voteCardSubtitle: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+    },
+    hintText: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    successHint: {
+      color: colors.emerald500,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: typography.bold,
+    },
+    sectionTitle: {
+      color: colors.white,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+    },
+    confirmList: {
+      gap: spacing.sm,
+    },
+    actions: {
+      gap: spacing.sm,
+    },
+    actionButton: {
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionPrimary: {
+      backgroundColor: palette.primary,
+    },
+    actionGhost: {
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity20,
+      backgroundColor: colors.whiteOpacity4,
+    },
+    actionPrimaryText: {
+      color: colors.backgroundDark,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    actionGhostText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    doneCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.successOpacity35,
+      backgroundColor: colors.successOpacity12,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    doneTitle: {
+      color: colors.emerald500,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    doneText: {
+      color: colors.white,
+      fontSize: typography.sm,
+    },
+    doneButton: {
+      marginTop: spacing.sm,
+    },
+    blockedCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity35,
+      backgroundColor: colors.dangerOpacity12,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    blockedTitle: {
+      color: colors.danger,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    blockedText: {
+      color: colors.white,
+      fontSize: typography.sm,
+    },
+    centerState: {
+      paddingVertical: spacing.xl,
+      alignItems: "center",
+    },
+  });

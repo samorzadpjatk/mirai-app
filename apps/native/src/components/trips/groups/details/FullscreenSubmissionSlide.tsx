@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
 
 interface Props {
@@ -23,6 +24,7 @@ export function formatDateTime(approvedAt: string | Date): string {
 }
 
 export default function FullscreenSubmissionSlide({ submission, width, height, topInset }: Props) {
+  const { palette } = useTripTheme();
   return (
     <View
       testID="fullscreen-slide"
@@ -37,13 +39,17 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
             contentFit="contain"
             fallback={
               <View testID="image-fallback" style={styles.fullscreenFallback}>
-                <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
+                <ActivityIndicator
+                  testID="loading-indicator"
+                  size="large"
+                  color={palette.primary}
+                />
               </View>
             }
           />
         ) : (
           <View testID="image-fallback" style={styles.fullscreenFallback}>
-            <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
+            <ActivityIndicator testID="loading-indicator" size="large" color={palette.primary} />
           </View>
         )}
       </View>

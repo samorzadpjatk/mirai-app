@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface TripNewsSectionProps {
   tripId: string;
@@ -41,6 +42,8 @@ export function formatAdminName(item: {
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   const newsQuery = useQuery({
     ...orpc.activityFeed.getByTrip.queryOptions({
@@ -93,7 +96,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
       <View style={styles.newsList}>
         {newsQuery.isLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
             <Text style={styles.loadingText}>Loading admin news...</Text>
           </View>
         ) : null}
@@ -121,7 +124,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
             }
           >
             <View style={styles.newsIcon}>
-              <Ionicons name="megaphone" size={18} color={colors.primary} />
+              <Ionicons name="megaphone" size={18} color={palette.primary} />
             </View>
 
             <View style={styles.newsContent}>
@@ -151,122 +154,123 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  newsSection: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xxl,
-  },
-  newsSectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  viewAllButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  viewAllButtonText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  newsList: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  loadingState: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  emptyState: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  newsItem: {
-    backgroundColor: colors.cardDarkOpacity40,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    flexDirection: "row",
-    gap: spacing.lg,
-  },
-  newsIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  newsContent: {
-    flex: 1,
-  },
-  newsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.xs,
-    gap: spacing.sm,
-  },
-  newsTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    flex: 1,
-  },
-  newsTime: {
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-    color: colors.slate500,
-  },
-  newsDescription: {
-    fontSize: typography.xs,
-    color: colors.textTertiary,
-    lineHeight: typography.xs * typography.relaxed,
-  },
-  newsAuthor: {
-    marginTop: spacing.sm,
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-  },
-  newsImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    marginTop: spacing.sm,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    newsSection: {
+      marginTop: spacing.xxl,
+      marginBottom: spacing.xxl,
+    },
+    newsSectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.slate400,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    viewAllButton: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+    },
+    viewAllButtonText: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1.2,
+    },
+    newsList: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    loadingState: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      backgroundColor: colors.cardDarkOpacity40,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      padding: spacing.lg,
+      borderRadius: borderRadius.md,
+    },
+    loadingText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    emptyState: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      backgroundColor: colors.cardDarkOpacity40,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      padding: spacing.lg,
+      borderRadius: borderRadius.md,
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    newsItem: {
+      backgroundColor: colors.cardDarkOpacity40,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      padding: spacing.lg,
+      borderRadius: borderRadius.md,
+      flexDirection: "row",
+      gap: spacing.lg,
+    },
+    newsIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.primaryOpacity20,
+    },
+    newsContent: {
+      flex: 1,
+    },
+    newsHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.xs,
+      gap: spacing.sm,
+    },
+    newsTitle: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: colors.white,
+      flex: 1,
+    },
+    newsTime: {
+      fontSize: typography.xs,
+      fontWeight: typography.medium,
+      color: colors.slate500,
+    },
+    newsDescription: {
+      fontSize: typography.xs,
+      color: colors.textTertiary,
+      lineHeight: typography.xs * typography.relaxed,
+    },
+    newsAuthor: {
+      marginTop: spacing.sm,
+      fontSize: typography.xs,
+      color: colors.textSecondary,
+    },
+    newsImage: {
+      width: "100%",
+      height: 120,
+      borderRadius: borderRadius.sm,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      marginTop: spacing.sm,
+    },
+  });

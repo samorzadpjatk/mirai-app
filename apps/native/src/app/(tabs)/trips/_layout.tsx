@@ -1,22 +1,22 @@
 import { Stack } from "expo-router";
-import { colors } from "../../../styles/colors";
+import { useSelectedTrip } from "~/hooks/trips/useSelectedTrip";
+import { TripThemeProvider, useTripTheme } from "~/theme/TripThemeProvider";
 
-const backgroundColor = colors.backgroundDark;
-const headerTintColor = colors.primary;
+function TripsStack() {
+  const { palette } = useTripTheme();
 
-export default function TripsLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor },
-        headerTintColor: headerTintColor,
+        headerStyle: { backgroundColor: palette.backgroundDark },
+        headerTintColor: palette.primary,
         headerTitleStyle: {
           fontFamily: "IBMPlexSans_600SemiBold",
-          color: colors.white,
+          color: palette.white,
         },
         headerBackButtonDisplayMode: "minimal",
-        contentStyle: { backgroundColor },
+        contentStyle: { backgroundColor: palette.backgroundDark },
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -36,5 +36,15 @@ export default function TripsLayout() {
       <Stack.Screen name="leaderboard/index" options={{ title: "Leaderboard" }} />
       <Stack.Screen name="partners/[id]" options={{ title: "Partner" }} />
     </Stack>
+  );
+}
+
+export default function TripsLayout() {
+  const { selectedTripId } = useSelectedTrip();
+
+  return (
+    <TripThemeProvider tripId={selectedTripId}>
+      <TripsStack />
+    </TripThemeProvider>
   );
 }

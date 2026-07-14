@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ExistingSubmission {
   id: string;
@@ -42,6 +43,7 @@ export function ExistingSubmissionCard({
   localPreviewUri,
   onWithdraw,
 }: ExistingSubmissionCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const hasImage = submission.imageIds.length > 0;
   const canWithdraw = submission.status !== "APPROVED";
 
@@ -126,101 +128,102 @@ export function ExistingSubmissionCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.textPrimary,
-  },
-  statusPill: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  statusText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  meta: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  imageWrapper: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceDark,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageLoading: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  imageFallback: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  noImageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  noImageText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  rejectionText: {
-    color: "#fca5a5",
-    fontSize: typography.sm,
-  },
-  withdrawButton: {
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.4)",
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
-  },
-  withdrawButtonDisabled: {
-    opacity: 0.6,
-  },
-  withdrawButtonText: {
-    color: "#ef4444",
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  lockedText: {
-    marginTop: spacing.sm,
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.cardDark,
+      borderRadius: borderRadius.xl,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    title: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: colors.textPrimary,
+    },
+    statusPill: {
+      borderWidth: 1,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    statusText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    meta: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+    },
+    imageWrapper: {
+      width: "100%",
+      aspectRatio: 4 / 3,
+      borderRadius: borderRadius.lg,
+      overflow: "hidden",
+      backgroundColor: colors.surfaceDark,
+    },
+    image: {
+      width: "100%",
+      height: "100%",
+    },
+    imageLoading: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    imageFallback: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+    },
+    noImageRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    noImageText: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+    },
+    rejectionText: {
+      color: "#fca5a5",
+      fontSize: typography.sm,
+    },
+    withdrawButton: {
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: "rgba(239, 68, 68, 0.4)",
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+      backgroundColor: "rgba(239, 68, 68, 0.12)",
+    },
+    withdrawButtonDisabled: {
+      opacity: 0.6,
+    },
+    withdrawButtonText: {
+      color: "#ef4444",
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+    lockedText: {
+      marginTop: spacing.sm,
+      color: colors.textMuted,
+      fontSize: typography.xs,
+    },
+  });
