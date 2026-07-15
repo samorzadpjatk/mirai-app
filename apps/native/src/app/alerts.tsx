@@ -7,11 +7,14 @@ import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
 import { AlertsPagination } from "~/components/alerts/AlertsPagination";
 import { NotificationCard } from "~/components/alerts/NotificationCard";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { NotificationItem } from "~/types/notifications";
-import { colors, spacing, typography } from "../styles";
+import { spacing, typography } from "../styles";
 
 export default function AlertsScreen() {
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -59,7 +62,7 @@ export default function AlertsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={refetch}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -104,27 +107,29 @@ export default function AlertsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  notificationsList: {
-    gap: spacing.md,
-  },
-  loadingState: {
-    alignItems: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  loadingStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      paddingBottom: spacing.xxxl,
+    },
+    notificationsList: {
+      gap: spacing.md,
+    },
+    loadingState: {
+      alignItems: "center",
+      paddingVertical: spacing.xxl * 2,
+    },
+    loadingStateText: {
+      fontSize: typography.base,
+      color: palette.textMuted,
+    },
+  });
+}

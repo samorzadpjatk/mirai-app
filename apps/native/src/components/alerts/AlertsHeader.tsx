@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface AlertsHeaderProps {
   title: string;
@@ -7,6 +8,7 @@ interface AlertsHeaderProps {
 }
 
 export function AlertsHeader({ title, subtitle }: AlertsHeaderProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>{title}</Text>
@@ -15,18 +17,20 @@ export function AlertsHeader({ title, subtitle }: AlertsHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.xl,
-  },
-  headerTitle: {
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    header: {
+      marginBottom: spacing.xl,
+    },
+    headerTitle: {
+      fontSize: typography.xxl,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    headerSubtitle: {
+      fontSize: typography.sm,
+      color: palette.textMuted,
+    },
+  });
+}

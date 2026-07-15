@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { NotificationScheduleItem } from "~/types/notifications";
 import { formatDate, formatRelativeTime } from "~/utils/format";
 
@@ -11,6 +12,8 @@ interface NotificationScheduleCardProps {
 
 export function NotificationScheduleCard({ schedule }: NotificationScheduleCardProps) {
   const queryClient = useQueryClient();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   const deleteMutation = useMutation(
     orpc.notificationSchedule.delete.mutationOptions({
@@ -79,7 +82,7 @@ export function NotificationScheduleCard({ schedule }: NotificationScheduleCardP
             <Ionicons
               name={schedule.isActive ? "notifications" : "notifications-off"}
               size={16}
-              color="#9ca3af"
+              color={palette.textSecondary}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -87,7 +90,7 @@ export function NotificationScheduleCard({ schedule }: NotificationScheduleCardP
             style={styles.actionButton}
             onPress={handleDelete}
           >
-            <Ionicons name="trash" size={16} color="#9ca3af" />
+            <Ionicons name="trash" size={16} color={palette.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -125,71 +128,75 @@ export function NotificationScheduleCard({ schedule }: NotificationScheduleCardP
   );
 }
 
-const styles = StyleSheet.create({
-  scheduleCard: {
-    backgroundColor: "#23262b",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#374151",
-    gap: 12,
-  },
-  scheduleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  scheduleInfo: {
-    flex: 1,
-  },
-  scheduleName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  scheduleCreator: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 4,
-  },
-  scheduleActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: "#374151",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: "#374151",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  tagActive: {
-    backgroundColor: "rgba(0, 206, 209, 0.2)",
-  },
-  tagText: {
-    fontSize: 12,
-    color: "#9ca3af",
-  },
-  tagTextActive: {
-    color: "#00ced1",
-  },
-  scheduleDetails: {
-    gap: 4,
-  },
-  detailText: {
-    fontSize: 13,
-    color: "#9ca3af",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    scheduleCard: {
+      backgroundColor: palette.surfaceDark,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      // #374151 has no exact match on palette.borderDark — see notifications/index.tsx
+      // makeStyles for the same normalization rationale.
+      borderColor: palette.gray700,
+      gap: 12,
+    },
+    scheduleHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    scheduleInfo: {
+      flex: 1,
+    },
+    scheduleName: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: palette.white,
+    },
+    scheduleCreator: {
+      fontSize: 12,
+      color: palette.gray500,
+      marginTop: 4,
+    },
+    scheduleActions: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    actionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      backgroundColor: palette.gray700,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tagRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    tag: {
+      backgroundColor: palette.gray700,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    tagActive: {
+      backgroundColor: palette.primaryOpacity20,
+    },
+    tagText: {
+      fontSize: 12,
+      color: palette.textSecondary,
+    },
+    tagTextActive: {
+      color: palette.primary,
+    },
+    scheduleDetails: {
+      gap: 4,
+    },
+    detailText: {
+      fontSize: 13,
+      color: palette.textSecondary,
+    },
+  });
+}

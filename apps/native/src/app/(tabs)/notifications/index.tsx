@@ -8,10 +8,14 @@ import { ErrorState } from "~/components/common/ui";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
 import { NotificationsHeader } from "~/components/notifications/NotificationsHeader";
+import { colors } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { NotificationScheduleItem } from "~/types/notifications";
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   // Check user permissions
   const { data: currentUser, isLoading: isLoadingUser } = useQuery(
@@ -81,7 +85,7 @@ export default function NotificationsScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={() => void refetch()}
-            tintColor="#00ced1"
+            tintColor={palette.primary}
           />
         }
         contentContainerStyle={styles.scrollContent}
@@ -114,48 +118,53 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#17181c",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 96,
-    gap: 16,
-  },
-  errorTitle: {
-    color: "#ef4444",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  errorMessage: {
-    color: "#9ca3af",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  retryButton: {
-    marginTop: 16,
-    backgroundColor: "#23262b",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
-  },
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollContent: {
+      padding: 16,
+      paddingBottom: 96,
+      gap: 16,
+    },
+    errorTitle: {
+      color: colors.danger,
+      fontSize: 18,
+      fontWeight: "bold",
+    },
+    errorMessage: {
+      color: palette.textSecondary,
+      marginTop: 8,
+      textAlign: "center",
+    },
+    retryButton: {
+      marginTop: 16,
+      backgroundColor: palette.surfaceDark,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: palette.white,
+      fontWeight: "600",
+    },
 
-  // Empty State
-  emptyCard: {
-    backgroundColor: "#23262b",
-    borderRadius: 12,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#374151",
-  },
-  emptyText: {
-    color: "#9ca3af",
-    textAlign: "center",
-  },
-});
+    // Empty State
+    emptyCard: {
+      backgroundColor: palette.surfaceDark,
+      borderRadius: 12,
+      padding: 24,
+      borderWidth: 1,
+      // #374151 has no exact match on palette.borderDark (#395556 default) — using
+      // the exact-matching neutral token instead of introducing a second
+      // unsanctioned pixel change (see task-8-report.md).
+      borderColor: palette.gray700,
+    },
+    emptyText: {
+      color: palette.textSecondary,
+      textAlign: "center",
+    },
+  });
+}
