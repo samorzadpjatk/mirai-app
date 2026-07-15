@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { WoodTexture } from "~/components/common/WoodTexture";
-import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
+import { borderRadius, colors, glow, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface GroupDetailsHeroProps {
@@ -14,7 +14,7 @@ export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
   const { palette } = useTripTheme();
   const styles = useThemedStyles(makeStyles);
   return (
-    <View testID="group-details-hero" style={[styles.heroCard, shadows.primaryGlow]}>
+    <View testID="group-details-hero" style={[styles.heroCard, glow(palette.primary)]}>
       <WoodTexture radius={borderRadius.xl} />
       {imageUrl ? (
         <>

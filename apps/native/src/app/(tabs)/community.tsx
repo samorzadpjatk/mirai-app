@@ -255,7 +255,7 @@ export default function CommunityScreen() {
       <StatusBar style="light" />
 
       <LinearGradient
-        colors={[colors.backgroundDark, palette.backgroundDarkAlt]}
+        colors={[palette.backgroundDark, palette.backgroundDarkAlt]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -357,7 +357,7 @@ export default function CommunityScreen() {
             onRefresh={handleRefresh}
             tintColor={colors.white}
             colors={[colors.white]}
-            progressBackgroundColor={colors.cardDarkOpacity70}
+            progressBackgroundColor={palette.cardDarkOpacity70}
           />
         }
         ListEmptyComponent={
@@ -403,11 +403,11 @@ export default function CommunityScreen() {
   );
 }
 
-const makeStyles = (palette: ThemePalette) =>
-  StyleSheet.create({
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.backgroundDark,
+      backgroundColor: palette.backgroundDark,
     },
     feedList: {
       flex: 1,
@@ -498,3 +498,4 @@ const makeStyles = (palette: ThemePalette) =>
       fontWeight: typography.semibold,
     },
   });
+}
