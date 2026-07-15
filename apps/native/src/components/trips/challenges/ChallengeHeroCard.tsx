@@ -2,7 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { getColorForPoints, getIconForChallenge } from "./challengeStyles";
 
 interface ChallengeHeroCardProps {
@@ -46,14 +48,14 @@ const statusLabels: Record<string, string> = {
   CANCELLED: "Cancelled",
 };
 
-const statusTone: Record<string, string> = {
+const getStatusTone = (palette: ThemePalette): Record<string, string> => ({
   HIDDEN: colors.slate400,
-  VISIBLE: colors.primary,
-  ACTIVE: colors.primary,
+  VISIBLE: palette.primary,
+  ACTIVE: palette.primary,
   VOTING_PHASE: colors.warning,
   COMPLETED: colors.success,
   CANCELLED: colors.danger,
-};
+});
 
 const getEndsLabel = (isRecurring?: boolean) => (isRecurring ? "Recurring" : "One-time");
 
@@ -71,10 +73,12 @@ export function ChallengeHeroCard({
   secondPlacePoints,
   thirdPlacePoints,
 }: ChallengeHeroCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const icon = getIconForChallenge(name);
   const iconColor = getColorForPoints(points);
   const statusValue = status ?? (isSelected ? "ACTIVE" : "VISIBLE");
-  const statusColor = statusTone[statusValue] ?? colors.primary;
+  const statusColor = getStatusTone(palette)[statusValue] ?? palette.primary;
   const statusText = statusLabels[statusValue] ?? statusValue;
   const typeText = submissionType
     ? (submissionTypeLabels[submissionType] ?? submissionType)
@@ -119,6 +123,7 @@ export function ChallengeHeroCard({
           !imageUrl && { backgroundColor: heroFallbackColor },
         ]}
       >
+        <WoodTexture radius={borderRadius.xl} />
         {imageUrl ? (
           <CachedImage source={{ uri: imageUrl }} style={styles.heroImage} contentFit="cover" />
         ) : null}
@@ -193,155 +198,158 @@ function MetaCard({
   label: string;
   value: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <View style={styles.metaCard}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Ionicons name={icon} size={18} color={palette.primary} />
       <Text style={styles.metaLabel}>{label}</Text>
       <Text style={styles.metaValue}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: spacing.lg,
-  },
-  heroContainer: {
-    position: "relative",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    overflow: "hidden",
-  },
-  heroSelected: {
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-  },
-  heroImage: {
-    position: "absolute",
-    inset: 0,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    padding: spacing.lg,
-    justifyContent: "space-between",
-  },
-  heroTopRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  statusBadge: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: "rgba(10,11,13,0.58)",
-  },
-  statusText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  pointsBadge: {
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(10,11,13,0.68)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.34)",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  pointsText: {
-    color: colors.white,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  pointsStack: {
-    alignItems: "flex-end",
-    gap: 4,
-    maxWidth: "78%",
-  },
-  podiumInline: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    backgroundColor: "rgba(10,11,13,0.72)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 4,
-  },
-  podiumChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  podiumPlaceText: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 9,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  podiumPointsText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: typography.bold,
-  },
-  heroBottom: {
-    gap: spacing.sm,
-  },
-  iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.6,
-  },
-  metaGrid: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  metaCard: {
-    flex: 1,
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    alignItems: "center",
-    gap: 2,
-  },
-  metaLabel: {
-    color: colors.textMuted,
-    fontSize: 9,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  metaValue: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textAlign: "center",
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    wrapper: {
+      marginBottom: spacing.lg,
+    },
+    heroContainer: {
+      position: "relative",
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      overflow: "hidden",
+    },
+    heroSelected: {
+      borderColor: palette.primary,
+      shadowColor: palette.primary,
+      shadowOpacity: 0.22,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 6 },
+    },
+    heroImage: {
+      position: "absolute",
+      inset: 0,
+    },
+    heroOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      padding: spacing.lg,
+      justifyContent: "space-between",
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+    },
+    statusBadge: {
+      borderWidth: 1,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: "rgba(10,11,13,0.58)",
+    },
+    statusText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+    },
+    pointsBadge: {
+      borderRadius: borderRadius.md,
+      backgroundColor: "rgba(10,11,13,0.68)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.34)",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    pointsText: {
+      color: colors.white,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    pointsStack: {
+      alignItems: "flex-end",
+      gap: 4,
+      maxWidth: "78%",
+    },
+    podiumInline: {
+      flexDirection: "row",
+      gap: spacing.xs,
+      backgroundColor: "rgba(10,11,13,0.72)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.25)",
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 4,
+    },
+    podiumChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+      borderWidth: 1,
+      borderRadius: 999,
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+    },
+    podiumPlaceText: {
+      color: "rgba(255,255,255,0.9)",
+      fontSize: 9,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    podiumPointsText: {
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: typography.bold,
+    },
+    heroBottom: {
+      gap: spacing.sm,
+    },
+    iconWrapper: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    title: {
+      fontSize: 34,
+      fontWeight: typography.bold,
+      color: colors.white,
+      letterSpacing: -0.6,
+    },
+    metaGrid: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    metaCard: {
+      flex: 1,
+      backgroundColor: "rgba(255,255,255,0.04)",
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.xs,
+      alignItems: "center",
+      gap: 2,
+    },
+    metaLabel: {
+      color: colors.textMuted,
+      fontSize: 9,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+    },
+    metaValue: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textAlign: "center",
+    },
+  });

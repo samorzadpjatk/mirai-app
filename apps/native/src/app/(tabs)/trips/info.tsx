@@ -19,6 +19,7 @@ import { WebView } from "react-native-webview";
 import { FullScreenModal } from "~/components/common/ui";
 import { useFileDownload } from "~/hooks/files";
 import { useSelectedTrip, useTripResources } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { borderRadius, colors, spacing, typography } from "../../../styles";
 
@@ -40,6 +41,8 @@ export default function TripInfoScreen() {
   const [pdfModalTitle, setPdfModalTitle] = useState("");
   const [pdfModalUri, setPdfModalUri] = useState<string>("");
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const params = useLocalSearchParams();
   const paramTripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const { selectedTripId } = useSelectedTrip();
@@ -233,7 +236,7 @@ export default function TripInfoScreen() {
                             "map",
                           )}
                           size={24}
-                          color={colors.primary}
+                          color={palette.primary}
                         />
                       </View>
                       <Text style={styles.mapTitle}>
@@ -242,7 +245,7 @@ export default function TripInfoScreen() {
                       <Text style={styles.mapSubtitle}>Navigate trails & lifts</Text>
                       <View style={styles.mapAction}>
                         <Text style={styles.mapActionText}>Explore Map</Text>
-                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                        <Ionicons name="chevron-forward" size={16} color={palette.primary} />
                       </View>
                     </View>
                   </ImageBackground>
@@ -342,7 +345,7 @@ export default function TripInfoScreen() {
                     <Ionicons
                       name={getIconName(getResource("WHATSAPP")?.iconName ?? null, "chatbubble")}
                       size={28}
-                      color={colors.accentMagenta}
+                      color={palette.accentMagenta}
                     />
                   </View>
                   <View style={styles.bentoContent}>
@@ -372,7 +375,7 @@ export default function TripInfoScreen() {
                   <Ionicons
                     name={getIconName(getResource("SOS")?.iconName ?? null, "alert-circle")}
                     size={24}
-                    color={colors.primary}
+                    color={palette.primary}
                   />
                   <Text style={styles.resourceText}>{getResource("SOS")?.label ?? "SOS"}</Text>
                 </TouchableOpacity>
@@ -384,7 +387,7 @@ export default function TripInfoScreen() {
                   onPress={handleInsurancePress}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="medkit" size={24} color={colors.primary} />
+                  <Ionicons name="medkit" size={24} color={palette.primary} />
                   <Text style={styles.resourceText}>{insurance.label ?? "Insurance"}</Text>
                 </TouchableOpacity>
               )}
@@ -467,7 +470,7 @@ export default function TripInfoScreen() {
                   onPress={handleInsuranceCopyPress}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="copy-outline" size={18} color={colors.primary} />
+                  <Ionicons name="copy-outline" size={18} color={palette.primary} />
                   <Text style={styles.insuranceActionSecondaryText}>Kopiuj numer</Text>
                 </TouchableOpacity>
               </View>
@@ -523,390 +526,391 @@ export default function TripInfoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  errorText: {
-    fontSize: typography.base,
-    color: colors.white,
-    textAlign: "center",
-    marginTop: spacing.xl,
-  },
-  mainContent: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    errorText: {
+      fontSize: typography.base,
+      color: colors.white,
+      textAlign: "center",
+      marginTop: spacing.xl,
+    },
+    mainContent: {
+      flex: 1,
+    },
+    contentContainer: {
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxxl,
+      paddingHorizontal: spacing.lg,
+      gap: spacing.lg,
+    },
 
-  // Hero Header
-  heroCard: {
-    height: 192,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(23, 24, 28, 0.4)",
-  },
-  heroContent: {
-    flex: 1,
-    padding: spacing.lg,
-    justifyContent: "space-between",
-  },
-  liveBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    alignSelf: "flex-start",
-  },
-  liveBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  heroTextContainer: {
-    gap: spacing.xs,
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  heroSubtitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-    color: colors.primaryOpacity80,
-  },
+    // Hero Header
+    heroCard: {
+      height: 192,
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+    },
+    heroImage: {
+      width: "100%",
+      height: "100%",
+    },
+    heroOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(23, 24, 28, 0.4)",
+    },
+    heroContent: {
+      flex: 1,
+      padding: spacing.lg,
+      justifyContent: "space-between",
+    },
+    liveBadge: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      alignSelf: "flex-start",
+    },
+    liveBadgeText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    heroTextContainer: {
+      gap: spacing.xs,
+    },
+    heroTitle: {
+      fontSize: 24,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    heroSubtitle: {
+      fontSize: typography.xs,
+      fontWeight: typography.medium,
+      color: palette.primaryOpacity80,
+    },
 
-  // Bento Grid
-  bentoGrid: {
-    gap: spacing.lg,
-  },
+    // Bento Grid
+    bentoGrid: {
+      gap: spacing.lg,
+    },
 
-  // Map Tile Large
-  mapTileLarge: {
-    height: 176,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity20,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 4,
-  },
-  mapBackground: {
-    width: "100%",
-    height: "100%",
-  },
-  mapGradient: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(39, 41, 53, 0.85)",
-  },
-  mapContent: {
-    flex: 1,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  mapIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryOpacity20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  mapTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  mapSubtitle: {
-    fontSize: typography.xs,
-    color: colors.slate400,
-  },
-  mapAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  mapActionText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
+    // Map Tile Large
+    mapTileLarge: {
+      height: 176,
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity20,
+      shadowColor: palette.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.15,
+      shadowRadius: 15,
+      elevation: 4,
+    },
+    mapBackground: {
+      width: "100%",
+      height: "100%",
+    },
+    mapGradient: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(39, 41, 53, 0.85)",
+    },
+    mapContent: {
+      flex: 1,
+      padding: spacing.xl,
+      justifyContent: "space-between",
+    },
+    mapIconWrapper: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.primaryOpacity20,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    mapTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    mapSubtitle: {
+      fontSize: typography.xs,
+      color: colors.slate400,
+    },
+    mapAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    mapActionText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
 
-  // Grid Row
-  gridRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
+    // Grid Row
+    gridRow: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
 
-  // Map Tiles
-  mapTile: {
-    flex: 1,
-    height: 176,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity20,
-  },
-  pdfMapContent: {
-    flex: 1,
-    backgroundColor: colors.cardDark,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  pdfMapIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pdfMapTextContainer: {
-    gap: 4,
-  },
-  pdfMapTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  pdfMapSubtitle: {
-    fontSize: 10,
-    color: colors.slate400,
-    lineHeight: 14,
-  },
+    // Map Tiles
+    mapTile: {
+      flex: 1,
+      height: 176,
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity20,
+    },
+    pdfMapContent: {
+      flex: 1,
+      backgroundColor: palette.cardDark,
+      padding: spacing.xl,
+      justifyContent: "space-between",
+    },
+    pdfMapIconWrapper: {
+      width: 48,
+      height: 48,
+      borderRadius: borderRadius.md,
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pdfMapTextContainer: {
+      gap: 4,
+    },
+    pdfMapTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    pdfMapSubtitle: {
+      fontSize: 10,
+      color: colors.slate400,
+      lineHeight: 14,
+    },
 
-  // Bento Tiles
-  bentoTile: {
-    flex: 1,
-    aspectRatio: 1,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    padding: spacing.xl,
-    justifyContent: "space-between",
-  },
-  whatsappTile: {
-    flex: 1,
-    aspectRatio: 1,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.magentaOpacity30,
-    padding: spacing.xl,
-    justifyContent: "space-between",
-    shadowColor: colors.accentMagenta,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 4,
-  },
-  bentoIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  whatsappIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.magentaOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bentoContent: {
-    gap: 4,
-  },
-  bentoTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  bentoTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  bentoSubtitle: {
-    fontSize: 10,
-    color: colors.slate400,
-    lineHeight: 14,
-  },
-  whatsappSubtitle: {
-    fontSize: 10,
-    color: colors.accentMagenta,
-    fontWeight: typography.medium,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
+    // Bento Tiles
+    bentoTile: {
+      flex: 1,
+      aspectRatio: 1,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      padding: spacing.xl,
+      justifyContent: "space-between",
+    },
+    whatsappTile: {
+      flex: 1,
+      aspectRatio: 1,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: palette.magentaOpacity30,
+      padding: spacing.xl,
+      justifyContent: "space-between",
+      shadowColor: palette.accentMagenta,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
+      elevation: 4,
+    },
+    bentoIconWrapper: {
+      width: 48,
+      height: 48,
+      borderRadius: borderRadius.md,
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    whatsappIconWrapper: {
+      width: 48,
+      height: 48,
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.magentaOpacity10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    bentoContent: {
+      gap: 4,
+    },
+    bentoTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    bentoTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    bentoSubtitle: {
+      fontSize: 10,
+      color: colors.slate400,
+      lineHeight: 14,
+    },
+    whatsappSubtitle: {
+      fontSize: 10,
+      color: palette.accentMagenta,
+      fontWeight: typography.medium,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+    },
 
-  // Section Header
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate500,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  sectionDivider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
+    // Section Header
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingTop: spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.slate500,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    sectionDivider: {
+      flex: 1,
+      height: 1,
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+    },
 
-  // Resource Grid
-  resourceGrid: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  resourceTile: {
-    flex: 1,
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    padding: spacing.lg,
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  resourceText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-  },
-  resourceSubtext: {
-    fontSize: 10,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
+    // Resource Grid
+    resourceGrid: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    resourceTile: {
+      flex: 1,
+      backgroundColor: "rgba(39, 41, 53, 0.5)",
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      padding: spacing.lg,
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    resourceText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: colors.white,
+      textTransform: "uppercase",
+    },
+    resourceSubtext: {
+      fontSize: 10,
+      color: colors.slate400,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
 
-  // Branding
+    // Branding
 
-  webView: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  pdf: {
-    flex: 1,
-    width: Dimensions.get("window").width,
-    backgroundColor: colors.backgroundDark,
-  },
-  insuranceScroll: {
-    flex: 1,
-  },
-  insuranceContent: {
-    padding: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  insuranceActions: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  insuranceActionButton: {
-    flex: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-  },
-  insuranceActionText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceActionSecondary: {
-    flex: 1,
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: "rgba(39, 41, 53, 0.4)",
-  },
-  insuranceActionSecondaryText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceCard: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  insuranceCardTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-  insuranceText: {
-    fontSize: typography.sm,
-    color: colors.white,
-    lineHeight: 22,
-  },
-  insuranceLabel: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate400,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  insuranceListItem: {
-    fontSize: typography.sm,
-    color: colors.white,
-    lineHeight: 22,
-    paddingLeft: spacing.sm,
-  },
-  insuranceQuote: {
-    fontSize: typography.sm,
-    color: colors.primaryOpacity80,
-    lineHeight: 22,
-    fontStyle: "italic",
-  },
-});
+    webView: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    pdf: {
+      flex: 1,
+      width: Dimensions.get("window").width,
+      backgroundColor: colors.backgroundDark,
+    },
+    insuranceScroll: {
+      flex: 1,
+    },
+    insuranceContent: {
+      padding: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    insuranceActions: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    insuranceActionButton: {
+      flex: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius.full,
+      backgroundColor: palette.primary,
+    },
+    insuranceActionText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    insuranceActionSecondary: {
+      flex: 1,
+      flexDirection: "row",
+      gap: spacing.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      backgroundColor: "rgba(39, 41, 53, 0.4)",
+    },
+    insuranceActionSecondaryText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    insuranceCard: {
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.06)",
+      backgroundColor: "rgba(39, 41, 53, 0.5)",
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    insuranceCardTitle: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+    },
+    insuranceText: {
+      fontSize: typography.sm,
+      color: colors.white,
+      lineHeight: 22,
+    },
+    insuranceLabel: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.slate400,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    insuranceListItem: {
+      fontSize: typography.sm,
+      color: colors.white,
+      lineHeight: 22,
+      paddingLeft: spacing.sm,
+    },
+    insuranceQuote: {
+      fontSize: typography.sm,
+      color: palette.primaryOpacity80,
+      lineHeight: 22,
+      fontStyle: "italic",
+    },
+  });

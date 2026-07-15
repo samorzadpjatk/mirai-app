@@ -39,7 +39,7 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="trips">
-          <NativeTabs.Trigger.Icon sf="snowflake" md="ac_unit" />
+          <NativeTabs.Trigger.Icon sf="airplane" md="flight" />
           <NativeTabs.Trigger.Label>Trips</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="notifications">

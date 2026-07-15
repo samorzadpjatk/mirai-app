@@ -4,8 +4,10 @@ import LoadingScreen from "~/components/LoadingScreen";
 import { CachedImage } from "~/components/common/CachedImage";
 import { useSponsorById } from "~/hooks/sponsors/useSponsors";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export default function PartnerDetailScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: sponsor, isLoading, error } = useSponsorById(id ?? "");
 
@@ -46,55 +48,56 @@ export default function PartnerDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: 96,
-    alignItems: "center",
-    gap: spacing.xxl,
-  },
-  logoWrapper: {
-    width: 220,
-    height: 220,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: spacing.lg,
-  },
-  logo: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "contain",
-  },
-  name: {
-    fontSize: typography.xxxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textAlign: "center",
-  },
-  descriptionCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.lg,
-    width: "100%",
-    gap: spacing.md,
-    marginBottom: spacing.xxxl,
-  },
-  description: {
-    fontSize: typography.lg,
-    color: colors.white,
-    textAlign: "center",
-    lineHeight: typography.lg * typography.relaxed,
-  },
-  notFound: {
-    fontSize: typography.lg,
-    color: colors.textTertiary,
-    textAlign: "center",
-    marginTop: spacing.xxxl,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    content: {
+      padding: spacing.lg,
+      paddingBottom: 96,
+      alignItems: "center",
+      gap: spacing.xxl,
+    },
+    logoWrapper: {
+      width: 220,
+      height: 220,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: spacing.lg,
+    },
+    logo: {
+      width: "100%",
+      height: "100%",
+      resizeMode: "contain",
+    },
+    name: {
+      fontSize: typography.xxxl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      textAlign: "center",
+    },
+    descriptionCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      padding: spacing.lg,
+      width: "100%",
+      gap: spacing.md,
+      marginBottom: spacing.xxxl,
+    },
+    description: {
+      fontSize: typography.lg,
+      color: colors.white,
+      textAlign: "center",
+      lineHeight: typography.lg * typography.relaxed,
+    },
+    notFound: {
+      fontSize: typography.lg,
+      color: colors.textTertiary,
+      textAlign: "center",
+      marginTop: spacing.xxxl,
+    },
+  });

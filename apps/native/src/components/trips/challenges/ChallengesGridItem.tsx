@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { ChallengeListItem } from "./types";
 
 interface ChallengesGridItemProps {
@@ -9,8 +11,10 @@ interface ChallengesGridItemProps {
 }
 
 export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const isLocked = challenge.status === "locked";
-  const statusMeta = getStatusMeta(challenge.status);
+  const statusMeta = getStatusMeta(challenge.status, palette);
   const submissionTypeMeta = getSubmissionTypeMeta(challenge.submissionType);
   const scoringMeta = getScoringMeta(challenge.scoringCategory);
   const cardStatusStyle =
@@ -31,12 +35,13 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
       disabled={isLocked}
       style={[styles.card, cardStatusStyle, isLocked && styles.cardLocked]}
     >
+      <WoodTexture radius={borderRadius.lg} />
       <ImageBackground
         source={challenge.image ? { uri: challenge.image } : undefined}
         style={[
           styles.imageFill,
           !challenge.image && {
-            backgroundColor: isLocked ? colors.surfaceDark : `${challenge.iconColor}1f`,
+            backgroundColor: isLocked ? palette.surfaceDark : `${challenge.iconColor}1f`,
           },
         ]}
         imageStyle={styles.imageFillRadius}
@@ -116,7 +121,7 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
   );
 }
 
-const getStatusMeta = (status: ChallengeListItem["status"]) => {
+const getStatusMeta = (status: ChallengeListItem["status"], palette: ThemePalette) => {
   switch (status) {
     case "solved":
       return {
@@ -170,9 +175,9 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
     default:
       return {
         label: "Active",
-        textColor: colors.primary,
-        borderColor: `${colors.primary}73`,
-        backgroundColor: `${colors.primary}33`,
+        textColor: palette.primary,
+        borderColor: `${palette.primary}73`,
+        backgroundColor: `${palette.primary}33`,
       };
   }
 };
@@ -211,170 +216,172 @@ const getScoringMeta = (scoringCategory: ChallengeListItem["scoringCategory"]) =
   }
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    aspectRatio: 1,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    overflow: "hidden",
-  },
-  cardToSolve: {
-    borderColor: colors.statusActive,
-    shadowColor: colors.statusActive,
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  cardSubmitted: {
-    borderColor: colors.statusVotingPhase,
-    shadowColor: colors.statusVotingPhase,
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  cardVisible: {
-    borderColor: colors.statusVisible,
-    shadowColor: colors.statusVisible,
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  cardSolved: {
-    borderColor: colors.statusCompleted,
-    shadowColor: colors.statusCompleted,
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-  },
-  cardLocked: {
-    opacity: 0.6,
-  },
-  imageFill: {
-    flex: 1,
-    padding: spacing.sm,
-  },
-  imageFillRadius: {
-    borderRadius: borderRadius.lg,
-  },
-  imageOverlayTop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(10,11,13,0.28)",
-  },
-  cardInner: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    zIndex: 1,
-  },
-  headerRight: {
-    alignItems: "flex-end",
-  },
-  statusBadge: {
-    borderWidth: 1,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 3,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statusBadgeLocked: {
-    borderColor: "rgba(241,245,249,0.55)",
-    backgroundColor: "rgba(15,23,42,0.82)",
-  },
-  statusBadgeText: {
-    fontSize: 9,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(10,11,13,0.58)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    zIndex: 1,
-  },
-  pointsBadge: {
-    backgroundColor: "rgba(10, 11, 13, 0.62)",
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: typography.bold,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  headerJoinedRow: {
-    marginTop: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(10,11,13,0.5)",
-    borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.28)",
-  },
-  headerJoinedCount: {
-    fontSize: 11,
-    fontWeight: typography.bold,
-    color: "#22c55e",
-  },
-  content: {
-    alignSelf: "stretch",
-    backgroundColor: "rgba(10,11,13,0.62)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-    marginBottom: spacing.xs,
-  },
-  metaBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    backgroundColor: "rgba(255,255,255,0.05)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  metaBadgeText: {
-    fontSize: 8,
-    fontWeight: typography.bold,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: "#cbd5e1",
-  },
-  title: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    lineHeight: 18,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      aspectRatio: 1,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      shadowColor: "transparent",
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      overflow: "hidden",
+    },
+    cardToSolve: {
+      borderColor: colors.statusActive,
+      shadowColor: colors.statusActive,
+      shadowOpacity: 0.2,
+      shadowRadius: 15,
+    },
+    cardSubmitted: {
+      borderColor: colors.statusVotingPhase,
+      shadowColor: colors.statusVotingPhase,
+      shadowOpacity: 0.2,
+      shadowRadius: 15,
+    },
+    cardVisible: {
+      borderColor: colors.statusVisible,
+      shadowColor: colors.statusVisible,
+      shadowOpacity: 0.2,
+      shadowRadius: 15,
+    },
+    cardSolved: {
+      borderColor: colors.statusCompleted,
+      shadowColor: colors.statusCompleted,
+      shadowOpacity: 0.2,
+      shadowRadius: 15,
+    },
+    cardLocked: {
+      opacity: 0.6,
+    },
+    imageFill: {
+      flex: 1,
+      padding: spacing.sm,
+    },
+    imageFillRadius: {
+      borderRadius: borderRadius.lg,
+    },
+    imageOverlayTop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(10,11,13,0.28)",
+    },
+    cardInner: {
+      flex: 1,
+      justifyContent: "space-between",
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      zIndex: 1,
+    },
+    headerRight: {
+      alignItems: "flex-end",
+    },
+    statusBadge: {
+      borderWidth: 1,
+      borderRadius: borderRadius.sm,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 3,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    statusBadgeLocked: {
+      borderColor: "rgba(241,245,249,0.55)",
+      backgroundColor: "rgba(15,23,42,0.82)",
+    },
+    statusBadgeText: {
+      fontSize: 9,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    iconWrapper: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-start",
+      backgroundColor: "rgba(10,11,13,0.58)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.2)",
+      zIndex: 1,
+    },
+    pointsBadge: {
+      backgroundColor: "rgba(10, 11, 13, 0.62)",
+      color: colors.white,
+      fontSize: 10,
+      fontWeight: typography.bold,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.sm,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.3)",
+    },
+    headerJoinedRow: {
+      marginTop: 6,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+      backgroundColor: "rgba(10,11,13,0.5)",
+      borderWidth: 1,
+      borderColor: "rgba(34,197,94,0.28)",
+    },
+    headerJoinedCount: {
+      fontSize: 11,
+      fontWeight: typography.bold,
+      color: "#22c55e",
+    },
+    content: {
+      alignSelf: "stretch",
+      backgroundColor: "rgba(10,11,13,0.62)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    metaRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 4,
+      marginBottom: spacing.xs,
+    },
+    metaBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
+      backgroundColor: "rgba(255,255,255,0.05)",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    metaBadgeText: {
+      fontSize: 8,
+      fontWeight: typography.bold,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+      color: "#cbd5e1",
+    },
+    title: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: colors.white,
+      lineHeight: 18,
+    },
+  });
+}

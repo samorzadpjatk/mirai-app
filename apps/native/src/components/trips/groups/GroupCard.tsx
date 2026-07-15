@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { GroupListItem } from "./types";
 
 interface GroupCardProps {
@@ -11,6 +13,8 @@ interface GroupCardProps {
 }
 
 export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <TouchableOpacity
       testID="group-card"
@@ -19,6 +23,7 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
       onPress={() => onPress(group)}
       aria-label={`Group ${group.name}${isMyGroup ? " (Your group)" : ""}`}
     >
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.groupImageContainer}>
         {group.image ? (
           <CachedImage
@@ -29,7 +34,7 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
           />
         ) : (
           <View testID="image-placeholder" style={styles.groupImagePlaceholder}>
-            <Ionicons name="images-outline" size={20} color={colors.primary} />
+            <Ionicons name="images-outline" size={20} color={palette.primary} />
           </View>
         )}
       </View>
@@ -52,85 +57,86 @@ export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps)
   );
 }
 
-const styles = StyleSheet.create({
-  groupCard: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-  },
-  groupCardMine: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity10,
-  },
-  groupImageContainer: {
-    position: "relative",
-  },
-  groupImage: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-  },
-  groupImagePlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(39, 41, 53, 0.8)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  groupInfo: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  myGroupBadge: {
-    alignSelf: "flex-start",
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.primaryOpacity20,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-  },
-  myGroupBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  groupName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.5,
-  },
-  groupCode: {
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    color: colors.textMuted,
-  },
-  groupStats: {
-    alignItems: "flex-end",
-  },
-  groupMemberCount: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  groupMemberLabel: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    groupCard: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      borderRadius: borderRadius.xl,
+      padding: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+    },
+    groupCardMine: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity10,
+    },
+    groupImageContainer: {
+      position: "relative",
+    },
+    groupImage: {
+      width: 64,
+      height: 64,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.1)",
+    },
+    groupImagePlaceholder: {
+      width: 64,
+      height: 64,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.1)",
+      backgroundColor: "rgba(39, 41, 53, 0.8)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    groupInfo: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    myGroupBadge: {
+      alignSelf: "flex-start",
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      backgroundColor: palette.primaryOpacity20,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+    },
+    myGroupBadgeText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 1.2,
+    },
+    groupName: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      letterSpacing: -0.5,
+    },
+    groupCode: {
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+      color: colors.textMuted,
+    },
+    groupStats: {
+      alignItems: "flex-end",
+    },
+    groupMemberCount: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    groupMemberLabel: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+    },
+  });

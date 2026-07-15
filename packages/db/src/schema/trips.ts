@@ -12,6 +12,7 @@ import {
 import { randomUUID } from "../utils/uuid";
 import { tripRoleEnum } from "./enums";
 import { groups } from "./groups";
+import { rooms } from "./rooms";
 import { users } from "./users";
 
 export const trips = pgTable(
@@ -25,6 +26,9 @@ export const trips = pgTable(
     startDate: timestamp("start_date", { withTimezone: true }).notNull(),
     endDate: timestamp("end_date", { withTimezone: true }).notNull(),
     backgroundImagePath: text("background_image_path"),
+    // Per-trip visual theme key (e.g. "DEFAULT", "PIRATE"). Resolved to a palette
+    // client-side with a fallback, so a plain varchar is preferred over a pgEnum.
+    theme: varchar("theme", { length: 32 }).default("DEFAULT").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .$onUpdate(() => new Date())
@@ -94,6 +98,7 @@ export const tripParticipants = pgTable(
       .notNull()
       .references(() => trips.id),
     groupId: varchar("group_id", { length: 36 }).references(() => groups.id),
+    roomId: varchar("room_id", { length: 36 }).references(() => rooms.id),
     wristNumber: text("wrist_number"),
     houseNumber: text("house_number"),
     role: tripRoleEnum("role").default("MEMBER").notNull(),
@@ -106,5 +111,6 @@ export const tripParticipants = pgTable(
     uniqueIndex("trip_participants_user_id_trip_id_unique").on(t.userId, t.tripId),
     uniqueIndex("trip_participants_trip_id_wrist_number_unique").on(t.tripId, t.wristNumber),
     index("trip_participants_trip_id_group_id_idx").on(t.tripId, t.groupId),
+    index("trip_participants_trip_id_room_id_idx").on(t.tripId, t.roomId),
   ],
 );

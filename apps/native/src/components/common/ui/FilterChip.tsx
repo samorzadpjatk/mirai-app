@@ -3,6 +3,7 @@ import type React from "react";
 import type { TextStyle, ViewStyle } from "react-native";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export type FilterChipIcon = keyof typeof Ionicons.glyphMap;
 
@@ -37,6 +38,8 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   countPillStyle,
   countTextStyle,
 }) => {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const hasCount = typeof count === "number";
 
   return (
@@ -54,14 +57,14 @@ export const FilterChip: React.FC<FilterChipProps> = ({
           <Ionicons
             name={icon}
             size={14}
-            color={selected ? colors.primary : colors.textSecondary}
+            color={selected ? palette.primary : colors.textSecondary}
           />
         ) : null}
         {secondaryIcon ? (
           <Ionicons
             name={secondaryIcon}
             size={14}
-            color={selected ? colors.primary : colors.textSecondary}
+            color={selected ? palette.primary : colors.textSecondary}
           />
         ) : null}
         <Text
@@ -94,69 +97,71 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  chip: {
-    minHeight: 34,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.backgroundDarkOpacity50,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  chipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  chipDisabled: {
-    opacity: 0.6,
-  },
-  leftContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    flexShrink: 1,
-  },
-  label: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    textTransform: "none",
-    letterSpacing: 0.4,
-  },
-  labelSelected: {
-    color: colors.primary,
-  },
-  labelDisabled: {
-    color: colors.textTertiary,
-  },
-  countPill: {
-    minWidth: 24,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  countPillSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  countText: {
-    color: colors.white,
-    fontWeight: typography.bold,
-    fontSize: typography.xs,
-  },
-  countTextSelected: {
-    color: colors.primary,
-  },
-  countTextDisabled: {
-    color: colors.textTertiary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    chip: {
+      minHeight: 34,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      backgroundColor: colors.backgroundDarkOpacity50,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    chipSelected: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    chipDisabled: {
+      opacity: 0.6,
+    },
+    leftContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      flexShrink: 1,
+    },
+    label: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      textTransform: "none",
+      letterSpacing: 0.4,
+    },
+    labelSelected: {
+      color: palette.primary,
+    },
+    labelDisabled: {
+      color: colors.textTertiary,
+    },
+    countPill: {
+      minWidth: 24,
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      backgroundColor: colors.backgroundDarkOpacity80,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    countPillSelected: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    countText: {
+      color: colors.white,
+      fontWeight: typography.bold,
+      fontSize: typography.xs,
+    },
+    countTextSelected: {
+      color: palette.primary,
+    },
+    countTextDisabled: {
+      color: colors.textTertiary,
+    },
+  });
+}

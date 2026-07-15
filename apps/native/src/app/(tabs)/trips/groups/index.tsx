@@ -18,10 +18,12 @@ import { GroupsNoTripState } from "~/components/trips/groups/GroupsNoTripState";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { useGroups } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing } from "../../../../styles";
 
 export default function GroupsListScreen() {
   const router = useRouter();
+  const { palette } = useTripTheme();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
@@ -93,7 +95,7 @@ export default function GroupsListScreen() {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -116,7 +118,7 @@ export default function GroupsListScreen() {
 
         {isFetchingNextPage ? (
           <View style={styles.listFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
             <Text style={styles.listFooterText}>Loading more groups...</Text>
           </View>
         ) : null}

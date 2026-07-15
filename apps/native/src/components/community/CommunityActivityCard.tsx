@@ -3,8 +3,10 @@ import type { Activity } from "@mirai-app/orpc";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { colors, spacing, typography } from "../../styles";
 
 type ActivityType = Activity["activityType"];
@@ -230,6 +232,7 @@ export const CommunityActivityCard = React.memo(
     rankingData,
     avatarUri,
   }: CommunityActivityCardProps) {
+    const styles = useThemedStyles(makeStyles);
     const lastMediaTapAtRef = useRef(0);
     const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -330,6 +333,7 @@ export const CommunityActivityCard = React.memo(
         disabled={!onPress}
         activeOpacity={onPress ? 0.9 : 1}
       >
+        <WoodTexture radius={18} />
         <View style={styles.cardHeader}>
           <TouchableOpacity
             style={styles.ownerRow}
@@ -427,146 +431,148 @@ export const CommunityActivityCard = React.memo(
 
 export type { CommunityFeedActivity, ActivityType, ActivityFilter };
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 18,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: "rgba(16, 34, 34, 0.78)",
-  },
-  cardFocused: {
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  cardNews: {
-    borderColor: "rgba(239, 68, 68, 0.72)",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: "rgba(12, 20, 24, 0.6)",
-  },
-  ownerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  avatarFrame: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: "#0f2627",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primaryOpacity20,
-  },
-  avatarFallbackText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  ownerMeta: {
-    flex: 1,
-  },
-  ownerName: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-  },
-  ownerSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    marginTop: 1,
-  },
-  cardTime: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  mediaWrap: {
-    width: "100%",
-    aspectRatio: 1,
-    backgroundColor: "#0f171a",
-  },
-  mediaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  rankChangeWrap: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  rankLeaderboardWrap: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  rankLeaderboardScale: {
-    transform: [{ scale: 0.85 }],
-    marginVertical: -40,
-  },
-  cardBody: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.semibold,
-  },
-  cardDescription: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    lineHeight: 20,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing.xs,
-  },
-  activityTypePill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: colors.primaryOpacity10,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-  },
-  activityTypePillText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.semibold,
-  },
-  reactionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  reactionCount: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      borderRadius: 18,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      backgroundColor: palette.feedCardBg,
+    },
+    cardFocused: {
+      borderColor: palette.primary,
+      shadowColor: palette.primary,
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 6,
+    },
+    cardNews: {
+      borderColor: "rgba(239, 68, 68, 0.72)",
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      backgroundColor: palette.feedCardHeaderBg,
+    },
+    ownerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    avatarFrame: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      backgroundColor: palette.feedAvatarBg,
+    },
+    avatarImage: {
+      width: "100%",
+      height: "100%",
+    },
+    avatarFallback: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.primaryOpacity20,
+    },
+    avatarFallbackText: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    ownerMeta: {
+      flex: 1,
+    },
+    ownerName: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+    },
+    ownerSubtitle: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+      marginTop: 1,
+    },
+    cardTime: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    mediaWrap: {
+      width: "100%",
+      aspectRatio: 1,
+      backgroundColor: palette.feedCardMediaBg,
+    },
+    mediaImage: {
+      width: "100%",
+      height: "100%",
+    },
+    rankChangeWrap: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    rankLeaderboardWrap: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    rankLeaderboardScale: {
+      transform: [{ scale: 0.85 }],
+      marginVertical: -40,
+    },
+    cardBody: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    cardTitle: {
+      color: colors.white,
+      fontSize: typography.lg,
+      fontWeight: typography.semibold,
+    },
+    cardDescription: {
+      color: colors.textSecondary,
+      fontSize: typography.base,
+      lineHeight: 20,
+    },
+    cardFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: spacing.xs,
+    },
+    activityTypePill: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: palette.primaryOpacity10,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+    },
+    activityTypePillText: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      fontWeight: typography.semibold,
+    },
+    reactionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    reactionCount: {
+      fontSize: typography.xs,
+      color: colors.textSecondary,
+      fontWeight: typography.medium,
+    },
+  });
+}

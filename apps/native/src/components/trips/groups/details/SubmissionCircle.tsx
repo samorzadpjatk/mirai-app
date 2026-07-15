@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { colors } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import type { ApprovedSubmissionItem } from "./GroupApprovedChallenges";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function SubmissionCircle({ submission, onPress }: Props) {
+  const { palette } = useTripTheme();
   return (
     <TouchableOpacity
       testID="submission-circle"
@@ -25,13 +27,17 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
             contentFit="cover"
             fallback={
               <View testID="image-fallback" style={styles.imageFallback}>
-                <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
+                <ActivityIndicator
+                  testID="loading-indicator"
+                  size="small"
+                  color={palette.primary}
+                />
               </View>
             }
           />
         ) : (
           <View testID="image-fallback" style={styles.imageFallback}>
-            <ActivityIndicator testID="loading-indicator" size="small" color={colors.primary} />
+            <ActivityIndicator testID="loading-indicator" size="small" color={palette.primary} />
           </View>
         )}
       </View>

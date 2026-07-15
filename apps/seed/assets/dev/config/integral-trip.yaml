@@ -1,0 +1,9 @@
+key: integral
+name: Integral 2026
+description: Piracki rejs integracyjny – INTEGRAL 2026
+theme: PIRATE
+startDate: 2026-09-16
+endDate: 2026-09-20
+users: users/integral-members.csv
+background: images/trips/integral/background.png
+info: info/integral-info.yaml

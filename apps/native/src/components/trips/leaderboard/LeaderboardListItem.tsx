@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { formatNumber } from "~/utils/format";
 import type { RankedGroup } from "./types";
 
@@ -10,6 +11,7 @@ interface LeaderboardListItemProps {
 }
 
 export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <TouchableOpacity
       testID="leaderboard-item"
@@ -57,97 +59,98 @@ export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  rowActive: {
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    borderColor: "rgba(0, 206, 209, 0.3)",
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  rankCell: {
-    width: 32,
-    alignItems: "center",
-  },
-  rankText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: "rgba(255, 255, 255, 0.6)",
-  },
-  rankTextActive: {
-    color: colors.primary,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.cardDark,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarActive: {
-    borderWidth: 2,
-    borderColor: "rgba(0, 206, 209, 0.2)",
-  },
-  avatarText: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  content: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  groupName: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  youBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  youBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    textTransform: "uppercase",
-  },
-  memberCount: {
-    fontSize: typography.xs,
-    color: "rgba(255, 255, 255, 0.4)",
-    marginTop: 2,
-  },
-  scoreCell: {
-    alignItems: "flex-end",
-  },
-  scoreText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: "rgba(255, 255, 255, 0.8)",
-  },
-  scoreTextActive: {
-    color: colors.primary,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    rowActive: {
+      backgroundColor: "rgba(0, 206, 209, 0.1)",
+      borderColor: "rgba(0, 206, 209, 0.3)",
+      borderLeftWidth: 4,
+      borderLeftColor: palette.primary,
+    },
+    rankCell: {
+      width: 32,
+      alignItems: "center",
+    },
+    rankText: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: "rgba(255, 255, 255, 0.6)",
+    },
+    rankTextActive: {
+      color: palette.primary,
+    },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: palette.cardDark,
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    },
+    avatarImage: {
+      width: "100%",
+      height: "100%",
+    },
+    avatarActive: {
+      borderWidth: 2,
+      borderColor: "rgba(0, 206, 209, 0.2)",
+    },
+    avatarText: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    content: {
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    groupName: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    youBadge: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: borderRadius.sm,
+    },
+    youBadgeText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+      textTransform: "uppercase",
+    },
+    memberCount: {
+      fontSize: typography.xs,
+      color: "rgba(255, 255, 255, 0.4)",
+      marginTop: 2,
+    },
+    scoreCell: {
+      alignItems: "flex-end",
+    },
+    scoreText: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: "rgba(255, 255, 255, 0.8)",
+    },
+    scoreTextActive: {
+      color: palette.primary,
+    },
+  });

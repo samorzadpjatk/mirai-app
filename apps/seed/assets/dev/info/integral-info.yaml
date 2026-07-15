@@ -1,0 +1,44 @@
+resources:
+  - type: hero_image
+    label: "INTEGRAL 2026"
+    storagePath: "images/trips/integral/hero-bg.png"
+    sortOrder: 0
+  - type: interactive_map
+    label: "Mapa wyprawy"
+    url: "https://example.com/integral-map"
+    iconName: "compass"
+    sortOrder: 1
+  - type: whatsapp
+    label: "Załoga (WhatsApp)"
+    url: "https://example.com/integral-whatsapp"
+    iconName: "boat"
+    sortOrder: 2
+  - type: sos
+    label: "SOS"
+    description: "W razie nagłego wypadku na pokładzie zawołaj kadrę i dzwoń na 112."
+    iconName: "alert-circle"
+    value: "112"
+    sortOrder: 3
+
+insurance:
+  label: "Ubezpieczenie / Kontakt"
+  phoneNumber: "+48123456789"
+  phoneDisplay: "+48 123 456 789"
+  policyNumber: "INTEGRAL2026"
+  contractNumber: "INTEGRAL-SSPJ"
+  providerName: "Przykładowy Ubezpieczyciel"
+  steps:
+    - stepNumber: 1
+      title: "Krok 1"
+      text: "Poproś o pomoc kadrę wyjazdu lub najbliższą osobę z obsługi. W razie poważnego wypadku dzwoń na 112."
+    - stepNumber: 2
+      title: "Krok 2"
+      text: "Skontaktuj się z ubezpieczycielem pod numerem +48 123 456 789. Podaj:"
+      requiredInfo:
+        - "imienia i nazwiska"
+        - "daty urodzenia"
+        - "numeru polisy: INTEGRAL2026"
+      exampleCall: "Jestem na wyjeździe Integral, doznałem kontuzji, potrzebuję pomocy."
+    - stepNumber: 3
+      title: "Krok 3"
+      text: "Poinformuj kadrę o sytuacji i zadzwoń na podany numer kontaktowy."

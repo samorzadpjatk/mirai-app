@@ -51,6 +51,15 @@ const tiles: TileType[] = [
     route: "/admin/groups",
   },
   {
+    key: "rooms",
+    title: "Rooms",
+    subtitle: "Accommodation & occupancy",
+    icon: "bed",
+    accent: colors.primary,
+    accentBg: colors.cardDarkOpacity40,
+    route: "/admin/rooms",
+  },
+  {
     key: "coins",
     title: "Coins",
     subtitle: "Currency & transactions",

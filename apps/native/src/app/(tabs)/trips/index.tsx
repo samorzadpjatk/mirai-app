@@ -14,6 +14,7 @@ import { ErrorState } from "~/components/common/ui";
 import { TripCard } from "~/components/trips/list/TripCard";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import LoadingScreen from "../../../components/LoadingScreen";
 import TripDetailsScreen from "./details";
 
@@ -33,6 +34,7 @@ export default function TripsScreen() {
     refetch,
   } = useTrips();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
+  const { palette } = useTripTheme();
 
   const handleScrollLoadMore = (event: {
     nativeEvent: {
@@ -97,7 +99,7 @@ export default function TripsScreen() {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -114,7 +116,7 @@ export default function TripsScreen() {
 
         {isFetchingNextPage ? (
           <View style={styles.listFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
             <Text style={styles.listFooterText}>Loading more trips...</Text>
           </View>
         ) : null}

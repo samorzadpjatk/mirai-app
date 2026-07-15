@@ -67,6 +67,7 @@ services:
       SUPABASE_URL: "http://kong:8000"
       SUPABASE_PUBLIC_URL: "${SUPABASE_PUBLIC_URL}"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+      SERVICE_ACCOUNT_TOKEN: "${SERVICE_ACCOUNT_TOKEN}"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
       db:
@@ -91,6 +92,7 @@ services:
       ORPC_HOST: "backend-server:2022"
       SUPABASE_URL: "http://kong:8000"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+      SERVICE_ACCOUNT_TOKEN: "${SERVICE_ACCOUNT_TOKEN}"
     depends_on:
       db:
         condition: service_healthy
