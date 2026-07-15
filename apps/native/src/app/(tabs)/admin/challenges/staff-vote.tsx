@@ -17,12 +17,15 @@ import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLo
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { type VotingSubmission, useStaffVoting } from "~/hooks/admin/useStaffVoting";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function AdminChallengeStaffVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const challengeId =
     typeof params.challengeId === "string" ? params.challengeId : params.challengeId?.[0];
@@ -338,7 +341,7 @@ export default function AdminChallengeStaffVotingScreen() {
               if (!currentLeft || !currentRight) {
                 return (
                   <View style={styles.centerState}>
-                    <ActivityIndicator size="small" color={colors.primary} />
+                    <ActivityIndicator size="small" color={palette.primary} />
                   </View>
                 );
               }
@@ -444,181 +447,183 @@ export default function AdminChallengeStaffVotingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    marginTop: -spacing.sm,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontSize: typography.xs,
-  },
-  staffProgressCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.skyOpacity35,
-    backgroundColor: colors.skyOpacity10,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  staffProgressTitle: {
-    color: colors.sky400,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  staffProgressText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  progressWrap: {
-    gap: spacing.xs,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: colors.whiteOpacity10,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-  },
-  progressLabel: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  pairsWrap: {
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-  },
-  hintText: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  successHint: {
-    color: colors.emerald500,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    fontWeight: typography.bold,
-  },
-  sectionTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  confirmList: {
-    gap: spacing.sm,
-  },
-  actions: {
-    gap: spacing.sm,
-  },
-  actionButton: {
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionPrimary: {
-    backgroundColor: colors.primary,
-  },
-  actionGhost: {
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity20,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  actionPrimaryText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  actionGhostText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  forceButton: {
-    marginTop: spacing.xs,
-    backgroundColor: colors.danger,
-  },
-  forceButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.successOpacity35,
-    backgroundColor: colors.successOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  doneTitle: {
-    color: colors.emerald500,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  doneText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  doneButton: {
-    marginTop: spacing.sm,
-  },
-  blockedCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity35,
-    backgroundColor: colors.dangerOpacity12,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  blockedTitle: {
-    color: colors.danger,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  blockedText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    lineHeight: 20,
-  },
-  centerState: {
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      gap: spacing.lg,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    subtitle: {
+      marginTop: -spacing.sm,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      fontSize: typography.xs,
+    },
+    staffProgressCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.skyOpacity35,
+      backgroundColor: colors.skyOpacity10,
+      padding: spacing.md,
+      gap: spacing.xs,
+    },
+    staffProgressTitle: {
+      color: colors.sky400,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    staffProgressText: {
+      color: colors.white,
+      fontSize: typography.sm,
+    },
+    progressWrap: {
+      gap: spacing.xs,
+    },
+    progressTrack: {
+      height: 8,
+      borderRadius: 999,
+      backgroundColor: colors.whiteOpacity10,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      backgroundColor: palette.primary,
+    },
+    progressLabel: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    pairsWrap: {
+      gap: spacing.md,
+      marginBottom: spacing.xxl,
+    },
+    hintText: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    successHint: {
+      color: colors.emerald500,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      fontWeight: typography.bold,
+    },
+    sectionTitle: {
+      color: colors.white,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+    },
+    confirmList: {
+      gap: spacing.sm,
+    },
+    actions: {
+      gap: spacing.sm,
+    },
+    actionButton: {
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    actionPrimary: {
+      backgroundColor: palette.primary,
+    },
+    actionGhost: {
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity20,
+      backgroundColor: colors.whiteOpacity4,
+    },
+    actionPrimaryText: {
+      color: colors.backgroundDark,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    actionGhostText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    forceButton: {
+      marginTop: spacing.xs,
+      backgroundColor: colors.danger,
+    },
+    forceButtonText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    doneCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.successOpacity35,
+      backgroundColor: colors.successOpacity12,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    doneTitle: {
+      color: colors.emerald500,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    doneText: {
+      color: colors.white,
+      fontSize: typography.sm,
+    },
+    doneButton: {
+      marginTop: spacing.sm,
+    },
+    blockedCard: {
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity35,
+      backgroundColor: colors.dangerOpacity12,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    blockedTitle: {
+      color: colors.danger,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    blockedText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      lineHeight: 20,
+    },
+    centerState: {
+      paddingVertical: spacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });
+}

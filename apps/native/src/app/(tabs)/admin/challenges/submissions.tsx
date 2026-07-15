@@ -27,6 +27,7 @@ import {
   ThemedTextInput,
 } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
 type SubmissionStatus = ReviewStatus | "PENDING";
@@ -43,6 +44,8 @@ export default function ChallengeSubmissionsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const challengeId =
@@ -233,7 +236,7 @@ export default function ChallengeSubmissionsScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -289,209 +292,211 @@ export default function ChallengeSubmissionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  centeredScreen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-    gap: spacing.md,
-  },
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  groupName: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  metaText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    marginTop: 2,
-  },
-  statusPill: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  statusText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    letterSpacing: 0.6,
-  },
-  mediaWrap: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  mediaImage: {
-    width: "100%",
-    height: "100%",
-  },
-  mediaFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  mediaFallbackText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  assetFallbackBox: {
-    width: "100%",
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  textBox: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.slateOpacity35,
-    backgroundColor: colors.backgroundDarkOpacity45,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  textBoxLabel: {
-    color: colors.slate300,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  textBoxValue: {
-    color: colors.white,
-    fontSize: typography.sm,
-    lineHeight: 20,
-  },
-  textBoxHint: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  reasonBox: {
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity35,
-    backgroundColor: colors.dangerOpacity12,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    gap: 2,
-  },
-  reasonLabel: {
-    color: colors.red400,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-  },
-  reasonText: {
-    color: colors.red300,
-    fontSize: typography.sm,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  approveButton: {
-    borderWidth: 1,
-    borderColor: colors.successOpacity45,
-    backgroundColor: colors.successOpacity90,
-  },
-  approveButtonText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  rejectButton: {
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity45,
-    backgroundColor: colors.dangerOpacity85,
-  },
-  rejectButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  mutedText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  blockedCard: {
-    width: "90%",
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.skyOpacity35,
-    backgroundColor: colors.skyOpacity14,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  blockedTitle: {
-    color: colors.sky400,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  blockedText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    lineHeight: 20,
-  },
-  modalSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    marginBottom: spacing.md,
-  },
-  modalInput: {
-    minHeight: 96,
-    textAlignVertical: "top",
-    fontSize: typography.base,
-    marginBottom: spacing.lg,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    centeredScreen: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.md,
+    },
+    subtitle: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xxl,
+      gap: spacing.md,
+    },
+    card: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+    },
+    groupName: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    metaText: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+      marginTop: 2,
+    },
+    statusPill: {
+      borderWidth: 1,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    statusText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      letterSpacing: 0.6,
+    },
+    mediaWrap: {
+      width: "100%",
+      aspectRatio: 4 / 3,
+      borderRadius: borderRadius.lg,
+      overflow: "hidden",
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    mediaImage: {
+      width: "100%",
+      height: "100%",
+    },
+    mediaFallback: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    mediaFallbackText: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+    },
+    assetFallbackBox: {
+      width: "100%",
+      borderRadius: borderRadius.lg,
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.md,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    textBox: {
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.slateOpacity35,
+      backgroundColor: colors.backgroundDarkOpacity45,
+      padding: spacing.md,
+      gap: spacing.xs,
+    },
+    textBoxLabel: {
+      color: colors.slate300,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    textBoxValue: {
+      color: colors.white,
+      fontSize: typography.sm,
+      lineHeight: 20,
+    },
+    textBoxHint: {
+      color: colors.textSecondary,
+      fontSize: typography.xs,
+    },
+    reasonBox: {
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity35,
+      backgroundColor: colors.dangerOpacity12,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      gap: 2,
+    },
+    reasonLabel: {
+      color: colors.red400,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+    },
+    reasonText: {
+      color: colors.red300,
+      fontSize: typography.sm,
+    },
+    actionsRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    actionButton: {
+      flex: 1,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    approveButton: {
+      borderWidth: 1,
+      borderColor: colors.successOpacity45,
+      backgroundColor: colors.successOpacity90,
+    },
+    approveButtonText: {
+      color: colors.backgroundDark,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+    rejectButton: {
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity45,
+      backgroundColor: colors.dangerOpacity85,
+    },
+    rejectButtonText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+    mutedText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    blockedCard: {
+      width: "90%",
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.skyOpacity35,
+      backgroundColor: colors.skyOpacity14,
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    blockedTitle: {
+      color: colors.sky400,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    blockedText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      lineHeight: 20,
+    },
+    modalSubtitle: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+      marginBottom: spacing.md,
+    },
+    modalInput: {
+      minHeight: 96,
+      textAlignVertical: "top",
+      fontSize: typography.base,
+      marginBottom: spacing.lg,
+    },
+  });
+}

@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 import { useJudgement } from "~/stores/judgement";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface JudgementHeaderProps {
   tripId: string;
@@ -8,6 +9,8 @@ interface JudgementHeaderProps {
 }
 
 const JudgementHeader = ({ tripId, challengeId }: JudgementHeaderProps) => {
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
   const { challengeName, pendingCount, stats } = useJudgement(tripId, challengeId);
 
   return (

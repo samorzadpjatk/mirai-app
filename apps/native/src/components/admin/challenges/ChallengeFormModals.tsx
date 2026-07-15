@@ -4,12 +4,14 @@ import { DateTimePickerModal } from "~/components/common/ui/DateTimePickerModal"
 import { LocationPicker } from "~/components/map/LocationPicker";
 import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ChallengeFormModalsProps {
   formState: ReturnType<typeof useChallengeForm>;
 }
 
 export function ChallengeFormModals({ formState }: ChallengeFormModalsProps) {
+  const styles = useThemedStyles(makeStyles);
   const {
     form,
     activePicker,
@@ -98,32 +100,34 @@ export function ChallengeFormModals({ formState }: ChallengeFormModalsProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.xl,
-  },
-  modalCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    width: "100%",
-    maxWidth: 400,
-    paddingVertical: spacing.sm,
-  },
-  modalOption: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDark,
-  },
-  modalOptionText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: colors.blackOpacity40,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: spacing.xl,
+    },
+    modalCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      width: "100%",
+      maxWidth: 400,
+      paddingVertical: spacing.sm,
+    },
+    modalOption: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.borderDark,
+    },
+    modalOptionText: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+    },
+  });
+}

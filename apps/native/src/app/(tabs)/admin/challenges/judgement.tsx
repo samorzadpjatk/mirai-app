@@ -6,11 +6,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "~/components/LoadingScreen";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function ChallengeJudgementScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const challengeId =
@@ -53,7 +57,7 @@ export default function ChallengeJudgementScreen() {
           }
           style={{
             borderRadius: borderRadius.md,
-            backgroundColor: colors.primary,
+            backgroundColor: palette.primary,
             paddingHorizontal: spacing.lg,
             paddingVertical: spacing.sm,
           }}

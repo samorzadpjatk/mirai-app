@@ -14,6 +14,7 @@ import { FormField } from "~/components/common/ui/FormField";
 import { ThemedTextInput } from "~/components/common/ui/ThemedTextInput";
 import type { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export function formatLocationText(
   targetLocation: { latitude: number; longitude: number } | null,
@@ -58,6 +59,8 @@ export function ChallengeFormFields({
   isSaving,
   isNewChallenge = false,
 }: ChallengeFormFieldsProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const {
     form,
     imagePreviewUri,
@@ -288,10 +291,10 @@ export function ChallengeFormFields({
             value={form.isRecurring}
             onValueChange={(value) => updateForm("isRecurring", value)}
             trackColor={{
-              false: colors.borderDark,
-              true: colors.primaryOpacity80,
+              false: palette.borderDark,
+              true: palette.primaryOpacity80,
             }}
-            thumbColor={form.isRecurring ? colors.primary : colors.textSecondary}
+            thumbColor={form.isRecurring ? palette.primary : colors.textSecondary}
           />
         </View>
 
@@ -406,14 +409,14 @@ export function ChallengeFormFields({
             onValueChange={(value) => updateForm("autoApprove", value)}
             disabled={isAutoApproveForced || isAutoApproveDisabled}
             trackColor={{
-              false: colors.borderDark,
-              true: colors.primaryOpacity80,
+              false: palette.borderDark,
+              true: palette.primaryOpacity80,
             }}
             thumbColor={getAutoApproveThumbColor(
               isAutoApproveForced,
               isAutoApproveDisabled,
               form.autoApprove,
-              colors.primary,
+              palette.primary,
               colors.textSecondary,
             )}
           />
@@ -440,187 +443,189 @@ export function ChallengeFormFields({
   );
 }
 
-const styles = StyleSheet.create({
-  mapControlButtonIcon: {
-    fontSize: 20,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-    gap: spacing.md,
-  },
-  pageTitle: {
-    color: colors.white,
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    marginBottom: spacing.xs,
-  },
-  section: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    marginBottom: spacing.xs,
-  },
-  labelInline: {
-    color: colors.textPrimary,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-  },
-  textArea: {
-    minHeight: 96,
-    textAlignVertical: "top",
-  },
-  selectButton: {
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  selectButtonText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  selectButtonChevron: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-  },
-  hint: {
-    color: colors.textTertiary,
-    fontSize: typography.xs,
-  },
-  coverPreview: {
-    width: "100%",
-    height: 160,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surfaceDark,
-  },
-  coverPlaceholder: {
-    width: "100%",
-    height: 120,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceDark,
-  },
-  coverPlaceholderText: {
-    color: colors.textTertiary,
-    fontSize: typography.sm,
-  },
-  rowButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  secondaryButton: {
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flex: 1,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: colors.textPrimary,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  clearButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flex: 1,
-    alignItems: "center",
-  },
-  clearButtonText: {
-    color: colors.textTertiary,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  locationCard: {
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-  },
-  locationContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  locationText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  locationIcon: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
-  },
-  inlineInputs: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  inlineInput: {
-    flex: 1,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-  },
-  inlineButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  dateButton: {
-    backgroundColor: colors.surfaceDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flex: 1,
-    alignItems: "center",
-  },
-  dateText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  selectOptionActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  saveButton: {
-    marginTop: spacing.lg,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    mapControlButtonIcon: {
+      fontSize: 20,
+    },
+    content: {
+      padding: spacing.lg,
+      paddingBottom: spacing.xxl,
+      gap: spacing.md,
+    },
+    pageTitle: {
+      color: colors.white,
+      fontSize: typography.xxl,
+      fontWeight: typography.bold,
+      marginBottom: spacing.xs,
+    },
+    section: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      color: palette.primary,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1.2,
+      marginBottom: spacing.xs,
+    },
+    labelInline: {
+      color: colors.textPrimary,
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+    },
+    textArea: {
+      minHeight: 96,
+      textAlignVertical: "top",
+    },
+    selectButton: {
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    selectButtonText: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+    },
+    selectButtonChevron: {
+      color: colors.textSecondary,
+      fontSize: typography.base,
+    },
+    hint: {
+      color: colors.textTertiary,
+      fontSize: typography.xs,
+    },
+    coverPreview: {
+      width: "100%",
+      height: 160,
+      borderRadius: borderRadius.lg,
+      backgroundColor: palette.surfaceDark,
+    },
+    coverPlaceholder: {
+      width: "100%",
+      height: 120,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.surfaceDark,
+    },
+    coverPlaceholderText: {
+      color: colors.textTertiary,
+      fontSize: typography.sm,
+    },
+    rowButtons: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    secondaryButton: {
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      flex: 1,
+      alignItems: "center",
+    },
+    secondaryButtonText: {
+      color: colors.textPrimary,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    clearButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      flex: 1,
+      alignItems: "center",
+    },
+    clearButtonText: {
+      color: colors.textTertiary,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    locationCard: {
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+    },
+    locationContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    locationInfo: {
+      flex: 1,
+    },
+    locationText: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+    },
+    locationIcon: {
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.lg,
+      padding: spacing.sm,
+    },
+    inlineInputs: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    inlineInput: {
+      flex: 1,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: spacing.sm,
+    },
+    inlineButtons: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    dateButton: {
+      backgroundColor: palette.surfaceDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      flex: 1,
+      alignItems: "center",
+    },
+    dateText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    selectOptionActive: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    saveButton: {
+      marginTop: spacing.lg,
+    },
+  });
+}

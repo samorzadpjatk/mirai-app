@@ -6,9 +6,12 @@ import { CachedImage } from "~/components/common/CachedImage";
 import { useFileDownload } from "~/hooks/files";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles } from "~/theme/TripThemeProvider";
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
   const { width, height } = useWindowDimensions();
   const hasImage = submission.imageIds.length > 0;
   const hasVideo = Boolean(submission.videoId);

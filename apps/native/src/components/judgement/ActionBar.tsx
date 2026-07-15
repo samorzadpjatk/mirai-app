@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { colors } from "~/styles";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles } from "~/theme/TripThemeProvider";
 
 const ActionBar = ({
   disabled,
@@ -12,6 +13,9 @@ const ActionBar = ({
   onReject: () => void;
   onApprove: () => void;
 }) => {
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
+
   return (
     <View style={viewStyles.actions}>
       <TouchableOpacity

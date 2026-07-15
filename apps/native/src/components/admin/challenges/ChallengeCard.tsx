@@ -2,7 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import type { AdminChallengeUI } from "~/hooks/admin";
+import { colors } from "~/styles";
 import { commonStyles } from "~/styles/commonStyles";
+import { type ThemePalette, useTripTheme } from "~/theme/TripThemeProvider";
 
 const CHALLENGE_ICON_MAP: Record<string, ComponentProps<typeof Ionicons>["name"]> = {
   eco: "leaf",
@@ -16,12 +18,15 @@ export function getChallengeIcon(icon: string): ComponentProps<typeof Ionicons>[
   return CHALLENGE_ICON_MAP[icon] ?? "star";
 }
 
-export function getChallengeBackgroundColor(category: string): string {
-  return category === "wintegral" ? "#00ced1" : "rgba(0, 206, 209, 0.1)";
+export function getChallengeBackgroundColor(
+  category: string,
+  palette: ThemePalette = colors,
+): string {
+  return category === "wintegral" ? palette.primary : palette.primaryOpacity10;
 }
 
-export function getChallengeIconColor(category: string): string {
-  return category === "wintegral" ? "#0f2323" : "#00ced1";
+export function getChallengeIconColor(category: string, palette: ThemePalette = colors): string {
+  return category === "wintegral" ? "#0f2323" : palette.primary;
 }
 
 export function getChallengeStatusColor(status: string): string {
@@ -43,6 +48,8 @@ export default function ChallengeCard({
   onEdit?: (c: AdminChallengeUI) => void;
   onDelete?: (id: string, tripId?: string) => void;
 }) {
+  const { palette } = useTripTheme();
+
   return (
     <View style={[commonStyles.card, { flexDirection: "row", alignItems: "center", gap: 16 }]}>
       <View
@@ -52,20 +59,20 @@ export default function ChallengeCard({
           alignItems: "center",
           justifyContent: "center",
           borderRadius: 8,
-          backgroundColor: getChallengeBackgroundColor(challenge.category),
+          backgroundColor: getChallengeBackgroundColor(challenge.category, palette),
         }}
       >
         <Ionicons
           name={getChallengeIcon(challenge.icon)}
           size={24}
-          color={getChallengeIconColor(challenge.category)}
+          color={getChallengeIconColor(challenge.category, palette)}
         />
       </View>
 
       <View style={{ flex: 1 }}>
         <Text style={[commonStyles.h4, { marginBottom: 4 }]}>{challenge.title}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Text style={{ color: "#00ced1", fontSize: 14, fontWeight: "600" }}>
+          <Text style={{ color: palette.primary, fontSize: 14, fontWeight: "600" }}>
             {challenge.points} PTS
           </Text>
           <Text

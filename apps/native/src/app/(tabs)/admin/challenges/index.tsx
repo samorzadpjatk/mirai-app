@@ -20,6 +20,7 @@ import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChall
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ChallengeItem {
   id: string;
@@ -80,102 +81,106 @@ const statusColors: Record<string, string> = {
 
 const PAGE_SIZE = 30;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-  },
-  scrollContent: {
-    paddingTop: spacing.xl,
-    paddingBottom: 96,
-  },
-  statusFiltersRow: {
-    marginBottom: spacing.md,
-  },
-  headerContainer: {
-    marginBottom: spacing.md,
-  },
-  headerTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.5,
-    marginBottom: spacing.xs,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  typeFiltersScroll: {},
-  typeFilterChip: {
-    minHeight: 34,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  typeFilterCount: {
-    minWidth: 20,
-    paddingHorizontal: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  typeFilterCountText: {
-    fontWeight: "700",
-    fontSize: 10,
-  },
-  searchInput: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    color: colors.white,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  searchContainer: {
-    marginBottom: spacing.md,
-  },
-  challengesList: {
-    gap: 12,
-  },
-  emptyState: {
-    padding: 24,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    backgroundColor: colors.cardDark,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    color: colors.gray400,
-  },
-  loadingMoreContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  loadingMoreText: {
-    color: colors.gray400,
-    fontSize: 12,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+    },
+    scrollContent: {
+      paddingTop: spacing.xl,
+      paddingBottom: 96,
+    },
+    statusFiltersRow: {
+      marginBottom: spacing.md,
+    },
+    headerContainer: {
+      marginBottom: spacing.md,
+    },
+    headerTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      letterSpacing: -0.5,
+      marginBottom: spacing.xs,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    typeFiltersScroll: {},
+    typeFilterChip: {
+      minHeight: 34,
+      paddingHorizontal: 8,
+      borderRadius: 999,
+      borderWidth: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    typeFilterCount: {
+      minWidth: 20,
+      paddingHorizontal: 5,
+      borderRadius: 999,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    typeFilterCountText: {
+      fontWeight: "700",
+      fontSize: 10,
+    },
+    searchInput: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      color: colors.white,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+    },
+    searchContainer: {
+      marginBottom: spacing.md,
+    },
+    challengesList: {
+      gap: 12,
+    },
+    emptyState: {
+      padding: 24,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      backgroundColor: palette.cardDark,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      color: colors.gray400,
+    },
+    loadingMoreContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    loadingMoreText: {
+      color: colors.gray400,
+      fontSize: 12,
+    },
+  });
+}
 
 export default function AdminChallengesScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
@@ -430,7 +435,7 @@ export default function AdminChallengesScreen() {
           <RefreshControl
             refreshing={isRefetching && !isFetchingNextPage}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -444,7 +449,7 @@ export default function AdminChallengesScreen() {
         <FilterChipRow style={styles.statusFiltersRow}>
           {statusFilters.map((filter) => {
             const isAll = filter.value === "ALL";
-            const color = isAll ? colors.primary : (statusColors[filter.value] ?? colors.gray400);
+            const color = isAll ? palette.primary : (statusColors[filter.value] ?? colors.gray400);
             const count = isAll ? totalChallenges : (statusCounts[filter.value] ?? 0);
             const selected = selectedStatusFilter === filter.value;
 
@@ -484,30 +489,30 @@ export default function AdminChallengesScreen() {
                 style={[
                   styles.typeFilterChip,
                   {
-                    borderColor: selected ? colors.primary : colors.whiteOpacity15,
-                    backgroundColor: selected ? colors.primaryOpacity20 : colors.whiteOpacity4,
+                    borderColor: selected ? palette.primary : colors.whiteOpacity15,
+                    backgroundColor: selected ? palette.primaryOpacity20 : colors.whiteOpacity4,
                   },
                 ]}
               >
                 <Ionicons
                   name={filter.icon}
                   size={14}
-                  color={selected ? colors.primary : colors.gray400}
+                  color={selected ? palette.primary : colors.gray400}
                 />
                 {"secondaryIcon" in filter && filter.secondaryIcon ? (
                   <Ionicons
                     name={filter.secondaryIcon}
                     size={14}
-                    color={selected ? colors.primary : colors.gray400}
+                    color={selected ? palette.primary : colors.gray400}
                   />
                 ) : null}
                 <View
                   style={[
                     styles.typeFilterCount,
                     {
-                      borderColor: selected ? colors.primaryOpacity30 : colors.whiteOpacity20,
+                      borderColor: selected ? palette.primaryOpacity30 : colors.whiteOpacity20,
                       backgroundColor: selected
-                        ? colors.primaryOpacity20
+                        ? palette.primaryOpacity20
                         : colors.backgroundDarkOpacity55,
                     },
                   ]}
@@ -515,7 +520,7 @@ export default function AdminChallengesScreen() {
                   <Text
                     style={[
                       styles.typeFilterCountText,
-                      { color: selected ? colors.primary : colors.white },
+                      { color: selected ? palette.primary : colors.white },
                     ]}
                   >
                     {count}
@@ -562,7 +567,7 @@ export default function AdminChallengesScreen() {
 
           {isFetchingNextPage ? (
             <View style={styles.loadingMoreContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator size="small" color={palette.primary} />
               <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
             </View>
           ) : null}

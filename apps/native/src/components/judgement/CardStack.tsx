@@ -10,7 +10,8 @@ import { EmptyStateCard } from "~/components/judgement/EmptyStateCard";
 import { QueuedSubmissionCard } from "~/components/judgement/QueuedSubmissionCard";
 import { useJudgement } from "~/stores/judgement";
 import { colors } from "~/styles";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles } from "~/theme/TripThemeProvider";
 import { useCardAnimations } from "./hooks/useCardAnimations";
 
 interface CardStackProps {
@@ -23,6 +24,8 @@ import { calculateSwipeToValue, canSubmitReject } from "./cardStackUtils";
 export { canSubmitReject, calculateSwipeToValue };
 
 const CardStack = ({ tripId, challengeId }: CardStackProps) => {
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
   const {
     currentSubmission,
     nextSubmission,

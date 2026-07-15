@@ -4,8 +4,8 @@ import { CardStack } from "~/components/judgement/CardStack";
 import { JudgementHeader } from "~/components/judgement/JudgementHeader";
 import { useJudgement } from "~/stores/judgement";
 import { judgementStore } from "~/stores/judgement/judgementStores";
-import { colors } from "~/styles";
-import { viewStyles } from "~/styles/judgement";
+import { makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface JudgementContentProps {
   tripId: string;
@@ -13,6 +13,8 @@ interface JudgementContentProps {
 }
 
 const JudgementContent = ({ tripId, challengeId }: JudgementContentProps) => {
+  const { palette } = useTripTheme();
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const { isLoading } = useJudgement(tripId, challengeId);
 
   // Reset dismissed IDs when scope changes (replaces JudgementScope logic)
@@ -24,7 +26,7 @@ const JudgementContent = ({ tripId, challengeId }: JudgementContentProps) => {
   if (isLoading) {
     return (
       <View style={[viewStyles.container, viewStyles.centered]}>
-        <ActivityIndicator testID="judgement-loading" size="large" color={colors.primary} />
+        <ActivityIndicator testID="judgement-loading" size="large" color={palette.primary} />
       </View>
     );
   }

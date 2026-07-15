@@ -5,6 +5,7 @@ import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/com
 import { useAdminChallenges } from "~/hooks/admin";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { type LocationCoordinate, LocationPicker } from "../../map/LocationPicker";
 
 interface Props {
@@ -22,6 +23,7 @@ interface NewChallengeState {
 }
 
 export default function AddChallengeModal({ visible, onClose }: Props) {
+  const { palette } = useTripTheme();
   const [newChallenge, setNewChallenge] = useState<NewChallengeState>({
     title: "",
     description: "",
@@ -96,7 +98,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                 style={{
                   backgroundColor: colors.backgroundDark,
                   borderWidth: 1,
-                  borderColor: colors.borderDark,
+                  borderColor: palette.borderDark,
                   marginTop: spacing.sm,
                   borderRadius: spacing.sm,
                   maxHeight: 160,
@@ -126,15 +128,15 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                         paddingVertical: spacing.sm,
                         borderRadius: spacing.sm,
                         borderWidth: 1,
-                        borderColor: colors.primary,
+                        borderColor: palette.primary,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
                       {isFetchingNextPage ? (
-                        <ActivityIndicator size="small" color={colors.primary} />
+                        <ActivityIndicator size="small" color={palette.primary} />
                       ) : (
-                        <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                        <Text style={{ color: palette.primary, fontWeight: "600" }}>
                           Load more trips
                         </Text>
                       )}
@@ -162,7 +164,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
               style={{
                 backgroundColor: colors.backgroundDark,
                 borderWidth: 1,
-                borderColor: newChallenge.location ? colors.primary : colors.borderDark,
+                borderColor: newChallenge.location ? palette.primary : palette.borderDark,
                 borderRadius: spacing.sm,
                 padding: spacing.md,
                 flexDirection: "row",
@@ -174,11 +176,11 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                 <Ionicons
                   name="location"
                   size={20}
-                  color={newChallenge.location ? colors.primary : colors.textSecondary}
+                  color={newChallenge.location ? palette.primary : colors.textSecondary}
                 />
                 <Text
                   style={{
-                    color: newChallenge.location ? colors.primary : colors.textSecondary,
+                    color: newChallenge.location ? palette.primary : colors.textSecondary,
                     flex: 1,
                   }}
                 >
