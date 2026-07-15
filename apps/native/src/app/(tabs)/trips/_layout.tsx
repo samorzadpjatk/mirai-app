@@ -1,6 +1,5 @@
 import { Stack } from "expo-router";
-import { useSelectedTrip } from "~/hooks/trips/useSelectedTrip";
-import { TripThemeProvider, useTripTheme } from "~/theme/TripThemeProvider";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 function TripsStack() {
   const { palette } = useTripTheme();
@@ -40,11 +39,5 @@ function TripsStack() {
 }
 
 export default function TripsLayout() {
-  const { selectedTripId } = useSelectedTrip();
-
-  return (
-    <TripThemeProvider tripId={selectedTripId}>
-      <TripsStack />
-    </TripThemeProvider>
-  );
+  return <TripsStack />;
 }

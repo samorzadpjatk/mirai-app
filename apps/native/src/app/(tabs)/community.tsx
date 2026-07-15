@@ -37,12 +37,7 @@ import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useHomeFull } from "~/hooks/home";
 import { useAutoSelectFirstTrip, useSelectedTrip } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
-import {
-  type ThemePalette,
-  TripThemeProvider,
-  useThemedStyles,
-  useTripTheme,
-} from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type ActivityFilter = "all" | Activity["activityType"];
 
@@ -56,15 +51,6 @@ const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
 ];
 
 export default function CommunityScreen() {
-  const { selectedTripId } = useSelectedTrip();
-  return (
-    <TripThemeProvider tripId={selectedTripId}>
-      <CommunityScreenInner />
-    </TripThemeProvider>
-  );
-}
-
-function CommunityScreenInner() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{

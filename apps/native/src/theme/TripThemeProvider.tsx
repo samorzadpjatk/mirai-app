@@ -26,10 +26,12 @@ const DEFAULT_VALUE: TripThemeValue = { palette: colors, themeKey: "DEFAULT" };
 const TripThemeContext = createContext<TripThemeValue>(DEFAULT_VALUE);
 
 /**
- * Provides the resolved palette for the given trip to its subtree. Mount it only
- * around trip-scoped screens (trips stack, community feed) so the pirate theme
- * never leaks into the rest of the app. Falls back to DEFAULT while loading or
- * when the trip is inaccessible.
+ * Provides the resolved palette for the given trip to its subtree. Mounted once at
+ * the app root (`src/app/_layout.tsx`), keyed on the globally selected trip, so
+ * every screen can read the per-trip palette. Falls back to DEFAULT while loading,
+ * when the trip is inaccessible, or in any subtree left unmounted (e.g. component
+ * tests that render without a provider) — the context default keeps those on
+ * DEFAULT.
  */
 export function TripThemeProvider({
   tripId,
