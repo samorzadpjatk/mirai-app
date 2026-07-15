@@ -12,6 +12,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useLocationContext } from "~/stores/location";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { UserAvatar } from "./ui/UserAvatar";
 
 export interface UserLocation {
@@ -273,6 +274,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
   const { canShareOwnLocation, canViewOthersLocations } = useLocationContext();
+  const styles = useThemedStyles(makeStyles);
 
   // Keep a periodic `now` in state to avoid calling Date.now() during render
   // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
@@ -431,42 +433,44 @@ export const UserMap: React.FC<UserMapProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  overlayContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: "box-none",
-  },
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    map: {
+      flex: 1,
+    },
+    overlayContainer: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: "box-none",
+    },
 
-  avatarShadow: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-  avatarBorder: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    overflow: "hidden",
-    backgroundColor: "#0F172A",
-  },
-});
+    avatarShadow: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: "rgba(0,0,0,0.25)",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 4,
+    },
+    avatarBorder: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      borderWidth: 2,
+      borderColor: palette.white,
+      overflow: "hidden",
+      backgroundColor: "#0F172A",
+    },
+  });
+}

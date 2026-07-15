@@ -1,4 +1,5 @@
 import { colors } from "~/styles";
+import type { ThemePalette } from "~/theme/TripThemeProvider";
 
 export function calculateBackgroundDisplayState(
   isLocationSharingEnabled: boolean,
@@ -36,8 +37,9 @@ export function getThemeIconName(mapTheme: string): "sunny" | "moon" {
 export function getBackgroundIconColor(
   isBackgroundControlDisabled: boolean,
   isBackgroundDisplayedOn: boolean,
+  palette: ThemePalette = colors,
 ): string {
-  if (isBackgroundControlDisabled) return colors.textMuted;
-  if (isBackgroundDisplayedOn) return colors.primary;
-  return colors.white;
+  if (isBackgroundControlDisabled) return palette.textMuted;
+  if (isBackgroundDisplayedOn) return palette.primary;
+  return palette.white;
 }

@@ -4,9 +4,11 @@ import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export function ShareLocationModal() {
   const { shareModal, allAvailableUsers, sharingUserIds } = useMapOverlayStore();
+  const styles = useThemedStyles(makeStyles);
   const {
     open,
     searchQuery,
@@ -104,72 +106,76 @@ export function ShareLocationModal() {
   );
 }
 
-const styles = StyleSheet.create({
-  searchContainer: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  selectedContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primaryOpacity10,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.primaryOpacity20,
-  },
-  selectedLabel: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.white,
-  },
-  clearButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  clearButtonText: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.textSecondary,
-  },
-  modalUsersList: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  emptyState: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-  checkmark: {
-    fontSize: 20,
-    color: colors.success,
-    fontWeight: typography.bold,
-  },
-  modalFooter: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderWhite5,
-  },
-  confirmButton: {
-    backgroundColor: colors.primaryOpacity80,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  confirmButtonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    letterSpacing: -0.3,
-  },
-});
+// Note: `success` (checkmark) is a semantic status color (already sharing / selected)
+// and is intentionally left on the fixed `colors` token, not the per-trip palette.
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    searchContainer: {
+      padding: spacing.md,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    selectedContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: palette.primaryOpacity10,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: palette.primaryOpacity20,
+    },
+    selectedLabel: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: palette.white,
+    },
+    clearButton: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+    clearButtonText: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: palette.textSecondary,
+    },
+    modalUsersList: {
+      padding: spacing.md,
+      paddingTop: spacing.sm,
+    },
+    emptyState: {
+      paddingVertical: spacing.md,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      textAlign: "center",
+    },
+    checkmark: {
+      fontSize: 20,
+      color: colors.success,
+      fontWeight: typography.bold,
+    },
+    modalFooter: {
+      padding: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: palette.borderWhite5,
+    },
+    confirmButton: {
+      backgroundColor: palette.primaryOpacity80,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.sm,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: palette.primary,
+    },
+    confirmButtonText: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: palette.backgroundDark,
+      letterSpacing: -0.3,
+    },
+  });
+}
