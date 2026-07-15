@@ -21,7 +21,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { CachedImage } from "~/components/common/CachedImage";
 import { useFileUpload } from "~/hooks/files";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 const sanitizeNameInput = (value: string) => value.replace(/\d+/g, "");
 interface UploadAsset {
@@ -33,6 +34,8 @@ interface UploadAsset {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const queryClient = useQueryClient();
   const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
@@ -235,7 +238,7 @@ export default function EditProfileScreen() {
               cacheKey={currentUser?.updatedAt?.toISOString() ?? null}
               fallback={
                 <View style={styles.placeholder}>
-                  <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+                  <Ionicons name="person-circle-outline" size={32} color={palette.primary} />
                   <Text style={styles.placeholderText}>No photo selected</Text>
                 </View>
               }
@@ -246,7 +249,7 @@ export default function EditProfileScreen() {
             <View style={styles.badge}>
               {isUploading ? (
                 <>
-                  <ActivityIndicator size="small" color={colors.white} />
+                  <ActivityIndicator size="small" color={palette.white} />
                   <Text style={styles.badgeText}>
                     {uploadProgress.percent != null
                       ? `Uploading ${Math.round(uploadProgress.percent * 100)}%`
@@ -255,7 +258,7 @@ export default function EditProfileScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="camera-outline" size={16} color={colors.white} />
+                  <Ionicons name="camera-outline" size={16} color={palette.white} />
                   <Text style={styles.badgeText}>
                     {localAvatarPreviewUri || currentUser?.hasAvatar ? "Change Photo" : "Add Photo"}
                   </Text>
@@ -272,7 +275,7 @@ export default function EditProfileScreen() {
             value={firstName}
             onChangeText={(value) => setFirstName(sanitizeNameInput(value))}
             placeholder="Enter first name"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={palette.textMuted}
             autoCapitalize="words"
             autoCorrect={false}
             maxLength={100}
@@ -287,7 +290,7 @@ export default function EditProfileScreen() {
             value={lastName}
             onChangeText={(value) => setLastName(sanitizeNameInput(value))}
             placeholder="Enter last name"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={palette.textMuted}
             autoCapitalize="words"
             autoCorrect={false}
             maxLength={100}
@@ -305,7 +308,7 @@ export default function EditProfileScreen() {
           activeOpacity={0.85}
         >
           {updateProfileMutation.isPending ? (
-            <ActivityIndicator size="small" color={colors.white} />
+            <ActivityIndicator size="small" color={palette.white} />
           ) : (
             <Text style={styles.saveButtonText}>Save Changes</Text>
           )}
@@ -323,102 +326,104 @@ export default function EditProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    gap: spacing.xl,
-  },
-  imagePickerContainer: {
-    gap: spacing.sm,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginLeft: spacing.xs,
-  },
-  imageCard: {
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
-    backgroundColor: colors.cardDark,
-  },
-  image: {
-    width: "100%",
-    height: 180,
-  },
-  placeholder: {
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "rgba(39, 41, 53, 0.65)",
-  },
-  placeholderText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  badgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  fieldGroup: {
-    gap: spacing.sm,
-  },
-  input: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.lg,
-    minHeight: 52,
-    marginTop: spacing.sm,
-  },
-  saveButtonDisabled: {
-    opacity: 0.7,
-  },
-  saveButtonText: {
-    color: colors.backgroundDark,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.7,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      gap: spacing.xl,
+    },
+    imagePickerContainer: {
+      gap: spacing.sm,
+    },
+    inputLabel: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+      marginLeft: spacing.xs,
+    },
+    imageCard: {
+      borderRadius: borderRadius.xl,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "rgba(48, 54, 61, 1)",
+      backgroundColor: palette.cardDark,
+    },
+    image: {
+      width: "100%",
+      height: 180,
+    },
+    placeholder: {
+      height: 160,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      backgroundColor: "rgba(39, 41, 53, 0.65)",
+    },
+    placeholderText: {
+      color: palette.textMuted,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+      paddingVertical: spacing.md,
+      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      borderTopWidth: 1,
+      borderTopColor: "rgba(255,255,255,0.08)",
+    },
+    badgeText: {
+      color: palette.white,
+      fontSize: 12,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    fieldGroup: {
+      gap: spacing.sm,
+    },
+    input: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.08)",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      color: palette.white,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+    },
+    saveButton: {
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.lg,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.lg,
+      minHeight: 52,
+      marginTop: spacing.sm,
+    },
+    saveButtonDisabled: {
+      opacity: 0.7,
+    },
+    saveButtonText: {
+      color: palette.backgroundDark,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    },
+  });
+}

@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "rea
 import { useNotifications } from "~/hooks/notifications";
 import { useLocationContext } from "~/stores/location";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ProfileActionsSectionProps {
   onEditProfile?: () => void;
@@ -13,6 +14,8 @@ interface ProfileActionsSectionProps {
 export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionProps) {
   const { signOut } = useAuth();
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
   const {
     isLocationSharingEnabled,
@@ -76,7 +79,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
       >
         <View style={[styles.actionIcon, isSubscribed && styles.activeIcon]}>
           {isSubscribed ? (
-            <Ionicons name="notifications" size={20} color={colors.primary} />
+            <Ionicons name="notifications" size={20} color={palette.primary} />
           ) : (
             <Ionicons name="notifications-off" size={20} color={colors.white} />
           )}
@@ -98,7 +101,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
       >
         <View style={[styles.actionIcon, isLocationSharingEnabled && styles.activeIcon]}>
           {isLocationSharingEnabled ? (
-            <Ionicons name="location" size={20} color={colors.primary} />
+            <Ionicons name="location" size={20} color={palette.primary} />
           ) : (
             <Ionicons name="locate" size={20} color={colors.white} />
           )}
@@ -136,7 +139,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
               isBackgroundControlDisabled
                 ? colors.textMuted
                 : isBackgroundDisplayedOn
-                  ? colors.primary
+                  ? palette.primary
                   : colors.white
             }
           />
@@ -153,7 +156,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
           <ActivityIndicator
             testID="background-location-indicator"
             size="small"
-            color={colors.primary}
+            color={palette.primary}
           />
         ) : (
           <View style={[styles.activeBadge, !isBackgroundDisplayedOn && styles.offBadge]}>
@@ -165,7 +168,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.settingsAction} onPress={handleOpenSystemSettings}>
-        <Ionicons name="settings-outline" size={16} color={colors.primary} />
+        <Ionicons name="settings-outline" size={16} color={palette.primary} />
         <Text style={styles.settingsActionText}>Open system location settings</Text>
       </TouchableOpacity>
 
@@ -182,116 +185,118 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.cardDark,
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.md,
-  },
-  actionText: {
-    flex: 1,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.white,
-  },
-  actionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.white,
-  },
-  actionTextWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  actionSubtext: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-  },
-  dangerButton: {
-    borderColor: "rgba(239, 68, 68, 0.2)",
-  },
-  dangerIcon: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-  },
-  dangerText: {
-    color: "#ef4444",
-  },
-  activeButton: {
-    borderColor: "rgba(0, 206, 209, 0.3)",
-  },
-  activeIcon: {
-    backgroundColor: "rgba(0, 206, 209, 0.2)",
-  },
-  activeBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.sm,
-  },
-  activeBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-    letterSpacing: 1,
-  },
-  offBadge: {
-    backgroundColor: "rgba(148, 163, 184, 0.2)",
-  },
-  offBadgeText: {
-    color: colors.white,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  disabledIcon: {
-    backgroundColor: "rgba(148, 163, 184, 0.12)",
-  },
-  disabledText: {
-    color: colors.textMuted,
-  },
-  settingsAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    alignSelf: "flex-start",
-    marginTop: -spacing.xs,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.25)",
-    backgroundColor: "rgba(0, 206, 209, 0.08)",
-  },
-  settingsActionText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    section: {
+      marginBottom: spacing.xl,
+    },
+    sectionTitle: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.xs,
+    },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: palette.cardDark,
+      padding: spacing.lg,
+      borderRadius: borderRadius.xl,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    actionIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.primaryOpacity10,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: spacing.md,
+    },
+    actionText: {
+      flex: 1,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+      color: colors.white,
+    },
+    actionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+      color: colors.white,
+    },
+    actionTextWrap: {
+      flex: 1,
+      gap: 2,
+    },
+    actionSubtext: {
+      color: colors.textMuted,
+      fontSize: typography.xs,
+    },
+    dangerButton: {
+      borderColor: "rgba(239, 68, 68, 0.2)",
+    },
+    dangerIcon: {
+      backgroundColor: "rgba(239, 68, 68, 0.1)",
+    },
+    dangerText: {
+      color: "#ef4444",
+    },
+    activeButton: {
+      borderColor: palette.primaryOpacity30,
+    },
+    activeIcon: {
+      backgroundColor: palette.primaryOpacity20,
+    },
+    activeBadge: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: borderRadius.sm,
+    },
+    activeBadgeText: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.backgroundDark,
+      letterSpacing: 1,
+    },
+    offBadge: {
+      backgroundColor: "rgba(148, 163, 184, 0.2)",
+    },
+    offBadgeText: {
+      color: colors.white,
+    },
+    disabledButton: {
+      opacity: 0.6,
+    },
+    disabledIcon: {
+      backgroundColor: "rgba(148, 163, 184, 0.12)",
+    },
+    disabledText: {
+      color: colors.textMuted,
+    },
+    settingsAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      alignSelf: "flex-start",
+      marginTop: -spacing.xs,
+      marginBottom: spacing.md,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: `${palette.primary}40`,
+      backgroundColor: `${palette.primary}14`,
+    },
+    settingsActionText: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      fontWeight: typography.medium,
+    },
+  });
+}
