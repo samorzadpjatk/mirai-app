@@ -9,6 +9,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export default function AdminEditActivityScreen() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function AdminEditActivityScreen() {
   const params = useLocalSearchParams<{ activityId: string; tripId?: string }>();
   const activityId = params.activityId;
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const styles = useThemedStyles(makeStyles);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -174,49 +176,51 @@ export default function AdminEditActivityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  activityInfo: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    borderRadius: spacing.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  activityTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  activityType: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  activityMeta: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  textArea: {
-    minHeight: 110,
-    textAlignVertical: "top",
-  },
-  readOnlyHint: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontStyle: "italic",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    activityInfo: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+      borderRadius: spacing.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    activityTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.xs,
+    },
+    activityType: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    activityMeta: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+    },
+    textArea: {
+      minHeight: 110,
+      textAlignVertical: "top",
+    },
+    readOnlyHint: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+      fontStyle: "italic",
+    },
+  });
+}

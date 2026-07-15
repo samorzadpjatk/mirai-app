@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface GroupOption {
   id: string;
@@ -22,6 +23,8 @@ export function TransactionsFilters({
   onGroupChange,
   groups,
 }: TransactionsFiltersProps) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.container}>
       <View style={styles.searchSection}>
@@ -78,55 +81,57 @@ export function TransactionsFilters({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.lg,
-  },
-  searchSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  searchBar: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  groupSelector: {
-    paddingHorizontal: spacing.lg,
-  },
-  groupSelectorContent: {
-    paddingRight: spacing.lg,
-  },
-  groupOption: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.full,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  groupOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  groupOptionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  groupOptionTextSelected: {
-    color: colors.white,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      marginBottom: spacing.lg,
+    },
+    searchSection: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    searchBar: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: spacing.sm,
+      fontSize: typography.base,
+      color: colors.white,
+    },
+    groupSelector: {
+      paddingHorizontal: spacing.lg,
+    },
+    groupSelectorContent: {
+      paddingRight: spacing.lg,
+    },
+    groupOption: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.full,
+      marginRight: spacing.sm,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    groupOptionSelected: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    groupOptionText: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+      fontWeight: typography.medium,
+    },
+    groupOptionTextSelected: {
+      color: colors.white,
+    },
+  });
+}

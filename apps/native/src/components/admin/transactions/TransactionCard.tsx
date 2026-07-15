@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { borderRadius, colors, spacing, typography } from "../../../styles";
 
 export interface TransactionItem {
@@ -24,6 +25,8 @@ interface TransactionCardProps {
 }
 
 const TransactionCard: React.FC<TransactionCardProps> = ({ transaction }) => {
+  const styles = useThemedStyles(makeStyles);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -74,63 +77,65 @@ const TransactionCard: React.FC<TransactionCardProps> = ({ transaction }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  transactionCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-  },
-  transactionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionGroup: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  transactionDate: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  amountBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  addBadge: {
-    backgroundColor: colors.success,
-  },
-  removeBadge: {
-    backgroundColor: colors.red700,
-  },
-  amountText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.bold,
-  },
-  transactionReason: {
-    fontSize: typography.base,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    lineHeight: 20,
-  },
-  transactionAdmin: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    transactionCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+    },
+    transactionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.md,
+    },
+    transactionInfo: {
+      flex: 1,
+    },
+    transactionGroup: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.xs,
+    },
+    transactionDate: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+    },
+    amountBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    addBadge: {
+      backgroundColor: colors.success,
+    },
+    removeBadge: {
+      backgroundColor: colors.red700,
+    },
+    amountText: {
+      fontSize: typography.base,
+      color: colors.white,
+      fontWeight: typography.bold,
+    },
+    transactionReason: {
+      fontSize: typography.base,
+      color: colors.white,
+      marginBottom: spacing.sm,
+      lineHeight: 20,
+    },
+    transactionAdmin: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+    },
+  });
+}
 
 export default TransactionCard;

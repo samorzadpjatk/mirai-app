@@ -3,6 +3,7 @@ import type { Activity } from "@mirai-app/orpc";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type AdminActivity = Activity;
 
@@ -45,6 +46,8 @@ export function AdminActivityCard({
   onHide,
   onDelete,
 }: AdminActivityCardProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const groupName = getActivityGroupName(item);
 
   return (
@@ -59,7 +62,7 @@ export function AdminActivityCard({
         <View style={styles.badges}>
           {item.isPinned ? (
             <View style={styles.badgePinned}>
-              <Ionicons name="pin" size={12} color={colors.primary} />
+              <Ionicons name="pin" size={12} color={palette.primary} />
               <Text style={styles.badgePinnedText}>Pinned</Text>
             </View>
           ) : null}
@@ -93,7 +96,11 @@ export function AdminActivityCard({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={() => onPin(item)} disabled={isBusy}>
-          <Ionicons name={item.isPinned ? "pin" : "pin-outline"} size={16} color={colors.primary} />
+          <Ionicons
+            name={item.isPinned ? "pin" : "pin-outline"}
+            size={16}
+            color={palette.primary}
+          />
           <Text style={styles.actionText}>{item.isPinned ? "Unpin" : "Pin"}</Text>
         </TouchableOpacity>
 
@@ -121,97 +128,99 @@ export function AdminActivityCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.cardDark,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  cardTop: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  cardType: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
-  cardTitle: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: "700",
-  },
-  cardMeta: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    marginTop: 2,
-  },
-  badges: {
-    alignItems: "flex-end",
-    gap: spacing.xs,
-  },
-  badgePinned: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  badgePinnedText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  badgeHidden: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
-  },
-  badgeHiddenText: {
-    color: colors.warning,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  cardDescription: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  cardImagePreview: {
-    width: "100%",
-    height: 140,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-  },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-  },
-  actionText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: "600",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      backgroundColor: palette.cardDark,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    cardTop: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    cardType: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 2,
+    },
+    cardTitle: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: "700",
+    },
+    cardMeta: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+      marginTop: 2,
+    },
+    badges: {
+      alignItems: "flex-end",
+      gap: spacing.xs,
+    },
+    badgePinned: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    badgePinnedText: {
+      color: palette.primary,
+      fontSize: 11,
+      fontWeight: "700",
+    },
+    badgeHidden: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: borderRadius.full,
+      backgroundColor: "rgba(245, 158, 11, 0.15)",
+    },
+    badgeHiddenText: {
+      color: colors.warning,
+      fontSize: 11,
+      fontWeight: "700",
+    },
+    cardDescription: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    cardImagePreview: {
+      width: "100%",
+      height: 140,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    actionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+    },
+    actionText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: "600",
+    },
+  });
+}

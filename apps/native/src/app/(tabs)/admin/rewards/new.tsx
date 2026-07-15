@@ -12,12 +12,15 @@ import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoading
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { useFileUpload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { getFileContentType, getFileExtension } from "~/utils/image";
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
@@ -223,7 +226,7 @@ export default function AdminCreateRewardScreen() {
               activeOpacity={0.85}
               disabled={isUploadingImage}
             >
-              <Ionicons name="image-outline" size={16} color={colors.primary} />
+              <Ionicons name="image-outline" size={16} color={palette.primary} />
               <Text style={styles.imagePickerButtonText}>
                 {imagePath ? "Change image" : "Add image"}
               </Text>
@@ -269,7 +272,7 @@ export default function AdminCreateRewardScreen() {
               <Ionicons
                 name="eye-outline"
                 size={16}
-                color={isHidden ? colors.textSecondary : colors.primary}
+                color={isHidden ? colors.textSecondary : palette.primary}
               />
               <Text
                 style={[
@@ -288,7 +291,7 @@ export default function AdminCreateRewardScreen() {
               <Ionicons
                 name="eye-off-outline"
                 size={16}
-                color={isHidden ? colors.primary : colors.textSecondary}
+                color={isHidden ? palette.primary : colors.textSecondary}
               />
               <Text
                 style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}
@@ -317,112 +320,114 @@ export default function AdminCreateRewardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  section: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.white,
-  },
-  helperText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  imageRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  imagePickerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: colors.primaryOpacity10,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-  },
-  imagePickerButtonText: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: "600",
-  },
-  imageRemoveButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-  },
-  imageRemoveButtonText: {
-    color: colors.danger,
-    fontSize: typography.sm,
-    fontWeight: "600",
-  },
-  imagePreview: {
-    width: "100%",
-    height: 200,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    marginTop: spacing.xs,
-  },
-  visibilityOptions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  visibilityOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    flex: 1,
-    justifyContent: "center",
-  },
-  visibilityOptionActive: {
-    backgroundColor: colors.primaryOpacity20,
-    borderColor: colors.primaryOpacity30,
-  },
-  visibilityOptionText: {
-    fontSize: typography.sm,
-    fontWeight: "600",
-    color: colors.textSecondary,
-  },
-  visibilityOptionTextActive: {
-    color: colors.primary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    section: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+      color: colors.white,
+    },
+    helperText: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+    },
+    textArea: {
+      minHeight: 80,
+      textAlignVertical: "top",
+    },
+    imageRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      alignItems: "center",
+      marginTop: spacing.xs,
+    },
+    imagePickerButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      backgroundColor: palette.primaryOpacity10,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 8,
+    },
+    imagePickerButtonText: {
+      color: palette.primary,
+      fontSize: typography.sm,
+      fontWeight: "600",
+    },
+    imageRemoveButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 8,
+    },
+    imageRemoveButtonText: {
+      color: colors.danger,
+      fontSize: typography.sm,
+      fontWeight: "600",
+    },
+    imagePreview: {
+      width: "100%",
+      height: 200,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      marginTop: spacing.xs,
+    },
+    visibilityOptions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    visibilityOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: colors.borderWhite10,
+      backgroundColor: colors.backgroundDarkOpacity80,
+      flex: 1,
+      justifyContent: "center",
+    },
+    visibilityOptionActive: {
+      backgroundColor: palette.primaryOpacity20,
+      borderColor: palette.primaryOpacity30,
+    },
+    visibilityOptionText: {
+      fontSize: typography.sm,
+      fontWeight: "600",
+      color: colors.textSecondary,
+    },
+    visibilityOptionTextActive: {
+      color: palette.primary,
+    },
+  });
+}

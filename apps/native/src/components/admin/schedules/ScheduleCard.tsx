@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;
@@ -20,6 +21,8 @@ export function ScheduleCard({
   onTrigger,
   isToggling = false,
 }: ScheduleCardProps) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -98,89 +101,91 @@ export function ScheduleCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-  },
-  header: {
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "flex-start" as const,
-    marginBottom: spacing.md,
-  },
-  titleSection: {
-    flex: 1,
-  },
-  title: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  triggerTime: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-  },
-  statusBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  statusText: {
-    fontSize: typography.xs,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  message: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: 20,
-  },
-  metaSection: {
-    marginBottom: spacing.md,
-  },
-  metaText: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  actions: {
-    flexDirection: "row" as const,
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-    minHeight: 36,
-  },
-  editButton: {
-    backgroundColor: colors.primary,
-  },
-  triggerButton: {
-    backgroundColor: colors.accentMagenta,
-  },
-  toggleButton: {
-    backgroundColor: colors.success,
-  },
-  deleteButton: {
-    backgroundColor: colors.danger,
-  },
-  actionButtonText: {
-    fontSize: typography.xs,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+    },
+    header: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "flex-start" as const,
+      marginBottom: spacing.md,
+    },
+    titleSection: {
+      flex: 1,
+    },
+    title: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.xs,
+    },
+    triggerTime: {
+      fontSize: typography.sm,
+      color: colors.textSecondary,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+    },
+    statusBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+    },
+    statusText: {
+      fontSize: typography.xs,
+      color: colors.white,
+      fontWeight: typography.medium,
+    },
+    message: {
+      fontSize: typography.base,
+      color: colors.textSecondary,
+      marginBottom: spacing.md,
+      lineHeight: 20,
+    },
+    metaSection: {
+      marginBottom: spacing.md,
+    },
+    metaText: {
+      fontSize: typography.xs,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    actions: {
+      flexDirection: "row" as const,
+      gap: spacing.sm,
+    },
+    actionButton: {
+      flex: 1,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      gap: spacing.xs,
+      minHeight: 36,
+    },
+    editButton: {
+      backgroundColor: palette.primary,
+    },
+    triggerButton: {
+      backgroundColor: palette.accentMagenta,
+    },
+    toggleButton: {
+      backgroundColor: colors.success,
+    },
+    deleteButton: {
+      backgroundColor: colors.danger,
+    },
+    actionButtonText: {
+      fontSize: typography.xs,
+      color: colors.white,
+      fontWeight: typography.medium,
+    },
+  });
+}

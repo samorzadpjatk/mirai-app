@@ -10,6 +10,7 @@ import { TransactionsFilters } from "~/components/admin/transactions/Transaction
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing, typography } from "../../../../styles";
 
 export default function AdminTransactionsScreen() {
@@ -17,6 +18,7 @@ export default function AdminTransactionsScreen() {
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
+  const { palette } = useTripTheme();
 
   // Use the custom hook for all transaction operations
   const {
@@ -143,13 +145,13 @@ export default function AdminTransactionsScreen() {
               onRefresh={() => {
                 void refetch();
               }}
-              tintColor={colors.primary}
+              tintColor={palette.primary}
             />
           }
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.listFooter}>
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={palette.primary} />
                 <Text style={styles.loadingText}>Loading more transactions...</Text>
               </View>
             ) : null

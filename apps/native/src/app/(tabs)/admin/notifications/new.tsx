@@ -25,6 +25,7 @@ import {
   ThemedTextInput,
 } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
@@ -111,6 +112,8 @@ export default function AdminCreateNotificationScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("instant");
   const [audienceType, setAudienceType] = useState<AudienceType>("all");
@@ -337,7 +340,7 @@ export default function AdminCreateNotificationScreen() {
             <View style={styles.groupList}>
               {groupsQuery.isLoading ? (
                 <View style={styles.loadingInline}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={palette.primary} />
                   <Text style={styles.loadingInlineText}>Loading groups...</Text>
                 </View>
               ) : groups.length === 0 ? (
@@ -452,109 +455,111 @@ export default function AdminCreateNotificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  section: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-    color: colors.white,
-  },
-  helperText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  textArea: {
-    minHeight: 110,
-    textAlignVertical: "top",
-  },
-  pickerButton: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  pickerButtonText: {
-    color: colors.white,
-    fontSize: typography.base,
-  },
-  groupList: {
-    gap: spacing.xs,
-  },
-  groupButton: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  groupButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  groupButtonText: {
-    color: colors.white,
-    fontSize: typography.base,
-  },
-  groupButtonTextActive: {
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  loadingInline: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  loadingInlineText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  legendList: {
-    gap: spacing.xs,
-  },
-  legendItem: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  legendKey: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  legendDesc: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  pickerActionTextPrimary: {
-    color: colors.primary,
-    fontWeight: typography.bold,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    section: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+      color: colors.white,
+    },
+    helperText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    textArea: {
+      minHeight: 110,
+      textAlignVertical: "top",
+    },
+    pickerButton: {
+      backgroundColor: colors.backgroundDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    pickerButtonText: {
+      color: colors.white,
+      fontSize: typography.base,
+    },
+    groupList: {
+      gap: spacing.xs,
+    },
+    groupButton: {
+      backgroundColor: colors.backgroundDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    groupButtonActive: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    groupButtonText: {
+      color: colors.white,
+      fontSize: typography.base,
+    },
+    groupButtonTextActive: {
+      color: colors.white,
+      fontWeight: typography.medium,
+    },
+    loadingInline: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    loadingInlineText: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    legendList: {
+      gap: spacing.xs,
+    },
+    legendItem: {
+      backgroundColor: colors.backgroundDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      padding: spacing.sm,
+      gap: spacing.xs,
+    },
+    legendKey: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    legendDesc: {
+      color: colors.textSecondary,
+      fontSize: typography.sm,
+    },
+    pickerActionTextPrimary: {
+      color: palette.primary,
+      fontWeight: typography.bold,
+    },
+  });
+}

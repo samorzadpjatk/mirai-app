@@ -10,10 +10,12 @@ import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function AdminCoinsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
 
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
@@ -116,7 +118,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -124,7 +126,7 @@ export default function AdminCoinsScreen() {
           borderColor: colors.borderWhite5,
         }}
       >
-        <Ionicons name="cash" size={24} color={colors.accentMagenta} />
+        <Ionicons name="cash" size={24} color={palette.accentMagenta} />
         <Text
           style={{
             fontSize: typography.xl,
@@ -149,7 +151,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -157,7 +159,7 @@ export default function AdminCoinsScreen() {
           borderColor: colors.borderWhite5,
         }}
       >
-        <Ionicons name="people-circle" size={24} color={colors.primary} />
+        <Ionicons name="people-circle" size={24} color={palette.primary} />
         <Text
           style={{
             fontSize: typography.xl,
@@ -182,7 +184,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -226,12 +228,12 @@ export default function AdminCoinsScreen() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
           borderWidth: 1,
-          borderColor: colors.borderDark,
+          borderColor: palette.borderDark,
         }}
       >
         <Ionicons name="search" size={20} color={colors.textSecondary} />
