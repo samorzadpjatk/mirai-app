@@ -174,7 +174,8 @@ function makeStyles(palette: ThemePalette) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: "rgba(0, 206, 209, 0.35)",
+      // 0x59 = round(0.35*255) — bit-exact vs poprzednie rgba(0, 206, 209, 0.35)
+      borderColor: `${palette.primary}59`,
     },
     recenterButton: {
       backgroundColor: "rgba(23, 24, 28, 0.9)",
@@ -184,7 +185,7 @@ function makeStyles(palette: ThemePalette) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: "rgba(0, 206, 209, 0.35)",
+      borderColor: `${palette.primary}59`,
     },
     locationToggle: {
       flexDirection: "row",
@@ -218,7 +219,7 @@ function makeStyles(palette: ThemePalette) {
       gap: spacing.xs,
     },
     backgroundToggleActive: {
-      borderColor: "rgba(0, 206, 209, 0.35)",
+      borderColor: `${palette.primary}59`,
     },
     backgroundToggleDisabled: {
       opacity: 0.55,

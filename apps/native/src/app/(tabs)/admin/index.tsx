@@ -296,8 +296,8 @@ export default function AdminPanelScreen() {
   );
 }
 
-const makeStyles = (palette: ThemePalette) =>
-  StyleSheet.create({
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: palette.backgroundDark,
@@ -395,3 +395,4 @@ const makeStyles = (palette: ThemePalette) =>
       flexShrink: 1,
     },
   });
+}

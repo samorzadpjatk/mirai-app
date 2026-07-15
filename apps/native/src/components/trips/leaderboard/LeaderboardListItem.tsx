@@ -73,8 +73,8 @@ const makeStyles = (palette: ThemePalette) =>
       borderColor: "rgba(255, 255, 255, 0.05)",
     },
     rowActive: {
-      backgroundColor: "rgba(0, 206, 209, 0.1)",
-      borderColor: "rgba(0, 206, 209, 0.3)",
+      backgroundColor: palette.primaryOpacity10,
+      borderColor: palette.primaryOpacity30,
       borderLeftWidth: 4,
       borderLeftColor: palette.primary,
     },
@@ -105,7 +105,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     avatarActive: {
       borderWidth: 2,
-      borderColor: "rgba(0, 206, 209, 0.2)",
+      borderColor: palette.primaryOpacity20,
     },
     avatarText: {
       fontSize: typography.lg,

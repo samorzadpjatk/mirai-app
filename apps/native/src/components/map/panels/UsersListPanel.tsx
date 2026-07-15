@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
 import { useMapOverlayStore } from "~/stores/map";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { formatRelativeTime } from "~/utils/format";
 
 export function UsersListPanel() {
@@ -15,6 +16,8 @@ export function UsersListPanel() {
     onManagePress,
     handleSelectUser,
   } = useMapOverlayStore();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <>
@@ -29,7 +32,7 @@ export function UsersListPanel() {
               onManagePress();
             }}
           >
-            <Ionicons name="settings-outline" size={16} color="#00ced1" />
+            <Ionicons name="settings-outline" size={16} color={palette.primary} />
           </Pressable>
           <Pressable
             style={styles.addButton}
@@ -38,7 +41,7 @@ export function UsersListPanel() {
               onAddPress();
             }}
           >
-            <Ionicons name="add" size={20} color="#00ced1" />
+            <Ionicons name="add" size={20} color={palette.primary} />
           </Pressable>
         </View>
       </Pressable>
@@ -76,105 +79,108 @@ export function UsersListPanel() {
   );
 }
 
-const styles = StyleSheet.create({
-  handleBar: {
-    width: 36,
-    height: 4,
-    backgroundColor: "rgba(0, 206, 209, 0.4)",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  listHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  headerButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  listTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#F8FAFC",
-  },
-  manageButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 206, 209, 0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manageButtonText: {
-    color: "#00ced1",
-    fontSize: 16,
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 206, 209, 0.2)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addButtonText: {
-    color: "#00ced1",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  usersList: {
-    overflow: "hidden",
-  },
-  userListItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
-  },
-  avatarWrapperSmall: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: "rgba(0, 206, 209, 0.4)",
-    overflow: "hidden",
-    backgroundColor: "rgba(23, 24, 28, 0.8)",
-    padding: 2,
-  },
-  avatarWrapperMe: {
-    borderWidth: 0,
-  },
-  userListDetails: {
-    flex: 1,
-  },
-  userListRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  userListName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#F8FAFC",
-  },
-  userListTime: {
-    fontSize: 11,
-    color: "rgba(226,232,240,0.5)",
-  },
-  userListAddress: {
-    fontSize: 13,
-    color: "rgba(226,232,240,0.7)",
-    marginTop: 2,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    handleBar: {
+      width: 36,
+      height: 4,
+      // 0x66 = round(0.4*255) — bit-exact vs poprzednie rgba(0, 206, 209, 0.4)
+      backgroundColor: `${palette.primary}66`,
+      borderRadius: 2,
+      alignSelf: "center",
+      marginBottom: 16,
+    },
+    listHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    headerButtons: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    listTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#F8FAFC",
+    },
+    manageButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: palette.primaryOpacity20,
+      borderWidth: 1,
+      borderColor: `${palette.primary}80`,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    manageButtonText: {
+      color: palette.primary,
+      fontSize: 16,
+    },
+    addButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: palette.primaryOpacity20,
+      borderWidth: 1,
+      borderColor: `${palette.primary}80`,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    addButtonText: {
+      color: palette.primary,
+      fontSize: 18,
+      fontWeight: "700",
+    },
+    usersList: {
+      overflow: "hidden",
+    },
+    userListItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    },
+    avatarWrapperSmall: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      borderWidth: 2,
+      borderColor: `${palette.primary}66`,
+      overflow: "hidden",
+      backgroundColor: "rgba(23, 24, 28, 0.8)",
+      padding: 2,
+    },
+    avatarWrapperMe: {
+      borderWidth: 0,
+    },
+    userListDetails: {
+      flex: 1,
+    },
+    userListRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    userListName: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#F8FAFC",
+    },
+    userListTime: {
+      fontSize: 11,
+      color: "rgba(226,232,240,0.5)",
+    },
+    userListAddress: {
+      fontSize: 13,
+      color: "rgba(226,232,240,0.7)",
+      marginTop: 2,
+    },
+  });
+}

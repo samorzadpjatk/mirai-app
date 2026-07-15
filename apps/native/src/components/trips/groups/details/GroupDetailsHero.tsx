@@ -48,7 +48,7 @@ function makeStyles(palette: ThemePalette) {
       borderRadius: borderRadius.xl,
       backgroundColor: palette.cardDark,
       borderWidth: 1,
-      borderColor: "rgba(0, 206, 209, 0.2)",
+      borderColor: palette.primaryOpacity20,
       overflow: "hidden",
       marginBottom: spacing.lg,
     },
