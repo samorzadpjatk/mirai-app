@@ -42,3 +42,21 @@ export const shadows = {
     elevation: 8,
   },
 };
+
+// Themable glow shadows: glow(colors.primary) is identical to shadows.primaryGlow,
+// so themed components can swap to glow(palette.primary) with no visual change on DEFAULT.
+export const glow = (color: string) => ({
+  shadowColor: color,
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.4,
+  shadowRadius: 15,
+  elevation: 8,
+});
+
+export const glowStrong = (color: string) => ({
+  shadowColor: color,
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.3,
+  shadowRadius: 20,
+  elevation: 8,
+});

@@ -6,7 +6,7 @@ import { typography as typographyImport } from "./typography";
 export { colors } from "./colors";
 export { spacing, borderRadius } from "./spacing";
 export { typography } from "./typography";
-export { shadows } from "./shadows";
+export { shadows, glow, glowStrong } from "./shadows";
 export { commonStyles } from "./commonStyles";
 
 // Re-export everything as theme for convenience
