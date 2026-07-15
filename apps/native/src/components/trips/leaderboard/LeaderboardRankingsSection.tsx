@@ -37,8 +37,8 @@ export function LeaderboardRankingsSection({
   );
 }
 
-const makeStyles = (palette: ThemePalette) =>
-  StyleSheet.create({
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
     container: {
       backgroundColor: "rgba(28, 31, 33, 0.3)",
       borderTopLeftRadius: borderRadius.xl * 2.5,
@@ -89,3 +89,4 @@ const makeStyles = (palette: ThemePalette) =>
       marginTop: spacing.sm,
     },
   });
+}

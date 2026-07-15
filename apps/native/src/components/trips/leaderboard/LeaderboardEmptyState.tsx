@@ -15,8 +15,8 @@ export function LeaderboardEmptyState({ message }: LeaderboardEmptyStateProps) {
   );
 }
 
-const makeStyles = (palette: ThemePalette) =>
-  StyleSheet.create({
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: palette.backgroundDark,
@@ -28,3 +28,4 @@ const makeStyles = (palette: ThemePalette) =>
       fontSize: typography.lg,
     },
   });
+}

@@ -87,8 +87,8 @@ export default function LeaderboardScreen() {
   );
 }
 
-const makeStyles = (palette: ThemePalette) =>
-  StyleSheet.create({
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: palette.backgroundDark,
@@ -101,3 +101,4 @@ const makeStyles = (palette: ThemePalette) =>
       paddingBottom: spacing.xxxl,
     },
   });
+}
