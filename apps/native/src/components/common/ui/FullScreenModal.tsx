@@ -3,6 +3,7 @@ import type React from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaTop } from "~/components/SafeAreaWrapper";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface FullScreenModalProps {
   visible: boolean;
@@ -12,6 +13,7 @@ interface FullScreenModalProps {
 }
 
 export function FullScreenModal({ visible, title, onClose, children }: FullScreenModalProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Modal
       visible={visible}
@@ -37,37 +39,39 @@ export function FullScreenModal({ visible, title, onClose, children }: FullScree
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  safeArea: {
-    backgroundColor: colors.cardDark,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primaryOpacity10,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  title: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  content: {
-    flex: 1,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    safeArea: {
+      backgroundColor: palette.cardDark,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.primaryOpacity10,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    title: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    closeButton: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.full,
+      backgroundColor: palette.primaryOpacity10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    content: {
+      flex: 1,
+    },
+  });
+}

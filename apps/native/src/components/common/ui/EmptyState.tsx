@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 // Ionicons icon names type
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
@@ -32,6 +33,7 @@ export function EmptyState({
   style,
   iconOpacity = 0.5,
 }: EmptyStateProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID="empty-state-container" style={[styles.emptyState, style]}>
       {icon ? (
@@ -48,25 +50,27 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  emptyIcon: {
-    marginBottom: spacing.lg,
-  },
-  emptyStateTitle: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    emptyState: {
+      alignItems: "center",
+      paddingVertical: spacing.xxl * 2,
+    },
+    emptyIcon: {
+      marginBottom: spacing.lg,
+    },
+    emptyStateTitle: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.sm,
+      textAlign: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.base,
+      color: palette.textMuted,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+  });
+}

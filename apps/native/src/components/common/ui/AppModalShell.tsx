@@ -10,6 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface AppModalShellProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export function AppModalShell({
   variant = "card",
   maxWidth,
 }: AppModalShellProps) {
+  const styles = useThemedStyles(makeStyles);
   const isPageSheet = variant === "pageSheet";
 
   if (!visible) {
@@ -80,78 +82,80 @@ export function AppModalShell({
   );
 }
 
-const styles = StyleSheet.create({
-  // Card modal (overlay) styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  modalContent: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    width: "85%",
-    maxHeight: "80%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.3,
-  },
-  modalClose: {
-    fontSize: 24,
-    color: colors.textSecondary,
-    fontWeight: "600",
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  modalBody: {
-    padding: spacing.lg,
-  },
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    // Card modal (overlay) styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: colors.blackOpacity40,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: spacing.lg,
+    },
+    modalContent: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      width: "85%",
+      maxHeight: "80%",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderWhite5,
+    },
+    modalTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      letterSpacing: -0.3,
+    },
+    modalClose: {
+      fontSize: 24,
+      color: colors.textSecondary,
+      fontWeight: "600",
+      paddingHorizontal: spacing.xs,
+      paddingVertical: spacing.xs,
+    },
+    modalBody: {
+      padding: spacing.lg,
+    },
 
-  // Page sheet modal styles
-  pageSheetContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  pageSheetContent: {
-    flex: 1,
-  },
-  pageSheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDark,
-  },
-  pageSheetTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.3,
-  },
-  pageSheetClose: {
-    fontSize: 24,
-    color: colors.textSecondary,
-    fontWeight: "600",
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  pageSheetBody: {
-    flex: 1,
-  },
-});
+    // Page sheet modal styles
+    pageSheetContainer: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    pageSheetContent: {
+      flex: 1,
+    },
+    pageSheetHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.borderDark,
+    },
+    pageSheetTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+      letterSpacing: -0.3,
+    },
+    pageSheetClose: {
+      fontSize: 24,
+      color: colors.textSecondary,
+      fontWeight: "600",
+      paddingHorizontal: spacing.xs,
+      paddingVertical: spacing.xs,
+    },
+    pageSheetBody: {
+      flex: 1,
+    },
+  });
+}

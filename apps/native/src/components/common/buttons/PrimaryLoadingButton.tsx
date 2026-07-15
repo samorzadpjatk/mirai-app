@@ -7,7 +7,8 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Skeleton } from "~/components/ui/Skeleton";
-import { borderRadius, colors, shadows, spacing, typography } from "~/styles";
+import { borderRadius, colors, glow, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface PrimaryLoadingButtonProps {
   label: string;
@@ -30,12 +31,14 @@ export function PrimaryLoadingButton({
   activeOpacity = 0.9,
   testID,
 }: PrimaryLoadingButtonProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const isDisabled = isLoading || disabled;
 
   return (
     <TouchableOpacity
       testID={testID}
-      style={[styles.button, shadows.primaryGlow, style]}
+      style={[styles.button, glow(palette.primary), style]}
       onPress={onPress}
       disabled={isDisabled}
       activeOpacity={activeOpacity}
@@ -55,20 +58,22 @@ export function PrimaryLoadingButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-  skeletonContainer: {
-    alignItems: "center",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    button: {
+      backgroundColor: palette.primary,
+      paddingVertical: spacing.lg,
+      borderRadius: borderRadius.xl,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    buttonText: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: colors.backgroundDark,
+    },
+    skeletonContainer: {
+      alignItems: "center",
+    },
+  });
+}

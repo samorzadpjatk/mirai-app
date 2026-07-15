@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from "react-native";
-import { borderRadius, colors, spacing } from "~/styles";
+import { WoodTexture } from "~/components/common/WoodTexture";
+import { borderRadius, spacing } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ThemedCardProps {
   children: ReactNode;
@@ -21,6 +23,7 @@ export function ThemedCard({
   selected = false,
   variant = "default",
 }: ThemedCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const isPressable = typeof onPress === "function";
 
   return (
@@ -36,30 +39,33 @@ export function ThemedCard({
       onPress={onPress}
       disabled={!isPressable || disabled}
     >
+      <WoodTexture radius={borderRadius.md} />
       {children}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.md,
-  },
-  cardBordered: {
-    borderColor: colors.borderDark,
-  },
-  cardSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderColor: colors.primary,
-  },
-  cardInteractive: {
-    backgroundColor: colors.primaryOpacity10,
-  },
-  cardPressed: {
-    opacity: 0.8,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: "transparent",
+      padding: spacing.md,
+    },
+    cardBordered: {
+      borderColor: palette.borderDark,
+    },
+    cardSelected: {
+      backgroundColor: palette.primaryOpacity10,
+      borderColor: palette.primary,
+    },
+    cardInteractive: {
+      backgroundColor: palette.primaryOpacity10,
+    },
+    cardPressed: {
+      opacity: 0.8,
+    },
+  });
+}

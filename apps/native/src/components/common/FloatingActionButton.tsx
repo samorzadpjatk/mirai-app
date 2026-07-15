@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type StyleProp, StyleSheet, TouchableOpacity, type ViewStyle } from "react-native";
 import { colors } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -23,6 +24,7 @@ export function FloatingActionButton({
   activeOpacity = 0.7,
   testID,
 }: FloatingActionButtonProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -38,21 +40,23 @@ export function FloatingActionButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    width: 58,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    button: {
+      width: 58,
+      height: 58,
+      borderRadius: 999,
+      backgroundColor: palette.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: palette.primary,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+  });
+}
