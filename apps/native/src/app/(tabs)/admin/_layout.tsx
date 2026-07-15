@@ -16,7 +16,7 @@ function AdminStack() {
         headerStyle: {
           backgroundColor: palette.backgroundDark,
         },
-        headerTintColor: palette.primary,
+        headerTintColor: palette.textPrimary,
         headerShadowVisible: true,
         headerTitleStyle: {
           fontWeight: "600",
