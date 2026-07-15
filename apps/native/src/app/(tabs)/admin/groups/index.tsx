@@ -17,11 +17,18 @@ import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import type { Group } from "~/hooks/admin/useAdminGroups";
-import { borderRadius, colors, spacing, typography } from "../../../../styles";
+import { borderRadius, spacing, typography } from "../../../../styles";
+import {
+  type ThemePalette,
+  useThemedStyles,
+  useTripTheme,
+} from "../../../../theme/TripThemeProvider";
 
 export default function AdminGroupsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
 
@@ -91,7 +98,7 @@ export default function AdminGroupsScreen() {
         subtitle="Manage teams and roles"
         rightComponent={
           <TouchableOpacity style={styles.createButton} onPress={handleCreateGroup}>
-            <Ionicons name="add" size={20} color={colors.white} />
+            <Ionicons name="add" size={20} color={palette.white} />
           </TouchableOpacity>
         }
       />
@@ -135,7 +142,7 @@ export default function AdminGroupsScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="people-circle" size={48} color={colors.textSecondary} />
+              <Ionicons name="people-circle" size={48} color={palette.textSecondary} />
               <Text style={styles.emptyText}>
                 {searchTerm ? "No groups found" : "No groups available"}
               </Text>
@@ -149,8 +156,8 @@ export default function AdminGroupsScreen() {
           ListFooterComponent={
             groupsFetchingNextPage ? (
               <View style={{ alignItems: "center", paddingVertical: spacing.md }}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
+                <ActivityIndicator size="small" color={palette.primary} />
+                <Text style={{ fontSize: 12, color: palette.textSecondary, marginTop: spacing.xs }}>
                   Loading more groups...
                 </Text>
               </View>
@@ -162,71 +169,73 @@ export default function AdminGroupsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  createButton: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  loadingContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  groupsList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-  },
-  emptyContainer: {
-    alignItems: "center" as const,
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    textAlign: "center" as const,
-  },
-  emptyCreateButton: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-  },
-  emptyCreateButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.lg,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    createButton: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.full,
+      backgroundColor: palette.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    loadingContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    groupsList: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+    },
+    emptyContainer: {
+      alignItems: "center" as const,
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      textAlign: "center" as const,
+    },
+    emptyCreateButton: {
+      marginTop: spacing.lg,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.md,
+    },
+    emptyCreateButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+  });
+}

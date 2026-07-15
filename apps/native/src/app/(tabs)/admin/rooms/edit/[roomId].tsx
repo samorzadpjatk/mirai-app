@@ -6,10 +6,13 @@ import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } 
 import LoadingScreen from "~/components/LoadingScreen";
 import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function EditRoomScreen() {
   const { roomId, tripId } = useLocalSearchParams<{ roomId?: string; tripId?: string }>();
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const { rooms, users, isLoading, updateRoom, deleteRoom, assignUser, removeUser, isMutating } =
     useAdminRooms(tripId ?? "");
 
@@ -97,7 +100,7 @@ export default function EditRoomScreen() {
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholderTextColor={colors.gray600}
+              placeholderTextColor={palette.gray600}
             />
             <Text style={styles.label}>Capacity</Text>
             <TextInput
@@ -105,7 +108,7 @@ export default function EditRoomScreen() {
               value={capacity}
               onChangeText={(text) => setCapacity(text.replace(/[^0-9]/g, ""))}
               keyboardType="number-pad"
-              placeholderTextColor={colors.gray600}
+              placeholderTextColor={palette.gray600}
             />
             <View style={styles.actionRow}>
               <TouchableOpacity
@@ -142,7 +145,7 @@ export default function EditRoomScreen() {
               <Ionicons
                 name={inRoom ? "checkbox" : "square-outline"}
                 size={22}
-                color={inRoom ? colors.primary : colors.textTertiary}
+                color={inRoom ? palette.primary : palette.textTertiary}
               />
             </TouchableOpacity>
           );
@@ -152,75 +155,77 @@ export default function EditRoomScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.backgroundDark },
-  centered: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: { color: colors.textSecondary, fontSize: typography.base },
-  list: { padding: spacing.lg },
-  header: { gap: spacing.sm, marginBottom: spacing.md },
-  label: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  input: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    color: colors.white,
-    fontSize: typography.base,
-  },
-  actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
-  saveBtn: {
-    flex: 1,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  saveTxt: { fontWeight: typography.bold, color: colors.backgroundDark },
-  delBtn: {
-    flex: 1,
-    backgroundColor: colors.dangerOpacity15,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  delTxt: { fontWeight: typography.bold, color: colors.danger },
-  disabled: { opacity: 0.6 },
-  sectionTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  userName: { flex: 1, color: colors.white, fontSize: typography.base },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: palette.backgroundDark },
+    centered: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyText: { color: palette.textSecondary, fontSize: typography.base },
+    list: { padding: spacing.lg },
+    header: { gap: spacing.sm, marginBottom: spacing.md },
+    label: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textSecondary,
+      marginTop: spacing.md,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    input: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      color: palette.white,
+      fontSize: typography.base,
+    },
+    actionRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.lg },
+    saveBtn: {
+      flex: 1,
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      alignItems: "center",
+    },
+    saveTxt: { fontWeight: typography.bold, color: palette.backgroundDark },
+    delBtn: {
+      flex: 1,
+      backgroundColor: colors.dangerOpacity15,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      alignItems: "center",
+    },
+    delTxt: { fontWeight: typography.bold, color: colors.danger },
+    disabled: { opacity: 0.6 },
+    sectionTitle: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      marginTop: spacing.xl,
+      marginBottom: spacing.sm,
+    },
+    userRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    userName: { flex: 1, color: palette.white, fontSize: typography.base },
+  });
+}

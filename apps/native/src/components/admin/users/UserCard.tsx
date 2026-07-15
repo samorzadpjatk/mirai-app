@@ -3,6 +3,7 @@ import { formatDisplayName } from "@mirai-app/common/users";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { User } from "~/hooks/admin/useAdminUsers";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface UserCardProps {
   user: User;
@@ -10,6 +11,8 @@ interface UserCardProps {
 }
 
 export function UserCard({ user, onEdit }: UserCardProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const userName = formatDisplayName(user.firstName, user.lastName, user.email) ?? "Unknown User";
   const groupName = user.group?.name ?? "Not selected";
   const isAdmin = user.role === "ADMIN";
@@ -30,7 +33,7 @@ export function UserCard({ user, onEdit }: UserCardProps) {
         <View style={styles.userBadges}>
           {isAdmin && (
             <View style={[styles.badge, styles.adminBadge]}>
-              <Ionicons name="shield-checkmark" size={12} color={colors.white} />
+              <Ionicons name="shield-checkmark" size={12} color={palette.white} />
               <Text style={styles.badgeText}>Admin</Text>
             </View>
           )}
@@ -54,7 +57,7 @@ export function UserCard({ user, onEdit }: UserCardProps) {
             style={[styles.actionButton, styles.editButton]}
             onPress={() => onEdit(user)}
           >
-            <Ionicons name="create" size={16} color={colors.white} />
+            <Ionicons name="create" size={16} color={palette.white} />
             <Text style={styles.actionButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -63,109 +66,111 @@ export function UserCard({ user, onEdit }: UserCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  userCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-  },
-  userHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  userEmail: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  userBanned: {
-    fontSize: typography.sm,
-    color: colors.danger,
-    marginBottom: spacing.xs,
-    fontWeight: typography.medium,
-  },
-  userGroup: {
-    fontSize: typography.sm,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  userBadges: {
-    flexDirection: "row",
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  adminBadge: {
-    backgroundColor: colors.warning,
-  },
-  badgeText: {
-    fontSize: typography.xs,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  userActions: {
-    gap: spacing.md,
-  },
-  numberSummary: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  numberItem: {
-    flex: 1,
-  },
-  numberLabel: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  numberValue: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-  },
-  assignButton: {
-    backgroundColor: colors.primary,
-  },
-  editButton: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  actionButtonText: {
-    fontSize: typography.sm,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    userCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: palette.borderWhite5,
+    },
+    userHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.md,
+    },
+    userInfo: {
+      flex: 1,
+    },
+    userName: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    userEmail: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    userBanned: {
+      fontSize: typography.sm,
+      color: colors.danger,
+      marginBottom: spacing.xs,
+      fontWeight: typography.medium,
+    },
+    userGroup: {
+      fontSize: typography.sm,
+      color: palette.primary,
+      marginBottom: spacing.xs,
+    },
+    userBadges: {
+      flexDirection: "row",
+    },
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      gap: spacing.xs,
+    },
+    adminBadge: {
+      backgroundColor: colors.warning,
+    },
+    badgeText: {
+      fontSize: typography.xs,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    userActions: {
+      gap: spacing.md,
+    },
+    numberSummary: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    numberItem: {
+      flex: 1,
+    },
+    numberLabel: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    numberValue: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    actionButtons: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    actionButton: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      gap: spacing.xs,
+    },
+    assignButton: {
+      backgroundColor: palette.primary,
+    },
+    editButton: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    actionButtonText: {
+      fontSize: typography.sm,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+  });
+}

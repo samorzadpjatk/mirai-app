@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import type { Group, User } from "~/hooks/admin/useAdminGroups";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface CreateGroupModalProps {
@@ -131,6 +132,8 @@ export function DeleteGroupModal({
   onDeleteGroup,
   isDeleting,
 }: DeleteGroupModalProps) {
+  const styles = useThemedStyles(makeStyles);
+
   const handleDelete = () => {
     if (!group) return;
     onDeleteGroup(group.id);
@@ -189,6 +192,8 @@ export function AssignOrganizerModal({
   onAssignOrganizer,
   isAssigning,
 }: AssignOrganizerModalProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const [selectedOrganizer, setSelectedOrganizer] = useState<User | null>(null);
 
   const handleClose = useCallback(() => {
@@ -225,7 +230,7 @@ export function AssignOrganizerModal({
             <Text
               style={{
                 fontSize: typography.base,
-                color: colors.white,
+                color: palette.white,
                 fontWeight: typography.medium,
                 marginBottom: spacing.xs,
               }}
@@ -259,7 +264,7 @@ export function AssignOrganizerModal({
                   <Text style={styles.userOptionEmail}>{user.email}</Text>
                 </View>
                 {selectedOrganizer?.id === user.id && (
-                  <Ionicons name="checkmark" size={18} color={colors.primary} />
+                  <Ionicons name="checkmark" size={18} color={palette.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -270,60 +275,62 @@ export function AssignOrganizerModal({
   );
 }
 
-const styles = StyleSheet.create({
-  deleteContent: {
-    paddingBottom: spacing.md,
-  },
-  deleteWarning: {
-    fontSize: typography.base,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  deleteSubWarning: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  memberCount: {
-    fontSize: typography.sm,
-    color: colors.danger,
-    fontWeight: typography.medium,
-  },
-  currentOrganizer: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  usersList: {
-    maxHeight: 200,
-  },
-  userOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundDark,
-    marginBottom: spacing.xs,
-  },
-  userOptionSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  userOptionInfo: {
-    flex: 1,
-  },
-  userOptionName: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  userOptionNameSelected: {
-    color: colors.primary,
-  },
-  userOptionEmail: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    deleteContent: {
+      paddingBottom: spacing.md,
+    },
+    deleteWarning: {
+      fontSize: typography.base,
+      color: palette.white,
+      marginBottom: spacing.sm,
+    },
+    deleteSubWarning: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.md,
+    },
+    memberCount: {
+      fontSize: typography.sm,
+      color: colors.danger,
+      fontWeight: typography.medium,
+    },
+    currentOrganizer: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.md,
+    },
+    usersList: {
+      maxHeight: 200,
+    },
+    userOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing.sm,
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.backgroundDark,
+      marginBottom: spacing.xs,
+    },
+    userOptionSelected: {
+      backgroundColor: palette.primaryOpacity10,
+      borderWidth: 1,
+      borderColor: palette.primary,
+    },
+    userOptionInfo: {
+      flex: 1,
+    },
+    userOptionName: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    userOptionNameSelected: {
+      color: palette.primary,
+    },
+    userOptionEmail: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+  });
+}

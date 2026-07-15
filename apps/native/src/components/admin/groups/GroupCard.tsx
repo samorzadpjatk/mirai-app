@@ -3,6 +3,7 @@ import { formatDisplayName } from "@mirai-app/common/users";
 import { Text, TouchableOpacity, View } from "react-native";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface GroupCardProps {
   group: Group;
@@ -11,15 +12,17 @@ interface GroupCardProps {
 }
 
 export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) {
+  const { palette } = useTripTheme();
+
   return (
     <View
       style={{
-        backgroundColor: colors.cardDark,
+        backgroundColor: palette.cardDark,
         borderRadius: borderRadius.lg,
         padding: spacing.lg,
         marginBottom: spacing.md,
         borderWidth: 1,
-        borderColor: colors.borderWhite5,
+        borderColor: palette.borderWhite5,
       }}
     >
       <View
@@ -35,7 +38,7 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
             style={{
               fontSize: typography.lg,
               fontWeight: typography.bold,
-              color: colors.white,
+              color: palette.white,
               marginBottom: spacing.xs,
             }}
           >
@@ -45,7 +48,7 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
             <Text
               style={{
                 fontSize: typography.sm,
-                color: colors.textSecondary,
+                color: palette.textSecondary,
               }}
             >
               Organizer:{" "}
@@ -63,14 +66,14 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
               paddingVertical: spacing.sm,
               borderRadius: borderRadius.full,
               gap: spacing.xs,
-              backgroundColor: colors.accentMagenta,
+              backgroundColor: palette.accentMagenta,
             }}
           >
-            <Ionicons name="cash" size={16} color={colors.white} />
+            <Ionicons name="cash" size={16} color={palette.white} />
             <Text
               style={{
                 fontSize: typography.base,
-                color: colors.white,
+                color: palette.white,
                 fontWeight: typography.bold,
               }}
             >
@@ -88,11 +91,11 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
             gap: spacing.xs,
           }}
         >
-          <Ionicons name="people" size={14} color={colors.textSecondary} />
+          <Ionicons name="people" size={14} color={palette.textSecondary} />
           <Text
             style={{
               fontSize: typography.sm,
-              color: colors.textSecondary,
+              color: palette.textSecondary,
             }}
           >
             {group._count.participants} members
@@ -119,11 +122,11 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
           }}
           onPress={() => onAddCoins(group)}
         >
-          <Ionicons name="add-circle" size={16} color={colors.white} />
+          <Ionicons name="add-circle" size={16} color={palette.white} />
           <Text
             style={{
               fontSize: typography.sm,
-              color: colors.white,
+              color: palette.white,
               fontWeight: typography.medium,
             }}
           >
@@ -144,11 +147,11 @@ export function GroupCard({ group, onAddCoins, onRemoveCoins }: GroupCardProps) 
           }}
           onPress={() => onRemoveCoins(group)}
         >
-          <Ionicons name="remove-circle" size={16} color={colors.white} />
+          <Ionicons name="remove-circle" size={16} color={palette.white} />
           <Text
             style={{
               fontSize: typography.sm,
-              color: colors.white,
+              color: palette.white,
               fontWeight: typography.medium,
             }}
           >

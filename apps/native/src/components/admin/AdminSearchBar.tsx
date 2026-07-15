@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface SearchField {
   key: string;
@@ -26,19 +27,22 @@ export function AdminSearchBar({
   fields,
   placeholder,
 }: AdminSearchBarProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const selectedFieldLabel =
     fields.find((f) => f.key === selectedField)?.label.toLowerCase() ?? "items";
 
   return (
     <View style={styles.searchSection}>
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <Ionicons name="search" size={20} color={palette.textSecondary} />
         <TextInput
           style={styles.searchInput}
           placeholder={placeholder ?? `Search by ${selectedFieldLabel}...`}
           value={searchTerm}
           onChangeText={onSearchChange}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={palette.textSecondary}
         />
       </View>
 
@@ -78,50 +82,52 @@ export function AdminSearchBar({
   );
 }
 
-const styles = StyleSheet.create({
-  searchSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  fieldSelector: {
-    flexDirection: "row",
-  },
-  fieldOption: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.full,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  fieldOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  fieldOptionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  fieldOptionTextSelected: {
-    color: colors.white,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    searchSection: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: spacing.sm,
+      fontSize: typography.base,
+      color: palette.white,
+    },
+    fieldSelector: {
+      flexDirection: "row",
+    },
+    fieldOption: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.full,
+      marginRight: spacing.sm,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    fieldOptionSelected: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    fieldOptionText: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      fontWeight: typography.medium,
+    },
+    fieldOptionTextSelected: {
+      color: palette.white,
+    },
+  });
+}

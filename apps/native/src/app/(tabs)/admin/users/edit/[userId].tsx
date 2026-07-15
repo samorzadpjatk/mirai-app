@@ -10,12 +10,14 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { DateTimePickerModal, FormField, ThemedTextInput } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { formatBanLabel, isBanReady } from "~/utils/validation";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
   const userId = params.userId;
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
@@ -407,121 +409,123 @@ export default function AdminEditUserScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  userInfo: {
-    marginBottom: spacing.md,
-  },
-  userName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  userEmail: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  sectionBlock: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  groupList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  groupOption: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    backgroundColor: colors.backgroundDark,
-  },
-  groupOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity10,
-  },
-  groupOptionText: {
-    color: colors.white,
-    fontSize: typography.sm,
-  },
-  groupOptionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.medium,
-  },
-  groupEmpty: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  section: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  sectionHint: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  banPickerButton: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  banPickerButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  banButton: {
-    backgroundColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-  },
-  dangerButtonDisabled: {
-    opacity: 0.5,
-  },
-  banButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  deleteButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-    marginTop: spacing.lg,
-  },
-  deleteButtonText: {
-    fontSize: typography.base,
-    color: colors.danger,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    userInfo: {
+      marginBottom: spacing.md,
+    },
+    userName: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    userEmail: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+    sectionBlock: {
+      marginTop: spacing.sm,
+      gap: spacing.sm,
+    },
+    groupList: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    groupOption: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: borderRadius.sm,
+      borderWidth: 1,
+      borderColor: palette.borderWhite5,
+      backgroundColor: palette.backgroundDark,
+    },
+    groupOptionSelected: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity10,
+    },
+    groupOptionText: {
+      color: palette.white,
+      fontSize: typography.sm,
+    },
+    groupOptionTextSelected: {
+      color: palette.primary,
+      fontWeight: typography.medium,
+    },
+    groupEmpty: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+    },
+    section: {
+      marginTop: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    sectionHint: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    banPickerButton: {
+      backgroundColor: palette.backgroundDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+      marginBottom: spacing.sm,
+    },
+    banPickerButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+    },
+    banButton: {
+      backgroundColor: colors.danger,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+    },
+    dangerButtonDisabled: {
+      opacity: 0.5,
+    },
+    banButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    deleteButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+      marginTop: spacing.lg,
+    },
+    deleteButtonText: {
+      fontSize: typography.base,
+      color: colors.danger,
+      fontWeight: typography.medium,
+    },
+  });
+}

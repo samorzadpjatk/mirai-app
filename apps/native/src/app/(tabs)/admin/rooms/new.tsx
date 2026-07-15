@@ -2,11 +2,14 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function NewRoomScreen() {
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const { createRoom, isMutating } = useAdminRooms(tripId ?? "");
   const [name, setName] = useState("");
   const [capacity, setCapacity] = useState("");
@@ -37,7 +40,7 @@ export default function NewRoomScreen() {
         value={name}
         onChangeText={setName}
         placeholder="e.g. Room 101"
-        placeholderTextColor={colors.gray600}
+        placeholderTextColor={palette.gray600}
       />
 
       <Text style={styles.label}>Capacity (beds)</Text>
@@ -47,7 +50,7 @@ export default function NewRoomScreen() {
         onChangeText={(text) => setCapacity(text.replace(/[^0-9]/g, ""))}
         keyboardType="number-pad"
         placeholder="e.g. 4"
-        placeholderTextColor={colors.gray600}
+        placeholderTextColor={palette.gray600}
       />
 
       <TouchableOpacity
@@ -61,42 +64,44 @@ export default function NewRoomScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  label: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  input: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    color: colors.white,
-    fontSize: typography.base,
-  },
-  button: {
-    marginTop: spacing.xl,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
+    label: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textSecondary,
+      marginTop: spacing.md,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    input: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      color: palette.white,
+      fontSize: typography.base,
+    },
+    button: {
+      marginTop: spacing.xl,
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.md,
+      alignItems: "center",
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: palette.backgroundDark,
+    },
+  });
+}
