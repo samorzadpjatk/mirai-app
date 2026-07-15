@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { colors, commonStyles } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { getTotalCost } from "./RewardsView";
 import type { RewardListItem } from "./types";
 
@@ -23,6 +24,7 @@ export default function RewardPurchaseModal({
   onConfirm,
   isPending,
 }: Props) {
+  const { palette } = useTripTheme();
   return (
     <Modal
       testID="purchase-modal"
@@ -137,7 +139,10 @@ export default function RewardPurchaseModal({
                 testID="confirm-purchase"
                 onPress={onConfirm}
                 disabled={isPending}
-                style={[commonStyles.button, { marginBottom: 24 }]}
+                style={[
+                  commonStyles.button,
+                  { backgroundColor: palette.primary, marginBottom: 24 },
+                ]}
               >
                 <Text style={commonStyles.buttonText}>
                   {isPending ? "Claiming..." : "Confirm claim"}

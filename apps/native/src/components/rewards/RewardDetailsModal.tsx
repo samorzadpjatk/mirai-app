@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { colors, commonStyles } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import {
   getRewardAvailabilityColor,
   getRewardAvailabilityText,
@@ -32,6 +33,7 @@ export default function RewardDetailsModal({
   onImageIndexChange,
   isTripPast,
 }: Props) {
+  const { palette } = useTripTheme();
   if (!reward) return null;
 
   const buttonState = getRewardButtonState(
@@ -39,6 +41,7 @@ export default function RewardDetailsModal({
     reward.isEligibleToBuy,
     reward.isOutOfStock,
     isTripPast,
+    palette,
   );
 
   return (
@@ -110,7 +113,7 @@ export default function RewardDetailsModal({
                         width: 7,
                         height: 7,
                         borderRadius: 999,
-                        backgroundColor: index === imageIndex ? colors.primary : colors.gray600,
+                        backgroundColor: index === imageIndex ? palette.primary : colors.gray600,
                       }}
                     />
                   ))}

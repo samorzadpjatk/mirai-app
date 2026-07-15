@@ -9,13 +9,15 @@ import { LeaderboardEmptyState } from "~/components/trips/leaderboard/Leaderboar
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
-import { colors, spacing } from "../../../../styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { spacing } from "../../../../styles";
 
 export default function LeaderboardScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
 
   const { data: trip, isLoading: tripLoading } = useQuery({
     ...orpc.trip.getById.queryOptions({ input: { id: tripId ?? "" } }),
@@ -85,16 +87,17 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: spacing.xxxl,
+    },
+  });

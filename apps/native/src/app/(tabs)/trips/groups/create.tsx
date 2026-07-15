@@ -10,14 +10,16 @@ import { GroupFormFields } from "~/components/trips/groups/create/GroupFormField
 import { useFileUpload } from "~/hooks/files";
 import { useCreateGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { getFileContentType, getFileExtension } from "~/utils/image";
-import { colors, spacing } from "../../../../styles";
+import { spacing } from "../../../../styles";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string>("");
@@ -128,16 +130,17 @@ export default function CreateGroupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: spacing.xxxl,
+    },
+  });
