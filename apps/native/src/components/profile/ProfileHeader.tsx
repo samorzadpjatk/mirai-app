@@ -16,7 +16,7 @@ const getRoleColor = (role: string, palette: ThemePalette) => {
     case "SERVICE":
       return colors.slate400;
     default:
-      return colors.textMuted;
+      return palette.textMuted;
   }
 };
 

@@ -69,7 +69,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
           <Ionicons name="person" size={20} color={colors.white} />
         </View>
         <Text style={styles.actionText}>Edit Profile</Text>
-        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        <Ionicons name="chevron-forward" size={20} color={palette.textMuted} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -137,7 +137,7 @@ export function ProfileActionsSection({ onEditProfile }: ProfileActionsSectionPr
             size={20}
             color={
               isBackgroundControlDisabled
-                ? colors.textMuted
+                ? palette.textMuted
                 : isBackgroundDisplayedOn
                   ? palette.primary
                   : colors.white
@@ -193,7 +193,7 @@ function makeStyles(palette: ThemePalette) {
     sectionTitle: {
       fontSize: typography.xs,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 2,
       marginBottom: spacing.md,
@@ -234,7 +234,7 @@ function makeStyles(palette: ThemePalette) {
       gap: 2,
     },
     actionSubtext: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
     },
     dangerButton: {
@@ -277,7 +277,7 @@ function makeStyles(palette: ThemePalette) {
       backgroundColor: "rgba(148, 163, 184, 0.12)",
     },
     disabledText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     settingsAction: {
       flexDirection: "row",

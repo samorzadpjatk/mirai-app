@@ -53,7 +53,7 @@ function makeStyles(palette: ThemePalette) {
     },
     message: {
       fontSize: typography.base,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textAlign: "center",
       lineHeight: 22,
     },

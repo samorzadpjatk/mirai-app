@@ -155,7 +155,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: "700",
     },
     cardMeta: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       marginTop: 2,
     },
@@ -192,7 +192,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: "700",
     },
     cardDescription: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     cardImagePreview: {

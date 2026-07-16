@@ -32,7 +32,7 @@ const getStatusBadge = (status: string, palette: ThemePalette = colors) => {
     case "pending":
       return { color: palette.primary, text: "Pending" };
     default:
-      return { color: colors.textSecondary, text: status };
+      return { color: palette.textSecondary, text: status };
   }
 };
 
@@ -143,7 +143,7 @@ function makeStyles(palette: ThemePalette) {
     },
     creator: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     statusBadge: {
       paddingHorizontal: spacing.sm,
@@ -159,7 +159,7 @@ function makeStyles(palette: ThemePalette) {
     },
     body: {
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.md,
       lineHeight: 20,
     },
@@ -180,7 +180,7 @@ function makeStyles(palette: ThemePalette) {
     },
     summaryLabel: {
       fontSize: typography.xs,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: 2,
     },
     summaryValue: {

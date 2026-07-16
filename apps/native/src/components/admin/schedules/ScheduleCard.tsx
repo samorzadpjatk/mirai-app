@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;
@@ -22,6 +22,7 @@ export function ScheduleCard({
   isToggling = false,
 }: ScheduleCardProps) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   return (
     <View style={styles.card}>
@@ -29,13 +30,13 @@ export function ScheduleCard({
         <View style={styles.titleSection}>
           <Text style={styles.title}>{schedule.name}</Text>
           <Text style={styles.triggerTime}>
-            <Ionicons name="time" size={14} color={colors.textSecondary} /> {schedule.triggerTime}
+            <Ionicons name="time" size={14} color={palette.textSecondary} /> {schedule.triggerTime}
           </Text>
         </View>
         <View
           style={[
             styles.statusBadge,
-            { backgroundColor: schedule.isActive ? colors.success : colors.textSecondary },
+            { backgroundColor: schedule.isActive ? colors.success : palette.textSecondary },
           ]}
         >
           <Text style={styles.statusText}>{schedule.isActive ? "Active" : "Inactive"}</Text>
@@ -128,7 +129,7 @@ function makeStyles(palette: ThemePalette) {
     },
     triggerTime: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       flexDirection: "row" as const,
       alignItems: "center" as const,
     },
@@ -144,7 +145,7 @@ function makeStyles(palette: ThemePalette) {
     },
     message: {
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.md,
       lineHeight: 20,
     },
@@ -153,7 +154,7 @@ function makeStyles(palette: ThemePalette) {
     },
     metaText: {
       fontSize: typography.xs,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: 2,
     },
     actions: {

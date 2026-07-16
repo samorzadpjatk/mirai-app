@@ -6,7 +6,7 @@ import { CachedImage } from "~/components/common/CachedImage";
 import { PlankPanel } from "~/components/common/PlankPanel";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing, typography } from "../../styles";
 
 type ActivityType = Activity["activityType"];
@@ -233,6 +233,7 @@ export const CommunityActivityCard = React.memo(
     avatarUri,
   }: CommunityActivityCardProps) {
     const styles = useThemedStyles(makeStyles);
+    const { palette } = useTripTheme();
     const lastMediaTapAtRef = useRef(0);
     const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -416,7 +417,7 @@ export const CommunityActivityCard = React.memo(
               <Ionicons
                 name={isHeartActive ? "heart" : "heart-outline"}
                 size={16}
-                color={isHeartActive ? "#ff5a6c" : colors.textSecondary}
+                color={isHeartActive ? "#ff5a6c" : palette.textSecondary}
               />
               <Text style={styles.reactionCount}>{activity.reactionsSummary?.total ?? 0}</Text>
             </TouchableOpacity>
@@ -499,12 +500,12 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.semibold,
     },
     ownerSubtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       marginTop: 1,
     },
     cardTime: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.6,
@@ -541,7 +542,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.semibold,
     },
     cardDescription: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.base,
       lineHeight: 20,
     },
@@ -571,7 +572,7 @@ function makeStyles(palette: ThemePalette) {
     },
     reactionCount: {
       fontSize: typography.xs,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: typography.medium,
     },
   });

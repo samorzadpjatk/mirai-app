@@ -142,7 +142,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -175,7 +175,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -208,7 +208,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -237,7 +237,7 @@ export default function AdminCoinsScreen() {
           borderColor: palette.borderDark,
         }}
       >
-        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <Ionicons name="search" size={20} color={palette.textSecondary} />
         <TextInput
           style={{
             flex: 1,
@@ -248,7 +248,7 @@ export default function AdminCoinsScreen() {
           placeholder="Search groups..."
           value={searchTerm}
           onChangeText={setSearchTerm}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={palette.textSecondary}
         />
       </View>
     </View>
@@ -303,12 +303,12 @@ export default function AdminCoinsScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: spacing.xxl }}>
-              <Ionicons name="cash" size={48} color={colors.textSecondary} />
+              <Ionicons name="cash" size={48} color={palette.textSecondary} />
               <Text
                 style={{
                   marginTop: spacing.md,
                   fontSize: typography.base,
-                  color: colors.textSecondary,
+                  color: palette.textSecondary,
                   textAlign: "center",
                 }}
               >

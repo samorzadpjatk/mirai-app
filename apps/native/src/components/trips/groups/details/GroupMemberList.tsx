@@ -111,7 +111,7 @@ const makeStyles = (palette: ThemePalette) =>
     memberHeaderTitle: {
       fontSize: typography.sm,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
     },
@@ -140,7 +140,7 @@ const makeStyles = (palette: ThemePalette) =>
       height: 40,
       borderRadius: borderRadius.full,
       overflow: "hidden",
-      backgroundColor: colors.textMuted,
+      backgroundColor: palette.textMuted,
       borderWidth: 2,
       borderColor: "transparent",
       alignItems: "center",
@@ -171,7 +171,7 @@ const makeStyles = (palette: ThemePalette) =>
     memberRole: {
       fontSize: 10,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: -0.2,
     },

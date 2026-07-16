@@ -157,7 +157,7 @@ function makeStyles(palette: ThemePalette) {
       paddingHorizontal: spacing.sm,
     },
     closeText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: 16,
     },
     cameraContainer: {
@@ -173,7 +173,7 @@ function makeStyles(palette: ThemePalette) {
       paddingHorizontal: spacing.xl,
     },
     permissionText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: 16,
       textAlign: "center",
       marginBottom: spacing.lg,
@@ -194,7 +194,7 @@ function makeStyles(palette: ThemePalette) {
       paddingVertical: spacing.md,
     },
     footerText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: 14,
       textAlign: "center",
     },

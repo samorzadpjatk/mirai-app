@@ -63,7 +63,7 @@ export function TripPickerModal({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select trip</Text>
             <TouchableOpacity onPress={onClose} testID="close-button">
-              <Ionicons name="close" size={18} color={colors.textSecondary} />
+              <Ionicons name="close" size={18} color={palette.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -158,7 +158,7 @@ function makeStyles(palette: ThemePalette) {
       paddingRight: spacing.sm,
     },
     modalEmpty: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       textAlign: "center",
       paddingVertical: spacing.lg,
     },
@@ -170,7 +170,7 @@ function makeStyles(palette: ThemePalette) {
       paddingVertical: spacing.sm,
     },
     modalFooterLoaderText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
   });

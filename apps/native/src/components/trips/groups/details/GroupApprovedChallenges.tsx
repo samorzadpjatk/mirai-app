@@ -201,7 +201,7 @@ const makeStyles = (palette: ThemePalette) =>
     sectionTitle: {
       fontSize: typography.sm,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.1,
     },
@@ -252,7 +252,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.sm,
     },
     fullscreenCounter: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       fontWeight: typography.bold,
     },

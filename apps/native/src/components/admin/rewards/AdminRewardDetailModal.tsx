@@ -251,7 +251,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       <View style={{ padding: spacing.lg }}>
         {reward && (
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={{ color: colors.textSecondary, fontSize: typography.sm }}>
+            <Text style={{ color: palette.textSecondary, fontSize: typography.sm }}>
               Created: {new Date(reward.createdAt).toLocaleDateString()} |{" "}
               {reward.createdBy?.firstName} {reward.createdBy?.lastName}
             </Text>
@@ -342,8 +342,8 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                     <ActivityIndicator color={palette.primary} />
                   ) : (
                     <View style={{ alignItems: "center" }}>
-                      <Ionicons name="image" size={24} color={colors.textSecondary} />
-                      <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>
+                      <Ionicons name="image" size={24} color={palette.textSecondary} />
+                      <Text style={{ color: palette.textSecondary, marginTop: spacing.sm }}>
                         Add image
                       </Text>
                     </View>
@@ -388,7 +388,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                     style={{
                       fontSize: typography.xs,
                       marginTop: spacing.xs,
-                      color: colors.textSecondary,
+                      color: palette.textSecondary,
                     }}
                   >
                     Percentage of total available points
@@ -406,7 +406,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 >
                   Purchases
                 </Text>
-                <Text style={{ color: colors.textSecondary }}>{purchasedCount} purchased</Text>
+                <Text style={{ color: palette.textSecondary }}>{purchasedCount} purchased</Text>
                 {reward.purchases.length > 0 ? (
                   <View style={{ gap: spacing.sm }}>
                     {reward.purchases.map((purchase) => {
@@ -465,15 +465,15 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                             </View>
                           </View>
 
-                          <Text style={{ color: colors.textSecondary }}>
+                          <Text style={{ color: palette.textSecondary }}>
                             Group: {purchase.group?.name ?? "Unknown"}
                           </Text>
                           {purchaserName ? (
-                            <Text style={{ color: colors.textSecondary }}>
+                            <Text style={{ color: palette.textSecondary }}>
                               Claimed by: {purchaserName}
                             </Text>
                           ) : null}
-                          <Text style={{ color: colors.textSecondary }}>
+                          <Text style={{ color: palette.textSecondary }}>
                             {new Date(purchase.purchasedAt).toLocaleString()}
                           </Text>
 

@@ -103,7 +103,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
 
         {!newsQuery.isLoading && customNews.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="megaphone-outline" size={18} color={colors.textSecondary} />
+            <Ionicons name="megaphone-outline" size={18} color={palette.textSecondary} />
             <Text style={styles.emptyText}>No news yet.</Text>
           </View>
         ) : null}
@@ -200,7 +200,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderRadius: borderRadius.md,
     },
     loadingText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     emptyState: {
@@ -214,7 +214,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderRadius: borderRadius.md,
     },
     emptyText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     newsItem: {
@@ -257,13 +257,13 @@ const makeStyles = (palette: ThemePalette) =>
     },
     newsDescription: {
       fontSize: typography.xs,
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       lineHeight: typography.xs * typography.relaxed,
     },
     newsAuthor: {
       marginTop: spacing.sm,
       fontSize: typography.xs,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     newsImage: {
       width: "100%",

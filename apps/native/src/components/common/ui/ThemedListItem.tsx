@@ -118,7 +118,7 @@ function makeStyles(palette: ThemePalette) {
     },
     subtitle: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginTop: 2,
     },
   });

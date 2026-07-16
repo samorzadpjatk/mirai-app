@@ -46,7 +46,7 @@ export default function RewardPurchaseModal({
         >
           <Text style={[commonStyles.h3]}>Claim reward</Text>
           <TouchableOpacity testID="close-purchase-modal" onPress={onClose}>
-            <Ionicons name="close" size={24} color={colors.textSecondary} />
+            <Ionicons name="close" size={24} color={palette.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -58,7 +58,7 @@ export default function RewardPurchaseModal({
                 <Text
                   style={[
                     commonStyles.textSecondary,
-                    { color: colors.textSecondary, marginBottom: 16 },
+                    { color: palette.textSecondary, marginBottom: 16 },
                   ]}
                 >
                   {reward.description}
@@ -86,7 +86,7 @@ export default function RewardPurchaseModal({
                         <Text
                           style={[
                             commonStyles.textSecondary,
-                            { color: colors.textSecondary, fontSize: 11, lineHeight: 13 },
+                            { color: palette.textSecondary, fontSize: 11, lineHeight: 13 },
                           ]}
                         >
                           {reward.originalCoinCost}% of total points

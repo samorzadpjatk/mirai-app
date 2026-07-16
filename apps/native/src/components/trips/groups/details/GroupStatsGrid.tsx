@@ -58,7 +58,7 @@ const makeStyles = (palette: ThemePalette) =>
     statLabel: {
       fontSize: 10,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
       marginBottom: spacing.xs,

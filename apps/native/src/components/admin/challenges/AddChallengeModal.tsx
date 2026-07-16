@@ -112,7 +112,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                       style={{ paddingVertical: 8 }}
                     >
                       <Text style={{ color: colors.white }}>
-                        {t.name} <Text style={{ color: colors.textSecondary }}>({t.id})</Text>
+                        {t.name} <Text style={{ color: palette.textSecondary }}>({t.id})</Text>
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -176,11 +176,11 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                 <Ionicons
                   name="location"
                   size={20}
-                  color={newChallenge.location ? palette.primary : colors.textSecondary}
+                  color={newChallenge.location ? palette.primary : palette.textSecondary}
                 />
                 <Text
                   style={{
-                    color: newChallenge.location ? palette.primary : colors.textSecondary,
+                    color: newChallenge.location ? palette.primary : palette.textSecondary,
                     flex: 1,
                   }}
                 >
@@ -189,7 +189,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                     : "Tap to select location"}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+              <Ionicons name="chevron-forward" size={16} color={palette.textSecondary} />
             </TouchableOpacity>
             {newChallenge.location && (
               <TouchableOpacity

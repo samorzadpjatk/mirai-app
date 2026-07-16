@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 import type { Submission } from "~/stores/judgement";
-import { colors } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
-import { useThemedStyles } from "~/theme/TripThemeProvider";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { getInitials } from "~/utils/validation";
 
 const QueuedSubmissionCard = ({
@@ -15,6 +14,7 @@ const QueuedSubmissionCard = ({
 }) => {
   const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const textStyles = useThemedStyles(makeJudgementTextStyles);
+  const { palette } = useTripTheme();
 
   return (
     <View
@@ -31,7 +31,7 @@ const QueuedSubmissionCard = ({
         </View>
       </View>
       <View style={viewStyles.cardPlaceholder}>
-        <Ionicons name="time" size={32} color={colors.textSecondary} />
+        <Ionicons name="time" size={32} color={palette.textSecondary} />
         <Text style={textStyles.cardPlaceholderText}>Queued submission</Text>
       </View>
     </View>

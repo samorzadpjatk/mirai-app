@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ChallengeActionButtonProps {
   isLoading: boolean;
@@ -19,10 +19,11 @@ export function ChallengeActionButton({
   disabled = false,
 }: ChallengeActionButtonProps) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const buttonLabel = label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
   const isDisabled = isLoading || disabled;
-  const iconColor = isDisabled ? colors.textMuted : colors.backgroundDark;
-  const textColor = isDisabled ? colors.textMuted : colors.backgroundDark;
+  const iconColor = isDisabled ? palette.textMuted : colors.backgroundDark;
+  const textColor = isDisabled ? palette.textMuted : colors.backgroundDark;
   return (
     <TouchableOpacity
       onPress={onPress}

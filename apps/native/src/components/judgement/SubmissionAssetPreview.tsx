@@ -7,11 +7,12 @@ import { useFileDownload } from "~/hooks/files";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
-import { useThemedStyles } from "~/theme/TripThemeProvider";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const textStyles = useThemedStyles(makeJudgementTextStyles);
+  const { palette } = useTripTheme();
   const { width, height } = useWindowDimensions();
   const hasImage = submission.imageIds.length > 0;
   const hasVideo = Boolean(submission.videoId);
@@ -98,7 +99,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
               contentFit="cover"
               fallback={
                 <View style={viewStyles.mediaLoading}>
-                  <Ionicons name="image" size={36} color={colors.textSecondary} />
+                  <Ionicons name="image" size={36} color={palette.textSecondary} />
                   <Text style={textStyles.videoLabel}>Image unavailable</Text>
                 </View>
               }
@@ -129,7 +130,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
               contentFit="contain"
               fallback={
                 <View style={viewStyles.mediaLoading}>
-                  <Ionicons name="image" size={36} color={colors.textSecondary} />
+                  <Ionicons name="image" size={36} color={palette.textSecondary} />
                   <Text style={textStyles.videoLabel}>Image unavailable</Text>
                 </View>
               }

@@ -61,7 +61,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     progressText: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.sm,
     },
     progressTrack: {

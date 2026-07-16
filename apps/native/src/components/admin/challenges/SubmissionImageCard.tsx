@@ -78,7 +78,7 @@ function makeStyles(palette: ThemePalette) {
       justifyContent: "center",
     },
     voteImageFallbackText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xl,
       fontWeight: typography.bold,
     },
@@ -99,7 +99,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     voteCardSubtitle: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
     },
   });

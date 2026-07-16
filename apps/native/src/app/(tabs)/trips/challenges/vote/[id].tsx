@@ -612,7 +612,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     subtitle: {
       marginTop: -spacing.sm,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1,
       fontSize: typography.xs,
@@ -631,7 +631,7 @@ const makeStyles = (palette: ThemePalette) =>
       backgroundColor: palette.primary,
     },
     progressLabel: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.8,
@@ -662,7 +662,7 @@ const makeStyles = (palette: ThemePalette) =>
       justifyContent: "center",
     },
     voteImageFallbackText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xl,
       fontWeight: typography.bold,
     },
@@ -683,11 +683,11 @@ const makeStyles = (palette: ThemePalette) =>
       fontWeight: typography.bold,
     },
     voteCardSubtitle: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
     },
     hintText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.8,

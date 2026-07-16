@@ -57,14 +57,14 @@ export const FilterChip: React.FC<FilterChipProps> = ({
           <Ionicons
             name={icon}
             size={14}
-            color={selected ? palette.primary : colors.textSecondary}
+            color={selected ? palette.primary : palette.textSecondary}
           />
         ) : null}
         {secondaryIcon ? (
           <Ionicons
             name={secondaryIcon}
             size={14}
-            color={selected ? palette.primary : colors.textSecondary}
+            color={selected ? palette.primary : palette.textSecondary}
           />
         ) : null}
         <Text
@@ -125,7 +125,7 @@ function makeStyles(palette: ThemePalette) {
       flexShrink: 1,
     },
     label: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       fontWeight: typography.semibold,
       textTransform: "none",
@@ -135,7 +135,7 @@ function makeStyles(palette: ThemePalette) {
       color: palette.primary,
     },
     labelDisabled: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
     },
     countPill: {
       minWidth: 24,
@@ -161,7 +161,7 @@ function makeStyles(palette: ThemePalette) {
       color: palette.primary,
     },
     countTextDisabled: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
     },
   });
 }

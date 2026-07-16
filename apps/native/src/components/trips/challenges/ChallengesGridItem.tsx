@@ -71,7 +71,7 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
 
             <View style={styles.headerRight}>
               {isLocked ? (
-                <Ionicons name="lock-closed" size={16} color={colors.textMuted} />
+                <Ionicons name="lock-closed" size={16} color={palette.textMuted} />
               ) : (
                 <Text style={styles.pointsBadge}>+{challenge.points} MAX</Text>
               )}
@@ -87,7 +87,7 @@ export function ChallengesGridItem({ challenge, onPress }: ChallengesGridItemPro
               <Ionicons
                 name={challenge.icon as keyof typeof Ionicons.glyphMap}
                 size={24}
-                color={isLocked ? colors.textMuted : challenge.iconColor}
+                color={isLocked ? palette.textMuted : challenge.iconColor}
               />
             </View>
           )}

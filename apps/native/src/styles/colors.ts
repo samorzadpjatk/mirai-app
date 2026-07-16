@@ -6,6 +6,8 @@ export const colors = {
   // Background colors
   backgroundLight: "#f1f1f4",
   backgroundDark: "#17181c",
+  // Navigation header background, themable.
+  headerBackground: "#17181c",
   cardDark: "#1b2828",
   surfaceDark: "#272935",
 

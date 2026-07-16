@@ -89,7 +89,7 @@ export function ChallengeListItem({
           </Text>
           <Text
             style={{
-              color: colors.textSecondary,
+              color: palette.textSecondary,
               fontSize: 12,
               textTransform: "uppercase",
             }}
@@ -100,7 +100,7 @@ export function ChallengeListItem({
             <Text
               numberOfLines={1}
               style={{
-                color: colors.textSecondary,
+                color: palette.textSecondary,
                 fontSize: 12,
                 flex: 1,
                 minWidth: 0,
@@ -117,10 +117,10 @@ export function ChallengeListItem({
           <Ionicons name="checkmark-circle" size={20} color={palette.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={{ padding: 8 }} onPress={handleEdit}>
-          <Ionicons name="create" size={20} color={colors.textSecondary} />
+          <Ionicons name="create" size={20} color={palette.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity style={{ padding: 8 }} onPress={handleDelete}>
-          <Ionicons name="trash" size={20} color={colors.textSecondary} />
+          <Ionicons name="trash" size={20} color={palette.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>

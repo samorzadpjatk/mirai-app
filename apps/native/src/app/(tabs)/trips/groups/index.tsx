@@ -19,12 +19,13 @@ import { GroupsNoTripState } from "~/components/trips/groups/GroupsNoTripState";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { useGroups } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
-import { useTripTheme } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing } from "../../../../styles";
 
 export default function GroupsListScreen() {
   const router = useRouter();
   const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
@@ -140,32 +141,34 @@ export default function GroupsListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: 96,
-  },
-  listFooter: {
-    marginTop: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  listFooterText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 96,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: 96,
+    },
+    listFooter: {
+      marginTop: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    listFooterText: {
+      color: palette.textSecondary,
+      fontSize: 12,
+    },
+    fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 96,
+    },
+  });
+}

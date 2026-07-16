@@ -104,7 +104,7 @@ function makeStyles(palette: ThemePalette) {
     },
     transactionDate: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     amountBadge: {
       flexDirection: "row",
@@ -133,7 +133,7 @@ function makeStyles(palette: ThemePalette) {
     },
     transactionAdmin: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
   });
 }

@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ExistingSubmission {
   id: string;
@@ -45,6 +45,7 @@ export function ExistingSubmissionCard({
   onWithdraw,
 }: ExistingSubmissionCardProps) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const hasImage = submission.imageIds.length > 0;
   const canWithdraw = submission.status !== "APPROVED";
 
@@ -92,7 +93,7 @@ export function ExistingSubmissionCard({
               accessibilityLabel="Submission preview"
               fallback={
                 <View style={styles.imageLoading}>
-                  <Ionicons name="image-outline" size={24} color={colors.textSecondary} />
+                  <Ionicons name="image-outline" size={24} color={palette.textSecondary} />
                   <Text style={styles.imageFallback}>Image unavailable</Text>
                 </View>
               }
@@ -103,7 +104,7 @@ export function ExistingSubmissionCard({
 
       {!hasImage && (
         <View style={styles.noImageRow}>
-          <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
+          <Ionicons name="information-circle-outline" size={18} color={palette.textSecondary} />
           <Text style={styles.noImageText}>Submission has no image asset.</Text>
         </View>
       )}
@@ -166,7 +167,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     meta: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     imageWrapper: {
       width: "100%",
@@ -186,7 +187,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.xs,
     },
     imageFallback: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     noImageRow: {
@@ -195,7 +196,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.xs,
     },
     noImageText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     rejectionText: {
@@ -225,7 +226,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     lockedText: {
       marginTop: spacing.sm,
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
     },
   });

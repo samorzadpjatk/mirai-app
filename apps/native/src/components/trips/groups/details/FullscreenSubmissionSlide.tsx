@@ -100,7 +100,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     fullscreenDate: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
     },
   });

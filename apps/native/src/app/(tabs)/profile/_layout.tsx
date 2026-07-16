@@ -8,7 +8,7 @@ function ProfileStack() {
     <Stack
       screenOptions={{
         headerShown: false, // Hide by default; override per screen
-        headerStyle: { backgroundColor: palette.backgroundDark },
+        headerStyle: { backgroundColor: palette.headerBackground },
         headerTintColor: palette.primary,
         headerTitleStyle: {
           fontFamily: "IBMPlexSans_600SemiBold",

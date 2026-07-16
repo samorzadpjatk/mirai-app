@@ -215,7 +215,7 @@ export function ChallengeTimeLeftCard({
           {scheduleRows.map((row) => (
             <View key={row.label} style={styles.scheduleRow}>
               <View style={styles.scheduleRowLeft}>
-                <Ionicons name={row.icon} size={14} color={colors.textMuted} />
+                <Ionicons name={row.icon} size={14} color={palette.textMuted} />
                 <Text style={styles.scheduleLabel}>{row.label}</Text>
               </View>
               <Text style={styles.scheduleValue}>{row.value}</Text>
@@ -270,7 +270,7 @@ const makeStyles = (palette: ThemePalette) =>
     title: {
       fontSize: typography.xs,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 2,
     },
@@ -310,7 +310,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     countdownSubtext: {
       fontSize: typography.xs,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     progressTrack: {
       height: 10,
@@ -367,7 +367,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.xs,
     },
     scheduleLabel: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.8,

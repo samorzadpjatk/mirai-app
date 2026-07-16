@@ -262,7 +262,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     headerSubtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       marginTop: spacing.xs,
     },
@@ -277,7 +277,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     groupHint: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       marginTop: spacing.xs,
     },
@@ -287,7 +287,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     videoLabel: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       marginTop: spacing.sm,
     },
@@ -297,11 +297,11 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       lineHeight: 22,
     },
     locationText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     cardPlaceholderText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     stampTextApprove: {
@@ -315,7 +315,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       letterSpacing: 1,
     },
     actionHintText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 1.5,
@@ -326,7 +326,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     emptyText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       textAlign: "center",
     },
@@ -336,7 +336,7 @@ function makeJudgementTextStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     rejectReasonSubtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     rejectReasonCancelText: {

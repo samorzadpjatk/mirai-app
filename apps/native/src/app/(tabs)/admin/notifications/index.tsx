@@ -376,13 +376,13 @@ export default function AdminNotificationsScreen() {
 
           <View style={styles.searchSection}>
             <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color={colors.textSecondary} />
+              <Ionicons name="search" size={20} color={palette.textSecondary} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search planned by title..."
                 value={plannedSearchTerm}
                 onChangeText={setPlannedSearchTerm}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={palette.textSecondary}
               />
             </View>
           </View>
@@ -530,7 +530,7 @@ function makeStyles(palette: ThemePalette) {
       borderColor: palette.primary,
     },
     tabText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       fontWeight: typography.medium,
     },
@@ -555,7 +555,7 @@ function makeStyles(palette: ThemePalette) {
     loadingText: {
       marginTop: spacing.md,
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     notificationsList: {
       paddingHorizontal: spacing.lg,
@@ -606,14 +606,14 @@ function makeStyles(palette: ThemePalette) {
       marginBottom: spacing.md,
     },
     inlineLoadingText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     inlineEmptyContainer: {
       marginBottom: spacing.md,
     },
     inlineEmptyText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
   });

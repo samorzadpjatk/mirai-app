@@ -74,7 +74,7 @@ function makeStyles(palette: ThemePalette) {
     label: {
       fontSize: 10,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
       marginBottom: spacing.sm,
@@ -99,7 +99,7 @@ function makeStyles(palette: ThemePalette) {
       backgroundColor: "rgba(39, 41, 53, 0.65)",
     },
     placeholderText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.sm,
       fontWeight: typography.medium,
       textTransform: "uppercase",

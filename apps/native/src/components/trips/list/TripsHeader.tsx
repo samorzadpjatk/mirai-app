@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface TripsHeaderProps {
   title: string;
@@ -7,6 +8,7 @@ interface TripsHeaderProps {
 }
 
 export function TripsHeader({ title, subtitle }: TripsHeaderProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
@@ -15,18 +17,20 @@ export function TripsHeader({ title, subtitle }: TripsHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: typography.xxxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    header: {
+      marginBottom: spacing.md,
+    },
+    title: {
+      fontSize: typography.xxxl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.sm,
+    },
+    subtitle: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+  });
+}

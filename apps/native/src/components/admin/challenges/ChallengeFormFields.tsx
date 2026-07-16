@@ -294,7 +294,7 @@ export function ChallengeFormFields({
               false: palette.borderDark,
               true: palette.primaryOpacity80,
             }}
-            thumbColor={form.isRecurring ? palette.primary : colors.textSecondary}
+            thumbColor={form.isRecurring ? palette.primary : palette.textSecondary}
           />
         </View>
 
@@ -417,7 +417,7 @@ export function ChallengeFormFields({
               isAutoApproveDisabled,
               form.autoApprove,
               palette.primary,
-              colors.textSecondary,
+              palette.textSecondary,
             )}
           />
         </View>
@@ -501,11 +501,11 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.medium,
     },
     selectButtonChevron: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.base,
     },
     hint: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       fontSize: typography.xs,
     },
     coverPreview: {
@@ -525,7 +525,7 @@ function makeStyles(palette: ThemePalette) {
       backgroundColor: palette.surfaceDark,
     },
     coverPlaceholderText: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       fontSize: typography.sm,
     },
     rowButtons: {
@@ -559,7 +559,7 @@ function makeStyles(palette: ThemePalette) {
       alignItems: "center",
     },
     clearButtonText: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       fontSize: typography.sm,
       fontWeight: typography.medium,
     },

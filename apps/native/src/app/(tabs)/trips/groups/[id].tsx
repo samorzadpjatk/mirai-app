@@ -335,7 +335,7 @@ export default function GroupDetailsScreen() {
 
         {!isLoadingCurrentUserGroup && !isGroupMember && hasGroupInCurrentTrip ? (
           <View style={styles.groupLockedBadge}>
-            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="lock-closed-outline" size={16} color={palette.textMuted} />
             <Text style={styles.groupLockedText}>
               Leave your current group first to join this one
             </Text>
@@ -520,7 +520,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.sm,
     },
     groupLockedText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.sm,
       fontWeight: typography.medium,
     },
@@ -556,13 +556,13 @@ const makeStyles = (palette: ThemePalette) =>
     joinRequestsTitle: {
       fontSize: typography.sm,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.1,
     },
     joinRequestsEmpty: {
       fontSize: typography.sm,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     joinRequestRow: {
       gap: spacing.md,
@@ -594,7 +594,7 @@ const makeStyles = (palette: ThemePalette) =>
       textTransform: "uppercase",
     },
     joinRequestDate: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: 11,
       fontWeight: typography.medium,
     },
@@ -608,7 +608,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     joinRequestEmail: {
       fontSize: 12,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     joinRequestActions: {
       flexDirection: "row",

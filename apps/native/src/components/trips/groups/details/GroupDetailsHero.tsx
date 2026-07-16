@@ -67,7 +67,7 @@ function makeStyles(palette: ThemePalette) {
     placeholderText: {
       fontSize: typography.sm,
       fontWeight: typography.medium,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1,
     },

@@ -89,7 +89,7 @@ export default function RewardCard({
           <Text
             numberOfLines={3}
             ellipsizeMode="tail"
-            style={[commonStyles.textSecondary, { color: colors.textSecondary, marginBottom: 6 }]}
+            style={[commonStyles.textSecondary, { color: palette.textSecondary, marginBottom: 6 }]}
           >
             {reward.description}
           </Text>
@@ -124,7 +124,7 @@ export default function RewardCard({
                   <Text
                     style={[
                       commonStyles.textSecondary,
-                      { color: colors.textSecondary, fontSize: 10, lineHeight: 12 },
+                      { color: palette.textSecondary, fontSize: 10, lineHeight: 12 },
                     ]}
                   >
                     {reward.originalCoinCost}% of total points

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
 import { colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface CreateScheduleModalProps {
@@ -177,6 +178,7 @@ export function DeleteScheduleModal({
   onDeleteSchedule,
   isDeleting,
 }: DeleteScheduleModalProps) {
+  const styles = useThemedStyles(makeStyles);
   const handleDelete = () => {
     if (!schedule) return;
     onDeleteSchedule(schedule.id);
@@ -213,18 +215,20 @@ export function DeleteScheduleModal({
   );
 }
 
-const styles = StyleSheet.create({
-  deleteContent: {
-    paddingBottom: spacing.md,
-  },
-  deleteWarning: {
-    fontSize: typography.base,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  deleteSubWarning: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    deleteContent: {
+      paddingBottom: spacing.md,
+    },
+    deleteWarning: {
+      fontSize: typography.base,
+      color: colors.white,
+      marginBottom: spacing.sm,
+    },
+    deleteSubWarning: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.md,
+    },
+  });
+}

@@ -39,7 +39,7 @@ function makeStyles(palette: ThemePalette) {
     sectionTitle: {
       fontSize: typography.xs,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 2,
       marginBottom: spacing.md,
@@ -70,7 +70,7 @@ function makeStyles(palette: ThemePalette) {
     },
     infoLabel: {
       fontSize: typography.xs,
-      color: colors.textMuted,
+      color: palette.textMuted,
       marginBottom: 2,
     },
     infoValue: {

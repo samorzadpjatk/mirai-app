@@ -127,7 +127,7 @@ export function SubmissionReviewCard({
 
       {!hasImage && submission.videoId ? (
         <View style={styles.assetFallbackBox}>
-          <Ionicons name="videocam-outline" size={24} color={colors.textMuted} />
+          <Ionicons name="videocam-outline" size={24} color={palette.textMuted} />
           <Text style={styles.mediaFallbackText}>Video submission</Text>
         </View>
       ) : null}
@@ -144,7 +144,7 @@ export function SubmissionReviewCard({
 
       {!hasImage && !submission.videoId && !hasText ? (
         <View style={styles.assetFallbackBox}>
-          <Ionicons name="document-text-outline" size={22} color={colors.textMuted} />
+          <Ionicons name="document-text-outline" size={22} color={palette.textMuted} />
           <Text style={styles.mediaFallbackText}>No content asset</Text>
         </View>
       ) : null}
@@ -204,7 +204,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     metaText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       marginTop: 2,
     },
@@ -239,7 +239,7 @@ function makeStyles(palette: ThemePalette) {
       gap: spacing.xs,
     },
     mediaFallbackText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     assetFallbackBox: {
@@ -275,7 +275,7 @@ function makeStyles(palette: ThemePalette) {
       lineHeight: 20,
     },
     textBoxHint: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     reasonBox: {

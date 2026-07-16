@@ -116,7 +116,7 @@ function makeStyles(palette: ThemePalette) {
     },
     modalClose: {
       fontSize: 24,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: "600",
       paddingHorizontal: spacing.xs,
       paddingVertical: spacing.xs,
@@ -149,7 +149,7 @@ function makeStyles(palette: ThemePalette) {
     },
     pageSheetClose: {
       fontSize: 24,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: "600",
       paddingHorizontal: spacing.xs,
       paddingVertical: spacing.xs,

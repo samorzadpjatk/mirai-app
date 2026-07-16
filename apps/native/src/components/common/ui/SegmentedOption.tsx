@@ -66,7 +66,7 @@ function makeStyles(palette: ThemePalette) {
     },
     optionText: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: typography.medium,
     },
     optionTextSelected: {
@@ -74,7 +74,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.semibold,
     },
     optionTextDisabled: {
-      color: colors.textTertiary,
+      color: palette.textTertiary,
     },
   });
 }

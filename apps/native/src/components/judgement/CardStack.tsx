@@ -9,9 +9,8 @@ import { CurrentSubmissionCard } from "~/components/judgement/CurrentSubmissionC
 import { EmptyStateCard } from "~/components/judgement/EmptyStateCard";
 import { QueuedSubmissionCard } from "~/components/judgement/QueuedSubmissionCard";
 import { useJudgement } from "~/stores/judgement";
-import { colors } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
-import { useThemedStyles } from "~/theme/TripThemeProvider";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { useCardAnimations } from "./hooks/useCardAnimations";
 
 interface CardStackProps {
@@ -26,6 +25,7 @@ export { canSubmitReject, calculateSwipeToValue };
 const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const textStyles = useThemedStyles(makeJudgementTextStyles);
+  const { palette } = useTripTheme();
   const {
     currentSubmission,
     nextSubmission,
@@ -247,7 +247,7 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
             <TextInput
               style={viewStyles.rejectReasonInput}
               placeholder="Why was this rejected?"
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={palette.textTertiary}
               value={rejectionReason}
               onChangeText={setRejectionReason}
               multiline={true}

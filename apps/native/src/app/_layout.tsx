@@ -70,7 +70,7 @@ function RootStack({ hasSession }: { hasSession: boolean }) {
         gestureDirection: "horizontal",
         contentStyle: { backgroundColor: palette.backgroundDark },
         headerStyle: {
-          backgroundColor: palette.backgroundDark,
+          backgroundColor: palette.headerBackground,
         },
         headerTintColor: palette.white,
         headerShadowVisible: true,

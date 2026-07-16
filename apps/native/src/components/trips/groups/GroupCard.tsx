@@ -122,7 +122,7 @@ const makeStyles = (palette: ThemePalette) =>
     groupCode: {
       fontSize: typography.sm,
       fontWeight: typography.medium,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     groupStats: {
       alignItems: "flex-end",
@@ -135,7 +135,7 @@ const makeStyles = (palette: ThemePalette) =>
     groupMemberLabel: {
       fontSize: typography.xs,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
     },

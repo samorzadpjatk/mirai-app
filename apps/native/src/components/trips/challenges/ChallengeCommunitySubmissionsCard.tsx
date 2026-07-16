@@ -250,7 +250,7 @@ export function ChallengeCommunitySubmissionsCard({
         </View>
       ) : (
         <View style={styles.emptyGallery}>
-          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
+          <Ionicons name="images-outline" size={20} color={palette.textMuted} />
           <Text style={styles.emptyGalleryText}>No photos yet. Submit first and set the pace.</Text>
         </View>
       )}
@@ -322,10 +322,11 @@ export function ChallengeCommunitySubmissionsCard({
 
 function PodiumPlaceholder({ rank }: { rank: number }) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <View style={styles.podiumPlaceholder}>
       <View style={styles.podiumPlaceholderImage}>
-        <Ionicons name="trophy-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="trophy-outline" size={14} color={palette.textMuted} />
       </View>
       <Text style={styles.podiumPlaceholderText}>#{rank}</Text>
     </View>
@@ -448,7 +449,7 @@ const makeStyles = (palette: ThemePalette) =>
       fontWeight: typography.bold,
     },
     subtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       marginTop: 2,
     },
@@ -462,7 +463,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     sectionTitle: {
       fontSize: typography.xs,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.1,
       fontWeight: typography.bold,
@@ -512,7 +513,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     podiumTileLabel: {
       textAlign: "center",
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: 11,
       fontWeight: typography.bold,
     },
@@ -538,7 +539,7 @@ const makeStyles = (palette: ThemePalette) =>
       backgroundColor: palette.cardDark,
     },
     podiumPlaceholderText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: 11,
       fontWeight: typography.bold,
     },
@@ -555,7 +556,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.sm,
     },
     emptyGalleryText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       flex: 1,
     },
@@ -601,7 +602,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.sm,
     },
     fullscreenCounter: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       fontWeight: typography.bold,
     },
@@ -655,7 +656,7 @@ const makeStyles = (palette: ThemePalette) =>
       letterSpacing: 0.6,
     },
     fullscreenDate: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
   });

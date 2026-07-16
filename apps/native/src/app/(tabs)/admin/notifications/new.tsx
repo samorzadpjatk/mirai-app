@@ -485,7 +485,7 @@ function makeStyles(palette: ThemePalette) {
       color: colors.white,
     },
     helperText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     textArea: {
@@ -536,7 +536,7 @@ function makeStyles(palette: ThemePalette) {
       gap: spacing.sm,
     },
     loadingInlineText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     legendList: {
@@ -556,7 +556,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.medium,
     },
     legendDesc: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     pickerActionTextPrimary: {

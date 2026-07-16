@@ -123,7 +123,7 @@ const makeStyles = (palette: ThemePalette) =>
       width: 44,
       height: 44,
       borderRadius: borderRadius.full,
-      backgroundColor: colors.textMuted,
+      backgroundColor: palette.textMuted,
       borderWidth: 1,
       borderColor: "rgba(255, 255, 255, 0.1)",
       alignItems: "center",
@@ -145,7 +145,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     memberEmail: {
       fontSize: 12,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     checkbox: {
       width: 20,
@@ -173,6 +173,6 @@ const makeStyles = (palette: ThemePalette) =>
     },
     emptyStateText: {
       fontSize: typography.base,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
   });

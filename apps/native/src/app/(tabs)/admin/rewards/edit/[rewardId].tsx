@@ -352,7 +352,7 @@ export default function AdminEditRewardScreen() {
               <Ionicons
                 name="eye-outline"
                 size={16}
-                color={isHidden ? colors.textSecondary : palette.primary}
+                color={isHidden ? palette.textSecondary : palette.primary}
               />
               <Text
                 style={[
@@ -371,7 +371,7 @@ export default function AdminEditRewardScreen() {
               <Ionicons
                 name="eye-off-outline"
                 size={16}
-                color={isHidden ? palette.primary : colors.textSecondary}
+                color={isHidden ? palette.primary : palette.textSecondary}
               />
               <Text
                 style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}
@@ -437,7 +437,7 @@ function makeStyles(palette: ThemePalette) {
     },
     rewardMeta: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.xs,
     },
     section: {
@@ -455,7 +455,7 @@ function makeStyles(palette: ThemePalette) {
     },
     helperText: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     textArea: {
       minHeight: 80,
@@ -530,7 +530,7 @@ function makeStyles(palette: ThemePalette) {
     visibilityOptionText: {
       fontSize: typography.sm,
       fontWeight: "600",
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     visibilityOptionTextActive: {
       color: palette.primary,

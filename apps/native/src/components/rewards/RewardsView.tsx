@@ -309,7 +309,7 @@ export default function RewardsView({ tripId }: Props) {
               paddingVertical: 6,
             }}
           >
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+            <Ionicons name="time-outline" size={14} color={palette.textSecondary} />
             <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>History</Text>
           </TouchableOpacity>
         </View>

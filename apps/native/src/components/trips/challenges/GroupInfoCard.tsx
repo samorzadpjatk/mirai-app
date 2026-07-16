@@ -101,7 +101,7 @@ const makeStyles = (palette: ThemePalette) =>
     label: {
       fontSize: 9,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.4,
       marginBottom: 2,
@@ -139,7 +139,7 @@ const makeStyles = (palette: ThemePalette) =>
       flex: 1,
       fontSize: 12,
       fontWeight: typography.medium,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     progressRow: {
       marginTop: spacing.xs,
@@ -150,7 +150,7 @@ const makeStyles = (palette: ThemePalette) =>
     progressLabel: {
       fontSize: 11,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1,
     },

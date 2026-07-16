@@ -280,7 +280,7 @@ function makeStyles(palette: ThemePalette) {
       gap: spacing.sm,
     },
     centerSubtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       textAlign: "center",
     },

@@ -65,7 +65,7 @@ export default function RewardDetailsModal({
         >
           <Text style={[commonStyles.h3]}>Reward details</Text>
           <TouchableOpacity testID="close-details-modal" onPress={onClose}>
-            <Ionicons name="close" size={24} color={colors.textSecondary} />
+            <Ionicons name="close" size={24} color={palette.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -157,7 +157,7 @@ export default function RewardDetailsModal({
                   <Text
                     style={[
                       commonStyles.textSecondary,
-                      { color: colors.textSecondary, fontSize: 11 },
+                      { color: palette.textSecondary, fontSize: 11 },
                     ]}
                   >
                     {reward.originalCoinCost}% of total points

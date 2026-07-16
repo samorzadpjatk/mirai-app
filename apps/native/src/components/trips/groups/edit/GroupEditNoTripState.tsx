@@ -28,7 +28,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     errorText: {
       fontSize: typography.lg,
-      color: colors.textMuted,
+      color: palette.textMuted,
       marginBottom: spacing.lg,
     },
     linkText: {

@@ -15,7 +15,7 @@ import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
@@ -58,6 +58,7 @@ export default function AdminSchedulesScreen() {
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   // Use the custom hook for all schedule operations
   const {
@@ -190,7 +191,7 @@ export default function AdminSchedulesScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="time" size={48} color={colors.textSecondary} />
+      <Ionicons name="time" size={48} color={palette.textSecondary} />
       <Text style={styles.emptyText}>No schedules found</Text>
       <TouchableOpacity style={styles.emptyCreateButton} onPress={() => setShowCreateModal(true)}>
         <Text style={styles.emptyCreateButtonText}>Create your first schedule</Text>
@@ -287,7 +288,7 @@ function makeStyles(palette: ThemePalette) {
     loadingText: {
       marginTop: spacing.md,
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     schedulesList: {
       paddingHorizontal: spacing.lg,
@@ -300,7 +301,7 @@ function makeStyles(palette: ThemePalette) {
     emptyText: {
       marginTop: spacing.md,
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       textAlign: "center" as const,
       marginBottom: spacing.lg,
     },

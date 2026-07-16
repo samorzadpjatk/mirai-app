@@ -271,7 +271,7 @@ export default function AdminRewardsPage() {
               style={[
                 commonStyles.label,
                 {
-                  color: viewMode === "PURCHASES" ? palette.primary : colors.textSecondary,
+                  color: viewMode === "PURCHASES" ? palette.primary : palette.textSecondary,
                   letterSpacing: 1,
                 },
               ]}
@@ -296,7 +296,7 @@ export default function AdminRewardsPage() {
               style={[
                 commonStyles.label,
                 {
-                  color: viewMode === "REWARDS" ? palette.primary : colors.textSecondary,
+                  color: viewMode === "REWARDS" ? palette.primary : palette.textSecondary,
                   letterSpacing: 1,
                 },
               ]}
@@ -374,7 +374,7 @@ export default function AdminRewardsPage() {
                           style={[
                             commonStyles.label,
                             {
-                              color: active ? palette.primary : colors.textSecondary,
+                              color: active ? palette.primary : palette.textSecondary,
                               letterSpacing: 0.8,
                             },
                           ]}
@@ -490,7 +490,7 @@ export default function AdminRewardsPage() {
                             borderRadius: 10,
                             paddingHorizontal: 10,
                             paddingVertical: 8,
-                            color: canEditCollectionMethod ? colors.white : colors.textSecondary,
+                            color: canEditCollectionMethod ? colors.white : palette.textSecondary,
                           }}
                           placeholder="Collection method (how to pick up)"
                           placeholderTextColor={colors.gray500}
@@ -850,7 +850,7 @@ export default function AdminRewardsPage() {
                         <Text
                           style={[
                             commonStyles.textSecondary,
-                            { color: colors.textSecondary, marginBottom: 8 },
+                            { color: palette.textSecondary, marginBottom: 8 },
                           ]}
                           numberOfLines={2}
                         >
@@ -879,7 +879,7 @@ export default function AdminRewardsPage() {
                                 <Text
                                   style={[
                                     commonStyles.textSecondary,
-                                    { color: colors.textSecondary, fontSize: 10, lineHeight: 12 },
+                                    { color: palette.textSecondary, fontSize: 10, lineHeight: 12 },
                                   ]}
                                 >
                                   {reward.originalCoinCost}% of total points

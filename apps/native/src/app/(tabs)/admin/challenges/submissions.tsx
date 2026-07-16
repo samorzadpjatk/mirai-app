@@ -276,7 +276,7 @@ export default function ChallengeSubmissionsScreen() {
           value={rejectionReason}
           onChangeText={setRejectionReason}
           placeholder="Reason for rejection"
-          placeholderTextColor={colors.textTertiary}
+          placeholderTextColor={palette.textTertiary}
           multiline={true}
           numberOfLines={4}
           editable={!reviewMutation.isPending}
@@ -312,7 +312,7 @@ function makeStyles(palette: ThemePalette) {
       paddingBottom: spacing.md,
     },
     subtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     content: {
@@ -339,7 +339,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     metaText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
       marginTop: 2,
     },
@@ -374,7 +374,7 @@ function makeStyles(palette: ThemePalette) {
       gap: spacing.xs,
     },
     mediaFallbackText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     assetFallbackBox: {
@@ -410,7 +410,7 @@ function makeStyles(palette: ThemePalette) {
       lineHeight: 20,
     },
     textBoxHint: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.xs,
     },
     reasonBox: {
@@ -465,7 +465,7 @@ function makeStyles(palette: ThemePalette) {
       fontWeight: typography.bold,
     },
     mutedText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     blockedCard: {
@@ -490,7 +490,7 @@ function makeStyles(palette: ThemePalette) {
       lineHeight: 20,
     },
     modalSubtitle: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
       marginBottom: spacing.md,
     },

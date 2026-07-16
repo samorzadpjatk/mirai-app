@@ -469,7 +469,7 @@ function makeStyles(palette: ThemePalette) {
     },
     subtitle: {
       marginTop: -spacing.sm,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1,
       fontSize: typography.xs,
@@ -507,7 +507,7 @@ function makeStyles(palette: ThemePalette) {
       backgroundColor: palette.primary,
     },
     progressLabel: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.8,
@@ -517,7 +517,7 @@ function makeStyles(palette: ThemePalette) {
       marginBottom: spacing.xxl,
     },
     hintText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: typography.xs,
       textTransform: "uppercase",
       letterSpacing: 0.8,

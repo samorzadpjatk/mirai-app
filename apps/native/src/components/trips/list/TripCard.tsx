@@ -182,12 +182,12 @@ const makeStyles = (palette: ThemePalette) =>
     },
     tripDate: {
       fontSize: typography.sm,
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       marginBottom: spacing.xs,
     },
     tripGroups: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: typography.medium,
     },
   });

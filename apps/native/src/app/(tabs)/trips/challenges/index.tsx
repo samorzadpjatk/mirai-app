@@ -248,13 +248,13 @@ export default function ChallengesScreen() {
                   <Ionicons
                     name={filter.icon}
                     size={14}
-                    color={selected ? palette.primary : colors.textMuted}
+                    color={selected ? palette.primary : palette.textMuted}
                   />
                   {"secondaryIcon" in filter && filter.secondaryIcon ? (
                     <Ionicons
                       name={filter.secondaryIcon}
                       size={14}
-                      color={selected ? palette.primary : colors.textMuted}
+                      color={selected ? palette.primary : palette.textMuted}
                     />
                   ) : null}
                 </View>
@@ -343,7 +343,7 @@ const makeStyles = (palette: ThemePalette) =>
       marginBottom: spacing.xl,
     },
     loadingMoreText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: 12,
     },
     filtersRow: {
@@ -411,7 +411,7 @@ const makeStyles = (palette: ThemePalette) =>
       backgroundColor: palette.primaryOpacity20,
     },
     filterChipText: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontWeight: "700",
       fontSize: 12,
       textTransform: "uppercase",

@@ -340,7 +340,7 @@ const makeStyles = (palette: ThemePalette) =>
       gap: 2,
     },
     metaLabel: {
-      color: colors.textMuted,
+      color: palette.textMuted,
       fontSize: 9,
       fontWeight: typography.bold,
       textTransform: "uppercase",

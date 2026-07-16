@@ -96,7 +96,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
                     style={{ paddingVertical: 8 }}
                   >
                     <Text style={{ color: colors.white }}>
-                      {t.name} <Text style={{ color: colors.textSecondary }}>({t.id})</Text>
+                      {t.name} <Text style={{ color: palette.textSecondary }}>({t.id})</Text>
                     </Text>
                   </TouchableOpacity>
                 ))}

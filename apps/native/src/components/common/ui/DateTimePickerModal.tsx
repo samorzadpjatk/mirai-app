@@ -146,7 +146,7 @@ function makeStyles(palette: ThemePalette) {
     },
     actionText: {
       fontSize: typography.base,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     actionTextPrimary: {
       color: colors.backgroundDark,

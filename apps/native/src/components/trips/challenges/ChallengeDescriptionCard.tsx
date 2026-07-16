@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { WoodTexture } from "~/components/common/WoodTexture";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ChallengeDescriptionCardProps {
@@ -43,7 +43,7 @@ function makeStyles(palette: ThemePalette) {
     description: {
       fontSize: typography.base,
       lineHeight: typography.base * 1.5,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.lg,
     },
     image: {

@@ -37,6 +37,13 @@ const piratePalette: ThemePalette = {
   cardDarkOpacity70: "rgba(36, 26, 18, 0.7)",
   borderDark: "#5a4326",
   backgroundDarkAlt: "#17100a",
+  // Navigation header follows the deep walnut surface family instead of navy.
+  headerBackground: "#241a12",
+  // Secondary/muted texts read gray-on-gray against the wooden deck background;
+  // brighten them so they stay legible while keeping the same visual hierarchy.
+  textSecondary: "rgba(255, 255, 255, 0.92)",
+  textTertiary: "rgba(255, 255, 255, 0.78)",
+  textMuted: "rgba(255, 255, 255, 0.70)",
   feedCardBg: "rgba(36, 26, 18, 0.82)",
   feedCardHeaderBg: "rgba(26, 18, 11, 0.6)",
   feedCardMediaBg: "#1a120b",

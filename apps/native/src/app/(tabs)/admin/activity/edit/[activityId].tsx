@@ -208,12 +208,12 @@ function makeStyles(palette: ThemePalette) {
     },
     activityType: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       marginBottom: spacing.xs,
     },
     activityMeta: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     textArea: {
       minHeight: 110,
@@ -221,7 +221,7 @@ function makeStyles(palette: ThemePalette) {
     },
     readOnlyHint: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontStyle: "italic",
     },
   });

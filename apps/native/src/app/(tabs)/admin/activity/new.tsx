@@ -279,7 +279,7 @@ function makeStyles(palette: ThemePalette) {
     },
     helperText: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     textArea: {
       minHeight: 110,
@@ -353,7 +353,7 @@ function makeStyles(palette: ThemePalette) {
     typeChipText: {
       fontSize: typography.sm,
       fontWeight: "600",
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
     typeChipTextActive: {
       color: palette.primary,

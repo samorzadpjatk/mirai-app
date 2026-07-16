@@ -8,7 +8,7 @@ function TripsStack() {
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: palette.backgroundDark },
+        headerStyle: { backgroundColor: palette.headerBackground },
         headerTintColor: palette.primary,
         headerTitleStyle: {
           fontFamily: "IBMPlexSans_600SemiBold",

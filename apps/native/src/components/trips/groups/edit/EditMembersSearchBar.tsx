@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, TextInput, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface EditMembersSearchBarProps {
   value: string;
@@ -10,10 +10,11 @@ interface EditMembersSearchBarProps {
 
 export function EditMembersSearchBar({ value, onChangeText }: EditMembersSearchBarProps) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <View style={styles.searchContainer}>
       <View style={styles.searchIconContainer}>
-        <Ionicons name="search" size={20} color={colors.textMuted} />
+        <Ionicons name="search" size={20} color={palette.textMuted} />
       </View>
       <TextInput
         style={styles.searchInput}

@@ -303,7 +303,7 @@ function makeStyles(palette: ThemePalette) {
     inputLabel: {
       fontSize: 10,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
       marginBottom: spacing.sm,
@@ -331,7 +331,7 @@ function makeStyles(palette: ThemePalette) {
       width: 44,
       height: 44,
       borderRadius: radius.full,
-      backgroundColor: colors.textMuted,
+      backgroundColor: palette.textMuted,
       borderWidth: 1,
       borderColor: colors.whiteOpacity10,
       alignItems: "center",
@@ -353,7 +353,7 @@ function makeStyles(palette: ThemePalette) {
     },
     memberMeta: {
       fontSize: 12,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     removeButton: {
       backgroundColor: colors.dangerOpacity12,
@@ -381,7 +381,7 @@ function makeStyles(palette: ThemePalette) {
     },
     emptyStateText: {
       fontSize: typography.base,
-      color: colors.textMuted,
+      color: palette.textMuted,
     },
     deleteButton: {
       marginTop: spacing.lg,

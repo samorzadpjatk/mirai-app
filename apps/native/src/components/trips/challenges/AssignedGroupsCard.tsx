@@ -53,7 +53,7 @@ function makeStyles(palette: ThemePalette) {
     title: {
       fontSize: 12,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 2,
       marginBottom: spacing.md,
@@ -73,7 +73,7 @@ function makeStyles(palette: ThemePalette) {
     },
     groupLeader: {
       fontSize: typography.sm,
-      color: colors.textMuted,
+      color: palette.textMuted,
       marginTop: 4,
     },
   });

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { colors } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
-import { useThemedStyles } from "~/theme/TripThemeProvider";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 const ActionBar = ({
   disabled,
@@ -15,6 +15,7 @@ const ActionBar = ({
 }) => {
   const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const textStyles = useThemedStyles(makeJudgementTextStyles);
+  const { palette } = useTripTheme();
 
   return (
     <View style={viewStyles.actions}>
@@ -28,7 +29,7 @@ const ActionBar = ({
       </TouchableOpacity>
 
       <View style={viewStyles.actionHint}>
-        <Ionicons name="swap-horizontal" size={16} color={colors.textSecondary} />
+        <Ionicons name="swap-horizontal" size={16} color={palette.textSecondary} />
         <Text style={textStyles.actionHintText}>Swipe to decide</Text>
       </View>
 

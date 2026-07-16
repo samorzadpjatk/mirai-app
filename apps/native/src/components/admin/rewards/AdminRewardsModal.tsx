@@ -202,7 +202,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               style={{
                 fontSize: typography.xs,
                 marginTop: spacing.xs,
-                color: colors.textSecondary,
+                color: palette.textSecondary,
               }}
             >
               Percentage of total available points
@@ -226,7 +226,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               <Text
                 style={{
-                  color: newReward.isHidden ? colors.textSecondary : colors.success,
+                  color: newReward.isHidden ? palette.textSecondary : colors.success,
                   letterSpacing: 0.8,
                   fontWeight: typography.semibold,
                 }}
@@ -248,7 +248,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               <Text
                 style={{
-                  color: newReward.isHidden ? colors.danger : colors.textSecondary,
+                  color: newReward.isHidden ? colors.danger : palette.textSecondary,
                   letterSpacing: 0.8,
                   fontWeight: typography.semibold,
                 }}
@@ -313,7 +313,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                     <ActivityIndicator size="small" color={palette.primary} />
                     <Text
                       style={{
-                        color: colors.textSecondary,
+                        color: palette.textSecondary,
                         marginTop: spacing.sm,
                         fontSize: typography.xs,
                       }}
@@ -322,7 +322,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                     </Text>
                   </View>
                 ) : (
-                  <Text style={{ color: colors.textSecondary }}>Add more images</Text>
+                  <Text style={{ color: palette.textSecondary }}>Add more images</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -345,7 +345,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                   <ActivityIndicator size="small" color={palette.primary} />
                   <Text
                     style={{
-                      color: colors.textSecondary,
+                      color: palette.textSecondary,
                       marginTop: spacing.sm,
                       fontSize: typography.xs,
                     }}
@@ -355,8 +355,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 </View>
               ) : (
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons name="image" size={24} color={colors.textSecondary} />
-                  <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>
+                  <Ionicons name="image" size={24} color={palette.textSecondary} />
+                  <Text style={{ color: palette.textSecondary, marginTop: spacing.sm }}>
                     Add images
                   </Text>
                 </View>

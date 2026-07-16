@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface GroupsListHeaderProps {
@@ -36,7 +36,7 @@ const makeStyles = (palette: ThemePalette) =>
     listHeaderCount: {
       fontSize: 10,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
     },
   });

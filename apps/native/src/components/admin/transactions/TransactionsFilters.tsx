@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface GroupOption {
   id: string;
@@ -24,18 +24,19 @@ export function TransactionsFilters({
   groups,
 }: TransactionsFiltersProps) {
   const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   return (
     <View style={styles.container}>
       <View style={styles.searchSection}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <Ionicons name="search" size={20} color={palette.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search transactions..."
             value={searchTerm}
             onChangeText={onSearchChange}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={palette.textSecondary}
           />
         </View>
       </View>
@@ -127,7 +128,7 @@ function makeStyles(palette: ThemePalette) {
     },
     groupOptionText: {
       fontSize: typography.sm,
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontWeight: typography.medium,
     },
     groupOptionTextSelected: {

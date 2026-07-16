@@ -98,7 +98,7 @@ const makeStyles = (palette: ThemePalette) =>
     },
     notFound: {
       fontSize: typography.lg,
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       textAlign: "center",
       marginTop: spacing.xxxl,
     },

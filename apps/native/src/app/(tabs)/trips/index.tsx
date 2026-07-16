@@ -15,7 +15,7 @@ import { ErrorState } from "~/components/common/ui";
 import { TripCard } from "~/components/trips/list/TripCard";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
-import { useTripTheme } from "~/theme/TripThemeProvider";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import LoadingScreen from "../../../components/LoadingScreen";
 import TripDetailsScreen from "./details";
 
@@ -36,6 +36,7 @@ export default function TripsScreen() {
   } = useTrips();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
   const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const handleScrollLoadMore = (event: {
     nativeEvent: {
@@ -127,43 +128,45 @@ export default function TripsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  list: {
-    gap: spacing.md,
-  },
-  emptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    textAlign: "center",
-    marginTop: spacing.lg,
-  },
-  listFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  listFooterText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.md,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    subtitle: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      marginBottom: spacing.md,
+    },
+    list: {
+      gap: spacing.md,
+    },
+    emptyText: {
+      color: palette.textSecondary,
+      fontSize: typography.base,
+      textAlign: "center",
+      marginTop: spacing.lg,
+    },
+    listFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    listFooterText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+    },
+  });
+}

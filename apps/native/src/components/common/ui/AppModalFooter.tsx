@@ -90,7 +90,7 @@ function makeStyles(palette: ThemePalette) {
       borderColor: palette.borderDark,
     },
     secondaryButtonText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
     },
   });
 }

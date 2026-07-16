@@ -14,7 +14,7 @@ function AdminStack() {
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: palette.backgroundDark,
+          backgroundColor: palette.headerBackground,
         },
         headerTintColor: palette.textPrimary,
         headerShadowVisible: true,

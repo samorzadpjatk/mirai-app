@@ -134,7 +134,7 @@ function makeStyles(palette: ThemePalette) {
     },
     emptyRoom: {
       fontSize: typography.sm,
-      color: colors.textTertiary,
+      color: palette.textTertiary,
       fontStyle: "italic",
     },
   });

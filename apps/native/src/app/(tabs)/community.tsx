@@ -429,7 +429,7 @@ function makeStyles(palette: ThemePalette) {
       paddingVertical: spacing.md,
     },
     listFooterLoadingText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.sm,
     },
     headerWrap: {
@@ -498,7 +498,7 @@ function makeStyles(palette: ThemePalette) {
       paddingVertical: spacing.sm,
     },
     loadingStateText: {
-      color: colors.textSecondary,
+      color: palette.textSecondary,
       fontSize: typography.lg,
       fontWeight: typography.semibold,
     },

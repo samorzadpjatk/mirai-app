@@ -108,7 +108,7 @@ function makeStyles(palette: ThemePalette) {
     title: {
       fontSize: typography.xs,
       fontWeight: typography.bold,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 2,
       marginBottom: spacing.md,
@@ -121,7 +121,7 @@ function makeStyles(palette: ThemePalette) {
     },
     label: {
       fontSize: 12,
-      color: colors.textMuted,
+      color: palette.textMuted,
       textTransform: "uppercase",
       letterSpacing: 1.5,
       marginBottom: 4,
