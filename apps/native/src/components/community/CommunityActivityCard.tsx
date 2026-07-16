@@ -3,7 +3,7 @@ import type { Activity } from "@mirai-app/orpc";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
-import { WoodTexture } from "~/components/common/WoodTexture";
+import { PlankPanel } from "~/components/common/PlankPanel";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
@@ -333,7 +333,7 @@ export const CommunityActivityCard = React.memo(
         disabled={!onPress}
         activeOpacity={onPress ? 0.9 : 1}
       >
-        <WoodTexture radius={18} />
+        <PlankPanel radius={18} />
         <View style={styles.cardHeader}>
           <TouchableOpacity
             style={styles.ownerRow}
