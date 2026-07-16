@@ -7,6 +7,7 @@ import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
 import { AlertsPagination } from "~/components/alerts/AlertsPagination";
 import { NotificationCard } from "~/components/alerts/NotificationCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import type { NotificationItem } from "~/types/notifications";
 import { spacing, typography } from "../styles";
@@ -48,6 +49,7 @@ export default function AlertsScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[

@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { TripPickerModal } from "~/components/common/ui";
 import type { TripListItem } from "~/components/trips/list/types";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
@@ -204,6 +205,7 @@ export default function AdminPanelScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <ScrollView
         style={styles.scrollView}

@@ -26,6 +26,7 @@ import { Skeleton } from "~/components/ui/Skeleton";
 
 import { useAuth } from "@mirai-app/auth/client";
 import { Logo } from "~/components";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import {
   EmptyState,
   ErrorState,
@@ -260,6 +261,10 @@ export default function CommunityScreen() {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
+
+      {/* Deck sits above the opaque gradient (both act as the screen background) and
+          below all interactive chrome, matching the trip hub's z-order pattern. */}
+      <DeckBackground />
 
       <View style={[styles.headerWrap, { paddingTop: Math.max(insets.top - spacing.md, 0) }]}>
         <View style={styles.headerTopRow}>

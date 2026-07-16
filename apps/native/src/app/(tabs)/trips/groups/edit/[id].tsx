@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
@@ -195,6 +196,7 @@ export default function EditGroupScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[

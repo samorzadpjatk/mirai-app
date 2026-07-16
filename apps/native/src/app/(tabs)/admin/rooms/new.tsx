@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
 import { borderRadius, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
@@ -34,6 +35,7 @@ export default function NewRoomScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <Text style={styles.label}>Room name</Text>
       <TextInput
         style={styles.input}

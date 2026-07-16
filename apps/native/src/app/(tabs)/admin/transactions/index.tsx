@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
@@ -105,6 +106,7 @@ export default function AdminTransactionsScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Transactions" subtitle="View coin transaction history" />
 

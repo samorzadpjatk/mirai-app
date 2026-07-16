@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
@@ -89,6 +90,7 @@ export default function EditRoomScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <FlatList
         data={users}
         keyExtractor={(user) => user.id}

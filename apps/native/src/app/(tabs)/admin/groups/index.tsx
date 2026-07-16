@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
 import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminGroups } from "~/hooks/admin/useAdminGroups";
 import type { Group } from "~/hooks/admin/useAdminGroups";
@@ -92,6 +93,7 @@ export default function AdminGroupsScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader
         title="Group Management"

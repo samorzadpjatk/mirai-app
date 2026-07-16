@@ -4,6 +4,7 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ErrorState } from "~/components/common/ui";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
@@ -277,6 +278,7 @@ export default function GroupDetailsScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       {canManageGroup && !isTripPast && (
         <View style={styles.editButtonContainer}>
           <EditGroupButton onPress={() => router.push(`/trips/groups/edit/${groupId}`)} />

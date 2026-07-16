@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "~/components/common/CachedImage";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { useTripDetails } from "~/hooks/trips";
@@ -493,6 +494,7 @@ export default function ChallengePeerVotingScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}

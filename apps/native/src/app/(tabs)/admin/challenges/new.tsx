@@ -10,6 +10,7 @@ import {
   toOptionalInt,
   toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { colors } from "~/styles";
 
@@ -144,6 +145,7 @@ export default function NewChallengeScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
+      <DeckBackground />
       <ChallengeFormFields
         formState={formState}
         onSave={handleSave}

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { EmptyState } from "~/components/common/ui";
 import { useAdminRooms } from "~/hooks/admin/useAdminRooms";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -20,6 +21,7 @@ export default function AdminRoomsScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <FlatList
         data={rooms}
         keyExtractor={(room) => room.id}

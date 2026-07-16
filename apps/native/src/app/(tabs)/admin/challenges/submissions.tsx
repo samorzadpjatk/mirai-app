@@ -18,6 +18,7 @@ import {
   type SubmissionItem,
   SubmissionReviewCard,
 } from "~/components/admin/challenges/SubmissionReviewCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import {
   AppModalFooter,
   AppModalShell,
@@ -221,6 +222,7 @@ export default function ChallengeSubmissionsScreen() {
           title: "Challenge submissions",
         }}
       />
+      <DeckBackground />
 
       <View style={styles.header}>
         <Text style={styles.subtitle}>

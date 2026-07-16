@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { CachedImage } from "~/components/common/CachedImage";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import {
   useAdminRewards,
@@ -239,6 +240,7 @@ export default function AdminRewardsPage() {
       style={[commonStyles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
       <AdminHeader
         title="Rewards"
         subtitle={

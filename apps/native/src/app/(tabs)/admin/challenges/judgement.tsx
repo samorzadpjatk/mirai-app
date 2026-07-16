@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
@@ -88,6 +89,7 @@ export default function ChallengeJudgementScreen() {
     >
       <Stack.Screen options={{ title: "Challenge Judgement" }} />
       <StatusBar barStyle="light-content" />
+      <DeckBackground />
       <JudgementContent tripId={tripId} challengeId={challengeId} />
     </View>
   );

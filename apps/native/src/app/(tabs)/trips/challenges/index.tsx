@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ChallengesGrid } from "~/components/trips/challenges/ChallengesGrid";
 import { ChallengesLoadingState } from "~/components/trips/challenges/ChallengesLoadingState";
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
@@ -196,6 +197,7 @@ export default function ChallengesScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}

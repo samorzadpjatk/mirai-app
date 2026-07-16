@@ -11,6 +11,7 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
@@ -200,6 +201,7 @@ export default function AdminSchedulesScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader
         title="Notification Schedules"

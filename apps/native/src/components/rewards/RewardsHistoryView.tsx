@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
 import { colors, commonStyles } from "~/styles";
@@ -89,6 +90,7 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
   return (
     <View style={commonStyles.container}>
+      <DeckBackground />
       <ScrollView
         testID="rewards-scroll-view"
         style={{ flex: 1, padding: 16 }}

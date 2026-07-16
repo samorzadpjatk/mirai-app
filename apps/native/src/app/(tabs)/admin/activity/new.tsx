@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { useFileUpload } from "~/hooks/files";
@@ -141,6 +142,7 @@ export default function AdminCreateActivityScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Create Activity" subtitle="Add custom activity to feed" />
 

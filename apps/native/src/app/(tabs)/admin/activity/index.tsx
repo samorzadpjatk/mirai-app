@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { EmptyState, FilterChip, FilterChipRow, ThemedTextInput } from "~/components/common/ui";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -144,6 +145,7 @@ export default function AdminActivityScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Activity" subtitle="Manage community activity feed" />
 

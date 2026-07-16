@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import {
   DateTimePickerModal,
@@ -291,6 +292,7 @@ export default function AdminCreateNotificationScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader
         title="Create Notification"

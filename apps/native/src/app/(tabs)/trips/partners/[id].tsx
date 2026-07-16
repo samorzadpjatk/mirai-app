@@ -2,6 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
 import { CachedImage } from "~/components/common/CachedImage";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useSponsorById } from "~/hooks/sponsors/useSponsors";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
@@ -25,6 +26,7 @@ export default function PartnerDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoWrapper}>
           <CachedImage

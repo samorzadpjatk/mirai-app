@@ -7,6 +7,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminSearchBar } from "~/components/admin/AdminSearchBar";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { UserCard } from "~/components/admin/users/UserCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminUsers } from "~/hooks/admin/useAdminUsers";
 import type { User, UserSearchField } from "~/hooks/admin/useAdminUsers";
@@ -88,6 +89,7 @@ export default function AdminUsersScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="User Management" subtitle="Manage accounts and permissions" />
 

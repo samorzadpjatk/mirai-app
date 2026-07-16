@@ -18,6 +18,7 @@ import {
 import LoadingScreen from "~/components/LoadingScreen";
 import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
@@ -424,6 +425,7 @@ export default function AdminChallengesScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.backgroundDark} />
+      <DeckBackground />
 
       <ScrollView
         style={styles.scrollView}

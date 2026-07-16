@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
@@ -60,6 +61,7 @@ export default function LeaderboardScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[

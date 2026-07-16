@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { type VotingSubmission, useStaffVoting } from "~/hooks/admin/useStaffVoting";
@@ -295,6 +296,7 @@ export default function AdminChallengeStaffVotingScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}

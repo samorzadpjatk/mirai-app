@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ErrorState } from "~/components/common/ui";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
@@ -80,6 +81,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container]}>
+      <DeckBackground />
       <ScrollView
         refreshControl={
           <RefreshControl

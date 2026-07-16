@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ErrorState } from "~/components/common/ui";
 import { TripCard } from "~/components/trips/list/TripCard";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
@@ -83,6 +84,7 @@ export default function TripsScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         contentContainerStyle={[
           styles.content,

@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useMyGroup } from "~/hooks/groups";
 import { usePurchaseReward, useRewards } from "~/hooks/rewards";
 import { useTripDetails } from "~/hooks/trips";
@@ -257,6 +258,7 @@ export default function RewardsView({ tripId }: Props) {
   if (!safeRewards || safeRewards.length === 0) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <DeckBackground />
         <Ionicons name="gift" size={48} color={colors.gray500} />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
           No rewards available for this trip
@@ -267,6 +269,7 @@ export default function RewardsView({ tripId }: Props) {
 
   return (
     <View style={commonStyles.container}>
+      <DeckBackground />
       <View style={{ padding: 16 }}>
         <View
           style={{

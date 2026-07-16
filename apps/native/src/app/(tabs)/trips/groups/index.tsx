@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 import { GroupsList } from "~/components/trips/groups/GroupsList";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
@@ -83,6 +84,7 @@ export default function GroupsListScreen() {
 
   return (
     <View style={[styles.container]}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}

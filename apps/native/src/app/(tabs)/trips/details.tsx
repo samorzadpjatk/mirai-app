@@ -1,11 +1,11 @@
 import { useAuth } from "@mirai-app/auth/client";
 import type { TripDetailTripSponsor } from "@mirai-app/orpc";
-import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { TripBanner } from "~/components/trips/TripBanner";
 import { type Partner, PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
@@ -14,8 +14,6 @@ import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState"
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import { useTripSync } from "~/stores/tripStore";
-import { useTripTheme } from "~/theme/TripThemeProvider";
-import deckBg from "../../../../assets/textures/deck-bg.jpg";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
 
@@ -27,8 +25,6 @@ export default function TripDetailsScreen() {
   const paramTripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
-  const { themeKey } = useTripTheme();
-  const isPirate = themeKey === "PIRATE";
 
   const { trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
 
@@ -77,9 +73,7 @@ export default function TripDetailsScreen() {
     <>
       <StatusBar style="light" />
       <View style={styles.container}>
-        {isPirate ? (
-          <Image source={deckBg} style={styles.deckBg} contentFit="cover" pointerEvents="none" />
-        ) : null}
+        <DeckBackground />
         {/* Main Content */}
         <ScrollView
           style={[styles.mainContent, styles.contentAboveDeck]}
@@ -134,12 +128,8 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
   },
-  // Keep the deck strictly behind, content strictly above (defensive z-order so
+  // Keep content strictly above the deck background (defensive z-order so
   // the hero/tiles never get covered by the absolute-fill background image).
-  deckBg: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-  },
   contentAboveDeck: {
     zIndex: 1,
   },

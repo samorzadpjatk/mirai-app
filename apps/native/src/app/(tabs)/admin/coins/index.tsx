@@ -6,6 +6,7 @@ import { FlatList, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import type { Group } from "~/hooks/admin/useAdminCoins";
@@ -265,6 +266,7 @@ export default function AdminCoinsScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Coins Management" subtitle="Manage group coins and transactions" />
 

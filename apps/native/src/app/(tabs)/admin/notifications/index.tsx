@@ -26,6 +26,7 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { EmptyState } from "~/components/common/ui";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { type Notification, useAdminNotifications } from "~/hooks/admin/useAdminNotifications";
@@ -282,6 +283,7 @@ export default function AdminNotificationsScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Notifications" />
 

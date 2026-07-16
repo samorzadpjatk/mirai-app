@@ -15,6 +15,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { QrScannerModal } from "~/components/common";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { AppModalFooter, AppModalShell } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
@@ -428,6 +429,7 @@ export default function ChallengeDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import LoadingScreen from "~/components/LoadingScreen";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { WoodTexture } from "~/components/common/WoodTexture";
 import { EmptyState } from "~/components/common/ui";
 import {
@@ -33,6 +34,7 @@ export default function RoomsScreen() {
   if (rooms.length === 0) {
     return (
       <View style={styles.emptyWrapper}>
+        <DeckBackground />
         <EmptyState
           icon="bed-outline"
           title="No rooms"
@@ -43,48 +45,58 @@ export default function RoomsScreen() {
   }
 
   return (
-    <FlatList
-      data={rooms}
-      keyExtractor={(room) => room.id}
-      contentContainerStyle={styles.container}
-      renderItem={({ item }) => {
-        const members: GroupMember[] = item.participants.map((participant) => ({
-          id: participant.user.id,
-          name:
-            formatDisplayName(participant.user.firstName, participant.user.lastName) ??
-            participant.user.email ??
-            "Unknown participant",
-          initials: getInitials(participant.user.firstName, participant.user.lastName),
-          role: "",
-          isLeader: false,
-          avatarStoragePath: null,
-        }));
+    <View style={styles.listWrapper}>
+      <DeckBackground />
+      <FlatList
+        style={styles.list}
+        data={rooms}
+        keyExtractor={(room) => room.id}
+        contentContainerStyle={styles.container}
+        renderItem={({ item }) => {
+          const members: GroupMember[] = item.participants.map((participant) => ({
+            id: participant.user.id,
+            name:
+              formatDisplayName(participant.user.firstName, participant.user.lastName) ??
+              participant.user.email ??
+              "Unknown participant",
+            initials: getInitials(participant.user.firstName, participant.user.lastName),
+            role: "",
+            isLeader: false,
+            avatarStoragePath: null,
+          }));
 
-        const isFull = item.occupancy >= item.capacity;
+          const isFull = item.occupancy >= item.capacity;
 
-        return (
-          <View style={styles.roomCard}>
-            <WoodTexture radius={borderRadius.md} />
-            <View style={styles.roomHeader}>
-              <Text style={styles.roomName}>{item.name}</Text>
-              <Text style={[styles.roomCapacity, isFull && styles.roomCapacityFull]}>
-                {item.occupancy}/{item.capacity} beds
-              </Text>
+          return (
+            <View style={styles.roomCard}>
+              <WoodTexture radius={borderRadius.md} />
+              <View style={styles.roomHeader}>
+                <Text style={styles.roomName}>{item.name}</Text>
+                <Text style={[styles.roomCapacity, isFull && styles.roomCapacityFull]}>
+                  {item.occupancy}/{item.capacity} beds
+                </Text>
+              </View>
+              {members.length > 0 ? (
+                <GroupMemberList members={members} />
+              ) : (
+                <Text style={styles.emptyRoom}>Empty room</Text>
+              )}
             </View>
-            {members.length > 0 ? (
-              <GroupMemberList members={members} />
-            ) : (
-              <Text style={styles.emptyRoom}>Empty room</Text>
-            )}
-          </View>
-        );
-      }}
-    />
+          );
+        }}
+      />
+    </View>
   );
 }
 
 function makeStyles(palette: ThemePalette) {
   return StyleSheet.create({
+    listWrapper: {
+      flex: 1,
+    },
+    list: {
+      flex: 1,
+    },
     container: {
       padding: spacing.lg,
       gap: spacing.lg,

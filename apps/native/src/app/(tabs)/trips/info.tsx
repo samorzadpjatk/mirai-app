@@ -16,6 +16,7 @@ import {
 import Pdf from "react-native-pdf";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { FullScreenModal } from "~/components/common/ui";
 import { useFileDownload } from "~/hooks/files";
 import { useSelectedTrip, useTripResources } from "~/hooks/trips";
@@ -176,6 +177,7 @@ export default function TripInfoScreen() {
     <>
       <StatusBar style="light" />
       <View style={styles.container}>
+        <DeckBackground />
         <ScrollView
           style={styles.mainContent}
           contentContainerStyle={[styles.contentContainer, { paddingBottom: 96 }]}

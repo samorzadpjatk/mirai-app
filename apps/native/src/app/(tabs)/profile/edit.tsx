@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { CachedImage } from "~/components/common/CachedImage";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useFileUpload } from "~/hooks/files";
 import { borderRadius, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
@@ -211,6 +212,7 @@ export default function EditProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
