@@ -159,6 +159,7 @@ describe("trips", () => {
         startDate: new Date("2026-01-01"),
         endDate: new Date("2026-01-10"),
         backgroundImagePath: undefined,
+        theme: "DEFAULT",
       });
       expect(result).toEqual({
         id: "trip-1",
@@ -167,6 +168,7 @@ describe("trips", () => {
         startDate: new Date("2026-01-01"),
         endDate: new Date("2026-01-10"),
         backgroundImagePath: undefined,
+        theme: "DEFAULT",
       });
     });
 
@@ -197,6 +199,7 @@ describe("trips", () => {
         startDate: new Date("2026-02-01"),
         endDate: new Date("2026-02-10"),
         backgroundImagePath: undefined,
+        theme: "DEFAULT",
       });
     });
 
@@ -650,6 +653,7 @@ describe("trips", () => {
         startDate: new Date("2026-01-01"),
         endDate: new Date("2026-01-10"),
         backgroundImagePath: undefined,
+        theme: "DEFAULT",
       });
 
       consoleSpy.mockRestore();
