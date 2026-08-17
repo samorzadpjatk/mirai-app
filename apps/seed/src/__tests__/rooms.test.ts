@@ -1,3 +1,4 @@
+import { logger } from "@mirai-app/common/utils";
 import type { SupabaseUser } from "@mirai-app/supabase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadRoomConfigs, seedRooms } from "../rooms";
@@ -199,8 +200,6 @@ describe("rooms", () => {
     });
 
     it("should warn when members exceed capacity", async () => {
-      const { logger } = await import("@mirai-app/common/utils");
-
       await seedRooms(
         [{ name: "Room 101", capacity: 1, members: ["a@example.com", "b@example.com"] }],
         "trip-1",
@@ -225,7 +224,6 @@ describe("rooms", () => {
     });
 
     it("should keep seeding remaining rooms when one fails", async () => {
-      const { logger } = await import("@mirai-app/common/utils");
       mockRoomInsert
         .mockRejectedValueOnce(new Error("insert failed"))
         .mockResolvedValueOnce([{ id: "room-2" }]);
