@@ -78,27 +78,6 @@ function AdminStack() {
           }}
         />
         <Stack.Screen
-          name="rooms/index"
-          options={{
-            title: "Rooms",
-            headerBackTitle: "Back",
-          }}
-        />
-        <Stack.Screen
-          name="rooms/new"
-          options={{
-            title: "Create Room",
-            headerBackTitle: "Back",
-          }}
-        />
-        <Stack.Screen
-          name="rooms/edit/[roomId]"
-          options={{
-            title: "Edit Room",
-            headerBackTitle: "Back",
-          }}
-        />
-        <Stack.Screen
           name="coins/index"
           options={{
             title: "Coins",

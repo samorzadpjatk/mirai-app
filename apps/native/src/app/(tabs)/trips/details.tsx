@@ -104,7 +104,6 @@ export default function TripDetailsScreen() {
           <TripQuickAccessGrid
             isTripPast={isTripPast}
             onOpenGroups={() => router.push(`/trips/groups?tripId=${trip.id}`)}
-            onOpenRooms={() => router.push(`/trips/rooms?tripId=${trip.id}`)}
             onOpenMap={() => router.push("/trips/map")}
             onOpenChallenges={() => router.push(`/trips/challenges?tripId=${trip.id}`)}
             onOpenRewards={() => router.push(`/trips/rewards?tripId=${trip.id}`)}

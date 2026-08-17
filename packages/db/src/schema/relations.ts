@@ -24,7 +24,6 @@ import {
   pushSubscriptions,
 } from "./notifications";
 import { coinTransactions, rewardPurchases, rewards } from "./rewards";
-import { rooms } from "./rooms";
 import { sponsors, tripSponsors } from "./sponsors";
 import { tripResourceFiles } from "./tripResourceFiles";
 import { tripResourceIcons } from "./tripResourceIcons";
@@ -151,10 +150,6 @@ export const tripParticipantsRelations = relations(tripParticipants, ({ one, man
     fields: [tripParticipants.groupId],
     references: [groups.id],
   }),
-  room: one(rooms, {
-    fields: [tripParticipants.roomId],
-    references: [rooms.id],
-  }),
   challengeVotes: many(challengeVotes),
   submissionReports: many(submissionReports),
   userPosts: many(userPosts),
@@ -180,14 +175,6 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
     relationName: "RankChangeActivityGroup",
   }),
   joinRequests: many(groupJoinRequests),
-}));
-
-export const roomsRelations = relations(rooms, ({ one, many }) => ({
-  trip: one(trips, {
-    fields: [rooms.tripId],
-    references: [trips.id],
-  }),
-  participants: many(tripParticipants),
 }));
 
 export const groupJoinRequestsRelations = relations(groupJoinRequests, ({ one }) => ({

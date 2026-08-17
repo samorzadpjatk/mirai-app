@@ -8,7 +8,6 @@ import plankPanel from "../../../../assets/textures/plank-panel.png";
 interface TripQuickAccessGridProps {
   isTripPast?: boolean;
   onOpenGroups: () => void;
-  onOpenRooms: () => void;
   onOpenMap: () => void;
   onOpenChallenges: () => void;
   onOpenLeaderboard: () => void;
@@ -19,7 +18,6 @@ interface TripQuickAccessGridProps {
 export function TripQuickAccessGrid({
   isTripPast,
   onOpenGroups,
-  onOpenRooms,
   onOpenMap,
   onOpenChallenges,
   onOpenLeaderboard,
@@ -44,22 +42,6 @@ export function TripQuickAccessGrid({
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Groups</Text>
           <Text style={styles.gridCardSubtitle}>Team Roster</Text>
-        </View>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.gridCard, isPirate && styles.gridCardPirate]}
-        onPress={onOpenRooms}
-      >
-        {isPirate ? (
-          <Image source={plankPanel} style={styles.panel} contentFit="fill" pointerEvents="none" />
-        ) : null}
-        <View style={[styles.gridIconWrapper, isPirate && styles.gridIconWrapperPirate]}>
-          <Ionicons name="bed" size={24} color={palette.primary} />
-        </View>
-        <View style={styles.gridCardContent}>
-          <Text style={styles.gridCardTitle}>Rooms</Text>
-          <Text style={styles.gridCardSubtitle}>Who's Where</Text>
         </View>
       </TouchableOpacity>
 

@@ -3,7 +3,6 @@ import { loadAuthUsers } from "./auth";
 import { env } from "./config/env";
 import { assetsRoot } from "./constants";
 import { loadRewardConfigs, seedRewards } from "./rewards";
-import { loadRoomConfigs, seedRooms } from "./rooms";
 import { loadSponsorConfigs, seedSponsors } from "./sponsors";
 import { cleanupOldAssets, ensureBuckets, ensurePlaceholderImage, uploadAssets } from "./storage";
 import { loadTripConfigs } from "./tripConfigs";
@@ -57,16 +56,6 @@ export const runSeed = async () => {
         await seedRewards(rewardConfigs, seededTrip.id, authUsers);
       } catch (error) {
         logger.warn(error, `✗ Failed to seed rewards for trip ${trip.key}`);
-      }
-    }
-
-    // Seed rooms if the trip has a rooms config
-    if (trip.rooms) {
-      try {
-        const roomConfigs = await loadRoomConfigs(envRoot, trip.rooms);
-        await seedRooms(roomConfigs, seededTrip.id, authUsers);
-      } catch (error) {
-        logger.warn(error, `✗ Failed to seed rooms for trip ${trip.key}`);
       }
     }
 

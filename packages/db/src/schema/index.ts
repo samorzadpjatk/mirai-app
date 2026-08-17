@@ -30,7 +30,6 @@ export { tripResourceFiles } from "./tripResourceFiles";
 export { tripResourceTexts } from "./tripResourceTexts";
 export { tripResourceIcons } from "./tripResourceIcons";
 export { groups, groupJoinRequests } from "./groups";
-export { rooms } from "./rooms";
 export {
   challenges,
   challengeSubmissions,
@@ -74,7 +73,6 @@ export {
   tripInsuranceStepsRelations,
   tripParticipantsRelations,
   groupsRelations,
-  roomsRelations,
   groupJoinRequestsRelations,
   challengesRelations,
   challengeRecurrenceRelations,
@@ -134,7 +132,6 @@ import {
   pushSubscriptions,
 } from "./notifications";
 import { coinTransactions, rewardPurchases, rewards } from "./rewards";
-import { rooms } from "./rooms";
 import { sponsors, tripSponsors } from "./sponsors";
 import { tripResourceFiles } from "./tripResourceFiles";
 import { tripResourceIcons } from "./tripResourceIcons";
@@ -156,7 +153,6 @@ export type TripInsuranceStep = typeof tripInsuranceSteps.$inferSelect;
 export type TripParticipant = typeof tripParticipants.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type GroupJoinRequest = typeof groupJoinRequests.$inferSelect;
-export type Room = typeof rooms.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
 export type ChallengeRecurrence = typeof challengeRecurrence.$inferSelect;
 export type ChallengeLocationMatch = typeof challengeLocationMatch.$inferSelect;
@@ -199,7 +195,6 @@ export const schemaTables = [
   tripParticipants,
   groups,
   groupJoinRequests,
-  rooms,
   challenges,
   challengeRecurrence,
   challengeLocationMatch,

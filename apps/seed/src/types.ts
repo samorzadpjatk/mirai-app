@@ -13,15 +13,8 @@ export interface TripConfig {
   rewards?: string;
   sponsors?: string;
   info?: string;
-  rooms?: string;
   /** Per-trip visual theme key (e.g. "PIRATE"); defaults to "DEFAULT". */
   theme?: string;
-}
-
-export interface RoomConfig {
-  name: string;
-  capacity: number;
-  members?: string[];
 }
 
 export interface CsvUser {

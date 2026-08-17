@@ -23,7 +23,6 @@ function TripsStack() {
       <Stack.Screen name="info" options={{ title: "Trip Info" }} />
       <Stack.Screen name="map/index" options={{ title: "Map" }} />
       <Stack.Screen name="groups/index" options={{ title: "Groups" }} />
-      <Stack.Screen name="rooms/index" options={{ title: "Rooms" }} />
       <Stack.Screen name="groups/[id]" options={{ title: "Group Details" }} />
       <Stack.Screen name="groups/create" options={{ title: "Create Group" }} />
       <Stack.Screen name="groups/edit/[id]" options={{ title: "Edit Group" }} />

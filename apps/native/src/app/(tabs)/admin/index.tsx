@@ -56,15 +56,6 @@ function makeTiles(palette: ThemePalette): TileType[] {
       route: "/admin/groups",
     },
     {
-      key: "rooms",
-      title: "Rooms",
-      subtitle: "Accommodation & occupancy",
-      icon: "bed",
-      accent: palette.primary,
-      accentBg: palette.cardDarkOpacity40,
-      route: "/admin/rooms",
-    },
-    {
       key: "coins",
       title: "Coins",
       subtitle: "Currency & transactions",
