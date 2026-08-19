@@ -15,6 +15,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { QrScannerModal } from "~/components/common";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { AppModalFooter, AppModalShell } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
@@ -30,6 +31,7 @@ import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 import { deleteCachedDownload } from "~/hooks/files";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { colors, spacing } from "../../../../styles";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
@@ -63,6 +65,7 @@ const isOnOrBeforeNow = (value?: string | Date | null) => {
 };
 
 export default function ChallengeDetailScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
@@ -426,6 +429,7 @@ export default function ChallengeDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 96 }]}
@@ -722,126 +726,128 @@ export default function ChallengeDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  solvedCounterCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  solvedCounterLabel: {
-    color: colors.emerald500,
-    fontSize: 12,
-    textTransform: "uppercase",
-    marginBottom: 4,
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  solvedCounterValue: {
-    color: colors.emerald500,
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  solvedCounterHint: {
-    color: colors.emerald500,
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  targetLocationCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  targetLocationLabel: {
-    color: colors.emerald500,
-    fontSize: 12,
-    textTransform: "uppercase",
-    marginBottom: 8,
-    letterSpacing: 0.8,
-    fontWeight: "700",
-  },
-  targetLocationMapWrap: {
-    height: 180,
-    borderRadius: 12,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  targetLocationMap: {
-    flex: 1,
-  },
-  targetLocationMarker: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.danger,
-    borderWidth: 2,
-    borderColor: colors.whiteOpacity90,
-  },
-  targetLocationCoords: {
-    color: colors.emerald500,
-    marginTop: 8,
-    fontSize: 12,
-  },
-  qrModalContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  qrModalHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  qrModalTitle: {
-    color: colors.emerald500,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  qrModalCloseButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  qrModalCloseText: {
-    color: colors.emerald500,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  qrCameraContainer: {
-    flex: 1,
-    margin: spacing.lg,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-  },
-  qrCamera: {
-    flex: 1,
-  },
-  qrFooter: {
-    padding: spacing.lg,
-  },
-  qrFooterText: {
-    color: colors.emerald500,
-    fontSize: 14,
-    textAlign: "center",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      paddingBottom: spacing.xxxl,
+    },
+    solvedCounterCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity8,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    solvedCounterLabel: {
+      color: colors.emerald500,
+      fontSize: 12,
+      textTransform: "uppercase",
+      marginBottom: 4,
+      letterSpacing: 0.8,
+      fontWeight: "700",
+    },
+    solvedCounterValue: {
+      color: colors.emerald500,
+      fontSize: 28,
+      fontWeight: "800",
+    },
+    solvedCounterHint: {
+      color: colors.emerald500,
+      fontSize: 12,
+      marginTop: spacing.xs,
+    },
+    targetLocationCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity8,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+    },
+    targetLocationLabel: {
+      color: colors.emerald500,
+      fontSize: 12,
+      textTransform: "uppercase",
+      marginBottom: 8,
+      letterSpacing: 0.8,
+      fontWeight: "700",
+    },
+    targetLocationMapWrap: {
+      height: 180,
+      borderRadius: 12,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity12,
+    },
+    targetLocationMap: {
+      flex: 1,
+    },
+    targetLocationMarker: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: colors.danger,
+      borderWidth: 2,
+      borderColor: colors.whiteOpacity90,
+    },
+    targetLocationCoords: {
+      color: colors.emerald500,
+      marginTop: 8,
+      fontSize: 12,
+    },
+    qrModalContainer: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    qrModalHeader: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    qrModalTitle: {
+      color: colors.emerald500,
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    qrModalCloseButton: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    qrModalCloseText: {
+      color: colors.emerald500,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    qrCameraContainer: {
+      flex: 1,
+      margin: spacing.lg,
+      borderRadius: 16,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity12,
+    },
+    qrCamera: {
+      flex: 1,
+    },
+    qrFooter: {
+      padding: spacing.lg,
+    },
+    qrFooterText: {
+      color: colors.emerald500,
+      fontSize: 14,
+      textAlign: "center",
+    },
+  });
+}

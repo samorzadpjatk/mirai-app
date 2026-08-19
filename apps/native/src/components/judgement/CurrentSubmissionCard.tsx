@@ -5,7 +5,8 @@ import { CachedImage } from "~/components/common/CachedImage";
 import { SubmissionAssetPreview } from "~/components/judgement/SubmissionAssetPreview";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
-import { textStyles, viewStyles } from "~/styles/judgement";
+import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
+import { useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { formatDate, getInitials } from "~/utils/validation";
 
 const CurrentSubmissionCard = ({
@@ -21,10 +22,14 @@ const CurrentSubmissionCard = ({
   approveStampStyle: AnimatedStyle<ViewStyle>;
   rejectStampStyle: AnimatedStyle<ViewStyle>;
 }) => {
+  const { palette } = useTripTheme();
+  const viewStyles = useThemedStyles(makeJudgementViewStyles);
+  const textStyles = useThemedStyles(makeJudgementTextStyles);
+
   return (
     <Animated.View style={[viewStyles.card, { maxHeight: maxCardHeight }, cardStyle]}>
       <Animated.View style={[viewStyles.stamp, viewStyles.stampApprove, approveStampStyle]}>
-        <Ionicons name="checkmark" size={18} color={colors.primary} />
+        <Ionicons name="checkmark" size={18} color={palette.primary} />
         <Text style={textStyles.stampTextApprove}>APPROVE</Text>
       </Animated.View>
       <Animated.View style={[viewStyles.stamp, viewStyles.stampReject, rejectStampStyle]}>
@@ -62,7 +67,7 @@ const CurrentSubmissionCard = ({
 
       {(submission.latitude !== null || submission.longitude !== null) && (
         <View style={viewStyles.locationBlock}>
-          <Ionicons name="location" size={16} color={colors.primary} />
+          <Ionicons name="location" size={16} color={palette.primary} />
           <Text style={textStyles.locationText}>
             {submission.latitude?.toFixed(5) ?? "—"}, {submission.longitude?.toFixed(5) ?? "—"}
           </Text>

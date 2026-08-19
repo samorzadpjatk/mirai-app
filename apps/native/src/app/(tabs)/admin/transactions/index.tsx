@@ -7,9 +7,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminTransactions } from "~/hooks/admin/useAdminTransactions";
 import type { TransactionItem } from "~/hooks/admin/useAdminTransactions";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing, typography } from "../../../../styles";
 
 export default function AdminTransactionsScreen() {
@@ -17,6 +19,8 @@ export default function AdminTransactionsScreen() {
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   // Use the custom hook for all transaction operations
   const {
@@ -91,7 +95,7 @@ export default function AdminTransactionsScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="cash-outline" size={48} color={colors.textSecondary} />
+      <Ionicons name="cash-outline" size={48} color={palette.textSecondary} />
       <Text style={styles.emptyText}>
         {searchTerm || selectedGroupId !== "all"
           ? "No transactions found"
@@ -103,6 +107,7 @@ export default function AdminTransactionsScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Transactions" subtitle="View coin transaction history" />
 
@@ -143,13 +148,13 @@ export default function AdminTransactionsScreen() {
               onRefresh={() => {
                 void refetch();
               }}
-              tintColor={colors.primary}
+              tintColor={palette.primary}
             />
           }
           ListFooterComponent={
             isFetchingNextPage ? (
               <View style={styles.listFooter}>
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={palette.primary} />
                 <Text style={styles.loadingText}>Loading more transactions...</Text>
               </View>
             ) : null
@@ -161,57 +166,59 @@ export default function AdminTransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  loadingContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  transactionsList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-  },
-  listFooter: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  emptyContainer: {
-    alignItems: "center" as const,
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    textAlign: "center" as const,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    header: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.lg,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    loadingContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    transactionsList: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+    },
+    listFooter: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    emptyContainer: {
+      alignItems: "center" as const,
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      textAlign: "center" as const,
+    },
+  });
+}

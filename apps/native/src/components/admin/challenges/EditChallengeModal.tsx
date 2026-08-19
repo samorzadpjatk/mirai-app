@@ -5,6 +5,7 @@ import { useAdminChallenges } from "~/hooks/admin";
 import type { AdminChallengeUI } from "~/hooks/admin";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface Props {
   visible: boolean;
@@ -22,6 +23,7 @@ export function filterTripsByName(
 }
 
 export default function EditChallengeModal({ visible, onClose, challenge }: Props) {
+  const { palette } = useTripTheme();
   const [state, setState] = useState({
     title: challenge.title,
     description: challenge.description,
@@ -80,7 +82,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
               style={{
                 backgroundColor: colors.backgroundDark,
                 borderWidth: 1,
-                borderColor: colors.borderDark,
+                borderColor: palette.borderDark,
                 marginTop: spacing.sm,
                 borderRadius: spacing.sm,
                 maxHeight: 160,
@@ -94,7 +96,7 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
                     style={{ paddingVertical: 8 }}
                   >
                     <Text style={{ color: colors.white }}>
-                      {t.name} <Text style={{ color: colors.textSecondary }}>({t.id})</Text>
+                      {t.name} <Text style={{ color: palette.textSecondary }}>({t.id})</Text>
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -110,15 +112,15 @@ export default function EditChallengeModal({ visible, onClose, challenge }: Prop
                       paddingVertical: spacing.sm,
                       borderRadius: spacing.sm,
                       borderWidth: 1,
-                      borderColor: colors.primary,
+                      borderColor: palette.primary,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
                     {isFetchingNextPage ? (
-                      <ActivityIndicator size="small" color={colors.primary} />
+                      <ActivityIndicator size="small" color={palette.primary} />
                     ) : (
-                      <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                      <Text style={{ color: palette.primary, fontWeight: "600" }}>
                         Load more trips
                       </Text>
                     )}

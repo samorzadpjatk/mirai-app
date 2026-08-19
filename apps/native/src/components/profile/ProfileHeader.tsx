@@ -5,17 +5,18 @@ import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
-const getRoleColor = (role: string) => {
+const getRoleColor = (role: string, palette: ThemePalette) => {
   switch (role) {
     case "ADMIN":
-      return colors.accentMagenta;
+      return palette.accentMagenta;
     case "MODERATOR":
-      return colors.primary;
+      return palette.primary;
     case "SERVICE":
       return colors.slate400;
     default:
-      return colors.textMuted;
+      return palette.textMuted;
   }
 };
 
@@ -34,17 +35,17 @@ const getRoleLabel = (role: string) => {
   }
 };
 
-const getRoleBadgeStyle = (role: string) => {
+const getRoleBadgeStyle = (role: string, palette: ThemePalette) => {
   switch (role) {
     case "ADMIN":
       return {
-        backgroundColor: colors.magentaOpacity10,
-        borderColor: colors.magentaOpacity30,
+        backgroundColor: palette.magentaOpacity10,
+        borderColor: palette.magentaOpacity30,
       };
     case "MODERATOR":
       return {
-        backgroundColor: colors.primaryOpacity10,
-        borderColor: colors.primaryOpacity30,
+        backgroundColor: palette.primaryOpacity10,
+        borderColor: palette.primaryOpacity30,
       };
     case "SERVICE":
       return {
@@ -59,7 +60,7 @@ const getRoleBadgeStyle = (role: string) => {
   }
 };
 
-function buildAvatarFallback(initials: string) {
+function buildAvatarFallback(initials: string, styles: ReturnType<typeof makeStyles>) {
   return (
     <View style={styles.avatarFallback}>
       <Text style={styles.avatarLargeText}>{initials}</Text>
@@ -69,6 +70,8 @@ function buildAvatarFallback(initials: string) {
 
 export function ProfileHeader() {
   const { data: currentUser } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   const avatarStoragePath = useMemo(() => {
     if (!currentUser?.id || !currentUser.hasAvatar) return null;
@@ -79,8 +82,8 @@ export function ProfileHeader() {
   const last = currentUser?.lastName;
   const roleValue = (currentUser?.role ?? "USER").toUpperCase();
   const initials = `${first?.charAt(0) ?? ""}${last?.charAt(0) ?? ""}`;
-  const roleColor = getRoleColor(roleValue);
-  const roleBadgeStyle = getRoleBadgeStyle(roleValue);
+  const roleColor = getRoleColor(roleValue, palette);
+  const roleBadgeStyle = getRoleBadgeStyle(roleValue, palette);
   const updatedAtValue = currentUser?.updatedAt;
   const avatarCacheKey = updatedAtValue === undefined ? "no-avatar" : String(updatedAtValue);
 
@@ -93,10 +96,10 @@ export function ProfileHeader() {
             cacheKey={avatarCacheKey}
             style={styles.avatarImage}
             contentFit="cover"
-            fallback={buildAvatarFallback(initials)}
+            fallback={buildAvatarFallback(initials, styles)}
           />
         ) : (
-          buildAvatarFallback(initials)
+          buildAvatarFallback(initials, styles)
         )}
       </View>
 
@@ -112,65 +115,67 @@ export function ProfileHeader() {
   );
 }
 
-const styles = StyleSheet.create({
-  profileHeader: {
-    alignItems: "center",
-    paddingVertical: spacing.xl * 2,
-    position: "relative",
-  },
-  avatarLarge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.cardDark,
-    borderWidth: 3,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarFallback: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
-  avatarLargeText: {
-    fontSize: 36,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  userName: {
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-  },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.3)",
-  },
-  roleText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    profileHeader: {
+      alignItems: "center",
+      paddingVertical: spacing.xl * 2,
+      position: "relative",
+    },
+    avatarLarge: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: palette.cardDark,
+      borderWidth: 3,
+      borderColor: palette.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: spacing.lg,
+      shadowColor: palette.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      overflow: "hidden",
+    },
+    avatarImage: {
+      width: "100%",
+      height: "100%",
+    },
+    avatarFallback: {
+      width: "100%",
+      height: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+    },
+    avatarLargeText: {
+      fontSize: 36,
+      fontWeight: typography.bold,
+      color: palette.primary,
+    },
+    userName: {
+      fontSize: typography.xxl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.sm,
+    },
+    roleBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      backgroundColor: palette.primaryOpacity10,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+    },
+    roleText: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+  });
+}

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ChallengeItem {
   id: string;
@@ -81,122 +82,124 @@ export function getScoringMeta(scoringCategory: ChallengeItem["scoringCategory"]
   }
 }
 
-const styles = {
-  card: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: borderRadius.lg,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 16,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "bold" as const,
-    color: colors.white,
-    marginBottom: 4,
-  },
-  pointsRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 8,
-  },
-  pointsText: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-  },
-  statusText: {
-    fontSize: 12,
-    textTransform: "uppercase" as const,
-    fontWeight: "700" as const,
-  },
-  tagsContainer: {
-    marginTop: 8,
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 6,
-  },
-  tag: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  tagText: {
-    fontSize: 10,
-    fontWeight: "700" as const,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  actionsContainer: {
-    alignSelf: "stretch" as const,
-    alignItems: "flex-end" as const,
-    justifyContent: "space-between" as const,
-    paddingVertical: 2,
-  },
-  statusIndicators: {
-    gap: 6,
-    alignItems: "flex-end" as const,
-  },
-  statusIndicator: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  statusIndicatorText: {
-    fontSize: 10,
-    fontWeight: "700" as const,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.3,
-  },
-  actionButtons: {
-    flexDirection: "row" as const,
-    gap: 4,
-  },
-  actionButton: {
-    padding: 8,
-  },
-  emptyState: {
-    padding: 24,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    backgroundColor: colors.cardDark,
-    alignItems: "center" as const,
-  },
-  emptyStateText: {
-    color: colors.gray400,
-  },
-  loadingMoreContainer: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginTop: 16,
-  },
-  loadingMoreText: {
-    fontSize: 12,
-  },
-};
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      borderRadius: borderRadius.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
+    iconContainer: {
+      width: 48,
+      height: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    content: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colors.white,
+      marginBottom: 4,
+    },
+    pointsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    pointsText: {
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    statusText: {
+      fontSize: 12,
+      textTransform: "uppercase",
+      fontWeight: "700",
+    },
+    tagsContainer: {
+      marginTop: 8,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+    },
+    tag: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    tagText: {
+      fontSize: 10,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    actionsContainer: {
+      alignSelf: "stretch",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      paddingVertical: 2,
+    },
+    statusIndicators: {
+      gap: 6,
+      alignItems: "flex-end",
+    },
+    statusIndicator: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    statusIndicatorText: {
+      fontSize: 10,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: 0.3,
+    },
+    actionButtons: {
+      flexDirection: "row",
+      gap: 4,
+    },
+    actionButton: {
+      padding: 8,
+    },
+    emptyState: {
+      padding: 24,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      backgroundColor: palette.cardDark,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      color: colors.gray400,
+    },
+    loadingMoreContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 16,
+    },
+    loadingMoreText: {
+      fontSize: 12,
+    },
+  });
+}
 
 export function AdminChallengeListCard({
   challenge,
@@ -205,6 +208,8 @@ export function AdminChallengeListCard({
   tripId,
 }: AdminChallengeListCardProps) {
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const statusColor = statusColors[challenge.status] ?? colors.gray400;
   const hasPendingSubmissions = challenge.pendingSubmissionsCount > 0;
@@ -403,7 +408,7 @@ export function AdminChallengeListCard({
               <Ionicons
                 name="git-compare"
                 size={20}
-                color={isStaffVotingAvailable ? colors.primary : colors.gray400}
+                color={isStaffVotingAvailable ? palette.primary : colors.gray400}
               />
             </TouchableOpacity>
           ) : (
@@ -413,7 +418,7 @@ export function AdminChallengeListCard({
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.actionButton} onPress={handleJudgement}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                <Ionicons name="checkmark-circle" size={20} color={palette.primary} />
               </TouchableOpacity>
             </>
           )}

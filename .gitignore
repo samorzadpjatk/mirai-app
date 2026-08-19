@@ -126,3 +126,5 @@ coverage.txt
 # profiling reports
 reports/
 docs/profiling-report.md
+# VPN configs (WireGuard) - nigdy nie commitowac, zawieraja klucze prywatne
+*.conf

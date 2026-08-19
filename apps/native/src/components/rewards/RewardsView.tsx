@@ -11,10 +11,12 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useMyGroup } from "~/hooks/groups";
 import { usePurchaseReward, useRewards } from "~/hooks/rewards";
 import { useTripDetails } from "~/hooks/trips";
 import { colors, commonStyles } from "~/styles";
+import { type ThemePalette, useTripTheme } from "~/theme/TripThemeProvider";
 import RewardCard from "./RewardCard";
 import RewardDetailsModal from "./RewardDetailsModal";
 import RewardPurchaseModal from "./RewardPurchaseModal";
@@ -62,6 +64,7 @@ export function getRewardButtonState(
   isEligibleToBuy: boolean,
   isOutOfStock: boolean,
   isTripPast: boolean,
+  palette: ThemePalette = colors,
 ): RewardButtonState {
   const enabled = canAfford && isEligibleToBuy && !isOutOfStock && !isTripPast;
   let text: string;
@@ -79,7 +82,7 @@ export function getRewardButtonState(
   return {
     disabled: !enabled,
     text,
-    backgroundColor: enabled ? colors.primary : colors.gray700,
+    backgroundColor: enabled ? palette.primary : colors.gray700,
     opacity: enabled ? 1 : 0.5,
   };
 }
@@ -146,6 +149,7 @@ export function getPurchaseValidationError(
 
 export default function RewardsView({ tripId }: Props) {
   const router = useRouter();
+  const { palette } = useTripTheme();
   const queryClient = useQueryClient();
   const { data: rewards, isLoading, error, refetch } = useRewards(tripId);
   const { group: currentUserGroup } = useMyGroup(tripId);
@@ -254,6 +258,7 @@ export default function RewardsView({ tripId }: Props) {
   if (!safeRewards || safeRewards.length === 0) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <DeckBackground />
         <Ionicons name="gift" size={48} color={colors.gray500} />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
           No rewards available for this trip
@@ -264,6 +269,7 @@ export default function RewardsView({ tripId }: Props) {
 
   return (
     <View style={commonStyles.container}>
+      <DeckBackground />
       <View style={{ padding: 16 }}>
         <View
           style={{
@@ -303,15 +309,15 @@ export default function RewardsView({ tripId }: Props) {
               paddingVertical: 6,
             }}
           >
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+            <Ionicons name="time-outline" size={14} color={palette.textSecondary} />
             <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>History</Text>
           </TouchableOpacity>
         </View>
 
         {currentUserGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Ionicons name="people" size={16} color={colors.primary} />
-            <Text style={[commonStyles.textPrimary, { color: colors.primary }]}>
+            <Ionicons name="people" size={16} color={palette.primary} />
+            <Text style={[commonStyles.textPrimary, { color: palette.primary }]}>
               {currentUserGroup.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -332,8 +338,8 @@ export default function RewardsView({ tripId }: Props) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={palette.primary}
+            colors={[palette.primary]}
           />
         }
       >

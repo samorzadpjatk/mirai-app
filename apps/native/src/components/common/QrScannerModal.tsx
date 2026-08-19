@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from "react";
 import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export interface QrScannerModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ export function QrScannerModal({
   onScan,
   scanOncePerSession = true,
 }: QrScannerModalProps) {
+  const styles = useThemedStyles(makeStyles);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [hasScannedThisSession, setHasScannedThisSession] = useState(false);
   const scanLockRef = useRef(false);
@@ -132,67 +134,69 @@ export function QrScannerModal({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  closeButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  closeText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-  },
-  cameraContainer: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: spacing.xl,
-  },
-  permissionText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: "center",
-    marginBottom: spacing.lg,
-  },
-  permissionButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
-  },
-  permissionButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  footerText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    textAlign: "center",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    title: {
+      color: colors.white,
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    closeButton: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    closeText: {
+      color: palette.textSecondary,
+      fontSize: 16,
+    },
+    cameraContainer: {
+      flex: 1,
+    },
+    camera: {
+      flex: 1,
+    },
+    permissionContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: spacing.xl,
+    },
+    permissionText: {
+      color: palette.textSecondary,
+      fontSize: 16,
+      textAlign: "center",
+      marginBottom: spacing.lg,
+    },
+    permissionButton: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      borderRadius: 8,
+    },
+    permissionButtonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    footer: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    footerText: {
+      color: palette.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+    },
+  });
+}

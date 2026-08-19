@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface GroupsListHeaderProps {
   title: string;
@@ -7,6 +8,7 @@ interface GroupsListHeaderProps {
 }
 
 export function GroupsListHeader({ title, count }: GroupsListHeaderProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID="groups-list-header" style={styles.listHeader}>
       <Text style={styles.listHeaderTitle}>{title}</Text>
@@ -15,25 +17,26 @@ export function GroupsListHeader({ title, count }: GroupsListHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  listHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  listHeaderTitle: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  listHeaderCount: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    listHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.xs,
+      marginBottom: spacing.lg,
+    },
+    listHeaderTitle: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      letterSpacing: 2,
+      textTransform: "uppercase",
+    },
+    listHeaderCount: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+    },
+  });

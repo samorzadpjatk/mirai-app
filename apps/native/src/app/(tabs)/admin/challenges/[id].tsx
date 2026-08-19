@@ -11,13 +11,16 @@ import {
   toOptionalInt,
   toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { colors } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export default function EditChallengeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
+  const styles = useThemedStyles(makeStyles);
 
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
   const challengeId = typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
@@ -187,6 +190,7 @@ export default function EditChallengeScreen() {
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
+      <DeckBackground />
       <ChallengeFormFields
         formState={formState}
         onSave={handleSave}
@@ -199,18 +203,20 @@ export default function EditChallengeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  missingContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  missingText: {
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    missingContainer: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    missingText: {
+      color: palette.textSecondary,
+    },
+  });
+}

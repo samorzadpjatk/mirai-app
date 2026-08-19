@@ -4,10 +4,12 @@ import { useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";
@@ -16,6 +18,7 @@ interface CoinOperationScreenProps {
 export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{
     tripId?: string | string[];
     groupId?: string | string[];
@@ -97,6 +100,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title={title} subtitle={subtitle} />
 
@@ -155,36 +159,38 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.md,
-  },
-  summaryCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  readOnlyInput: {
-    color: colors.textPrimary,
-  },
-  textArea: {
-    minHeight: 96,
-    textAlignVertical: "top",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xxxl,
+      gap: spacing.md,
+    },
+    summaryCard: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    summaryRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    readOnlyInput: {
+      color: colors.textPrimary,
+    },
+    textArea: {
+      minHeight: 96,
+      textAlignVertical: "top",
+    },
+  });
+}

@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View } from "react-native";
 import { FilterChip, FilterChipRow } from "~/components/common/ui";
 import type { NotificationStatus } from "~/hooks/admin/useAdminNotifications";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface NotificationFiltersProps {
   searchTerm: string;
@@ -30,17 +31,19 @@ export function NotificationFilters({
   selectedGroupId,
   onGroupChange,
 }: NotificationFiltersProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <View style={styles.container}>
       <View style={styles.searchSection}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <Ionicons name="search" size={20} color={palette.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search notifications..."
             value={searchTerm}
             onChangeText={onSearchChange}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={palette.textSecondary}
           />
         </View>
       </View>
@@ -77,35 +80,37 @@ export function NotificationFilters({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.sm,
-  },
-  searchSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  searchBar: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  statusSelector: {
-    paddingHorizontal: spacing.lg,
-  },
-  groupSelector: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      marginBottom: spacing.sm,
+    },
+    searchSection: {
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    searchBar: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: spacing.sm,
+      fontSize: typography.base,
+      color: colors.white,
+    },
+    statusSelector: {
+      paddingHorizontal: spacing.lg,
+    },
+    groupSelector: {
+      paddingHorizontal: spacing.lg,
+      marginTop: spacing.sm,
+    },
+  });
+}

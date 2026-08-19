@@ -9,9 +9,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { EmptyState, FilterChip, FilterChipRow, ThemedTextInput } from "~/components/common/ui";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type ActivityType = Activity["activityType"];
 
@@ -38,6 +40,8 @@ export default function AdminActivityScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,6 +145,7 @@ export default function AdminActivityScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Activity" subtitle="Manage community activity feed" />
 
@@ -188,7 +193,7 @@ export default function AdminActivityScreen() {
               onRefresh={() => {
                 void refetch();
               }}
-              tintColor={colors.primary}
+              tintColor={palette.primary}
             />
           }
           contentContainerStyle={styles.listContent}
@@ -236,46 +241,48 @@ export default function AdminActivityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  filtersWrap: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.cardDark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.white,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-  skeletonList: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
-  centerState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  centerSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    textAlign: "center",
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    filtersWrap: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    searchInput: {
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.lg,
+      backgroundColor: palette.cardDark,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      color: colors.white,
+    },
+    listContent: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+    skeletonList: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      gap: spacing.md,
+    },
+    centerState: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    centerSubtitle: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+      textAlign: "center",
+    },
+  });
+}

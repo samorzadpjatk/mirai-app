@@ -26,11 +26,13 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { EmptyState } from "~/components/common/ui";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { type Notification, useAdminNotifications } from "~/hooks/admin/useAdminNotifications";
 import { type NotificationSchedule, useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 type AdminNotificationsTab = "sent" | "planned";
 type PlannedSchedulesTab = "recurring" | "scheduled";
@@ -79,6 +81,8 @@ export default function AdminNotificationsScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [plannedSearchTerm, setPlannedSearchTerm] = useState("");
@@ -279,6 +283,7 @@ export default function AdminNotificationsScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Notifications" />
 
@@ -342,13 +347,13 @@ export default function AdminNotificationsScreen() {
                   onRefresh={() => {
                     void refetch();
                   }}
-                  tintColor={colors.primary}
+                  tintColor={palette.primary}
                 />
               }
               ListFooterComponent={
                 isFetchingNextPage ? (
                   <View style={styles.listFooter}>
-                    <ActivityIndicator size="small" color={colors.primary} />
+                    <ActivityIndicator size="small" color={palette.primary} />
                     <Text style={styles.inlineLoadingText}>Loading more notifications...</Text>
                   </View>
                 ) : null
@@ -371,13 +376,13 @@ export default function AdminNotificationsScreen() {
 
           <View style={styles.searchSection}>
             <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color={colors.textSecondary} />
+              <Ionicons name="search" size={20} color={palette.textSecondary} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search planned by title..."
                 value={plannedSearchTerm}
                 onChangeText={setPlannedSearchTerm}
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor={palette.textSecondary}
               />
             </View>
           </View>
@@ -409,7 +414,7 @@ export default function AdminNotificationsScreen() {
 
               {areSchedulesLoading ? (
                 <View style={styles.inlineLoadingContainer}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={palette.primary} />
                   <Text style={styles.inlineLoadingText}>Loading schedules...</Text>
                 </View>
               ) : recurringSchedules.length === 0 ? (
@@ -440,7 +445,7 @@ export default function AdminNotificationsScreen() {
 
               {areSchedulesLoading ? (
                 <View style={styles.inlineLoadingContainer}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={palette.primary} />
                   <Text style={styles.inlineLoadingText}>Loading schedules...</Text>
                 </View>
               ) : oneTimeScheduled.length === 0 ? (
@@ -499,115 +504,117 @@ export default function AdminNotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  tabsRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  tabButton: {
-    flex: 1,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    backgroundColor: colors.cardDark,
-    paddingVertical: spacing.sm,
-    alignItems: "center",
-  },
-  tabButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  tabText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  tabTextActive: {
-    color: colors.white,
-  },
-  sectionHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  sectionTitle: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  loadingContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  notificationsList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-  },
-  listFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-  },
-  plannedTabsRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  searchSection: {
-    marginBottom: spacing.md,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  inlineLoadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  inlineLoadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-  inlineEmptyContainer: {
-    marginBottom: spacing.md,
-  },
-  inlineEmptyText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    tabsRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    tabButton: {
+      flex: 1,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      backgroundColor: palette.cardDark,
+      paddingVertical: spacing.sm,
+      alignItems: "center",
+    },
+    tabButtonActive: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    tabText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    tabTextActive: {
+      color: colors.white,
+    },
+    sectionHeader: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.sm,
+    },
+    sectionTitle: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.medium,
+    },
+    loadingContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    notificationsList: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+    },
+    listFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+    },
+    plannedTabsRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    searchSection: {
+      marginBottom: spacing.md,
+    },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: spacing.sm,
+      fontSize: typography.base,
+      color: colors.white,
+    },
+    inlineLoadingContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    inlineLoadingText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+    },
+    inlineEmptyContainer: {
+      marginBottom: spacing.md,
+    },
+    inlineEmptyText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+    },
+  });
+}

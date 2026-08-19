@@ -3,7 +3,8 @@ import { formatDisplayName } from "@mirai-app/common/users";
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import type { Group, User } from "~/hooks/admin/useAdminUsers";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
 interface GroupAssignmentModalProps {
@@ -35,6 +36,7 @@ export function GroupAssignmentModal({
   onAssign,
   loading = false,
 }: GroupAssignmentModalProps) {
+  const { palette } = useTripTheme();
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
 
   const handleAssign = async () => {
@@ -77,7 +79,7 @@ export function GroupAssignmentModal({
             style={{
               fontSize: typography.base,
               fontWeight: typography.semibold,
-              color: colors.white,
+              color: palette.white,
               marginBottom: spacing.xs,
             }}
           >
@@ -86,14 +88,14 @@ export function GroupAssignmentModal({
           <Text
             style={{
               fontSize: typography.sm,
-              color: colors.textSecondary,
+              color: palette.textSecondary,
               marginBottom: spacing.sm,
             }}
           >
             {user.email}
           </Text>
           {user.group && (
-            <Text style={{ fontSize: typography.sm, color: colors.primary }}>
+            <Text style={{ fontSize: typography.sm, color: palette.primary }}>
               Current: {user.group.name}
             </Text>
           )}
@@ -112,19 +114,19 @@ export function GroupAssignmentModal({
                   justifyContent: "space-between",
                   paddingVertical: spacing.sm,
                   borderBottomWidth: 1,
-                  borderBottomColor: colors.borderWhite5,
+                  borderBottomColor: palette.borderWhite5,
                 },
                 selectedGroup?.id === group.id && {
-                  backgroundColor: colors.primaryOpacity10,
+                  backgroundColor: palette.primaryOpacity10,
                 },
               ]}
               onPress={() => setSelectedGroup(group)}
             >
               <Text
                 style={[
-                  { fontSize: typography.base, color: colors.white, flex: 1 },
+                  { fontSize: typography.base, color: palette.white, flex: 1 },
                   selectedGroup?.id === group.id && {
-                    color: colors.primary,
+                    color: palette.primary,
                     fontWeight: typography.semibold,
                   },
                 ]}
@@ -132,7 +134,7 @@ export function GroupAssignmentModal({
                 {group.name}
               </Text>
               {selectedGroup?.id === group.id && (
-                <Ionicons name="checkmark" size={18} color={colors.primary} />
+                <Ionicons name="checkmark" size={18} color={palette.primary} />
               )}
             </TouchableOpacity>
           ))}

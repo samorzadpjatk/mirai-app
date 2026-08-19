@@ -3,11 +3,13 @@ import { MapModalShell } from "~/components/map/modals/MapModalShell";
 import { MapModalUserItem } from "~/components/map/modals/MapModalUserItem";
 import { useMapOverlayStore } from "~/stores/map";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export function ManageSharingModal() {
   const { showManageModal, setShowManageModal, sharingSettings, isRemovingUser, handleRemoveUser } =
     useMapOverlayStore();
   const users = sharingSettings?.usersToShareWith ?? [];
+  const styles = useThemedStyles(makeStyles);
 
   return (
     <MapModalShell
@@ -58,31 +60,35 @@ export function ManageSharingModal() {
   );
 }
 
-const styles = StyleSheet.create({
-  modalUsersList: {
-    padding: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  removeButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.red900Opacity30,
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  removeButtonText: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.danger,
-  },
-  emptyState: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-});
+// Note: red900Opacity30/danger are semantic (destructive "remove" action) and are
+// intentionally left on the fixed `colors` token, not the per-trip palette.
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    modalUsersList: {
+      padding: spacing.md,
+      paddingTop: spacing.sm,
+    },
+    removeButton: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.sm,
+      backgroundColor: colors.red900Opacity30,
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    removeButtonText: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: colors.danger,
+    },
+    emptyState: {
+      paddingVertical: spacing.xl,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      textAlign: "center",
+    },
+  });
+}

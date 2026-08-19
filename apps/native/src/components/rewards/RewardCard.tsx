@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { colors, commonStyles } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import {
   getRewardAvailabilityColor,
   getRewardAvailabilityText,
@@ -27,6 +29,7 @@ export default function RewardCard({
   onPress,
   onPurchasePress,
 }: Props) {
+  const { palette } = useTripTheme();
   const rewardImages = getRewardImages(reward);
   const rewardPrimaryImage = rewardImages[0] ?? null;
   const buttonState = getRewardButtonState(
@@ -34,6 +37,7 @@ export default function RewardCard({
     reward.isEligibleToBuy,
     reward.isOutOfStock,
     isTripPast,
+    palette,
   );
 
   return (
@@ -49,6 +53,7 @@ export default function RewardCard({
         ...getRewardShadowProps(justRefreshed),
       }}
     >
+      <WoodTexture radius={12} />
       <TouchableOpacity activeOpacity={0.85} onPress={() => onPress(reward)}>
         {rewardPrimaryImage ? (
           <CachedImage
@@ -84,14 +89,14 @@ export default function RewardCard({
           <Text
             numberOfLines={3}
             ellipsizeMode="tail"
-            style={[commonStyles.textSecondary, { color: colors.textSecondary, marginBottom: 6 }]}
+            style={[commonStyles.textSecondary, { color: palette.textSecondary, marginBottom: 6 }]}
           >
             {reward.description}
           </Text>
           <Text
             style={[
               commonStyles.textSecondary,
-              { color: colors.primary, fontSize: 11, marginBottom: 8 },
+              { color: palette.primary, fontSize: 11, marginBottom: 8 },
             ]}
           >
             Tap to read full description
@@ -119,7 +124,7 @@ export default function RewardCard({
                   <Text
                     style={[
                       commonStyles.textSecondary,
-                      { color: colors.textSecondary, fontSize: 10, lineHeight: 12 },
+                      { color: palette.textSecondary, fontSize: 10, lineHeight: 12 },
                     ]}
                   >
                     {reward.originalCoinCost}% of total points

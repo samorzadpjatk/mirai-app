@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { TripBanner } from "~/components/trips/TripBanner";
 import { type Partner, PartnersSection } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
@@ -72,9 +73,10 @@ export default function TripDetailsScreen() {
     <>
       <StatusBar style="light" />
       <View style={styles.container}>
+        <DeckBackground />
         {/* Main Content */}
         <ScrollView
-          style={styles.mainContent}
+          style={[styles.mainContent, styles.contentAboveDeck]}
           contentContainerStyle={[
             styles.contentContainer,
             {
@@ -124,6 +126,11 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
+  },
+  // Keep content strictly above the deck background (defensive z-order so
+  // the hero/tiles never get covered by the absolute-fill background image).
+  contentAboveDeck: {
+    zIndex: 1,
   },
   contentContainer: {
     paddingBottom: 0,

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ErrorStateProps {
   title?: string;
@@ -15,6 +16,7 @@ export function ErrorState({
   onRetry,
   retryLabel = "Retry",
 }: ErrorStateProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID="error-state-container" style={styles.container}>
       <Ionicons name="warning-outline" size={48} color={colors.red400} />
@@ -34,36 +36,38 @@ export function ErrorState({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  title: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  retryButton: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: spacing.xl,
+      gap: spacing.md,
+    },
+    title: {
+      fontSize: typography.xl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      textAlign: "center",
+    },
+    message: {
+      fontSize: typography.base,
+      color: palette.textMuted,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    retryButton: {
+      marginTop: spacing.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      backgroundColor: palette.primary,
+      borderRadius: 8,
+    },
+    retryText: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+  });
+}

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { colors, commonStyles } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { getTotalCost } from "./RewardsView";
 import type { RewardListItem } from "./types";
 
@@ -23,6 +24,7 @@ export default function RewardPurchaseModal({
   onConfirm,
   isPending,
 }: Props) {
+  const { palette } = useTripTheme();
   return (
     <Modal
       testID="purchase-modal"
@@ -44,7 +46,7 @@ export default function RewardPurchaseModal({
         >
           <Text style={[commonStyles.h3]}>Claim reward</Text>
           <TouchableOpacity testID="close-purchase-modal" onPress={onClose}>
-            <Ionicons name="close" size={24} color={colors.textSecondary} />
+            <Ionicons name="close" size={24} color={palette.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -56,7 +58,7 @@ export default function RewardPurchaseModal({
                 <Text
                   style={[
                     commonStyles.textSecondary,
-                    { color: colors.textSecondary, marginBottom: 16 },
+                    { color: palette.textSecondary, marginBottom: 16 },
                   ]}
                 >
                   {reward.description}
@@ -84,7 +86,7 @@ export default function RewardPurchaseModal({
                         <Text
                           style={[
                             commonStyles.textSecondary,
-                            { color: colors.textSecondary, fontSize: 11, lineHeight: 13 },
+                            { color: palette.textSecondary, fontSize: 11, lineHeight: 13 },
                           ]}
                         >
                           {reward.originalCoinCost}% of total points
@@ -137,7 +139,10 @@ export default function RewardPurchaseModal({
                 testID="confirm-purchase"
                 onPress={onConfirm}
                 disabled={isPending}
-                style={[commonStyles.button, { marginBottom: 24 }]}
+                style={[
+                  commonStyles.button,
+                  { backgroundColor: palette.primary, marginBottom: 24 },
+                ]}
               >
                 <Text style={commonStyles.buttonText}>
                   {isPending ? "Claiming..." : "Confirm claim"}

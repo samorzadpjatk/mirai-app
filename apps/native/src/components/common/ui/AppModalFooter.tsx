@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { colors, spacing } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { PrimaryLoadingButton } from "../buttons/PrimaryLoadingButton";
 
 interface AppModalFooterProps {
@@ -30,6 +31,7 @@ export function AppModalFooter({
   primaryTestID = "app-modal-footer-primary",
   secondaryTestID = "app-modal-footer-secondary",
 }: AppModalFooterProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.footer, variant === "right" && styles.footerRight, style]}>
       {children}
@@ -58,35 +60,37 @@ export function AppModalFooter({
   );
 }
 
-const styles = StyleSheet.create({
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderWhite5,
-    gap: spacing.md,
-  },
-  footerRight: {
-    justifyContent: "flex-end",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.md,
-    flex: 1,
-  },
-  primaryButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  secondaryButtonText: {
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    footer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderWhite5,
+      gap: spacing.md,
+    },
+    footerRight: {
+      justifyContent: "flex-end",
+    },
+    actions: {
+      flexDirection: "row",
+      gap: spacing.md,
+      flex: 1,
+    },
+    primaryButton: {
+      flex: 1,
+    },
+    secondaryButton: {
+      flex: 1,
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    secondaryButtonText: {
+      color: palette.textSecondary,
+    },
+  });
+}

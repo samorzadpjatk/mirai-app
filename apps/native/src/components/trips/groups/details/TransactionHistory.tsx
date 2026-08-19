@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDisplayName } from "@mirai-app/common/users";
 import type React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "../../../../styles";
+import { borderRadius, spacing, typography } from "../../../../styles";
+import { type ThemePalette, useThemedStyles } from "../../../../theme/TripThemeProvider";
 
 interface CoinTransaction {
   id: string;
@@ -21,6 +22,7 @@ interface TransactionHistoryProps {
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transactions }) => {
+  const styles = useThemedStyles(makeStyles);
   const formatDate = (date: Date | string) => {
     const dateObj = typeof date === "string" ? new Date(date) : date;
     return dateObj.toLocaleString("en-US", {
@@ -98,106 +100,108 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({ transact
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.lg,
-  },
-  title: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    paddingHorizontal: spacing.xs,
-  },
-  emptyState: {
-    backgroundColor: "rgba(35, 38, 43, 0.8)",
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: "center",
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: "rgba(100, 116, 139, 0.2)",
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#64748b",
-    textAlign: "center",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#475569",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  scrollContent: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  transactionCard: {
-    backgroundColor: "rgba(35, 38, 43, 0.8)",
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    minWidth: 280,
-    maxWidth: 320,
-    borderWidth: 1,
-    borderColor: "rgba(100, 116, 139, 0.2)",
-    gap: spacing.md,
-  },
-  transactionHeader: {
-    gap: spacing.sm,
-  },
-  amountContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: spacing.xs,
-  },
-  amount: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  positiveAmount: {
-    color: "#10b981",
-  },
-  negativeAmount: {
-    color: "#ef4444",
-  },
-  coinLabel: {
-    fontSize: 12,
-    color: "#64748b",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  transactionMeta: {
-    gap: spacing.xs,
-  },
-  date: {
-    fontSize: 12,
-    color: "#94a3b8",
-  },
-  admin: {
-    fontSize: 13,
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  reasonContainer: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  reasonLabel: {
-    fontSize: 11,
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontWeight: "600",
-  },
-  reasonText: {
-    fontSize: 13,
-    color: "#cbd5e1",
-    lineHeight: 18,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      gap: spacing.lg,
+    },
+    title: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+      paddingHorizontal: spacing.xs,
+    },
+    emptyState: {
+      backgroundColor: "rgba(35, 38, 43, 0.8)",
+      borderRadius: borderRadius.lg,
+      padding: spacing.xl,
+      alignItems: "center",
+      gap: spacing.md,
+      borderWidth: 1,
+      borderColor: "rgba(100, 116, 139, 0.2)",
+    },
+    emptyText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#64748b",
+      textAlign: "center",
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: "#475569",
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    scrollContent: {
+      gap: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    transactionCard: {
+      backgroundColor: "rgba(35, 38, 43, 0.8)",
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      minWidth: 280,
+      maxWidth: 320,
+      borderWidth: 1,
+      borderColor: "rgba(100, 116, 139, 0.2)",
+      gap: spacing.md,
+    },
+    transactionHeader: {
+      gap: spacing.sm,
+    },
+    amountContainer: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: spacing.xs,
+    },
+    amount: {
+      fontSize: 24,
+      fontWeight: "bold",
+    },
+    positiveAmount: {
+      color: "#10b981",
+    },
+    negativeAmount: {
+      color: "#ef4444",
+    },
+    coinLabel: {
+      fontSize: 12,
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    transactionMeta: {
+      gap: spacing.xs,
+    },
+    date: {
+      fontSize: 12,
+      color: "#94a3b8",
+    },
+    admin: {
+      fontSize: 13,
+      color: "#64748b",
+      fontWeight: "500",
+    },
+    reasonContainer: {
+      backgroundColor: "rgba(30, 41, 59, 0.5)",
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      gap: spacing.xs,
+    },
+    reasonLabel: {
+      fontSize: 11,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      fontWeight: "600",
+    },
+    reasonText: {
+      fontSize: 13,
+      color: "#cbd5e1",
+      lineHeight: 18,
+    },
+  });
+}

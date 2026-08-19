@@ -13,6 +13,7 @@ import {
   useUpdateRewardPurchaseStatus,
 } from "~/hooks/rewards";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface Props {
   rewardId: string | null;
@@ -25,14 +26,15 @@ const purchaseStatusMeta: Record<
   PurchaseStatus,
   { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
-  BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
-  ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
-  IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
-  CANCELLED: { label: "Cancelled", color: "#ef4444", icon: "close-circle-outline" },
-  DELIVERED: { label: "Delivered", color: "#10b981", icon: "cube-outline" },
+  BOUGHT: { label: "Bought", color: colors.amber400, icon: "receipt-outline" },
+  ACCEPTED: { label: "Accepted", color: colors.success, icon: "checkmark-circle-outline" },
+  IN_DELIVERY: { label: "In delivery", color: colors.sky400, icon: "car-outline" },
+  CANCELLED: { label: "Cancelled", color: colors.danger, icon: "close-circle-outline" },
+  DELIVERED: { label: "Delivered", color: colors.statusCompleted, icon: "cube-outline" },
 };
 
 export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
+  const { palette } = useTripTheme();
   const { upload, status: uploadStatus } = useFileUpload();
   const { data: reward, isLoading } = useReward(rewardId ?? null);
   const updateReward = useUpdateReward();
@@ -249,7 +251,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       <View style={{ padding: spacing.lg }}>
         {reward && (
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={{ color: colors.textSecondary, fontSize: typography.sm }}>
+            <Text style={{ color: palette.textSecondary, fontSize: typography.sm }}>
               Created: {new Date(reward.createdAt).toLocaleDateString()} |{" "}
               {reward.createdBy?.firstName} {reward.createdBy?.lastName}
             </Text>
@@ -265,7 +267,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
 
         {isLoading || !reward ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <ActivityIndicator testID="loading-indicator" size="large" color={colors.primary} />
+            <ActivityIndicator testID="loading-indicator" size="large" color={palette.primary} />
           </View>
         ) : (
           <View style={{ flex: 1 }}>
@@ -279,7 +281,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                       width: "100%",
                       aspectRatio: 1,
                       borderRadius: borderRadius.md,
-                      backgroundColor: colors.cardDark,
+                      backgroundColor: palette.cardDark,
                     }}
                     contentFit="cover"
                   />
@@ -289,7 +291,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                       disabled={isUploadingImage}
                       style={{
                         flex: 1,
-                        backgroundColor: colors.primary,
+                        backgroundColor: palette.primary,
                         padding: spacing.sm,
                         borderRadius: borderRadius.md,
                         alignItems: "center",
@@ -326,9 +328,9 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                   onPress={handlePickImage}
                   disabled={isUploadingImage}
                   style={{
-                    backgroundColor: colors.cardDark,
+                    backgroundColor: palette.cardDark,
                     borderWidth: 1,
-                    borderColor: colors.borderDark,
+                    borderColor: palette.borderDark,
                     borderRadius: borderRadius.md,
                     padding: spacing.sm,
                     alignItems: "center",
@@ -337,11 +339,11 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                   }}
                 >
                   {isUploadingImage ? (
-                    <ActivityIndicator color={colors.primary} />
+                    <ActivityIndicator color={palette.primary} />
                   ) : (
                     <View style={{ alignItems: "center" }}>
-                      <Ionicons name="image" size={24} color={colors.textSecondary} />
-                      <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>
+                      <Ionicons name="image" size={24} color={palette.textSecondary} />
+                      <Text style={{ color: palette.textSecondary, marginTop: spacing.sm }}>
                         Add image
                       </Text>
                     </View>
@@ -386,7 +388,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                     style={{
                       fontSize: typography.xs,
                       marginTop: spacing.xs,
-                      color: colors.textSecondary,
+                      color: palette.textSecondary,
                     }}
                   >
                     Percentage of total available points
@@ -404,7 +406,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 >
                   Purchases
                 </Text>
-                <Text style={{ color: colors.textSecondary }}>{purchasedCount} purchased</Text>
+                <Text style={{ color: palette.textSecondary }}>{purchasedCount} purchased</Text>
                 {reward.purchases.length > 0 ? (
                   <View style={{ gap: spacing.sm }}>
                     {reward.purchases.map((purchase) => {
@@ -418,9 +420,9 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                         <View
                           key={purchase.id}
                           style={{
-                            backgroundColor: "#0f2323",
+                            backgroundColor: colors.cardBackground,
                             borderWidth: 1,
-                            borderColor: "#273a3a",
+                            borderColor: colors.cardBorder,
                             borderRadius: 12,
                             padding: 12,
                             gap: 10,
@@ -463,15 +465,15 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                             </View>
                           </View>
 
-                          <Text style={{ color: colors.textSecondary }}>
+                          <Text style={{ color: palette.textSecondary }}>
                             Group: {purchase.group?.name ?? "Unknown"}
                           </Text>
                           {purchaserName ? (
-                            <Text style={{ color: colors.textSecondary }}>
+                            <Text style={{ color: palette.textSecondary }}>
                               Claimed by: {purchaserName}
                             </Text>
                           ) : null}
-                          <Text style={{ color: colors.textSecondary }}>
+                          <Text style={{ color: palette.textSecondary }}>
                             {new Date(purchase.purchasedAt).toLocaleString()}
                           </Text>
 
@@ -547,7 +549,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                                   }
                                   disabled={isMutating}
                                   style={{
-                                    backgroundColor: colors.primary,
+                                    backgroundColor: palette.primary,
                                     borderRadius: 999,
                                     paddingHorizontal: spacing.sm,
                                     paddingVertical: spacing.xs,
@@ -653,7 +655,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 disabled={isMutating}
                 style={{
                   backgroundColor: reward.isHidden
-                    ? colors.primaryOpacity10
+                    ? palette.primaryOpacity10
                     : colors.red900Opacity30,
                   padding: spacing.sm,
                   borderRadius: borderRadius.md,

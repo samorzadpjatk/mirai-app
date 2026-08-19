@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { CachedImage } from "~/components/common/CachedImage";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import {
   useAdminRewards,
@@ -26,6 +27,7 @@ import {
 } from "~/hooks/rewards";
 import { colors, spacing } from "~/styles";
 import { commonStyles } from "~/styles/commonStyles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 type ViewMode = "PURCHASES" | "REWARDS";
 type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
@@ -76,6 +78,7 @@ const statusMeta: Record<
 
 export default function AdminRewardsPage() {
   const router = useRouter();
+  const { palette } = useTripTheme();
   const params = useLocalSearchParams();
   const tripIdParam = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const tripId = useMemo(() => tripIdParam ?? "all", [tripIdParam]);
@@ -237,6 +240,7 @@ export default function AdminRewardsPage() {
       style={[commonStyles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
       <AdminHeader
         title="Rewards"
         subtitle={
@@ -256,7 +260,7 @@ export default function AdminRewardsPage() {
               flex: 1,
               borderRadius: 999,
               borderWidth: 1,
-              borderColor: viewMode === "PURCHASES" ? colors.primary : colors.cardBorder,
+              borderColor: viewMode === "PURCHASES" ? palette.primary : colors.cardBorder,
               backgroundColor:
                 viewMode === "PURCHASES" ? "rgba(0, 206, 209, 0.14)" : colors.cardBackground,
               paddingVertical: 10,
@@ -267,7 +271,7 @@ export default function AdminRewardsPage() {
               style={[
                 commonStyles.label,
                 {
-                  color: viewMode === "PURCHASES" ? colors.primary : colors.textSecondary,
+                  color: viewMode === "PURCHASES" ? palette.primary : palette.textSecondary,
                   letterSpacing: 1,
                 },
               ]}
@@ -281,7 +285,7 @@ export default function AdminRewardsPage() {
               flex: 1,
               borderRadius: 999,
               borderWidth: 1,
-              borderColor: viewMode === "REWARDS" ? colors.primary : colors.cardBorder,
+              borderColor: viewMode === "REWARDS" ? palette.primary : colors.cardBorder,
               backgroundColor:
                 viewMode === "REWARDS" ? "rgba(0, 206, 209, 0.14)" : colors.cardBackground,
               paddingVertical: 10,
@@ -292,7 +296,7 @@ export default function AdminRewardsPage() {
               style={[
                 commonStyles.label,
                 {
-                  color: viewMode === "REWARDS" ? colors.primary : colors.textSecondary,
+                  color: viewMode === "REWARDS" ? palette.primary : palette.textSecondary,
                   letterSpacing: 1,
                 },
               ]}
@@ -315,7 +319,7 @@ export default function AdminRewardsPage() {
               onRefresh={() => {
                 void refetchPurchases();
               }}
-              tintColor={colors.primary}
+              tintColor={palette.primary}
             />
           }
         >
@@ -358,7 +362,7 @@ export default function AdminRewardsPage() {
                         style={{
                           borderRadius: 999,
                           borderWidth: 1,
-                          borderColor: active ? colors.primary : colors.cardBorder,
+                          borderColor: active ? palette.primary : colors.cardBorder,
                           backgroundColor: active
                             ? "rgba(0, 206, 209, 0.14)"
                             : colors.cardBackground,
@@ -370,7 +374,7 @@ export default function AdminRewardsPage() {
                           style={[
                             commonStyles.label,
                             {
-                              color: active ? colors.primary : colors.textSecondary,
+                              color: active ? palette.primary : palette.textSecondary,
                               letterSpacing: 0.8,
                             },
                           ]}
@@ -486,7 +490,7 @@ export default function AdminRewardsPage() {
                             borderRadius: 10,
                             paddingHorizontal: 10,
                             paddingVertical: 8,
-                            color: canEditCollectionMethod ? colors.white : colors.textSecondary,
+                            color: canEditCollectionMethod ? colors.white : palette.textSecondary,
                           }}
                           placeholder="Collection method (how to pick up)"
                           placeholderTextColor={colors.gray500}
@@ -721,7 +725,7 @@ export default function AdminRewardsPage() {
               onRefresh={() => {
                 void refetchRewards();
               }}
-              tintColor={colors.primary}
+              tintColor={palette.primary}
             />
           }
         >
@@ -846,7 +850,7 @@ export default function AdminRewardsPage() {
                         <Text
                           style={[
                             commonStyles.textSecondary,
-                            { color: colors.textSecondary, marginBottom: 8 },
+                            { color: palette.textSecondary, marginBottom: 8 },
                           ]}
                           numberOfLines={2}
                         >
@@ -875,7 +879,7 @@ export default function AdminRewardsPage() {
                                 <Text
                                   style={[
                                     commonStyles.textSecondary,
-                                    { color: colors.textSecondary, fontSize: 10, lineHeight: 12 },
+                                    { color: palette.textSecondary, fontSize: 10, lineHeight: 12 },
                                   ]}
                                 >
                                   {reward.originalCoinCost}% of total points
@@ -894,8 +898,8 @@ export default function AdminRewardsPage() {
                             </Text>
                           </View>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                            <Ionicons name="cart-outline" size={16} color={colors.primary} />
-                            <Text style={[commonStyles.label, { color: colors.primary }]}>
+                            <Ionicons name="cart-outline" size={16} color={palette.primary} />
+                            <Text style={[commonStyles.label, { color: palette.primary }]}>
                               {reward.purchasedCount ?? 0} purchased
                             </Text>
                           </View>

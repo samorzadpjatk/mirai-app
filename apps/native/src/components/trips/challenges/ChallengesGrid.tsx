@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { ChallengesGridItem } from "./ChallengesGridItem";
 import type { ChallengeListItem } from "./types";
 
@@ -9,6 +10,7 @@ interface ChallengesGridProps {
 }
 
 export function ChallengesGrid({ challenges, onSelectChallenge }: ChallengesGridProps) {
+  const styles = useThemedStyles(makeStyles);
   if (challenges.length === 0) {
     return (
       <View style={styles.emptyState}>
@@ -29,31 +31,33 @@ export function ChallengesGrid({ challenges, onSelectChallenge }: ChallengesGrid
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    marginBottom: 40,
-  },
-  gridCell: {
-    width: "48%",
-  },
-  emptyState: {
-    padding: spacing.xxl,
-    alignItems: "center",
-  },
-  emptyTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: spacing.sm,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      marginBottom: 40,
+    },
+    gridCell: {
+      width: "48%",
+    },
+    emptyState: {
+      padding: spacing.xxl,
+      alignItems: "center",
+    },
+    emptyTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textAlign: "center",
+    },
+    emptySubtitle: {
+      fontSize: typography.sm,
+      color: palette.textMuted,
+      textAlign: "center",
+      marginTop: spacing.sm,
+    },
+  });
+}

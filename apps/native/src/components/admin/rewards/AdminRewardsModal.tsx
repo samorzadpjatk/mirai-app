@@ -14,6 +14,7 @@ import { AppModalFooter, AppModalShell, FormField, ThemedTextInput } from "~/com
 import { useFileUpload } from "~/hooks/files";
 import { useCreateReward } from "~/hooks/rewards";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 import { getFileContentType, getFileExtension } from "~/utils/image";
 
 interface Props {
@@ -43,6 +44,7 @@ const buildUniqueRewardImageName = (asset: ImagePicker.ImagePickerAsset, index: 
 };
 
 export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
+  const { palette } = useTripTheme();
   const createReward = useCreateReward();
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
   const [imagePreviewUris, setImagePreviewUris] = useState<string[]>([]);
@@ -200,7 +202,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               style={{
                 fontSize: typography.xs,
                 marginTop: spacing.xs,
-                color: colors.textSecondary,
+                color: palette.textSecondary,
               }}
             >
               Percentage of total available points
@@ -215,8 +217,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               style={{
                 flex: 1,
                 borderWidth: 1,
-                borderColor: newReward.isHidden ? colors.borderDark : colors.success,
-                backgroundColor: newReward.isHidden ? colors.cardDark : colors.primaryOpacity10,
+                borderColor: newReward.isHidden ? palette.borderDark : colors.success,
+                backgroundColor: newReward.isHidden ? palette.cardDark : palette.primaryOpacity10,
                 borderRadius: borderRadius.md,
                 paddingVertical: spacing.sm,
                 alignItems: "center",
@@ -224,7 +226,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               <Text
                 style={{
-                  color: newReward.isHidden ? colors.textSecondary : colors.success,
+                  color: newReward.isHidden ? palette.textSecondary : colors.success,
                   letterSpacing: 0.8,
                   fontWeight: typography.semibold,
                 }}
@@ -237,8 +239,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               style={{
                 flex: 1,
                 borderWidth: 1,
-                borderColor: newReward.isHidden ? colors.danger : colors.borderDark,
-                backgroundColor: newReward.isHidden ? colors.red900Opacity30 : colors.cardDark,
+                borderColor: newReward.isHidden ? colors.danger : palette.borderDark,
+                backgroundColor: newReward.isHidden ? colors.red900Opacity30 : palette.cardDark,
                 borderRadius: borderRadius.md,
                 paddingVertical: spacing.sm,
                 alignItems: "center",
@@ -246,7 +248,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               <Text
                 style={{
-                  color: newReward.isHidden ? colors.danger : colors.textSecondary,
+                  color: newReward.isHidden ? colors.danger : palette.textSecondary,
                   letterSpacing: 0.8,
                   fontWeight: typography.semibold,
                 }}
@@ -273,7 +275,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                         width: 110,
                         height: 110,
                         borderRadius: borderRadius.md,
-                        backgroundColor: colors.cardDark,
+                        backgroundColor: palette.cardDark,
                       }}
                       resizeMode="cover"
                     />
@@ -297,9 +299,9 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 onPress={handlePickImage}
                 disabled={isUploadingImage}
                 style={{
-                  backgroundColor: colors.cardDark,
+                  backgroundColor: palette.cardDark,
                   borderWidth: 1,
-                  borderColor: colors.borderDark,
+                  borderColor: palette.borderDark,
                   borderRadius: borderRadius.md,
                   paddingVertical: spacing.sm,
                   alignItems: "center",
@@ -308,10 +310,10 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               >
                 {isUploadingImage ? (
                   <View style={{ alignItems: "center" }}>
-                    <ActivityIndicator size="small" color={colors.primary} />
+                    <ActivityIndicator size="small" color={palette.primary} />
                     <Text
                       style={{
-                        color: colors.textSecondary,
+                        color: palette.textSecondary,
                         marginTop: spacing.sm,
                         fontSize: typography.xs,
                       }}
@@ -320,7 +322,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                     </Text>
                   </View>
                 ) : (
-                  <Text style={{ color: colors.textSecondary }}>Add more images</Text>
+                  <Text style={{ color: palette.textSecondary }}>Add more images</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -329,9 +331,9 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
               onPress={handlePickImage}
               disabled={isUploadingImage}
               style={{
-                backgroundColor: colors.cardDark,
+                backgroundColor: palette.cardDark,
                 borderWidth: 1,
-                borderColor: colors.borderDark,
+                borderColor: palette.borderDark,
                 borderRadius: borderRadius.md,
                 padding: spacing.xl,
                 alignItems: "center",
@@ -340,10 +342,10 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
             >
               {isUploadingImage ? (
                 <View style={{ alignItems: "center" }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color={palette.primary} />
                   <Text
                     style={{
-                      color: colors.textSecondary,
+                      color: palette.textSecondary,
                       marginTop: spacing.sm,
                       fontSize: typography.xs,
                     }}
@@ -353,8 +355,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 </View>
               ) : (
                 <View style={{ alignItems: "center" }}>
-                  <Ionicons name="image" size={24} color={colors.textSecondary} />
-                  <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>
+                  <Ionicons name="image" size={24} color={palette.textSecondary} />
+                  <Text style={{ color: palette.textSecondary, marginTop: spacing.sm }}>
                     Add images
                   </Text>
                 </View>

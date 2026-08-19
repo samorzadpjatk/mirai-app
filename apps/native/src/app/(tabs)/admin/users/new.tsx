@@ -6,15 +6,18 @@ import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import { colors, spacing } from "~/styles";
+import { spacing } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { isNameValid, isNonEmptyString } from "~/utils/validation";
 
 export default function AdminCreateUserScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
 
@@ -70,6 +73,7 @@ export default function AdminCreateUserScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Create User" subtitle="Add a new user to the system" />
 
@@ -118,17 +122,19 @@ export default function AdminCreateUserScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-    gap: spacing.md,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+      gap: spacing.md,
+    },
+  });
+}

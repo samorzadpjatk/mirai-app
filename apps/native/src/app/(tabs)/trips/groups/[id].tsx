@@ -4,6 +4,7 @@ import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ErrorState } from "~/components/common/ui";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
@@ -14,9 +15,12 @@ import { GroupNotFoundState } from "~/components/trips/groups/details/GroupNotFo
 import { GroupStatsGrid } from "~/components/trips/groups/details/GroupStatsGrid";
 import { TransactionHistory } from "~/components/trips/groups/details/TransactionHistory";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 export default function GroupDetailsScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
@@ -274,6 +278,7 @@ export default function GroupDetailsScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       {canManageGroup && !isTripPast && (
         <View style={styles.editButtonContainer}>
           <EditGroupButton onPress={() => router.push(`/trips/groups/edit/${groupId}`)} />
@@ -311,7 +316,7 @@ export default function GroupDetailsScreen() {
         {canRequestToJoin && hasPendingRequestToThisGroup && !isTripPast ? (
           <View style={styles.pendingRequestContainer}>
             <View style={styles.pendingRequestBadge}>
-              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Ionicons name="time-outline" size={16} color={palette.primary} />
               <Text style={styles.pendingRequestText}>Join request pending approval</Text>
             </View>
             <TouchableOpacity
@@ -330,7 +335,7 @@ export default function GroupDetailsScreen() {
 
         {!isLoadingCurrentUserGroup && !isGroupMember && hasGroupInCurrentTrip ? (
           <View style={styles.groupLockedBadge}>
-            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="lock-closed-outline" size={16} color={palette.textMuted} />
             <Text style={styles.groupLockedText}>
               Leave your current group first to join this one
             </Text>
@@ -421,216 +426,217 @@ export default function GroupDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-  },
-  transactionHistorySection: {
-    marginBottom: spacing.xxl,
-  },
-  editButtonContainer: {
-    position: "absolute",
-    right: 20,
-    bottom: 96,
-    zIndex: 20,
-  },
-  joinButton: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  joinButtonText: {
-    color: colors.backgroundDark,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  pendingRequestBadge: {
-    backgroundColor: colors.primaryOpacity12,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  pendingRequestText: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-  },
-  pendingRequestContainer: {
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  cancelRequestButton: {
-    backgroundColor: colors.dangerOpacity12,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity45,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  cancelRequestButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  groupLockedBadge: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.whiteOpacity4,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity10,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  groupLockedText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  leaveButton: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.dangerOpacity15,
-    borderWidth: 1,
-    borderColor: colors.dangerOpacity45,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  leaveButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  joinRequestsCard: {
-    marginBottom: spacing.lg,
-    backgroundColor: colors.cardDarkOpacity45,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  joinRequestsTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  joinRequestsEmpty: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-  },
-  joinRequestRow: {
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity6,
-    backgroundColor: colors.blackOpacity12,
-  },
-  joinRequestTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  joinRequestAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.whiteOpacity12,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  joinRequestAvatarText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-  },
-  joinRequestDate: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: typography.medium,
-  },
-  joinRequestUser: {
-    gap: 4,
-  },
-  joinRequestName: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-  },
-  joinRequestEmail: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  joinRequestActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  joinRequestButton: {
-    flex: 1,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-  },
-  joinRequestRejectButton: {
-    borderColor: colors.dangerOpacity50,
-    backgroundColor: colors.dangerOpacity12,
-  },
-  joinRequestAcceptButton: {
-    borderColor: colors.successOpacity50,
-    backgroundColor: colors.successOpacity12,
-  },
-  joinRequestButtonText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      paddingBottom: spacing.xxxl,
+    },
+    transactionHistorySection: {
+      marginBottom: spacing.xxl,
+    },
+    editButtonContainer: {
+      position: "absolute",
+      right: 20,
+      bottom: 96,
+      zIndex: 20,
+    },
+    joinButton: {
+      marginBottom: spacing.lg,
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    joinButtonText: {
+      color: colors.backgroundDark,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    pendingRequestBadge: {
+      backgroundColor: palette.primaryOpacity12,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    pendingRequestText: {
+      color: palette.primary,
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+    },
+    pendingRequestContainer: {
+      marginBottom: spacing.lg,
+      gap: spacing.sm,
+    },
+    cancelRequestButton: {
+      backgroundColor: colors.dangerOpacity12,
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity45,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    cancelRequestButtonText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    groupLockedBadge: {
+      marginBottom: spacing.lg,
+      backgroundColor: colors.whiteOpacity4,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity10,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    groupLockedText: {
+      color: palette.textMuted,
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+    },
+    leaveButton: {
+      marginBottom: spacing.lg,
+      backgroundColor: colors.dangerOpacity15,
+      borderWidth: 1,
+      borderColor: colors.dangerOpacity45,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    leaveButtonText: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    joinRequestsCard: {
+      marginBottom: spacing.lg,
+      backgroundColor: colors.cardDarkOpacity45,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity8,
+      borderRadius: borderRadius.xl,
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    joinRequestsTitle: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+    },
+    joinRequestsEmpty: {
+      fontSize: typography.sm,
+      color: palette.textMuted,
+    },
+    joinRequestRow: {
+      gap: spacing.md,
+      padding: spacing.md,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity6,
+      backgroundColor: colors.blackOpacity12,
+    },
+    joinRequestTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    joinRequestAvatar: {
+      width: 34,
+      height: 34,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.whiteOpacity12,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity18,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    joinRequestAvatarText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+    },
+    joinRequestDate: {
+      color: palette.textMuted,
+      fontSize: 11,
+      fontWeight: typography.medium,
+    },
+    joinRequestUser: {
+      gap: 4,
+    },
+    joinRequestName: {
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+      color: colors.white,
+    },
+    joinRequestEmail: {
+      fontSize: 12,
+      color: palette.textMuted,
+    },
+    joinRequestActions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    joinRequestButton: {
+      flex: 1,
+      borderRadius: borderRadius.md,
+      paddingVertical: spacing.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 6,
+    },
+    joinRequestRejectButton: {
+      borderColor: colors.dangerOpacity50,
+      backgroundColor: colors.dangerOpacity12,
+    },
+    joinRequestAcceptButton: {
+      borderColor: colors.successOpacity50,
+      backgroundColor: colors.successOpacity12,
+    },
+    joinRequestButtonText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+  });

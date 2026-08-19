@@ -36,32 +36,78 @@ import {
   QueryProvider,
   cleanupBackgroundORPCClient,
   getBackgroundORPCClient,
-  orpc,
+  getORPCClient,
 } from "@mirai-app/orpc/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { ORPC_HTTP_URL, ORPC_WS_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from "~/config/runtimeEnv";
+import { useSelectedTrip } from "~/hooks/trips/useSelectedTrip";
 import {
   createBackgroundTaskDeps,
   initBackgroundLocationTask,
 } from "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
+import { colors } from "~/styles";
+import { TripThemeProvider, useTripTheme } from "~/theme/TripThemeProvider";
 import "../../global.css";
 import "../global.css";
-
-// Theme colors
-const colors = {
-  backgroundDark: "#17181c",
-  backgroundLight: "#f1f1f4",
-  textDark: "#ffffff",
-  textLight: "#000000",
-};
 
 const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
 
 function AutoPushSubscription() {
   useAutoPushSubscription();
   return null;
+}
+
+function RootStack({ hasSession }: { hasSession: boolean }) {
+  const { palette } = useTripTheme();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: "horizontal",
+        contentStyle: { backgroundColor: palette.backgroundDark },
+        headerStyle: {
+          backgroundColor: palette.headerBackground,
+        },
+        headerTintColor: palette.white,
+        headerShadowVisible: true,
+        headerTitleStyle: {
+          fontWeight: "600",
+        },
+      }}
+    >
+      {/* Protected routes for authenticated users */}
+      <Stack.Protected guard={hasSession}>
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="alerts"
+          options={{
+            title: "Admin Challenges",
+            headerShown: false,
+          }}
+        />
+      </Stack.Protected>
+
+      {/* Protected routes for unauthenticated users */}
+      <Stack.Protected guard={!hasSession}>
+        <Stack.Screen
+          name="auth/login"
+          options={{
+            title: "Sign In",
+            headerShown: false,
+          }}
+        />
+      </Stack.Protected>
+    </Stack>
+  );
 }
 
 function App() {
@@ -75,6 +121,7 @@ function App() {
   initBackgroundLocationTask(backgroundTaskDeps);
   const isAuthLoading = useAuthLoading();
   const { session, user } = useAuth();
+  const { selectedTripId } = useSelectedTrip();
 
   useEffect(() => {
     return () => {
@@ -82,60 +129,16 @@ function App() {
     };
   }, []);
 
-  const headerBackgroundColor = colors.backgroundDark;
-  const headerTintColor = colors.textDark;
-
   const hasSession = !!session?.access_token;
   const isUserResolved = !hasSession || user !== null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
+    <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
       {!isAuthLoading && hasSession ? <AutoPushSubscription /> : null}
       {!isAuthLoading && isUserResolved && (
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            gestureEnabled: true,
-            gestureDirection: "horizontal",
-            contentStyle: { backgroundColor: headerBackgroundColor },
-            headerStyle: {
-              backgroundColor: headerBackgroundColor,
-            },
-            headerTintColor: headerTintColor,
-            headerShadowVisible: true,
-            headerTitleStyle: {
-              fontWeight: "600",
-            },
-          }}
-        >
-          {/* Protected routes for authenticated users */}
-          <Stack.Protected guard={hasSession}>
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="alerts"
-              options={{
-                title: "Admin Challenges",
-                headerShown: false,
-              }}
-            />
-          </Stack.Protected>
-
-          {/* Protected routes for unauthenticated users */}
-          <Stack.Protected guard={!hasSession}>
-            <Stack.Screen
-              name="auth/login"
-              options={{
-                title: "Sign In",
-                headerShown: false,
-              }}
-            />
-          </Stack.Protected>
-        </Stack>
+        <TripThemeProvider tripId={selectedTripId}>
+          <RootStack hasSession={hasSession} />
+        </TripThemeProvider>
       )}
     </View>
   );
@@ -144,7 +147,22 @@ function App() {
 function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
   const onUserFetch = async () => {
     try {
-      const user = await orpc.user.getMy.call({});
+      // Use a client bound to the current access token directly, instead of the
+      // globally-mutated `orpc` singleton which may still be tokenless when the
+      // auth store triggers this fetch right as the session appears (race -> 401).
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return null;
+
+      const { client, cleanup } = getORPCClient(ORPC_HTTP_URL, undefined, token);
+      let user: Awaited<ReturnType<typeof client.user.getMy>>;
+      try {
+        user = await client.user.getMy({});
+      } finally {
+        await cleanup();
+      }
       if (!user) return null;
 
       const normalizedFirstName = user.firstName ?? "";

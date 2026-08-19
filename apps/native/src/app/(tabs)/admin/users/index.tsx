@@ -7,14 +7,17 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminSearchBar } from "~/components/admin/AdminSearchBar";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { UserCard } from "~/components/admin/users/UserCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminUsers } from "~/hooks/admin/useAdminUsers";
 import type { User, UserSearchField } from "~/hooks/admin/useAdminUsers";
-import { colors, spacing } from "~/styles";
+import { spacing } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function AdminUsersScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { palette } = useTripTheme();
 
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
@@ -58,7 +61,7 @@ export default function AdminUsersScreen() {
 
   if (!tripId) {
     return (
-      <View style={[{ flex: 1, backgroundColor: colors.backgroundDark, paddingTop: spacing.xl }]}>
+      <View style={[{ flex: 1, backgroundColor: palette.backgroundDark, paddingTop: spacing.xl }]}>
         <StatusBar style="light" />
         <AdminHeader title="Error" subtitle="Trip ID is required" />
       </View>
@@ -79,13 +82,14 @@ export default function AdminUsersScreen() {
       style={[
         {
           flex: 1,
-          backgroundColor: colors.backgroundDark,
+          backgroundColor: palette.backgroundDark,
           paddingTop: spacing.xl,
           paddingBottom: insets.bottom,
         },
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="User Management" subtitle="Manage accounts and permissions" />
 
@@ -137,7 +141,7 @@ export default function AdminUsersScreen() {
           }}
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: spacing.xxl }}>
-              <Text style={{ fontSize: 16, color: colors.textSecondary, marginTop: spacing.md }}>
+              <Text style={{ fontSize: 16, color: palette.textSecondary, marginTop: spacing.md }}>
                 No users found
               </Text>
             </View>
@@ -145,8 +149,8 @@ export default function AdminUsersScreen() {
           ListFooterComponent={
             usersFetchingNextPage ? (
               <View style={{ alignItems: "center", paddingVertical: spacing.md }}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
+                <ActivityIndicator size="small" color={palette.primary} />
+                <Text style={{ fontSize: 12, color: palette.textSecondary, marginTop: spacing.xs }}>
                   Loading more users...
                 </Text>
               </View>

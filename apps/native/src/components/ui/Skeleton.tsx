@@ -12,7 +12,8 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from "react-native-reanimated";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 const DURATION_MS = 1500;
 const GRADIENT_WIDTH_RATIO = 0.75;
@@ -98,13 +99,14 @@ function SkeletonBase({
   colors: colorOverrides,
   testID,
 }: SkeletonProps) {
+  const { palette } = useTripTheme();
   const groupProgress = useSkeletonGroupProgress();
   const ownProgress = useSharedValue(0);
   const progress = groupProgress ?? ownProgress;
   const containerWidth = useSharedValue(0);
   const reducedMotion = useReducedMotion();
 
-  const resolvedBase = colorOverrides?.base ?? colors.surfaceDark;
+  const resolvedBase = colorOverrides?.base ?? palette.surfaceDark;
   const resolvedBorderRadius = resolveBorderRadius(variant, width, borderRadiusOverride);
   const resolvedHeight = resolveHeight(variant, height);
 
@@ -196,7 +198,7 @@ function SkeletonBase({
         ]}
       >
         <LinearGradient
-          colors={["transparent", colors.whiteOpacity15, "transparent"]}
+          colors={["transparent", palette.whiteOpacity15, "transparent"]}
           end={{ x: 1, y: 0.5 }}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0.5 }}

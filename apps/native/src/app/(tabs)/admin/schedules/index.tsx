@@ -11,9 +11,11 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminSchedules } from "~/hooks/admin/useAdminSchedules";
 import type { NotificationSchedule } from "~/hooks/admin/useAdminSchedules";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
@@ -55,6 +57,8 @@ export default function AdminSchedulesScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
 
   // Use the custom hook for all schedule operations
   const {
@@ -187,7 +191,7 @@ export default function AdminSchedulesScreen() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="time" size={48} color={colors.textSecondary} />
+      <Ionicons name="time" size={48} color={palette.textSecondary} />
       <Text style={styles.emptyText}>No schedules found</Text>
       <TouchableOpacity style={styles.emptyCreateButton} onPress={() => setShowCreateModal(true)}>
         <Text style={styles.emptyCreateButtonText}>Create your first schedule</Text>
@@ -198,6 +202,7 @@ export default function AdminSchedulesScreen() {
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader
         title="Notification Schedules"
@@ -260,54 +265,56 @@ export default function AdminSchedulesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  createButton: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-  },
-  loadingContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  schedulesList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 96,
-  },
-  emptyContainer: {
-    alignItems: "center" as const,
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    textAlign: "center" as const,
-    marginBottom: spacing.lg,
-  },
-  emptyCreateButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-  },
-  emptyCreateButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    createButton: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.full,
+      backgroundColor: palette.primary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    loadingContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      gap: spacing.sm,
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    schedulesList: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 96,
+    },
+    emptyContainer: {
+      alignItems: "center" as const,
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      marginTop: spacing.md,
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      textAlign: "center" as const,
+      marginBottom: spacing.lg,
+    },
+    emptyCreateButton: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.md,
+    },
+    emptyCreateButtonText: {
+      fontSize: typography.base,
+      color: colors.white,
+      fontWeight: typography.medium,
+    },
+  });
+}

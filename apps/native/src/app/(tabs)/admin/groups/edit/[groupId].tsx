@@ -7,9 +7,11 @@ import { useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { EmptyState, FormField, ThemedTextInput } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface OrganizerOption {
   id: string;
@@ -22,6 +24,8 @@ export default function AdminEditGroupScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ groupId: string; tripId?: string }>();
   const groupId = params.groupId;
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
@@ -187,6 +191,7 @@ export default function AdminEditGroupScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
       <View style={styles.body}>
         <View style={styles.formSection}>
           <FormField label="Group Name" required={true}>
@@ -239,7 +244,7 @@ export default function AdminEditGroupScreen() {
                 <Text style={styles.userOptionEmail}>{item.email}</Text>
               </View>
               {selectedOrganizer?.id === item.id ? (
-                <Ionicons name="checkmark" size={18} color={colors.primary} />
+                <Ionicons name="checkmark" size={18} color={palette.primary} />
               ) : null}
             </TouchableOpacity>
           )}
@@ -286,104 +291,106 @@ export default function AdminEditGroupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  body: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  formSection: {
-    gap: spacing.md,
-  },
-  listContent: {
-    paddingTop: 0,
-    paddingBottom: 96,
-  },
-  usersList: {
-    flex: 1,
-  },
-  sectionHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  groupInfo: {
-    marginBottom: spacing.xs,
-  },
-  participantCount: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  section: {
-    marginTop: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  searchContainer: {
-    marginBottom: spacing.md,
-  },
-  usersListContent: {
-    paddingBottom: spacing.sm,
-  },
-  userSeparator: {
-    height: spacing.xs,
-  },
-  userOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundDark,
-    marginBottom: spacing.sm,
-  },
-  userOptionSelected: {
-    backgroundColor: `${colors.primary}20`,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  userOptionInfo: {
-    flex: 1,
-  },
-  userOptionName: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  userOptionNameSelected: {
-    color: colors.primary,
-  },
-  userOptionEmail: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  deleteButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  actions: {
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  deleteButtonDisabled: {
-    opacity: 0.5,
-  },
-  deleteButtonText: {
-    fontSize: typography.base,
-    color: colors.danger,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    body: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
+      gap: spacing.lg,
+    },
+    formSection: {
+      gap: spacing.md,
+    },
+    listContent: {
+      paddingTop: 0,
+      paddingBottom: 96,
+    },
+    usersList: {
+      flex: 1,
+    },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    groupInfo: {
+      marginBottom: spacing.xs,
+    },
+    participantCount: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+    section: {
+      marginTop: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    searchContainer: {
+      marginBottom: spacing.md,
+    },
+    usersListContent: {
+      paddingBottom: spacing.sm,
+    },
+    userSeparator: {
+      height: spacing.xs,
+    },
+    userOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing.md,
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.backgroundDark,
+      marginBottom: spacing.sm,
+    },
+    userOptionSelected: {
+      backgroundColor: `${palette.primary}20`,
+      borderWidth: 1,
+      borderColor: palette.primary,
+    },
+    userOptionInfo: {
+      flex: 1,
+    },
+    userOptionName: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    userOptionNameSelected: {
+      color: palette.primary,
+    },
+    userOptionEmail: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+    deleteButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+      marginTop: spacing.md,
+    },
+    actions: {
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    deleteButtonDisabled: {
+      opacity: 0.5,
+    },
+    deleteButtonText: {
+      fontSize: typography.base,
+      color: colors.danger,
+      fontWeight: typography.medium,
+    },
+  });
+}

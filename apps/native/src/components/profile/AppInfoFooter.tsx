@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface AppInfoFooterProps {
   versionLabel: string;
@@ -7,6 +8,8 @@ interface AppInfoFooterProps {
 }
 
 export function AppInfoFooter({ versionLabel, copyrightLabel }: AppInfoFooterProps) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <View style={styles.appInfo}>
       <Text style={styles.appInfoText}>{versionLabel}</Text>
@@ -15,14 +18,16 @@ export function AppInfoFooter({ versionLabel, copyrightLabel }: AppInfoFooterPro
   );
 }
 
-const styles = StyleSheet.create({
-  appInfo: {
-    alignItems: "center",
-    paddingVertical: spacing.xl,
-    gap: spacing.xs,
-  },
-  appInfoText: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    appInfo: {
+      alignItems: "center",
+      paddingVertical: spacing.xl,
+      gap: spacing.xs,
+    },
+    appInfoText: {
+      fontSize: typography.xs,
+      color: palette.textMuted,
+    },
+  });
+}

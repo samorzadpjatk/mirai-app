@@ -1,5 +1,6 @@
 import { Pressable, type StyleProp, StyleSheet, Text, type ViewStyle } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface SegmentedOptionProps {
   label: string;
@@ -18,6 +19,7 @@ export function SegmentedOption({
   disabled = false,
   testID = `segmented-option-${label}`,
 }: SegmentedOptionProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       testID={testID}
@@ -43,34 +45,36 @@ export function SegmentedOption({
   );
 }
 
-const styles = StyleSheet.create({
-  option: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    alignItems: "center",
-  },
-  optionSelected: {
-    backgroundColor: colors.primaryOpacity10,
-    borderColor: colors.primary,
-  },
-  optionDisabled: {
-    opacity: 0.5,
-  },
-  optionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  optionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.semibold,
-  },
-  optionTextDisabled: {
-    color: colors.textTertiary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    option: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      alignItems: "center",
+    },
+    optionSelected: {
+      backgroundColor: palette.primaryOpacity10,
+      borderColor: palette.primary,
+    },
+    optionDisabled: {
+      opacity: 0.5,
+    },
+    optionText: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      fontWeight: typography.medium,
+    },
+    optionTextSelected: {
+      color: palette.primary,
+      fontWeight: typography.semibold,
+    },
+    optionTextDisabled: {
+      color: palette.textTertiary,
+    },
+  });
+}

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { GroupCard } from "./GroupCard";
 import type { GroupListItem } from "./types";
 
@@ -10,6 +11,7 @@ interface GroupsListProps {
 }
 
 export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps) {
+  const styles = useThemedStyles(makeStyles);
   if (groups.length === 0) {
     return (
       <View style={styles.emptyState}>
@@ -32,16 +34,18 @@ export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps
   );
 }
 
-const styles = StyleSheet.create({
-  groupsList: {
-    gap: spacing.lg,
-  },
-  emptyState: {
-    paddingVertical: spacing.xxxl,
-    alignItems: "center",
-  },
-  emptyStateText: {
-    fontSize: typography.base,
-    color: colors.textMuted,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    groupsList: {
+      gap: spacing.lg,
+    },
+    emptyState: {
+      paddingVertical: spacing.xxxl,
+      alignItems: "center",
+    },
+    emptyStateText: {
+      fontSize: typography.base,
+      color: palette.textMuted,
+    },
+  });
+}

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface AlertsPaginationProps {
   page: number;
@@ -9,6 +10,8 @@ interface AlertsPaginationProps {
 }
 
 export function AlertsPagination({ page, totalPages, onPrev, onNext }: AlertsPaginationProps) {
+  const styles = useThemedStyles(makeStyles);
+
   if (totalPages <= 1) {
     return null;
   }
@@ -47,38 +50,40 @@ export function AlertsPagination({ page, totalPages, onPrev, onNext }: AlertsPag
   );
 }
 
-const styles = StyleSheet.create({
-  pagination: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: spacing.xl,
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.05)",
-  },
-  paginationButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.3)",
-  },
-  paginationButtonDisabled: {
-    opacity: 0.3,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  paginationButtonText: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  paginationButtonTextDisabled: {
-    color: colors.textMuted,
-  },
-  paginationText: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    pagination: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: spacing.xl,
+      paddingTop: spacing.xl,
+      borderTopWidth: 1,
+      borderTopColor: "rgba(255, 255, 255, 0.05)",
+    },
+    paginationButton: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: "rgba(0, 206, 209, 0.3)",
+    },
+    paginationButtonDisabled: {
+      opacity: 0.3,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    paginationButtonText: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.primary,
+    },
+    paginationButtonTextDisabled: {
+      color: palette.textMuted,
+    },
+    paginationText: {
+      fontSize: typography.sm,
+      color: palette.textMuted,
+    },
+  });
+}

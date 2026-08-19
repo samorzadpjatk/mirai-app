@@ -2,30 +2,28 @@ import { hasAdminAccess } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { colors } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
-const backgroundColor = colors.backgroundDark;
-
-export default function AdminLayout() {
+function AdminStack() {
+  const { palette } = useTripTheme();
   const { data: user } = useQuery(orpc.user.getMy.queryOptions({ input: {} }));
 
   const isAdmin = hasAdminAccess(user?.role);
-  const headerBackgroundColor = colors.backgroundDark;
-  const headerTintColor = colors.textPrimary;
   return (
     <Stack
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: headerBackgroundColor,
+          backgroundColor: palette.headerBackground,
         },
-        headerTintColor: headerTintColor,
+        headerTintColor: palette.textPrimary,
         headerShadowVisible: true,
         headerTitleStyle: {
           fontWeight: "600",
+          color: palette.white,
         },
         headerBackButtonDisplayMode: "minimal",
-        contentStyle: { backgroundColor },
+        contentStyle: { backgroundColor: palette.backgroundDark },
       }}
     >
       {/* Protected admin routes - only accessible to users with admin or moderator role */}
@@ -215,4 +213,8 @@ export default function AdminLayout() {
       </Stack.Protected>
     </Stack>
   );
+}
+
+export default function AdminLayout() {
+  return <AdminStack />;
 }

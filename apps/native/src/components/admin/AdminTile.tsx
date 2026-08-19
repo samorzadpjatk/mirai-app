@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface AdminTileProps {
   title: string;
@@ -26,6 +27,7 @@ export function AdminTile({
   onPress,
 }: AdminTileProps) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
 
   const handlePress = () => {
     if (onPress) {
@@ -64,32 +66,34 @@ export function AdminTile({
   );
 }
 
-const styles = StyleSheet.create({
-  tile: {
-    width: "47%",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-  },
-  tileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    marginBottom: spacing.md,
-  },
-  tileTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  tileSubtitle: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    tile: {
+      width: "47%",
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: palette.borderWhite5,
+    },
+    tileIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: borderRadius.md,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      marginBottom: spacing.md,
+    },
+    tileTitle: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    tileSubtitle: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+  });
+}

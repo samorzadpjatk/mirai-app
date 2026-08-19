@@ -6,14 +6,17 @@ import { FlatList, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import { useAdminCoins } from "~/hooks/admin/useAdminCoins";
 import type { Group } from "~/hooks/admin/useAdminCoins";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 export default function AdminCoinsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
 
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
@@ -116,7 +119,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -124,7 +127,7 @@ export default function AdminCoinsScreen() {
           borderColor: colors.borderWhite5,
         }}
       >
-        <Ionicons name="cash" size={24} color={colors.accentMagenta} />
+        <Ionicons name="cash" size={24} color={palette.accentMagenta} />
         <Text
           style={{
             fontSize: typography.xl,
@@ -139,7 +142,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -149,7 +152,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -157,7 +160,7 @@ export default function AdminCoinsScreen() {
           borderColor: colors.borderWhite5,
         }}
       >
-        <Ionicons name="people-circle" size={24} color={colors.primary} />
+        <Ionicons name="people-circle" size={24} color={palette.primary} />
         <Text
           style={{
             fontSize: typography.xl,
@@ -172,7 +175,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -182,7 +185,7 @@ export default function AdminCoinsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           padding: spacing.md,
           alignItems: "center",
@@ -205,7 +208,7 @@ export default function AdminCoinsScreen() {
         <Text
           style={{
             fontSize: typography.sm,
-            color: colors.textSecondary,
+            color: palette.textSecondary,
             textAlign: "center",
           }}
         >
@@ -226,15 +229,15 @@ export default function AdminCoinsScreen() {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: colors.cardDark,
+          backgroundColor: palette.cardDark,
           borderRadius: borderRadius.lg,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
           borderWidth: 1,
-          borderColor: colors.borderDark,
+          borderColor: palette.borderDark,
         }}
       >
-        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <Ionicons name="search" size={20} color={palette.textSecondary} />
         <TextInput
           style={{
             flex: 1,
@@ -245,7 +248,7 @@ export default function AdminCoinsScreen() {
           placeholder="Search groups..."
           value={searchTerm}
           onChangeText={setSearchTerm}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={palette.textSecondary}
         />
       </View>
     </View>
@@ -263,6 +266,7 @@ export default function AdminCoinsScreen() {
       ]}
     >
       <StatusBar style="light" />
+      <DeckBackground />
 
       <AdminHeader title="Coins Management" subtitle="Manage group coins and transactions" />
 
@@ -299,12 +303,12 @@ export default function AdminCoinsScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: spacing.xxl }}>
-              <Ionicons name="cash" size={48} color={colors.textSecondary} />
+              <Ionicons name="cash" size={48} color={palette.textSecondary} />
               <Text
                 style={{
                   marginTop: spacing.md,
                   fontSize: typography.base,
-                  color: colors.textSecondary,
+                  color: palette.textSecondary,
                   textAlign: "center",
                 }}
               >

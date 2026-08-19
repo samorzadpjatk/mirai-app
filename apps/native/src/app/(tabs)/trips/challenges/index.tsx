@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { ChallengesGrid } from "~/components/trips/challenges/ChallengesGrid";
 import { ChallengesLoadingState } from "~/components/trips/challenges/ChallengesLoadingState";
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
@@ -19,6 +20,7 @@ import type {
   ChallengeSubmissionType,
 } from "~/components/trips/challenges/types";
 import { useChallenges } from "~/hooks/challenges";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing } from "../../../../styles";
 
 const statusColors: Record<string, string> = {
@@ -78,6 +80,8 @@ export default function ChallengesScreen() {
     userGroup,
     leaderboardInfo,
   } = useChallenges(tripId);
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>("ALL");
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<TypeFilter>("ALL");
 
@@ -193,6 +197,7 @@ export default function ChallengesScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}
@@ -205,7 +210,7 @@ export default function ChallengesScreen() {
             onRefresh={handleRefresh}
             tintColor={colors.white}
             colors={[colors.white]}
-            progressBackgroundColor={colors.cardDarkOpacity70}
+            progressBackgroundColor={palette.cardDarkOpacity70}
           />
         }
       >
@@ -243,13 +248,13 @@ export default function ChallengesScreen() {
                   <Ionicons
                     name={filter.icon}
                     size={14}
-                    color={selected ? colors.primary : colors.textMuted}
+                    color={selected ? palette.primary : palette.textMuted}
                   />
                   {"secondaryIcon" in filter && filter.secondaryIcon ? (
                     <Ionicons
                       name={filter.secondaryIcon}
                       size={14}
-                      color={selected ? colors.primary : colors.textMuted}
+                      color={selected ? palette.primary : palette.textMuted}
                     />
                   ) : null}
                 </View>
@@ -272,7 +277,7 @@ export default function ChallengesScreen() {
         >
           {statusFilters.map((filter) => {
             const isAll = filter.value === "ALL";
-            const color = isAll ? colors.primary : (statusColors[filter.value] ?? colors.primary);
+            const color = isAll ? palette.primary : (statusColors[filter.value] ?? palette.primary);
             const selected = selectedStatusFilter === filter.value;
 
             return (
@@ -307,7 +312,7 @@ export default function ChallengesScreen() {
 
         {isFetchingNextPage ? (
           <View style={styles.loadingMoreWrap}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
             <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
           </View>
         ) : null}
@@ -316,104 +321,105 @@ export default function ChallengesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingTop: spacing.lg, // Space for BackNavbar
-    paddingBottom: 96,
-  },
-  loadingMoreWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
-  },
-  loadingMoreText: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  filtersRow: {
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingRight: spacing.md,
-  },
-  typeFiltersRow: {
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  typeChip: {
-    minHeight: 34,
-    paddingHorizontal: spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  typeChipIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  typeChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  typeChipCount: {
-    minWidth: 20,
-    paddingHorizontal: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity8,
-    backgroundColor: colors.backgroundDarkOpacity55,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  typeChipCountActive: {
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  typeChipCountText: {
-    color: colors.white,
-    fontWeight: "700",
-    fontSize: 10,
-  },
-  typeChipCountTextActive: {
-    color: colors.primary,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.whiteOpacity12,
-    backgroundColor: colors.whiteOpacity4,
-  },
-  filterChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryOpacity20,
-  },
-  filterChipText: {
-    color: colors.textMuted,
-    fontWeight: "700",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  filterChipTextActive: {
-    color: colors.primary,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      paddingTop: spacing.lg, // Space for BackNavbar
+      paddingBottom: 96,
+    },
+    loadingMoreWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+      marginBottom: spacing.xl,
+    },
+    loadingMoreText: {
+      color: palette.textMuted,
+      fontSize: 12,
+    },
+    filtersRow: {
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+      paddingRight: spacing.md,
+    },
+    typeFiltersRow: {
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+      paddingRight: spacing.md,
+    },
+    typeChip: {
+      minHeight: 34,
+      paddingHorizontal: spacing.xs,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity12,
+      backgroundColor: colors.whiteOpacity4,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    typeChipIcons: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    typeChipActive: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    typeChipCount: {
+      minWidth: 20,
+      paddingHorizontal: 5,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity8,
+      backgroundColor: colors.backgroundDarkOpacity55,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    typeChipCountActive: {
+      borderColor: palette.primaryOpacity30,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    typeChipCountText: {
+      color: colors.white,
+      fontWeight: "700",
+      fontSize: 10,
+    },
+    typeChipCountTextActive: {
+      color: palette.primary,
+    },
+    filterChip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.whiteOpacity12,
+      backgroundColor: colors.whiteOpacity4,
+    },
+    filterChipActive: {
+      borderColor: palette.primary,
+      backgroundColor: palette.primaryOpacity20,
+    },
+    filterChipText: {
+      color: palette.textMuted,
+      fontWeight: "700",
+      fontSize: 12,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    filterChipTextActive: {
+      color: palette.primary,
+    },
+  });
 
 // ...

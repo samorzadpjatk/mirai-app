@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { AppModalShell } from "~/components/common/ui";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface AdminModalProps {
   visible: boolean;
@@ -68,6 +69,9 @@ export function AdminModalButton({
   loading = false,
   flex = true,
 }: AdminModalButtonProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
+
   const getButtonStyle = () => {
     switch (variant) {
       case "danger":
@@ -95,7 +99,7 @@ export function AdminModalButton({
       disabled={disabled || loading}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={colors.white} />
+        <ActivityIndicator size="small" color={palette.white} />
       ) : (
         <Text style={getTextStyle()}>{title}</Text>
       )}
@@ -103,31 +107,33 @@ export function AdminModalButton({
   );
 }
 
-const styles = StyleSheet.create({
-  modalButton: {
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-  },
-  dangerButton: {
-    backgroundColor: colors.danger,
-  },
-  cancelButton: {
-    backgroundColor: colors.cardDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  confirmButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  cancelButtonText: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    modalButton: {
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md,
+      alignItems: "center",
+    },
+    confirmButton: {
+      backgroundColor: palette.primary,
+    },
+    dangerButton: {
+      backgroundColor: colors.danger,
+    },
+    cancelButton: {
+      backgroundColor: palette.cardDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    confirmButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    cancelButtonText: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      fontWeight: typography.medium,
+    },
+  });
+}

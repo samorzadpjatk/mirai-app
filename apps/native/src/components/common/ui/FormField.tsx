@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { type StyleProp, StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { colors, spacing, typography } from "~/styles";
+import { spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface FormFieldProps {
   label: string;
@@ -19,6 +20,7 @@ export function FormField({
   required = false,
   style,
 }: FormFieldProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID="form-field-container" style={[styles.container, style]}>
       <Text testID="form-field-label" style={styles.label}>
@@ -45,27 +47,29 @@ export function FormField({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  required: {
-    color: colors.danger,
-  },
-  hint: {
-    fontSize: typography.xs,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-  },
-  error: {
-    fontSize: typography.xs,
-    color: colors.danger,
-    marginTop: spacing.xs,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: palette.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    required: {
+      color: palette.danger,
+    },
+    hint: {
+      fontSize: typography.xs,
+      color: palette.textTertiary,
+      marginTop: spacing.xs,
+    },
+    error: {
+      fontSize: typography.xs,
+      color: palette.danger,
+      marginTop: spacing.xs,
+    },
+  });
+}

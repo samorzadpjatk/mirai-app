@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export interface GroupMember {
   id: string;
@@ -17,6 +18,7 @@ interface GroupMemberListProps {
 }
 
 function MemberAvatar({ member }: { member: GroupMember }) {
+  const styles = useThemedStyles(makeStyles);
   if (member.avatarStoragePath) {
     return (
       <CachedImage
@@ -51,6 +53,7 @@ export function formatMemberRole(role: string): string {
 }
 
 export function GroupMemberList({ members }: GroupMemberListProps) {
+  const styles = useThemedStyles(makeStyles);
   const [isExpanded, setIsExpanded] = useState(false);
   const hasMoreThanPreview = calculateHasMoreThanPreview(members);
   const visibleMembers = useMemo(
@@ -93,85 +96,86 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  memberSection: {
-    marginBottom: spacing.lg,
-  },
-  memberHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  memberHeaderTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-  },
-  viewAllButton: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.primary,
-  },
-  memberList: {
-    gap: spacing.sm,
-  },
-  memberCard: {
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: borderRadius.xl,
-    padding: spacing.md,
-  },
-  memberInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
-    backgroundColor: colors.textMuted,
-    borderWidth: 2,
-    borderColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: borderRadius.full,
-  },
-  avatarLeader: {
-    borderColor: colors.primary,
-  },
-  avatarText: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  memberDetails: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  memberRole: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: -0.2,
-  },
-  memberRoleLeader: {
-    color: colors.primary,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    memberSection: {
+      marginBottom: spacing.lg,
+    },
+    memberHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    memberHeaderTitle: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+    },
+    viewAllButton: {
+      fontSize: 12,
+      fontWeight: typography.bold,
+      color: palette.primary,
+    },
+    memberList: {
+      gap: spacing.sm,
+    },
+    memberCard: {
+      backgroundColor: "rgba(39, 41, 53, 0.5)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      borderRadius: borderRadius.xl,
+      padding: spacing.md,
+    },
+    memberInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.full,
+      overflow: "hidden",
+      backgroundColor: palette.textMuted,
+      borderWidth: 2,
+      borderColor: "transparent",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarImage: {
+      width: "100%",
+      height: "100%",
+      borderRadius: borderRadius.full,
+    },
+    avatarLeader: {
+      borderColor: palette.primary,
+    },
+    avatarText: {
+      fontSize: 12,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    memberDetails: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: 2,
+    },
+    memberRole: {
+      fontSize: 10,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: -0.2,
+    },
+    memberRoleLeader: {
+      color: palette.primary,
+    },
+  });

@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export interface AssignedGroup {
   id: string;
@@ -17,10 +19,12 @@ interface AssignedGroupsCardProps {
 }
 
 export function AssignedGroupsCard({ groups }: AssignedGroupsCardProps) {
+  const styles = useThemedStyles(makeStyles);
   if (groups.length === 0) return null;
 
   return (
     <View testID="assigned-groups-card" style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <Text style={styles.title}>Assigned to Groups</Text>
       {groups.map((group) => (
         <View key={group.id} style={styles.groupRow}>
@@ -36,39 +40,41 @@ export function AssignedGroupsCard({ groups }: AssignedGroupsCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.md,
-  },
-  groupRow: {
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  groupName: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  groupLeader: {
-    fontSize: typography.sm,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      padding: spacing.xl,
+      marginBottom: spacing.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    title: {
+      fontSize: 12,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      marginBottom: spacing.md,
+    },
+    groupRow: {
+      backgroundColor: "rgba(39, 41, 53, 0.5)",
+      padding: spacing.md,
+      borderRadius: borderRadius.md,
+      marginBottom: spacing.sm,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    groupName: {
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    groupLeader: {
+      fontSize: typography.sm,
+      color: palette.textMuted,
+      marginTop: 4,
+    },
+  });
+}

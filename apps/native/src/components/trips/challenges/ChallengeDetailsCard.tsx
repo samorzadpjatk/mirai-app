@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface ChallengeDetailsCardProps {
   challenge: {
@@ -43,6 +45,7 @@ const formatVotingDuration = (start: Date, end: Date) => {
 };
 
 export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const start = toDate(challenge.startTime);
   const end = toDate(challenge.endTime);
   const votingStart = toDate(challenge.votingStartTime);
@@ -63,6 +66,7 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.header}>
         <Text style={styles.title}>Challenge Details</Text>
       </View>
@@ -91,39 +95,41 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  title: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.md,
-  },
-  header: {
-    marginBottom: spacing.md,
-  },
-  row: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 14,
-    color: colors.white,
-    lineHeight: 20,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      padding: spacing.xl,
+      marginBottom: spacing.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    title: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      marginBottom: spacing.md,
+    },
+    header: {
+      marginBottom: spacing.md,
+    },
+    row: {
+      marginBottom: spacing.md,
+    },
+    label: {
+      fontSize: 12,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.5,
+      marginBottom: 4,
+    },
+    value: {
+      fontSize: 14,
+      color: colors.white,
+      lineHeight: 20,
+    },
+  });
+}

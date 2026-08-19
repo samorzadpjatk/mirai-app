@@ -2,27 +2,40 @@ import { useUser } from "@mirai-app/auth/client";
 import { hasAdminAccess } from "@mirai-app/common/users";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useMemo } from "react";
 import { useColorScheme } from "react-native";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
-const colors = {
-  backgroundDark: "#17181c",
-  backgroundLight: "#f1f1f4",
-  accentColor: "#00ced1",
-  inactiveColorDark: "#8E8E93",
-  inactiveColorLight: "#8E8E93",
-};
+const INACTIVE_COLOR = "#8E8E93";
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark" || colorScheme === null;
   const user = useUser();
+  const { palette } = useTripTheme();
 
-  const backgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
-  const activeColor = colors.accentColor;
-  const inactiveColor = isDark ? colors.inactiveColorDark : colors.inactiveColorLight;
+  const backgroundColor = isDark ? palette.backgroundDark : "#f1f1f4";
+  const activeColor = palette.primary;
+  const inactiveColor = INACTIVE_COLOR;
+
+  const navTheme = useMemo(
+    () =>
+      isDark
+        ? {
+            ...DarkTheme,
+            colors: {
+              ...DarkTheme.colors,
+              primary: palette.primary,
+              background: palette.backgroundDark,
+              card: palette.backgroundDark,
+            },
+          }
+        : DefaultTheme,
+    [isDark, palette],
+  );
 
   return (
-    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navTheme}>
       <NativeTabs
         backgroundColor={backgroundColor}
         tintColor={activeColor}
@@ -39,7 +52,7 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="trips">
-          <NativeTabs.Trigger.Icon sf="snowflake" md="ac_unit" />
+          <NativeTabs.Trigger.Icon sf="airplane" md="flight" />
           <NativeTabs.Trigger.Label>Trips</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="notifications">

@@ -13,7 +13,9 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CachedImage } from "~/components/common/CachedImage";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { formatDate } from "~/utils/format";
 
 interface CommunitySubmission {
@@ -98,6 +100,8 @@ export function ChallengeCommunitySubmissionsCard({
   submissions,
   showPodium,
 }: ChallengeCommunitySubmissionsCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const insets = useSafeAreaInsets();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
@@ -187,6 +191,7 @@ export function ChallengeCommunitySubmissionsCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.header}>
         <Text style={styles.title}>Groups submissions</Text>
         <Text style={styles.subtitle}>
@@ -240,12 +245,12 @@ export function ChallengeCommunitySubmissionsCard({
 
           <TouchableOpacity style={styles.showAllButton} onPress={() => openGalleryAt()}>
             <Text style={styles.showAllText}>View all ({imageSubmissions.length})</Text>
-            <Ionicons name="arrow-forward-circle-outline" size={16} color={colors.primary} />
+            <Ionicons name="arrow-forward-circle-outline" size={16} color={palette.primary} />
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.emptyGallery}>
-          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
+          <Ionicons name="images-outline" size={20} color={palette.textMuted} />
           <Text style={styles.emptyGalleryText}>No photos yet. Submit first and set the pace.</Text>
         </View>
       )}
@@ -316,10 +321,12 @@ export function ChallengeCommunitySubmissionsCard({
 }
 
 function PodiumPlaceholder({ rank }: { rank: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   return (
     <View style={styles.podiumPlaceholder}>
       <View style={styles.podiumPlaceholderImage}>
-        <Ionicons name="trophy-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="trophy-outline" size={14} color={palette.textMuted} />
       </View>
       <Text style={styles.podiumPlaceholderText}>#{rank}</Text>
     </View>
@@ -337,6 +344,8 @@ function SubmissionTile({
   rank?: number;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const imagePath = submission.imageIds[0] ?? "";
   const placeStyle = rank ? placeStyleMap[rank] : undefined;
 
@@ -357,7 +366,7 @@ function SubmissionTile({
           contentFit="contain"
           fallback={
             <View style={styles.tileFallback}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator size="small" color={palette.primary} />
             </View>
           }
         />
@@ -383,6 +392,8 @@ function FullscreenSubmissionSlide({
   height: number;
   topInset: number;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const imagePath = submission.imageIds[0] ?? "";
   const placeStyle =
     typeof submission.ranking === "number" ? placeStyleMap[submission.ranking] : undefined;
@@ -396,7 +407,7 @@ function FullscreenSubmissionSlide({
           contentFit="contain"
           fallback={
             <View style={styles.fullscreenFallback}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={palette.primary} />
             </View>
           }
         />
@@ -417,234 +428,235 @@ function FullscreenSubmissionSlide({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: spacing.lg,
-    overflow: "hidden",
-  },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    marginTop: 2,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.xs,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    fontWeight: typography.bold,
-  },
-  podiumRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  previewGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  tile: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceDark,
-    overflow: "hidden",
-  },
-  podiumTile: {
-    flex: 1,
-    padding: 6,
-    gap: 6,
-  },
-  previewTile: {
-    width: "31.5%",
-    padding: 4,
-  },
-  tileImageWrap: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: colors.cardDark,
-  },
-  tileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  tileFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  podiumTileLabel: {
-    textAlign: "center",
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: typography.bold,
-  },
-  podiumPlaceholder: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceDark,
-    padding: 6,
-    gap: 6,
-    alignItems: "center",
-  },
-  podiumPlaceholderImage: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.cardDark,
-  },
-  podiumPlaceholderText: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: typography.bold,
-  },
-  emptyGallery: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderStyle: "dashed",
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  emptyGalleryText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    flex: 1,
-  },
-  showAllButton: {
-    borderWidth: 1,
-    borderColor: "rgba(0,206,209,0.4)",
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    backgroundColor: "rgba(0,206,209,0.12)",
-  },
-  showAllText: {
-    color: colors.primary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  fullscreenHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  fullscreenTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  fullscreenHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fullscreenCounter: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-  fullscreenClose: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenSlide: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    justifyContent: "center",
-  },
-  fullscreenImageWrap: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    overflow: "hidden",
-    backgroundColor: "#090a0d",
-    minHeight: 300,
-  },
-  fullscreenImage: {
-    width: "100%",
-    height: "100%",
-  },
-  fullscreenFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fullscreenMeta: {
-    marginTop: spacing.sm,
-    gap: 2,
-    paddingHorizontal: spacing.xs,
-  },
-  fullscreenGroupName: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  fullscreenRankLabel: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  fullscreenDate: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.08)",
+      marginBottom: spacing.lg,
+      overflow: "hidden",
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: {
+      color: colors.textPrimary,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    subtitle: {
+      color: palette.textSecondary,
+      fontSize: typography.xs,
+      marginTop: 2,
+    },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      gap: spacing.md,
+    },
+    section: {
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.xs,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+      fontWeight: typography.bold,
+    },
+    podiumRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+    },
+    previewGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    tile: {
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.surfaceDark,
+      overflow: "hidden",
+    },
+    podiumTile: {
+      flex: 1,
+      padding: 6,
+      gap: 6,
+    },
+    previewTile: {
+      width: "31.5%",
+      padding: 4,
+    },
+    tileImageWrap: {
+      width: "100%",
+      aspectRatio: 1,
+      borderRadius: borderRadius.sm,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.1)",
+      backgroundColor: palette.cardDark,
+    },
+    tileImage: {
+      width: "100%",
+      height: "100%",
+    },
+    tileFallback: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    podiumTileLabel: {
+      textAlign: "center",
+      color: palette.textSecondary,
+      fontSize: 11,
+      fontWeight: typography.bold,
+    },
+    podiumPlaceholder: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.18)",
+      borderRadius: borderRadius.md,
+      backgroundColor: palette.surfaceDark,
+      padding: 6,
+      gap: 6,
+      alignItems: "center",
+    },
+    podiumPlaceholderImage: {
+      width: "100%",
+      aspectRatio: 1,
+      borderRadius: borderRadius.sm,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.1)",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.cardDark,
+    },
+    podiumPlaceholderText: {
+      color: palette.textMuted,
+      fontSize: 11,
+      fontWeight: typography.bold,
+    },
+    emptyGallery: {
+      marginHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.12)",
+      borderStyle: "dashed",
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    emptyGalleryText: {
+      color: palette.textSecondary,
+      fontSize: typography.xs,
+      flex: 1,
+    },
+    showAllButton: {
+      borderWidth: 1,
+      borderColor: "rgba(0,206,209,0.4)",
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+      backgroundColor: "rgba(0,206,209,0.12)",
+    },
+    showAllText: {
+      color: palette.primary,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+    fullscreen: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    fullscreenHeader: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(255,255,255,0.08)",
+    },
+    fullscreenTitle: {
+      color: colors.white,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+    },
+    fullscreenHeaderRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    fullscreenCounter: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+    fullscreenClose: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
+      backgroundColor: "rgba(255,255,255,0.04)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    fullscreenSlide: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      justifyContent: "center",
+    },
+    fullscreenImageWrap: {
+      flex: 1,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.14)",
+      overflow: "hidden",
+      backgroundColor: "#090a0d",
+      minHeight: 300,
+    },
+    fullscreenImage: {
+      width: "100%",
+      height: "100%",
+    },
+    fullscreenFallback: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    fullscreenMeta: {
+      marginTop: spacing.sm,
+      gap: 2,
+      paddingHorizontal: spacing.xs,
+    },
+    fullscreenGroupName: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    fullscreenRankLabel: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    fullscreenDate: {
+      color: palette.textSecondary,
+      fontSize: typography.xs,
+    },
+  });

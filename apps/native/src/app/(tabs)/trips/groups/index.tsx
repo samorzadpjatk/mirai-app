@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 import { GroupsList } from "~/components/trips/groups/GroupsList";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
@@ -18,10 +19,13 @@ import { GroupsNoTripState } from "~/components/trips/groups/GroupsNoTripState";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { useGroups } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { colors, spacing } from "../../../../styles";
 
 export default function GroupsListScreen() {
   const router = useRouter();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
@@ -81,6 +85,7 @@ export default function GroupsListScreen() {
 
   return (
     <View style={[styles.container]}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}
@@ -93,7 +98,7 @@ export default function GroupsListScreen() {
             onRefresh={() => {
               void refetch();
             }}
-            tintColor={colors.primary}
+            tintColor={palette.primary}
           />
         }
       >
@@ -116,7 +121,7 @@ export default function GroupsListScreen() {
 
         {isFetchingNextPage ? (
           <View style={styles.listFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={palette.primary} />
             <Text style={styles.listFooterText}>Loading more groups...</Text>
           </View>
         ) : null}
@@ -136,32 +141,34 @@ export default function GroupsListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: 96,
-  },
-  listFooter: {
-    marginTop: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  listFooterText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 96,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: 96,
+    },
+    listFooter: {
+      marginTop: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    listFooterText: {
+      color: palette.textSecondary,
+      fontSize: 12,
+    },
+    fab: {
+      position: "absolute",
+      right: 20,
+      bottom: 96,
+    },
+  });
+}

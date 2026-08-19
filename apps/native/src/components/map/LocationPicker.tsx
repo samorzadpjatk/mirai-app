@@ -20,7 +20,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { borderRadius, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 export interface LocationCoordinate {
   latitude: number;
@@ -97,6 +98,8 @@ export const LocationPicker: React.FC<Props> = ({
   mapTheme = "dark",
 }) => {
   const insets = useSafeAreaInsets();
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const cameraRef = useRef<CameraRef>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationCoordinate | null>(null);
   // markerCoordinate always holds a valid coordinate so the MarkerView is never unmounted.
@@ -306,7 +309,7 @@ export const LocationPicker: React.FC<Props> = ({
           {/* Loading indicator */}
           {!isMapReady && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="large" color={palette.primary} />
               <Text style={styles.loadingText}>Loading map...</Text>
             </View>
           )}
@@ -320,12 +323,12 @@ export const LocationPicker: React.FC<Props> = ({
               disabled={isLoadingLocation}
             >
               {isLoadingLocation ? (
-                <ActivityIndicator size="small" color={colors.white} />
+                <ActivityIndicator size="small" color={palette.white} />
               ) : (
                 <Ionicons
                   name="location-sharp"
                   size={20}
-                  color={colors.white}
+                  color={palette.white}
                   style={styles.mapControlButtonIcon}
                 />
               )}
@@ -357,145 +360,147 @@ export const LocationPicker: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.cardDark,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDark,
-  },
-  headerButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  headerButtonConfirm: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-  },
-  headerButtonDisabled: {
-    backgroundColor: colors.borderDark,
-    opacity: 0.5,
-  },
-  headerButtonText: {
-    color: colors.primary,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-  },
-  headerButtonTextConfirm: {
-    color: colors.white,
-  },
-  headerButtonTextDisabled: {
-    color: colors.textTertiary,
-  },
-  headerTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
-  mapContainer: {
-    flex: 1,
-    position: "relative",
-  },
-  map: {
-    flex: 1,
-  },
-  loadingContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.backgroundDark,
-  },
-  loadingText: {
-    color: colors.textSecondary,
-    fontSize: typography.base,
-    marginTop: spacing.sm,
-  },
-  mapControls: {
-    position: "absolute",
-    bottom: spacing.xl,
-    right: spacing.lg,
-  },
-  mapControlButton: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  mapControlButtonIcon: {
-    fontSize: 20,
-  },
-  markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  marker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    borderWidth: 3,
-    borderColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  markerInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.white,
-  },
-  footer: {
-    backgroundColor: colors.cardDark,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderDark,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  footerText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    flex: 1,
-  },
-  clearButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  clearButtonText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      backgroundColor: palette.cardDark,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.borderDark,
+    },
+    headerButton: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.sm,
+    },
+    headerButtonConfirm: {
+      backgroundColor: palette.primary,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+    },
+    headerButtonDisabled: {
+      backgroundColor: palette.borderDark,
+      opacity: 0.5,
+    },
+    headerButtonText: {
+      color: palette.primary,
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+    },
+    headerButtonTextConfirm: {
+      color: palette.white,
+    },
+    headerButtonTextDisabled: {
+      color: palette.textTertiary,
+    },
+    headerTitle: {
+      color: palette.white,
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+    },
+    mapContainer: {
+      flex: 1,
+      position: "relative",
+    },
+    map: {
+      flex: 1,
+    },
+    loadingContainer: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: palette.backgroundDark,
+    },
+    loadingText: {
+      color: palette.textSecondary,
+      fontSize: typography.base,
+      marginTop: spacing.sm,
+    },
+    mapControls: {
+      position: "absolute",
+      bottom: spacing.xl,
+      right: spacing.lg,
+    },
+    mapControlButton: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      width: 48,
+      height: 48,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    mapControlButtonIcon: {
+      fontSize: 20,
+    },
+    markerContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    marker: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: palette.primary,
+      borderWidth: 3,
+      borderColor: palette.white,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    markerInner: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: palette.white,
+    },
+    footer: {
+      backgroundColor: palette.cardDark,
+      borderTopWidth: 1,
+      borderTopColor: palette.borderDark,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    footerText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+      flex: 1,
+    },
+    clearButton: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    clearButtonText: {
+      color: palette.textSecondary,
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+    },
+  });
+}

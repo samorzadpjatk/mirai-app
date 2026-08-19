@@ -12,6 +12,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import FullscreenSubmissionSlide, { formatDateTime } from "./FullscreenSubmissionSlide";
 import SubmissionCircle from "./SubmissionCircle";
 
@@ -44,6 +45,8 @@ export {
 };
 
 export function GroupApprovedChallenges({ submissions }: GroupApprovedChallengesProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList<ApprovedSubmissionItem>>(null);
@@ -101,7 +104,7 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
           activeOpacity={0.8}
         >
           <Text style={styles.showAllButtonText}>View all</Text>
-          <Ionicons name="expand-outline" size={14} color={colors.primary} />
+          <Ionicons name="expand-outline" size={14} color={palette.primary} />
         </TouchableOpacity>
       </View>
 
@@ -183,83 +186,84 @@ export function GroupApprovedChallenges({ submissions }: GroupApprovedChallenges
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.xxl,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-  },
-  showAllButton: {
-    borderWidth: 1,
-    borderColor: "rgba(0,206,209,0.38)",
-    backgroundColor: "rgba(0,206,209,0.12)",
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  showAllButtonText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-  fullscreen: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  fullscreenHeader: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  fullscreenTitle: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  fullscreenHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fullscreenCounter: {
-    color: colors.textMuted,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-  },
-  fullscreenClose: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    section: {
+      marginBottom: spacing.xxl,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: spacing.md,
+      gap: spacing.sm,
+    },
+    sectionTitle: {
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 1.1,
+    },
+    showAllButton: {
+      borderWidth: 1,
+      borderColor: "rgba(0,206,209,0.38)",
+      backgroundColor: "rgba(0,206,209,0.12)",
+      borderRadius: borderRadius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    showAllButtonText: {
+      color: palette.primary,
+      fontSize: 11,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    grid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    fullscreen: {
+      flex: 1,
+      backgroundColor: colors.backgroundDark,
+    },
+    fullscreenHeader: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(255,255,255,0.08)",
+    },
+    fullscreenTitle: {
+      color: colors.white,
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    fullscreenHeaderRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    fullscreenCounter: {
+      color: palette.textMuted,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+    },
+    fullscreenClose: {
+      width: 32,
+      height: 32,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(255,255,255,0.04)",
+    },
+  });

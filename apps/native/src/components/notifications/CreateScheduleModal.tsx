@@ -10,7 +10,8 @@ import {
   ThemedTextInput,
 } from "~/components/common/ui";
 import { useTrips } from "~/hooks/trips";
-import { colors, spacing } from "~/styles";
+import { spacing } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface CreateScheduleModalProps {
   isOpen: boolean;
@@ -74,6 +75,7 @@ export function buildScheduleInput(
 
 export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateScheduleModalProps) {
   const queryClient = useQueryClient();
+  const { palette } = useTripTheme();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
   const [createName, setCreateName] = useState("");
@@ -170,7 +172,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
       variant="pageSheet"
     >
       <ScrollView testID="schedule-modal-scrollview" style={{ padding: spacing.lg }}>
-        <Text style={{ color: colors.textSecondary, marginBottom: spacing.lg }}>
+        <Text style={{ color: palette.textSecondary, marginBottom: spacing.lg }}>
           Schedule a notification to be sent at specific times
         </Text>
 
@@ -220,7 +222,7 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
         {createType === "ranking" && (
           <FormField label="Trip" required={true}>
             {trips.length === 0 ? (
-              <Text style={{ color: colors.textSecondary }}>(No trips available)</Text>
+              <Text style={{ color: palette.textSecondary }}>(No trips available)</Text>
             ) : (
               <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
                 {trips.map((trip) => (
@@ -239,11 +241,11 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
                       flexBasis: "45%",
                       borderRadius: spacing.sm,
                       borderWidth: 1,
-                      borderColor: colors.primary,
+                      borderColor: palette.primary,
                       paddingVertical: spacing.sm,
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: colors.primaryOpacity10,
+                      backgroundColor: palette.primaryOpacity10,
                     }}
                     onPress={() => {
                       void fetchNextPage();
@@ -254,10 +256,10 @@ export function CreateScheduleModal({ isOpen, onClose, onCreated }: CreateSchedu
                       <ActivityIndicator
                         testID="loading-indicator"
                         size="small"
-                        color={colors.primary}
+                        color={palette.primary}
                       />
                     ) : (
-                      <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
+                      <Text style={{ color: palette.primary, fontSize: 14, fontWeight: "600" }}>
                         Load more trips
                       </Text>
                     )}

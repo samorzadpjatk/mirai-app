@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import miraiLogo from "../../../../assets/mirai_logo.png";
 import type { TripListItem } from "./types";
 
@@ -33,6 +34,7 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
 };
 
 export function TripCard({ trip, onPress }: TripCardProps) {
+  const styles = useThemedStyles(makeStyles);
   const status = getTripStatus(trip.startDate, trip.endDate);
   const isPast = status === "Past";
   const hasBackgroundImage = Boolean(trip.backgroundImagePath);
@@ -98,93 +100,94 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  tripCard: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    overflow: "hidden",
-  },
-  pastTripCard: {
-    opacity: 0.6,
-  },
-  tripCardNoImage: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    backgroundColor: colors.cardDark,
-  },
-  tripImageBackground: {
-    position: "absolute",
-    inset: 0,
-    borderRadius: borderRadius.md,
-  },
-  tripOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(23, 24, 28, 0.7)",
-  },
-  tripLogoBadge: {
-    position: "absolute",
-    top: spacing.md,
-    left: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(0,0,0,0.28)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  tripLogo: {
-    width: 28,
-    height: 28,
-  },
-  tripContent: {
-    padding: spacing.xl,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  tripBadge: {
-    backgroundColor: colors.primaryOpacity20,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    alignSelf: "flex-start",
-  },
-  tripBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  tripTitle: {
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  tripSubtitle: {
-    fontSize: typography.base,
-    color: colors.primaryOpacity80,
-    marginBottom: spacing.sm,
-  },
-  tripDate: {
-    fontSize: typography.sm,
-    color: colors.textTertiary,
-    marginBottom: spacing.xs,
-  },
-  tripGroups: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    tripCard: {
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      overflow: "hidden",
+    },
+    pastTripCard: {
+      opacity: 0.6,
+    },
+    tripCardNoImage: {
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity10,
+      backgroundColor: palette.cardDark,
+    },
+    tripImageBackground: {
+      position: "absolute",
+      inset: 0,
+      borderRadius: borderRadius.md,
+    },
+    tripOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(23, 24, 28, 0.7)",
+    },
+    tripLogoBadge: {
+      position: "absolute",
+      top: spacing.md,
+      left: spacing.md,
+      width: 36,
+      height: 36,
+      borderRadius: borderRadius.full,
+      backgroundColor: "rgba(0,0,0,0.28)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2,
+    },
+    tripLogo: {
+      width: 28,
+      height: 28,
+    },
+    tripContent: {
+      padding: spacing.xl,
+    },
+    badgeRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: spacing.md,
+    },
+    tripBadge: {
+      backgroundColor: palette.primaryOpacity20,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      alignSelf: "flex-start",
+    },
+    tripBadgeText: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.primary,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    tripTitle: {
+      fontSize: typography.xxl,
+      fontWeight: typography.bold,
+      color: colors.white,
+      marginBottom: spacing.xs,
+    },
+    tripSubtitle: {
+      fontSize: typography.base,
+      color: palette.primaryOpacity80,
+      marginBottom: spacing.sm,
+    },
+    tripDate: {
+      fontSize: typography.sm,
+      color: palette.textTertiary,
+      marginBottom: spacing.xs,
+    },
+    tripGroups: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      fontWeight: typography.medium,
+    },
+  });

@@ -1,21 +1,21 @@
 import { Stack } from "expo-router";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
-const backgroundColor = "#17181c";
-const headerTintColor = "#00ced1";
+function ProfileStack() {
+  const { palette } = useTripTheme();
 
-export default function ProfileLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: false, // Hide by default; override per screen
-        headerStyle: { backgroundColor },
-        headerTintColor,
+        headerStyle: { backgroundColor: palette.headerBackground },
+        headerTintColor: palette.primary,
         headerTitleStyle: {
           fontFamily: "IBMPlexSans_600SemiBold",
-          color: "#ffffff",
+          color: palette.white,
         },
         headerBackButtonDisplayMode: "minimal",
-        contentStyle: { backgroundColor },
+        contentStyle: { backgroundColor: palette.backgroundDark },
       }}
     >
       <Stack.Screen
@@ -34,4 +34,8 @@ export default function ProfileLayout() {
       />
     </Stack>
   );
+}
+
+export default function ProfileLayout() {
+  return <ProfileStack />;
 }

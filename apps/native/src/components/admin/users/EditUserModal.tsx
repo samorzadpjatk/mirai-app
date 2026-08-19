@@ -4,6 +4,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { DateTimePickerModal, FormField, ThemedTextInput } from "~/components/common/ui";
 import type { User } from "~/hooks/admin/useAdminUsers";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import { formatBanLabel, isBanReady, isNameValid } from "~/utils/validation";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
@@ -36,6 +37,8 @@ export function EditUserModal({
   isDeleting,
   isBanning,
 }: EditUserModalProps) {
+  const { palette } = useTripTheme();
+  const styles = useThemedStyles(makeStyles);
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [wristNumber, setWristNumber] = useState(user?.wristNumber?.toString() ?? "");
@@ -92,13 +95,13 @@ export function EditUserModal({
               style={{
                 fontSize: typography.lg,
                 fontWeight: typography.bold,
-                color: colors.white,
+                color: palette.white,
                 marginBottom: spacing.xs,
               }}
             >
               {formatDisplayName(firstName, lastName, "Unknown user")}
             </Text>
-            <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>
+            <Text style={{ fontSize: typography.sm, color: palette.textSecondary }}>
               {user.email ?? "No email"}
             </Text>
           </View>
@@ -190,61 +193,63 @@ export function EditUserModal({
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  sectionHint: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  banPickerButton: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  banPickerButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-  },
-  banButton: {
-    backgroundColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-  },
-  dangerButtonDisabled: {
-    opacity: 0.5,
-  },
-  banButtonText: {
-    fontSize: typography.base,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  deleteButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    alignItems: "center",
-    marginTop: spacing.lg,
-  },
-  deleteButtonText: {
-    fontSize: typography.base,
-    color: colors.danger,
-    fontWeight: typography.medium,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    section: {
+      marginTop: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    sectionTitle: {
+      fontSize: typography.base,
+      fontWeight: typography.semibold,
+      color: palette.white,
+      marginBottom: spacing.xs,
+    },
+    sectionHint: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    banPickerButton: {
+      backgroundColor: palette.backgroundDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+      marginBottom: spacing.sm,
+    },
+    banPickerButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+    },
+    banButton: {
+      backgroundColor: colors.danger,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+    },
+    dangerButtonDisabled: {
+      opacity: 0.5,
+    },
+    banButtonText: {
+      fontSize: typography.base,
+      color: palette.white,
+      fontWeight: typography.medium,
+    },
+    deleteButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: borderRadius.md,
+      padding: spacing.sm,
+      alignItems: "center",
+      marginTop: spacing.lg,
+    },
+    deleteButtonText: {
+      fontSize: typography.base,
+      color: colors.danger,
+      fontWeight: typography.medium,
+    },
+  });
+}

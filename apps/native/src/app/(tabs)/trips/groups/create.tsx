@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DeckBackground } from "~/components/common/DeckBackground";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
@@ -10,14 +11,16 @@ import { GroupFormFields } from "~/components/trips/groups/create/GroupFormField
 import { useFileUpload } from "~/hooks/files";
 import { useCreateGroup } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 import { getFileContentType, getFileExtension } from "~/utils/image";
-import { colors, spacing } from "../../../../styles";
+import { spacing } from "../../../../styles";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(makeStyles);
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string>("");
@@ -101,6 +104,7 @@ export default function CreateGroupScreen() {
 
   return (
     <View style={styles.container}>
+      <DeckBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -128,16 +132,18 @@ export default function CreateGroupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.backgroundDark,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.xl,
+      paddingBottom: spacing.xxxl,
+    },
+  });
+}

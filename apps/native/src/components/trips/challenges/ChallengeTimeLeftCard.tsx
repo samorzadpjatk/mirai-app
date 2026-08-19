@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { WoodTexture } from "~/components/common/WoodTexture";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ChallengeTimeLeftCardProps {
   phaseLabel: "Submission" | "Voting";
@@ -100,6 +102,8 @@ export function ChallengeTimeLeftCard({
   dailyStartTime,
   dailyEndTime,
 }: ChallengeTimeLeftCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { palette } = useTripTheme();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -196,6 +200,7 @@ export function ChallengeTimeLeftCard({
 
   return (
     <View style={styles.container}>
+      <WoodTexture radius={borderRadius.xl} />
       <View style={styles.header}>
         <Text style={styles.title}>{statusTitle}</Text>
         <Text style={styles.phase}>{phaseLabel}</Text>
@@ -204,13 +209,13 @@ export function ChallengeTimeLeftCard({
       {showScheduleOnly ? (
         <View style={styles.scheduleCard}>
           <View style={styles.scheduleBadge}>
-            <Ionicons name="calendar-outline" size={14} color={colors.primary} />
+            <Ionicons name="calendar-outline" size={14} color={palette.primary} />
             <Text style={styles.scheduleBadgeText}>Not active yet</Text>
           </View>
           {scheduleRows.map((row) => (
             <View key={row.label} style={styles.scheduleRow}>
               <View style={styles.scheduleRowLeft}>
-                <Ionicons name={row.icon} size={14} color={colors.textMuted} />
+                <Ionicons name={row.icon} size={14} color={palette.textMuted} />
                 <Text style={styles.scheduleLabel}>{row.label}</Text>
               </View>
               <Text style={styles.scheduleValue}>{row.value}</Text>
@@ -221,7 +226,7 @@ export function ChallengeTimeLeftCard({
         <>
           <View style={styles.countdownCard}>
             <View style={styles.countdownIconWrap}>
-              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Ionicons name="time-outline" size={20} color={palette.primary} />
             </View>
             <View style={styles.countdownTextWrap}>
               <Text style={styles.countdownValue}>{countdownText}</Text>
@@ -246,129 +251,130 @@ export function ChallengeTimeLeftCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  header: {
-    marginBottom: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-  },
-  phase: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  countdownCard: {
-    backgroundColor: colors.primaryOpacity10,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  countdownIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.backgroundDarkOpacity50,
-  },
-  countdownTextWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  countdownValue: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  countdownSubtext: {
-    fontSize: typography.xs,
-    color: colors.textSecondary,
-  },
-  progressTrack: {
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "transparent",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.borderWhite5,
-    position: "relative",
-  },
-  progressFill: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 999,
-  },
-  scheduleCard: {
-    backgroundColor: colors.primaryOpacity10,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  scheduleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
-    backgroundColor: colors.backgroundDarkOpacity50,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  scheduleBadgeText: {
-    color: colors.primary,
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  scheduleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  scheduleRowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  scheduleLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  scheduleValue: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-  },
-});
+const makeStyles = (palette: ThemePalette) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      padding: spacing.xl,
+      marginBottom: spacing.xl,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.05)",
+    },
+    header: {
+      marginBottom: spacing.md,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    title: {
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      color: palette.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+    },
+    phase: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 1.2,
+    },
+    countdownCard: {
+      backgroundColor: palette.primaryOpacity10,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    countdownIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.backgroundDarkOpacity50,
+    },
+    countdownTextWrap: {
+      flex: 1,
+      gap: 2,
+    },
+    countdownValue: {
+      fontSize: typography.lg,
+      fontWeight: typography.bold,
+      color: colors.white,
+    },
+    countdownSubtext: {
+      fontSize: typography.xs,
+      color: palette.textSecondary,
+    },
+    progressTrack: {
+      height: 10,
+      borderRadius: 999,
+      backgroundColor: "transparent",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.borderWhite5,
+      position: "relative",
+    },
+    progressFill: {
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      borderRadius: 999,
+    },
+    scheduleCard: {
+      backgroundColor: palette.primaryOpacity10,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    scheduleBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      alignSelf: "flex-start",
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity30,
+      backgroundColor: colors.backgroundDarkOpacity50,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+    },
+    scheduleBadgeText: {
+      color: palette.primary,
+      fontSize: typography.xs,
+      fontWeight: typography.bold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    scheduleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    scheduleRowLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    scheduleLabel: {
+      color: palette.textSecondary,
+      fontSize: typography.xs,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    scheduleValue: {
+      color: colors.white,
+      fontSize: typography.sm,
+      fontWeight: typography.bold,
+    },
+  });

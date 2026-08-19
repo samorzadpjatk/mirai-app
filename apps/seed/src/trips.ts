@@ -72,6 +72,7 @@ export const seedTrip = async (
         startDate: new Date(tripConfig.startDate),
         endDate: new Date(tripConfig.endDate),
         backgroundImagePath,
+        theme: tripConfig.theme ?? "DEFAULT",
       })
       .where(eq(trips.id, trip.id));
     const tripId = trip.id;
@@ -85,6 +86,7 @@ export const seedTrip = async (
         startDate: new Date(tripConfig.startDate),
         endDate: new Date(tripConfig.endDate),
         backgroundImagePath,
+        theme: tripConfig.theme ?? "DEFAULT",
       })
       .returning();
     trip = inserted[0];

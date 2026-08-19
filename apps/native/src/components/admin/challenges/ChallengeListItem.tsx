@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Text, TouchableOpacity, View } from "react-native";
 import type { ChallengeItem } from "~/hooks/admin/useAdminChallengesByTrip";
 import { borderRadius, colors, spacing } from "~/styles";
+import { useTripTheme } from "~/theme/TripThemeProvider";
 
 interface ChallengeListItemProps {
   challenge: ChallengeItem;
@@ -16,6 +17,7 @@ export function ChallengeListItem({
   onDeletePress,
 }: ChallengeListItemProps) {
   const router = useRouter();
+  const { palette } = useTripTheme();
 
   const handleJudgement = () => {
     router.push({
@@ -38,9 +40,9 @@ export function ChallengeListItem({
   return (
     <View
       style={{
-        backgroundColor: colors.cardDark,
+        backgroundColor: palette.cardDark,
         borderWidth: 1,
-        borderColor: colors.borderDark,
+        borderColor: palette.borderDark,
         paddingHorizontal: spacing.lg,
         paddingVertical: spacing.lg,
         borderRadius: borderRadius.lg,
@@ -56,12 +58,12 @@ export function ChallengeListItem({
           alignItems: "center",
           justifyContent: "center",
           borderRadius: 8,
-          backgroundColor: "rgba(0, 206, 209, 0.1)",
+          backgroundColor: palette.primaryOpacity10,
           borderWidth: 1,
-          borderColor: "rgba(0, 206, 209, 0.2)",
+          borderColor: palette.primaryOpacity20,
         }}
       >
-        <Ionicons name="trophy" size={24} color={colors.primary} />
+        <Ionicons name="trophy" size={24} color={palette.primary} />
       </View>
 
       <View style={{ flex: 1, minWidth: 0 }}>
@@ -78,7 +80,7 @@ export function ChallengeListItem({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <Text
             style={{
-              color: colors.primary,
+              color: palette.primary,
               fontSize: 14,
               fontWeight: "600",
             }}
@@ -87,7 +89,7 @@ export function ChallengeListItem({
           </Text>
           <Text
             style={{
-              color: colors.textSecondary,
+              color: palette.textSecondary,
               fontSize: 12,
               textTransform: "uppercase",
             }}
@@ -98,7 +100,7 @@ export function ChallengeListItem({
             <Text
               numberOfLines={1}
               style={{
-                color: colors.textSecondary,
+                color: palette.textSecondary,
                 fontSize: 12,
                 flex: 1,
                 minWidth: 0,
@@ -112,13 +114,13 @@ export function ChallengeListItem({
 
       <View style={{ flexDirection: "row", gap: 4 }}>
         <TouchableOpacity style={{ padding: 8 }} onPress={handleJudgement}>
-          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+          <Ionicons name="checkmark-circle" size={20} color={palette.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={{ padding: 8 }} onPress={handleEdit}>
-          <Ionicons name="create" size={20} color={colors.textSecondary} />
+          <Ionicons name="create" size={20} color={palette.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity style={{ padding: 8 }} onPress={handleDelete}>
-          <Ionicons name="trash" size={20} color={colors.textSecondary} />
+          <Ionicons name="trash" size={20} color={palette.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>

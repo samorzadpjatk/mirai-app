@@ -3,6 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 export type DateTimePickerModalMode = "date" | "time" | "datetime";
 
@@ -48,6 +49,7 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   onCancel,
 }) => {
   const [draft, setDraft] = useState<Date>(value);
+  const styles = useThemedStyles(makeStyles);
 
   if (Platform.OS === "android") {
     const handleAndroidChange = (event: DateTimePickerEvent, selected?: Date) => {
@@ -108,45 +110,47 @@ const DateTimePickerModalContent: React.FC<DateTimePickerModalContentProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    width: "100%",
-    maxWidth: 360,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  actionButton: {
-    flex: 1,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  actionButtonPrimary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  actionText: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-  },
-  actionTextPrimary: {
-    color: colors.backgroundDark,
-    fontWeight: typography.semibold,
-  },
-});
+function makeStyles(palette: ThemePalette) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: colors.blackOpacity40,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: spacing.lg,
+    },
+    card: {
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      width: "100%",
+      maxWidth: 360,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    actionButton: {
+      flex: 1,
+      padding: spacing.sm,
+      borderRadius: borderRadius.md,
+      alignItems: "center",
+      backgroundColor: colors.backgroundDark,
+      borderWidth: 1,
+      borderColor: palette.borderDark,
+    },
+    actionButtonPrimary: {
+      backgroundColor: palette.primary,
+      borderColor: palette.primary,
+    },
+    actionText: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+    },
+    actionTextPrimary: {
+      color: colors.backgroundDark,
+      fontWeight: typography.semibold,
+    },
+  });
+}
