@@ -1,6 +1,7 @@
 email,firstName,lastName,role
 admin@pjatk.dev,Admin,User,admin
 dev@pjatk.dev,Developer,User,admin
+s30351@pjwstk.edu.pl,Jakub,Graliński,admin
 moderator@pjatk.dev,Moderator,User,moderator
 user@pjatk.dev,Regular,User,user
 student@pjatk.dev,Student,User,user
