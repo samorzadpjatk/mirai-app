@@ -962,6 +962,19 @@ platform :ios do
     classification = ios_release_classification!(options)
     destination = ios_destination_for_classification(classification)
 
+    # App Store Connect requires a strictly increasing CFBundleVersion per app,
+    # but this lane does not otherwise bump it (unlike the Android versionCode).
+    # Derive a monotonic build number from the current UTC time so repeated
+    # uploads never collide; IOS_BUILD_NUMBER overrides it when needed. This is
+    # written before `expo prebuild` so it flows into the generated Info.plist.
+    build_number = ENV["IOS_BUILD_NUMBER"].to_s.strip
+    build_number = Time.now.utc.strftime("%y%m%d%H%M") if build_number.empty?
+    ios_build_app_json_path = resolve_app_json_path
+    ios_build_app_config = JSON.parse(File.read(ios_build_app_json_path))
+    ios_build_app_config["expo"]["ios"]["buildNumber"] = build_number
+    File.write(ios_build_app_json_path, "#{JSON.pretty_generate(ios_build_app_config)}\n")
+    UI.message("Set iOS buildNumber=#{build_number}")
+
     ios_run_if_script_defined!("eas-build-pre-install", app_root)
 
     repo_root = File.expand_path("../..", app_root)
