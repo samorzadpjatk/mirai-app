@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DeckBackground } from "~/components/common/DeckBackground";
 import { TripPickerModal } from "~/components/common/ui";
 import type { TripListItem } from "~/components/trips/list/types";
+import { useSelectedTrip } from "~/hooks/trips";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 import plankPanel from "../../../../assets/textures/plank-panel.png";
 import { borderRadius, spacing, typography } from "../../../styles";
@@ -117,6 +118,7 @@ export default function AdminPanelScreen() {
   const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
+  const { selectedTripId: globalSelectedTripId } = useSelectedTrip();
   const styles = useThemedStyles(makeStyles);
   const { palette, themeKey } = useTripTheme();
   const isPirate = themeKey === "PIRATE";
@@ -167,7 +169,10 @@ export default function AdminPanelScreen() {
     [data?.pages],
   );
 
-  const effectiveTripId = selectedTripId || (trips?.[0]?.id ?? null);
+  // Default to the globally selected trip (the one active elsewhere in the app)
+  // and only fall back to the first trip when nothing is selected. An explicit
+  // in-panel pick (selectedTripId) still takes precedence.
+  const effectiveTripId = selectedTripId || globalSelectedTripId || (trips?.[0]?.id ?? null);
 
   const selectedTrip = useMemo(() => {
     if (!trips || !effectiveTripId) return null;
