@@ -220,6 +220,7 @@ jobs:
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
       - name: Upload iOS release artifact + metadata
+        if: always() && steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ios-release-${{ steps.current_semver.outputs.release }}
