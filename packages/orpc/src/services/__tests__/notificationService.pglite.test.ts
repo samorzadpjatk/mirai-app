@@ -11,6 +11,7 @@ import { executeWithRetry } from "../../utils/resilience";
 import {
   type NotificationData,
   NotificationService,
+  pruneUnregisteredTokens,
   sendMobileNotifications,
 } from "../notificationService";
 
@@ -665,5 +666,54 @@ describe("sendMobileNotifications — PGLite", () => {
     const result = await sendMobileNotifications(testDb.db, "notification-1");
 
     expect(result.success).toBe(true);
+  });
+});
+
+describe("pruneUnregisteredTokens", () => {
+  let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
+
+  beforeAll(async () => {
+    testDb = await createPgliteTestDb();
+  });
+
+  beforeEach(async () => {
+    await testDb.reset();
+    await seedUser(testDb.db, "user-1");
+  });
+
+  afterAll(async () => {
+    await testDb.cleanup();
+  });
+
+  it("should delete subscriptions rejected as DeviceNotRegistered", async () => {
+    await seedPushSubscription(testDb.db, "sub-live", "user-1", "ExponentPushToken[live]");
+    await seedPushSubscription(testDb.db, "sub-dead", "user-1", "ExponentPushToken[dead]");
+
+    const removed = await pruneUnregisteredTokens(
+      testDb.db,
+      [
+        { status: "ok", id: "ticket-live" },
+        { status: "error", message: "gone", details: { error: "DeviceNotRegistered" } },
+      ] as never,
+      [{ to: "ExponentPushToken[live]" }, { to: "ExponentPushToken[dead]" }] as never,
+    );
+
+    expect(removed).toEqual(["ExponentPushToken[dead]"]);
+    const remaining = await testDb.db.select().from(pushSubscriptions);
+    expect(remaining.map((row) => row.token)).toEqual(["ExponentPushToken[live]"]);
+  });
+
+  it("should keep subscriptions that failed for other reasons", async () => {
+    await seedPushSubscription(testDb.db, "sub-big", "user-1", "ExponentPushToken[big]");
+
+    const removed = await pruneUnregisteredTokens(
+      testDb.db,
+      [{ status: "error", message: "too big", details: { error: "MessageTooBig" } }] as never,
+      [{ to: "ExponentPushToken[big]" }] as never,
+    );
+
+    expect(removed).toEqual([]);
+    const remaining = await testDb.db.select().from(pushSubscriptions);
+    expect(remaining).toHaveLength(1);
   });
 });

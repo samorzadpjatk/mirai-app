@@ -314,15 +314,18 @@ jobs:
           PROJECTS="${{ steps.projects.outputs.projects }}"
           EXCLUDE="${{ steps.projects.outputs.exclude }}"
 
-          if [ "$IS_PR" = "true" ] && [ "$IS_CRITICAL" != "true" ]; then
+          # `nx affected` has no --projects flag: an unrecognised flag is forwarded
+          # to the underlying task, so vitest received --projects and every shard
+          # pinning a project failed with "Unknown option `--projects`". Shards that
+          # pin explicit projects therefore always run through run-many.
+          if [ -n "$PROJECTS" ]; then
+            CMD="bunx nx run-many -t test:ci --projects=$PROJECTS"
+          elif [ "$IS_PR" = "true" ] && [ "$IS_CRITICAL" != "true" ]; then
             CMD="bunx nx affected -t test:ci --base=origin/${{ github.base_ref }}"
           else
             CMD="bunx nx run-many -t test:ci"
           fi
 
-          if [ -n "$PROJECTS" ]; then
-            CMD="$CMD --projects=$PROJECTS"
-          fi
           if [ -n "$EXCLUDE" ]; then
             CMD="$CMD --exclude=$EXCLUDE"
           fi

@@ -3,7 +3,8 @@ import { orpc } from "@mirai-app/orpc/client";
 import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { hasOptedOutOfNotifications } from "~/services/notifications";
 import { resolveProjectId } from "./notificationProjectId";
 
 export { resolveProjectId };
@@ -22,17 +23,11 @@ export function isAutoPushBlocked(
   hasSession: boolean,
   authUserId: string | null,
   isStatusLoading: boolean,
-  hasSubscription: boolean,
   isPending: boolean,
   attemptedUserId: string | null,
 ): boolean {
   return (
-    !hasSession ||
-    !authUserId ||
-    isStatusLoading ||
-    hasSubscription ||
-    isPending ||
-    attemptedUserId === authUserId
+    !hasSession || !authUserId || isStatusLoading || isPending || attemptedUserId === authUserId
   );
 }
 
@@ -42,10 +37,16 @@ export async function getExpoPushToken(projectId?: string): Promise<Notification
     : await Notifications.getExpoPushTokenAsync();
 }
 
-export async function runAutoPushSubscriptionFlow(subscribeMutation: {
-  mutateAsync: (data: { token: string }) => Promise<unknown>;
-}): Promise<void> {
+export async function runAutoPushSubscriptionFlow(
+  subscribeMutation: {
+    mutateAsync: (data: { token: string }) => Promise<unknown>;
+  },
+  registeredTokens: string[] = [],
+): Promise<void> {
   try {
+    if (await hasOptedOutOfNotifications()) {
+      return;
+    }
     const currentPermission = await Notifications.getPermissionsAsync();
     let finalStatus = currentPermission.status;
     if (finalStatus === Notifications.PermissionStatus.UNDETERMINED) {
@@ -58,7 +59,7 @@ export async function runAutoPushSubscriptionFlow(subscribeMutation: {
     const projectId = resolveProjectId();
     const tokenData = await getExpoPushToken(projectId);
     const token = parseToken(tokenData);
-    if (!token) {
+    if (!token || registeredTokens.includes(token)) {
       return;
     }
     await subscribeMutation.mutateAsync({ token });
@@ -71,21 +72,13 @@ export function shouldRunAutoPushEffect(
   hasSession: boolean,
   authUserId: string | null,
   isStatusLoading: boolean,
-  hasSubscription: boolean,
   isPending: boolean,
   attemptedUserId: string | null,
 ): boolean {
   if (!hasSession || !authUserId) {
     return false;
   }
-  return !isAutoPushBlocked(
-    hasSession,
-    authUserId,
-    isStatusLoading,
-    hasSubscription,
-    isPending,
-    attemptedUserId,
-  );
+  return !isAutoPushBlocked(hasSession, authUserId, isStatusLoading, isPending, attemptedUserId);
 }
 
 export function useAutoPushSubscription() {
@@ -106,7 +99,10 @@ export function useAutoPushSubscription() {
   const { data: subscriptionStatus, isLoading: isStatusLoading } = subscriptionQuery;
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;
-  const hasSubscription = subscriptionStatus?.isSubscribed ?? false;
+  const registeredTokens = useMemo(
+    () => (subscriptionStatus?.subscriptions ?? []).map((sub) => sub.token),
+    [subscriptionStatus],
+  );
   useEffect(() => {
     if (!hasSession || !authUserId) {
       attemptedForUserRef.current = null;
@@ -117,7 +113,6 @@ export function useAutoPushSubscription() {
         hasSession,
         authUserId,
         isStatusLoading,
-        hasSubscription,
         subscribeMutation.isPending,
         attemptedForUserRef.current,
       )
@@ -125,6 +120,6 @@ export function useAutoPushSubscription() {
       return;
     }
     attemptedForUserRef.current = authUserId;
-    void runAutoPushSubscriptionFlow(subscribeMutation);
-  }, [authUserId, hasSession, hasSubscription, isStatusLoading, subscribeMutation]);
+    void runAutoPushSubscriptionFlow(subscribeMutation, registeredTokens);
+  }, [authUserId, hasSession, isStatusLoading, registeredTokens, subscribeMutation]);
 }

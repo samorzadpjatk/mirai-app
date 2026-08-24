@@ -3,6 +3,7 @@ import { invalidateNotificationQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
 import { Alert } from "react-native";
+import { setNotificationsOptOut } from "~/services/notifications";
 import { resolveProjectId } from "./notificationProjectId";
 import { useNotificationPermission } from "./useNotificationPermission";
 
@@ -67,6 +68,27 @@ export interface NotificationPermissionDeps {
   openAppSettings: () => void;
 }
 
+export async function resolveDevicePushToken(): Promise<string | null> {
+  try {
+    const projectId = getExpoProjectId();
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    return typeof tokenData?.data === "string" && tokenData.data.length > 0 ? tokenData.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export function selectTokensToUnsubscribe(
+  subscriptions: Array<{ token: string }> | undefined,
+  deviceToken: string | null,
+): string[] {
+  const tokens = (subscriptions ?? []).map((sub) => sub.token);
+  if (deviceToken && tokens.includes(deviceToken)) {
+    return [deviceToken];
+  }
+  return tokens;
+}
+
 export async function executeToggleSubscription(
   subscriptionStatus:
     | {
@@ -77,10 +99,12 @@ export async function executeToggleSubscription(
   permissionDeps: NotificationPermissionDeps,
   mutations: NotificationMutations,
 ): Promise<void> {
-  if (subscriptionStatus?.isSubscribed) {
-    for (const sub of subscriptionStatus.subscriptions ?? []) {
-      await mutations.unsubscribeMutation.mutateAsync({ token: sub.token });
+  if (calculateIsSubscribed(permissionDeps.permission, subscriptionStatus?.isSubscribed)) {
+    const deviceToken = await resolveDevicePushToken();
+    for (const token of selectTokensToUnsubscribe(subscriptionStatus?.subscriptions, deviceToken)) {
+      await mutations.unsubscribeMutation.mutateAsync({ token });
     }
+    await setNotificationsOptOut(true);
     return;
   }
 
@@ -99,6 +123,7 @@ export async function executeToggleSubscription(
 
   if (tokenData.data) {
     await mutations.subscribeMutation.mutateAsync({ token: tokenData.data });
+    await setNotificationsOptOut(false);
   }
 }
 

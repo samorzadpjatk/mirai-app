@@ -65,3 +65,20 @@ export function calculateDeliveryStats(
     total: totalCount,
   };
 }
+
+export function collectUnregisteredTokens(
+  tickets: Array<{ status: string; details?: { error?: string } }>,
+  messages: Array<{ to: string }>,
+): string[] {
+  const unregistered = new Set<string>();
+
+  tickets.forEach((ticket, idx) => {
+    if (ticket.status === "ok" || ticket.details?.error !== "DeviceNotRegistered") return;
+    const token = messages[idx]?.to;
+    if (typeof token === "string" && token.length > 0) {
+      unregistered.add(token);
+    }
+  });
+
+  return Array.from(unregistered);
+}
