@@ -1,8 +1,12 @@
-import { aggregateTicketResults, calculateDeliveryStats } from "@mirai-app/common/notifications";
+import {
+  aggregateTicketResults,
+  calculateDeliveryStats,
+  collectUnregisteredTokens,
+} from "@mirai-app/common/notifications";
 import type { DB } from "@mirai-app/db";
-import { challenges, notificationPushes, tripParticipants } from "@mirai-app/db";
+import { challenges, notificationPushes, pushSubscriptions, tripParticipants } from "@mirai-app/db";
 import { env } from "bun";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import { logger } from "../utils/logger";
 import {
@@ -222,6 +226,32 @@ export class NotificationService {
   }
 }
 
+export async function pruneUnregisteredTokens(
+  db: DB,
+  tickets: ExpoPushTicket[],
+  messages: ExpoPushMessage[],
+): Promise<string[]> {
+  const unregisteredTokens = collectUnregisteredTokens(
+    tickets as Array<{ status: string; details?: { error?: string } }>,
+    messages as Array<{ to: string }>,
+  );
+  if (unregisteredTokens.length === 0) {
+    return [];
+  }
+
+  try {
+    await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.token, unregisteredTokens));
+    logger.info(
+      { count: unregisteredTokens.length },
+      "Removed push subscriptions rejected as DeviceNotRegistered",
+    );
+    return unregisteredTokens;
+  } catch (error) {
+    logger.error({ error }, "Failed to remove push subscriptions for unregistered devices");
+    return [];
+  }
+}
+
 export async function sendMobileNotifications(db: DB, notificationId: string) {
   const notification = await db.query.notifications.findFirst({
     where: (n, { eq }) => eq(n.id, notificationId),
@@ -377,6 +407,8 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     messages as Array<{ to: string }>,
     userByToken,
   );
+
+  await pruneUnregisteredTokens(db, tickets, messages);
 
   const sentUserIds = Array.from(resultByUser.entries())
     .filter(([, status]) => status.hasSuccess)

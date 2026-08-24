@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { aggregateTicketResults, calculateDeliveryStats } from "../deliveryUtils";
+import {
+  aggregateTicketResults,
+  calculateDeliveryStats,
+  collectUnregisteredTokens,
+} from "../deliveryUtils";
 
 describe("aggregateTicketResults", () => {
   it("aggregates all success results for a user", () => {
@@ -132,5 +136,46 @@ describe("calculateDeliveryStats", () => {
     const result = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, [], []);
 
     expect(result).toEqual({ sent: 0, failed: 0, total: 0, success: true });
+  });
+});
+
+describe("collectUnregisteredTokens", () => {
+  it("should return no tokens when every delivery succeeded", () => {
+    const tickets = [{ status: "ok" }, { status: "ok" }];
+    const messages = [{ to: "token-1" }, { to: "token-2" }];
+
+    expect(collectUnregisteredTokens(tickets, messages)).toEqual([]);
+  });
+
+  it("should return only tokens rejected as DeviceNotRegistered", () => {
+    const tickets = [
+      { status: "ok" },
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+      { status: "error", details: { error: "MessageTooBig" } },
+      { status: "error" },
+    ];
+    const messages = [{ to: "live" }, { to: "dead" }, { to: "too-big" }, { to: "unknown-error" }];
+
+    expect(collectUnregisteredTokens(tickets, messages)).toEqual(["dead"]);
+  });
+
+  it("should deduplicate a token rejected in several chunks", () => {
+    const tickets = [
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+    ];
+    const messages = [{ to: "dead" }, { to: "dead" }];
+
+    expect(collectUnregisteredTokens(tickets, messages)).toEqual(["dead"]);
+  });
+
+  it("should ignore tickets without a matching message", () => {
+    const tickets = [
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+      { status: "error", details: { error: "DeviceNotRegistered" } },
+    ];
+    const messages = [{ to: "dead" }];
+
+    expect(collectUnregisteredTokens(tickets, messages)).toEqual(["dead"]);
   });
 });

@@ -10,7 +10,11 @@ export {
 } from "./scheduleUtils";
 export type { DeliveryStats } from "./deliveryStats";
 export { buildDeliveryStats } from "./deliveryStats";
-export { aggregateTicketResults, calculateDeliveryStats } from "./deliveryUtils";
+export {
+  aggregateTicketResults,
+  calculateDeliveryStats,
+  collectUnregisteredTokens,
+} from "./deliveryUtils";
 export type { DeliveryStatus } from "./deliveryStatus";
 export { buildDeliveryStatus } from "./deliveryStatus";
 export { extractErrorMessage } from "./errorUtils";
