@@ -187,13 +187,13 @@ jobs:
         id: build
         run: bundle exec fastlane android android_build
         env:
-          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          ANDROID_APP_PACKAGE: ${{ vars.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
           ANDROID_KEYSTORE_PATH: ${{ env.WORKDIR }}/credentials/android/keystore.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          ANDROID_SIGNING_LINEAGE: ${{ vars.ANDROID_SIGNING_LINEAGE }}
           GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
           JAVA_TOOL_OPTIONS: "-Xmx4g -XX:MaxMetaspaceSize=1g"
 
@@ -208,9 +208,9 @@ jobs:
         id: upload
         run: bundle exec fastlane android android_submit track:internal artifact_path:${{ steps.artifact.outputs.artifact_path }}
         env:
-          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          ANDROID_APP_PACKAGE: ${{ vars.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
-          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          ANDROID_SIGNING_LINEAGE: ${{ vars.ANDROID_SIGNING_LINEAGE }}
 
       - name: Extract release metadata
         id: metadata
@@ -331,9 +331,9 @@ jobs:
             echo "::error::Android beta promotion failed"
           fi
         env:
-          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          ANDROID_APP_PACKAGE: ${{ vars.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
-          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          ANDROID_SIGNING_LINEAGE: ${{ vars.ANDROID_SIGNING_LINEAGE }}
 
   promote_to_production:
     name: Promote internal -> production
@@ -410,6 +410,6 @@ jobs:
             echo "::error::Android production promotion failed"
           fi
         env:
-          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          ANDROID_APP_PACKAGE: ${{ vars.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
-          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          ANDROID_SIGNING_LINEAGE: ${{ vars.ANDROID_SIGNING_LINEAGE }}
