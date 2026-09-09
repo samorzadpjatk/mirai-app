@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import { useTripDetails } from "~/hooks/trips";
+import { useTripThemeKey } from "~/hooks/trips";
 import { colors } from "~/styles";
 import {
   type ThemeKey,
@@ -32,6 +32,10 @@ const TripThemeContext = createContext<TripThemeValue>(DEFAULT_VALUE);
  * when the trip is inaccessible, or in any subtree left unmounted (e.g. component
  * tests that render without a provider) — the context default keeps those on
  * DEFAULT.
+ *
+ * Backed by `trip.getTheme` (a single column) rather than `trip.getByIdFull`, so
+ * mounting it at the root does not drag the heaviest endpoint in the API into the
+ * cold-start critical path.
  */
 export function TripThemeProvider({
   tripId,
@@ -40,8 +44,7 @@ export function TripThemeProvider({
   tripId?: string | null;
   children: React.ReactNode;
 }) {
-  const { trip } = useTripDetails(tripId);
-  const themeSource = trip?.theme;
+  const { theme: themeSource } = useTripThemeKey(tripId);
 
   const value = useMemo<TripThemeValue>(
     () => ({
