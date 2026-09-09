@@ -270,6 +270,19 @@ describe("storage", () => {
       expect(result).toBeNull();
     });
 
+    it("should not treat a bare public/ prefix as the public bucket", () => {
+      // "public" is a Supabase object prefix (/storage/v1/object/public/<bucket>/…),
+      // never a bucket alias in a stored reference, so a row holding
+      // "public/integral/guide.pdf" can never be downloaded. Anything that
+      // writes storage references — the seeder above all — has to persist the
+      // bucket name, "files-public/integral/guide.pdf".
+      expect(parseSupabaseStoragePath("public/integral/guide.pdf")).toBeNull();
+      expect(parseSupabaseStoragePath("files-public/integral/guide.pdf")).toEqual({
+        bucket: PUBLIC_BUCKET,
+        path: "integral/guide.pdf",
+      });
+    });
+
     it("should handle webm video extension", () => {
       const path = "challenge/video.webm";
       const result = parseSupabaseStoragePath(path);

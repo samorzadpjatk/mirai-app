@@ -1,25 +1,64 @@
+# Trip Info content for INTEGRAL 2026 (Ośrodek Kacze Stawy, Łeba, 16-20.09.2026).
+#
+# Every value marked with "TODO(integral)" is a placeholder that only the
+# organisers can fill in. Do not invent them — the screen degrades gracefully
+# when a resource is missing, but a wrong link or a wrong emergency contact is
+# worse than none.
+#
+# `storagePath` is the file's location inside apps/seed/assets/dev/, not the
+# storage reference: `public/` is the asset directory whose bucket is called
+# `files-public`. The seeder resolves the pair and persists `bucket/object`,
+# which is the only form the app can download (see utils/storagePath.ts).
+
 resources:
   - type: hero_image
     label: "INTEGRAL 2026"
     storagePath: "images/trips/integral/hero-bg.png"
     sortOrder: 0
+
+  # Zdjęcie ośrodka Kacze Stawy w Łebie — tło kafelka z mapą (kwadrat,
+  # renderowany z opacity 0.4).
+  # TODO(integral): plik `kacze-stawy.png` musi dostarczyć organizator.
+  # Do czasu wgrania kafelek renderuje się bez tła.
+  - type: map_bg_image
+    label: "Kacze Stawy"
+    storagePath: "images/trips/integral/kacze-stawy.png"
+    sortOrder: 1
+
   - type: interactive_map
-    label: "Mapa wyprawy"
+    label: "Mapa ośrodka"
+    description: "Plan ośrodka Kacze Stawy i okolic Łeby."
+    # TODO(integral): podmień na prawdziwy adres mapy wyprawy.
     url: "https://example.com/integral-map"
     iconName: "compass"
-    sortOrder: 1
-  - type: whatsapp
-    label: "Załoga (WhatsApp)"
-    url: "https://example.com/integral-whatsapp"
-    iconName: "boat"
     sortOrder: 2
-  - type: sos
-    label: "SOS"
-    description: "W razie nagłego wypadku na pokładzie zawołaj kadrę i dzwoń na 112."
-    iconName: "alert-circle"
-    value: "112"
+
+  - type: infopack
+    label: "Przewodnik uczestnika"
+    description: "Jak pobrać MIRAI, zalogować się kodem z e-maila i poruszać się po zakładkach aplikacji."
+    storagePath: "public/integral/Integral2026-Przewodnik-Uczestnika.pdf"
+    fileName: "Integral2026-Przewodnik-Uczestnika"
+    iconName: "book"
     sortOrder: 3
 
+  - type: whatsapp
+    label: "Załoga (WhatsApp)"
+    description: "Grupa wyjazdowa — ogłoszenia kadry i bieżące ustalenia."
+    # TODO(integral): podmień na prawdziwy link zapraszający do grupy WhatsApp.
+    url: "https://example.com/integral-whatsapp"
+    iconName: "boat"
+    sortOrder: 4
+
+  - type: sos
+    label: "SOS"
+    description: "W razie nagłego wypadku zawołaj kadrę i dzwoń na 112. Podaj, że jesteś na wyjeździe Integral w ośrodku Kacze Stawy w Łebie."
+    iconName: "alert-circle"
+    value: "112"
+    sortOrder: 5
+
+# TODO(integral): cała sekcja poniżej to nadal dane przykładowe. Ubezpieczyciel,
+# numer polisy, numer umowy generalnej i numer telefonu muszą pochodzić od
+# organizatorów — do tego czasu ekran pokazuje instrukcję z fikcyjnym numerem.
 insurance:
   label: "Ubezpieczenie / Kontakt"
   phoneNumber: "+48123456789"
@@ -30,7 +69,7 @@ insurance:
   steps:
     - stepNumber: 1
       title: "Krok 1"
-      text: "Poproś o pomoc kadrę wyjazdu lub najbliższą osobę z obsługi. W razie poważnego wypadku dzwoń na 112."
+      text: "Poproś o pomoc kadrę wyjazdu lub najbliższą osobę z obsługi ośrodka. W razie poważnego wypadku dzwoń na 112."
     - stepNumber: 2
       title: "Krok 2"
       text: "Skontaktuj się z ubezpieczycielem pod numerem +48 123 456 789. Podaj:"
@@ -38,7 +77,8 @@ insurance:
         - "imienia i nazwiska"
         - "daty urodzenia"
         - "numeru polisy: INTEGRAL2026"
-      exampleCall: "Jestem na wyjeździe Integral, doznałem kontuzji, potrzebuję pomocy."
+        - "numeru umowy generalnej: INTEGRAL-SSPJ"
+      exampleCall: "Jestem na wyjeździe Integral w Łebie, doznałem kontuzji, potrzebuję pomocy."
     - stepNumber: 3
       title: "Krok 3"
       text: "Poinformuj kadrę o sytuacji i zadzwoń na podany numer kontaktowy."

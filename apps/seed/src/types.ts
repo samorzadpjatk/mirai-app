@@ -47,6 +47,12 @@ export interface TripResourceConfig {
   label: string;
   description?: string;
   url?: string;
+  /**
+   * Source file location relative to `apps/seed/assets/<env>/`, e.g.
+   * `public/integral/guide.pdf`. It is not the storage reference — the seeder
+   * resolves it to `bucket/object` before persisting it, because that is the
+   * only form the app can download. See `utils/storagePath.ts`.
+   */
   storagePath?: string;
   fileName?: string;
   publicUrl?: string;
