@@ -68,6 +68,8 @@ services:
       SUPABASE_PUBLIC_URL: "${SUPABASE_PUBLIC_URL}"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
       SERVICE_ACCOUNT_TOKEN: "${SERVICE_ACCOUNT_TOKEN}"
+      # Authenticates outgoing pushes to the Expo push service.
+      EXPO_ACCESS_TOKEN: "${EXPO_ACCESS_TOKEN:-}"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
       db:
