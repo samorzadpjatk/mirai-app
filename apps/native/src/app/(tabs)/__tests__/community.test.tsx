@@ -12,6 +12,11 @@ jest.mock("expo-router", () => {
         testID: "redirect-to-login",
         "data-href": href,
       }),
+    // The screen refreshes the feed on focus; the real hook needs a navigation
+    // container, so run the effect once on mount instead.
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      React.useEffect(callback, [callback]);
+    },
     useLocalSearchParams: jest.fn(() => ({})),
     useRouter: jest.fn(() => ({
       back: jest.fn(),
@@ -74,6 +79,7 @@ jest.mock("~/hooks/community/useCommunityFeed", () => ({
       fetchNextPage: jest.fn(),
     },
     filteredActivities: [],
+    refreshFeed: jest.fn(),
     handleToggleHeart: jest.fn(),
     rankingData: {},
     avatarUrls: {},
