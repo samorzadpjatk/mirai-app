@@ -115,26 +115,43 @@ export const seedTripInfo = async (
 
       const sortOrder = resourceConfig.sortOrder ?? 0;
 
-      if (resourceConfig.url || publicUrl) {
+      // A single configured resource can carry a file, a link, a text value and
+      // an icon at once, while each of the four tables can only store one of
+      // those. Every part is written to the table that can hold it — routing
+      // the resource into a single table would silently drop the rest.
+      // getResources() recombines the rows via mergeTripResourceFragments().
+      const storagePath = resourceConfig.storagePath;
+      // A stored file keeps its public URL on the file row, so only resources
+      // that are not backed by a file become standalone links.
+      const linkUrl = resourceConfig.url ?? (storagePath ? undefined : publicUrl);
+      let seededParts = 0;
+
+      if (linkUrl || resourceConfig.description) {
         await db.insert(tripResourceLinks).values({
           tripId,
           label: resourceConfig.label,
           type: resourceConfig.type,
-          url: resourceConfig.url ?? publicUrl ?? "",
+          url: linkUrl ?? "",
           description: resourceConfig.description ?? "",
           sortOrder,
         });
-      } else if (resourceConfig.storagePath) {
+        seededParts += 1;
+      }
+
+      if (storagePath) {
         await db.insert(tripResourceFiles).values({
           tripId,
           label: resourceConfig.label,
           type: resourceConfig.type,
-          storagePath: resourceConfig.storagePath,
+          storagePath,
           fileName: resourceConfig.fileName ?? "",
           publicUrl: publicUrl ?? "",
           sortOrder,
         });
-      } else if (resourceConfig.value) {
+        seededParts += 1;
+      }
+
+      if (resourceConfig.value) {
         await db.insert(tripResourceTexts).values({
           tripId,
           label: resourceConfig.label,
@@ -142,7 +159,10 @@ export const seedTripInfo = async (
           value: resourceConfig.value,
           sortOrder,
         });
-      } else if (resourceConfig.iconName) {
+        seededParts += 1;
+      }
+
+      if (resourceConfig.iconName) {
         await db.insert(tripResourceIcons).values({
           tripId,
           label: resourceConfig.label,
@@ -150,6 +170,14 @@ export const seedTripInfo = async (
           iconName: resourceConfig.iconName,
           sortOrder,
         });
+        seededParts += 1;
+      }
+
+      if (seededParts === 0) {
+        logger.warn(
+          `✗ Resource has nothing to store, skipped: ${resourceConfig.label} (${resourceConfig.type})`,
+        );
+        continue;
       }
 
       logger.info(`✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`);

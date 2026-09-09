@@ -60,8 +60,8 @@ vi.mock("../config/supabase", () => ({
 vi.mock("../config/env", () => ({
   env: {
     publicBucket: "files-public",
-    imageBucket: "image",
-    videoBucket: "video",
+    imageBucket: "images",
+    videoBucket: "videos",
   },
 }));
 
@@ -221,7 +221,10 @@ describe("tripInfo", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should create resources with correct data", async () => {
+    it("should write every part of a resource to the table that can store it", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+
       const infoConfig: TripInfoConfig = {
         resources: [
           {
@@ -250,9 +253,185 @@ describe("tripInfo", () => {
         description: "Main hero image",
         sortOrder: 0,
       });
-      expect(mockTripResourceFileCreate).not.toHaveBeenCalled();
-      expect(mockTripResourceTextCreate).not.toHaveBeenCalled();
-      expect(mockTripResourceIconCreate).not.toHaveBeenCalled();
+      // Regression: the file used to be dropped because the link branch won.
+      expect(mockTripResourceFileCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Hero Image",
+        type: "hero_image",
+        storagePath: "images/hero.jpg",
+        fileName: "hero",
+        publicUrl: "",
+        sortOrder: 0,
+      });
+      expect(mockTripResourceTextCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Hero Image",
+        type: "hero_image",
+        value: "hero-value",
+        sortOrder: 0,
+      });
+      expect(mockTripResourceIconCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Hero Image",
+        type: "hero_image",
+        iconName: "image",
+        sortOrder: 0,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should keep an uploaded public file as a file row instead of a bare link", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+      mockUpload.mockResolvedValue({ error: null });
+      mockGetPublicUrl.mockReturnValue({
+        data: { publicUrl: "https://cdn.example.com/infopack.pdf" },
+      });
+
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "infopack",
+            label: "Infopack",
+            storagePath: "public/integral/infopack.pdf",
+            fileName: "infopack",
+            iconName: "book",
+            sortOrder: 4,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      // The resolved public URL used to route the resource into the links table,
+      // which lost the storagePath the app needs to download the file.
+      expect(mockTripResourceFileCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Infopack",
+        type: "infopack",
+        storagePath: "public/integral/infopack.pdf",
+        fileName: "infopack",
+        publicUrl: "https://cdn.example.com/infopack.pdf",
+        sortOrder: 4,
+      });
+      expect(mockTripResourceLinkCreate).not.toHaveBeenCalled();
+      expect(mockTripResourceIconCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Infopack",
+        type: "infopack",
+        iconName: "book",
+        sortOrder: 4,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should keep the icon of a link resource", async () => {
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "whatsapp",
+            label: "Załoga",
+            url: "https://chat.whatsapp.com/example",
+            iconName: "chatbubble",
+            sortOrder: 5,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      expect(mockTripResourceLinkCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Załoga",
+        type: "whatsapp",
+        url: "https://chat.whatsapp.com/example",
+        description: "",
+        sortOrder: 5,
+      });
+      expect(mockTripResourceIconCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "Załoga",
+        type: "whatsapp",
+        iconName: "chatbubble",
+        sortOrder: 5,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should keep the description of a text resource that has no url", async () => {
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "sos",
+            label: "SOS",
+            description: "W razie wypadku dzwoń na 112.",
+            value: "112",
+            iconName: "alert-circle",
+            sortOrder: 6,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      expect(mockTripResourceLinkCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "SOS",
+        type: "sos",
+        url: "",
+        description: "W razie wypadku dzwoń na 112.",
+        sortOrder: 6,
+      });
+      expect(mockTripResourceTextCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "SOS",
+        type: "sos",
+        value: "112",
+        sortOrder: 6,
+      });
+      expect(mockTripResourceIconCreate).toHaveBeenCalledWith({
+        tripId: "trip-1",
+        label: "SOS",
+        type: "sos",
+        iconName: "alert-circle",
+        sortOrder: 6,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should give every row of one resource the same type, label and sortOrder", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "pdf_map",
+            label: "Mapa PDF",
+            storagePath: "images/map.png",
+            iconName: "document-text",
+            sortOrder: 3,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      const identity = { type: "pdf_map", label: "Mapa PDF", sortOrder: 3 };
+      expect(mockTripResourceFileCreate).toHaveBeenCalledWith(expect.objectContaining(identity));
+      expect(mockTripResourceIconCreate).toHaveBeenCalledWith(expect.objectContaining(identity));
 
       consoleSpy.mockRestore();
     });
@@ -268,6 +447,7 @@ describe("tripInfo", () => {
       };
 
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
@@ -275,7 +455,9 @@ describe("tripInfo", () => {
       expect(mockTripResourceFileCreate).not.toHaveBeenCalled();
       expect(mockTripResourceTextCreate).not.toHaveBeenCalled();
       expect(mockTripResourceIconCreate).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("nothing to store"));
 
+      warnSpy.mockRestore();
       consoleSpy.mockRestore();
     });
 
@@ -327,7 +509,7 @@ describe("tripInfo", () => {
 
       await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
 
-      expect(mockUpload).toHaveBeenCalledWith("image", "hero.jpg", mockFile, { upsert: true });
+      expect(mockUpload).toHaveBeenCalledWith("images", "hero.jpg", mockFile, { upsert: true });
 
       consoleSpy.mockRestore();
     });
