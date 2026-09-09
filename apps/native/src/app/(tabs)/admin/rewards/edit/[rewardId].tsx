@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateRewardQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -36,19 +37,30 @@ export default function AdminEditRewardScreen() {
     orpc.reward.getTotalAvailablePoints.queryOptions({ input: { tripId }, enabled: !!tripId }),
   );
 
-  const [name, setName] = useState(reward?.name ?? "");
-  const [description, setDescription] = useState(reward?.description ?? "");
-  const [coinCost, setCoinCost] = useState(
-    reward?.originalCoinCost?.toString() ?? reward?.coinCost.toString() ?? "",
-  );
-  const [availableQuantity, setAvailableQuantity] = useState(
-    reward?.availableQuantity.toString() ?? "",
-  );
-  const [isHidden, setIsHidden] = useState(reward?.isHidden ?? false);
-  const [imagePath, setImagePath] = useState(reward?.image ?? "");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(
-    reward?.signedImageUrl ?? null,
-  );
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [coinCost, setCoinCost] = useState("");
+  const [availableQuantity, setAvailableQuantity] = useState("");
+  const [isHidden, setIsHidden] = useState(false);
+  const [imagePath, setImagePath] = useState("");
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [hydratedRewardId, setHydratedRewardId] = useState<string | null>(null);
+
+  // `useState` initialisers only run on the first render, while `reward.getById`
+  // is still in flight, so seeding the form from `reward` there left every field
+  // empty (and `isHidden` stuck on `false`, which silently un-hid hidden rewards
+  // on save). Hydrate during render once the data lands, keyed on the reward so
+  // navigating to another reward re-hydrates.
+  if (reward && hydratedRewardId !== rewardId) {
+    setHydratedRewardId(rewardId);
+    setName(reward.name ?? "");
+    setDescription(reward.description ?? "");
+    setCoinCost(reward.originalCoinCost?.toString() ?? reward.coinCost?.toString() ?? "");
+    setAvailableQuantity(reward.availableQuantity?.toString() ?? "");
+    setIsHidden(reward.isHidden ?? false);
+    setImagePath(reward.image ?? "");
+    setImagePreviewUri(reward.signedImageUrl ?? null);
+  }
 
   const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
   const calculatedCost =
@@ -59,12 +71,7 @@ export default function AdminEditRewardScreen() {
   const updateRewardMutation = useMutation(
     orpc.reward.update.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getById"], { input: { id: rewardId } }],
-        });
+        await invalidateRewardQueries(queryClient);
         Alert.alert("Success", "Reward updated successfully.", [
           {
             text: "OK",
@@ -79,12 +86,7 @@ export default function AdminEditRewardScreen() {
   const setHiddenMutation = useMutation(
     orpc.reward.setHidden.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getById"], { input: { id: rewardId } }],
-        });
+        await invalidateRewardQueries(queryClient);
       },
       onError: (error) => Alert.alert("Error", error.message),
     }),
@@ -93,9 +95,7 @@ export default function AdminEditRewardScreen() {
   const deleteRewardMutation = useMutation(
     orpc.reward.delete.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
+        await invalidateRewardQueries(queryClient);
         Alert.alert("Success", "Reward deleted successfully.", [
           {
             text: "OK",

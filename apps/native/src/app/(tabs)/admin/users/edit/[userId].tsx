@@ -1,5 +1,6 @@
 import { formatDisplayName } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateUserQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -27,10 +28,11 @@ export default function AdminEditUserScreen() {
     orpc.user.getById.queryOptions({ input: { id: userId }, enabled: !!userId }),
   );
 
-  const { data: participant } = useQuery(
+  const isParticipantQueryEnabled = Boolean(userId && tripId);
+  const { data: participant, isFetched: isParticipantFetched } = useQuery(
     orpc.user.getByIdWithGroup.queryOptions({
       input: { id: userId, tripId },
-      enabled: Boolean(userId && tripId),
+      enabled: isParticipantQueryEnabled,
     }),
   );
 
@@ -42,27 +44,39 @@ export default function AdminEditUserScreen() {
   );
   const groups = groupsResponse?.groups ?? [];
 
-  const [firstName, setFirstName] = useState(user?.firstName ?? "");
-  const [lastName, setLastName] = useState(user?.lastName ?? "");
-  const [wristNumber, setWristNumber] = useState(participant?.trips?.[0]?.wristNumber ?? "");
-  const [houseNumber, setHouseNumber] = useState(participant?.trips?.[0]?.houseNumber ?? "");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
-    const participantTrip = participant?.trips?.[0];
-    return participantTrip?.group?.id ?? null;
-  });
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [wristNumber, setWristNumber] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState("");
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+
+  // `useState` initialisers only run on the very first render, when both user
+  // queries are still in flight, so seeding the form from them leaves every
+  // field permanently empty. Hydrate during render instead - React's supported
+  // "adjust state while rendering" pattern - once the data has actually landed.
+  // The key covers userId *and* tripId so navigating to another user (or the
+  // same user under a different trip) re-hydrates the form.
+  const hydrationKey = `${userId}:${tripId}`;
+  const isParticipantSettled = !isParticipantQueryEnabled || isParticipantFetched;
+
+  if (user && isParticipantSettled && hydratedKey !== hydrationKey) {
+    const participantTrip = participant?.trips?.[0];
+    setHydratedKey(hydrationKey);
+    setFirstName(user.firstName ?? "");
+    setLastName(user.lastName ?? "");
+    setWristNumber(participantTrip?.wristNumber ?? "");
+    setHouseNumber(participantTrip?.houseNumber ?? "");
+    setSelectedGroupId(participantTrip?.group?.id ?? null);
+  }
 
   const updateNameMutation = useMutation(
     orpc.user.updateName.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to update user: ${error.message}`);
@@ -73,12 +87,7 @@ export default function AdminEditUserScreen() {
   const updateWristNumberMutation = useMutation(
     orpc.user.updateWristNumber.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to update wrist number: ${error.message}`);
@@ -89,12 +98,7 @@ export default function AdminEditUserScreen() {
   const updateHouseNumberMutation = useMutation(
     orpc.user.updateHouseNumber.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to update house number: ${error.message}`);
@@ -105,12 +109,7 @@ export default function AdminEditUserScreen() {
   const banUserMutation = useMutation(
     orpc.user.banUserUntil.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
         Alert.alert("Success", "User has been banned.");
         setBanUntil(null);
         setBanReason("");
@@ -124,9 +123,7 @@ export default function AdminEditUserScreen() {
   const deleteUserMutation = useMutation(
     orpc.user.deleteUser.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
         Alert.alert("Success", "User has been deleted.", [
           {
             text: "OK",
@@ -143,15 +140,7 @@ export default function AdminEditUserScreen() {
   const assignToGroupMutation = useMutation(
     orpc.group.assignUserToGroup.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getTripParticipant"], { input: { userId, tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
+        await invalidateUserQueries(queryClient, true);
         Alert.alert("Success", "Group updated.");
       },
       onError: (error) => {
@@ -240,6 +229,10 @@ export default function AdminEditUserScreen() {
     updateWristNumberMutation.isPending ||
     updateHouseNumberMutation.isPending ||
     assignToGroupMutation.isPending;
+  // The group is optional for `handleSave`, so gating Save on it left the button
+  // permanently dead for users (and trips) without a group. Gate on what the
+  // handler actually requires instead.
+  const canSave = firstName.trim().length > 0 && lastName.trim().length > 0;
   const banReady = isBanReady(banUntil);
   const banLabel = formatBanLabel(banUntil);
 
@@ -287,6 +280,7 @@ export default function AdminEditUserScreen() {
 
         <FormField label="First name" required={true}>
           <ThemedTextInput
+            testID="first-name-input"
             value={firstName}
             onChangeText={setFirstName}
             placeholder="Enter first name..."
@@ -296,6 +290,7 @@ export default function AdminEditUserScreen() {
 
         <FormField label="Last name" required={true}>
           <ThemedTextInput
+            testID="last-name-input"
             value={lastName}
             onChangeText={setLastName}
             placeholder="Enter last name..."
@@ -305,6 +300,7 @@ export default function AdminEditUserScreen() {
 
         <FormField label="Wrist #">
           <ThemedTextInput
+            testID="wrist-number-input"
             value={wristNumber}
             onChangeText={setWristNumber}
             placeholder="None"
@@ -314,6 +310,7 @@ export default function AdminEditUserScreen() {
 
         <FormField label="House #">
           <ThemedTextInput
+            testID="house-number-input"
             value={houseNumber}
             onChangeText={setHouseNumber}
             placeholder="None"
@@ -330,6 +327,7 @@ export default function AdminEditUserScreen() {
                 return (
                   <TouchableOpacity
                     key={group.id}
+                    testID={`group-option-${group.id}`}
                     style={[styles.groupOption, isSelected && styles.groupOptionSelected]}
                     onPress={() => setSelectedGroupId(group.id)}
                     disabled={assignToGroupMutation.isPending}
@@ -349,10 +347,11 @@ export default function AdminEditUserScreen() {
         </View>
 
         <PrimaryLoadingButton
+          testID="save-changes-button"
           label="Save Changes"
           isLoading={isSaving}
           onPress={handleSave}
-          disabled={isSaving || !selectedGroupId}
+          disabled={isSaving || !canSave}
         />
 
         <View style={styles.section}>
@@ -365,6 +364,7 @@ export default function AdminEditUserScreen() {
 
           <FormField label="Reason">
             <ThemedTextInput
+              testID="ban-reason-input"
               value={banReason}
               onChangeText={setBanReason}
               placeholder="Optional reason for the ban"
