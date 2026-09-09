@@ -1,4 +1,5 @@
 import { buildParticipantCountMap, calculatePagination } from "@mirai-app/common/groups";
+import { attachSponsorDisplay } from "@mirai-app/common/sponsors";
 import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/common/trips";
 import { type DB, tripParticipants, trips } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
@@ -96,6 +97,9 @@ async function fetchTripWithRelations(db: DB, tripId: string) {
           sponsor: true,
         },
       },
+      // Per-trip logo layout (height/offsets) lives here since migration
+      // 20260605202256_freezing_venom moved it off the sponsors table.
+      tripSponsorDisplays: true,
       participants: {
         with: {
           user: true,
@@ -145,9 +149,16 @@ async function buildTripDetail(
   );
 
   const normalizedTrip = toClientTrip(trip);
+  const detail = buildTripDetailResponse(
+    normalizedTrip,
+    countMap,
+    emailByAuthUserId,
+    resolvedGroupImages,
+  );
   return {
     ...normalizedTrip,
-    ...buildTripDetailResponse(normalizedTrip, countMap, emailByAuthUserId, resolvedGroupImages),
+    ...detail,
+    tripSponsors: attachSponsorDisplay(detail.tripSponsors, trip.tripSponsorDisplays),
   } as TripDetail;
 }
 

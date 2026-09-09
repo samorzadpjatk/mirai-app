@@ -94,14 +94,14 @@ export function shapeTripParticipant(
   } as ShapedTripParticipant;
 }
 
-export interface TripWithDetailRelations {
-  tripSponsors: TripSponsorEntry[];
+export interface TripWithDetailRelations<TSponsor extends TripSponsorEntry = TripSponsorEntry> {
+  tripSponsors: TSponsor[];
   groups: TripGroupInput[];
   participants: TripParticipantInput[];
 }
 
-export interface TripDetailResponse {
-  tripSponsors: TripSponsorEntry[];
+export interface TripDetailResponse<TSponsor extends TripSponsorEntry = TripSponsorEntry> {
+  tripSponsors: TSponsor[];
   groups: Array<
     TripGroupInput & { _count: { participants: number }; image: string | null | undefined }
   >;
@@ -112,13 +112,16 @@ export interface TripDetailResponse {
  * Builds a complete trip detail response by shaping sponsors, groups, and participants.
  * All external data (image URLs, email lookups, participant counts) must be resolved
  * before calling this function — it is fully pure.
+ *
+ * Generic over the sponsor entry so callers keep the full row type (including
+ * `sponsorId`, needed to attach per-trip display metadata afterwards).
  */
-export function buildTripDetailResponse(
-  trip: TripWithDetailRelations,
+export function buildTripDetailResponse<TSponsor extends TripSponsorEntry>(
+  trip: TripWithDetailRelations<TSponsor>,
   countMap: Map<string | null, number>,
   emailByAuthUserId: Map<string, string | null>,
   resolvedGroupImages: Map<string, string | null | undefined>,
-): TripDetailResponse {
+): TripDetailResponse<TSponsor> {
   return {
     tripSponsors: filterActiveSponsors(trip.tripSponsors),
     groups: trip.groups.map((group) => ({

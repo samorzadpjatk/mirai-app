@@ -1,3 +1,4 @@
+import type { SponsorDisplay } from "@mirai-app/common/sponsors";
 import type { sponsors, tripSponsors, trips } from "@mirai-app/db";
 import type { InferSelectModel } from "drizzle-orm";
 
@@ -9,10 +10,13 @@ import type { InferSelectModel } from "drizzle-orm";
 export type TripDetailSponsor = InferSelectModel<typeof sponsors>;
 
 /**
- * Junction-row shape for `trip.tripSponsors`, including the resolved `sponsor`.
+ * Junction-row shape for `trip.tripSponsors`, including the resolved `sponsor`
+ * and the per-trip logo layout read from `tripSponsorDisplay`. Sponsors without
+ * a display row get the default layout, so `display` is never null.
  */
 export type TripDetailTripSponsor = InferSelectModel<typeof tripSponsors> & {
   sponsor: TripDetailSponsor | null;
+  display: SponsorDisplay;
 };
 
 export interface TripDetailGroup {
