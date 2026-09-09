@@ -26,6 +26,7 @@ export function UsersListPanel() {
         <Text style={styles.listTitle}>People</Text>
         <View style={styles.headerButtons}>
           <Pressable
+            testID="map-manage-sharing-button"
             style={styles.manageButton}
             onPress={(event) => {
               event.stopPropagation();
@@ -35,6 +36,7 @@ export function UsersListPanel() {
             <Ionicons name="settings-outline" size={16} color={palette.primary} />
           </Pressable>
           <Pressable
+            testID="map-add-share-button"
             style={styles.addButton}
             onPress={(event) => {
               event.stopPropagation();

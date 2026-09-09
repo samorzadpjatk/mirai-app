@@ -2,7 +2,7 @@ import { useAuth } from "@mirai-app/auth/client";
 import { formatDisplayName } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { UserMap } from "~/components/map/UserMap";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
@@ -13,7 +13,13 @@ import { useMapActions } from "~/hooks/map";
 import { useSelectedTrip } from "~/hooks/trips";
 import { useTripDetails } from "~/hooks/trips";
 import { useLocationContext } from "~/stores/location";
-import { mapOverlayStore, setMapOverlayExternals, useMapOverlayStore } from "~/stores/map";
+import {
+  MapOverlayProvider,
+  MapOverlayStateProvider,
+  buildMapOverlaySyncState,
+  mapOverlayStore,
+  useMapOverlayStore,
+} from "~/stores/map";
 
 function MapScreenContent({
   onLocationUpdate,
@@ -54,7 +60,6 @@ export default function MapScreen() {
   const { isTripPast } = useTripDetails(selectedTripId);
   const userMyQueryOptions = orpc.user.getMy.queryOptions({ input: {} });
   const { data: currentUser } = useQuery(userMyQueryOptions);
-  const mapTheme = "dark";
   const [currentCoordinate, setCurrentCoordinate] = useState<[number, number] | null>(null);
   const {
     canShareOwnLocation,
@@ -93,52 +98,57 @@ export default function MapScreen() {
     currentCoordinate: null,
   });
 
-  // Initialize map overlay store with data and external functions
+  // Push screen-owned data into the overlay store. Deliberately excludes
+  // `mapTheme`: the store owns it and the user toggles it, so writing it here
+  // reset the theme on every tick of the location stream.
   useEffect(() => {
-    mapOverlayStore.setState({
-      users,
-      currentUserId: session?.user?.id,
-      sharingUserIds,
-      allAvailableUsers,
-      sharingSettings,
-      isRemovingUser,
-      mapTheme,
-    });
-
-    setMapOverlayExternals({
-      updateSharing,
-      removeUser,
-      currentCoordinate,
-    });
+    mapOverlayStore.setState(
+      buildMapOverlaySyncState({
+        users,
+        currentUserId: session?.user?.id,
+        sharingUserIds,
+        allAvailableUsers,
+        sharingSettings,
+        isRemovingUser,
+      }),
+    );
   }, [
     users,
-    session,
+    session?.user?.id,
     sharingUserIds,
     allAvailableUsers,
     sharingSettings,
     isRemovingUser,
-    mapTheme,
-    updateSharing,
-    removeUser,
-    currentCoordinate,
   ]);
+
+  // External (non-store) values the overlay needs, handed down through context.
+  const overlayExternals = useMemo(
+    () => ({ session, updateSharing, removeUser, currentCoordinate }),
+    [session, updateSharing, removeUser, currentCoordinate],
+  );
 
   if (!session?.access_token) {
     return null;
   }
 
   return (
-    <MapScreenContent
-      onLocationUpdate={({ latitude, longitude }) => {
-        setCurrentCoordinate([longitude, latitude]);
-        // Only send location if sharing is enabled and trip is not past
-        if (canShareOwnLocation && !isTripPast) {
-          void sendLocation({ latitude, longitude });
-        }
-      }}
-      currentUserId={currentUser?.id}
-      currentUserName={currentUserName && currentUserName.length > 0 ? currentUserName : undefined}
-      currentUserAvatarStoragePath={currentUser?.hasAvatar ? avatarStoragePath : null}
-    />
+    <MapOverlayProvider value={overlayExternals}>
+      <MapOverlayStateProvider>
+        <MapScreenContent
+          onLocationUpdate={({ latitude, longitude }) => {
+            setCurrentCoordinate([longitude, latitude]);
+            // Only send location if sharing is enabled and trip is not past
+            if (canShareOwnLocation && !isTripPast) {
+              void sendLocation({ latitude, longitude });
+            }
+          }}
+          currentUserId={currentUser?.id}
+          currentUserName={
+            currentUserName && currentUserName.length > 0 ? currentUserName : undefined
+          }
+          currentUserAvatarStoragePath={currentUser?.hasAvatar ? avatarStoragePath : null}
+        />
+      </MapOverlayStateProvider>
+    </MapOverlayProvider>
   );
 }
