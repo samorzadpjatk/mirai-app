@@ -1,4 +1,4 @@
-import { orpc } from "@mirai-app/orpc/client";
+import { QUERY_GROUPS, invalidateCascadingQueries, orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -56,7 +56,11 @@ export default function AdminEditActivityScreen() {
   const updateMutation = useMutation(
     orpc.activityFeed.update.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey }),
+          // Also drop the user facing community feed so the edit shows up there.
+          invalidateCascadingQueries(queryClient, QUERY_GROUPS.COMMUNITY_FEED),
+        ]);
         Alert.alert("Success", "Activity updated successfully.", [
           {
             text: "OK",

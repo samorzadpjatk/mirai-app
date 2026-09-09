@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { orpc } from "@mirai-app/orpc/client";
+import { QUERY_GROUPS, invalidateCascadingQueries, orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -49,7 +49,11 @@ export default function AdminCreateActivityScreen() {
   const createCustomMutation = useMutation(
     orpc.activityFeed.createCustom.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey }),
+          // Also drop the user facing community feed so the new post shows up there.
+          invalidateCascadingQueries(queryClient, QUERY_GROUPS.COMMUNITY_FEED),
+        ]);
         setTitle("");
         setDescription("");
         setIsPinned(false);
