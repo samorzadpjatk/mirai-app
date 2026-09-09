@@ -144,7 +144,9 @@ export function hasRequiredRole(groups: string[], requiredRole: string): boolean
 /**
  * Get the current session with user information
  * @param supabase - Supabase client instance
- * @returns Session object with user and authUserId, or null if not authenticated
+ * @returns Session object with user, authUserId and the backing database row, or null
+ *          if not authenticated. `dbUser` is returned so callers such as
+ *          {@link requireAuth} do not have to re-query the same row.
  */
 export async function getSession(
   db: DB,
@@ -153,6 +155,7 @@ export async function getSession(
 ): Promise<{
   user: AuthUser | null;
   authUserId: string | null;
+  dbUser: User | null;
 } | null> {
   const supabaseUser = await getAuthServerUser(supabase, accessToken);
 
@@ -168,6 +171,7 @@ export async function getSession(
     return {
       user: null,
       authUserId: supabaseUser.id,
+      dbUser: null,
     };
   }
 
@@ -176,6 +180,7 @@ export async function getSession(
   return {
     user: authUser,
     authUserId: supabaseUser.id,
+    dbUser,
   };
 }
 
@@ -187,9 +192,12 @@ export async function requireAuth(
   user: AuthUser;
   dbUser: User;
 }> {
+  // `getSession` already loaded the user row for this access token, so it is reused
+  // here instead of being queried a second time — this runs on every single protected
+  // procedure call.
   const session = await getSession(db, supabase, accessToken);
 
-  if (!session?.user || !session.authUserId) {
+  if (!session?.user || !session.authUserId || !session.dbUser) {
     throw new AuthenticationError("Unauthorized");
   }
 
@@ -212,15 +220,7 @@ export async function requireAuth(
     }
   }
 
-  const dbUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.authUserId, authUserId),
-  });
-
-  if (!dbUser) {
-    throw new AuthenticationError("User not found in database");
-  }
-
-  const { user } = session;
+  const { user, dbUser } = session;
 
   return {
     user,

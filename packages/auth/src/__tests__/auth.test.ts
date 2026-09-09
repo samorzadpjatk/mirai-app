@@ -243,6 +243,31 @@ describe("authServer", () => {
       });
     });
 
+    it("looks the user row up exactly once per call", async () => {
+      const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
+      await seedUser();
+
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: mockSupabaseUser },
+        error: null,
+      } as never);
+      vi.mocked(mockSupabase.auth.admin.getUserById).mockResolvedValue({
+        data: { user: null },
+        error: null,
+      } as never);
+
+      const findFirstSpy = vi.spyOn(testDb.db.query.users, "findFirst");
+
+      const result = await requireAuth(testDb.db, mockSupabase, "token");
+
+      // `getSession` already loads the row; a second lookup would double the database
+      // work of every protected procedure call.
+      expect(findFirstSpy).toHaveBeenCalledTimes(1);
+      expect(result.dbUser).toMatchObject({ id: "db-123", authUserId: "auth-123" });
+
+      findFirstSpy.mockRestore();
+    });
+
     it("should throw AuthenticationError when db user not found after auth", async () => {
       const mockSupabaseUser = { id: "auth-123", email: "test@example.com" } as SupabaseUser;
       await seedUser();
