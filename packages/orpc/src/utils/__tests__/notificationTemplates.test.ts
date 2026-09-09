@@ -28,7 +28,7 @@ describe("notificationTemplates", () => {
 
     it("should have correct notification URLs", () => {
       DAILY_RANKING_SCHEDULE_TEMPLATES.forEach((template) => {
-        expect(template.notificationUrl).toBe("/ranking");
+        expect(template.notificationUrl).toBe("/trips/leaderboard");
       });
     });
 

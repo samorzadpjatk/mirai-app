@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useAutoPushSubscription } from "~/hooks/notifications";
+import { useAutoPushSubscription, useNotificationResponse } from "~/hooks/notifications";
 import { LocationStoreProvider } from "~/stores/location";
 
 function initNotifications(): void {
@@ -56,6 +56,15 @@ const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, aut
 
 function AutoPushSubscription() {
   useAutoPushSubscription();
+  return null;
+}
+
+/**
+ * Handles taps on delivered push notifications. Mounted alongside the
+ * navigator, so `router.push` always has a mounted Stack to push onto.
+ */
+function NotificationResponseHandler() {
+  useNotificationResponse();
   return null;
 }
 
@@ -138,6 +147,7 @@ function App() {
       {!isAuthLoading && isUserResolved && (
         <TripThemeProvider tripId={selectedTripId}>
           <RootStack hasSession={hasSession} />
+          <NotificationResponseHandler />
         </TripThemeProvider>
       )}
     </View>
