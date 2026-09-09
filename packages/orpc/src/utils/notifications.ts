@@ -3,7 +3,7 @@ import type { DB } from "@mirai-app/db";
 import { groups, notificationPushes, notifications, tripParticipants } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq } from "drizzle-orm";
-import { NotificationService } from "../services/notificationService";
+import { NotificationService, sendMobileNotifications } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
 import { logger } from "./logger";
 
@@ -110,7 +110,7 @@ export async function sendRankingUpdate({
         index + 1,
       );
 
-      return await sendNotification({
+      const result = await sendNotification({
         db,
         userId,
         input: {
@@ -121,6 +121,9 @@ export async function sendRankingUpdate({
           tripId,
         },
       });
+      // Creating the rows is not delivery — the push has to be dispatched too.
+      await sendMobileNotifications(db, result.notificationId);
+      return result;
     }),
   );
 

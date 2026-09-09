@@ -63,6 +63,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await testDb.reset();
+  vi.mocked(sendMobileNotifications).mockClear();
 });
 
 afterAll(async () => {
@@ -281,6 +282,8 @@ describe("notifications mutations", () => {
 
       expect(result).toBeDefined();
       expect(result.notificationId).toBe("notif-1");
+      // Creating the rows is not delivery: the push must be dispatched too.
+      expect(sendMobileNotifications).toHaveBeenCalledWith(testDb.db, "notif-1");
     });
   });
 
@@ -315,6 +318,7 @@ describe("notifications mutations", () => {
 
       expect(result).toBeDefined();
       expect(result.notificationId).toBe("notif-1");
+      expect(sendMobileNotifications).toHaveBeenCalledWith(testDb.db, "notif-1");
     });
   });
 
@@ -364,6 +368,7 @@ describe("notifications mutations", () => {
 
       expect(result).toBeDefined();
       expect(result.notificationId).toBe("notif-1");
+      expect(sendMobileNotifications).toHaveBeenCalledWith(testDb.db, "notif-1");
     });
   });
 
@@ -401,6 +406,7 @@ describe("notifications mutations", () => {
 
       expect(result).toBeDefined();
       expect(result.notificationId).toBe("notif-1");
+      expect(sendMobileNotifications).toHaveBeenCalledWith(testDb.db, "notif-1");
     });
   });
 

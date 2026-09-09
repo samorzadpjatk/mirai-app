@@ -1,4 +1,10 @@
-import { groups, notificationPushes, notifications, tripParticipants } from "@mirai-app/db";
+import {
+  groups,
+  notificationPushes,
+  notifications,
+  pushSubscriptions,
+  tripParticipants,
+} from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -497,6 +503,42 @@ describe("notifications — PGLite", () => {
 
       expect(result.success).toBe(false);
       expect(result.notificationIds).toHaveLength(1);
+    }, 30000);
+
+    it("dispatches the push instead of stopping at the notification row", async () => {
+      await seedUser(testDb.db, "admin-1");
+      await seedUser(testDb.db, "user-1");
+      await seedUser(testDb.db, "bystander-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
+      await seedGroup(testDb.db, "group-1", "trip-1", "Group A", "admin-1", "GRP01");
+      await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+
+      // A subscription that belongs to nobody in the audience. Its only job is
+      // to get past the "no subscriptions at all" short-circuit, so that
+      // sendMobileNotifications reaches the point where it resolves the
+      // audience and marks the undeliverable pushes.
+      await testDb.db.insert(pushSubscriptions).values({
+        id: "sub-1",
+        userId: "bystander-1",
+        token: "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await sendRankingUpdate({
+        db: testDb.db,
+        userId: "admin-1",
+        tripId: "trip-1",
+      });
+
+      expect(result.notificationIds).toHaveLength(1);
+
+      // Still "pending" would mean the push was never attempted — which is
+      // exactly what used to happen: the row was created and nothing else.
+      const pushes = await testDb.db.query.notificationPushes.findMany();
+      expect(pushes).toHaveLength(1);
+      expect(pushes[0]?.status).toBe("failed");
+      expect(pushes[0]?.failureReason).toBe("no_valid_push_token");
     }, 30000);
   });
 });
