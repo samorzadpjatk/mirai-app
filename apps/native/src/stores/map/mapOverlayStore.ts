@@ -6,6 +6,7 @@ import { createStore } from "zustand/vanilla";
 import type { UserLocation } from "~/components/map/UserMap";
 import { useMapSelectedUser } from "~/hooks/map";
 import { usePanelAnimation, useShareModal } from "~/hooks/ui";
+import type { UseMapOverlayGesturesReturn } from "./hooks/useMapOverlayGestures";
 import { useMapOverlayGestures } from "./hooks/useMapOverlayGestures";
 import {
   type MapTheme,
@@ -81,6 +82,35 @@ export interface MapOverlayActions {
 }
 
 export type MapOverlayStore = MapOverlayState & MapOverlayActions;
+
+/**
+ * Store fields owned by the map screen's data sources (queries, stream, session).
+ *
+ * `mapTheme` is deliberately absent: it is user-controlled through `toggleTheme`
+ * and lives entirely in the store. Writing it from the screen's data-sync effect
+ * overwrote the user's choice on the next tick of the location stream, which is
+ * why the light/dark toggle snapped straight back to dark.
+ */
+export type MapOverlayDataSlice = Pick<
+  MapOverlayState,
+  | "users"
+  | "currentUserId"
+  | "sharingUserIds"
+  | "allAvailableUsers"
+  | "sharingSettings"
+  | "isRemovingUser"
+>;
+
+export function buildMapOverlaySyncState(input: MapOverlayDataSlice): MapOverlayDataSlice {
+  return {
+    users: input.users,
+    currentUserId: input.currentUserId,
+    sharingUserIds: input.sharingUserIds,
+    allAvailableUsers: input.allAvailableUsers,
+    sharingSettings: input.sharingSettings,
+    isRemovingUser: input.isRemovingUser,
+  };
+}
 
 // Zustand store for state management
 export const mapOverlayStore = createStore<MapOverlayStore>()((set, get) => ({
@@ -324,8 +354,35 @@ export function buildMapOverlayHandlers(deps: MapOverlayHandlerDeps) {
   };
 }
 
-// Hook that combines store with animations and external data
-export function useMapOverlayStore() {
+export type MapOverlayShareModal = ReturnType<typeof useShareModal>;
+export type MapOverlayHandlers = ReturnType<typeof buildMapOverlayHandlers>;
+
+/**
+ * Everything a map overlay component consumes: the zustand slice plus the
+ * React-local state (selection, share modal, panel animations) that only makes
+ * sense when it is shared by every overlay component.
+ */
+export type MapOverlayController = Omit<MapOverlayStore, keyof MapOverlayHandlers> &
+  MapOverlayHandlers & {
+    selectedUser: UserLocation | null;
+    panelStyle: UseMapOverlayGesturesReturn["panelStyle"];
+    usersListStyle: UseMapOverlayGesturesReturn["usersListStyle"];
+    panGesture: UseMapOverlayGesturesReturn["panGesture"];
+    canStopSharing: boolean;
+    shareModal: MapOverlayShareModal;
+  };
+
+/**
+ * Builds the overlay controller. Call this EXACTLY ONCE per map screen and hand
+ * the result to every overlay component through `MapOverlayStateProvider`.
+ *
+ * It is not a plain store subscription: `useShareModal`, `useMapSelectedUser`
+ * and `usePanelAnimation` create React-local state. Calling it independently in
+ * each component gave every component its own modal flag and its own selection,
+ * so the "+" button flipped a flag nobody rendered and selecting a user left the
+ * panel blank.
+ */
+function useMapOverlayController(): MapOverlayController {
   const store = useStore(mapOverlayStore);
 
   // Animation values
@@ -403,4 +460,32 @@ export function useMapOverlayStore() {
     shareModal,
     ...handlers,
   };
+}
+
+const MapOverlayStateContext = createContext<MapOverlayController | null>(null);
+
+/**
+ * Creates the single overlay controller and shares it with every overlay
+ * component below it. Mount it once, around the map screen.
+ */
+export function MapOverlayStateProvider({ children }: { children: React.ReactNode }) {
+  const controller = useMapOverlayController();
+
+  return React.createElement(MapOverlayStateContext.Provider, { value: controller }, children);
+}
+
+/**
+ * Reads the shared overlay controller. Throws outside the provider rather than
+ * silently handing back a private copy of the modal / selection state.
+ */
+export function useMapOverlayStore(): MapOverlayController {
+  const controller = useContext(MapOverlayStateContext);
+
+  if (!controller) {
+    throw new Error(
+      "useMapOverlayStore must be used inside <MapOverlayStateProvider>: every map overlay component has to share one controller instance.",
+    );
+  }
+
+  return controller;
 }

@@ -1,14 +1,29 @@
 import { locationShares } from "@mirai-app/db";
-import type { DB, Location as DbLocation } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
-import { REALTIME_CHANNEL_STATES, type RealtimeChannel } from "@mirai-app/supabase";
+import type { DB } from "@mirai-app/db";
+import type { RealtimeChannel, SupabaseClient } from "@mirai-app/supabase";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { tracked } from "~/api/orpc";
 import { calculateDistance } from "../../../utils/location-validation";
 import { logger } from "../../../utils/logger";
-import type { FriendLocationEvent, LocationWithUser, SharingUser } from "./types";
+import {
+  LOCATION_REALTIME_TABLE,
+  buildFriendLocationFilter,
+  createChannelSubscriptionGate,
+  extractRealtimeUserId,
+  shouldKeepStreaming,
+} from "./realtime";
+import type { FriendLocationEvent, SharingUser } from "./types";
 import { mapUserWithAvatar, toLocationWithUser } from "./utils";
+
+/** How often the generator drains the realtime event queue. */
+const LOCATION_STREAM_POLL_INTERVAL_MS = 100;
+
+/**
+ * Shape of a raw `locations` row as delivered by Supabase Realtime. Only the
+ * owning user is read from the payload; everything else is re-read via Drizzle.
+ */
+type RealtimeLocationRow = { user_id: string };
 
 export type LocationContext = {
   db: DB;
@@ -288,185 +303,78 @@ export async function* getFriendsLocationsStream(
     "Setting up location subscription",
   );
 
+  const enqueueDelete = (userId: string) => {
+    // With radius filtering we only announce a removal for friends we had
+    // previously reported as inside the radius.
+    if (radiusKm !== undefined && !inRadius.delete(userId)) return;
+    queue.push({ id: connectionId, type: "delete", userId });
+  };
+
+  const enqueueUpsert = async (userId: string) => {
+    // Realtime payloads carry raw Postgres rows, so we re-read the row through
+    // Drizzle instead of trusting the payload shape.
+    const dbLocation = await context.db.query.locations.findFirst({
+      where: (l, { eq }) => eq(l.userId, userId),
+    });
+
+    if (!dbLocation || !dbLocation.isSharingLocation) {
+      enqueueDelete(userId);
+      return;
+    }
+
+    const location = await toLocationWithUser(context.db, context.supabase, dbLocation);
+
+    if (radiusKm === undefined) {
+      queue.push({ id: connectionId, type: "upsert", location });
+      return;
+    }
+
+    const distance = calculateDistance(
+      latitude!,
+      longitude!,
+      Number(dbLocation.latitude),
+      Number(dbLocation.longitude),
+    );
+
+    if (distance <= radiusKm) {
+      inRadius.add(userId);
+      queue.push({ id: connectionId, type: "upsert", location });
+      return;
+    }
+
+    if (inRadius.delete(userId)) {
+      queue.push({ id: connectionId, type: "delete", userId });
+    }
+  };
+
+  let isSubscribed = false;
+
   if (friendIds.length > 0) {
     // Subskrybuj zmiany tylko dla lokalizacji znajomych (jeden kanał, filtr in)
-    const filter = `userId=in.(${friendIds.join(",")})`;
+    const gate = createChannelSubscriptionGate();
 
     channel = supabase
       .channel(`friends_locations_${context.dbUser.id}`)
-      .on<DbLocation>(
+      .on<RealtimeLocationRow>(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "Location",
-          filter,
+          table: LOCATION_REALTIME_TABLE,
+          filter: buildFriendLocationFilter(friendIds),
         },
         (payload) => {
-          switch (payload.eventType) {
-            case "DELETE": {
-              const userId = payload.old.userId;
-              if (!userId || !allowedFriendIds.has(userId)) {
-                return;
-              }
+          const userId = extractRealtimeUserId(payload);
+          if (!userId || !allowedFriendIds.has(userId)) return;
 
-              if (radiusKm !== undefined) {
-                if (inRadius.has(userId)) {
-                  inRadius.delete(userId);
-                  queue.push({ id: connectionId, type: "delete", userId });
-                }
-              } else {
-                queue.push({ id: connectionId, type: "delete", userId });
-              }
-              break;
-            }
-            default: {
-              const newLocation = payload.new;
-
-              const userIdFromEvent = newLocation.userId;
-              if (!userIdFromEvent || !allowedFriendIds.has(userIdFromEvent)) {
-                return;
-              }
-
-              if (!newLocation.userId || !newLocation.timestamp) {
-                void context.db.query.locations
-                  .findFirst({
-                    where: (l, { eq }) => eq(l.userId, userIdFromEvent),
-                    with: {
-                      user: {
-                        columns: {
-                          id: true,
-                          firstName: true,
-                          lastName: true,
-                          hasAvatar: true,
-                        },
-                      },
-                    },
-                  })
-                  .then(async (dbLocation) => {
-                    if (!dbLocation) {
-                      return;
-                    }
-
-                    if (!allowedFriendIds.has(dbLocation.userId)) {
-                      return;
-                    }
-
-                    const userWithAvatar = await mapUserWithAvatar(
-                      context.supabase,
-                      dbLocation.user,
-                    );
-
-                    const location: LocationWithUser = {
-                      coords: {
-                        latitude: dbLocation.latitude,
-                        longitude: dbLocation.longitude,
-                        altitude: dbLocation.altitude ?? null,
-                        accuracy: dbLocation.accuracy ?? null,
-                        altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,
-                        heading: dbLocation.heading ?? null,
-                        speed: dbLocation.speed ?? null,
-                      },
-                      timestamp: dbLocation.timestamp.getTime(),
-                      isSharingLocation: dbLocation.isSharingLocation,
-                      user: userWithAvatar ?? undefined,
-                    };
-
-                    const userId = dbLocation.userId;
-
-                    if (radiusKm !== undefined) {
-                      if (!dbLocation.latitude || !dbLocation.longitude) {
-                        if (inRadius.delete(userId)) {
-                          queue.push({
-                            id: connectionId,
-                            type: "delete",
-                            userId,
-                          });
-                        }
-                        return;
-                      }
-
-                      const dist = calculateDistance(
-                        latitude!,
-                        longitude!,
-                        Number(dbLocation.latitude),
-                        Number(dbLocation.longitude),
-                      );
-
-                      if (dist <= radiusKm) {
-                        inRadius.add(userId);
-                        queue.push({
-                          id: connectionId,
-                          type: "upsert",
-                          location,
-                        });
-                      } else if (inRadius.delete(userId)) {
-                        queue.push({
-                          id: connectionId,
-                          type: "delete",
-                          userId,
-                        });
-                      }
-                    } else {
-                      queue.push({
-                        id: connectionId,
-                        type: "upsert",
-                        location,
-                      });
-                    }
-                  });
-                return;
-              }
-
-              void toLocationWithUser(context.db, context.supabase, newLocation).then(
-                (location) => {
-                  const userId = newLocation.userId;
-
-                  if (radiusKm !== undefined) {
-                    if (!newLocation?.latitude || !newLocation?.longitude) {
-                      if (inRadius.delete(userId)) {
-                        queue.push({
-                          id: connectionId,
-                          type: "delete",
-                          userId,
-                        });
-                      }
-                      return;
-                    }
-
-                    const dist = calculateDistance(
-                      latitude!,
-                      longitude!,
-                      Number(newLocation.latitude),
-                      Number(newLocation.longitude),
-                    );
-
-                    if (dist <= radiusKm) {
-                      inRadius.add(userId);
-                      queue.push({
-                        id: connectionId,
-                        type: "upsert",
-                        location,
-                      });
-                    } else if (inRadius.delete(userId)) {
-                      queue.push({
-                        id: connectionId,
-                        type: "delete",
-                        userId,
-                      });
-                    }
-                  } else {
-                    queue.push({
-                      id: connectionId,
-                      type: "upsert",
-                      location,
-                    });
-                  }
-                },
-              );
-              break;
-            }
+          if (payload.eventType === "DELETE") {
+            enqueueDelete(userId);
+            return;
           }
+
+          void enqueueUpsert(userId).catch((error: unknown) => {
+            logger.error({ err: error, userId }, "Failed to process location realtime event");
+          });
         },
       )
       .subscribe((status, err) => {
@@ -474,17 +382,27 @@ export async function* getFriendsLocationsStream(
         if (err) {
           logger.error(err, "Location stream subscription error");
         }
+        gate.onStatus(status);
       });
+
+    // `subscribe()` only moves the channel to "joining"; wait for the websocket
+    // join to actually complete before entering the pump loop, otherwise the
+    // generator returns immediately and the client stream closes.
+    isSubscribed = await gate.wait();
+
+    if (!isSubscribed) {
+      logger.error(
+        { userId: context.dbUser.id },
+        "Location stream subscription failed to establish",
+      );
+    }
   }
 
   try {
-    while (
-      (channel?.state && channel?.state === REALTIME_CHANNEL_STATES.joined) ||
-      queue.length > 0
-    ) {
+    while ((isSubscribed && shouldKeepStreaming(channel)) || queue.length > 0) {
       if (queue.length === 0) {
         // Wait for new events
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, LOCATION_STREAM_POLL_INTERVAL_MS));
         continue;
       }
       const event = queue.shift();

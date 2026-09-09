@@ -13,13 +13,17 @@ export { useMapStore, useMapActions } from "./mapHooks";
 export {
   mapOverlayStore,
   useMapOverlayStore,
+  buildMapOverlaySyncState,
   MapOverlayProvider,
+  MapOverlayStateProvider,
   setMapOverlayExternals,
 } from "./mapOverlayStore";
 export type {
   MapOverlayStore,
   MapOverlayState,
   MapOverlayActions,
+  MapOverlayController,
+  MapOverlayDataSlice,
   ShareableUser,
   SharingUser,
   SharingSettings,
