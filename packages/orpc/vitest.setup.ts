@@ -53,6 +53,16 @@ vi.mock("@mirai-app/supabase", () => {
   };
 
   return {
+    // Mirrors the constant re-exported from @supabase/supabase-js. The location
+    // stream reads it to decide when a realtime channel is beyond recovery, so
+    // the mock has to provide it too.
+    REALTIME_CHANNEL_STATES: {
+      closed: "closed",
+      errored: "errored",
+      joined: "joined",
+      joining: "joining",
+      leaving: "leaving",
+    },
     createClient: vi.fn(() => mockSupabaseClient),
     createBrowserClient: vi.fn(() => mockSupabaseClient),
     createServerClient: vi.fn(() => mockSupabaseClient),
