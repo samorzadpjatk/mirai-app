@@ -1,86 +1,18 @@
+import { IntervalScheduler } from "@mirai-app/common/utils";
+import type { SchedulerTask } from "@mirai-app/common/utils";
 import { logger } from "@mirai-app/orpc";
 
-export type SchedulerTask = () => Promise<void>;
+export type { SchedulerTask };
 
 /**
- * Simple scheduler that runs tasks at regular intervals.
+ * Interval scheduler wired to the shared Pino logger.
+ *
+ * The mechanics live in `@mirai-app/common` so the backend server's
+ * notification-schedule executor can reuse them without importing across apps.
  */
-export class Scheduler {
-  private timeoutId: NodeJS.Timeout | null = null;
-  private intervalId: NodeJS.Timeout | null = null;
-  private isRunning = false;
-
-  constructor(
-    private readonly task: SchedulerTask,
-    private readonly intervalMinutes: number,
-  ) {}
-
-  /**
-   * Start the scheduler. The task will run immediately and then at regular intervals.
-   */
-  start(): void {
-    if (this.isRunning) {
-      logger.warn("Scheduler is already running");
-      return;
-    }
-
-    this.isRunning = true;
-    logger.info({ intervalMinutes: this.intervalMinutes }, "Scheduler started");
-
-    // Run immediately (wrap in setTimeout to avoid sync call during start)
-    this.timeoutId = setTimeout(() => {
-      this.timeoutId = null;
-      this.runTask();
-    }, 0);
-
-    // Then run at regular intervals (only if interval > 0)
-    if (this.intervalMinutes > 0) {
-      this.intervalId = setInterval(
-        () => {
-          this.runTask();
-        },
-        this.intervalMinutes * 60 * 1000,
-      );
-    }
-  }
-
-  /**
-   * Stop the scheduler.
-   */
-  stop(): void {
-    if (!this.isRunning) {
-      return;
-    }
-
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
-    }
-
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-
-    this.isRunning = false;
-    logger.info("Scheduler stopped");
-  }
-
-  /**
-   * Check if the scheduler is currently running.
-   */
-  isActive(): boolean {
-    return this.isRunning;
-  }
-
-  private runTask(): void {
-    void (async () => {
-      try {
-        await this.task();
-      } catch (error) {
-        logger.error(error, "Scheduler task failed");
-      }
-    })();
+export class Scheduler extends IntervalScheduler {
+  constructor(task: SchedulerTask, intervalMinutes: number) {
+    super(task, intervalMinutes, logger);
   }
 }
 
