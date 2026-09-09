@@ -177,7 +177,7 @@ async function getRankingTemplateValuesByUser(
  * `apps/native/src/app`. The previous `/group/my` and `/ranking` paths matched
  * no screen at all, so a tap navigated nowhere.
  */
-export const NOTIFICATION_ROUTES = {
+const NOTIFICATION_ROUTES = {
   myGroup: "/trips/groups",
   ranking: "/trips/leaderboard",
   rewards: "/trips/rewards",
