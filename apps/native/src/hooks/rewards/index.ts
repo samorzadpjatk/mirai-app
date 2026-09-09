@@ -131,6 +131,7 @@ export const usePurchaseReward = () => {
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: [["reward", "getByTrip"]] });
         await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistory"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistoryAdmin"]] });
         await invalidateTransactionQueries(queryClient);
       },
     }),
@@ -193,6 +194,50 @@ export const useRewardPurchaseHistory = (tripId: string) => {
   };
 };
 
+/**
+ * Admin-panel purchase history.
+ *
+ * Backed by `reward.getPurchaseHistoryAdmin` (moderatorProcedure), the only
+ * endpoint that returns other groups' redemptions. The user-facing screen must
+ * keep using {@link useRewardPurchaseHistory}, which the server scopes to the
+ * caller's own group.
+ */
+export const useAdminRewardPurchaseHistory = (tripId: string) => {
+  const {
+    data,
+    isLoading,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(
+    orpc.reward.getPurchaseHistoryAdmin.infiniteOptions({
+      input: (pageParam: number) => buildPurchaseHistoryQueryInput(tripId, pageParam),
+      initialPageParam: 0,
+      getNextPageParam: getNextPurchaseHistoryPageParam,
+      enabled: Boolean(tripId),
+    }),
+  );
+
+  const purchases = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.purchases ?? []),
+    [data?.pages],
+  );
+
+  return {
+    data: purchases,
+    isLoading,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  };
+};
+
 export const useUpdateRewardPurchaseStatus = () => {
   const queryClient = useQueryClient();
   return useMutation(
@@ -200,6 +245,7 @@ export const useUpdateRewardPurchaseStatus = () => {
       onSuccess: async (responseData) => {
         if (!responseData) return;
         await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistory"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistoryAdmin"]] });
         await queryClient.invalidateQueries({
           queryKey: ["reward", "getById", responseData.rewardId],
         });
@@ -217,6 +263,7 @@ export const useUpdateMyRewardPurchaseStatus = () => {
     orpc.reward.updateMyPurchaseStatus.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistory"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getPurchaseHistoryAdmin"]] });
         await queryClient.invalidateQueries({ queryKey: [["reward", "getByTrip"]] });
         await invalidateTransactionQueries(queryClient);
       },

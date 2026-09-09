@@ -3,6 +3,7 @@ import { waitFor } from "@testing-library/react-native";
 import { createORPCHandler, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
 import {
+  useAdminRewardPurchaseHistory,
   useAdminRewards,
   useCreateReward,
   useDeleteReward,
@@ -313,6 +314,45 @@ describe("useRewardPurchaseHistory (MSW)", () => {
 
   it("should not fetch when tripId is empty", async () => {
     const { result } = renderHookWithMSW(() => useRewardPurchaseHistory(""));
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toEqual([]);
+  });
+});
+
+describe("useAdminRewardPurchaseHistory (MSW)", () => {
+  it("should read from the admin-only getPurchaseHistoryAdmin endpoint", async () => {
+    const mockPurchases = [
+      { id: "purchase-a", rewardId: "reward-1", quantity: 1, totalCost: 100, status: "BOUGHT" },
+      { id: "purchase-b", rewardId: "reward-1", quantity: 2, totalCost: 200, status: "BOUGHT" },
+    ];
+
+    server.use(
+      createORPCHandler(["reward", "getPurchaseHistoryAdmin"], () => ({
+        purchases: mockPurchases,
+        pagination: { total: 2, limit: 30, offset: 0, hasMore: false },
+      })),
+      // The user-facing endpoint must not be the one that answers here.
+      createORPCHandler(["reward", "getPurchaseHistory"], () => ({
+        purchases: [{ id: "should-not-be-used" }],
+        pagination: { total: 1, limit: 30, offset: 0, hasMore: false },
+      })),
+    );
+
+    const { result } = renderHookWithMSW(() => useAdminRewardPurchaseHistory("trip-1"));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data.map((purchase) => purchase.id)).toEqual([
+      "purchase-a",
+      "purchase-b",
+    ]);
+  });
+
+  it("should not fetch when tripId is empty", async () => {
+    const { result } = renderHookWithMSW(() => useAdminRewardPurchaseHistory(""));
 
     expect(result.current.isLoading).toBe(false);
     expect(result.current.data).toEqual([]);

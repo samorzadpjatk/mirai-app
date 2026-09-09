@@ -124,6 +124,27 @@ export const mockUseRewardPurchaseHistory = jest.fn((_tripId: string) => ({
   fetchNextPage: jest.fn(() => Promise.resolve()),
 }));
 
+export const mockUseAdminRewardPurchaseHistory = jest.fn((_tripId: string) => ({
+  data: [] as {
+    id: string;
+    rewardId: string;
+    rewardName: string;
+    groupId: string;
+    groupName: string;
+    status: "pending" | "completed" | "cancelled";
+    purchasedAt: Date;
+    completedAt?: Date | null;
+    coinCost: number;
+  }[],
+  isLoading: false,
+  error: null as Error | null,
+  isRefetching: false,
+  refetch: jest.fn(() => Promise.resolve()),
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: jest.fn(() => Promise.resolve()),
+}));
+
 export const mockUseUpdateRewardPurchaseStatus = jest.fn(() => ({
   mutateAsync: jest.fn(() => Promise.resolve({ success: true })),
   mutate: jest.fn(),
@@ -149,5 +170,6 @@ export const useSetRewardHidden = mockUseSetRewardHidden;
 export const useDeleteReward = mockUseDeleteReward;
 export const usePurchaseReward = mockUsePurchaseReward;
 export const useRewardPurchaseHistory = mockUseRewardPurchaseHistory;
+export const useAdminRewardPurchaseHistory = mockUseAdminRewardPurchaseHistory;
 export const useUpdateRewardPurchaseStatus = mockUseUpdateRewardPurchaseStatus;
 export const useUpdateMyRewardPurchaseStatus = mockUseUpdateMyRewardPurchaseStatus;
