@@ -19,6 +19,7 @@ import type { SeedEnv, TripInfoConfig, TripResourceConfig } from "./types";
 import { readTextFile } from "./utils/fs";
 import { readFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
+import { resolveSeedStorageTarget } from "./utils/storagePath";
 
 function isTripResourceConfig(value: unknown): value is TripResourceConfig {
   if (typeof value !== "object" || value === null) return false;
@@ -66,29 +67,24 @@ export const seedTripInfo = async (
     await db.delete(tripResourceIcons).where(eq(tripResourceIcons.tripId, tripId));
 
     for (const resourceConfig of infoConfig.resources) {
+      // A configured storagePath names a location in the asset tree, which is
+      // not a storage reference: the app can only download `bucket/object`.
+      // Both forms are derived once, here.
+      const storageTarget = resourceConfig.storagePath
+        ? resolveSeedStorageTarget(resourceConfig.storagePath)
+        : null;
+
       let publicUrl = resourceConfig.publicUrl;
-      if (resourceConfig.storagePath && !publicUrl) {
+      if (storageTarget && !publicUrl) {
         try {
-          const envRoot = joinPath(assetsRoot, seedEnv);
-          const filePath = joinPath(envRoot, resourceConfig.storagePath);
-
-          let bucketName: string;
-          let objectPath: string;
-
-          if (resourceConfig.storagePath.startsWith("public/")) {
-            bucketName = env.publicBucket;
-            objectPath = resourceConfig.storagePath.replace("public/", "");
-          } else if (resourceConfig.storagePath.startsWith("images/")) {
-            bucketName = env.imageBucket;
-            objectPath = resourceConfig.storagePath.replace("images/", "");
-          } else if (resourceConfig.storagePath.startsWith("videos/")) {
-            bucketName = env.videoBucket;
-            objectPath = resourceConfig.storagePath.replace("videos/", "");
-          } else {
+          if (!storageTarget.knownPrefix) {
             logger.warn(`✗ Unknown storage path format: ${resourceConfig.storagePath}`);
-            bucketName = env.publicBucket;
-            objectPath = resourceConfig.storagePath;
           }
+
+          const envRoot = joinPath(assetsRoot, seedEnv);
+          const filePath = joinPath(envRoot, storageTarget.sourcePath);
+          const bucketName = storageTarget.bucket;
+          const objectPath = storageTarget.objectPath;
 
           const file: BunFile = readFile(filePath);
           const uploadResult = await supabase.storage.from(bucketName).upload(objectPath, file, {
@@ -120,7 +116,12 @@ export const seedTripInfo = async (
       // those. Every part is written to the table that can hold it — routing
       // the resource into a single table would silently drop the rest.
       // getResources() recombines the rows via mergeTripResourceFragments().
-      const storagePath = resourceConfig.storagePath;
+      //
+      // The file row stores the resolved `bucket/object` reference, never the
+      // configured asset path: storage.createDownloadUrl rejects anything whose
+      // first segment is not a bucket, which is what made an infopack seeded as
+      // `public/…` impossible to open.
+      const storagePath = storageTarget?.storagePath;
       // A stored file keeps its public URL on the file row, so only resources
       // that are not backed by a file become standalone links.
       const linkUrl = resourceConfig.url ?? (storagePath ? undefined : publicUrl);

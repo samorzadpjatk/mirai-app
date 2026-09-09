@@ -4,6 +4,11 @@
 # organisers can fill in. Do not invent them — the screen degrades gracefully
 # when a resource is missing, but a wrong link or a wrong emergency contact is
 # worse than none.
+#
+# `storagePath` is the file's location inside apps/seed/assets/dev/, not the
+# storage reference: `public/` is the asset directory whose bucket is called
+# `files-public`. The seeder resolves the pair and persists `bucket/object`,
+# which is the only form the app can download (see utils/storagePath.ts).
 
 resources:
   - type: hero_image

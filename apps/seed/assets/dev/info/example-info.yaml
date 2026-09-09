@@ -1,3 +1,15 @@
+# Demo content for the example trip.
+#
+# `storagePath` is the file's location inside apps/seed/assets/dev/, not the
+# storage reference: `public/` is the asset directory whose bucket is called
+# `files-public`. The seeder resolves the pair and persists `bucket/object`,
+# which is the only form the app can download (see src/utils/storagePath.ts).
+#
+# NOTE: the two PDFs and the two trip images referenced below are not committed
+# to the repository, so seeding logs "Failed to process file" for them and their
+# tiles render with nothing behind them. Drop the files into
+# apps/seed/assets/dev/ to make the demo trip complete.
+
 resources:
   - type: hero_image
     label: "Example Trip"

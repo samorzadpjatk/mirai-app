@@ -43,7 +43,7 @@ describe("mergeTripResourceFragments", () => {
         type: "infopack",
         label: "Przewodnik",
         sortOrder: 4,
-        storagePath: "public/integral/guide.pdf",
+        storagePath: "files-public/integral/guide.pdf",
         fileName: "guide",
         publicUrl: "https://cdn.example.com/guide.pdf",
       }),
@@ -52,7 +52,7 @@ describe("mergeTripResourceFragments", () => {
 
     expect(merged).toHaveLength(1);
     expect(merged[0]).toMatchObject({
-      storagePath: "public/integral/guide.pdf",
+      storagePath: "files-public/integral/guide.pdf",
       fileName: "guide",
       publicUrl: "https://cdn.example.com/guide.pdf",
       iconName: "book",

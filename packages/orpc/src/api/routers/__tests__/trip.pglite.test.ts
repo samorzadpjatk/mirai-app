@@ -333,7 +333,7 @@ describe("trip router — PGLite integration", () => {
       tripId: "trip-1",
       label: "Przewodnik uczestnika",
       type: "infopack",
-      storagePath: "public/integral/guide.pdf",
+      storagePath: "files-public/integral/guide.pdf",
       fileName: "guide",
       publicUrl: "https://cdn.example.com/guide.pdf",
       sortOrder: 3,
@@ -393,7 +393,7 @@ describe("trip router — PGLite integration", () => {
     expect(result.resources[0]).toMatchObject({
       type: "infopack",
       label: "Przewodnik uczestnika",
-      storagePath: "public/integral/guide.pdf",
+      storagePath: "files-public/integral/guide.pdf",
       fileName: "guide",
       publicUrl: "https://cdn.example.com/guide.pdf",
       iconName: "book",

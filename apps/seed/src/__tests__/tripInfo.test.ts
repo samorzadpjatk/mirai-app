@@ -312,7 +312,7 @@ describe("tripInfo", () => {
         tripId: "trip-1",
         label: "Infopack",
         type: "infopack",
-        storagePath: "public/integral/infopack.pdf",
+        storagePath: "files-public/integral/infopack.pdf",
         fileName: "infopack",
         publicUrl: "https://cdn.example.com/infopack.pdf",
         sortOrder: 4,
@@ -325,6 +325,104 @@ describe("tripInfo", () => {
         iconName: "book",
         sortOrder: 4,
       });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should store the bucket-qualified reference, not the asset path", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+      mockUpload.mockResolvedValue({ error: null });
+
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "infopack",
+            label: "Przewodnik uczestnika",
+            storagePath: "public/integral/guide.pdf",
+            fileName: "guide",
+            sortOrder: 3,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      // Regression: `public/` is a Supabase object prefix, not a bucket, so the
+      // backend resolved a `public/…` reference to nothing and every download
+      // of the seeded infopack failed with "Unsupported storage reference".
+      const fileRow = mockTripResourceFileCreate.mock.calls[0]?.[0] as { storagePath: string };
+      expect(fileRow.storagePath).toBe("files-public/integral/guide.pdf");
+      expect(fileRow.storagePath.startsWith("public/")).toBe(false);
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should not double the prefix when the config already names the bucket", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+      mockUpload.mockResolvedValue({ error: null });
+
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "infopack",
+            label: "Przewodnik uczestnika",
+            storagePath: "files-public/integral/guide.pdf",
+            sortOrder: 3,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      expect(mockReadFile).toHaveBeenCalledWith("/test/assets/dev/public/integral/guide.pdf");
+      expect(mockUpload).toHaveBeenCalledWith("files-public", "integral/guide.pdf", mockFile, {
+        upsert: true,
+      });
+      expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining("Unknown storage path"));
+      expect(mockTripResourceFileCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ storagePath: "files-public/integral/guide.pdf" }),
+      );
+
+      warnSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
+    it("should leave an image reference alone because the directory is the bucket", async () => {
+      const mockFile = { stream: () => ({}) };
+      mockReadFile.mockReturnValue(mockFile);
+      mockUpload.mockResolvedValue({ error: null });
+
+      const infoConfig: TripInfoConfig = {
+        resources: [
+          {
+            type: "map_bg_image",
+            label: "Kacze Stawy",
+            storagePath: "images/trips/integral/kacze-stawy.png",
+            sortOrder: 1,
+          },
+        ],
+      };
+
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+      await seedTripInfo("db-url", "trip-1", "dev", infoConfig);
+
+      expect(mockUpload).toHaveBeenCalledWith(
+        "images",
+        "trips/integral/kacze-stawy.png",
+        mockFile,
+        { upsert: true },
+      );
+      expect(mockTripResourceFileCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ storagePath: "images/trips/integral/kacze-stawy.png" }),
+      );
 
       consoleSpy.mockRestore();
     });
