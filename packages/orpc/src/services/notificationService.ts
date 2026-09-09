@@ -378,6 +378,84 @@ async function markPushes(
     );
 }
 
+/**
+ * Hand a claim back.
+ *
+ * Only rows still in `sending` are released, and only before anything has
+ * reached Expo — a claim that is dropped after a successful send would be
+ * re-claimed by the next dispatcher and delivered twice.
+ */
+async function releasePushes(db: DB, notificationId: string, userIds: string[]): Promise<void> {
+  if (userIds.length === 0) return;
+
+  await db
+    .update(notificationPushes)
+    .set({ status: PUSH_STATUS.pending })
+    .where(
+      and(
+        eq(notificationPushes.notificationId, notificationId),
+        eq(notificationPushes.status, PUSH_STATUS.sending),
+        inArray(notificationPushes.targetUserId, userIds),
+      ),
+    );
+}
+
+interface PreparedPushMessages {
+  expo: Expo;
+  messages: ExpoPushMessage[];
+  userByToken: Map<string, string>;
+}
+
+async function preparePushMessages(
+  db: DB,
+  notification: { tripId: string | null; title: string; body: string },
+  parsedAudience: ParsedAudienceUrl,
+  scopedSubs: Array<{ userId: string; token: string }>,
+): Promise<PreparedPushMessages> {
+  const requiresRankingTemplate =
+    !!notification.tripId &&
+    (containsRankingTemplate(notification.title) || containsRankingTemplate(notification.body));
+
+  const rankingValuesByUser =
+    requiresRankingTemplate && notification.tripId
+      ? await getRankingTemplateValuesByUser(db, notification.tripId)
+      : new Map<string, RankingTemplateValues>();
+
+  const expoAccessToken = env.EXPO_ACCESS_TOKEN;
+  const expo = new Expo(expoAccessToken ? { accessToken: expoAccessToken } : undefined);
+  const messages: ExpoPushMessage[] = [];
+  const userByToken = new Map<string, string>();
+  const fallbackValues: RankingTemplateValues = {
+    ...FALLBACK_TEMPLATE_VALUES,
+    currentDate: formatCurrentDate(new Date()),
+    currentTime: formatCurrentTime(new Date()),
+  };
+
+  for (const s of scopedSubs) {
+    if (!Expo.isExpoPushToken(s.token)) continue;
+    userByToken.set(s.token, s.userId);
+
+    const values = rankingValuesByUser.get(s.userId) ?? fallbackValues;
+    const title = requiresRankingTemplate
+      ? applyRankingTemplate(notification.title, values)
+      : notification.title;
+    const body = requiresRankingTemplate
+      ? applyRankingTemplate(notification.body, values)
+      : notification.body;
+
+    messages.push({
+      to: s.token,
+      title,
+      body,
+      data: { url: parsedAudience.cleanUrl },
+      sound: "default",
+      priority: "default",
+    });
+  }
+
+  return { expo, messages, userByToken };
+}
+
 export async function sendMobileNotifications(db: DB, notificationId: string) {
   const notification = await db.query.notifications.findFirst({
     where: (n, { eq }) => eq(n.id, notificationId),
@@ -452,46 +530,18 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
 
-  const requiresRankingTemplate =
-    !!notification.tripId &&
-    (containsRankingTemplate(notification.title) || containsRankingTemplate(notification.body));
-
-  const rankingValuesByUser =
-    requiresRankingTemplate && notification.tripId
-      ? await getRankingTemplateValuesByUser(db, notification.tripId)
-      : new Map<string, RankingTemplateValues>();
-
-  const expoAccessToken = env.EXPO_ACCESS_TOKEN;
-  const expo = new Expo(expoAccessToken ? { accessToken: expoAccessToken } : undefined);
-  const messages: ExpoPushMessage[] = [];
-  const userByToken = new Map<string, string>();
-  const fallbackValues: RankingTemplateValues = {
-    ...FALLBACK_TEMPLATE_VALUES,
-    currentDate: formatCurrentDate(new Date()),
-    currentTime: formatCurrentTime(new Date()),
-  };
-
-  for (const s of scopedSubs) {
-    if (!Expo.isExpoPushToken(s.token)) continue;
-    userByToken.set(s.token, s.userId);
-
-    const values = rankingValuesByUser.get(s.userId) ?? fallbackValues;
-    const title = requiresRankingTemplate
-      ? applyRankingTemplate(notification.title, values)
-      : notification.title;
-    const body = requiresRankingTemplate
-      ? applyRankingTemplate(notification.body, values)
-      : notification.body;
-
-    messages.push({
-      to: s.token,
-      title,
-      body,
-      data: { url: parsedAudience.cleanUrl },
-      sound: "default",
-      priority: "default",
-    });
+  let prepared: PreparedPushMessages;
+  try {
+    prepared = await preparePushMessages(db, notification, parsedAudience, scopedSubs);
+  } catch (error) {
+    // Nothing has been handed to Expo yet, so the claim can go back without
+    // risking a duplicate. Leaving the rows in `sending` would strand them:
+    // no dispatcher ever claims anything but `pending`.
+    await releasePushes(db, notification.id, Array.from(claimedUserIds));
+    throw error;
   }
+
+  const { expo, messages, userByToken } = prepared;
 
   if (messages.length === 0) {
     await markPushes(

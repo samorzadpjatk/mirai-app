@@ -6,7 +6,7 @@ import { Expo } from "expo-server-sdk";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { seedGroup, seedParticipant, seedTrip, seedUser } from "../../test-helpers";
-import { applyRankingTemplate } from "../../utils/notificationTemplates";
+import { applyRankingTemplate, containsRankingTemplate } from "../../utils/notificationTemplates";
 import { executeWithRetry } from "../../utils/resilience";
 import {
   type NotificationData,
@@ -664,6 +664,35 @@ describe("sendMobileNotifications — PGLite", () => {
     const second = await sendMobileNotifications(testDb.db, "notification-1");
     expect(second.sent).toBe(0);
     expect(statusesWhenExpoWasCalled).toHaveLength(1);
+  });
+
+  it("hands the claim back when the push cannot be prepared", async () => {
+    await seedUser(testDb.db, "admin-1");
+    await seedUser(testDb.db, "user-1");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Test Group", "admin-1", "GRP01");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedPushSubscription(testDb.db, "sub-1", "user-1", "ExponentPushToken[test-token-1]");
+    await seedNotification(testDb.db, "notification-1", { tripId: "trip-1" });
+    await seedNotificationPush(testDb.db, "notification-1", "user-1", "pending");
+
+    vi.mocked(containsRankingTemplate).mockReturnValueOnce(true);
+    vi.mocked(applyRankingTemplate).mockImplementationOnce(() => {
+      throw new Error("template exploded");
+    });
+
+    await expect(sendMobileNotifications(testDb.db, "notification-1")).rejects.toThrow(
+      "template exploded",
+    );
+
+    // Nothing reached Expo, so the row must go back to pending instead of
+    // sitting in `sending` where no dispatcher would ever pick it up again.
+    const pushes = await testDb.db
+      .select()
+      .from(notificationPushes)
+      .where(eq(notificationPushes.notificationId, "notification-1"));
+    expect(pushes[0]?.status).toBe("pending");
+    expect(executeWithRetry).not.toHaveBeenCalled();
   });
 
   it("skips a notification another dispatcher is already sending", async () => {
