@@ -821,6 +821,60 @@ describe("Auth Store", () => {
     });
   });
 
+  describe("refetchUser", () => {
+    it("should throw error when not initialized", async () => {
+      await expect(authStore.getState().refetchUser()).rejects.toThrow(
+        "[AuthStore] Not initialized. Call initialize() first.",
+      );
+    });
+
+    it("refetches the profile and clears the user loading phase", async () => {
+      const session: SupabaseSession = {
+        user: { id: "auth-1" },
+        access_token: "token",
+      };
+      const refreshed = { id: "user-1", authUserId: "auth-1" } as AuthUser;
+      const onUserFetch = vi.fn().mockResolvedValue(refreshed);
+
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session } });
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      authStore.getState().initialize({ client: mockClient, onUserFetch });
+      await flushPromises();
+      onUserFetch.mockClear();
+
+      await authStore.getState().refetchUser();
+
+      expect(onUserFetch).toHaveBeenCalledWith("auth-1");
+      expect(authStore.getState().user).toEqual(refreshed);
+      expect(authStore.getState().isAuthenticated).toBe(true);
+      expect(authStore.getState().isUserLoading).toBe(false);
+    });
+
+    it("leaves the loading phase clean when the refetch fails", async () => {
+      const session: SupabaseSession = {
+        user: { id: "auth-1" },
+        access_token: "token",
+      };
+      const onUserFetch = vi.fn().mockRejectedValue(new Error("backend down"));
+
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session } });
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      authStore.getState().initialize({ client: mockClient, onUserFetch });
+      await flushPromises();
+
+      await expect(authStore.getState().refetchUser()).resolves.toBeUndefined();
+      expect(authStore.getState().isUserLoading).toBe(false);
+    });
+  });
+
   describe("AuthUser interface", () => {
     it("should support all role types", () => {
       const roles: ("USER" | "ADMIN" | "MODERATOR" | "SERVICE")[] = [

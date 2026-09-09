@@ -6,6 +6,8 @@ import {
   useAuth,
   useAuthLoading,
   useIsAuthenticated,
+  useSessionLoading,
+  useUserLoading,
   useLoginForm,
   useSession,
   useUser,
@@ -180,6 +182,42 @@ describe("client exports", () => {
     it("should return false when not loading", () => {
       authStore.setState({ isLoading: false });
       const { result } = renderHook(() => useAuthLoading());
+
+      expect(result.current).toBe(false);
+    });
+  });
+
+  describe("useSessionLoading hook", () => {
+    it("reports the session read separately from the user fetch", () => {
+      authStore.setState({ isSessionLoading: true, isUserLoading: false });
+
+      const { result } = renderHook(() => useSessionLoading());
+
+      expect(result.current).toBe(true);
+    });
+
+    it("returns false once the session is known", () => {
+      authStore.setState({ isSessionLoading: false, isUserLoading: true });
+
+      const { result } = renderHook(() => useSessionLoading());
+
+      expect(result.current).toBe(false);
+    });
+  });
+
+  describe("useUserLoading hook", () => {
+    it("stays true while the backend profile is in flight", () => {
+      authStore.setState({ isSessionLoading: false, isUserLoading: true });
+
+      const { result } = renderHook(() => useUserLoading());
+
+      expect(result.current).toBe(true);
+    });
+
+    it("returns false once the profile has resolved", () => {
+      authStore.setState({ isSessionLoading: false, isUserLoading: false });
+
+      const { result } = renderHook(() => useUserLoading());
 
       expect(result.current).toBe(false);
     });
