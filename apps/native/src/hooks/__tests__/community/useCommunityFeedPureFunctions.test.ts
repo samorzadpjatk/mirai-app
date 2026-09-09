@@ -1,9 +1,11 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { createMockActivity } from "../../../test-utils/activityMocks";
 import {
+  COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS,
   buildCommunityFeedActivities,
   buildCommunityFeedQueryKey,
   buildHandleToggleHeart,
+  shouldRefreshCommunityFeed,
 } from "../../community/useCommunityFeed";
 import type { FeedPageData } from "../../community/useCommunityFeed";
 
@@ -118,6 +120,54 @@ describe("buildCommunityFeedActivities", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]!.id).toBe("a1");
+  });
+});
+
+describe("shouldRefreshCommunityFeed", () => {
+  const now = 1_700_000_000_000;
+
+  it("should expose a 30 second minimum refresh interval", () => {
+    expect(COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS).toBe(30 * 1000);
+  });
+
+  it("should not refresh when the feed has never been loaded", () => {
+    // `undefined` means the query does not exist in the cache yet.
+    expect(shouldRefreshCommunityFeed(undefined, now)).toBe(false);
+  });
+
+  it("should not refresh while the first load is still in flight", () => {
+    // TanStack Query reports `dataUpdatedAt: 0` until the first response resolves.
+    // Invalidating here would cancel that request (cancelRefetch defaults to true).
+    expect(shouldRefreshCommunityFeed(0, now)).toBe(false);
+  });
+
+  it("should not refresh right after a successful load", () => {
+    expect(shouldRefreshCommunityFeed(now, now)).toBe(false);
+  });
+
+  it("should not refresh before the throttle window elapses", () => {
+    expect(
+      shouldRefreshCommunityFeed(now - (COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS - 1), now),
+    ).toBe(false);
+  });
+
+  it("should refresh exactly at the throttle boundary", () => {
+    expect(shouldRefreshCommunityFeed(now - COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS, now)).toBe(
+      true,
+    );
+  });
+
+  it("should refresh when the data is older than the throttle window", () => {
+    expect(shouldRefreshCommunityFeed(now - 5 * 60 * 1000, now)).toBe(true);
+  });
+
+  it("should honour a custom interval", () => {
+    expect(shouldRefreshCommunityFeed(now - 2000, now, 1000)).toBe(true);
+    expect(shouldRefreshCommunityFeed(now - 500, now, 1000)).toBe(false);
+  });
+
+  it("should not refresh when the last update is in the future (clock skew)", () => {
+    expect(shouldRefreshCommunityFeed(now + 60_000, now)).toBe(false);
   });
 });
 

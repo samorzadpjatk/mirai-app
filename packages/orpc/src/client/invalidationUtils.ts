@@ -54,6 +54,9 @@ export const QUERY_GROUPS = {
   JUDGEMENTS: [["judgement"]] as string[][],
   LOCATION: [["location"]] as string[][],
   MAP: [["map"], ["mapOverlay"]] as string[][],
+  // Hand-rolled key owned by apps/native `useCommunityFeed` (["community-feed", tripId, pageSize]).
+  // It is not oRPC generated, so this entry is the single place that names it outside that hook.
+  COMMUNITY_FEED: [["community-feed"]] as string[][],
 } as const;
 
 /**

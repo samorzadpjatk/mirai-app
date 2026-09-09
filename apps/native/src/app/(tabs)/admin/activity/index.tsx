@@ -1,5 +1,5 @@
 import type { Activity } from "@mirai-app/orpc";
-import { orpc } from "@mirai-app/orpc/client";
+import { QUERY_GROUPS, invalidateCascadingQueries, orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -61,7 +61,12 @@ export default function AdminActivityScreen() {
   });
 
   const invalidateFeed = async () => {
-    await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey }),
+      // Moderation actions (pin, hide, unhide, delete) change what the user facing
+      // community feed should render, so drop its hand-rolled cache entry too.
+      invalidateCascadingQueries(queryClient, QUERY_GROUPS.COMMUNITY_FEED),
+    ]);
   };
 
   const pinMutation = useMutation(

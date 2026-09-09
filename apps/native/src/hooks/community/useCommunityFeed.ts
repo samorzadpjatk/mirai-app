@@ -165,6 +165,34 @@ export function buildCommunityFeedQueryKey(
   return ["community-feed", selectedTripId, 30];
 }
 
+/**
+ * Minimum delay between two automatic (focus triggered) community feed refreshes.
+ *
+ * `community.getCommunityFull` is not a cheap read: every call runs participant checks,
+ * materialises recurring instances, activates visible challenges, updates `users.lastSeenOn`
+ * and signs one Supabase URL per distinct avatar author. TanStack Query additionally refetches
+ * every page that is currently loaded in the infinite query, so an unthrottled focus refetch
+ * would multiply that cost by the number of pages the user has scrolled through.
+ */
+export const COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS = 30 * 1000;
+
+/**
+ * Decides whether a focus triggered refresh of the community feed should run.
+ *
+ * `lastUpdatedAt` is the query's `dataUpdatedAt`. It is `undefined` when the query does not
+ * exist yet and `0` while the very first request is still in flight. In both cases we must not
+ * refresh: `queryClient.invalidateQueries` defaults to `cancelRefetch: true` and would abort
+ * the initial load.
+ */
+export function shouldRefreshCommunityFeed(
+  lastUpdatedAt: number | undefined,
+  now: number,
+  minIntervalMs: number = COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS,
+): boolean {
+  if (!lastUpdatedAt) return false;
+  return now - lastUpdatedAt >= minIntervalMs;
+}
+
 export function buildCommunityFeedActivities(
   pages: FeedPageData[] | undefined,
 ): CommunityFeedActivity[] {
@@ -244,6 +272,22 @@ export const useCommunityFeed = ({
 
   const handleToggleHeart = useCallback(buildHandleToggleHeart(toggleHeart), [toggleHeart]);
 
+  /**
+   * Throttled refresh used by the community screen's focus effect. Reads `dataUpdatedAt` from the
+   * cache instead of from `feedQuery` so the callback identity stays stable across renders.
+   *
+   * Returns `true` when an invalidation was actually scheduled.
+   */
+  const refreshFeed = useCallback((): boolean => {
+    if (!feedQueryKey) return false;
+
+    const lastUpdatedAt = queryClient.getQueryState(feedQueryKey)?.dataUpdatedAt;
+    if (!shouldRefreshCommunityFeed(lastUpdatedAt, Date.now())) return false;
+
+    void queryClient.invalidateQueries({ queryKey: feedQueryKey });
+    return true;
+  }, [feedQueryKey, queryClient]);
+
   const activities = useMemo(
     () => buildCommunityFeedActivities(feedQuery.data?.pages),
     [feedQuery.data?.pages],
@@ -272,5 +316,6 @@ export const useCommunityFeed = ({
     handleToggleHeart,
     rankingData,
     avatarUrls,
+    refreshFeed,
   };
 };
