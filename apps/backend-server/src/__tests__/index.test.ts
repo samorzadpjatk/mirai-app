@@ -3,6 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@mirai-app/db", () => ({
   runMigrations: vi.fn().mockResolvedValue(undefined),
+  createDb: vi.fn(() => ({})),
+}));
+
+const initNotificationScheduleRunnerMock = vi.fn(() => null);
+
+vi.mock("../notificationScheduleRunner", () => ({
+  initNotificationScheduleRunner: initNotificationScheduleRunnerMock,
 }));
 
 vi.mock("@mirai-app/common/utils", () => ({
@@ -37,6 +44,7 @@ describe("main entry point", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     createServerMock.mockClear();
+    initNotificationScheduleRunnerMock.mockClear();
   });
 
   it("should run migrations and start server", async () => {
@@ -53,6 +61,18 @@ describe("main entry point", () => {
     );
     const server = createServerMock.mock.results[0]?.value;
     expect(server?.start).toHaveBeenCalled();
+  });
+
+  it("should start the notification schedule runner", async () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://localhost:5432/test");
+    delete process.env.MIGRATIONS_FOLDER;
+    const { main } = await import("../index");
+
+    await main();
+
+    expect(initNotificationScheduleRunnerMock).toHaveBeenCalledWith({
+      databaseUrl: "postgresql://localhost:5432/test",
+    });
   });
 
   it("should throw when DATABASE_URL is missing", async () => {

@@ -8,6 +8,22 @@ export {
   getTemplateScheduleDates,
   normalizeScheduleWindow,
 } from "./scheduleUtils";
+export type { ZonedDateParts } from "./timezone";
+export {
+  APP_TIME_ZONE,
+  getZonedParts,
+  getTimeZoneOffsetMs,
+  zonedWallClockToUtc,
+  zonedDateAtTime,
+  zonedDateKey,
+  previousZonedDayAtTime,
+} from "./timezone";
+export type { ExecutableSchedule, ResolveDueOccurrenceOptions } from "./scheduleExecution";
+export {
+  DEFAULT_SCHEDULE_GRACE_MINUTES,
+  DEFAULT_SCHEDULE_INTERVAL_MINUTES,
+  resolveDueOccurrence,
+} from "./scheduleExecution";
 export type { DeliveryStats } from "./deliveryStats";
 export { buildDeliveryStats } from "./deliveryStats";
 export {

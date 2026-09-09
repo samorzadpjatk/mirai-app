@@ -17,6 +17,7 @@ import {
 import type { ChallengeSubmission, DB } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, lte, sql } from "drizzle-orm";
+import { NotificationService } from "../../../services/notificationService";
 import {
   captureTripRankingSnapshot,
   createChallengeStatusActivityById,
@@ -24,6 +25,7 @@ import {
   promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import { resolveRecurringChallengeIdForTrip } from "../../../utils/recurringChallenges";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import type { WhereCallback } from "../utils/drizzle-types";
@@ -674,6 +676,31 @@ export const reviewSubmission = async (
 
     return refreshedForResponse;
   });
+
+  // Reviewing a submission only ever wrote to the activity feed; the group that
+  // submitted was never told their entry had been judged.
+  const reviewedGroup = await context.db.query.groups.findFirst({
+    where: (g, { eq }) => eq(g.id, submission.groupId),
+    columns: { id: true, name: true },
+  });
+
+  if (reviewedGroup) {
+    await notifyGroupMembersSafely(
+      {
+        db: context.db,
+        actorId: context.dbUser.id,
+        tripId: submission.challenge.tripId,
+        groupId: reviewedGroup.id,
+        notification: NotificationService.createSubmissionReviewedNotification(
+          reviewedGroup.name,
+          submission.challenge.name,
+          input.status === "APPROVED",
+          totalAwardPoints,
+        ),
+      },
+      { scope: "submissionReview", submissionId: input.id },
+    );
+  }
 
   const emailByAuthUserId = await buildAuthEmailLookup(context.supabase, [
     updatedSubmission.reviewedBy?.authUserId,

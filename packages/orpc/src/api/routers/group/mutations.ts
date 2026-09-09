@@ -7,14 +7,18 @@ import {
   canViewJoinRequests,
   isUserInGroup,
 } from "@mirai-app/common/groups";
+import { formatDisplayName } from "@mirai-app/common/users";
 import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";
+import { NotificationService } from "../../../services/notificationService";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { notifyCoinChange } from "../../../utils/coinNotifications";
+import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
 import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import type { GroupContext } from "./queries";
@@ -24,6 +28,48 @@ import {
   resolveGroupImage,
   toUserWithEmail,
 } from "./utils";
+
+/**
+ * Tell a group that somebody joined it.
+ *
+ * `notifications.sendNewMemberToGroup` existed but had no caller anywhere, so
+ * membership changes were silent. This is the shared body every membership
+ * entry point now goes through.
+ */
+async function notifyNewGroupMember(
+  context: GroupContext,
+  params: { tripId: string; groupId: string; userId: string },
+): Promise<void> {
+  const [group, user] = await Promise.all([
+    context.db.query.groups.findFirst({
+      where: (g, { eq }) => eq(g.id, params.groupId),
+      columns: { id: true, name: true },
+    }),
+    context.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, params.userId),
+      columns: { id: true, firstName: true, lastName: true },
+    }),
+  ]);
+
+  if (!group) {
+    return;
+  }
+
+  const memberName =
+    formatDisplayName(user?.firstName ?? null, user?.lastName ?? null, "A new member") ??
+    "A new member";
+
+  await notifyGroupMembersSafely(
+    {
+      db: context.db,
+      actorId: context.dbUser.id,
+      tripId: params.tripId,
+      groupId: group.id,
+      notification: NotificationService.createNewMemberNotification(group.name, memberName),
+    },
+    { scope: "groupMembership", groupId: group.id, userId: params.userId },
+  );
+}
 
 export const create = async (
   context: GroupContext,
@@ -305,6 +351,12 @@ export const join = async (context: GroupContext, input: { id: string; tripId: s
     return [upsertedParticipant];
   });
 
+  await notifyNewGroupMember(context, {
+    tripId: input.tripId,
+    groupId: input.id,
+    userId: context.dbUser.id,
+  });
+
   return participant;
 };
 
@@ -406,7 +458,7 @@ export const respondToJoinRequest = async (
   context: GroupContext,
   input: { requestId: string; decision: "ACCEPT" | "REJECT" },
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const outcome = await context.db.transaction(async (tx) => {
     const matchRequestId: WhereCallback<"groupJoinRequests"> = (gjr, { eq }) =>
       eq(gjr.id, input.requestId);
 
@@ -441,7 +493,7 @@ export const respondToJoinRequest = async (
 
     if (input.decision === "REJECT") {
       await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.id, request.id));
-      return { status: "REJECTED" as const };
+      return { status: "REJECTED" as const, accepted: null };
     }
 
     const matchUserTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
@@ -474,8 +526,17 @@ export const respondToJoinRequest = async (
         ),
       );
 
-    return { status: "ACCEPTED" as const };
+    return {
+      status: "ACCEPTED" as const,
+      accepted: { tripId: request.tripId, groupId: request.groupId, userId: request.userId },
+    };
   });
+
+  if (outcome.accepted) {
+    await notifyNewGroupMember(context, outcome.accepted);
+  }
+
+  return { status: outcome.status };
 };
 
 export const assignUserToGroup = async (
@@ -522,6 +583,12 @@ export const assignUserToGroup = async (
       );
 
     return [upsertedParticipant];
+  });
+
+  await notifyNewGroupMember(context, {
+    tripId: input.tripId,
+    groupId: input.groupId,
+    userId: input.userId,
   });
 
   return participant;
@@ -799,11 +866,19 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
   return buildLeaveResult(true, nextOrganizerId, !nextOrganizerId);
 };
 
+/**
+ * Adjust a group's coin balance.
+ *
+ * This is the only coin endpoint the admin app calls (`useAdminCoins` →
+ * `group.addCoins`); a removal arrives here as a negative `amount`. The
+ * `coin.*` router carries a second, unused implementation — anything that must
+ * happen on a coin change has to happen here to reach production.
+ */
 export const addCoins = async (
   context: GroupContext,
-  input: { groupId: string; amount: number; tripId: string },
+  input: { groupId: string; amount: number; tripId: string; reason?: string },
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transactionWithGroup = await context.db.transaction(async (tx) => {
     const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
@@ -826,7 +901,7 @@ export const addCoins = async (
       .values({
         groupId: input.groupId,
         amount: input.amount,
-        reason: "",
+        reason: input.reason?.trim() ?? "",
         adminId: context.dbUser.id,
       })
       .returning();
@@ -860,4 +935,21 @@ export const addCoins = async (
 
     return transactionWithGroup;
   });
+
+  // Sent after the transaction commits so a slow Expo round-trip never holds a
+  // database transaction open. The rank-change activity above is the feed, not
+  // a notification — the two are separate systems.
+  if (transactionWithGroup?.group) {
+    await notifyCoinChange({
+      db: context.db,
+      actorId: context.dbUser.id,
+      tripId: input.tripId,
+      groupId: input.groupId,
+      groupName: transactionWithGroup.group.name,
+      amount: input.amount,
+      reason: input.reason,
+    });
+  }
+
+  return transactionWithGroup;
 };

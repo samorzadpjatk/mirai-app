@@ -4,6 +4,8 @@ import { type DB, coinTransactions, groups, rewardPurchases, rewards } from "@mi
 import { ORPCError } from "@orpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
+import { NotificationService } from "../../../services/notificationService";
+import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import { ensureTripNotEnded } from "../../../utils/tripGuards";
 import type { WhereCallback } from "../utils/drizzle-types";
 import type { RewardPurchaseStatus, userRewardPurchaseStatusSchema } from "./types";
@@ -169,7 +171,7 @@ export const purchaseReward = async (
   context: { db: DB; dbUser: { id: string } },
   input: { rewardId: string; quantity: number },
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const purchase = await context.db.transaction(async (tx) => {
     const matchRewardId: WhereCallback<"rewards"> = (r, { eq }) => eq(r.id, input.rewardId);
 
     const reward = await tx.query.rewards.findFirst({
@@ -309,6 +311,27 @@ export const purchaseReward = async (
       },
     });
   });
+
+  // Redeeming a reward previously produced no notification at all — the whole
+  // guild has an interest in knowing their coins were spent.
+  if (purchase) {
+    await notifyGroupMembersSafely(
+      {
+        db: context.db,
+        actorId: context.dbUser.id,
+        tripId: purchase.reward.tripId,
+        groupId: purchase.group.id,
+        notification: NotificationService.createRewardPurchasedNotification(
+          purchase.group.name,
+          purchase.reward.name,
+          purchase.totalCost,
+        ),
+      },
+      { scope: "rewardPurchase", purchaseId: purchase.id },
+    );
+  }
+
+  return purchase;
 };
 
 export const updateMyPurchaseStatus = async (

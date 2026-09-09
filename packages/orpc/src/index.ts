@@ -51,3 +51,9 @@ export type {
   TripDetailSponsor,
   TripDetailTripSponsor,
 } from "./api/routers/trip/types";
+
+export { runDueNotificationSchedules } from "./services/scheduleExecutor";
+export type {
+  RunDueNotificationSchedulesOptions,
+  RunDueNotificationSchedulesResult,
+} from "./services/scheduleExecutor";

@@ -95,7 +95,7 @@ export default function AdminSchedulesScreen() {
         tripId,
         notificationTitle: name,
         notificationBody: message,
-        notificationUrl: "/ranking",
+        notificationUrl: "/trips/leaderboard",
         hour,
         minute,
         notificationType: "custom" as const,
@@ -122,7 +122,7 @@ export default function AdminSchedulesScreen() {
         name,
         notificationTitle: name,
         notificationBody: message,
-        notificationUrl: "/ranking",
+        notificationUrl: "/trips/leaderboard",
         hour,
         minute,
       });

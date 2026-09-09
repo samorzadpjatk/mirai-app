@@ -7,4 +7,6 @@ export type { ClientLoggerOptions } from "./create-client-logger";
 export { getEnv, requireEnv, isTestEnv } from "./env";
 export { calculateDistance } from "./location";
 export { buildPaginatedResponse } from "./pagination";
+export { IntervalScheduler } from "./scheduler";
+export type { SchedulerTask, SchedulerLogger } from "./scheduler";
 export type { PaginatedResponse } from "./pagination";

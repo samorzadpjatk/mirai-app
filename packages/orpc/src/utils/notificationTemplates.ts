@@ -61,7 +61,7 @@ export const DAILY_RANKING_SCHEDULE_TEMPLATES: ScheduledNotificationTemplate[] =
     notificationType: "custom",
     notificationTitle: "Dzieeeeń dobry! Pobudka",
     notificationBody: `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} wyzwań do wykonania. Powodzenia!`,
-    notificationUrl: "/ranking",
+    notificationUrl: "/trips/leaderboard",
   },
   {
     key: "daily_evening",
@@ -71,7 +71,7 @@ export const DAILY_RANKING_SCHEDULE_TEMPLATES: ScheduledNotificationTemplate[] =
     notificationType: "custom",
     notificationTitle: "Dobry wieczór!",
     notificationBody: `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} wyzwań do wykonania. Powodzenia!`,
-    notificationUrl: "/ranking",
+    notificationUrl: "/trips/leaderboard",
   },
 ];
 

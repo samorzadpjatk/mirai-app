@@ -332,7 +332,14 @@ export const groupRouter = createORPCRouter({
     .handler(handleLeaveMyGroup),
 
   addCoins: moderatorProcedure
-    .input(z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        amount: z.number(),
+        tripId: z.string(),
+        reason: z.string().optional(),
+      }),
+    )
     .handler(handleAddCoins),
 
   ranking: protectedProcedure.input(z.object({ tripId: z.string() })).handler(handleRanking),

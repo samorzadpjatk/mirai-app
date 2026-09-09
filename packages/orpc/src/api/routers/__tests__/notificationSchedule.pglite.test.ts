@@ -1,4 +1,4 @@
-import { normalizeScheduleWindow } from "@mirai-app/common/notifications";
+import { getZonedParts, normalizeScheduleWindow } from "@mirai-app/common/notifications";
 import { notificationSchedules, trips, users } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -190,8 +190,12 @@ describe("notificationSchedule — Drizzle ORM PGLite integration", () => {
       hour: 9,
       minute: 30,
     });
-    expect(result.startDate.getUTCHours()).toBe(9);
-    expect(result.startDate.getUTCMinutes()).toBe(30);
+    // hour/minute are wall-clock values in the app's time zone, so 09:30 in
+    // Warsaw is 08:30 UTC in January.
+    expect(getZonedParts(result.startDate)).toMatchObject({ hour: 9, minute: 30 });
+    expect(result.startDate.toISOString()).toBe("2024-01-15T08:30:00.000Z");
+    expect(result.hour).toBe(9);
+    expect(result.minute).toBe(30);
     expect(result.endDate.getTime() - result.startDate.getTime()).toBe(5 * 24 * 60 * 60 * 1000);
   });
 

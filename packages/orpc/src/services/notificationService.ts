@@ -36,13 +36,13 @@ const FALLBACK_TEMPLATE_VALUES: RankingTemplateValues = {
 const AUDIENCE_MODE_PARAM = "__audience";
 const AUDIENCE_GROUP_PARAM = "__groupId";
 
-interface ParsedAudienceUrl {
+export interface ParsedAudienceUrl {
   cleanUrl: string;
   audienceMode: "all" | "group" | null;
   audienceGroupId: string | null;
 }
 
-function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
+export function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
   const baseUrl = "https://integral.local";
 
   try {
@@ -170,6 +170,20 @@ async function getRankingTemplateValuesByUser(
   return valuesByUser;
 }
 
+/**
+ * Deep-link targets for generated notifications.
+ *
+ * Every value must resolve to a real expo-router route under
+ * `apps/native/src/app`. The previous `/group/my` and `/ranking` paths matched
+ * no screen at all, so a tap navigated nowhere.
+ */
+export const NOTIFICATION_ROUTES = {
+  myGroup: "/trips/groups",
+  ranking: "/trips/leaderboard",
+  rewards: "/trips/rewards",
+  challenges: "/trips/challenges",
+} as const;
+
 export class NotificationService {
   /**
    * Create notifications for common group events
@@ -188,7 +202,7 @@ export class NotificationService {
     return {
       title: `💰 ${groupName} received coins!`,
       body: body,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
   static createCoinsRemovedNotification(
@@ -205,7 +219,7 @@ export class NotificationService {
     return {
       title: `💸 ${groupName} - Coins Seized`,
       body: body,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
 
@@ -213,7 +227,7 @@ export class NotificationService {
     return {
       title: `👥 New member in ${groupName}!`,
       body: `${memberName} joined your guild!`,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
 
@@ -221,7 +235,41 @@ export class NotificationService {
     return {
       title: "🏆 Ranking update!",
       body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
-      url: "/ranking",
+      url: NOTIFICATION_ROUTES.ranking,
+    };
+  }
+
+  static createRewardPurchasedNotification(
+    groupName: string,
+    rewardName: string,
+    totalCost: number,
+  ): NotificationData {
+    return {
+      title: `🎁 ${groupName} claimed a reward!`,
+      body: `Your guild claimed ${rewardName} for ${totalCost} coins.\nClick me to see your rewards.`,
+      url: NOTIFICATION_ROUTES.rewards,
+    };
+  }
+
+  static createSubmissionReviewedNotification(
+    groupName: string,
+    challengeName: string,
+    approved: boolean,
+    awardedPoints: number,
+  ): NotificationData {
+    if (!approved) {
+      return {
+        title: `❌ ${challengeName} — submission rejected`,
+        body: `${groupName}'s submission was rejected.\nClick me to see the challenge.`,
+        url: NOTIFICATION_ROUTES.challenges,
+      };
+    }
+
+    const pointsSuffix = awardedPoints > 0 ? ` and earned ${awardedPoints} coins` : "";
+    return {
+      title: `✅ ${challengeName} — submission approved!`,
+      body: `${groupName}'s submission was approved${pointsSuffix}.\nClick me to see the challenge.`,
+      url: NOTIFICATION_ROUTES.challenges,
     };
   }
 }
@@ -252,65 +300,118 @@ export async function pruneUnregisteredTokens(
   }
 }
 
-export async function sendMobileNotifications(db: DB, notificationId: string) {
-  const notification = await db.query.notifications.findFirst({
-    where: (n, { eq }) => eq(n.id, notificationId),
-  });
-  if (!notification) return { success: false, sent: 0, failed: 0, total: 0 };
+/**
+ * Lifecycle of a `notification_pushes` row.
+ *
+ * `sending` is a claim, not decoration. Two dispatchers race on every
+ * notification — the mutation that created it pushes in-process, and
+ * apps/notification-sender pushes again when Supabase Realtime delivers the
+ * INSERT — so a dispatcher flips its rows out of `pending` *before* it talks to
+ * Expo. The loser of that update claims nothing and returns without sending,
+ * instead of delivering every push twice.
+ */
+const PUSH_STATUS = {
+  pending: "pending",
+  sending: "sending",
+  sent: "sent",
+  failed: "failed",
+} as const;
 
-  const existingPushRows = await db.query.notificationPushes.findMany({
-    where: (np, { eq }) => eq(np.notificationId, notification.id),
-  });
-  const hasExplicitAudience = existingPushRows.length > 0;
-  const pendingAudienceUserIds = new Set(
-    existingPushRows.filter((push) => push.status === "pending").map((push) => push.targetUserId),
-  );
-  const explicitAudienceUserIds = new Set(existingPushRows.map((push) => push.targetUserId));
+const NO_TOKEN_FAILURE = "no_valid_push_token";
+const EXPO_FAILURE = "expo";
 
-  if (hasExplicitAudience && pendingAudienceUserIds.size === 0) {
-    return {
-      success: true,
-      sent: 0,
-      failed: 0,
-      total: existingPushRows.length,
-    };
+/**
+ * Resolve the audience of a notification that carries no `notification_pushes`
+ * rows of its own.
+ *
+ * Every caller in this repository materialises its audience through
+ * `sendNotification`, so this is the legacy path. The resolved audience is
+ * written down before anything is sent, which is what lets the claim below
+ * cover implicitly addressed notifications too.
+ */
+async function resolveImplicitAudience(
+  db: DB,
+  notification: { id: string; tripId: string | null },
+  parsedAudience: ParsedAudienceUrl,
+): Promise<string[]> {
+  if (!notification.tripId) {
+    logger.warn(
+      { notificationId: notification.id },
+      "Notification has no trip and no explicit audience — falling back to every registered device",
+    );
+    const subscriberRows = await db
+      .select({ userId: pushSubscriptions.userId })
+      .from(pushSubscriptions);
+    return Array.from(new Set(subscriberRows.map((row) => row.userId)));
   }
 
-  const subs = await db.query.pushSubscriptions.findMany();
-  if (subs.length === 0) {
-    return { success: true, sent: 0, failed: 0, total: 0 };
+  const conditions = [eq(tripParticipants.tripId, notification.tripId)];
+  if (parsedAudience.audienceMode === "group" && parsedAudience.audienceGroupId) {
+    conditions.push(eq(tripParticipants.groupId, parsedAudience.audienceGroupId));
   }
 
-  const parsedAudience = parseAudienceUrl(notification.url);
+  const participantRows = await db
+    .select({ userId: tripParticipants.userId })
+    .from(tripParticipants)
+    .where(and(...conditions));
 
-  let scopedSubs = subs;
-  if (hasExplicitAudience) {
-    scopedSubs = subs.filter((sub) => pendingAudienceUserIds.has(sub.userId));
-  } else if (notification.tripId) {
-    const tripParticipantRows = await db
-      .select({ userId: tripParticipants.userId })
-      .from(tripParticipants)
-      .where(eq(tripParticipants.tripId, notification.tripId));
-    const participantIds = new Set(tripParticipantRows.map((participant) => participant.userId));
-    scopedSubs = subs.filter((sub) => participantIds.has(sub.userId));
+  return Array.from(new Set(participantRows.map((row) => row.userId)));
+}
 
-    if (parsedAudience.audienceMode === "group" && parsedAudience.audienceGroupId) {
-      const groupParticipantRows = await db
-        .select({ userId: tripParticipants.userId })
-        .from(tripParticipants)
-        .where(
-          and(
-            eq(tripParticipants.tripId, notification.tripId),
-            eq(tripParticipants.groupId, parsedAudience.audienceGroupId),
-          ),
-        );
-      const groupParticipantIds = new Set(
-        groupParticipantRows.map((participant) => participant.userId),
-      );
-      scopedSubs = scopedSubs.filter((sub) => groupParticipantIds.has(sub.userId));
-    }
-  }
+async function markPushes(
+  db: DB,
+  notificationId: string,
+  userIds: string[],
+  status: (typeof PUSH_STATUS)[keyof typeof PUSH_STATUS],
+  failureReason: string | null,
+): Promise<void> {
+  if (userIds.length === 0) return;
 
+  await db
+    .update(notificationPushes)
+    .set({ status, sentAt: new Date(), failureReason })
+    .where(
+      and(
+        eq(notificationPushes.notificationId, notificationId),
+        inArray(notificationPushes.targetUserId, userIds),
+      ),
+    );
+}
+
+/**
+ * Hand a claim back.
+ *
+ * Only rows still in `sending` are released, and only before anything has
+ * reached Expo — a claim that is dropped after a successful send would be
+ * re-claimed by the next dispatcher and delivered twice.
+ */
+async function releasePushes(db: DB, notificationId: string, userIds: string[]): Promise<void> {
+  if (userIds.length === 0) return;
+
+  await db
+    .update(notificationPushes)
+    .set({ status: PUSH_STATUS.pending })
+    .where(
+      and(
+        eq(notificationPushes.notificationId, notificationId),
+        eq(notificationPushes.status, PUSH_STATUS.sending),
+        inArray(notificationPushes.targetUserId, userIds),
+      ),
+    );
+}
+
+interface PreparedPushMessages {
+  expo: Expo;
+  messages: ExpoPushMessage[];
+  userByToken: Map<string, string>;
+}
+
+async function preparePushMessages(
+  db: DB,
+  notification: { tripId: string | null; title: string; body: string },
+  parsedAudience: ParsedAudienceUrl,
+  scopedSubs: Array<{ userId: string; token: string }>,
+): Promise<PreparedPushMessages> {
   const requiresRankingTemplate =
     !!notification.tripId &&
     (containsRankingTemplate(notification.title) || containsRankingTemplate(notification.body));
@@ -319,25 +420,6 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     requiresRankingTemplate && notification.tripId
       ? await getRankingTemplateValuesByUser(db, notification.tripId)
       : new Map<string, RankingTemplateValues>();
-
-  if (scopedSubs.length === 0) {
-    if (hasExplicitAudience) {
-      await db
-        .update(notificationPushes)
-        .set({
-          status: "failed",
-          sentAt: new Date(),
-          failureReason: "no_valid_push_token",
-        })
-        .where(
-          and(
-            eq(notificationPushes.notificationId, notification.id),
-            eq(notificationPushes.status, "pending"),
-          ),
-        );
-    }
-    return { success: true, sent: 0, failed: 0, total: 0 };
-  }
 
   const expoAccessToken = env.EXPO_ACCESS_TOKEN;
   const expo = new Expo(expoAccessToken ? { accessToken: expoAccessToken } : undefined);
@@ -371,7 +453,104 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
     });
   }
 
+  return { expo, messages, userByToken };
+}
+
+export async function sendMobileNotifications(db: DB, notificationId: string) {
+  const notification = await db.query.notifications.findFirst({
+    where: (n, { eq }) => eq(n.id, notificationId),
+  });
+  if (!notification) return { success: false, sent: 0, failed: 0, total: 0 };
+
+  const parsedAudience = parseAudienceUrl(notification.url);
+
+  let audienceRows = await db.query.notificationPushes.findMany({
+    where: (np, { eq }) => eq(np.notificationId, notification.id),
+  });
+
+  const subs = await db.query.pushSubscriptions.findMany();
+  if (subs.length === 0) {
+    return { success: true, sent: 0, failed: 0, total: 0 };
+  }
+
+  if (audienceRows.length === 0) {
+    const implicitUserIds = await resolveImplicitAudience(db, notification, parsedAudience);
+    if (implicitUserIds.length === 0) {
+      return { success: true, sent: 0, failed: 0, total: 0 };
+    }
+
+    await db
+      .insert(notificationPushes)
+      .values(
+        implicitUserIds.map((targetUserId) => ({
+          notificationId: notification.id,
+          targetUserId,
+          status: PUSH_STATUS.pending,
+        })),
+      )
+      .onConflictDoNothing();
+
+    audienceRows = await db.query.notificationPushes.findMany({
+      where: (np, { eq }) => eq(np.notificationId, notification.id),
+    });
+  }
+
+  // The claim. `UPDATE ... WHERE status = 'pending' RETURNING` is atomic under
+  // read-committed: a concurrent dispatcher blocks on the same rows, re-checks
+  // the predicate once the winner commits, and gets nothing back.
+  const claimedRows = await db
+    .update(notificationPushes)
+    .set({ status: PUSH_STATUS.sending })
+    .where(
+      and(
+        eq(notificationPushes.notificationId, notification.id),
+        eq(notificationPushes.status, PUSH_STATUS.pending),
+      ),
+    )
+    .returning({ targetUserId: notificationPushes.targetUserId });
+
+  const claimedUserIds = new Set(claimedRows.map((row) => row.targetUserId));
+  if (claimedUserIds.size === 0) {
+    logger.info(
+      { notificationId: notification.id },
+      "Notification has no pending pushes left to claim — another dispatcher owns it",
+    );
+    return { success: true, sent: 0, failed: 0, total: audienceRows.length };
+  }
+
+  const scopedSubs = subs.filter((sub) => claimedUserIds.has(sub.userId));
+  if (scopedSubs.length === 0) {
+    await markPushes(
+      db,
+      notification.id,
+      Array.from(claimedUserIds),
+      PUSH_STATUS.failed,
+      NO_TOKEN_FAILURE,
+    );
+    return { success: true, sent: 0, failed: 0, total: 0 };
+  }
+
+  let prepared: PreparedPushMessages;
+  try {
+    prepared = await preparePushMessages(db, notification, parsedAudience, scopedSubs);
+  } catch (error) {
+    // Nothing has been handed to Expo yet, so the claim can go back without
+    // risking a duplicate. Leaving the rows in `sending` would strand them:
+    // no dispatcher ever claims anything but `pending`.
+    await releasePushes(db, notification.id, Array.from(claimedUserIds));
+    throw error;
+  }
+
+  const { expo, messages, userByToken } = prepared;
+
   if (messages.length === 0) {
+    await markPushes(
+      db,
+      notification.id,
+      Array.from(claimedUserIds),
+      PUSH_STATUS.failed,
+      NO_TOKEN_FAILURE,
+    );
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
 
@@ -416,80 +595,22 @@ export async function sendMobileNotifications(db: DB, notificationId: string) {
   const failedUserIds = Array.from(resultByUser.entries())
     .filter(([, status]) => !status.hasSuccess && status.hasFailure)
     .map(([userId]) => userId);
+  const attemptedUserIds = new Set(resultByUser.keys());
+  const unattemptedUserIds = Array.from(claimedUserIds).filter(
+    (userId) => !attemptedUserIds.has(userId),
+  );
 
-  if (hasExplicitAudience) {
-    const attemptedUserIds = new Set(resultByUser.keys());
-    const unattemptedUserIds = Array.from(explicitAudienceUserIds).filter(
-      (userId) => !attemptedUserIds.has(userId),
-    );
-
-    if (sentUserIds.length > 0) {
-      await Promise.all(
-        sentUserIds.map((userId) =>
-          db
-            .update(notificationPushes)
-            .set({
-              status: "sent",
-              sentAt: new Date(),
-              failureReason: null,
-            })
-            .where(
-              and(
-                eq(notificationPushes.targetUserId, userId),
-                eq(notificationPushes.notificationId, notification.id),
-              ),
-            ),
-        ),
-      );
-    }
-
-    const allFailedUserIds = Array.from(new Set([...failedUserIds, ...unattemptedUserIds]));
-    if (allFailedUserIds.length > 0) {
-      await Promise.all(
-        allFailedUserIds.map((userId) =>
-          db
-            .update(notificationPushes)
-            .set({
-              status: "failed",
-              sentAt: new Date(),
-              failureReason: attemptedUserIds.has(userId) ? "expo" : "no_valid_push_token",
-            })
-            .where(
-              and(
-                eq(notificationPushes.targetUserId, userId),
-                eq(notificationPushes.notificationId, notification.id),
-              ),
-            ),
-        ),
-      );
-    }
-  } else if (sentUserIds.length + failedUserIds.length > 0) {
-    await db
-      .insert(notificationPushes)
-      .values([
-        ...sentUserIds.map((targetUserId) => ({
-          notificationId: notification.id,
-          targetUserId,
-          status: "sent" as const,
-          sentAt: new Date(),
-          failureReason: null as string | null,
-        })),
-        ...failedUserIds.map((targetUserId) => ({
-          notificationId: notification.id,
-          targetUserId,
-          status: "failed" as const,
-          sentAt: new Date(),
-          failureReason: "expo" as const,
-        })),
-      ])
-      .onConflictDoNothing();
-  }
+  // Only the rows this dispatcher claimed are settled here; anything a previous
+  // delivery already marked `sent` keeps its status.
+  await markPushes(db, notification.id, sentUserIds, PUSH_STATUS.sent, null);
+  await markPushes(db, notification.id, failedUserIds, PUSH_STATUS.failed, EXPO_FAILURE);
+  await markPushes(db, notification.id, unattemptedUserIds, PUSH_STATUS.failed, NO_TOKEN_FAILURE);
 
   const {
     sent: sentCount,
     failed: failedCount,
     total: totalCount,
-  } = calculateDeliveryStats(resultByUser, explicitAudienceUserIds, sentUserIds, failedUserIds);
+  } = calculateDeliveryStats(resultByUser, claimedUserIds, sentUserIds, failedUserIds);
 
   return {
     success: failedCount === 0,
