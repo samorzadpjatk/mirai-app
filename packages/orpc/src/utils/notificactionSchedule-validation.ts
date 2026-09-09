@@ -1,3 +1,4 @@
+import { zonedDateAtTime } from "@mirai-app/common/notifications";
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 
@@ -26,8 +27,11 @@ export function validateFutureDates(startDate: Date, endDate: Date, allowPastSta
 }
 
 export function validateScheduleTime(startDate: Date, hour: number, minute: number): void {
-  const scheduleDateTime = new Date(startDate);
-  scheduleDateTime.setUTCHours(hour, minute, 0, 0);
+  // `hour`/`minute` are wall-clock values in the app's time zone, so the
+  // instant they refer to depends on the UTC offset in effect on that day.
+  // Reading them as UTC (the previous behaviour) moved the check one or two
+  // hours and rejected everything picked between 00:00 and 01:59 outright.
+  const scheduleDateTime = zonedDateAtTime(startDate, hour, minute);
 
   const now = new Date();
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
