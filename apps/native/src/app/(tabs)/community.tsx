@@ -52,7 +52,8 @@ const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
 ];
 
 export default function CommunityScreen() {
-  const { session, isLoading: isLoadingSession } = useAuth();
+  // Only the session read gates this screen; the backend user profile is not read here.
+  const { session, isSessionLoading: isLoadingSession } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{
     filter?: string | string[];

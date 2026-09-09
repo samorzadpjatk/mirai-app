@@ -17,6 +17,8 @@ export function useAuth() {
     user: state.user,
     session: state.session,
     isLoading: state.isLoading,
+    isSessionLoading: state.isSessionLoading,
+    isUserLoading: state.isUserLoading,
     isAuthenticated: state.isAuthenticated,
     signInWithOtp: (options: { email: string }) => state.signInWithOtp(options.email),
     signInWithPassword: (options: { email: string; password: string }) =>
@@ -50,10 +52,28 @@ export function useIsAuthenticated(): boolean {
 }
 
 /**
- * Hook to check if auth is loading.
+ * Hook to check if auth is loading (session read OR user profile fetch).
+ *
+ * Prefer {@link useSessionLoading} for anything that gates rendering: this combined
+ * flag stays `true` until the networked user profile arrives.
  */
 export function useAuthLoading(): boolean {
   return useStore(authStore, (state) => state.isLoading);
+}
+
+/**
+ * Hook to check whether the initial session read is still in flight. This is the cheap
+ * gate — it does not wait for the backend user profile.
+ */
+export function useSessionLoading(): boolean {
+  return useStore(authStore, (state) => state.isSessionLoading);
+}
+
+/**
+ * Hook to check whether the backend user profile is still being fetched.
+ */
+export function useUserLoading(): boolean {
+  return useStore(authStore, (state) => state.isUserLoading);
 }
 
 /**

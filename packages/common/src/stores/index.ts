@@ -24,3 +24,7 @@ export type {
   SupabaseClient,
   SupabaseSession,
 } from "./authStore";
+
+// Root navigation gate (pure, UI-framework agnostic)
+export { hasActiveSession, resolveRootGate } from "./authGate";
+export type { RootGate, RootGateInput } from "./authGate";

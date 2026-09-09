@@ -18,7 +18,8 @@ import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
 
 export default function TripDetailsScreen() {
-  const { session, isLoading } = useAuth();
+  // The login redirect only depends on the session, not on the user profile fetch.
+  const { session, isSessionLoading } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -32,12 +33,12 @@ export default function TripDetailsScreen() {
   useTripSync();
 
   useEffect(() => {
-    if (!isLoading && !session) {
+    if (!isSessionLoading && !session) {
       router.replace("/auth/login");
     }
-  }, [isLoading, session, router]);
+  }, [isSessionLoading, session, router]);
 
-  if (isLoading || isLoadingTrip || isLoadingSelectedTrip) {
+  if (isSessionLoading || isLoadingTrip || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading..." />;
   }
 

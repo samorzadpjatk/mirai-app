@@ -1,10 +1,11 @@
 import { AuthStoreProvider } from "@mirai-app/auth/client";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import LoadingScreen from "~/components/LoadingScreen";
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import { LocationStoreProvider } from "~/stores/location";
 
@@ -20,17 +21,9 @@ function initNotifications(): void {
   });
 }
 
-import {
-  IBMPlexSans_100Thin,
-  IBMPlexSans_200ExtraLight,
-  IBMPlexSans_300Light,
-  IBMPlexSans_400Regular,
-  IBMPlexSans_500Medium,
-  IBMPlexSans_600SemiBold,
-  IBMPlexSans_700Bold,
-  useFonts,
-} from "@expo-google-fonts/ibm-plex-sans";
-import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
+import { IBMPlexSans_600SemiBold, useFonts } from "@expo-google-fonts/ibm-plex-sans";
+import { useSession, useSessionLoading } from "@mirai-app/auth/client";
+import { resolveRootGate } from "@mirai-app/common/stores";
 import { formatDisplayName } from "@mirai-app/common/users";
 import {
   QueryProvider,
@@ -119,8 +112,13 @@ function App() {
     wsUrl: ORPC_WS_URL,
   });
   initBackgroundLocationTask(backgroundTaskDeps);
-  const isAuthLoading = useAuthLoading();
-  const { session, user } = useAuth();
+  // Only the *session* read gates the first frame. Waiting for `user` here used to add
+  // a full `user.getMy()` round trip (Keychain read -> token refresh -> oRPC call) to
+  // every cold start, during which the app rendered nothing at all. The one first-frame
+  // consumer of `user` — the admin tab in `(tabs)/_layout.tsx` — already tolerates
+  // `user === null` and simply reveals itself a moment later.
+  const isSessionLoading = useSessionLoading();
+  const session = useSession();
   const { selectedTripId } = useSelectedTrip();
 
   useEffect(() => {
@@ -129,23 +127,32 @@ function App() {
     };
   }, []);
 
-  const hasSession = !!session?.access_token;
-  const isUserResolved = !hasSession || user !== null;
+  const gate = resolveRootGate({ session, isSessionLoading });
+  const hasSession = gate === "authenticated";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
-      {!isAuthLoading && hasSession ? <AutoPushSubscription /> : null}
-      {!isAuthLoading && isUserResolved && (
-        <TripThemeProvider tripId={selectedTripId}>
-          <RootStack hasSession={hasSession} />
-        </TripThemeProvider>
+      {gate === "loading" ? (
+        // Rendered outside TripThemeProvider on purpose: the context default keeps it on
+        // the DEFAULT palette, so it costs no query while the session is being read.
+        <LoadingScreen />
+      ) : (
+        <>
+          {hasSession ? <AutoPushSubscription /> : null}
+          <TripThemeProvider tripId={selectedTripId}>
+            <RootStack hasSession={hasSession} />
+          </TripThemeProvider>
+        </>
       )}
     </View>
   );
 }
 
 function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
-  const onUserFetch = async () => {
+  // Stable identity: `AuthStoreProvider` re-runs `initialize()` whenever this callback
+  // changes, which would re-read the session and open a second auth subscription on
+  // every render of this wrapper (e.g. when the font finishes loading).
+  const onUserFetch = useCallback(async () => {
     try {
       // Use a client bound to the current access token directly, instead of the
       // globally-mutated `orpc` singleton which may still be tokenless when the
@@ -187,7 +194,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
       // TODO: Add Sentry crash reporting for production errors
       return null;
     }
-  };
+  }, []);
 
   return (
     <AuthStoreProvider
@@ -202,19 +209,12 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    IBMPlexSans_100Thin,
-    IBMPlexSans_200ExtraLight,
-    IBMPlexSans_300Light,
-    IBMPlexSans_400Regular,
-    IBMPlexSans_500Medium,
-    IBMPlexSans_600SemiBold,
-    IBMPlexSans_700Bold,
-  });
-
-  if (!fontsLoaded) {
-    return null;
-  }
+  // Only the one weight the app actually references (`fontFamily:
+  // "IBMPlexSans_600SemiBold"` in the profile and trips stack headers) is loaded, and
+  // the tree is NOT gated on it: the previous seven weights were ~1.5 MB of TTF that
+  // had to be parsed before a single React element existed. Headers fall back to the
+  // system font for the few frames before the face is registered.
+  useFonts({ IBMPlexSans_600SemiBold });
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
