@@ -17,6 +17,7 @@ import {
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { notifyCoinChange } from "../../../utils/coinNotifications";
 import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
 import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
@@ -865,11 +866,19 @@ export const leaveMyGroup = async (context: GroupContext, input: { groupId: stri
   return buildLeaveResult(true, nextOrganizerId, !nextOrganizerId);
 };
 
+/**
+ * Adjust a group's coin balance.
+ *
+ * This is the only coin endpoint the admin app calls (`useAdminCoins` →
+ * `group.addCoins`); a removal arrives here as a negative `amount`. The
+ * `coin.*` router carries a second, unused implementation — anything that must
+ * happen on a coin change has to happen here to reach production.
+ */
 export const addCoins = async (
   context: GroupContext,
-  input: { groupId: string; amount: number; tripId: string },
+  input: { groupId: string; amount: number; tripId: string; reason?: string },
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transactionWithGroup = await context.db.transaction(async (tx) => {
     const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     const matchGroupId: WhereCallback<"groups"> = (g, { eq }) => eq(g.id, input.groupId);
@@ -892,7 +901,7 @@ export const addCoins = async (
       .values({
         groupId: input.groupId,
         amount: input.amount,
-        reason: "",
+        reason: input.reason?.trim() ?? "",
         adminId: context.dbUser.id,
       })
       .returning();
@@ -926,4 +935,21 @@ export const addCoins = async (
 
     return transactionWithGroup;
   });
+
+  // Sent after the transaction commits so a slow Expo round-trip never holds a
+  // database transaction open. The rank-change activity above is the feed, not
+  // a notification — the two are separate systems.
+  if (transactionWithGroup?.group) {
+    await notifyCoinChange({
+      db: context.db,
+      actorId: context.dbUser.id,
+      tripId: input.tripId,
+      groupId: input.groupId,
+      groupName: transactionWithGroup.group.name,
+      amount: input.amount,
+      reason: input.reason,
+    });
+  }
+
+  return transactionWithGroup;
 };
