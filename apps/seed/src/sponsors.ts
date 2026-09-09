@@ -1,6 +1,7 @@
 import { logger } from "@mirai-app/common/utils";
 import type { Sponsor, TripSponsor, TripSponsorDisplay } from "@mirai-app/db";
 import { sponsors, tripSponsorDisplay, tripSponsors } from "@mirai-app/db";
+import { and, eq, notInArray } from "drizzle-orm";
 import yaml from "yaml";
 import { db } from "./config/db";
 import type { SeedEnv, SponsorConfig } from "./types";
@@ -100,6 +101,38 @@ export const seedSponsors = async (
         });
 
       logger.info(`✓ Seeded sponsor display for ${sponsorConfig.name}`);
+    }
+
+    // The YAML is the only way a sponsor reaches a trip — there is no admin UI —
+    // so it is the source of truth. Without this, a sponsor dropped from the
+    // config keeps its association forever and still renders on the trip screen,
+    // which is how four retired demo partners survived alongside the real one.
+    // Only the trip association and its layout are removed; the sponsor row
+    // itself stays, because other trips may still reference it.
+    const configuredIds = sponsorConfigs.map((sponsorConfig) => sponsorConfig.id);
+
+    const removedDisplays = await db
+      .delete(tripSponsorDisplay)
+      .where(
+        and(
+          eq(tripSponsorDisplay.tripId, tripId),
+          notInArray(tripSponsorDisplay.sponsorId, configuredIds),
+        ),
+      )
+      .returning({ sponsorId: tripSponsorDisplay.sponsorId });
+
+    const removed = await db
+      .delete(tripSponsors)
+      .where(
+        and(eq(tripSponsors.tripId, tripId), notInArray(tripSponsors.sponsorId, configuredIds)),
+      )
+      .returning({ sponsorId: tripSponsors.sponsorId });
+
+    for (const row of removed) {
+      logger.info(`✓ Removed stale sponsor association: ${row.sponsorId}`);
+    }
+    if (removedDisplays.length > 0) {
+      logger.info(`✓ Removed ${removedDisplays.length} stale sponsor display row(s)`);
     }
 
     logger.info("✓ Sponsors seeding completed");
