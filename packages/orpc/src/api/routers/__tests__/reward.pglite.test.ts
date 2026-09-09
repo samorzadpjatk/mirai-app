@@ -1,8 +1,17 @@
 import { canTransitionPurchaseStatus } from "@mirai-app/common/rewards";
-import { coinTransactions, groups, rewardPurchases, rewards, trips, users } from "@mirai-app/db";
+import {
+  coinTransactions,
+  groups,
+  rewardPurchases,
+  rewards,
+  tripParticipants,
+  trips,
+  users,
+} from "@mirai-app/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
+import { getPurchaseHistory, getPurchaseHistoryAdmin } from "../reward/queries";
 
 let testDb: Awaited<ReturnType<typeof createPgliteTestDb>>;
 const now = () => new Date();
@@ -585,5 +594,346 @@ describe("reward router — Drizzle ORM PGLite integration", () => {
     expect(canTransitionPurchaseStatus("IN_DELIVERY", "CANCELLED")).toBe(true);
     expect(canTransitionPurchaseStatus("CANCELLED", "BOUGHT")).toBe(false);
     expect(canTransitionPurchaseStatus("DELIVERED", "BOUGHT")).toBe(false);
+  });
+});
+
+describe("reward/queries — getPurchaseHistory scoping", () => {
+  const historyContext = (userId: string) => ({
+    db: testDb.db,
+    dbUser: { id: userId },
+  });
+
+  beforeEach(async () => {
+    await testDb.db.insert(users).values([
+      {
+        id: "user-a",
+        authUserId: "auth-user-a",
+        firstName: "Ann",
+        lastName: "Alpha",
+        role: "USER",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "user-b",
+        authUserId: "auth-user-b",
+        firstName: "Bob",
+        lastName: "Beta",
+        role: "USER",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "admin-a",
+        authUserId: "auth-admin-a",
+        firstName: "Ada",
+        lastName: "Admin",
+        role: "ADMIN",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "outsider",
+        authUserId: "auth-outsider",
+        firstName: "Otto",
+        lastName: "Outside",
+        role: "USER",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+
+    await testDb.db.insert(trips).values([
+      {
+        id: "trip-1",
+        name: "Trip One",
+        description: "",
+        startDate: new Date("2025-06-01"),
+        endDate: new Date("2025-06-07"),
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "trip-empty",
+        name: "Trip Without Rewards",
+        description: "",
+        startDate: new Date("2025-07-01"),
+        endDate: new Date("2025-07-07"),
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "trip-other",
+        name: "Other Trip",
+        description: "",
+        startDate: new Date("2025-08-01"),
+        endDate: new Date("2025-08-07"),
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+
+    await testDb.db.insert(groups).values([
+      {
+        id: "group-a",
+        tripId: "trip-1",
+        name: "Group A",
+        description: "",
+        organizerId: "user-a",
+        code: "AAAA",
+        coins: 500,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "group-b",
+        tripId: "trip-1",
+        name: "Group B",
+        description: "",
+        organizerId: "user-b",
+        code: "BBBB",
+        coins: 500,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "group-empty",
+        tripId: "trip-empty",
+        name: "Group Empty",
+        description: "",
+        organizerId: "user-a",
+        code: "EEEE",
+        coins: 500,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "group-other",
+        tripId: "trip-other",
+        name: "Group Other",
+        description: "",
+        organizerId: "user-b",
+        code: "OOOO",
+        coins: 500,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+
+    await testDb.db.insert(tripParticipants).values([
+      {
+        id: "tp-user-a",
+        userId: "user-a",
+        tripId: "trip-1",
+        groupId: "group-a",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "tp-user-b",
+        userId: "user-b",
+        tripId: "trip-1",
+        groupId: "group-b",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      // The admin participates in group A, exactly like any other traveller.
+      {
+        id: "tp-admin-a",
+        userId: "admin-a",
+        tripId: "trip-1",
+        groupId: "group-a",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "tp-user-a-empty",
+        userId: "user-a",
+        tripId: "trip-empty",
+        groupId: "group-empty",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "tp-admin-a-empty",
+        userId: "admin-a",
+        tripId: "trip-empty",
+        groupId: "group-empty",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+
+    await testDb.db.insert(rewards).values([
+      {
+        id: "reward-1",
+        name: "Trip One Reward",
+        description: "",
+        availableQuantity: 10,
+        coinCost: 50,
+        tripId: "trip-1",
+        createdById: "admin-a",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "reward-other",
+        name: "Other Trip Reward",
+        description: "",
+        availableQuantity: 10,
+        coinCost: 50,
+        tripId: "trip-other",
+        createdById: "admin-a",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+
+    await testDb.db.insert(rewardPurchases).values([
+      {
+        id: "purchase-a",
+        rewardId: "reward-1",
+        groupId: "group-a",
+        quantity: 1,
+        totalCost: 50,
+        status: "BOUGHT",
+        purchasedById: "user-a",
+        statusUpdatedById: "user-a",
+        statusUpdatedAt: now(),
+        purchasedAt: new Date("2025-06-02T10:00:00Z"),
+      },
+      {
+        id: "purchase-b",
+        rewardId: "reward-1",
+        groupId: "group-b",
+        quantity: 2,
+        totalCost: 100,
+        status: "BOUGHT",
+        purchasedById: "user-b",
+        statusUpdatedById: "user-b",
+        statusUpdatedAt: now(),
+        purchasedAt: new Date("2025-06-03T10:00:00Z"),
+      },
+      {
+        id: "purchase-other-trip",
+        rewardId: "reward-other",
+        groupId: "group-other",
+        quantity: 1,
+        totalCost: 50,
+        status: "BOUGHT",
+        purchasedById: "user-b",
+        statusUpdatedById: "user-b",
+        statusUpdatedAt: now(),
+        purchasedAt: new Date("2025-08-02T10:00:00Z"),
+      },
+    ]);
+  });
+
+  it("scopes a USER participant to their own group", async () => {
+    const result = await getPurchaseHistory(historyContext("user-a"), { tripId: "trip-1" });
+
+    expect(result.purchases.map((p) => p.id)).toEqual(["purchase-a"]);
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it("scopes an ADMIN participant to their own group too", async () => {
+    // Regression for issue #16: cross-group visibility is a property of the
+    // admin endpoint, never of the caller's role.
+    const result = await getPurchaseHistory(historyContext("admin-a"), { tripId: "trip-1" });
+
+    expect(result.purchases.map((p) => p.id)).toEqual(["purchase-a"]);
+    expect(result.purchases.every((p) => p.groupId === "group-a")).toBe(true);
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it("returns an empty page for a trip with no rewards instead of the whole table", async () => {
+    // Regression for issue #16b: an undefined Drizzle where clause means
+    // "no filter", which leaked every purchase in the database.
+    const result = await getPurchaseHistory(historyContext("user-a"), { tripId: "trip-empty" });
+
+    expect(result.purchases).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+    expect(result.pagination.hasMore).toBe(false);
+  });
+
+  it("rejects a caller who does not participate in the trip", async () => {
+    await expect(
+      getPurchaseHistory(historyContext("outsider"), { tripId: "trip-1" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("rejects an ADMIN who does not participate in the trip", async () => {
+    await expect(
+      getPurchaseHistory(historyContext("admin-a"), { tripId: "trip-other" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("rejects the pseudo trip id 'all' on the user-facing endpoint", async () => {
+    await expect(
+      getPurchaseHistory(historyContext("admin-a"), { tripId: "all" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("returns every group's purchases through the admin endpoint", async () => {
+    const result = await getPurchaseHistoryAdmin({ db: testDb.db }, { tripId: "trip-1" });
+
+    expect(result.purchases.map((p) => p.id).sort()).toEqual(["purchase-a", "purchase-b"]);
+    expect(result.pagination.total).toBe(2);
+  });
+
+  it("keeps the admin endpoint scoped to the requested trip", async () => {
+    const result = await getPurchaseHistoryAdmin({ db: testDb.db }, { tripId: "trip-1" });
+
+    expect(result.purchases.map((p) => p.id)).not.toContain("purchase-other-trip");
+  });
+
+  it("returns an empty page from the admin endpoint for a trip with no rewards", async () => {
+    const result = await getPurchaseHistoryAdmin({ db: testDb.db }, { tripId: "trip-empty" });
+
+    expect(result.purchases).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+  });
+
+  it("treats tripId 'all' on the admin endpoint as every trip", async () => {
+    const result = await getPurchaseHistoryAdmin({ db: testDb.db }, { tripId: "all" });
+
+    expect(result.purchases.map((p) => p.id).sort()).toEqual([
+      "purchase-a",
+      "purchase-b",
+      "purchase-other-trip",
+    ]);
+    expect(result.pagination.total).toBe(3);
+  });
+
+  it("paginates the scoped user history", async () => {
+    await testDb.db.insert(rewardPurchases).values({
+      id: "purchase-a2",
+      rewardId: "reward-1",
+      groupId: "group-a",
+      quantity: 1,
+      totalCost: 50,
+      status: "BOUGHT",
+      purchasedById: "user-a",
+      statusUpdatedById: "user-a",
+      statusUpdatedAt: now(),
+      purchasedAt: new Date("2025-06-04T10:00:00Z"),
+    });
+
+    const firstPage = await getPurchaseHistory(historyContext("user-a"), {
+      tripId: "trip-1",
+      pagination: { limit: 1, offset: 0 },
+    });
+
+    expect(firstPage.purchases.map((p) => p.id)).toEqual(["purchase-a2"]);
+    expect(firstPage.pagination.total).toBe(2);
+    expect(firstPage.pagination.hasMore).toBe(true);
+
+    const secondPage = await getPurchaseHistory(historyContext("user-a"), {
+      tripId: "trip-1",
+      pagination: { limit: 1, offset: 1 },
+    });
+
+    expect(secondPage.purchases.map((p) => p.id)).toEqual(["purchase-a"]);
+    expect(secondPage.pagination.hasMore).toBe(false);
   });
 });

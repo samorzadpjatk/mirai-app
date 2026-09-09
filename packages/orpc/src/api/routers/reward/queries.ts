@@ -1,6 +1,7 @@
 import { calculateRewardProgress } from "@mirai-app/common/rewards";
 import { type DB, rewardPurchases, rewards } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import { and, count, eq, inArray } from "drizzle-orm";
 import { calculateTotalAvailablePoints, resolveRewardImageData } from "./utils";
 
@@ -270,60 +271,23 @@ export const getById = async (
   return { ...reward, ...imageData, ...progress };
 };
 
-export const getPurchaseHistory = async (
-  context: {
-    db: DB;
-    dbUser: { id: string; role: string };
-  },
-  input: {
-    tripId: string;
-    pagination?: {
-      limit: number;
-      offset: number;
-    };
-  },
+const DEFAULT_HISTORY_LIMIT = 30;
+
+/**
+ * Shared page loader for reward purchase history.
+ *
+ * `where` is required by every caller that scopes the result; the only caller
+ * allowed to pass `undefined` is the admin "all trips" view, which deliberately
+ * asks for every purchase in the system.
+ */
+const fetchPurchaseHistoryPage = async (
+  db: DB,
+  where: SQL | undefined,
+  limit: number,
+  offset: number,
 ) => {
-  const isStaff = context.dbUser.role === "ADMIN" || context.dbUser.role === "MODERATOR";
-  let groupIdFilter: string | undefined;
-  const limit = input.pagination?.limit ?? 30;
-  const offset = input.pagination?.offset ?? 0;
-
-  if (!isStaff) {
-    const participant = await context.db.query.tripParticipants.findFirst({
-      where: (tp, { eq, and }) =>
-        and(eq(tp.userId, context.dbUser.id), eq(tp.tripId, input.tripId)),
-      columns: {
-        groupId: true,
-      },
-    });
-
-    if (!participant?.groupId) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Only trip participants with a group can view reward history",
-      });
-    }
-
-    groupIdFilter = participant.groupId;
-  }
-
-  const tripRewardIds = await context.db
-    .select({ id: rewards.id })
-    .from(rewards)
-    .where(eq(rewards.tripId, input.tripId));
-  const rewardIds = tripRewardIds.map((r) => r.id);
-
-  const where =
-    rewardIds.length > 0
-      ? groupIdFilter
-        ? and(
-            inArray(rewardPurchases.rewardId, rewardIds),
-            eq(rewardPurchases.groupId, groupIdFilter),
-          )
-        : inArray(rewardPurchases.rewardId, rewardIds)
-      : undefined;
-
   const [purchaseRows, totalResult] = await Promise.all([
-    context.db.query.rewardPurchases.findMany({
+    db.query.rewardPurchases.findMany({
       where,
       with: {
         reward: true,
@@ -352,7 +316,7 @@ export const getPurchaseHistory = async (
       limit,
       offset,
     }),
-    context.db.select({ count: count() }).from(rewardPurchases).where(where),
+    db.select({ count: count() }).from(rewardPurchases).where(where),
   ]);
 
   const total = totalResult[0]?.count ?? 0;
@@ -366,6 +330,123 @@ export const getPurchaseHistory = async (
       hasMore: offset + limit < total,
     },
   };
+};
+
+type PurchaseHistoryPage = Awaited<ReturnType<typeof fetchPurchaseHistoryPage>>;
+
+const emptyPurchaseHistoryPage = (limit: number, offset: number): PurchaseHistoryPage => ({
+  purchases: [],
+  pagination: {
+    total: 0,
+    limit,
+    offset,
+    hasMore: false,
+  },
+});
+
+const selectTripRewardIds = async (db: DB, tripId: string) => {
+  const tripRewardIds = await db
+    .select({ id: rewards.id })
+    .from(rewards)
+    .where(eq(rewards.tripId, tripId));
+  return tripRewardIds.map((r) => r.id);
+};
+
+/**
+ * User-facing reward purchase history.
+ *
+ * Always scoped to the caller's own group for the given trip, regardless of the
+ * caller's role. Cross-group visibility is a property of the admin endpoint
+ * (`getPurchaseHistoryAdmin`), never of the caller's role.
+ */
+export const getPurchaseHistory = async (
+  context: {
+    db: DB;
+    dbUser: { id: string };
+  },
+  input: {
+    tripId: string;
+    pagination?: {
+      limit: number;
+      offset: number;
+    };
+  },
+): Promise<PurchaseHistoryPage> => {
+  const limit = input.pagination?.limit ?? DEFAULT_HISTORY_LIMIT;
+  const offset = input.pagination?.offset ?? 0;
+
+  const participant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq: eqOp, and: andOp }) =>
+      andOp(eqOp(tp.userId, context.dbUser.id), eqOp(tp.tripId, input.tripId)),
+    columns: {
+      groupId: true,
+    },
+  });
+
+  if (!participant?.groupId) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Only trip participants with a group can view reward history",
+    });
+  }
+
+  const rewardIds = await selectTripRewardIds(context.db, input.tripId);
+
+  // A trip without rewards has no history. Never fall through to an undefined
+  // where clause, which Drizzle reads as "no filter" and would return every
+  // purchase in the database.
+  if (rewardIds.length === 0) {
+    return emptyPurchaseHistoryPage(limit, offset);
+  }
+
+  return fetchPurchaseHistoryPage(
+    context.db,
+    and(
+      inArray(rewardPurchases.rewardId, rewardIds),
+      eq(rewardPurchases.groupId, participant.groupId),
+    ),
+    limit,
+    offset,
+  );
+};
+
+/**
+ * Admin-panel reward purchase history.
+ *
+ * Returns every group's purchases and is gated by `moderatorProcedure`.
+ * `tripId === "all"` mirrors `getByTripAdmin` and means "every trip".
+ */
+export const getPurchaseHistoryAdmin = async (
+  context: {
+    db: DB;
+  },
+  input: {
+    tripId: string;
+    pagination?: {
+      limit: number;
+      offset: number;
+    };
+  },
+): Promise<PurchaseHistoryPage> => {
+  const limit = input.pagination?.limit ?? DEFAULT_HISTORY_LIMIT;
+  const offset = input.pagination?.offset ?? 0;
+  const isAllTrips = input.tripId === "all";
+
+  if (isAllTrips) {
+    return fetchPurchaseHistoryPage(context.db, undefined, limit, offset);
+  }
+
+  const rewardIds = await selectTripRewardIds(context.db, input.tripId);
+
+  if (rewardIds.length === 0) {
+    return emptyPurchaseHistoryPage(limit, offset);
+  }
+
+  return fetchPurchaseHistoryPage(
+    context.db,
+    inArray(rewardPurchases.rewardId, rewardIds),
+    limit,
+    offset,
+  );
 };
 
 export const getTotalAvailablePoints = async (db: DB, tripId: string) => {
