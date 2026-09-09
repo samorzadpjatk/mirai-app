@@ -36,13 +36,13 @@ const FALLBACK_TEMPLATE_VALUES: RankingTemplateValues = {
 const AUDIENCE_MODE_PARAM = "__audience";
 const AUDIENCE_GROUP_PARAM = "__groupId";
 
-interface ParsedAudienceUrl {
+export interface ParsedAudienceUrl {
   cleanUrl: string;
   audienceMode: "all" | "group" | null;
   audienceGroupId: string | null;
 }
 
-function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
+export function parseAudienceUrl(rawUrl: string): ParsedAudienceUrl {
   const baseUrl = "https://integral.local";
 
   try {
@@ -170,6 +170,20 @@ async function getRankingTemplateValuesByUser(
   return valuesByUser;
 }
 
+/**
+ * Deep-link targets for generated notifications.
+ *
+ * Every value must resolve to a real expo-router route under
+ * `apps/native/src/app`. The previous `/group/my` and `/ranking` paths matched
+ * no screen at all, so a tap navigated nowhere.
+ */
+export const NOTIFICATION_ROUTES = {
+  myGroup: "/trips/groups",
+  ranking: "/trips/leaderboard",
+  rewards: "/trips/rewards",
+  challenges: "/trips/challenges",
+} as const;
+
 export class NotificationService {
   /**
    * Create notifications for common group events
@@ -188,7 +202,7 @@ export class NotificationService {
     return {
       title: `💰 ${groupName} received coins!`,
       body: body,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
   static createCoinsRemovedNotification(
@@ -205,7 +219,7 @@ export class NotificationService {
     return {
       title: `💸 ${groupName} - Coins Seized`,
       body: body,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
 
@@ -213,7 +227,7 @@ export class NotificationService {
     return {
       title: `👥 New member in ${groupName}!`,
       body: `${memberName} joined your guild!`,
-      url: "/group/my",
+      url: NOTIFICATION_ROUTES.myGroup,
     };
   }
 
@@ -221,7 +235,41 @@ export class NotificationService {
     return {
       title: "🏆 Ranking update!",
       body: `${groupName} now holds ${newPosition} place in the ranking! Click me to check the current ranking.`,
-      url: "/ranking",
+      url: NOTIFICATION_ROUTES.ranking,
+    };
+  }
+
+  static createRewardPurchasedNotification(
+    groupName: string,
+    rewardName: string,
+    totalCost: number,
+  ): NotificationData {
+    return {
+      title: `🎁 ${groupName} claimed a reward!`,
+      body: `Your guild claimed ${rewardName} for ${totalCost} coins.\nClick me to see your rewards.`,
+      url: NOTIFICATION_ROUTES.rewards,
+    };
+  }
+
+  static createSubmissionReviewedNotification(
+    groupName: string,
+    challengeName: string,
+    approved: boolean,
+    awardedPoints: number,
+  ): NotificationData {
+    if (!approved) {
+      return {
+        title: `❌ ${challengeName} — submission rejected`,
+        body: `${groupName}'s submission was rejected.\nClick me to see the challenge.`,
+        url: NOTIFICATION_ROUTES.challenges,
+      };
+    }
+
+    const pointsSuffix = awardedPoints > 0 ? ` and earned ${awardedPoints} coins` : "";
+    return {
+      title: `✅ ${challengeName} — submission approved!`,
+      body: `${groupName}'s submission was approved${pointsSuffix}.\nClick me to see the challenge.`,
+      url: NOTIFICATION_ROUTES.challenges,
     };
   }
 }

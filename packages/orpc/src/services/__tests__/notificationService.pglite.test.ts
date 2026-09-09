@@ -119,7 +119,7 @@ describe("NotificationService", () => {
       expect(result.title).toBe("💰 Test Group received coins!");
       expect(result.body).toContain("100 coins");
       expect(result.body).toContain("Challenge completion");
-      expect(result.url).toBe("/group/my");
+      expect(result.url).toBe("/trips/groups");
     });
 
     it("should create notification without reason", () => {
@@ -132,7 +132,7 @@ describe("NotificationService", () => {
       expect(result.title).toBe("💰 Test Group received coins!");
       expect(result.body).toContain("50 coins");
       expect(result.body).not.toContain("Reason:");
-      expect(result.url).toBe("/group/my");
+      expect(result.url).toBe("/trips/groups");
     });
 
     it("should handle zero coins", () => {
@@ -177,7 +177,7 @@ describe("NotificationService", () => {
       expect(result.title).toBe("💸 Test Group - Coins Seized");
       expect(result.body).toContain("50 coins");
       expect(result.body).toContain("Penalty");
-      expect(result.url).toBe("/group/my");
+      expect(result.url).toBe("/trips/groups");
     });
 
     it("should create notification without reason", () => {
@@ -212,7 +212,7 @@ describe("NotificationService", () => {
 
       expect(result.title).toBe("👥 New member in Test Group!");
       expect(result.body).toBe("John Doe joined your guild!");
-      expect(result.url).toBe("/group/my");
+      expect(result.url).toBe("/trips/groups");
     });
 
     it("should handle long member names", () => {
@@ -246,7 +246,7 @@ describe("NotificationService", () => {
       expect(result.title).toBe("🏆 Ranking update!");
       expect(result.body).toContain("Test Group");
       expect(result.body).toContain("3 place");
-      expect(result.url).toBe("/ranking");
+      expect(result.url).toBe("/trips/leaderboard");
     });
 
     it("should handle first place", () => {

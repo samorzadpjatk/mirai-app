@@ -7,14 +7,17 @@ import {
   canViewJoinRequests,
   isUserInGroup,
 } from "@mirai-app/common/groups";
+import { formatDisplayName } from "@mirai-app/common/users";
 import { coinTransactions, groupJoinRequests, groups, tripParticipants } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, eq, inArray } from "drizzle-orm";
+import { NotificationService } from "../../../services/notificationService";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
 import { buildAuthEmailLookup } from "../../../utils/authEmails";
+import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../../utils/tripGuards";
 import type { OrderByCallback, WhereCallback } from "../utils/drizzle-types";
 import type { GroupContext } from "./queries";
@@ -24,6 +27,48 @@ import {
   resolveGroupImage,
   toUserWithEmail,
 } from "./utils";
+
+/**
+ * Tell a group that somebody joined it.
+ *
+ * `notifications.sendNewMemberToGroup` existed but had no caller anywhere, so
+ * membership changes were silent. This is the shared body every membership
+ * entry point now goes through.
+ */
+async function notifyNewGroupMember(
+  context: GroupContext,
+  params: { tripId: string; groupId: string; userId: string },
+): Promise<void> {
+  const [group, user] = await Promise.all([
+    context.db.query.groups.findFirst({
+      where: (g, { eq }) => eq(g.id, params.groupId),
+      columns: { id: true, name: true },
+    }),
+    context.db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, params.userId),
+      columns: { id: true, firstName: true, lastName: true },
+    }),
+  ]);
+
+  if (!group) {
+    return;
+  }
+
+  const memberName =
+    formatDisplayName(user?.firstName ?? null, user?.lastName ?? null, "A new member") ??
+    "A new member";
+
+  await notifyGroupMembersSafely(
+    {
+      db: context.db,
+      actorId: context.dbUser.id,
+      tripId: params.tripId,
+      groupId: group.id,
+      notification: NotificationService.createNewMemberNotification(group.name, memberName),
+    },
+    { scope: "groupMembership", groupId: group.id, userId: params.userId },
+  );
+}
 
 export const create = async (
   context: GroupContext,
@@ -305,6 +350,12 @@ export const join = async (context: GroupContext, input: { id: string; tripId: s
     return [upsertedParticipant];
   });
 
+  await notifyNewGroupMember(context, {
+    tripId: input.tripId,
+    groupId: input.id,
+    userId: context.dbUser.id,
+  });
+
   return participant;
 };
 
@@ -406,7 +457,7 @@ export const respondToJoinRequest = async (
   context: GroupContext,
   input: { requestId: string; decision: "ACCEPT" | "REJECT" },
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const outcome = await context.db.transaction(async (tx) => {
     const matchRequestId: WhereCallback<"groupJoinRequests"> = (gjr, { eq }) =>
       eq(gjr.id, input.requestId);
 
@@ -441,7 +492,7 @@ export const respondToJoinRequest = async (
 
     if (input.decision === "REJECT") {
       await tx.delete(groupJoinRequests).where(eq(groupJoinRequests.id, request.id));
-      return { status: "REJECTED" as const };
+      return { status: "REJECTED" as const, accepted: null };
     }
 
     const matchUserTrip: WhereCallback<"tripParticipants"> = (tp, { and, eq }) =>
@@ -474,8 +525,17 @@ export const respondToJoinRequest = async (
         ),
       );
 
-    return { status: "ACCEPTED" as const };
+    return {
+      status: "ACCEPTED" as const,
+      accepted: { tripId: request.tripId, groupId: request.groupId, userId: request.userId },
+    };
   });
+
+  if (outcome.accepted) {
+    await notifyNewGroupMember(context, outcome.accepted);
+  }
+
+  return { status: outcome.status };
 };
 
 export const assignUserToGroup = async (
@@ -522,6 +582,12 @@ export const assignUserToGroup = async (
       );
 
     return [upsertedParticipant];
+  });
+
+  await notifyNewGroupMember(context, {
+    tripId: input.tripId,
+    groupId: input.groupId,
+    userId: input.userId,
   });
 
   return participant;

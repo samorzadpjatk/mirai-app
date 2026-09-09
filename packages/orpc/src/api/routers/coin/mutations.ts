@@ -3,17 +3,47 @@ import { buildCoinTransactionValues } from "@mirai-app/common/coins";
 import { type DB, coinTransactions, groups } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { eq, sql } from "drizzle-orm";
+import { NotificationService } from "../../../services/notificationService";
 import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
+import { notifyGroupMembersSafely } from "../../../utils/groupNotifications";
 import type { CoinTransactionInput } from "./types";
+
+/**
+ * The activity feed and push notifications are two separate systems: writing a
+ * rank-change activity does not notify anybody. Coin adjustments made by an
+ * admin only ever reached the feed, so members were never told their guild
+ * gained or lost coins.
+ */
+async function notifyCoinChange(
+  context: { db: DB; dbUser: { id: string } },
+  input: CoinTransactionInput,
+  groupName: string,
+  added: boolean,
+): Promise<void> {
+  const notification = added
+    ? NotificationService.createCoinsAddedNotification(groupName, input.amount, input.reason)
+    : NotificationService.createCoinsRemovedNotification(groupName, input.amount, input.reason);
+
+  await notifyGroupMembersSafely(
+    {
+      db: context.db,
+      actorId: context.dbUser.id,
+      tripId: input.tripId,
+      groupId: input.groupId,
+      notification,
+    },
+    { scope: "coin", groupId: input.groupId, added },
+  );
+}
 
 export const addCoins = async (
   context: { db: DB; dbUser: { id: string } },
   input: CoinTransactionInput,
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transaction = await context.db.transaction(async (tx) => {
     const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     // Verify group exists and belongs to the trip
@@ -73,13 +103,19 @@ export const addCoins = async (
 
     return transaction;
   });
+
+  // Sent after the transaction commits so a slow Expo round-trip never holds a
+  // database transaction open.
+  await notifyCoinChange(context, input, transaction.group.name, true);
+
+  return transaction;
 };
 
 export const removeCoins = async (
   context: { db: DB; dbUser: { id: string } },
   input: CoinTransactionInput,
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transaction = await context.db.transaction(async (tx) => {
     const _previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     // Lock the group row for update to prevent race conditions
@@ -137,4 +173,8 @@ export const removeCoins = async (
 
     return transaction;
   });
+
+  await notifyCoinChange(context, input, transaction.group.name, false);
+
+  return transaction;
 };
