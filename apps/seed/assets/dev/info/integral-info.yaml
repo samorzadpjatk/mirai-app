@@ -17,12 +17,12 @@ resources:
     sortOrder: 0
 
   # Zdjęcie ośrodka Kacze Stawy w Łebie — tło kafelka z mapą (kwadrat,
-  # renderowany z opacity 0.4).
-  # TODO(integral): plik `kacze-stawy.png` musi dostarczyć organizator.
-  # Do czasu wgrania kafelek renderuje się bez tła.
+  # renderowany z opacity 0.4). Zdjęcie lotnicze ośrodka, dostarczone przez
+  # organizatora; przekodowane do JPEG (1000x750, 358 KB) zamiast PNG 1,6 MB,
+  # bo kafelek i tak renderuje się w ~180 pt.
   - type: map_bg_image
     label: "Kacze Stawy"
-    storagePath: "images/trips/integral/kacze-stawy.png"
+    storagePath: "images/trips/integral/kacze-stawy.jpg"
     sortOrder: 1
 
   - type: interactive_map
