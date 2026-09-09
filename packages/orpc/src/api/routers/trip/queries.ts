@@ -1,4 +1,5 @@
 import { buildParticipantCountMap, calculatePagination } from "@mirai-app/common/groups";
+import { mergeTripResourceFragments } from "@mirai-app/common/tripInfo";
 import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/common/trips";
 import { type DB, tripParticipants, trips } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
@@ -276,9 +277,14 @@ export const getResources = async (
     }),
   ]);
 
-  const resources = [...links, ...files, ...texts, ...icons]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((resource) => toClientTripResource(resource));
+  // One logical resource is stored as up to four rows, one per table that can
+  // hold part of its payload, so the fragments are recombined here before they
+  // reach the client.
+  const resources = mergeTripResourceFragments(
+    [...links, ...files, ...texts, ...icons]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((resource) => toClientTripResource(resource)),
+  );
 
   const insurance = await context.db.query.tripInsurances.findFirst({
     where: matchTripInsuranceByTripId,

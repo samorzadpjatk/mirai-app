@@ -320,4 +320,90 @@ describe("trip router — PGLite integration", () => {
     expect(result.insurance).toBeDefined();
     expect(result.insurance.steps.map((s) => s.title)).toEqual(["Find policy", "Call provider"]);
   });
+
+  it("getResources recombines the rows that make up one logical resource", async () => {
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, "trip-1", "Resource Trip");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1");
+
+    // The seeder writes one row per table that can store part of a resource,
+    // all sharing the same type, label and sortOrder.
+    await testDb.db.insert(tripResourceFiles).values({
+      id: "res-file",
+      tripId: "trip-1",
+      label: "Przewodnik uczestnika",
+      type: "infopack",
+      storagePath: "public/integral/guide.pdf",
+      fileName: "guide",
+      publicUrl: "https://cdn.example.com/guide.pdf",
+      sortOrder: 3,
+      createdAt: now(),
+      updatedAt: now(),
+    });
+    await testDb.db.insert(tripResourceIcons).values([
+      {
+        id: "res-icon",
+        tripId: "trip-1",
+        label: "Przewodnik uczestnika",
+        type: "infopack",
+        iconName: "book",
+        sortOrder: 3,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "res-icon-sos",
+        tripId: "trip-1",
+        label: "SOS",
+        type: "sos",
+        iconName: "alert-circle",
+        sortOrder: 5,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+    ]);
+    await testDb.db.insert(tripResourceLinks).values({
+      id: "res-link",
+      tripId: "trip-1",
+      label: "SOS",
+      type: "sos",
+      url: "",
+      description: "Dzwoń na 112.",
+      sortOrder: 5,
+      createdAt: now(),
+      updatedAt: now(),
+    });
+    await testDb.db.insert(tripResourceTexts).values({
+      id: "res-text",
+      tripId: "trip-1",
+      label: "SOS",
+      type: "sos",
+      value: "112",
+      sortOrder: 5,
+      createdAt: now(),
+      updatedAt: now(),
+    });
+
+    const result = await getResources(
+      { db: testDb.db, dbUser: { id: "user-1" } },
+      { tripId: "trip-1" },
+    );
+
+    expect(result.resources).toHaveLength(2);
+    expect(result.resources[0]).toMatchObject({
+      type: "infopack",
+      label: "Przewodnik uczestnika",
+      storagePath: "public/integral/guide.pdf",
+      fileName: "guide",
+      publicUrl: "https://cdn.example.com/guide.pdf",
+      iconName: "book",
+    });
+    expect(result.resources[1]).toMatchObject({
+      type: "sos",
+      label: "SOS",
+      description: "Dzwoń na 112.",
+      value: "112",
+      iconName: "alert-circle",
+    });
+  });
 });
