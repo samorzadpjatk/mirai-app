@@ -23,7 +23,7 @@ export interface NotifyGroupParams {
  * `notifications` and `notification_pushes` but never talks to Expo, so the
  * push has to be dispatched explicitly.
  */
-export async function notifyGroupMembers({
+async function notifyGroupMembers({
   db,
   actorId,
   tripId,

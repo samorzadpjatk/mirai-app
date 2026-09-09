@@ -10,10 +10,10 @@ import { REALTIME_CHANNEL_STATES } from "@mirai-app/supabase";
 export const LOCATION_REALTIME_TABLE = "locations";
 
 /** Physical column backing `locations.userId`. */
-export const LOCATION_REALTIME_USER_COLUMN = "user_id";
+const LOCATION_REALTIME_USER_COLUMN = "user_id";
 
 /** How long we wait for the websocket join handshake before giving up. */
-export const CHANNEL_SUBSCRIBE_TIMEOUT_MS = 10_000;
+const CHANNEL_SUBSCRIBE_TIMEOUT_MS = 10_000;
 
 const SUBSCRIBE_STATUS_SUBSCRIBED = "SUBSCRIBED";
 const SUBSCRIBE_FAILURE_STATUSES = new Set(["TIMED_OUT", "CLOSED", "CHANNEL_ERROR"]);
