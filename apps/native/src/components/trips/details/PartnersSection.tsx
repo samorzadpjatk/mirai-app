@@ -53,9 +53,12 @@ export function toPartners(tripSponsors: TripDetailTripSponsor[]): Partner[] {
         name: sponsor.name,
         logoPath: sponsor.logoPath,
         description: sponsor.description,
-        height: tripSponsor.display.height,
-        offsetX: tripSponsor.display.offsetX,
-        offsetY: tripSponsor.display.offsetY,
+        // Defensive: a trip coming from the list query carries no per-trip layout.
+        // Falling back keeps the tile rendering at its default size instead of
+        // taking the whole screen down.
+        height: tripSponsor.display?.height ?? null,
+        offsetX: tripSponsor.display?.offsetX ?? null,
+        offsetY: tripSponsor.display?.offsetY ?? null,
       };
     })
     .filter((partner): partner is Partner => partner !== null);

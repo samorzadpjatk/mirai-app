@@ -111,6 +111,24 @@ describe("toPartners", () => {
     expect(partner).toMatchObject({ height: 0, offsetX: 0, offsetY: 0 });
   });
 
+  // Regression: `trip.getAll` shapes `tripSponsors` without `display` (the list
+  // query never fetches trip_sponsor_display), so a list-shaped trip reaching this
+  // mapper used to throw "Cannot read property 'height' of undefined" and take the
+  // whole trip details screen down with a red render error.
+  it("survives a sponsor entry that carries no display at all", () => {
+    const withoutDisplay = buildTripSponsor();
+    // biome-ignore lint/performance/noDelete: reproduces the wire shape exactly
+    delete (withoutDisplay as { display?: unknown }).display;
+
+    expect(() => toPartners([withoutDisplay])).not.toThrow();
+    expect(toPartners([withoutDisplay])[0]).toMatchObject({
+      id: "netcompany",
+      height: null,
+      offsetX: null,
+      offsetY: null,
+    });
+  });
+
   it("drops entries whose sponsor could not be resolved", () => {
     expect(toPartners([buildTripSponsor({ sponsor: null })])).toEqual([]);
   });
