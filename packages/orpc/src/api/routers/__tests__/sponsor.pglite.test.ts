@@ -434,6 +434,82 @@ describe("sponsor router — PGLite integration", () => {
       expect(displayRows).toHaveLength(0);
     });
 
+    // Regression: create used to upsert trip_sponsor_display unconditionally, so
+    // "add this sponsor to this trip with the default layout" built an empty
+    // `set` and blew up with a raw Drizzle Error("No values to set") — after the
+    // sponsor and the association had already been written.
+    it("create with a tripId but no display settings associates the sponsor and skips the display row", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const result = await create(
+        { db: testDb.db },
+        {
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+          isActive: true,
+          tripId: "trip-1",
+        },
+      );
+
+      expect(result.display).toBeNull();
+
+      const visible = await getByTripId({ db: testDb.db }, { tripId: "trip-1" });
+      expect(visible.map((s) => s.id)).toEqual([result.id]);
+
+      const displayRows = await testDb.db.select().from(tripSponsorDisplay);
+      expect(displayRows).toHaveLength(0);
+    });
+
+    // The default layout must stay reachable: creating the same sponsor twice
+    // used to be the only way out of the crash above, and it duplicated rows.
+    it("create with a tripId but no display settings can be called twice without leftovers", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const input = {
+        name: "Netcompany",
+        description: "Partner",
+        logoPath: "images/sponsors/netcompany.png",
+        isActive: true,
+        tripId: "trip-1",
+      };
+
+      const first = await create({ db: testDb.db }, input);
+      const second = await create({ db: testDb.db }, { ...input, name: "Netcompany PL" });
+
+      expect(second.id).not.toBe(first.id);
+
+      const associations = await testDb.db
+        .select()
+        .from(tripSponsors)
+        .where(eq(tripSponsors.tripId, "trip-1"));
+      expect(associations).toHaveLength(2);
+    });
+
+    it("create rolls the sponsor and the association back when the display write fails", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      await expect(
+        create(
+          { db: testDb.db },
+          {
+            name: "Netcompany",
+            description: "Partner",
+            logoPath: "images/sponsors/netcompany.png",
+            isActive: true,
+            tripId: "trip-1",
+            // Out of range for a Postgres `integer`, so the display insert fails
+            // after the sponsor and the association have been written.
+            height: 2_147_483_648,
+          },
+        ),
+      ).rejects.toThrow();
+
+      expect(await testDb.db.select().from(sponsors)).toHaveLength(0);
+      expect(await testDb.db.select().from(tripSponsors)).toHaveLength(0);
+      expect(await testDb.db.select().from(tripSponsorDisplay)).toHaveLength(0);
+    });
+
     it("update persists height and offsets to trip_sponsor_display", async () => {
       await seedTrip("trip-1", "Summer Camp");
       await seedSponsor("sponsor-1", "Netcompany", true);

@@ -1,8 +1,11 @@
-import type { TripSponsorDisplay } from "@mirai-app/db";
+import type { DB, TransactionDB, TripSponsorDisplay } from "@mirai-app/db";
 import { sponsors, tripSponsorDisplay, tripSponsors } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import type { SponsorContext } from "./queries";
+
+/** Accepts both the pooled client and a transaction handle. */
+type SponsorDb = DB | TransactionDB;
 
 /**
  * Per-trip logo layout. Lives on `trip_sponsor_display` since migration
@@ -28,8 +31,8 @@ const assertTripIdForDisplay = (input: SponsorDisplayInput): void => {
   }
 };
 
-const requireTrip = async (context: SponsorContext, tripId: string): Promise<void> => {
-  const trip = await context.db.query.trips.findFirst({
+const requireTrip = async (db: SponsorDb, tripId: string): Promise<void> => {
+  const trip = await db.query.trips.findFirst({
     where: (t, { eq }) => eq(t.id, tripId),
   });
   if (!trip) {
@@ -38,23 +41,34 @@ const requireTrip = async (context: SponsorContext, tripId: string): Promise<voi
 };
 
 /**
- * Upserts the per-trip logo layout. Only the fields the caller actually sent are
- * overwritten on conflict, so a partial update never clobbers the other offsets.
+ * Upserts the per-trip logo layout, when the caller actually sent some of it.
+ * Only the fields that were sent are overwritten on conflict, so a partial
+ * update never clobbers the other offsets.
+ *
+ * Returns null when there is nothing to save: a trip sponsor with no
+ * `trip_sponsor_display` row reads back as the default layout, and an empty
+ * `set` would make Drizzle throw a raw `Error("No values to set")`. Keeping that
+ * check here rather than at each call site means no caller can reintroduce it.
  */
-const upsertSponsorDisplay = async (
-  context: SponsorContext,
+const saveSponsorDisplay = async (
+  db: SponsorDb,
   sponsorId: string,
-  input: SponsorDisplayInput & { tripId: string },
-): Promise<TripSponsorDisplay> => {
+  input: SponsorDisplayInput,
+): Promise<TripSponsorDisplay | null> => {
+  const { tripId } = input;
+  if (!tripId || !hasDisplayValues(input)) {
+    return null;
+  }
+
   const set: Partial<Pick<TripSponsorDisplay, "height" | "offsetX" | "offsetY">> = {};
   if (input.height !== undefined) set.height = input.height;
   if (input.offsetX !== undefined) set.offsetX = input.offsetX;
   if (input.offsetY !== undefined) set.offsetY = input.offsetY;
 
-  const [display] = await context.db
+  const [display] = await db
     .insert(tripSponsorDisplay)
     .values({
-      tripId: input.tripId,
+      tripId,
       sponsorId,
       height: input.height ?? 0,
       offsetX: input.offsetX ?? 0,
@@ -87,33 +101,38 @@ export const create = async (
   const { tripId, height, offsetX, offsetY, ...sponsorData } = input;
   assertTripIdForDisplay(input);
 
-  if (tripId) {
-    await requireTrip(context, tripId);
-  }
+  // The sponsor row, the trip association and the layout are one unit of work:
+  // without a transaction a failure half way through leaves an orphaned sponsor
+  // behind, and the retry then trips over the association that did land.
+  return context.db.transaction(async (tx) => {
+    if (tripId) {
+      await requireTrip(tx, tripId);
+    }
 
-  const [sponsor] = await context.db.insert(sponsors).values(sponsorData).returning();
+    const [sponsor] = await tx.insert(sponsors).values(sponsorData).returning();
 
-  if (!sponsor) {
-    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create sponsor" });
-  }
+    if (!sponsor) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create sponsor" });
+    }
 
-  if (!tripId) {
-    return { ...sponsor, display: null };
-  }
+    if (!tripId) {
+      return { ...sponsor, display: null };
+    }
 
-  await context.db
-    .insert(tripSponsors)
-    .values({ tripId, sponsorId: sponsor.id })
-    .onConflictDoNothing({ target: [tripSponsors.tripId, tripSponsors.sponsorId] });
+    await tx
+      .insert(tripSponsors)
+      .values({ tripId, sponsorId: sponsor.id })
+      .onConflictDoNothing({ target: [tripSponsors.tripId, tripSponsors.sponsorId] });
 
-  const display = await upsertSponsorDisplay(context, sponsor.id, {
-    tripId,
-    height,
-    offsetX,
-    offsetY,
+    const display = await saveSponsorDisplay(tx, sponsor.id, {
+      tripId,
+      height,
+      offsetX,
+      offsetY,
+    });
+
+    return { ...sponsor, display };
   });
-
-  return { ...sponsor, display };
 };
 
 export const update = async (
@@ -137,7 +156,7 @@ export const update = async (
   }
 
   if (tripId) {
-    await requireTrip(context, tripId);
+    await requireTrip(context.db, tripId);
   }
 
   let updated = sponsor;
@@ -153,10 +172,7 @@ export const update = async (
     updated = row;
   }
 
-  const display =
-    tripId && hasDisplayValues(input)
-      ? await upsertSponsorDisplay(context, id, { tripId, height, offsetX, offsetY })
-      : null;
+  const display = await saveSponsorDisplay(context.db, id, { tripId, height, offsetX, offsetY });
 
   return { ...updated, display };
 };
