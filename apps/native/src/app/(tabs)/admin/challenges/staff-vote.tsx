@@ -12,11 +12,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
 import { DeckBackground } from "~/components/common/DeckBackground";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
-import { type VotingSubmission, useStaffVoting } from "~/hooks/admin/useStaffVoting";
+import { SubmissionMediaCard } from "~/components/voting/SubmissionMediaCard";
+import { useStaffVoting } from "~/hooks/admin/useStaffVoting";
+import { buildVotingDeck } from "~/hooks/voting/useVotingDeck";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
 
@@ -95,19 +96,10 @@ export default function AdminChallengeStaffVotingScreen() {
     });
   };
 
-  const votingSubmissions: VotingSubmission[] = useMemo(() => {
-    const raw = submissionsData ?? [];
-    return raw
-      .filter((submission) => submission.status !== "REJECTED")
-      .filter((submission) => Boolean(submission.imageIds[0]))
-      .map((submission) => ({
-        id: submission.id,
-        groupId: submission.groupId,
-        groupName: submission.group.name,
-        imagePath: submission.imageIds[0] ?? "",
-        createdAt: submission.createdAt,
-      }));
-  }, [submissionsData]);
+  // Media agnostic: judged staff challenges accept every submission type, so filtering
+  // on the first image dropped video and text submissions out of the deck and left the
+  // screen spinning forever.
+  const votingSubmissions = useMemo(() => buildVotingDeck(submissionsData), [submissionsData]);
 
   const requiredVotePositions = Math.max(judgedStaffProgress?.requiredPositions ?? 0, 0);
   const myVotePositions = useMemo(
@@ -128,15 +120,12 @@ export default function AdminChallengeStaffVotingScreen() {
     judgedStaffProgressError,
     challenge,
   });
-  const submissionEndTimestamp = challenge?.endTime ? new Date(challenge.endTime).getTime() : null;
-  const isSubmissionPhaseEnded =
-    submissionEndTimestamp !== null &&
-    Number.isFinite(submissionEndTimestamp) &&
-    submissionEndTimestamp <= new Date().getTime();
+  // A challenge with no end time has no submission phase to wait for, so staff voting
+  // can be force ended right away instead of being stuck forever.
   const canForceEnd =
     challenge?.status !== "COMPLETED" &&
     challenge?.status !== "CANCELLED" &&
-    isSubmissionPhaseEnded;
+    voting.isSubmissionPhaseEnded;
 
   useEffect(() => {
     if (!challengeId || !tripId) return;
@@ -349,13 +338,13 @@ export default function AdminChallengeStaffVotingScreen() {
               }
               return (
                 <View style={styles.pairsWrap}>
-                  <SubmissionImageCard
+                  <SubmissionMediaCard
                     submission={currentLeft}
                     title="Pick this"
                     subtitle="Tap to select winner"
                     onPress={() => voting.handlePickWinner(currentLeft.id)}
                   />
-                  <SubmissionImageCard
+                  <SubmissionMediaCard
                     submission={currentRight}
                     title="Pick this"
                     subtitle="Tap to select winner"
@@ -381,7 +370,7 @@ export default function AdminChallengeStaffVotingScreen() {
             ) : null}
             <View style={styles.confirmList}>
               {voting.finalTopThree.map((submission, index) => (
-                <SubmissionImageCard
+                <SubmissionMediaCard
                   key={`${submission.id}-${index + 1}`}
                   submission={submission}
                   title={`#${index + 1}`}
