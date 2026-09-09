@@ -191,6 +191,43 @@ export const getById = async (
   return buildTripDetail(trip, context.supabase, context.db);
 };
 
+/**
+ * Minimal per-trip theme lookup.
+ *
+ * The root `TripThemeProvider` only reads `trip.theme`, so it must not pay for
+ * `getByIdFull` (trip + relations + groups + challenges + sponsors + a page of feed
+ * activities) on every cold start. Participation is enforced exactly as in `getById`.
+ */
+export const getTheme = async (
+  context: {
+    db: DB;
+    dbUser: { id: string };
+  },
+  input: { id: string },
+): Promise<{ theme: string }> => {
+  const isParticipant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq: equals, and: both }) =>
+      both(equals(tp.userId, context.dbUser.id), equals(tp.tripId, input.id)),
+    columns: { tripId: true },
+  });
+
+  if (!isParticipant) {
+    throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
+  }
+
+  const [row] = await context.db
+    .select({ theme: trips.theme })
+    .from(trips)
+    .where(eq(trips.id, input.id))
+    .limit(1);
+
+  if (!row) {
+    throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
+  }
+
+  return { theme: row.theme ?? "DEFAULT" };
+};
+
 export const getByIdFull = async (
   context: {
     db: DB;

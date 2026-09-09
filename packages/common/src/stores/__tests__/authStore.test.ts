@@ -18,6 +18,8 @@ describe("Auth Store", () => {
     authStore.setState({
       user: null,
       session: null,
+      isSessionLoading: true,
+      isUserLoading: false,
       isLoading: true,
       isAuthenticated: false,
     });
@@ -340,6 +342,107 @@ describe("Auth Store", () => {
       const state = authStore.getState();
       expect(state.session).toEqual(mockSession);
       expect(state.user).toBeNull();
+      expect(state.isLoading).toBe(false);
+    });
+  });
+
+  describe("Session vs user loading phases", () => {
+    const mockUser: AuthUser = {
+      id: "user-1",
+      authUserId: "auth-1",
+      email: "test@example.com",
+      firstName: "John",
+      lastName: "Doe",
+      name: "John Doe",
+      emailVerified: undefined,
+      role: "USER",
+      hasName: true,
+      hasEmail: true,
+      isEmailVerified: false,
+    };
+
+    const mockSession: SupabaseSession = {
+      user: { id: "auth-1", email: "test@example.com" },
+      access_token: "token",
+    };
+
+    it("starts with the session phase pending and the user phase idle", () => {
+      const state = authStore.getState();
+      expect(state.isSessionLoading).toBe(true);
+      expect(state.isUserLoading).toBe(false);
+      expect(state.isLoading).toBe(true);
+    });
+
+    it("publishes the session before the user fetch resolves", async () => {
+      let resolveUser: ((user: AuthUser | null) => void) | null = null;
+      const pendingUser = new Promise<AuthUser | null>((resolve) => {
+        resolveUser = resolve;
+      });
+
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      authStore.getState().initialize({
+        client: mockClient,
+        onUserFetch: vi.fn().mockReturnValue(pendingUser),
+      });
+
+      await flushPromises();
+
+      // The navigation tree can already mount here: the session is known even though
+      // the (networked) user profile has not arrived.
+      const pending = authStore.getState();
+      expect(pending.session).toEqual(mockSession);
+      expect(pending.isSessionLoading).toBe(false);
+      expect(pending.isUserLoading).toBe(true);
+      expect(pending.isLoading).toBe(true);
+      expect(pending.user).toBeNull();
+
+      (resolveUser as unknown as (user: AuthUser | null) => void)(mockUser);
+      await flushPromises();
+
+      const settled = authStore.getState();
+      expect(settled.user).toEqual(mockUser);
+      expect(settled.isSessionLoading).toBe(false);
+      expect(settled.isUserLoading).toBe(false);
+      expect(settled.isLoading).toBe(false);
+    });
+
+    it("clears the session phase immediately when there is no session", async () => {
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: null } });
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      authStore.getState().initialize({ client: mockClient, onUserFetch: vi.fn() });
+      await flushPromises();
+
+      const state = authStore.getState();
+      expect(state.isSessionLoading).toBe(false);
+      expect(state.isUserLoading).toBe(false);
+      expect(state.isLoading).toBe(false);
+    });
+
+    it("keeps isLoading equal to the disjunction of both phases", async () => {
+      const mockClient = createMockSupabaseClient();
+      mockClient.auth.getSession.mockResolvedValue({ data: { session: mockSession } });
+      mockClient.auth.onAuthStateChange.mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      });
+
+      authStore.getState().initialize({
+        client: mockClient,
+        onUserFetch: vi.fn().mockRejectedValue(new Error("boom")),
+      });
+
+      await flushPromises();
+
+      const state = authStore.getState();
+      expect(state.isLoading).toBe(state.isSessionLoading || state.isUserLoading);
       expect(state.isLoading).toBe(false);
     });
   });
