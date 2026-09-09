@@ -4,6 +4,7 @@
 **Gałąź:** `chore/video-storage-audit`
 **Zakres:** wyłącznie audyt. Ten dokument nie zmienia żadnego kodu aplikacji.
 **Data audytu:** wrzesień 2026
+**Pomiar na produkcji:** 2026-09-09 21:23 UTC (sekcja 6.3)
 **Stan repozytorium:** `main` @ `b3a5a9ae`
 
 ---
@@ -38,16 +39,25 @@ Dodatkowo: **usunięcie zgłoszenia nie usuwa pliku ze Storage**, a `docs/conven
 nie definiuje żadnej polityki dla `challenge_submissions` ani dla obiektów Storage. Zużycie
 dysku rośnie więc monotonicznie i nic go nie sprząta.
 
-**Rekomendacja skrótowo:** patrz sekcja 7. Warunkowe „tak", ale dopiero po zmierzeniu
-wolnego miejsca (sekcja 6) i po wykonaniu minimum z sekcji 5.1.
+**Pomiar dysku wykonano** 2026-09-09 na hoście produkcyjnym (sekcja 6.3): **81 GB
+wolnego ze 116 GB**, 90 % wolnych i-węzłów, bucket `videos` **pusty — wideo nigdy nie
+było używane na produkcji**. Cała aplikacja zajmuje dziś 229 MB w Storage i rośnie
+o 10 MB miesięcznie.
+
+**Rekomendacja skrótowo:** **tak dla wideo — miejsce nie jest przeszkodą, przeszkodą
+jest kod.** Prognozowany szczyt zużycia wyjazdu to około 6,5 GiB, czyli 8 % wolnego
+miejsca. Warunkiem włączenia pozostaje wyłącznie wykonanie minimum z sekcji 5.1 oraz
+M1–M3 z 5.2, przede wszystkim odtwarzacza dla uczestnika (P1) i talii głosowania,
+która nie wyrzuca zgłoszeń wideo (P2). Pełne uzasadnienie w sekcji 7.
 
 ---
 
 ## 2. Metoda i ograniczenia
 
-Audyt jest oparty wyłącznie na lekturze kodu w tym repozytorium. **Nie było i nie ma
-dostępu do serwera produkcyjnego** — nie nawiązywano połączenia VPN ani SSH. Wszystkie
-liczby dotyczące faktycznego zużycia dysku muszą zostać zmierzone przez operatora;
+Część opisowa audytu jest oparta wyłącznie na lekturze kodu w tym repozytorium;
+w trakcie jej powstawania nie było dostępu do serwera produkcyjnego. Pomiary z sekcji
+6.3 zostały wykonane później, 2026-09-09, przez operatora na hoście produkcyjnym, i to
+one — a nie założenia z kodu — są źródłem liczb w sekcjach 6.3, 6.4 i 7.1. Pozostałe
 gotowe komendy read-only znajdują się w sekcji 6.
 
 Weryfikowane pliki (ścieżki względem korzenia repo):
@@ -915,24 +925,66 @@ cd <KATALOG_DEPLOYU>
 
 ### 6.3 Co wpisać z powrotem do tego dokumentu
 
-Po pomiarze uzupełnić poniższą tabelę i dołączyć do issue #15:
+**Pomiar wykonany 2026-09-09 21:23 UTC** na `docker.samorzad.pja.edu.pl`.
 
 | Metryka | Wartość | Źródło |
 | --- | --- | --- |
-| Rozmiar partycji z `volumes/` | | 6.2 pkt 2 |
-| Wolne miejsce (GiB) | | 6.2 pkt 2 |
-| Wolne miejsce (%) | | 6.2 pkt 2 |
-| Wolne i-węzły (%) | | 6.2 pkt 3 |
-| `volumes/minio` | | 6.2 pkt 4 |
-| `volumes/db/data` | | 6.2 pkt 4 |
-| Bucket `images` — obiekty / bajty | | 6.1 B |
-| Bucket `videos` — obiekty / bajty | | 6.1 B |
-| Największy plik wideo | | 6.1 D |
-| Mediana rozmiaru wideo | | 6.1 D |
-| Osierocone wideo — sztuk / bajtów | | 6.1 E |
-| Przyrost w 30 dni (GiB) | | 6.2 pkt 6 |
-| Buckety faktycznie istniejące | | 6.1 A |
-| Polityki RLS na `storage.objects` | | 6.1 G |
+| Rozmiar partycji z `volumes/` | 116 GB (`/dev/mapper/ubuntu--vg-ubuntu--lv`, montowana na `/`) | 6.2 pkt 2 |
+| Wolne miejsce | **81 GB** | 6.2 pkt 2 |
+| Zajęte | 31 GB (28 %) | 6.2 pkt 2 |
+| Wolne i-węzły | 6 945 258 z 7 708 672 (90 % wolnych) | 6.2 pkt 3 |
+| `volumes/minio` | 229 MB | 6.2 pkt 4 |
+| `volumes/db` | 60 KB na hoście — **patrz sprostowanie 6.4** | 6.2 pkt 4 |
+| Prefiks `stub/images` | 209 MB | 6.2 pkt 5 |
+| Prefiks `stub/files-public` | 20 MB | 6.2 pkt 5 |
+| Bucket `images` | 207 obiektów, 191 MB, największy 5959 kB | 6.1 B |
+| Bucket `files-public` | 9 obiektów, 14 MB, największy 3827 kB | 6.1 B |
+| Bucket `videos` | **0 obiektów, 0 bajtów** | 6.1 B |
+| Największy plik wideo | brak — żadnego wideo nigdy nie wgrano | 6.1 D |
+| Mediana rozmiaru wideo | brak | 6.1 D |
+| Osierocone wideo | brak (bucket pusty) | 6.1 E |
+| Przyrost w 30 dni | 0,01 GiB (81 plików) | 6.2 pkt 6 |
+| Buckety faktycznie istniejące | `files-public` (publiczny), `images`, `videos` | 6.1 A |
+| `file_size_limit` per bucket | **NULL na wszystkich trzech** | 6.1 A |
+| `allowed_mime_types` per bucket | **NULL na wszystkich trzech** | 6.1 A |
+| Obrazy Dockera | 21,24 GB, z czego 13,69 GB do odzyskania (64 %) | 6.2 pkt 7 |
+| Wolumeny nazwane Dockera | 12 sztuk, 504,9 MB | 6.2 pkt 7 |
+
+### 6.4 Co pomiar zmienił w ustaleniach audytu
+
+**Sprostowanie do 6.0 — katalog danych PostgreSQL.** Sekcja 6.0 zakładała za
+`docker-compose.prod.yml`, że dane bazy leżą w bind-mouncie `./volumes/db/data`.
+Pomiar pokazuje `./volumes/db` = 60 KB, przy 504,9 MB w wolumenach nazwanych Dockera.
+Baza najprawdopodobniej stoi na wolumenie nazwanym, nie na bind-mouncie. Nie zmienia
+to wagi ryzyka — wolumeny Dockera leżą pod `/var/lib/docker`, czyli na **tej samej
+partycji** `/`, którą dzielą z MinIO. Do potwierdzenia jednym poleceniem:
+
+```bash
+docker inspect supabase-db --format '{{json .Mounts}}' | python3 -m json.tool
+```
+
+**Potwierdzenie P4 z zaostrzeniem.** `file_size_limit` i `allowed_mime_types` są
+NULL na wszystkich trzech bucketach, więc M2 nie jest zrobione i jedynym limitem
+pozostaje globalne `FILE_SIZE_LIMIT: 52428800`. Największy obiekt w całym Storage
+ma 5959 kB, czyli 12 % tego limitu — nikt go nigdy nie dotknął i nie wiadomo
+empirycznie, jak zachowa się upload przy jego przekroczeniu.
+
+**Wideo nigdy nie było używane na produkcji.** Bucket `videos` ma zero obiektów.
+Włączenie wideo jest więc wprowadzeniem nowej funkcji, a nie naprawą używanej —
+nie ma danych zastanych, nie ma migracji, nie ma osieroconych plików do sprzątnięcia.
+Znosi to również pilność P8 jako problemu kosztowego: staje się on wymaganiem
+poprzedzającym włączenie, a nie długiem do spłacenia.
+
+**Skala dzisiejszego zużycia.** Cała aplikacja po latach działania zajmuje 229 MB
+w Storage i rośnie o 10 MB miesięcznie. Wideo zmieniłoby rząd wielkości tego zużycia,
+ale punktem odniesienia jest 81 GB wolnego, nie 229 MB obecnego.
+
+**Największy konsument dysku nie ma nic wspólnego z aplikacją.** Obrazy Dockera
+zajmują 21,24 GB, z czego 13,69 GB jest do odzyskania. To ponad dwukrotność
+najbardziej pesymistycznej prognozy zużycia wideo z 7.2. Gdyby kiedykolwiek
+zabrakło miejsca, `docker image prune -a` na nieużywanych obrazach jest pierwszą
+i najtańszą dźwignią — w odróżnieniu od `docker system prune`, przed którym
+sekcja 6 ostrzega.
 
 ---
 
@@ -940,7 +992,23 @@ Po pomiarze uzupełnić poniższą tabelę i dołączyć do issue #15:
 
 ### 7.1 Odpowiedź na pytanie „czy umożliwiamy wideo?"
 
-**Warunkowe TAK — ale nie w obecnym stanie kodu i nie przed pomiarem z sekcji 6.**
+**TAK — miejsce na dysku nie jest przeszkodą. Przeszkodą jest kod.**
+
+Pomiar z 2026-09-09 (sekcja 6.3) zamyka warunek pojemnościowy z 7.3. Wszystkie trzy
+progi są spełnione z dużym zapasem:
+
+| Warunek | Próg | Zmierzone | Wynik |
+| --- | --- | --- | --- |
+| 1. ≥ 3 × prognozowany szczyt wyjazdu | ≥ 19,5 GiB | 81 GB | spełniony, 4× zapasu |
+| 2. ≥ 25 % pojemności partycji | ≥ 29 GB | 81 GB (70 %) | spełniony |
+| 3. ≥ 50 GB bezwzględnie | ≥ 50 GB | 81 GB | spełniony |
+
+Do tego 90 % wolnych i-węzłów i 13,69 GB obrazów Dockera do odzyskania jako rezerwa
+awaryjna. Prognoza szczytu dla 20 grup i 10 wyzwań wideo przy limicie 25 MiB to
+około 6,5 GiB, czyli **8 % dostępnego miejsca**.
+
+Odpada więc jedyny argument, który mógł uzasadniać odpowiedź „nie". Zostają wyłącznie
+wady funkcjonalne — i te są blokujące same z siebie.
 
 Włączenie wideo dzisiaj, bez zmian, oznaczałoby wypuszczenie funkcji, która:
 
@@ -963,9 +1031,12 @@ byłaby „wideo przestało działać", tylko „aplikacja przestała działać 
 Bez M3 uczestnik nadal nie widzi własnego filmu; bez M2 nie ma limitu, którego serwer
 faktycznie pilnuje; bez M1 model uprawnień do bucketów jest nieokreślony.
 
-**Warunek 2 — pomiar.** Wykonana sekcja 6, tabela 6.3 wypełniona.
+**Warunek 2 — pomiar.** ✅ **Spełniony.** Sekcja 6 wykonana 2026-09-09,
+tabela 6.3 wypełniona.
 
-**Warunek 3 — próg wolnego miejsca.** Przyjmuję próg:
+**Warunek 3 — próg wolnego miejsca.** ✅ **Spełniony** (81 GB wolnego, patrz 7.1).
+Próg pozostaje w dokumencie jako reguła do ponownego sprawdzenia przed każdym
+kolejnym wyjazdem, bo bez zadania sprzątającego (P8) zużycie jest monotoniczne:
 
 > Wideo można włączyć, jeżeli na partycji zawierającej `volumes/`
 > **jednocześnie** spełnione są trzy warunki:
