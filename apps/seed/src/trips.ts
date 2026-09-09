@@ -50,8 +50,13 @@ export const seedTrip = async (
             `✗ Background upload failed for ${tripConfig.name}: ${uploadResult.error.message}`,
           );
         } else {
-          backgroundImagePath = storagePath;
-          logger.info(`✓ Uploaded background for ${tripConfig.name}: ${storagePath}`);
+          // Persist the bucket-qualified reference, not the object path. The
+          // backend resolves a reference by reading its first segment as a
+          // bucket name (storage/utils.ts resolveStoragePath), so a bare
+          // `trips/<key>/background.png` is rejected as an unsupported storage
+          // reference and the trip renders with no background at all.
+          backgroundImagePath = `${env.imageBucket}/${storagePath}`;
+          logger.info(`✓ Uploaded background for ${tripConfig.name}: ${backgroundImagePath}`);
         }
       }
     } catch (err: unknown) {
