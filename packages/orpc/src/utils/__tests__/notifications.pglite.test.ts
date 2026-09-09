@@ -261,6 +261,31 @@ describe("notifications — PGLite", () => {
       expect(result.success).toBe(true);
       expect(wrappedAttempt).toBe(2);
     });
+
+    it("rolls the notification row back when its audience cannot be written", async () => {
+      await seedUser(testDb.db, "admin-1");
+      await seedTrip(testDb.db, "trip-1", "Test Trip");
+
+      // Both inserts share one transaction, so a Realtime consumer can never
+      // see a notification whose audience is missing and mistake it for a
+      // broadcast to the whole trip.
+      await expect(
+        sendNotification({
+          db: testDb.db,
+          userId: "admin-1",
+          input: {
+            userIds: ["user-that-does-not-exist"],
+            title: "Test",
+            body: "Body",
+            url: "/alerts",
+            tripId: "trip-1",
+          },
+        }),
+      ).rejects.toThrow();
+
+      expect(await testDb.db.select().from(notifications)).toHaveLength(0);
+      expect(await testDb.db.select().from(notificationPushes)).toHaveLength(0);
+    });
   });
 
   describe("sendRankingUpdate", () => {

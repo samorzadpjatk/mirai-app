@@ -634,6 +634,83 @@ describe("sendMobileNotifications — PGLite", () => {
     expect(user2Push?.status).toBe("failed");
   });
 
+  it("claims its pushes before it talks to Expo, so a late dispatcher sends nothing", async () => {
+    await seedUser(testDb.db, "admin-1");
+    await seedUser(testDb.db, "user-1");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Test Group", "admin-1", "GRP01");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedPushSubscription(testDb.db, "sub-1", "user-1", "ExponentPushToken[test-token-1]");
+    await seedNotification(testDb.db, "notification-1", { tripId: "trip-1" });
+    await seedNotificationPush(testDb.db, "notification-1", "user-1", "pending");
+
+    const statusesWhenExpoWasCalled: string[] = [];
+    vi.mocked(executeWithRetry).mockImplementation(async <T>(fn: RetryFunction<T>): Promise<T> => {
+      const rows = await testDb.db
+        .select()
+        .from(notificationPushes)
+        .where(eq(notificationPushes.notificationId, "notification-1"));
+      statusesWhenExpoWasCalled.push(...rows.map((row) => row.status));
+      return await fn();
+    });
+
+    const first = await sendMobileNotifications(testDb.db, "notification-1");
+    expect(first.sent).toBe(1);
+
+    // A row still "pending" at this point is the duplicate-push bug: the
+    // Realtime worker would read it as unsent and deliver the same push again.
+    expect(statusesWhenExpoWasCalled).toEqual(["sending"]);
+
+    const second = await sendMobileNotifications(testDb.db, "notification-1");
+    expect(second.sent).toBe(0);
+    expect(statusesWhenExpoWasCalled).toHaveLength(1);
+  });
+
+  it("skips a notification another dispatcher is already sending", async () => {
+    await seedUser(testDb.db, "admin-1");
+    await seedUser(testDb.db, "user-1");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Test Group", "admin-1", "GRP01");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedPushSubscription(testDb.db, "sub-1", "user-1", "ExponentPushToken[test-token-1]");
+    await seedNotification(testDb.db, "notification-1", { tripId: "trip-1" });
+    await seedNotificationPush(testDb.db, "notification-1", "user-1", "sending");
+
+    const result = await sendMobileNotifications(testDb.db, "notification-1");
+
+    expect(result.success).toBe(true);
+    expect(result.sent).toBe(0);
+    expect(result.total).toBe(1);
+    expect(executeWithRetry).not.toHaveBeenCalled();
+  });
+
+  it("writes down the audience it resolved for an implicitly addressed notification", async () => {
+    await seedUser(testDb.db, "admin-1");
+    await seedUser(testDb.db, "user-1");
+    await seedUser(testDb.db, "user-2");
+    await seedTrip(testDb.db, "trip-1", "Test Trip");
+    await seedGroup(testDb.db, "group-1", "trip-1", "Group A", "admin-1", "GRP01");
+    await seedGroup(testDb.db, "group-2", "trip-1", "Group B", "admin-1", "GRP02");
+    await seedParticipant(testDb.db, "tp-1", "user-1", "trip-1", "group-1");
+    await seedParticipant(testDb.db, "tp-2", "user-2", "trip-1", "group-2");
+    await seedPushSubscription(testDb.db, "sub-1", "user-1", "ExponentPushToken[test-token-1]");
+    await seedPushSubscription(testDb.db, "sub-2", "user-2", "ExponentPushToken[test-token-2]");
+    await seedNotification(testDb.db, "notification-1", {
+      tripId: "trip-1",
+      url: "/test?__audience=group&__groupId=group-1",
+    });
+
+    await sendMobileNotifications(testDb.db, "notification-1");
+
+    const pushes = await testDb.db
+      .select()
+      .from(notificationPushes)
+      .where(eq(notificationPushes.notificationId, "notification-1"));
+
+    expect(pushes.map((push) => push.targetUserId)).toEqual(["user-1"]);
+    expect(pushes[0]?.status).toBe("sent");
+  });
+
   it("should handle absolute URLs in notification", async () => {
     await seedUser(testDb.db, "admin-1");
     await seedUser(testDb.db, "user-1");

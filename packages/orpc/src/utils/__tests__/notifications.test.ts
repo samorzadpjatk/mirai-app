@@ -33,7 +33,12 @@ describe("sendNotification - pure unit branches", () => {
     const returning = vi.fn().mockResolvedValue([]);
     const values = vi.fn().mockReturnValue({ returning });
     const insert = vi.fn().mockReturnValue({ values });
-    const mockDb = { insert } as unknown as DB;
+    // The notification row and its audience are written in one transaction, so
+    // the double is a transaction handle rather than the connection itself.
+    const transaction = vi.fn(async (callback: (tx: { insert: typeof insert }) => unknown) =>
+      callback({ insert }),
+    );
+    const mockDb = { insert, transaction } as unknown as DB;
 
     await expect(
       sendNotification({
@@ -63,6 +68,7 @@ describe("sendNotification - pure unit branches", () => {
       }),
     ).rejects.toThrow("Failed to create notification");
 
+    expect(transaction).toHaveBeenCalled();
     expect(insert).toHaveBeenCalled();
     expect(values).toHaveBeenCalled();
     expect(returning).toHaveBeenCalled();
