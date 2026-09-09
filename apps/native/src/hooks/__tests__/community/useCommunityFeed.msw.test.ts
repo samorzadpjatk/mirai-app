@@ -3,7 +3,11 @@ import { act, waitFor } from "@testing-library/react-native";
 import { createCommunityFullHandler } from "../../../test-utils/msw/handlers";
 import { createORPCHandler, resetHandlers, server } from "../../../test-utils/msw/server";
 import { renderHookWithMSW } from "../../../test-utils/msw/test-wrapper";
-import { buildCommunityFeedQueryKey, useCommunityFeed } from "../../community/useCommunityFeed";
+import {
+  COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS,
+  buildCommunityFeedQueryKey,
+  useCommunityFeed,
+} from "../../community/useCommunityFeed";
 
 const baseActivity = {
   tripId: "trip-1",
@@ -368,6 +372,142 @@ describe("useCommunityFeed (MSW)", () => {
 
     expect(result.current.feedQuery.hasNextPage).toBe(true);
     expect(result.current.feedQuery.isFetchingNextPage).toBe(false);
+  });
+
+  describe("refreshFeed", () => {
+    it("should be a no-op when no trip is selected", () => {
+      const { result } = renderHookWithMSW(() =>
+        useCommunityFeed({ selectedTripId: null, selectedFilter: "all" }),
+      );
+
+      expect(result.current.refreshFeed()).toBe(false);
+    });
+
+    it("should not cancel the first load while it is still in flight", async () => {
+      let requestCount = 0;
+      let resolveFirstPage: (value: unknown) => void;
+
+      server.use(
+        createCommunityFullHandler(() => {
+          requestCount += 1;
+          return new Promise((resolve) => {
+            resolveFirstPage = resolve;
+          });
+        }),
+      );
+
+      const { result } = renderHookWithMSW(() =>
+        useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
+      );
+
+      // Wait until the request is actually in flight, but never resolved.
+      await waitFor(() => {
+        expect(requestCount).toBe(1);
+      });
+      expect(result.current.feedQuery.isLoading).toBe(true);
+
+      let refreshed = true;
+      act(() => {
+        refreshed = result.current.refreshFeed();
+      });
+
+      // invalidateQueries defaults to cancelRefetch: true, so refreshing here
+      // would abort the initial load and leave the screen empty.
+      expect(refreshed).toBe(false);
+
+      await act(async () => {
+        resolveFirstPage!(mockFeedPage);
+      });
+
+      await waitFor(() => {
+        expect(result.current.feedQuery.isLoading).toBe(false);
+      });
+
+      expect(requestCount).toBe(1);
+      expect(result.current.filteredActivities).toHaveLength(3);
+    });
+
+    it("should not refetch when the feed was loaded within the throttle window", async () => {
+      let requestCount = 0;
+      server.use(
+        createCommunityFullHandler(() => {
+          requestCount += 1;
+          return mockFeedPage;
+        }),
+      );
+
+      const { result } = renderHookWithMSW(() =>
+        useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.feedQuery.isLoading).toBe(false);
+      });
+      expect(requestCount).toBe(1);
+
+      let refreshed = true;
+      act(() => {
+        refreshed = result.current.refreshFeed();
+      });
+
+      expect(refreshed).toBe(false);
+      expect(requestCount).toBe(1);
+    });
+
+    it("should refetch when the cached feed is older than the throttle window", async () => {
+      let requestCount = 0;
+      server.use(
+        createCommunityFullHandler(() => {
+          requestCount += 1;
+          return mockFeedPage;
+        }),
+      );
+
+      const { result, queryClient } = renderHookWithMSW(() =>
+        useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.feedQuery.isLoading).toBe(false);
+      });
+      expect(requestCount).toBe(1);
+
+      const queryKey = buildCommunityFeedQueryKey("trip-1")!;
+      // Backdate the cache entry instead of waiting 30 real seconds.
+      act(() => {
+        queryClient.setQueryData(queryKey, (old: unknown) => old, {
+          updatedAt: Date.now() - (COMMUNITY_FEED_MIN_REFRESH_INTERVAL_MS + 1000),
+        });
+      });
+
+      let refreshed = false;
+      act(() => {
+        refreshed = result.current.refreshFeed();
+      });
+
+      expect(refreshed).toBe(true);
+      await waitFor(() => {
+        expect(requestCount).toBe(2);
+      });
+    });
+
+    it("should keep a stable identity across renders", async () => {
+      server.use(createCommunityFullHandler(() => mockFeedPage));
+
+      const { result, rerender } = renderHookWithMSW(() =>
+        useCommunityFeed({ selectedTripId: "trip-1", selectedFilter: "all" }),
+      );
+
+      const initialRefreshFeed = result.current.refreshFeed;
+
+      await waitFor(() => {
+        expect(result.current.feedQuery.isLoading).toBe(false);
+      });
+
+      rerender(undefined);
+
+      expect(result.current.refreshFeed).toBe(initialRefreshFeed);
+    });
   });
 
   it("should not apply optimistic update when selectedTripId is null", async () => {
