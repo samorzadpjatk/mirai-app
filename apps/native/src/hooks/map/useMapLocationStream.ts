@@ -1,8 +1,121 @@
 import { formatDisplayName } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
+import { useQuery } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useEffect, useMemo, useState } from "react";
 import { useLocationContext } from "~/stores/location";
+
+/**
+ * The realtime stream can drop (websocket loss, a failed Supabase Realtime join,
+ * a server restart). Polling the non-streaming query keeps the map populated
+ * instead of leaving the user with an empty map until they reopen the screen.
+ */
+export const FRIENDS_LOCATIONS_POLL_INTERVAL_MS = 15_000;
+
+export type MapLocationEntry = {
+  latitude: number;
+  longitude: number;
+  updatedAt: string | number | Date;
+};
+
+export type MapUserEntry = {
+  name?: string;
+  email?: string;
+  image?: string;
+  houseNumber?: string;
+};
+
+export interface FriendLocationSnapshot {
+  userId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  timestamp?: string | number | Date | null;
+  isSharingLocation?: boolean | null;
+  user?: {
+    id?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    image?: string | null;
+  } | null;
+}
+
+function toMillis(value: string | number | Date | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number") return value;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function isUsableSnapshot(friend: FriendLocationSnapshot): boolean {
+  return (
+    !!friend.userId &&
+    friend.isSharingLocation !== false &&
+    typeof friend.latitude === "number" &&
+    typeof friend.longitude === "number"
+  );
+}
+
+/**
+ * Fold polled friend locations into the stream-driven state. Entries already
+ * known from the stream are only replaced by strictly newer polled data, so the
+ * fallback never rewinds a live position. Returns `prev` unchanged when nothing
+ * moved, to avoid pointless re-renders.
+ */
+export function mergeFallbackLocations(
+  prev: Record<string, MapLocationEntry>,
+  friends: FriendLocationSnapshot[] | undefined,
+): Record<string, MapLocationEntry> {
+  if (!friends?.length) return prev;
+
+  const next = { ...prev };
+  let changed = false;
+
+  for (const friend of friends) {
+    if (!isUsableSnapshot(friend)) continue;
+    const userId = friend.userId as string;
+    const updatedAt = friend.timestamp ?? 0;
+    const existing = next[userId];
+    if (existing && toMillis(existing.updatedAt) >= toMillis(updatedAt)) continue;
+
+    next[userId] = {
+      latitude: friend.latitude as number,
+      longitude: friend.longitude as number,
+      updatedAt,
+    };
+    changed = true;
+  }
+
+  return changed ? next : prev;
+}
+
+/**
+ * Fill in display data for friends the stream has not described yet. Stream
+ * payloads win, because they carry freshly signed avatar URLs.
+ */
+export function mergeFallbackUsers(
+  prev: Record<string, MapUserEntry>,
+  friends: FriendLocationSnapshot[] | undefined,
+): Record<string, MapUserEntry> {
+  if (!friends?.length) return prev;
+
+  const next = { ...prev };
+  let changed = false;
+
+  for (const friend of friends) {
+    if (!isUsableSnapshot(friend)) continue;
+    const userId = friend.userId as string;
+    if (next[userId]) continue;
+
+    next[userId] = {
+      name: formatDisplayName(friend.user?.firstName, friend.user?.lastName) ?? undefined,
+      image: friend.user?.image ?? undefined,
+    };
+    changed = true;
+  }
+
+  return changed ? next : prev;
+}
 
 export function buildLocationUpdateData(location: {
   coords: { latitude: number; longitude: number };
@@ -116,6 +229,21 @@ export function useMapLocationStream(enabled: boolean) {
   >({});
 
   const connectionId = useMemo(() => Crypto.randomUUID(), []);
+
+  // Fallback: the already-registered non-streaming query keeps the map usable
+  // when the realtime stream is unavailable or drops mid-session.
+  const { data: friendsSnapshot } = useQuery({
+    ...orpc.location.getFriendsLocations.queryOptions({ input: {} }),
+    enabled: enabled && canViewOthersLocations,
+    refetchInterval: FRIENDS_LOCATIONS_POLL_INTERVAL_MS,
+  });
+
+  useEffect(() => {
+    if (!friendsSnapshot) return;
+    const friends = friendsSnapshot as FriendLocationSnapshot[];
+    setLocationsByUserId((prev) => mergeFallbackLocations(prev, friends));
+    setUsersData((prev) => mergeFallbackUsers(prev, friends));
+  }, [friendsSnapshot]);
 
   useEffect(() => {
     if (!enabled || !canViewOthersLocations) return;
