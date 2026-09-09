@@ -598,9 +598,13 @@ describe("reward router — Drizzle ORM PGLite integration", () => {
 });
 
 describe("reward/queries — getPurchaseHistory scoping", () => {
-  const historyContext = (userId: string) => ({
+  // In production `requireAuth` puts the whole user row on the context, so the
+  // caller's role is always present. The staff cases below must pass their real
+  // role: a context without one silently passes against the old role-branching
+  // implementation and proves nothing (issue #16).
+  const historyContext = (userId: string, role: "USER" | "ADMIN" | "MODERATOR" = "USER") => ({
     db: testDb.db,
-    dbUser: { id: userId },
+    dbUser: { id: userId, role },
   });
 
   beforeEach(async () => {
@@ -629,6 +633,15 @@ describe("reward/queries — getPurchaseHistory scoping", () => {
         firstName: "Ada",
         lastName: "Admin",
         role: "ADMIN",
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      {
+        id: "mod-b",
+        authUserId: "auth-mod-b",
+        firstName: "Mia",
+        lastName: "Mod",
+        role: "MODERATOR",
         createdAt: now(),
         updatedAt: now(),
       },
@@ -746,6 +759,15 @@ describe("reward/queries — getPurchaseHistory scoping", () => {
         createdAt: now(),
         updatedAt: now(),
       },
+      // The moderator travels with group B.
+      {
+        id: "tp-mod-b",
+        userId: "mod-b",
+        tripId: "trip-1",
+        groupId: "group-b",
+        createdAt: now(),
+        updatedAt: now(),
+      },
       {
         id: "tp-user-a-empty",
         userId: "user-a",
@@ -838,11 +860,27 @@ describe("reward/queries — getPurchaseHistory scoping", () => {
 
   it("scopes an ADMIN participant to their own group too", async () => {
     // Regression for issue #16: cross-group visibility is a property of the
-    // admin endpoint, never of the caller's role.
-    const result = await getPurchaseHistory(historyContext("admin-a"), { tripId: "trip-1" });
+    // admin endpoint, never of the caller's role. The context carries role
+    // "ADMIN" precisely so that the old `isStaff` shortcut would leak
+    // purchase-b here and fail this assertion.
+    const result = await getPurchaseHistory(historyContext("admin-a", "ADMIN"), {
+      tripId: "trip-1",
+    });
 
     expect(result.purchases.map((p) => p.id)).toEqual(["purchase-a"]);
     expect(result.purchases.every((p) => p.groupId === "group-a")).toBe(true);
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it("scopes a MODERATOR participant to their own group too", async () => {
+    // Same regression as above for the second staff role the old `isStaff`
+    // shortcut covered.
+    const result = await getPurchaseHistory(historyContext("mod-b", "MODERATOR"), {
+      tripId: "trip-1",
+    });
+
+    expect(result.purchases.map((p) => p.id)).toEqual(["purchase-b"]);
+    expect(result.purchases.every((p) => p.groupId === "group-b")).toBe(true);
     expect(result.pagination.total).toBe(1);
   });
 
@@ -856,6 +894,18 @@ describe("reward/queries — getPurchaseHistory scoping", () => {
     expect(result.pagination.hasMore).toBe(false);
   });
 
+  it("returns an empty page for a staff caller on a trip with no rewards", async () => {
+    // Issues #16 and #16b at once: the old code skipped the group lookup for
+    // staff and then collapsed the where clause to undefined, handing an admin
+    // every purchase in the database.
+    const result = await getPurchaseHistory(historyContext("admin-a", "ADMIN"), {
+      tripId: "trip-empty",
+    });
+
+    expect(result.purchases).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+  });
+
   it("rejects a caller who does not participate in the trip", async () => {
     await expect(
       getPurchaseHistory(historyContext("outsider"), { tripId: "trip-1" }),
@@ -864,13 +914,13 @@ describe("reward/queries — getPurchaseHistory scoping", () => {
 
   it("rejects an ADMIN who does not participate in the trip", async () => {
     await expect(
-      getPurchaseHistory(historyContext("admin-a"), { tripId: "trip-other" }),
+      getPurchaseHistory(historyContext("admin-a", "ADMIN"), { tripId: "trip-other" }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("rejects the pseudo trip id 'all' on the user-facing endpoint", async () => {
     await expect(
-      getPurchaseHistory(historyContext("admin-a"), { tripId: "all" }),
+      getPurchaseHistory(historyContext("admin-a", "ADMIN"), { tripId: "all" }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
