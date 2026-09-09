@@ -17,12 +17,13 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { AdminTripLoadError } from "~/components/admin/rewards/AdminTripLoadError";
 import { CachedImage } from "~/components/common/CachedImage";
 import { DeckBackground } from "~/components/common/DeckBackground";
 import { Skeleton } from "~/components/ui/Skeleton";
 import {
+  useAdminRewardPurchaseHistory,
   useAdminRewards,
-  useRewardPurchaseHistory,
   useUpdateRewardPurchaseStatus,
 } from "~/hooks/rewards";
 import { colors, spacing } from "~/styles";
@@ -120,7 +121,7 @@ export default function AdminRewardsPage() {
     fetchNextPage: fetchMorePurchases,
     isRefetching: isRefetchingPurchases,
     refetch: refetchPurchases,
-  } = useRewardPurchaseHistory(tripIdParam ?? "");
+  } = useAdminRewardPurchaseHistory(tripIdParam ?? "");
 
   const safePurchases = useMemo<AdminPurchaseListItem[]>(() => {
     if (!Array.isArray(purchasesData)) return [];
@@ -745,20 +746,7 @@ export default function AdminRewardsPage() {
               </Text>
             </View>
           ) : tripError ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
-              <Ionicons name="warning" size={48} color={colors.danger} />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
-                Trip {tripName ? `"${tripName}"` : "(selected)"} does not exist
-              </Text>
-              <Text
-                style={[
-                  commonStyles.textSecondary,
-                  { marginTop: 8, textAlign: "center", fontSize: 12, color: colors.gray500 },
-                ]}
-              >
-                Check if the correct trip was selected in the admin panel
-              </Text>
-            </View>
+            <AdminTripLoadError error={tripError} tripName={tripName} />
           ) : rewardsLoading ? (
             <Skeleton.Group style={{ flex: 1, padding: 16, gap: 12 }}>
               <Skeleton.Line count={1} height={20} width="40%" />
