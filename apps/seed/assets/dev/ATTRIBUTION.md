@@ -24,6 +24,14 @@ This file documents all Unsplash images used in the MIRAI seed assets for develo
 - **Unsplash Photo URL:** https://unsplash.com/photos/abstract-gradient-mesh-1620641788421
 - **Image URL:** https://images.unsplash.com/photo-1620641788421-7a1c342ea42e
 
+## Locally Generated Placeholders
+
+### netcompany.png (Partner Logo Placeholder)
+- **Source:** generated locally for this repository, not downloaded from a third party.
+- **Content:** flat grey box reading "PLACEHOLDER / netcompany.png / replace with the real partner logo".
+- **Note:** contains no Netcompany trademark or branding. Replace it with the logo supplied by the
+  partner before any demo or production seed run.
+
 ## Trip Background
 
 ### background.jpg (Saalbach Ski Resort)

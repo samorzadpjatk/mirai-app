@@ -5,6 +5,7 @@ import {
   challenges,
   sponsors,
   tripParticipants,
+  tripSponsorDisplay,
   tripSponsors,
   trips,
   users,
@@ -170,6 +171,44 @@ describe("trip.getByIdFull — PGLite integration", () => {
     expect(result.latestNews[0].title).toBe("News B");
     expect(result.latestNews[1].title).toBe("News A");
     expect(result.latestNews[0].admin).toBeDefined();
+  });
+
+  // Regression: seeded logo sizing lives in trip_sponsor_display and used to be
+  // dropped on the way to the trip details screen, which hardcoded nulls.
+  it("exposes the per-trip sponsor logo layout on tripSponsors", async () => {
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, TEST_TRIP_ID, "Winter Retreat", "Snow and cocoa");
+    await seedParticipant(testDb.db, "tp-1", "user-1", TEST_TRIP_ID);
+    await seedSponsor("sponsor-1", "Netcompany");
+    await seedTripSponsor("ts-1", TEST_TRIP_ID, "sponsor-1");
+    await testDb.db.insert(tripSponsorDisplay).values({
+      id: "tsd-1",
+      tripId: TEST_TRIP_ID,
+      sponsorId: "sponsor-1",
+      height: 22,
+      offsetX: 3,
+      offsetY: -5,
+    });
+
+    const result = await getByIdFull(buildContext("user-1"), { id: TEST_TRIP_ID });
+
+    expect(result.trip.tripSponsors[0]?.display).toEqual({
+      height: 22,
+      offsetX: 3,
+      offsetY: -5,
+    });
+  });
+
+  it("defaults the sponsor logo layout when no display row exists", async () => {
+    await seedUser(testDb.db, "user-1", "auth-1", "Alice", "Smith");
+    await seedTrip(testDb.db, TEST_TRIP_ID, "Winter Retreat", "Snow and cocoa");
+    await seedParticipant(testDb.db, "tp-1", "user-1", TEST_TRIP_ID);
+    await seedSponsor("sponsor-1", "Netcompany");
+    await seedTripSponsor("ts-1", TEST_TRIP_ID, "sponsor-1");
+
+    const result = await getByIdFull(buildContext("user-1"), { id: TEST_TRIP_ID });
+
+    expect(result.trip.tripSponsors[0]?.display).toEqual({ height: 0, offsetX: 0, offsetY: 0 });
   });
 
   it("returns empty consolidated sections when no groups, challenges, sponsors or news exist", async () => {
