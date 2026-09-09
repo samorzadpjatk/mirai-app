@@ -4,6 +4,9 @@ import { getServiceORPCClient } from "@mirai-app/orpc/client";
 import { createSupabaseClient as createClient } from "@mirai-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
 
+/** Realtime source table: `public.notifications` (see packages/db/src/schema/notifications.ts). */
+export const NOTIFICATIONS_TABLE = "notifications";
+
 interface NotificationRow {
   id: string;
 }
@@ -59,11 +62,14 @@ export function main() {
     }
   };
 
+  // The Drizzle table is `public.notifications` — the legacy Prisma table
+  // `public.Notification` was dropped by 20260617000000_drop_legacy_prisma_tables,
+  // so subscribing to it delivered exactly zero events.
   const channel = supabase
-    .channel("public:Notification:insert")
+    .channel("public:notifications:insert")
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "Notification" },
+      { event: "INSERT", schema: "public", table: NOTIFICATIONS_TABLE },
       (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
         // Intentionally not awaiting - Realtime callback must be synchronous
 
