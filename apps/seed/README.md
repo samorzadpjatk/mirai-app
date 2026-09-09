@@ -67,10 +67,18 @@ email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
 - id: partner-1
   name: Example Sponsor
   description: |
-    Multi-line sponsor description
+    First paragraph
+
+    Second paragraph
   logoPath: images/sponsors/example-sponsor.png
   height: 18
+  offsetX: 0
+  offsetY: 0
 ```
+- The file is only read when the trip YAML points at it with a `sponsors:` key.
+- `description` is split into paragraphs on blank lines by the partner detail screen.
+- `height`, `offsetX` and `offsetY` are per-trip and are stored in `trip_sponsor_display`,
+  not on the sponsor itself. They default to `0`, which means "use the default tile size".
 
 ### Rewards YAML schema
 ```yaml
