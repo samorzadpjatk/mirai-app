@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateGroupQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -40,22 +41,25 @@ export default function AdminEditGroupScreen() {
     enabled: !!tripId,
   });
 
-  const [groupName, setGroupName] = useState(group?.name ?? "");
-  const [selectedOrganizer, setSelectedOrganizer] = useState<OrganizerOption | null>(
-    group?.organizer ?? null,
-  );
+  const [groupName, setGroupName] = useState("");
+  const [selectedOrganizer, setSelectedOrganizer] = useState<OrganizerOption | null>(null);
   const [userSearch, setUserSearch] = useState("");
+  const [hydratedGroupId, setHydratedGroupId] = useState<string | null>(null);
+
+  // `useState` initialisers only run on the first render, while the group query
+  // is still in flight, so seeding the form from `group` there leaves the name
+  // blank and the organizer unselected forever. Hydrate during render once the
+  // data lands, keyed on the group so navigating to another group re-hydrates.
+  if (group && hydratedGroupId !== groupId) {
+    setHydratedGroupId(groupId);
+    setGroupName(group.name ?? "");
+    setSelectedOrganizer(group.organizer ?? null);
+  }
 
   const updateGroupMutation = useMutation(
     orpc.group.update.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["group", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["group", "getById"], { input: { id: groupId } }],
-        });
-        Alert.alert("Success", "Group updated successfully.");
+        await invalidateGroupQueries(queryClient, true);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to update group: ${error.message}`);
@@ -66,9 +70,7 @@ export default function AdminEditGroupScreen() {
   const deleteGroupMutation = useMutation(
     orpc.group.delete.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["group", "getAll"], { input: { tripId } }],
-        });
+        await invalidateGroupQueries(queryClient, true);
         Alert.alert("Success", "Group deleted successfully.", [
           {
             text: "OK",
