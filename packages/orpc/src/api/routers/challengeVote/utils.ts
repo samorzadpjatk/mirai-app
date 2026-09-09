@@ -79,11 +79,10 @@ export const ensureChallengeVoting = (params: {
     throw new ORPCError("BAD_REQUEST", { message: "Challenge nie jest gotowy do glosowania" });
   }
 
-  if (!challenge.endTime) {
-    throw new ORPCError("BAD_REQUEST", { message: "Staff voting requires submission end time" });
-  }
-
-  if (challenge.endTime.getTime() > Date.now()) {
+  // A judged staff challenge created without an end time has no submission phase to
+  // wait for, so voting is open immediately. Requiring an end time here would leave
+  // such challenges permanently unvotable and impossible to complete.
+  if (challenge.endTime && challenge.endTime.getTime() > Date.now()) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Staff voting starts after submission phase ends",
     });

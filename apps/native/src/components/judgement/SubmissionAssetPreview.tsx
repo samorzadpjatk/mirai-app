@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
+import { useCallback, useState } from "react";
+import { Modal, Pressable, Text, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
-import { useFileDownload } from "~/hooks/files";
+import { SubmissionVideoPlayer } from "~/components/common/SubmissionVideoPlayer";
 import type { Submission } from "~/stores/judgement";
 import { colors } from "~/styles";
 import { makeJudgementTextStyles, makeJudgementViewStyles } from "~/styles/judgement";
@@ -13,37 +12,10 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const viewStyles = useThemedStyles(makeJudgementViewStyles);
   const textStyles = useThemedStyles(makeJudgementTextStyles);
   const { palette } = useTripTheme();
-  const { width, height } = useWindowDimensions();
   const hasImage = submission.imageIds.length > 0;
   const hasVideo = Boolean(submission.videoId);
-  const videoContainerRef = useRef<View>(null);
-  const [isVideoFullyVisible, setIsVideoFullyVisible] = useState(false);
   const [isFullscreenImageVisible, setIsFullscreenImageVisible] = useState(false);
   const firstImageStoragePath = submission.imageIds[0] ?? null;
-  const {
-    download: downloadVideo,
-    status: videoStatus,
-    file: videoFile,
-    reset: resetVideo,
-    abort: abortVideo,
-  } = useFileDownload();
-
-  const videoPlayer = useVideoPlayer(
-    videoFile?.uri ? { uri: videoFile.uri, useCaching: true } : null,
-    (player) => {
-      player.muted = true;
-      player.loop = true;
-    },
-  );
-
-  const checkVideoVisibility = useCallback(() => {
-    if (!videoContainerRef.current) return;
-    videoContainerRef.current.measureInWindow((x, y, layoutWidth, layoutHeight) => {
-      const fullyVisible =
-        x >= 0 && y >= 0 && x + layoutWidth <= width && y + layoutHeight <= height;
-      setIsVideoFullyVisible(fullyVisible);
-    });
-  }, [height, width]);
 
   const openFullscreenImage = useCallback(() => {
     if (!firstImageStoragePath) return;
@@ -53,39 +25,6 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const closeFullscreenImage = useCallback(() => {
     setIsFullscreenImageVisible(false);
   }, []);
-
-  useEffect(() => {
-    if (!hasVideo) {
-      resetVideo();
-      return;
-    }
-
-    resetVideo();
-    void downloadVideo({
-      storagePath: submission.videoId ?? "",
-      skipCache: true,
-    }).catch(() => {
-      // Video may be temporarily unavailable; render fallback instead.
-    });
-
-    return () => {
-      abortVideo();
-    };
-  }, [abortVideo, downloadVideo, hasVideo, resetVideo, submission.videoId]);
-
-  useEffect(() => {
-    if (!videoFile?.uri) return;
-    checkVideoVisibility();
-  }, [checkVideoVisibility, videoFile?.uri]);
-
-  useEffect(() => {
-    if (!videoFile?.uri) return;
-    if (isVideoFullyVisible) {
-      void videoPlayer.play();
-    } else {
-      void videoPlayer.pause();
-    }
-  }, [isVideoFullyVisible, videoFile?.uri, videoPlayer]);
 
   if (hasImage) {
     return (
@@ -143,24 +82,12 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
 
   if (hasVideo) {
     return (
-      <View
-        ref={videoContainerRef}
-        style={[viewStyles.mediaWrapper, viewStyles.videoPlaceholder]}
-        onLayout={checkVideoVisibility}
-      >
-        {videoFile?.uri ? (
-          <VideoView player={videoPlayer} style={viewStyles.mediaImage} />
-        ) : videoStatus === "loading" ? (
-          <ActivityIndicator testID="video-loading" size="small" color={colors.white} />
-        ) : (
-          <Ionicons name="play-circle" size={48} color={colors.white} />
-        )}
-        {!videoFile?.uri && (
-          <Text style={textStyles.videoLabel}>
-            {videoStatus === "loading" ? "Loading video" : "Video submission"}
-          </Text>
-        )}
-      </View>
+      <SubmissionVideoPlayer
+        storagePath={submission.videoId}
+        containerStyle={[viewStyles.mediaWrapper, viewStyles.videoPlaceholder]}
+        videoStyle={viewStyles.mediaImage}
+        labelStyle={textStyles.videoLabel}
+      />
     );
   }
 

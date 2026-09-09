@@ -80,13 +80,12 @@ describe("challengeVote/utils pure functions", () => {
       );
     });
 
-    it("should throw BAD_REQUEST when endTime is null", () => {
+    it("should allow voting when endTime is null", () => {
+      // A judged staff challenge created without an end time has no submission phase
+      // to wait for. Blocking it here would leave it permanently unvotable.
       const challenge = makeChallenge({ endTime: null });
 
-      expect(() => ensureChallengeVoting({ challenge, actorRole: "ADMIN" })).toThrow(ORPCError);
-      expect(() => ensureChallengeVoting({ challenge, actorRole: "ADMIN" })).toThrow(
-        "Staff voting requires submission end time",
-      );
+      expect(() => ensureChallengeVoting({ challenge, actorRole: "ADMIN" })).not.toThrow();
     });
 
     it("should throw BAD_REQUEST when endTime is in the future", () => {

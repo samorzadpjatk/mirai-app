@@ -341,7 +341,9 @@ describe("useStaffVoting", () => {
     expect(result.current.currentPair).toBeNull();
   });
 
-  it("should handle missing challenge endTime", () => {
+  it("should start voting when the challenge has no endTime", () => {
+    // A challenge without an end time has no submission phase to wait for. Blocking it
+    // left such challenges impossible to vote on or complete.
     const { result } = renderHook(() =>
       useStaffVoting({
         ...defaultProps,
@@ -356,8 +358,62 @@ describe("useStaffVoting", () => {
       result.current.bootstrapVoting();
     });
 
+    expect(result.current.phase).not.toBe("blocked");
+    expect(result.current.isSubmissionPhaseEnded).toBe(true);
+  });
+
+  it("should block instead of spinning when the deck is empty but the server reports eligible submissions", () => {
+    // Reproduces the judged staff infinite spinner: the server counted three eligible
+    // submissions while the client deck dropped every one of them.
+    const { result } = renderHook(() =>
+      useStaffVoting({
+        ...defaultProps,
+        votingSubmissions: [],
+        requiredVotePositions: 3,
+        judgedStaffProgress: { eligibleSubmissionsCount: 3 },
+      }),
+    );
+
+    act(() => {
+      result.current.bootstrapVoting();
+    });
+
     expect(result.current.phase).toBe("blocked");
-    expect(result.current.blockedReason).toContain("Set submission end time first");
+    expect(result.current.currentPair).toBeNull();
+  });
+
+  it("should block when every submission belongs to the same group", () => {
+    const sameGroupSubmissions: VotingSubmission[] = [
+      {
+        id: "sub-1",
+        groupId: "group-1",
+        groupName: "Team Alpha",
+        imagePath: "/images/1.jpg",
+        createdAt: "2024-01-01T10:00:00Z",
+      },
+      {
+        id: "sub-2",
+        groupId: "group-1",
+        groupName: "Team Alpha",
+        imagePath: "/images/2.jpg",
+        createdAt: "2024-01-01T11:00:00Z",
+      },
+    ];
+
+    const { result } = renderHook(() =>
+      useStaffVoting({
+        ...defaultProps,
+        votingSubmissions: sameGroupSubmissions,
+        requiredVotePositions: 2,
+      }),
+    );
+
+    act(() => {
+      result.current.startComparing();
+    });
+
+    expect(result.current.phase).toBe("blocked");
+    expect(result.current.currentPair).toBeNull();
   });
 
   it("should provide ranking of all submissions", () => {

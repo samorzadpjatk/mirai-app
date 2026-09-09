@@ -316,7 +316,7 @@ describe("challengeVote utils", () => {
       ).toThrow("Glosowanie zostalo zakonczone");
     });
 
-    it("throws BAD_REQUEST for JUDGED_STAFF when endTime is missing", () => {
+    it("allows JUDGED_STAFF voting when endTime is missing", () => {
       expect(() =>
         ensureChallengeVoting({
           challenge: {
@@ -328,7 +328,7 @@ describe("challengeVote utils", () => {
           },
           actorRole: "ADMIN",
         }),
-      ).toThrow("Staff voting requires submission end time");
+      ).not.toThrow();
     });
 
     it("throws BAD_REQUEST for JUDGED_STAFF when endTime is in the future", () => {
