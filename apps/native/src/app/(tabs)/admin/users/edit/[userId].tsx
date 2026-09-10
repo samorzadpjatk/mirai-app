@@ -161,26 +161,33 @@ export default function AdminEditUserScreen() {
     }
 
     try {
-      await Promise.all([
-        updateNameMutation.mutateAsync({
-          userId,
-          firstName: trimmedFirstName,
-          lastName: trimmedLastName,
-        }),
-        wristNumber.trim()
-          ? updateWristNumberMutation.mutateAsync({ userId, tripId, wristNumber })
-          : Promise.resolve(),
-        houseNumber.trim()
-          ? updateHouseNumberMutation.mutateAsync({ userId, tripId, houseNumber })
-          : Promise.resolve(),
-        selectedGroupId && selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)
-          ? assignToGroupMutation.mutateAsync({ userId, groupId: selectedGroupId, tripId })
-          : Promise.resolve(),
-      ]);
+      // Sequential on purpose. Firing these together put all four mutations in the
+      // same tick, which the oRPC batch link merges into a single request; the
+      // batch response came back short and every call in it failed with "batch
+      // response not contains enough responses", so Save never wrote anything.
+      // Awaiting them one at a time keeps each on its own request, and also makes
+      // the failure report name the field that actually failed.
+      await updateNameMutation.mutateAsync({
+        userId,
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+      });
+
+      if (wristNumber.trim()) {
+        await updateWristNumberMutation.mutateAsync({ userId, tripId, wristNumber });
+      }
+
+      if (houseNumber.trim()) {
+        await updateHouseNumberMutation.mutateAsync({ userId, tripId, houseNumber });
+      }
+
+      if (selectedGroupId && selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)) {
+        await assignToGroupMutation.mutateAsync({ userId, groupId: selectedGroupId, tripId });
+      }
 
       Alert.alert("Success", "User updated successfully.");
     } catch {
-      // Error handling is done in the individual mutations
+      // Each mutation reports its own failure through its onError handler.
     }
   };
 
