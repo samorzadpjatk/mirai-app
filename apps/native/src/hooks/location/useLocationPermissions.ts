@@ -155,7 +155,9 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
       requestLocationPermissions,
       updateSharingMutation,
     }),
-    [permissionStatus, requestLocationPermissions, updateSharingMutation],
+    // Same reason as useSelectedTrip: depend on the stable `mutateAsync`, not on
+    // the mutation result object that TanStack Query rebuilds every render.
+    [permissionStatus, requestLocationPermissions, updateSharingMutation.mutateAsync],
   );
 
   const canViewOthersLocations = calculateCanViewOthersLocations(

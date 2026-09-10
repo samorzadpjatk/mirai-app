@@ -250,7 +250,13 @@ export const useFileDownload = () => {
         throw errorObject;
       }
     },
-    [createDownloadUrlMutation],
+    // Depend on `mutateAsync`, which TanStack Query keeps stable across renders,
+    // not on the mutation result object, which is rebuilt every render. Depending
+    // on the object made `download` a new function on each render, so an effect
+    // that lists it re-ran on every render; once the download actually succeeded
+    // and set state, that closed into an infinite render loop ("Maximum update
+    // depth exceeded") on every screen that downloads a file in an effect.
+    [createDownloadUrlMutation.mutateAsync],
   );
   return {
     download,
