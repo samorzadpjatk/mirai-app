@@ -1,6 +1,6 @@
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Alert } from "react-native";
 
 export function extractSharingUserIds(
@@ -38,21 +38,33 @@ export function useMapSharing(enabledForAllUsersQuery: boolean, tripId?: string 
 
   const sharingUserIds = useMemo(() => extractSharingUserIds(sharingSettings), [sharingSettings]);
 
-  const updateSharing = async (userIdsToShareWith: string[]) => {
-    await updateSharingMutation.mutateAsync({
-      isSharingLocation: true,
-      userIdsToShareWith,
-      tripId: tripId ?? undefined,
-    });
-    // Refetch sharing settings after successful update
-    void refetchSharing();
-  };
+  // `mutateAsync` and `refetch` are stable across renders, so these callbacks
+  // keep a stable identity. Consumers put them in effect dependency arrays;
+  // recreating them on every render made those effects fire continuously.
+  const { mutateAsync: mutateUpdateSharing } = updateSharingMutation;
+  const { mutateAsync: mutateRemoveUser } = removeUserMutation;
 
-  const removeUser = async (userId: string) => {
-    await removeUserMutation.mutateAsync({ userId });
-    // Refetch sharing settings after successful removal
-    void refetchSharing();
-  };
+  const updateSharing = useCallback(
+    async (userIdsToShareWith: string[]) => {
+      await mutateUpdateSharing({
+        isSharingLocation: true,
+        userIdsToShareWith,
+        tripId: tripId ?? undefined,
+      });
+      // Refetch sharing settings after successful update
+      void refetchSharing();
+    },
+    [mutateUpdateSharing, refetchSharing, tripId],
+  );
+
+  const removeUser = useCallback(
+    async (userId: string) => {
+      await mutateRemoveUser({ userId });
+      // Refetch sharing settings after successful removal
+      void refetchSharing();
+    },
+    [mutateRemoveUser, refetchSharing],
+  );
 
   return {
     sharingSettings,

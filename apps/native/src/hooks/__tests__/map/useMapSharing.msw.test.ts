@@ -88,6 +88,30 @@ describe("useMapSharing (MSW)", () => {
       expect(result.current.isRemovingUser).toBe(true);
     });
   });
+
+  it("keeps updateSharing and removeUser stable across re-renders", async () => {
+    server.use(
+      createORPCHandler(["location", "getMySharingSettings"], () => null),
+      createORPCHandler(["location", "getAllUsersForSharing"], () => []),
+    );
+
+    const { result, rerender } = renderHookWithMSW(() => useMapSharing(true, "trip-123"));
+
+    await waitFor(() => {
+      expect(result.current.sharingSettings).toBeNull();
+    });
+
+    const firstUpdateSharing = result.current.updateSharing;
+    const firstRemoveUser = result.current.removeUser;
+
+    rerender(undefined);
+    rerender(undefined);
+
+    // The map screen puts both callbacks in an effect dependency array; unstable
+    // identities made that effect re-run on every render and clobber user state.
+    expect(result.current.updateSharing).toBe(firstUpdateSharing);
+    expect(result.current.removeUser).toBe(firstRemoveUser);
+  });
 });
 
 describe("extractSharingUserIds", () => {

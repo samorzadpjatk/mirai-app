@@ -33,6 +33,10 @@ services:
       ADMIN_ROLE: "PJAPP Admin"
       MODERATOR_ROLE: "PJAPP Moderator"
       SERVICE_ACCOUNT_ROLE: "PJAPP SA"
+      # Validates the token the notification sender presents on /internal/orpc.
+      SERVICE_ACCOUNT_TOKEN: "${SERVICE_ACCOUNT_TOKEN}"
+      # Authenticates outgoing pushes to the Expo push service.
+      EXPO_ACCESS_TOKEN: "${EXPO_ACCESS_TOKEN:-}"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
       - kong
@@ -54,6 +58,9 @@ services:
       ORPC_HOST: "backend-server:2022"
       SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+      # Required: apps/notification-sender validates its environment at boot and
+      # throws without this, so the worker never starts and no push goes out.
+      SERVICE_ACCOUNT_TOKEN: "${SERVICE_ACCOUNT_TOKEN}"
     depends_on:
       - kong
       - db

@@ -6,4 +6,5 @@ startDate: 2026-09-16
 endDate: 2026-09-20
 users: users/integral-members.csv
 background: images/trips/integral/background.png
+sponsors: sponsors/integral-sponsors.yaml
 info: info/integral-info.yaml

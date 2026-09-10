@@ -15,6 +15,7 @@ import {
   getByTrip,
   getByTripAdmin,
   getPurchaseHistory,
+  getPurchaseHistoryAdmin,
   getTotalAvailablePoints,
 } from "./queries";
 import { rewardPurchaseStatusSchema, userRewardPurchaseStatusSchema } from "./types";
@@ -106,6 +107,14 @@ const handleGetPurchaseHistory = async ({
   context: Parameters<typeof getPurchaseHistory>[0];
   input: Parameters<typeof getPurchaseHistory>[1];
 }) => getPurchaseHistory(context, input);
+
+const handleGetPurchaseHistoryAdmin = async ({
+  context,
+  input,
+}: {
+  context: Parameters<typeof getPurchaseHistoryAdmin>[0];
+  input: Parameters<typeof getPurchaseHistoryAdmin>[1];
+}) => getPurchaseHistoryAdmin(context, input);
 
 const handleGetTotalAvailablePoints = async ({
   context,
@@ -215,6 +224,20 @@ export const rewardRouter = createORPCRouter({
       }),
     )
     .handler(handleGetPurchaseHistory),
+
+  getPurchaseHistoryAdmin: moderatorProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(30),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
+    .handler(handleGetPurchaseHistoryAdmin),
 
   getTotalAvailablePoints: moderatorProcedure
     .input(z.object({ tripId: z.string() }))

@@ -207,7 +207,7 @@ export const sendCoinAddedToGroup = async (
       input.coins,
       input.reason,
     );
-    return await sendNotification({
+    const result = await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
       input: {
@@ -218,6 +218,10 @@ export const sendCoinAddedToGroup = async (
         tripId: input.tripId,
       },
     });
+    // sendNotification only writes the rows; the push itself has to be kicked
+    // off explicitly, exactly as sendToGroup/sendToAll already do.
+    await sendMobileNotifications(context.db, result.notificationId);
+    return result;
   } catch (error) {
     logger.error({ error }, "Error sending coins added notification to group");
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -251,7 +255,7 @@ export const sendCoinRemovedFromGroup = async (
       input.coins,
       input.reason,
     );
-    return await sendNotification({
+    const result = await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
       input: {
@@ -262,6 +266,8 @@ export const sendCoinRemovedFromGroup = async (
         tripId: input.tripId,
       },
     });
+    await sendMobileNotifications(context.db, result.notificationId);
+    return result;
   } catch (error) {
     logger.error({ error }, "Error sending coins removed notification to group");
     throw new ORPCError("INTERNAL_SERVER_ERROR", {
@@ -314,6 +320,7 @@ export const sendNewMemberToGroup = async (
         tripId: input.tripId,
       },
     });
+    await sendMobileNotifications(context.db, notificationResult.notificationId);
     return notificationResult;
   } catch (error) {
     const err = error instanceof Error ? error : new Error("Unknown error");
@@ -344,7 +351,7 @@ export const sendCustomToGroup = async (
         and(eq(tripParticipants.tripId, input.tripId), eq(tripParticipants.groupId, input.groupId)),
       );
     const userIds = extractUserIdsFromParticipants(participants);
-    return await sendNotification({
+    const result = await sendNotification({
       db: context.db,
       userId: context.dbUser.id,
       input: {
@@ -355,6 +362,8 @@ export const sendCustomToGroup = async (
         tripId: input.tripId,
       },
     });
+    await sendMobileNotifications(context.db, result.notificationId);
+    return result;
   } catch (error) {
     logger.error({ error }, "Error sending custom notification to group");
     throw new ORPCError("INTERNAL_SERVER_ERROR", {

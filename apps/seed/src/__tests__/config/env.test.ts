@@ -1,3 +1,4 @@
+import { STANDARD_BUCKETS } from "@mirai-app/common/storage";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("config/env", () => {
@@ -75,6 +76,32 @@ describe("config/env", () => {
     expect(envConfig.supabaseUrl).toBe("https://test.supabase.co?param=value");
     expect(envConfig.serviceRoleKey).toBe("key-with-special-chars-!@#$%");
     expect(envConfig.databaseUrl).toBe("postgresql://user:pass@host:5432/db?ssl=true");
+  });
+
+  it("should default the storage buckets to the standard bucket names", async () => {
+    vi.stubEnv("SUPABASE_STORAGE_IMAGE_BUCKET", undefined);
+    vi.stubEnv("SUPABASE_STORAGE_VIDEO_BUCKET", undefined);
+    vi.stubEnv("SUPABASE_STORAGE_PUBLIC_BUCKET", undefined);
+
+    const { env: envConfig } = await import("../../config/env");
+
+    // The backend resolves "images/..." to the "images" bucket, so a seed that
+    // defaults to "image" uploads files no signed URL will ever point at.
+    expect(envConfig.imageBucket).toBe(STANDARD_BUCKETS.IMAGES);
+    expect(envConfig.videoBucket).toBe(STANDARD_BUCKETS.VIDEOS);
+    expect(envConfig.publicBucket).toBe(STANDARD_BUCKETS.PUBLIC);
+  });
+
+  it("should default the buckets to the values documented in .env.example", async () => {
+    vi.stubEnv("SUPABASE_STORAGE_IMAGE_BUCKET", undefined);
+    vi.stubEnv("SUPABASE_STORAGE_VIDEO_BUCKET", undefined);
+    vi.stubEnv("SUPABASE_STORAGE_PUBLIC_BUCKET", undefined);
+
+    const { env: envConfig } = await import("../../config/env");
+
+    expect(envConfig.imageBucket).toBe("images");
+    expect(envConfig.videoBucket).toBe("videos");
+    expect(envConfig.publicBucket).toBe("files-public");
   });
 
   it("should handle very long values", async () => {

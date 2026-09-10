@@ -1,0 +1,22 @@
+# Partnerzy wyprawy INTEGRAL 2026.
+#
+# `description` jest dzielony na akapity po pustej linii (patrz
+# apps/native/src/app/(tabs)/trips/partners/[id].tsx), więc kolejne akapity
+# rozdzielaj pustą linią wewnątrz bloku `|`.
+#
+# `height`/`offsetX`/`offsetY` trafiają do tabeli trip_sponsor_display i sterują
+# wielkością oraz przesunięciem logotypu na kafelku partnera (slot ma 28 dp).
+#
+# UWAGA: apps/seed/assets/dev/images/sponsors/netcompany.png to wygenerowany
+# lokalnie placeholder. Przed demem/produkcją podmień go na prawdziwy logotyp
+# dostarczony przez partnera, a treść opisu potwierdź z Netcompany.
+- id: netcompany
+  name: Netcompany
+  description: |
+    Netcompany to międzynarodowa firma technologiczna, która projektuje i dostarcza systemy IT dla sektora publicznego oraz biznesu. Ma zespoły również w Polsce.
+
+    Netcompany wspiera INTEGRAL jako partner wydarzenia — dziękujemy za pomoc w organizacji rejsu i za to, że jesteście z nami na pokładzie.
+  logoPath: images/sponsors/netcompany.png
+  height: 22
+  offsetX: 0
+  offsetY: 0

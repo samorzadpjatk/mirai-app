@@ -56,6 +56,11 @@ const mockDbInsert = vi.fn((table: unknown) => {
   throw new Error("Unknown table");
 });
 
+// The seed reconciles trip associations against the config, so it also deletes.
+const mockDeleteReturning = vi.fn().mockResolvedValue([]);
+const mockDeleteWhere = vi.fn().mockReturnValue({ returning: mockDeleteReturning });
+const mockDbDelete = vi.fn((_table: unknown) => ({ where: mockDeleteWhere }));
+
 describe("sponsors", () => {
   let bunFileSpy: MockInstance<typeof Bun.file>;
 
@@ -83,6 +88,9 @@ describe("sponsors", () => {
     mockTripSponsorDisplayValues
       .mockClear()
       .mockReturnValue({ onConflictDoUpdate: mockTripSponsorDisplayOnConflict });
+    mockDeleteReturning.mockReset().mockResolvedValue([]);
+    mockDeleteWhere.mockClear().mockReturnValue({ returning: mockDeleteReturning });
+    mockDbDelete.mockClear().mockImplementation((_table: unknown) => ({ where: mockDeleteWhere }));
     mockDbInsert.mockClear().mockImplementation((table: unknown) => {
       if (table === sponsorsTable) return { values: mockSponsorValues };
       if (table === tripSponsorsTable) return { values: mockTripSponsorValues };
@@ -94,7 +102,10 @@ describe("sponsors", () => {
       sponsors: sponsorsTable,
       tripSponsors: tripSponsorsTable,
       tripSponsorDisplay: tripSponsorDisplayTable,
-      createDb: () => ({ insert: (table: unknown) => mockDbInsert(table) }),
+      createDb: () => ({
+        insert: (table: unknown) => mockDbInsert(table),
+        delete: (table: unknown) => mockDbDelete(table),
+      }),
     }));
   });
 
@@ -367,6 +378,35 @@ describe("sponsors", () => {
       expect(displayCalls).toHaveLength(3);
 
       consoleSpy.mockRestore();
+    });
+
+    // Regression: the YAML is the only route a sponsor takes to a trip, so it is
+    // the source of truth. Without reconciliation a partner dropped from the
+    // config kept its association forever and still rendered on the trip screen
+    // — four retired demo partners survived next to the only real one, pushing
+    // it out of the centre of the Partners row.
+    it("removes trip associations for sponsors no longer in the config", async () => {
+      mockDeleteReturning
+        .mockResolvedValueOnce([{ sponsorId: "demo-spo-1" }])
+        .mockResolvedValueOnce([{ sponsorId: "demo-spo-1" }]);
+
+      const { seedSponsors } = await import("../sponsors");
+      const configs: SponsorConfig[] = [
+        {
+          id: "netcompany",
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+        },
+      ];
+
+      await seedSponsors("postgres://test", "trip-1", "dev", configs);
+
+      // Both the association and its layout row are reconciled.
+      expect(mockDbDelete).toHaveBeenCalledTimes(2);
+      expect(mockDeleteWhere).toHaveBeenCalledTimes(2);
+      // The sponsor rows themselves are never touched — other trips may use them.
+      expect(mockDbDelete).not.toHaveBeenCalledWith(sponsorsTable);
     });
 
     it("should throw and log error on database failure", async () => {

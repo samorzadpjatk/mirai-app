@@ -31,7 +31,7 @@ export function useAdminCoins(tripId: string) {
     }),
   );
 
-  const addCoins = (groupId: string, amount: number, _reason: string) => {
+  const addCoins = (groupId: string, amount: number, reason: string) => {
     if (amount <= 0) {
       throw new Error("Amount must be positive for adding coins");
     }
@@ -39,10 +39,11 @@ export function useAdminCoins(tripId: string) {
       groupId,
       amount,
       tripId,
+      reason,
     });
   };
 
-  const removeCoins = (groupId: string, amount: number, _reason: string) => {
+  const removeCoins = (groupId: string, amount: number, reason: string) => {
     if (amount <= 0) {
       throw new Error("Amount must be positive for removing coins");
     }
@@ -50,6 +51,7 @@ export function useAdminCoins(tripId: string) {
       groupId,
       amount: -amount, // Convert to negative for removal
       tripId,
+      reason,
     });
   };
 

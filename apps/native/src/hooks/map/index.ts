@@ -5,6 +5,8 @@ export {
   removeUserFromLocations,
   isUnauthorizedError,
   isValidLocationEvent,
+  mergeFallbackLocations,
+  mergeFallbackUsers,
   processLocationStreamEvent,
   useMapLocationStream,
 } from "./useMapLocationStream";

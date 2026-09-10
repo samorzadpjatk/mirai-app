@@ -196,16 +196,22 @@ describe("Notification Sender - Client Initialization", () => {
     );
   });
 
-  it("should create supabase channel for Notification table", async () => {
+  it("should subscribe to the live notifications table, not the dropped Prisma one", async () => {
     setEnvVars();
 
-    const { main } = await import("../index");
+    const { main, NOTIFICATIONS_TABLE } = await import("../index");
 
     await main();
 
+    expect(NOTIFICATIONS_TABLE).toBe("notifications");
     expect(mockChannelOn).toHaveBeenCalledWith(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "Notification" },
+      { event: "INSERT", schema: "public", table: "notifications" },
+      expect.any(Function),
+    );
+    expect(mockChannelOn).not.toHaveBeenCalledWith(
+      "postgres_changes",
+      expect.objectContaining({ table: "Notification" }),
       expect.any(Function),
     );
   });

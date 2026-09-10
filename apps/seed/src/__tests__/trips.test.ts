@@ -242,6 +242,16 @@ describe("trips", () => {
         },
       );
 
+      // Regression: the row used to store the bare object path. The backend
+      // resolves a storage reference by reading its first segment as a bucket
+      // name, so `trips/…` was rejected as an unsupported storage reference and
+      // the trip rendered with no background.
+      expect(mockTripCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          backgroundImagePath: "image/trips/trip-with-bg/background.jpg",
+        }),
+      );
+
       consoleSpy.mockRestore();
     });
 

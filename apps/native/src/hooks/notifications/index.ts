@@ -22,3 +22,4 @@ export {
   shouldRunAutoPushEffect,
   useAutoPushSubscription,
 } from "./useAutoPushSubscription";
+export { resolveNotificationRoute, useNotificationResponse } from "./useNotificationResponse";

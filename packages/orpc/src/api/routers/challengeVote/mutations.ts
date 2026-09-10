@@ -17,6 +17,27 @@ import {
   validateJudgedStaffVotePayload,
 } from "./utils";
 
+const PG_UNIQUE_VIOLATION = "23505";
+const MAX_ERROR_CAUSE_DEPTH = 5;
+
+/**
+ * Drizzle wraps driver errors in a DrizzleQueryError, so the postgres error code
+ * lives on `cause` rather than on the thrown error itself. Walk the cause chain.
+ */
+const isUniqueViolation = (error: unknown, depth = 0): boolean => {
+  if (typeof error !== "object" || error === null || depth > MAX_ERROR_CAUSE_DEPTH) {
+    return false;
+  }
+
+  if ("code" in error && (error as { code?: unknown }).code === PG_UNIQUE_VIOLATION) {
+    return true;
+  }
+
+  return "cause" in error
+    ? isUniqueViolation((error as { cause?: unknown }).cause, depth + 1)
+    : false;
+};
+
 export const forceEndJudgedStaffVoting = async (
   context: { db: DB; dbUser: { id: string } },
   input: { challengeId: string; tripId: string },
@@ -33,13 +54,9 @@ export const forceEndJudgedStaffVoting = async (
     throw new ORPCError("BAD_REQUEST", { message: "Cancelled challenge cannot be finalized" });
   }
 
-  if (!challenge.endTime) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "Staff voting requires submission end time",
-    });
-  }
-
-  if (challenge.endTime.getTime() > Date.now()) {
+  // Challenges without an end time have no submission phase to wait for, so they can be
+  // force ended right away. See ensureChallengeVoting for the same reasoning.
+  if (challenge.endTime && challenge.endTime.getTime() > Date.now()) {
     throw new ORPCError("BAD_REQUEST", {
       message: "You can force end staff voting only after submission phase ends",
     });
@@ -108,6 +125,17 @@ export const submitVotes = async (
     throw new ORPCError(payloadError.error, { message: payloadError.message });
   }
 
+  if (challenge.scoringCategory === "JUDGED_STAFF") {
+    // A batched staff vote is the complete podium, so it must cover every required
+    // position. Accepting a shorter podium would silently corrupt the final ranking,
+    // because votes cannot be changed once cast.
+    await validateJudgedStaffVotePayload(context, {
+      challengeId: input.challengeId,
+      votePositions: input.votes.map((vote) => vote.votePosition),
+      requireExactCount: true,
+    });
+  }
+
   const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
 
   const matchSubmissions: WhereCallback<"challengeSubmissions"> = (cs, { eq, and, inArray }) =>
@@ -149,31 +177,40 @@ export const submitVotes = async (
     asc(cv.votePosition),
   ];
 
-  const result = await context.db.transaction(async (tx) => {
-    await tx
-      .insert(challengeVotes)
-      .values(buildVoteInsertValues(input.votes, input.challengeId, participant.id));
+  try {
+    return await context.db.transaction(async (tx) => {
+      await tx
+        .insert(challengeVotes)
+        .values(buildVoteInsertValues(input.votes, input.challengeId, participant.id));
 
-    await recomputeSubmissionVotes({ db: tx }, input.challengeId);
+      await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
-    if (challenge.scoringCategory === "JUDGED_STAFF") {
-      await maybeFinalizeJudgedStaffVoting(
-        { db: tx },
-        {
-          challenge,
-          createdByAdminId: context.dbUser.id,
-        },
-      );
-    }
+      if (challenge.scoringCategory === "JUDGED_STAFF") {
+        await maybeFinalizeJudgedStaffVoting(
+          { db: tx },
+          {
+            challenge,
+            createdByAdminId: context.dbUser.id,
+          },
+        );
+      }
 
-    return await tx.query.challengeVotes.findMany({
-      where: matchVoter,
-      columns: voteColumns,
-      orderBy: sortByVotePosition,
+      return await tx.query.challengeVotes.findMany({
+        where: matchVoter,
+        columns: voteColumns,
+        orderBy: sortByVotePosition,
+      });
     });
-  });
-
-  return result;
+  } catch (error: unknown) {
+    // Two concurrent submissions from the same voter both pass the "already voted"
+    // check above; the unique index is what actually keeps the podium consistent.
+    if (isUniqueViolation(error)) {
+      throw new ORPCError("CONFLICT", {
+        message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
+      });
+    }
+    throw error;
+  }
 };
 
 export const submitVote = async (
@@ -267,12 +304,7 @@ export const submitVote = async (
 
     return result;
   } catch (error: unknown) {
-    const pgCode =
-      typeof error === "object" && error !== null && "code" in error
-        ? (error as { code?: unknown }).code
-        : undefined;
-    const pgCodeValue = typeof pgCode === "string" ? pgCode : "";
-    if (pgCodeValue === "23505") {
+    if (isUniqueViolation(error)) {
       throw new ORPCError("CONFLICT", { message: "Glos juz istnieje" });
     }
     throw error;

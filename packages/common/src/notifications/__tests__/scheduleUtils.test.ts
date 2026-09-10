@@ -6,6 +6,11 @@ import {
   normalizeScheduleWindow,
   toOptionalString,
 } from "../scheduleUtils";
+import { getZonedParts } from "../timezone";
+
+// Hours and minutes are Europe/Warsaw wall-clock values, so assertions read
+// them back in that zone rather than through the process time zone.
+const warsaw = (date: Date) => getZonedParts(date, "Europe/Warsaw");
 
 describe("toOptionalString", () => {
   it("returns undefined for null", () => {
@@ -98,24 +103,37 @@ describe("attachCreatedByEmail", () => {
 
 describe("getNextScheduledStartDate", () => {
   it("returns the same day if time is in the future", () => {
+    // 08:00 UTC is 09:00 in Warsaw (winter, UTC+1).
     const now = new Date("2024-01-15T08:00:00Z");
     const result = getNextScheduledStartDate(10, 0, now);
-    expect(result.getDate()).toBe(now.getDate());
-    expect(result.getHours()).toBe(10);
-    expect(result.getMinutes()).toBe(0);
+    expect(warsaw(result)).toMatchObject({ day: 15, hour: 10, minute: 0 });
+    expect(result.toISOString()).toBe("2024-01-15T09:00:00.000Z");
   });
 
   it("returns next day if time is in the past", () => {
     const now = new Date("2024-01-15T12:00:00Z");
     const result = getNextScheduledStartDate(10, 0, now);
-    expect(result.getDate()).toBe(now.getDate() + 1);
-    expect(result.getHours()).toBe(10);
+    expect(warsaw(result)).toMatchObject({ day: 16, hour: 10 });
   });
 
   it("returns next day if time is within 5 minutes", () => {
-    const now = new Date("2024-01-15T09:58:00Z");
+    // 08:58 UTC is 09:58 in Warsaw.
+    const now = new Date("2024-01-15T08:58:00Z");
     const result = getNextScheduledStartDate(10, 0, now);
-    expect(result.getDate()).toBe(now.getDate() + 1);
+    expect(warsaw(result)).toMatchObject({ day: 16, hour: 10 });
+  });
+
+  it("resolves the wall-clock hour with the summer offset", () => {
+    const now = new Date("2024-07-15T04:00:00Z");
+    const result = getNextScheduledStartDate(10, 0, now);
+    // Warsaw is UTC+2 in July.
+    expect(result.toISOString()).toBe("2024-07-15T08:00:00.000Z");
+  });
+
+  it("rolls over month ends", () => {
+    const now = new Date("2024-01-31T23:00:00Z");
+    const result = getNextScheduledStartDate(1, 0, now);
+    expect(warsaw(result)).toMatchObject({ year: 2024, month: 2, day: 1, hour: 1 });
   });
 });
 
@@ -133,13 +151,13 @@ describe("getTemplateScheduleDates", () => {
       notificationUrl: "/test",
     };
     const result = getTemplateScheduleDates(template, now);
-    expect(result.startDate.getHours()).toBe(9);
+    expect(warsaw(result.startDate).hour).toBe(9);
     expect(result.endDate.getFullYear()).toBe(now.getFullYear() + 1);
   });
 });
 
 describe("normalizeScheduleWindow", () => {
-  it("normalizes start date to UTC with given hour/minute", () => {
+  it("interprets hour/minute as Europe/Warsaw wall clock, not UTC", () => {
     const startDate = new Date("2024-01-15T12:00:00Z");
     const endDate = new Date("2024-01-20T12:00:00Z");
     const result = normalizeScheduleWindow({
@@ -148,8 +166,29 @@ describe("normalizeScheduleWindow", () => {
       hour: 9,
       minute: 30,
     });
-    expect(result.startDate.getUTCHours()).toBe(9);
-    expect(result.startDate.getUTCMinutes()).toBe(30);
+    // Winter offset is +1, so 09:30 Warsaw is 08:30 UTC. The old
+    // implementation produced 09:30 UTC, i.e. 10:30 Warsaw — one hour late.
+    expect(result.startDate.toISOString()).toBe("2024-01-15T08:30:00.000Z");
+    expect(warsaw(result.startDate)).toMatchObject({ hour: 9, minute: 30 });
+  });
+
+  it("uses the summer offset for summer dates", () => {
+    const startDate = new Date("2024-07-15T12:00:00Z");
+    const endDate = new Date("2024-07-20T12:00:00Z");
+    const result = normalizeScheduleWindow({ startDate, endDate, hour: 13, minute: 0 });
+    // Warsaw is UTC+2 in July: two hours, not the one that applies in January.
+    expect(result.startDate.toISOString()).toBe("2024-07-15T11:00:00.000Z");
+  });
+
+  it("keeps an early-morning pick on its own day instead of rolling it back", () => {
+    // 00:30 Warsaw on 15 Jan is 23:30 UTC on 14 Jan. Stamping the hour onto UTC
+    // moved the schedule to 00:30 UTC on 14 Jan — a day in the past, which the
+    // "start date cannot be in the past" check then rejected outright.
+    const startDate = new Date("2024-01-14T23:30:00Z");
+    const endDate = new Date("2024-01-14T23:32:00Z");
+    const result = normalizeScheduleWindow({ startDate, endDate, hour: 0, minute: 30 });
+    expect(result.startDate.toISOString()).toBe("2024-01-14T23:30:00.000Z");
+    expect(warsaw(result.startDate)).toMatchObject({ day: 15, hour: 0, minute: 30 });
   });
 
   it("preserves duration between start and end", () => {
@@ -165,7 +204,7 @@ describe("normalizeScheduleWindow", () => {
     expect(durationMs).toBe(5 * 24 * 60 * 60 * 1000);
   });
 
-  it("returns hour and minute from normalized start date", () => {
+  it("returns the wall-clock hour and minute unchanged", () => {
     const startDate = new Date("2024-01-15T12:00:00Z");
     const endDate = new Date("2024-01-20T12:00:00Z");
     const result = normalizeScheduleWindow({

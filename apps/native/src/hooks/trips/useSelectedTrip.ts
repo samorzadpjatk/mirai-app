@@ -41,7 +41,10 @@ export function useSelectedTrip() {
         },
       });
     },
-    [setSelectedTripMutation],
+    // `mutate` is stable across renders; the mutation result object is not.
+    // Depending on the object handed every consumer a new `setSelectedTripId` on
+    // each render, which is enough to make any effect listing it re-run forever.
+    [setSelectedTripMutation.mutate],
   );
 
   return {

@@ -1,3 +1,4 @@
+import { getZonedParts, zonedWallClockToUtc } from "@mirai-app/common/notifications";
 import { ORPCError } from "@orpc/server";
 import { describe, expect, it } from "vitest";
 
@@ -80,31 +81,39 @@ describe("notificactionSchedule-validation", () => {
   });
 
   describe("validateScheduleTime", () => {
+    // `hour`/`minute` are wall-clock values in the app's time zone, which is
+    // what the phone's time picker produces. Reading them as UTC (the old
+    // behaviour) shifted the check by the whole UTC offset.
+    const wallClock = (date: Date) => getZonedParts(date);
+
     it("should not throw for time at least 5 minutes in the future", () => {
-      const now = new Date();
-      const futureDate = new Date(now.getTime() + 10 * 60 * 1000);
-      expect(() =>
-        validateScheduleTime(futureDate, futureDate.getUTCHours(), futureDate.getUTCMinutes()),
-      ).not.toThrow();
+      const futureDate = new Date(Date.now() + 10 * 60 * 1000);
+      const { hour, minute } = wallClock(futureDate);
+      expect(() => validateScheduleTime(futureDate, hour, minute)).not.toThrow();
     });
 
     it("should throw for time less than 5 minutes in the future", () => {
-      const now = new Date();
-      const nearFuture = new Date(now.getTime() + 2 * 60 * 1000);
-      expect(() =>
-        validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes()),
-      ).toThrow(ORPCError);
-      expect(() =>
-        validateScheduleTime(nearFuture, nearFuture.getUTCHours(), nearFuture.getUTCMinutes()),
-      ).toThrow("at least 5 minutes in the future");
+      const nearFuture = new Date(Date.now() + 2 * 60 * 1000);
+      const { hour, minute } = wallClock(nearFuture);
+      expect(() => validateScheduleTime(nearFuture, hour, minute)).toThrow(ORPCError);
+      expect(() => validateScheduleTime(nearFuture, hour, minute)).toThrow(
+        "at least 5 minutes in the future",
+      );
     });
 
     it("should throw for past time", () => {
-      const now = new Date();
-      const pastDate = new Date(now.getTime() - 10 * 60 * 1000);
-      expect(() =>
-        validateScheduleTime(pastDate, pastDate.getUTCHours(), pastDate.getUTCMinutes()),
-      ).toThrow(ORPCError);
+      const pastDate = new Date(Date.now() - 10 * 60 * 1000);
+      const { hour, minute } = wallClock(pastDate);
+      expect(() => validateScheduleTime(pastDate, hour, minute)).toThrow(ORPCError);
+    });
+
+    it("accepts an early-morning wall-clock time that UTC parsing would reject", () => {
+      // 00:30 in Warsaw is 23:30 UTC the previous day. Stamping the hour onto
+      // UTC moved the schedule back a whole day, so it always looked past.
+      const target = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const { year, month, day } = getZonedParts(target);
+      const startDate = zonedWallClockToUtc({ year, month, day, hour: 0, minute: 30 });
+      expect(() => validateScheduleTime(startDate, 0, 30)).not.toThrow();
     });
   });
 

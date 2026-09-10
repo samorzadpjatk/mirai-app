@@ -15,29 +15,12 @@ jest.mock("expo-image", () => ({
   },
 }));
 
-function createFullTripResponse(trip: unknown) {
-  return { trip, groups: [], challenges: [], sponsors: [], latestNews: [] };
-}
-
-const pirateTrip = {
-  id: "trip-pirate",
-  name: "Pirate Trip",
-  description: "A pirate-themed adventure",
-  startDate: "2026-07-01T00:00:00.000Z",
-  endDate: "2026-07-10T00:00:00.000Z",
-  backgroundImagePath: "",
-  theme: "PIRATE",
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
-  groups: [],
-};
-
 describe("ThemedCard under the PIRATE trip theme (MSW)", () => {
   beforeEach(() => {
     server.resetHandlers();
-    server.use(
-      createORPCHandler(["trip", "getByIdFull"], () => createFullTripResponse(pirateTrip)),
-    );
+    // TripThemeProvider reads the theme through the light `trip.getTheme` endpoint,
+    // not through the full trip payload.
+    server.use(createORPCHandler(["trip", "getTheme"], () => ({ theme: "PIRATE" })));
   });
 
   it("renders the wood-grain texture only once the trip resolves to PIRATE, not on the initial DEFAULT render", async () => {

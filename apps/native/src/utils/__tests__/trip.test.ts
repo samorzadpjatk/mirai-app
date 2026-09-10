@@ -1,5 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
-import { getTripStatus, isTripOngoing, isTripPast, isTripUpcoming } from "../trip";
+import {
+  formatTripDateRange,
+  getTripStatus,
+  isTripOngoing,
+  isTripPast,
+  isTripUpcoming,
+} from "../trip";
 
 describe("Trip Utilities", () => {
   describe("isTripPast", () => {
@@ -106,6 +112,38 @@ describe("Trip Utilities", () => {
     it("should handle string dates", () => {
       expect(getTripStatus("2020-01-01", "2020-12-31")).toBe("Past");
       expect(getTripStatus("2030-01-01", "2030-12-31")).toBe("Upcoming");
+    });
+  });
+
+  describe("formatTripDateRange", () => {
+    // Local-time constructors keep the assertions independent of the runner's timezone.
+    const integralStart = new Date(2026, 8, 16);
+    const integralEnd = new Date(2026, 8, 20);
+
+    it("should format a range inside one year without repeating the year", () => {
+      expect(formatTripDateRange(integralStart, integralEnd)).toBe("Sep 16 - Sep 20, 2026");
+    });
+
+    it("should keep both years when the trip spans a year boundary", () => {
+      expect(formatTripDateRange(new Date(2026, 11, 28), new Date(2027, 0, 3))).toBe(
+        "Dec 28, 2026 - Jan 3, 2027",
+      );
+    });
+
+    it("should accept ISO strings", () => {
+      expect(formatTripDateRange("2026-09-16T12:00:00", "2026-09-20T12:00:00")).toBe(
+        "Sep 16 - Sep 20, 2026",
+      );
+    });
+
+    it("should return null when a date is missing", () => {
+      expect(formatTripDateRange(null, integralEnd)).toBeNull();
+      expect(formatTripDateRange(integralStart, undefined)).toBeNull();
+      expect(formatTripDateRange()).toBeNull();
+    });
+
+    it("should return null when a date cannot be parsed", () => {
+      expect(formatTripDateRange("not-a-date", integralEnd)).toBeNull();
     });
   });
 });

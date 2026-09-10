@@ -144,6 +144,23 @@ describe("QUERY_GROUPS constants", () => {
     expect(QUERY_GROUPS.JUDGEMENTS).toEqual([["judgement"]]);
     expect(QUERY_GROUPS.LOCATION).toEqual([["location"]]);
     expect(QUERY_GROUPS.MAP).toEqual([["map"], ["mapOverlay"]]);
+    expect(QUERY_GROUPS.COMMUNITY_FEED).toEqual([["community-feed"]]);
+  });
+
+  it("should match the hand-rolled community feed key and ignore the disabled placeholder", async () => {
+    const mockQueryClient = createMockQueryClient();
+
+    await invalidateCascadingQueries(
+      mockQueryClient as MockQueryClientType,
+      QUERY_GROUPS.COMMUNITY_FEED,
+    );
+
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (query: {
+      queryKey: unknown[];
+    }) => boolean;
+
+    expect(predicate({ queryKey: ["community-feed", "trip-1", 30] })).toBe(true);
+    expect(predicate({ queryKey: ["community-feed-disabled"] })).toBe(false);
   });
 });
 

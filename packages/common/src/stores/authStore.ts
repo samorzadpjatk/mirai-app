@@ -65,6 +65,24 @@ export interface AuthUser {
 export interface AuthState {
   user: AuthUser | null;
   session: SupabaseSession | null;
+  /**
+   * True until the initial Supabase session read resolves. This is the cheap gate:
+   * it only covers the local/Keychain session read (plus a possible token refresh),
+   * never the backend user profile fetch. UI that just needs to know "is somebody
+   * signed in" — e.g. the root navigator picking protected vs. public routes —
+   * should gate on this and render as soon as it flips to `false`.
+   */
+  isSessionLoading: boolean;
+  /**
+   * True while the backend user profile (`onUserFetch`) is in flight for the current
+   * session. Screens that actually read `user` fields should gate on this.
+   */
+  isUserLoading: boolean;
+  /**
+   * Combined gate, kept for backward compatibility: `isSessionLoading || isUserLoading`.
+   * Prefer the specific flag above — gating the whole app on this makes the first
+   * frame wait for a network round trip.
+   */
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -78,6 +96,10 @@ export interface AuthActions {
   refetchUser: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   setSession: (session: SupabaseSession | null) => void;
+  /**
+   * Set every loading phase at once. Kept for backward compatibility with callers
+   * that only know about the combined `isLoading` flag.
+   */
   setLoading: (loading: boolean) => void;
   /**
    * Initialize the store with a Supabase client and optional user-fetch callback.
@@ -115,20 +137,40 @@ export function _resetAuthStoreForTests(): void {
   _fetchingUserPromise = null;
 }
 
-const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthState>) => void) => {
+type AuthSetter = (partial: Partial<AuthState>) => void;
+type AuthGetter = () => AuthState;
+
+/**
+ * Apply a state patch while keeping the combined `isLoading` flag in sync with the two
+ * phase flags it aggregates. Every write that touches a loading phase must go through
+ * here so `isLoading === isSessionLoading || isUserLoading` always holds.
+ */
+const applyAuthState = (set: AuthSetter, get: AuthGetter, patch: Partial<AuthState>): void => {
+  const isSessionLoading = patch.isSessionLoading ?? get().isSessionLoading;
+  const isUserLoading = patch.isUserLoading ?? get().isUserLoading;
+
+  set({
+    ...patch,
+    isSessionLoading,
+    isUserLoading,
+    isLoading: isSessionLoading || isUserLoading,
+  });
+};
+
+const fetchAndSetUser = async (authUserId: string, set: AuthSetter, get: AuthGetter) => {
   if (!_onUserFetch) {
-    set({ isLoading: false });
+    applyAuthState(set, get, { isUserLoading: false });
     return;
   }
 
   if (_fetchingUserId === authUserId && _fetchingUserPromise) {
-    set({ isLoading: true });
+    applyAuthState(set, get, { isUserLoading: true });
     try {
       const user = await _fetchingUserPromise;
-      set({ user, isAuthenticated: !!user, isLoading: false });
+      applyAuthState(set, get, { user, isAuthenticated: !!user, isUserLoading: false });
     } catch (error) {
       clientLogger.error("Failed to fetch user", error);
-      set({ isLoading: false });
+      applyAuthState(set, get, { isUserLoading: false });
     }
     return;
   }
@@ -136,23 +178,25 @@ const fetchAndSetUser = async (authUserId: string, set: (partial: Partial<AuthSt
   _fetchingUserId = authUserId;
   _fetchingUserPromise = _onUserFetch(authUserId);
 
-  set({ isLoading: true });
+  applyAuthState(set, get, { isUserLoading: true });
   try {
     const user = await _fetchingUserPromise;
-    set({ user, isAuthenticated: !!user, isLoading: false });
+    applyAuthState(set, get, { user, isAuthenticated: !!user, isUserLoading: false });
   } catch (error) {
     clientLogger.error("Failed to fetch user", error);
-    set({ isLoading: false });
+    applyAuthState(set, get, { isUserLoading: false });
   } finally {
     _fetchingUserId = null;
     _fetchingUserPromise = null;
   }
 };
 
-export const authStore = createStore<AuthStore>()((set, _get) => ({
+export const authStore = createStore<AuthStore>()((set, get) => ({
   // State
   user: null,
   session: null,
+  isSessionLoading: true,
+  isUserLoading: false,
   isLoading: true,
   isAuthenticated: false,
 
@@ -163,11 +207,18 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
 
     // Get initial session
     void client.auth.getSession().then(({ data: { session } }) => {
-      set({ session });
+      const willFetchUser = Boolean(session?.user && onUserFetch);
+
+      // Publish the session the moment it is known so the navigation tree can mount
+      // without waiting for the (networked) user profile fetch below.
+      applyAuthState(set, get, {
+        session,
+        isSessionLoading: false,
+        isUserLoading: willFetchUser,
+      });
+
       if (session?.user && onUserFetch) {
-        void fetchAndSetUser(session.user.id, set);
-      } else {
-        set({ isLoading: false });
+        void fetchAndSetUser(session.user.id, set, get);
       }
     });
 
@@ -175,12 +226,17 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event: AuthChangeEvent, session) => {
-      set({ session });
-
       if (session?.user && onUserFetch) {
-        void fetchAndSetUser(session.user.id, set);
+        applyAuthState(set, get, { session, isSessionLoading: false, isUserLoading: true });
+        void fetchAndSetUser(session.user.id, set, get);
       } else {
-        set({ user: null, isAuthenticated: false, isLoading: false });
+        applyAuthState(set, get, {
+          session,
+          user: null,
+          isAuthenticated: false,
+          isSessionLoading: false,
+          isUserLoading: false,
+        });
       }
     });
 
@@ -226,7 +282,7 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     }
 
     if (data?.session?.user && _onUserFetch) {
-      await fetchAndSetUser(data.session.user.id, set);
+      await fetchAndSetUser(data.session.user.id, set, get);
     }
   },
 
@@ -250,7 +306,7 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     set({ session: sessionData.session });
 
     if (sessionData.session?.user && _onUserFetch) {
-      await fetchAndSetUser(sessionData.session.user.id, set);
+      await fetchAndSetUser(sessionData.session.user.id, set, get);
     }
   },
 
@@ -282,7 +338,7 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     set({ session: data?.session });
 
     if (data?.session?.user && _onUserFetch) {
-      await fetchAndSetUser(data.session.user.id, set);
+      await fetchAndSetUser(data.session.user.id, set, get);
     }
   },
 
@@ -300,18 +356,19 @@ export const authStore = createStore<AuthStore>()((set, _get) => ({
     const session = sessionData?.session;
 
     if (session?.user && _onUserFetch) {
-      set({ isLoading: true });
+      applyAuthState(set, get, { isUserLoading: true });
       try {
         const user = await _onUserFetch(session.user.id);
-        set({ user, isAuthenticated: !!user, isLoading: false });
+        applyAuthState(set, get, { user, isAuthenticated: !!user, isUserLoading: false });
       } catch (error) {
         clientLogger.error("Failed to refetch user", error);
-        set({ isLoading: false });
+        applyAuthState(set, get, { isUserLoading: false });
       }
     }
   },
 
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setSession: (session) => set({ session }),
-  setLoading: (isLoading) => set({ isLoading }),
+  setLoading: (isLoading) =>
+    set({ isLoading, isSessionLoading: isLoading, isUserLoading: isLoading }),
 }));

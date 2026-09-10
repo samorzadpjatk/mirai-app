@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { Activity } from "@mirai-app/orpc";
 import { LinearGradient } from "expo-linear-gradient";
-import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -52,7 +52,8 @@ const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
 ];
 
 export default function CommunityScreen() {
-  const { session, isLoading: isLoadingSession } = useAuth();
+  // Only the session read gates this screen; the backend user profile is not read here.
+  const { session, isSessionLoading: isLoadingSession } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{
     filter?: string | string[];
@@ -108,12 +109,21 @@ export default function CommunityScreen() {
       : params.focusActivityId?.[0];
   }, [params.focusActivityId]);
 
-  const { feedQuery, filteredActivities, handleToggleHeart, rankingData, avatarUrls } =
+  const { feedQuery, filteredActivities, handleToggleHeart, rankingData, avatarUrls, refreshFeed } =
     useCommunityFeed({
       selectedTripId: selectedTrip?.id ?? null,
       selectedFilter,
       focusActivityId,
     });
+
+  // The native tab view keeps this screen mounted once it has been visited, so `refetchOnMount`
+  // would never fire again. Refresh on focus instead; `refreshFeed` throttles itself so switching
+  // tabs back and forth does not hammer the expensive `getCommunityFull` call.
+  useFocusEffect(
+    useCallback(() => {
+      refreshFeed();
+    }, [refreshFeed]),
+  );
 
   const handleSelectFilter = useCallback(
     (filter: ActivityFilter) => {

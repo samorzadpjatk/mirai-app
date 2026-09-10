@@ -3,7 +3,7 @@ import type { DB } from "@mirai-app/db";
 import { groups, notificationPushes, notifications, tripParticipants } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq } from "drizzle-orm";
-import { NotificationService } from "../services/notificationService";
+import { NotificationService, sendMobileNotifications } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";
 import { logger } from "./logger";
 
@@ -34,41 +34,48 @@ export async function sendNotification({
       async () => {
         const uniqueUserIds = deduplicateIds(input.userIds);
 
-        const inserted = await db
-          .insert(notifications)
-          .values({
-            title: input.title,
-            body: input.body,
-            url: input.url,
-            createdById: userId,
-            tripId: input.tripId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .returning();
-        const notification = inserted[0];
+        // Both writes go in one transaction. Supabase Realtime streams
+        // committed transactions, so apps/notification-sender can never observe
+        // the `notifications` row before its audience exists — which is what
+        // used to make the worker treat a group-scoped notification as
+        // unaddressed and broadcast it to the whole trip.
+        return await db.transaction(async (tx) => {
+          const inserted = await tx
+            .insert(notifications)
+            .values({
+              title: input.title,
+              body: input.body,
+              url: input.url,
+              createdById: userId,
+              tripId: input.tripId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+          const notification = inserted[0];
 
-        if (!notification) {
-          throw new Error("Failed to create notification");
-        }
+          if (!notification) {
+            throw new Error("Failed to create notification");
+          }
 
-        if (uniqueUserIds.length > 0) {
-          await db
-            .insert(notificationPushes)
-            .values(
-              uniqueUserIds.map((targetUserId) => ({
-                notificationId: notification.id,
-                targetUserId,
-                status: "pending",
-              })),
-            )
-            .onConflictDoNothing();
-        }
+          if (uniqueUserIds.length > 0) {
+            await tx
+              .insert(notificationPushes)
+              .values(
+                uniqueUserIds.map((targetUserId) => ({
+                  notificationId: notification.id,
+                  targetUserId,
+                  status: "pending",
+                })),
+              )
+              .onConflictDoNothing();
+          }
 
-        return {
-          success: true,
-          notificationId: notification.id,
-        };
+          return {
+            success: true,
+            notificationId: notification.id,
+          };
+        });
       },
       (error, retryAttempt) => {
         logger.error({ retryAttempt: retryAttempt + 1, error }, "Error creating notification");
@@ -110,7 +117,7 @@ export async function sendRankingUpdate({
         index + 1,
       );
 
-      return await sendNotification({
+      const result = await sendNotification({
         db,
         userId,
         input: {
@@ -121,6 +128,9 @@ export async function sendRankingUpdate({
           tripId,
         },
       });
+      // Creating the rows is not delivery — the push has to be dispatched too.
+      await sendMobileNotifications(db, result.notificationId);
+      return result;
     }),
   );
 

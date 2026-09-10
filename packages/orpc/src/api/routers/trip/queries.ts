@@ -1,4 +1,6 @@
 import { buildParticipantCountMap, calculatePagination } from "@mirai-app/common/groups";
+import { attachSponsorDisplay } from "@mirai-app/common/sponsors";
+import { mergeTripResourceFragments } from "@mirai-app/common/tripInfo";
 import { buildTripDetailResponse, buildTripListItem } from "@mirai-app/common/trips";
 import { type DB, tripParticipants, trips } from "@mirai-app/db";
 import { ORPCError } from "@orpc/server";
@@ -96,6 +98,9 @@ async function fetchTripWithRelations(db: DB, tripId: string) {
           sponsor: true,
         },
       },
+      // Per-trip logo layout (height/offsets) lives here since migration
+      // 20260605202256_freezing_venom moved it off the sponsors table.
+      tripSponsorDisplays: true,
       participants: {
         with: {
           user: true,
@@ -145,9 +150,16 @@ async function buildTripDetail(
   );
 
   const normalizedTrip = toClientTrip(trip);
+  const detail = buildTripDetailResponse(
+    normalizedTrip,
+    countMap,
+    emailByAuthUserId,
+    resolvedGroupImages,
+  );
   return {
     ...normalizedTrip,
-    ...buildTripDetailResponse(normalizedTrip, countMap, emailByAuthUserId, resolvedGroupImages),
+    ...detail,
+    tripSponsors: attachSponsorDisplay(detail.tripSponsors, trip.tripSponsorDisplays),
   } as TripDetail;
 }
 
@@ -177,6 +189,43 @@ export const getById = async (
   }
 
   return buildTripDetail(trip, context.supabase, context.db);
+};
+
+/**
+ * Minimal per-trip theme lookup.
+ *
+ * The root `TripThemeProvider` only reads `trip.theme`, so it must not pay for
+ * `getByIdFull` (trip + relations + groups + challenges + sponsors + a page of feed
+ * activities) on every cold start. Participation is enforced exactly as in `getById`.
+ */
+export const getTheme = async (
+  context: {
+    db: DB;
+    dbUser: { id: string };
+  },
+  input: { id: string },
+): Promise<{ theme: string }> => {
+  const isParticipant = await context.db.query.tripParticipants.findFirst({
+    where: (tp, { eq: equals, and: both }) =>
+      both(equals(tp.userId, context.dbUser.id), equals(tp.tripId, input.id)),
+    columns: { tripId: true },
+  });
+
+  if (!isParticipant) {
+    throw new ORPCError("FORBIDDEN", { message: "You are not a participant of this trip" });
+  }
+
+  const [row] = await context.db
+    .select({ theme: trips.theme })
+    .from(trips)
+    .where(eq(trips.id, input.id))
+    .limit(1);
+
+  if (!row) {
+    throw new ORPCError("NOT_FOUND", { message: "Trip not found" });
+  }
+
+  return { theme: row.theme ?? "DEFAULT" };
 };
 
 export const getByIdFull = async (
@@ -276,9 +325,14 @@ export const getResources = async (
     }),
   ]);
 
-  const resources = [...links, ...files, ...texts, ...icons]
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((resource) => toClientTripResource(resource));
+  // One logical resource is stored as up to four rows, one per table that can
+  // hold part of its payload, so the fragments are recombined here before they
+  // reach the client.
+  const resources = mergeTripResourceFragments(
+    [...links, ...files, ...texts, ...icons]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((resource) => toClientTripResource(resource)),
+  );
 
   const insurance = await context.db.query.tripInsurances.findFirst({
     where: matchTripInsuranceByTripId,

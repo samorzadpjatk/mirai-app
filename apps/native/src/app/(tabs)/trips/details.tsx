@@ -1,5 +1,4 @@
 import { useAuth } from "@mirai-app/auth/client";
-import type { TripDetailTripSponsor } from "@mirai-app/orpc";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -7,7 +6,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DeckBackground } from "~/components/common/DeckBackground";
 import { TripBanner } from "~/components/trips/TripBanner";
-import { type Partner, PartnersSection } from "~/components/trips/details/PartnersSection";
+import { PartnersSection, toPartners } from "~/components/trips/details/PartnersSection";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
@@ -18,7 +17,8 @@ import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
 
 export default function TripDetailsScreen() {
-  const { session, isLoading } = useAuth();
+  // The login redirect only depends on the session, not on the user profile fetch.
+  const { session, isSessionLoading } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -32,12 +32,12 @@ export default function TripDetailsScreen() {
   useTripSync();
 
   useEffect(() => {
-    if (!isLoading && !session) {
+    if (!isSessionLoading && !session) {
       router.replace("/auth/login");
     }
-  }, [isLoading, session, router]);
+  }, [isSessionLoading, session, router]);
 
-  if (isLoading || isLoadingTrip || isLoadingSelectedTrip) {
+  if (isSessionLoading || isLoadingTrip || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading..." />;
   }
 
@@ -53,21 +53,7 @@ export default function TripDetailsScreen() {
     );
   }
 
-  const sponsors = trip.tripSponsors
-    .map((ts: TripDetailTripSponsor): Partner | null => {
-      const s = ts.sponsor;
-      if (!s) return null;
-      return {
-        id: s.id,
-        name: s.name,
-        logoPath: s.logoPath,
-        description: s.description,
-        height: null,
-        offsetX: null,
-        offsetY: null,
-      };
-    })
-    .filter((s): s is Partner => Boolean(s));
+  const sponsors = toPartners(trip.tripSponsors);
 
   return (
     <>

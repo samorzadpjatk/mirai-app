@@ -1,5 +1,5 @@
-import { sponsors, tripSponsors, trips } from "@mirai-app/db";
-import { eq, sql } from "drizzle-orm";
+import { sponsors, tripSponsorDisplay, tripSponsors, trips } from "@mirai-app/db";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPgliteTestDb } from "~/db-test-helper";
 import { addToTrip, create, deleteSponsor, removeFromTrip, update } from "../sponsor/mutations";
@@ -322,6 +322,270 @@ describe("sponsor router — PGLite integration", () => {
     await expect(
       addToTrip({ db: testDb.db }, { tripId: "trip-1", sponsorId: "sponsor-1" }),
     ).rejects.toThrow("Sponsor is already associated with this trip");
+  });
+
+  // Regression: migration 20260605202256_freezing_venom moved height/offsetX/offsetY
+  // from `sponsors` to `trip_sponsor_display`, but the router kept accepting them and
+  // spread them into the sponsors insert, where they were silently dropped.
+  describe("per-trip display settings", () => {
+    async function readDisplay(tripId: string, sponsorId: string) {
+      const [row] = await testDb.db
+        .select()
+        .from(tripSponsorDisplay)
+        .where(
+          and(eq(tripSponsorDisplay.tripId, tripId), eq(tripSponsorDisplay.sponsorId, sponsorId)),
+        );
+      return row;
+    }
+
+    it("create persists height and offsets to trip_sponsor_display", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const result = await create(
+        { db: testDb.db },
+        {
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+          isActive: true,
+          tripId: "trip-1",
+          height: 22,
+          offsetX: 3,
+          offsetY: -5,
+        },
+      );
+
+      expect(result.display).toMatchObject({ height: 22, offsetX: 3, offsetY: -5 });
+
+      const stored = await readDisplay("trip-1", result.id);
+      expect(stored).toMatchObject({ height: 22, offsetX: 3, offsetY: -5 });
+    });
+
+    it("create associates the sponsor with the trip when tripId is given", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const result = await create(
+        { db: testDb.db },
+        {
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+          isActive: true,
+          tripId: "trip-1",
+          height: 22,
+        },
+      );
+
+      const visible = await getByTripId({ db: testDb.db }, { tripId: "trip-1" });
+      expect(visible.map((s) => s.id)).toContain(result.id);
+    });
+
+    it("create rejects display settings without a tripId instead of dropping them", async () => {
+      await expect(
+        create(
+          { db: testDb.db },
+          {
+            name: "Netcompany",
+            description: "Partner",
+            logoPath: "images/sponsors/netcompany.png",
+            isActive: true,
+            height: 22,
+          },
+        ),
+      ).rejects.toThrow(/require a tripId/);
+
+      const rows = await testDb.db.select().from(sponsors);
+      expect(rows).toHaveLength(0);
+    });
+
+    it("create throws NOT_FOUND when the trip does not exist", async () => {
+      await expect(
+        create(
+          { db: testDb.db },
+          {
+            name: "Netcompany",
+            description: "Partner",
+            logoPath: "images/sponsors/netcompany.png",
+            isActive: true,
+            tripId: "missing",
+            height: 22,
+          },
+        ),
+      ).rejects.toThrow("Trip not found");
+
+      const rows = await testDb.db.select().from(sponsors);
+      expect(rows).toHaveLength(0);
+    });
+
+    it("create without a tripId leaves the sponsor unassociated and without display", async () => {
+      const result = await create(
+        { db: testDb.db },
+        {
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+          isActive: true,
+        },
+      );
+
+      expect(result.display).toBeNull();
+
+      const displayRows = await testDb.db.select().from(tripSponsorDisplay);
+      expect(displayRows).toHaveLength(0);
+    });
+
+    // Regression: create used to upsert trip_sponsor_display unconditionally, so
+    // "add this sponsor to this trip with the default layout" built an empty
+    // `set` and blew up with a raw Drizzle Error("No values to set") — after the
+    // sponsor and the association had already been written.
+    it("create with a tripId but no display settings associates the sponsor and skips the display row", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const result = await create(
+        { db: testDb.db },
+        {
+          name: "Netcompany",
+          description: "Partner",
+          logoPath: "images/sponsors/netcompany.png",
+          isActive: true,
+          tripId: "trip-1",
+        },
+      );
+
+      expect(result.display).toBeNull();
+
+      const visible = await getByTripId({ db: testDb.db }, { tripId: "trip-1" });
+      expect(visible.map((s) => s.id)).toEqual([result.id]);
+
+      const displayRows = await testDb.db.select().from(tripSponsorDisplay);
+      expect(displayRows).toHaveLength(0);
+    });
+
+    // The default layout must stay reachable: creating the same sponsor twice
+    // used to be the only way out of the crash above, and it duplicated rows.
+    it("create with a tripId but no display settings can be called twice without leftovers", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      const input = {
+        name: "Netcompany",
+        description: "Partner",
+        logoPath: "images/sponsors/netcompany.png",
+        isActive: true,
+        tripId: "trip-1",
+      };
+
+      const first = await create({ db: testDb.db }, input);
+      const second = await create({ db: testDb.db }, { ...input, name: "Netcompany PL" });
+
+      expect(second.id).not.toBe(first.id);
+
+      const associations = await testDb.db
+        .select()
+        .from(tripSponsors)
+        .where(eq(tripSponsors.tripId, "trip-1"));
+      expect(associations).toHaveLength(2);
+    });
+
+    it("create rolls the sponsor and the association back when the display write fails", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+
+      await expect(
+        create(
+          { db: testDb.db },
+          {
+            name: "Netcompany",
+            description: "Partner",
+            logoPath: "images/sponsors/netcompany.png",
+            isActive: true,
+            tripId: "trip-1",
+            // Out of range for a Postgres `integer`, so the display insert fails
+            // after the sponsor and the association have been written.
+            height: 2_147_483_648,
+          },
+        ),
+      ).rejects.toThrow();
+
+      expect(await testDb.db.select().from(sponsors)).toHaveLength(0);
+      expect(await testDb.db.select().from(tripSponsors)).toHaveLength(0);
+      expect(await testDb.db.select().from(tripSponsorDisplay)).toHaveLength(0);
+    });
+
+    it("update persists height and offsets to trip_sponsor_display", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+      await seedSponsor("sponsor-1", "Netcompany", true);
+      await seedTripSponsor("ts-1", "trip-1", "sponsor-1");
+
+      const result = await update(
+        { db: testDb.db },
+        { id: "sponsor-1", tripId: "trip-1", height: 22, offsetX: 1, offsetY: 2 },
+      );
+
+      expect(result.display).toMatchObject({ height: 22, offsetX: 1, offsetY: 2 });
+      expect(await readDisplay("trip-1", "sponsor-1")).toMatchObject({
+        height: 22,
+        offsetX: 1,
+        offsetY: 2,
+      });
+    });
+
+    it("update only overwrites the display fields that were sent", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+      await seedSponsor("sponsor-1", "Netcompany", true);
+      await testDb.db.insert(tripSponsorDisplay).values({
+        id: "tsd-1",
+        tripId: "trip-1",
+        sponsorId: "sponsor-1",
+        height: 30,
+        offsetX: 7,
+        offsetY: 9,
+      });
+
+      await update({ db: testDb.db }, { id: "sponsor-1", tripId: "trip-1", height: 18 });
+
+      expect(await readDisplay("trip-1", "sponsor-1")).toMatchObject({
+        height: 18,
+        offsetX: 7,
+        offsetY: 9,
+      });
+    });
+
+    it("update accepts display settings alone without touching sponsor columns", async () => {
+      await seedTrip("trip-1", "Summer Camp");
+      await seedSponsor("sponsor-1", "Netcompany", true);
+
+      const result = await update(
+        { db: testDb.db },
+        { id: "sponsor-1", tripId: "trip-1", height: 18 },
+      );
+
+      expect(result.name).toBe("Netcompany");
+    });
+
+    it("update rejects display settings without a tripId instead of dropping them", async () => {
+      await seedSponsor("sponsor-1", "Netcompany", true);
+
+      await expect(update({ db: testDb.db }, { id: "sponsor-1", height: 22 })).rejects.toThrow(
+        /require a tripId/,
+      );
+    });
+
+    it("update throws NOT_FOUND when the trip does not exist", async () => {
+      await seedSponsor("sponsor-1", "Netcompany", true);
+
+      await expect(
+        update({ db: testDb.db }, { id: "sponsor-1", tripId: "missing", height: 22 }),
+      ).rejects.toThrow("Trip not found");
+    });
+
+    it("update without display settings leaves trip_sponsor_display untouched", async () => {
+      await seedSponsor("sponsor-1", "Old Name", true);
+
+      const result = await update({ db: testDb.db }, { id: "sponsor-1", name: "New Name" });
+
+      expect(result.name).toBe("New Name");
+      expect(result.display).toBeNull();
+      expect(await testDb.db.select().from(tripSponsorDisplay)).toHaveLength(0);
+    });
   });
 
   it("removeFromTrip removes a sponsor from a trip", async () => {

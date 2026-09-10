@@ -350,6 +350,29 @@ describe("isAbortError", () => {
   });
 });
 
+describe("useFileDownload reference stability", () => {
+  // Regression: `download` used to depend on the whole mutation result object,
+  // which TanStack Query rebuilds on every render. Screens that call `download`
+  // from an effect list it in their dependencies, so the effect re-ran on every
+  // render; once a download actually succeeded and set state, that closed into an
+  // infinite render loop and the app showed "Maximum update depth exceeded".
+  it("keeps `download` identical across re-renders", async () => {
+    server.use(
+      createORPCHandler(["storage", "createDownloadUrl"], () => ({
+        signedUrl: "https://example.test/signed",
+      })),
+    );
+
+    const { result, rerender } = renderHookWithMSW(() => useFileDownload());
+
+    const first = result.current.download;
+    rerender({});
+    rerender({});
+
+    expect(result.current.download).toBe(first);
+  });
+});
+
 describe("getDownloadErrorMessage", () => {
   it("should return message from Error", () => {
     expect(getDownloadErrorMessage(new Error("test"))).toBe("test");

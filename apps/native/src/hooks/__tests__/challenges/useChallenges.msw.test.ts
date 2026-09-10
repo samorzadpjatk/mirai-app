@@ -187,11 +187,13 @@ describe("useChallenges (MSW)", () => {
       await result.current.fetchNextPage();
     });
 
+    // Wait for the second page to actually land. Waiting on `isFetchingNextPage`
+    // instead is a race: on a slow runner the flag can still be false because the
+    // request has not started yet, so the wait resolves against page one.
     await waitFor(() => {
-      expect(result.current.isFetchingNextPage).toBe(false);
+      expect(result.current.challenges).toHaveLength(2);
     });
 
-    expect(result.current.challenges).toHaveLength(2);
     expect(result.current.challenges[0]!.id).toBe("challenge-1");
     expect(result.current.challenges[1]!.id).toBe("challenge-2");
     expect(result.current.hasNextPage).toBe(false);

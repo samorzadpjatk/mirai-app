@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Dimensions,
-  ImageBackground,
   Linking,
   ScrollView,
   StyleSheet,
@@ -14,26 +13,16 @@ import {
   View,
 } from "react-native";
 import Pdf from "react-native-pdf";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { DeckBackground } from "~/components/common/DeckBackground";
-import { FullScreenModal } from "~/components/common/ui";
+import { EmptyState, FullScreenModal } from "~/components/common/ui";
+import { InteractiveMapTile, TripInfoHero, getIconName } from "~/components/tripInfo";
 import { useFileDownload } from "~/hooks/files";
-import { useSelectedTrip, useTripResources } from "~/hooks/trips";
+import { useSelectedTrip, useTripDetails, useTripResources } from "~/hooks/trips";
 import { type ThemePalette, useThemedStyles, useTripTheme } from "~/theme/TripThemeProvider";
+import { formatTripDateRange, getTripStatus } from "~/utils/trip";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { borderRadius, colors, spacing, typography } from "../../../styles";
-
-// Type-safe icon name helper
-const getIconName = (
-  iconName: string | null,
-  fallback: keyof typeof Ionicons.glyphMap,
-): keyof typeof Ionicons.glyphMap => {
-  if (!iconName) return fallback;
-  // Basic validation - check if it's a reasonable icon name format
-  // This is a simple heuristic; in a real app you might want a more robust validation
-  return iconName as keyof typeof Ionicons.glyphMap;
-};
 
 export default function TripInfoScreen() {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
@@ -41,7 +30,6 @@ export default function TripInfoScreen() {
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfModalTitle, setPdfModalTitle] = useState("");
   const [pdfModalUri, setPdfModalUri] = useState<string>("");
-  const insets = useSafeAreaInsets();
   const styles = useThemedStyles(makeStyles);
   const { palette } = useTripTheme();
   const params = useLocalSearchParams();
@@ -49,7 +37,8 @@ export default function TripInfoScreen() {
   const { selectedTripId } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { getResource, insurance, isLoading, isError } = useTripResources(tripId);
+  const { getResource, resources, insurance, isLoading, isError } = useTripResources(tripId);
+  const { trip } = useTripDetails(tripId);
 
   // File download hooks for images and PDFs
   const heroImageDownload = useFileDownload();
@@ -101,8 +90,14 @@ export default function TripInfoScreen() {
     );
   }
 
+  const heroResource = getResource("HERO_IMAGE");
+  const interactiveMapResource = getResource("INTERACTIVE_MAP");
+  const pdfMapResource = getResource("PDF_MAP");
+  const infopackResource = getResource("INFOPACK");
+  const whatsappResource = getResource("WHATSAPP");
+  const sosResource = getResource("SOS");
+
   const handleWhatsAppPress = () => {
-    const whatsappResource = getResource("WHATSAPP");
     if (whatsappResource?.url) {
       Linking.openURL(whatsappResource.url).catch(() => {
         /* no-op */
@@ -111,13 +106,12 @@ export default function TripInfoScreen() {
   };
 
   const handleInfopakPress = async () => {
-    const infopackResource = getResource("INFOPACK");
     if (infopackResource?.storagePath) {
       try {
         const result = await infopackDownload.download({
           storagePath: infopackResource.storagePath,
         });
-        setPdfModalTitle("Infopack");
+        setPdfModalTitle(infopackResource.label || "Infopack");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch {
@@ -127,7 +121,6 @@ export default function TripInfoScreen() {
   };
 
   const handleSosPress = () => {
-    const sosResource = getResource("SOS");
     if (sosResource?.description) {
       Alert.alert("Numer alarmowy", sosResource.description);
     } else {
@@ -140,13 +133,12 @@ export default function TripInfoScreen() {
   };
 
   const handlePdfMapPress = async () => {
-    const pdfMapResource = getResource("PDF_MAP");
     if (pdfMapResource?.storagePath) {
       try {
         const result = await mapPdfDownload.download({
           storagePath: pdfMapResource.storagePath,
         });
-        setPdfModalTitle("PDF Map");
+        setPdfModalTitle(pdfMapResource.label || "PDF Map");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch {
@@ -173,6 +165,13 @@ export default function TripInfoScreen() {
     }
   };
 
+  const interactiveMapUrl = interactiveMapResource?.url ?? "";
+  const heroTitle = trip?.name ?? (heroResource?.label || "Trip Info");
+  const heroSubtitle = formatTripDateRange(trip?.startDate, trip?.endDate);
+  const heroBadge = trip ? getTripStatus(trip.startDate, trip.endDate) : null;
+  const hasResources = resources.length > 0 || Boolean(insurance);
+  const hasEssentialResources = Boolean(sosResource) || Boolean(insurance);
+
   return (
     <>
       <StatusBar style="light" />
@@ -184,79 +183,40 @@ export default function TripInfoScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}
-          <View style={styles.heroCard}>
-            <ImageBackground
-              source={{
-                uri:
-                  heroImageDownload.file?.uri ??
-                  "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
-              }}
-              style={styles.heroImage}
-              imageStyle={{ borderRadius: borderRadius.xl }}
-            >
-              <View style={styles.heroOverlay} />
-              <View style={styles.heroContent}>
-                <View style={styles.liveBadge}>
-                  <Text style={styles.liveBadgeText}>Live Now</Text>
-                </View>
-                <View style={styles.heroTextContainer}>
-                  <Text style={styles.heroTitle}>
-                    {getResource("HERO_IMAGE")?.label ?? "Trip Info"}
-                  </Text>
-                  <Text style={styles.heroSubtitle}>Feb 20 - Mar 01, 2026</Text>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
+          <TripInfoHero
+            title={heroTitle}
+            subtitle={heroSubtitle}
+            badge={heroBadge}
+            imageUri={heroImageDownload.file?.uri}
+          />
+
+          {hasResources ? null : (
+            <EmptyState
+              icon="information-circle-outline"
+              title="No trip info yet"
+              subtitle="Your organisers haven't published any resources for this trip. Check back closer to departure."
+            />
+          )}
 
           {/* Main Bento Grid */}
           <View style={styles.bentoGrid}>
             {/* Map Tiles Row */}
             <View style={styles.gridRow}>
-              {/* Interactive Ski Map */}
-              {getResource("INTERACTIVE_MAP") && (
-                <TouchableOpacity
-                  style={styles.mapTile}
+              {/* Interactive Map */}
+              {interactiveMapUrl ? (
+                <InteractiveMapTile
+                  label={interactiveMapResource?.label || "Interactive Map"}
+                  subtitle={interactiveMapResource?.description}
+                  iconName={getIconName(interactiveMapResource?.iconName, "map")}
+                  backgroundUri={mapBgImageDownload.file?.uri}
                   onPress={handleMapPress}
-                  activeOpacity={0.8}
-                >
-                  <ImageBackground
-                    source={{
-                      uri:
-                        mapBgImageDownload.file?.uri ??
-                        "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
-                    }}
-                    style={styles.mapBackground}
-                    imageStyle={{ borderRadius: borderRadius.xl, opacity: 0.4 }}
-                  >
-                    <View style={styles.mapGradient} />
-                    <View style={styles.mapContent}>
-                      <View style={styles.mapIconWrapper}>
-                        <Ionicons
-                          name={getIconName(
-                            getResource("INTERACTIVE_MAP")?.iconName ?? null,
-                            "map",
-                          )}
-                          size={24}
-                          color={palette.primary}
-                        />
-                      </View>
-                      <Text style={styles.mapTitle}>
-                        {getResource("INTERACTIVE_MAP")?.label ?? "Interactive Map"}
-                      </Text>
-                      <Text style={styles.mapSubtitle}>Navigate trails & lifts</Text>
-                      <View style={styles.mapAction}>
-                        <Text style={styles.mapActionText}>Explore Map</Text>
-                        <Ionicons name="chevron-forward" size={16} color={palette.primary} />
-                      </View>
-                    </View>
-                  </ImageBackground>
-                </TouchableOpacity>
-              )}
+                />
+              ) : null}
 
               {/* PDF Map */}
-              {getResource("PDF_MAP") && (
+              {pdfMapResource ? (
                 <TouchableOpacity
+                  testID="trip-info-pdf-map-tile"
                   style={styles.mapTile}
                   onPress={() => void handlePdfMapPress()}
                   activeOpacity={0.8}
@@ -265,21 +225,20 @@ export default function TripInfoScreen() {
                   <View style={styles.pdfMapContent}>
                     <View style={styles.pdfMapIconWrapper}>
                       <Ionicons
-                        name={getIconName(
-                          getResource("PDF_MAP")?.iconName ?? null,
-                          "document-text",
-                        )}
+                        name={getIconName(pdfMapResource.iconName, "document-text")}
                         size={28}
                         color={colors.white}
                       />
                     </View>
                     <View style={styles.pdfMapTextContainer}>
                       <View style={styles.pdfMapTitleRow}>
-                        <Text style={styles.mapTitle}>
-                          {getResource("PDF_MAP")?.label ?? "PDF Map"}
-                        </Text>
+                        <Text style={styles.mapTitle}>{pdfMapResource.label || "PDF Map"}</Text>
                         {mapPdfDownload.file ? (
-                          <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={14}
+                            color={colors.statusCompleted}
+                          />
                         ) : (
                           <Ionicons name="download" size={14} color={colors.slate400} />
                         )}
@@ -294,14 +253,15 @@ export default function TripInfoScreen() {
                     </View>
                   </View>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
 
             {/* Grid Row */}
             <View style={styles.gridRow}>
               {/* Infopak Tile */}
-              {getResource("INFOPACK") && (
+              {infopackResource ? (
                 <TouchableOpacity
+                  testID="trip-info-infopack-tile"
                   style={styles.bentoTile}
                   onPress={() => void handleInfopakPress()}
                   activeOpacity={0.8}
@@ -309,18 +269,20 @@ export default function TripInfoScreen() {
                 >
                   <View style={styles.bentoIconWrapper}>
                     <Ionicons
-                      name={getIconName(getResource("INFOPACK")?.iconName ?? null, "document-text")}
+                      name={getIconName(infopackResource.iconName, "document-text")}
                       size={28}
                       color={colors.white}
                     />
                   </View>
                   <View style={styles.bentoContent}>
                     <View style={styles.bentoTitleRow}>
-                      <Text style={styles.bentoTitle}>
-                        {getResource("INFOPACK")?.label ?? "Infopack"}
-                      </Text>
+                      <Text style={styles.bentoTitle}>{infopackResource.label || "Infopack"}</Text>
                       {infopackDownload.file ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={14}
+                          color={colors.statusCompleted}
+                        />
                       ) : (
                         <Ionicons name="download" size={14} color={colors.slate400} />
                       )}
@@ -334,65 +296,72 @@ export default function TripInfoScreen() {
                     </Text>
                   </View>
                 </TouchableOpacity>
-              )}
+              ) : null}
 
               {/* WhatsApp Tile */}
-              {getResource("WHATSAPP") && (
+              {whatsappResource?.url ? (
                 <TouchableOpacity
+                  testID="trip-info-whatsapp-tile"
                   style={styles.whatsappTile}
                   onPress={handleWhatsAppPress}
                   activeOpacity={0.8}
                 >
                   <View style={styles.whatsappIconWrapper}>
                     <Ionicons
-                      name={getIconName(getResource("WHATSAPP")?.iconName ?? null, "chatbubble")}
+                      name={getIconName(whatsappResource.iconName, "chatbubble")}
                       size={28}
                       color={palette.accentMagenta}
                     />
                   </View>
                   <View style={styles.bentoContent}>
-                    <Text style={styles.bentoTitle}>
-                      {getResource("WHATSAPP")?.label ?? "WhatsApp"}
-                    </Text>
-                    <Text style={styles.whatsappSubtitle}>Join Trip Community</Text>
+                    <Text style={styles.bentoTitle}>{whatsappResource.label || "WhatsApp"}</Text>
+                    {whatsappResource.description ? (
+                      <Text style={styles.whatsappSubtitle} numberOfLines={2}>
+                        {whatsappResource.description}
+                      </Text>
+                    ) : null}
                   </View>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
 
             {/* Section Header */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Essential Resources</Text>
-              <View style={styles.sectionDivider} />
-            </View>
+            {hasEssentialResources ? (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Essential Resources</Text>
+                <View style={styles.sectionDivider} />
+              </View>
+            ) : null}
 
             {/* Smaller Action Tiles */}
             <View style={styles.resourceGrid}>
-              {getResource("SOS") && (
+              {sosResource ? (
                 <TouchableOpacity
+                  testID="trip-info-sos-tile"
                   style={styles.resourceTile}
                   onPress={handleSosPress}
                   activeOpacity={0.8}
                 >
                   <Ionicons
-                    name={getIconName(getResource("SOS")?.iconName ?? null, "alert-circle")}
+                    name={getIconName(sosResource.iconName, "alert-circle")}
                     size={24}
                     color={palette.primary}
                   />
-                  <Text style={styles.resourceText}>{getResource("SOS")?.label ?? "SOS"}</Text>
+                  <Text style={styles.resourceText}>{sosResource.label || "SOS"}</Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
 
-              {insurance && (
+              {insurance ? (
                 <TouchableOpacity
+                  testID="trip-info-insurance-tile"
                   style={styles.resourceTile}
                   onPress={handleInsurancePress}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="medkit" size={24} color={palette.primary} />
-                  <Text style={styles.resourceText}>{insurance.label ?? "Insurance"}</Text>
+                  <Text style={styles.resourceText}>{insurance.label || "Insurance"}</Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
           </View>
         </ScrollView>
@@ -400,21 +369,26 @@ export default function TripInfoScreen() {
         {/* Map Modal with WebView */}
         <FullScreenModal
           visible={isMapModalVisible}
-          title={getResource("INTERACTIVE_MAP")?.label ?? "Interactive Map"}
+          title={interactiveMapResource?.label || "Interactive Map"}
           onClose={() => setIsMapModalVisible(false)}
         >
-          <WebView
-            source={{
-              uri:
-                getResource("INTERACTIVE_MAP")?.url ??
-                "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
-            }}
-            style={styles.webView}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-          />
+          {interactiveMapUrl ? (
+            <WebView
+              testID="trip-info-map-webview"
+              source={{ uri: interactiveMapUrl }}
+              style={styles.webView}
+              startInLoadingState={true}
+              scalesPageToFit={true}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+            />
+          ) : (
+            <EmptyState
+              icon="map-outline"
+              title="No map available"
+              subtitle="No interactive map has been published for this trip yet."
+            />
+          )}
         </FullScreenModal>
 
         {/* PDF Modal */}
@@ -550,112 +524,18 @@ const makeStyles = (palette: ThemePalette) =>
       gap: spacing.lg,
     },
 
-    // Hero Header
-    heroCard: {
-      height: 192,
-      borderRadius: borderRadius.xl,
-      overflow: "hidden",
-    },
-    heroImage: {
-      width: "100%",
-      height: "100%",
-    },
-    heroOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(23, 24, 28, 0.4)",
-    },
-    heroContent: {
-      flex: 1,
-      padding: spacing.lg,
-      justifyContent: "space-between",
-    },
-    liveBadge: {
-      backgroundColor: palette.primary,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      borderRadius: borderRadius.full,
-      alignSelf: "flex-start",
-    },
-    liveBadgeText: {
-      fontSize: 10,
-      fontWeight: typography.bold,
-      color: colors.backgroundDark,
-      textTransform: "uppercase",
-      letterSpacing: 2,
-    },
-    heroTextContainer: {
-      gap: spacing.xs,
-    },
-    heroTitle: {
-      fontSize: 24,
-      fontWeight: typography.bold,
-      color: colors.white,
-    },
-    heroSubtitle: {
-      fontSize: typography.xs,
-      fontWeight: typography.medium,
-      color: palette.primaryOpacity80,
-    },
+    // Hero Header lives in ~/components/tripInfo/TripInfoHero
 
     // Bento Grid
     bentoGrid: {
       gap: spacing.lg,
     },
 
-    // Map Tile Large
-    mapTileLarge: {
-      height: 176,
-      borderRadius: borderRadius.xl,
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: palette.primaryOpacity20,
-      shadowColor: palette.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.15,
-      shadowRadius: 15,
-      elevation: 4,
-    },
-    mapBackground: {
-      width: "100%",
-      height: "100%",
-    },
-    mapGradient: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(39, 41, 53, 0.85)",
-    },
-    mapContent: {
-      flex: 1,
-      padding: spacing.xl,
-      justifyContent: "space-between",
-    },
-    mapIconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: borderRadius.md,
-      backgroundColor: palette.primaryOpacity20,
-      alignItems: "center",
-      justifyContent: "center",
-    },
+    // The interactive map tile lives in ~/components/tripInfo/InteractiveMapTile
     mapTitle: {
       fontSize: typography.lg,
       fontWeight: typography.bold,
       color: colors.white,
-    },
-    mapSubtitle: {
-      fontSize: typography.xs,
-      color: colors.slate400,
-    },
-    mapAction: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs,
-    },
-    mapActionText: {
-      fontSize: 10,
-      fontWeight: typography.bold,
-      color: palette.primary,
-      textTransform: "uppercase",
-      letterSpacing: 1,
     },
 
     // Grid Row
@@ -765,8 +645,7 @@ const makeStyles = (palette: ThemePalette) =>
       fontSize: 10,
       color: palette.accentMagenta,
       fontWeight: typography.medium,
-      textTransform: "uppercase",
-      letterSpacing: 1.5,
+      lineHeight: 14,
     },
 
     // Section Header
@@ -810,14 +689,6 @@ const makeStyles = (palette: ThemePalette) =>
       color: colors.white,
       textTransform: "uppercase",
     },
-    resourceSubtext: {
-      fontSize: 10,
-      color: colors.slate400,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-    },
-
-    // Branding
 
     webView: {
       flex: 1,

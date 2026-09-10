@@ -1,3 +1,4 @@
+import type { TripDetailTripSponsor } from "@mirai-app/orpc";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CachedImage } from "~/components/common/CachedImage";
@@ -35,6 +36,32 @@ export interface Partner {
   height: number | null;
   offsetX: number | null;
   offsetY: number | null;
+}
+
+/**
+ * Maps a trip's `tripSponsors` rows to partner tiles, carrying over the per-trip
+ * logo layout stored in `trip_sponsor_display` (seeded from the trip's sponsors
+ * YAML). Rows whose sponsor could not be resolved are dropped.
+ */
+export function toPartners(tripSponsors: TripDetailTripSponsor[]): Partner[] {
+  return tripSponsors
+    .map((tripSponsor): Partner | null => {
+      const sponsor = tripSponsor.sponsor;
+      if (!sponsor) return null;
+      return {
+        id: sponsor.id,
+        name: sponsor.name,
+        logoPath: sponsor.logoPath,
+        description: sponsor.description,
+        // Defensive: a trip coming from the list query carries no per-trip layout.
+        // Falling back keeps the tile rendering at its default size instead of
+        // taking the whole screen down.
+        height: tripSponsor.display?.height ?? null,
+        offsetX: tripSponsor.display?.offsetX ?? null,
+        offsetY: tripSponsor.display?.offsetY ?? null,
+      };
+    })
+    .filter((partner): partner is Partner => partner !== null);
 }
 
 interface PartnersSectionProps {

@@ -7,13 +7,14 @@ import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../../utils/activityFeed";
+import { notifyCoinChange } from "../../../utils/coinNotifications";
 import type { CoinTransactionInput } from "./types";
 
 export const addCoins = async (
   context: { db: DB; dbUser: { id: string } },
   input: CoinTransactionInput,
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transaction = await context.db.transaction(async (tx) => {
     const previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     // Verify group exists and belongs to the trip
@@ -73,13 +74,27 @@ export const addCoins = async (
 
     return transaction;
   });
+
+  // Sent after the transaction commits so a slow Expo round-trip never holds a
+  // database transaction open.
+  await notifyCoinChange({
+    db: context.db,
+    actorId: context.dbUser.id,
+    tripId: input.tripId,
+    groupId: input.groupId,
+    groupName: transaction.group.name,
+    amount: Math.abs(input.amount),
+    reason: input.reason,
+  });
+
+  return transaction;
 };
 
 export const removeCoins = async (
   context: { db: DB; dbUser: { id: string } },
   input: CoinTransactionInput,
 ) => {
-  return await context.db.transaction(async (tx) => {
+  const transaction = await context.db.transaction(async (tx) => {
     const _previousRankingSnapshot = await captureTripRankingSnapshot(tx, input.tripId);
 
     // Lock the group row for update to prevent race conditions
@@ -137,4 +152,16 @@ export const removeCoins = async (
 
     return transaction;
   });
+
+  await notifyCoinChange({
+    db: context.db,
+    actorId: context.dbUser.id,
+    tripId: input.tripId,
+    groupId: input.groupId,
+    groupName: transaction.group.name,
+    amount: -Math.abs(input.amount),
+    reason: input.reason,
+  });
+
+  return transaction;
 };
