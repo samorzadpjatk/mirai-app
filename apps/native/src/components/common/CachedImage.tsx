@@ -1,3 +1,4 @@
+import type { ImageTransformName } from "@mirai-app/common/storage";
 import { Image, type ImageProps } from "expo-image";
 import { ActivityIndicator, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useImageUrl } from "~/hooks/images";
@@ -6,18 +7,24 @@ export interface CachedImageProps extends Omit<ImageProps, "source"> {
   source?: ImageProps["source"];
   storagePath?: string | null;
   cacheKey?: string | null;
+  /**
+   * Render size to request from Storage. Omit only when the full-resolution
+   * object is genuinely needed (a full-screen photo viewer, a download).
+   */
+  transform?: ImageTransformName;
   fallback?: React.ReactNode;
 }
 
 function StorageCachedImage({
   storagePath,
   cacheKey,
+  transform,
   fallback,
   style,
   placeholder,
   ...imageProps
 }: CachedImageProps & { storagePath: string }) {
-  const { data: urlData, isLoading } = useImageUrl(storagePath, cacheKey);
+  const { data: urlData, isLoading } = useImageUrl(storagePath, cacheKey, transform);
 
   const resolvedSource = urlData?.signedUrl ? { uri: urlData.signedUrl } : undefined;
   const hasSource = Boolean(resolvedSource);
@@ -39,10 +46,23 @@ function StorageCachedImage({
   );
 }
 
-export function CachedImage({ source, storagePath, fallback, style, ...props }: CachedImageProps) {
+export function CachedImage({
+  source,
+  storagePath,
+  transform,
+  fallback,
+  style,
+  ...props
+}: CachedImageProps) {
   if (storagePath) {
     return (
-      <StorageCachedImage storagePath={storagePath} fallback={fallback} style={style} {...props} />
+      <StorageCachedImage
+        storagePath={storagePath}
+        transform={transform}
+        fallback={fallback}
+        style={style}
+        {...props}
+      />
     );
   }
 

@@ -1,4 +1,4 @@
-import { resolveStorageUrl } from "@mirai-app/common/storage";
+import { IMAGE_TRANSFORMS, resolveStorageUrl } from "@mirai-app/common/storage";
 import type { DB } from "@mirai-app/db";
 import { challenges } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
@@ -43,7 +43,7 @@ function collectAvatarUserIds(activities: Activity[]): Set<string> {
   return ids;
 }
 
-async function resolveAvatarUrls(
+export async function resolveAvatarUrls(
   context: { supabase: SupabaseClient },
   userIds: Set<string>,
 ): Promise<Record<string, string | null>> {
@@ -53,7 +53,12 @@ async function resolveAvatarUrls(
 
   const entries = await Promise.all(
     Array.from(userIds).map(async (userId) => {
-      const signedUrl = await resolveStorageUrl(context.supabase, `avatar/${userId}.jpg`, 60 * 60);
+      const signedUrl = await resolveStorageUrl(
+        context.supabase,
+        `avatar/${userId}.jpg`,
+        60 * 60,
+        IMAGE_TRANSFORMS.avatar,
+      );
       return [userId, signedUrl] as [string, string | null];
     }),
   );

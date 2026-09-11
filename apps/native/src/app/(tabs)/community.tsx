@@ -292,6 +292,7 @@ export default function CommunityScreen() {
             {tripImageStoragePath ? (
               <CachedImage
                 storagePath={tripImageStoragePath}
+                transform="tripTile"
                 style={styles.tripTileImage}
                 contentFit="cover"
               />

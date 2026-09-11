@@ -88,6 +88,7 @@ export function ExistingSubmissionCard({
           ) : (
             <CachedImage
               storagePath={submission.imageIds[0] ?? undefined}
+              transform="feedCard"
               style={styles.image}
               contentFit="contain"
               accessibilityLabel="Submission preview"

@@ -114,6 +114,7 @@ export function SubmissionReviewCard({
         <View style={styles.mediaWrap}>
           <CachedImage
             storagePath={submission.imageIds[0] ?? undefined}
+            transform="feedCard"
             style={styles.mediaImage}
             contentFit="cover"
             fallback={

@@ -93,6 +93,7 @@ export function ProfileHeader() {
         {avatarStoragePath ? (
           <CachedImage
             storagePath={avatarStoragePath}
+            transform="profileAvatar"
             cacheKey={avatarCacheKey}
             style={styles.avatarImage}
             contentFit="cover"

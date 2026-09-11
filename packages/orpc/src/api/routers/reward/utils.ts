@@ -1,5 +1,9 @@
 import { parseRewardImages } from "@mirai-app/common/rewards";
-import { resolveStorageUrl } from "@mirai-app/common/storage";
+import {
+  DEFAULT_SIGNED_URL_SECONDS,
+  IMAGE_TRANSFORMS,
+  resolveStorageUrl,
+} from "@mirai-app/common/storage";
 import { type DB, type TransactionDB, challenges } from "@mirai-app/db";
 import { eq } from "drizzle-orm";
 
@@ -36,7 +40,10 @@ export const calculateTotalAvailablePoints = async (db: DB | TransactionDB, trip
 export const normalizeRewardImagesInput = (images: string[] | undefined): string[] =>
   (images ?? []).map((image) => image.trim()).filter((image) => image.length > 0);
 
-const resolveRewardImage = resolveStorageUrl;
+const resolveRewardImage = (
+  supabase: Parameters<typeof resolveStorageUrl>[0],
+  path: string | null | undefined,
+) => resolveStorageUrl(supabase, path, DEFAULT_SIGNED_URL_SECONDS, IMAGE_TRANSFORMS.thumbnail);
 
 export const resolveRewardImageData = async (
   supabase: {

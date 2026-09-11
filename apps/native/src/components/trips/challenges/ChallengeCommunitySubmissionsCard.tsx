@@ -362,6 +362,7 @@ function SubmissionTile({
       <View style={styles.tileImageWrap}>
         <CachedImage
           storagePath={imagePath}
+          transform="thumbnail"
           style={styles.tileImage}
           contentFit="contain"
           fallback={
@@ -403,6 +404,7 @@ function FullscreenSubmissionSlide({
       <View style={styles.fullscreenImageWrap}>
         <CachedImage
           storagePath={imagePath}
+          transform="feedCard"
           style={styles.fullscreenImage}
           contentFit="contain"
           fallback={

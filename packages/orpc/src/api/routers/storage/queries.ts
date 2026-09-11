@@ -1,4 +1,7 @@
 import {
+  IMAGE_TRANSFORMS,
+  type ImageTransform,
+  type ImageTransformName,
   buildDownloadResponse,
   buildPublicUrlResponse,
   buildUploadResponse,
@@ -60,6 +63,7 @@ export const createDownloadUrl = async (
           createSignedUrl: (
             path: string,
             expiresIn: number,
+            options?: { transform: ImageTransform },
           ) => Promise<{
             data: { signedUrl?: string | null } | null;
             error: { message?: string } | null;
@@ -71,14 +75,33 @@ export const createDownloadUrl = async (
   input: {
     storagePath: string;
     expiresInSeconds?: number;
+    transform?: ImageTransformName;
   },
 ) => {
   const objectInfo = resolveStoragePath(input.storagePath);
   const expiresIn = input.expiresInSeconds ?? 10 * 60;
+  const bucket = context.supabase.storage.from(objectInfo.bucket);
 
-  const { data, error } = await context.supabase.storage
-    .from(objectInfo.bucket)
-    .createSignedUrl(objectInfo.path, expiresIn);
+  // Only raster buckets go through imgproxy; asking it to resize a video errors out.
+  const transform =
+    input.transform && objectInfo.bucket !== "videos"
+      ? IMAGE_TRANSFORMS[input.transform]
+      : undefined;
+
+  if (transform) {
+    const transformed = await bucket.createSignedUrl(objectInfo.path, expiresIn, { transform });
+    if (!transformed.error && transformed.data?.signedUrl) {
+      return buildDownloadResponse(
+        rewriteSignedUrlHost(transformed.data.signedUrl, env.SUPABASE_PUBLIC_URL),
+        calculateExpiresAtISO(expiresIn, Date.now()),
+      );
+    }
+    // imgproxy answers 422 "Invalid source image" for sources it cannot decode
+    // (very large iPhone captures, for one). Serving the original is slow but
+    // visible, which beats a hole in the feed.
+  }
+
+  const { data, error } = await bucket.createSignedUrl(objectInfo.path, expiresIn);
 
   if (error || !data?.signedUrl) {
     const message =

@@ -1,4 +1,5 @@
 import { emptyReactionCounts } from "@mirai-app/common/feed";
+import { DEFAULT_SIGNED_URL_SECONDS, IMAGE_TRANSFORMS } from "@mirai-app/common/storage";
 import { activityReactions } from "@mirai-app/db";
 import type { DB } from "@mirai-app/db";
 import { count, inArray } from "drizzle-orm";
@@ -111,7 +112,12 @@ export const enrichActivities = async (
       return cached;
     }
 
-    const loader = resolveSignedUrl(context.supabase, value);
+    const loader = resolveSignedUrl(
+      context.supabase,
+      value,
+      DEFAULT_SIGNED_URL_SECONDS,
+      IMAGE_TRANSFORMS.feedCard,
+    );
     imageCache.set(value, loader);
     return loader;
   };

@@ -57,6 +57,7 @@ export function TripHeroCard({
       <CachedImage
         source={directSource ?? undefined}
         storagePath={backgroundImagePath ?? undefined}
+        transform="hero"
         style={styles.heroImage}
         contentFit="cover"
         contentPosition="center"
