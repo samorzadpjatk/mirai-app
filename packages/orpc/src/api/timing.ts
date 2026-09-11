@@ -8,7 +8,7 @@
  * which also works inside a batched request, where several procedures share a
  * single HTTP round trip.
  */
-export interface TimingLogger {
+interface TimingLogger {
   info: (obj: Record<string, unknown>, msg: string) => void;
 }
 
