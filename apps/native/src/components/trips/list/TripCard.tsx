@@ -74,6 +74,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
     >
       <CachedImage
         storagePath={trip.backgroundImagePath ?? undefined}
+        transform="hero"
         style={styles.tripImageBackground}
         contentFit="cover"
       />

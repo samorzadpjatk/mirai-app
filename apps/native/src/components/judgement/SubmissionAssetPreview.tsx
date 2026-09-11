@@ -34,6 +34,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
             <CachedImage
               testID="submission-preview-image"
               storagePath={firstImageStoragePath ?? undefined}
+              transform="feedCard"
               style={viewStyles.mediaImage}
               contentFit="cover"
               fallback={
@@ -65,6 +66,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
             <CachedImage
               testID="fullscreen-image"
               storagePath={firstImageStoragePath ?? undefined}
+              transform="feedCard"
               style={viewStyles.fullscreenImage}
               contentFit="contain"
               fallback={

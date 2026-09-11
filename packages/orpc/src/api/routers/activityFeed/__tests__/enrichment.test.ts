@@ -1,3 +1,4 @@
+import { IMAGE_TRANSFORMS } from "@mirai-app/common/storage";
 import {
   activityFeeds,
   activityReactions,
@@ -173,6 +174,33 @@ describe("enrichActivities", () => {
   // The beforeAll block is kept for potential shared data.
   beforeEach(async () => {
     // nothing – each test seeds its own data
+  });
+
+  it("signs feed images at card size, not at full upload resolution", async () => {
+    const createSignedUrl = vi.fn(async () => ({
+      data: { signedUrl: "https://resolved.example.com/img.jpg" },
+      error: null,
+    }));
+    const ctx = {
+      db: testDb.db,
+      supabase: { storage: { from: () => ({ createSignedUrl }) } },
+      dbUser: { id: "user-1" },
+    } as unknown as Parameters<typeof enrichActivities>[0];
+
+    await seedUser(testDb.db, "user-1");
+    await seedTrip(testDb.db, "trip-1");
+    await seedActivity(testDb.db, "af-img", "trip-1", "custom");
+    await testDb.db
+      .update(activityFeeds)
+      .set({ imageUrl: "activity/banner.jpg" })
+      .where(eq(activityFeeds.id, "af-img"));
+
+    const feeds = await fetchActivityWithRelations(testDb.db, ["af-img"]);
+    await enrichActivities(ctx, feeds as unknown as RawActivityWithRelations[]);
+
+    expect(createSignedUrl).toHaveBeenCalledWith("activity/banner.jpg", expect.any(Number), {
+      transform: IMAGE_TRANSFORMS.feedCard,
+    });
   });
 
   it("enriches custom activity with reactions and cached image", async () => {

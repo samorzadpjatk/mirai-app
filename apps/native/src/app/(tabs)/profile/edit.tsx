@@ -237,6 +237,7 @@ export default function EditProfileScreen() {
               storagePath={
                 !localAvatarPreviewUri && currentUser?.hasAvatar ? avatarStoragePath : null
               }
+              transform="profileAvatar"
               cacheKey={currentUser?.updatedAt?.toISOString() ?? null}
               fallback={
                 <View style={styles.placeholder}>

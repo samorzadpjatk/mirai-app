@@ -23,6 +23,7 @@ function MemberAvatar({ member }: { member: GroupMember }) {
     return (
       <CachedImage
         storagePath={member.avatarStoragePath}
+        transform="avatar"
         style={styles.avatarImage}
         contentFit="cover"
         fallback={<Text style={styles.avatarText}>{member.initials}</Text>}

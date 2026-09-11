@@ -46,6 +46,7 @@ export function SubmissionMediaCard({
         {submission.imagePath ? (
           <CachedImage
             storagePath={submission.imagePath}
+            transform="feedCard"
             style={styles.voteImage}
             contentFit="cover"
             fallback={fallback}
