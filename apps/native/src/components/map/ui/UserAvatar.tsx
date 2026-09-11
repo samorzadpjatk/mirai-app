@@ -84,6 +84,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         testID="user-avatar-image"
         source={imageUrl ? { uri: imageUrl } : undefined}
         storagePath={storagePath ?? undefined}
+        transform="avatar"
         style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
         contentFit="cover"
         fallback={

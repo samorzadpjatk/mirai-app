@@ -1,3 +1,4 @@
+import type { ImageTransform } from "./imageTransform";
 import { parseStoragePath } from "./standard";
 
 export const DEFAULT_SIGNED_URL_SECONDS = 60 * 60 * 24;
@@ -8,6 +9,7 @@ type StorageClient = {
       createSignedUrl: (
         path: string,
         expiresIn: number,
+        options?: { transform: ImageTransform },
       ) => Promise<{
         data: { signedUrl?: string | null } | null;
         error: unknown;
@@ -65,6 +67,7 @@ export const resolveStorageUrl = async (
   supabase: StorageClient,
   path: string | null | undefined,
   seconds: number = DEFAULT_SIGNED_URL_SECONDS,
+  transform?: ImageTransform,
 ): Promise<string | null> => {
   if (!path) return null;
 
@@ -73,9 +76,21 @@ export const resolveStorageUrl = async (
     return path;
   }
 
-  const { data, error } = await supabase.storage
-    .from(parsed.bucket)
-    .createSignedUrl(parsed.path, seconds);
+  const bucket = supabase.storage.from(parsed.bucket);
+  // Only raster buckets go through imgproxy; asking it to resize a video errors out.
+  const wantsTransform = Boolean(transform) && parsed.bucket !== "videos";
+
+  if (wantsTransform && transform) {
+    const transformed = await bucket.createSignedUrl(parsed.path, seconds, { transform });
+    if (!transformed.error && transformed.data?.signedUrl) {
+      return transformed.data.signedUrl;
+    }
+    // imgproxy answers 422 "Invalid source image" for sources it cannot decode
+    // (very large iPhone captures, for one). Serving the original is slow but
+    // visible, which beats a hole in the feed.
+  }
+
+  const { data, error } = await bucket.createSignedUrl(parsed.path, seconds);
 
   if (error || !data?.signedUrl) {
     return null;
@@ -88,10 +103,11 @@ export const resolveStorageUrls = async <T extends { image: string | null }>(
   supabase: StorageClient,
   items: T[],
   seconds?: number,
+  transform?: ImageTransform,
 ): Promise<(T & { image: string | null })[]> =>
   Promise.all(
     items.map(async (item) => ({
       ...item,
-      image: await resolveStorageUrl(supabase, item.image, seconds),
+      image: await resolveStorageUrl(supabase, item.image, seconds, transform),
     })),
   );

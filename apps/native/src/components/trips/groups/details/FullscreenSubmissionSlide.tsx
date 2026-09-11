@@ -36,6 +36,7 @@ export default function FullscreenSubmissionSlide({ submission, width, height, t
           <CachedImage
             testID="fullscreen-image"
             storagePath={submission.imageStoragePath}
+            transform="feedCard"
             style={styles.fullscreenImage}
             contentFit="contain"
             fallback={

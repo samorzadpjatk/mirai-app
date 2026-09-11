@@ -38,6 +38,55 @@ describe("CachedImage", () => {
     });
   });
 
+  it("asks the server for a sized variant when a transform is given", async () => {
+    const inputs: Record<string, unknown>[] = [];
+    server.use(
+      createDownloadUrlHandler((input) => {
+        inputs.push(input);
+        return { signedUrl: "https://cdn.example.com/small.webp" };
+      }),
+    );
+
+    renderWithProviders(
+      <CachedImage
+        testID="cached-image"
+        storagePath="trips/integral/hero.jpg"
+        transform="tripTile"
+        style={{ width: 130, height: 52 }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(inputs[0]).toMatchObject({
+        storagePath: "trips/integral/hero.jpg",
+        transform: "tripTile",
+      });
+    });
+  });
+
+  it("omits the transform when the caller did not ask for one", async () => {
+    const inputs: Record<string, unknown>[] = [];
+    server.use(
+      createDownloadUrlHandler((input) => {
+        inputs.push(input);
+        return { signedUrl: "https://cdn.example.com/original.jpg" };
+      }),
+    );
+
+    renderWithProviders(
+      <CachedImage
+        testID="cached-image"
+        storagePath="trips/integral/hero.jpg"
+        style={{ width: 130, height: 52 }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(inputs[0]).toBeDefined();
+    });
+    expect(inputs[0]).not.toHaveProperty("transform");
+  });
+
   it("renders fallback when no source or storagePath is provided", () => {
     renderWithProviders(
       <CachedImage

@@ -1,4 +1,4 @@
-import { resolveStorageUrl, resolveStorageUrls } from "@mirai-app/common/storage";
+import { IMAGE_TRANSFORMS, resolveStorageUrl, resolveStorageUrls } from "@mirai-app/common/storage";
 import {
   type Challenge,
   type DB,
@@ -62,7 +62,7 @@ export const resolveChallengeImages = async <T extends { image: string | null }>
   challengeRows: T[],
   seconds?: number,
 ): Promise<(T & { image: string | null })[]> =>
-  resolveStorageUrls(supabase, challengeRows, seconds);
+  resolveStorageUrls(supabase, challengeRows, seconds, IMAGE_TRANSFORMS.feedCard);
 
 export type ChallengeWithRelations = Challenge & {
   dailyStartTime: string | null;

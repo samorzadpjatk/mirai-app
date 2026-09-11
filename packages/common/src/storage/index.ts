@@ -6,6 +6,8 @@ export {
   parseStoragePath,
 } from "./standard";
 export type { StandardBucket } from "./standard";
+export { IMAGE_TRANSFORMS } from "./imageTransform";
+export type { ImageTransform, ImageTransformName } from "./imageTransform";
 export {
   DEFAULT_SIGNED_URL_SECONDS,
   resolveStorageUrl,

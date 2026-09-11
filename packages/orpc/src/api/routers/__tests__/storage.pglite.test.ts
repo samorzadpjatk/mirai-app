@@ -265,6 +265,70 @@ describe("storageRouter", () => {
       expect(result.expiresAt).toBeDefined();
     });
 
+    it("signs a resized variant when a transform preset is requested", async () => {
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await caller.createDownloadUrl({
+        storagePath: "images/test-image.jpg",
+        transform: "avatar",
+      });
+
+      const signer = (mockSupabase.storage.from as ReturnType<typeof vi.fn>).mock.results[0].value
+        .createSignedUrl;
+      expect(signer).toHaveBeenCalledWith("test-image.jpg", 600, {
+        transform: { width: 120, height: 120, resize: "cover", quality: 70 },
+      });
+    });
+
+    it("signs the original when no transform preset is requested", async () => {
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await caller.createDownloadUrl({ storagePath: "images/test-image.jpg" });
+
+      const signer = (mockSupabase.storage.from as ReturnType<typeof vi.fn>).mock.results[0].value
+        .createSignedUrl;
+      expect(signer).toHaveBeenCalledWith("test-image.jpg", 600);
+    });
+
+    it("falls back to the original when the source image cannot be transformed", async () => {
+      const createSignedUrl = vi
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: { message: "Invalid source image" } })
+        .mockResolvedValueOnce({
+          data: { signedUrl: "https://signed-url.example.com/original.jpg" },
+          error: null,
+        });
+      mockSupabase = {
+        ...mockSupabase,
+        storage: { from: vi.fn().mockReturnValue({ createSignedUrl }) },
+      } as SupabaseClient;
+
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      const result = await caller.createDownloadUrl({
+        storagePath: "images/huge.jpg",
+        transform: "feedCard",
+      });
+
+      expect(result.signedUrl).toBe("https://signed-url.example.com/original.jpg");
+      expect(createSignedUrl).toHaveBeenNthCalledWith(2, "huge.jpg", 600);
+    });
+
+    it("rejects a transform preset that does not exist", async () => {
+      const ctx = createAuthContext(mockUser);
+      const caller = createCaller(ctx);
+
+      await expect(
+        caller.createDownloadUrl({
+          storagePath: "images/test-image.jpg",
+          transform: "gigantic",
+        }),
+      ).rejects.toThrow();
+    });
+
     it("should throw NOT_FOUND when object doesn't exist", async () => {
       mockSupabase = {
         ...mockSupabase,

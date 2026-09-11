@@ -23,6 +23,7 @@ export default function SubmissionCircle({ submission, onPress }: Props) {
           <CachedImage
             testID="submission-image"
             storagePath={submission.imageStoragePath}
+            transform="thumbnail"
             style={styles.image}
             contentFit="cover"
             fallback={

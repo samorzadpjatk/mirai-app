@@ -1,3 +1,4 @@
+import { IMAGE_TRANSFORMS, type ImageTransformName } from "@mirai-app/common/storage";
 import { z } from "zod";
 import { createORPCRouter, protectedProcedure } from "../../orpc";
 import { createDownloadUrl, createPublicUrl, createUploadUrl } from "./queries";
@@ -61,6 +62,12 @@ export const storageRouter = createORPCRouter({
           .int()
           .min(60)
           .max(60 * 60)
+          .optional(),
+        // Named presets rather than free-form dimensions: every distinct size is a
+        // separate imgproxy render and a separate cache entry, so callers must pick
+        // from the fixed set the app actually renders.
+        transform: z
+          .enum(Object.keys(IMAGE_TRANSFORMS) as [ImageTransformName, ...ImageTransformName[]])
           .optional(),
       }),
     )

@@ -399,6 +399,10 @@ services:
       IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
       IMGPROXY_USE_ETAG: "true"
       IMGPROXY_ENABLE_WEBP_DETECTION: ${IMGPROXY_ENABLE_WEBP_DETECTION}
+      # Phone cameras now shoot well past imgproxy's 16.8 MP default, and a source
+      # over the cap comes back as 422 "Invalid source image" — measured on one in
+      # eight production challenge photos. 50 MP covers a 48 MP iPhone capture.
+      IMGPROXY_MAX_SRC_RESOLUTION: "50"
 
   minio:
     container_name: minio
