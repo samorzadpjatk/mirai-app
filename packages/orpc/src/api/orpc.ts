@@ -11,16 +11,11 @@ import { os, ORPCError } from "@orpc/server";
 import { env } from "bun";
 
 import { timingSafeEqual } from "crypto";
-import {
-  AuthenticationError,
-  AuthorizationError,
-  requireAdmin,
-  requireAuth,
-  requireModerator,
-} from "@mirai-app/auth";
+import { AuthenticationError, AuthorizationError } from "@mirai-app/auth";
 import { type DB, createDb } from "@mirai-app/db";
 import { type SupabaseClient, createSupabaseClient } from "@mirai-app/supabase";
 import { logger } from "../utils/logger";
+import { resolveAuthOnce } from "./authOnce";
 import { createTimingInterceptor } from "./timing";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
@@ -161,11 +156,7 @@ export const publicProcedure = baseProcedure;
  */
 export const protectedProcedure = baseProcedure.use(async ({ context, next }) => {
   try {
-    const { user, dbUser } = await requireAuth(
-      context.db,
-      context.supabase,
-      context.accessToken ?? undefined,
-    );
+    const { user, dbUser } = await resolveAuthOnce(context);
 
     return next({
       context: {
@@ -188,11 +179,12 @@ export const protectedProcedure = baseProcedure.use(async ({ context, next }) =>
  */
 export const moderatorProcedure = baseProcedure.use(async ({ context, next }) => {
   try {
-    const dbUser = await requireModerator(
-      context.db,
-      context.supabase,
-      context.accessToken ?? undefined,
-    );
+    // Role is checked here rather than through `requireModerator` so the shared,
+    // once-per-request authentication is reused instead of running a second time.
+    const { dbUser } = await resolveAuthOnce(context);
+    if (dbUser.role !== "MODERATOR" && dbUser.role !== "ADMIN") {
+      throw new AuthorizationError("Moderator access required");
+    }
     return next({
       context: {
         dbUser,
@@ -213,11 +205,10 @@ export const mobileAppProcedure = base;
 
 export const adminProcedure = baseProcedure.use(async ({ context, next }) => {
   try {
-    const dbUser = await requireAdmin(
-      context.db,
-      context.supabase,
-      context.accessToken ?? undefined,
-    );
+    const { dbUser } = await resolveAuthOnce(context);
+    if (dbUser.role !== "ADMIN") {
+      throw new AuthorizationError("Admin access required");
+    }
     return next({
       context: {
         dbUser,

@@ -24,8 +24,12 @@ import { notificationRouter } from "../../routers/notifications";
 
 // ── Mocks ──────────────────────────────────────────────────────────────
 
-vi.mock("@mirai-app/auth", () => ({
-  requireAuth: vi.fn().mockResolvedValue({
+// `requireAuth`, `requireModerator` and `requireAdmin` all read the same user row
+// in production -- the role checks are performed on the row `requireAuth` returns.
+// Mocking them as independent sources let an admin procedure see a different role
+// than the request actually carried, so the mock follows the context instead.
+const authState = vi.hoisted(() => ({
+  current: {
     user: { id: "auth-123" },
     dbUser: {
       id: "user-123",
@@ -38,29 +42,13 @@ vi.mock("@mirai-app/auth", () => ({
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-  }),
-  requireModerator: vi.fn().mockResolvedValue({
-    id: "moderator-123",
-    authUserId: "auth-123",
-    firstName: "Test",
-    lastName: "Moderator",
-    role: "MODERATOR",
-    hasAvatar: false,
-    lastSeenOn: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }),
-  requireAdmin: vi.fn().mockResolvedValue({
-    id: "admin-123",
-    authUserId: "auth-123",
-    firstName: "Test",
-    lastName: "Admin",
-    role: "ADMIN",
-    hasAvatar: false,
-    lastSeenOn: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }),
+  } as { user: { id: string }; dbUser: Record<string, unknown> },
+}));
+
+vi.mock("@mirai-app/auth", () => ({
+  requireAuth: vi.fn(async () => authState.current),
+  requireModerator: vi.fn(async () => authState.current.dbUser),
+  requireAdmin: vi.fn(async () => authState.current.dbUser),
 }));
 
 vi.mock("../../../services/notificationService", () => ({
@@ -100,23 +88,29 @@ function createAuthContext(
 ): RequestContext {
   const userId = overrides.userId ?? "user-123";
   const role = overrides.role ?? "USER";
+  const dbUser = {
+    id: userId,
+    authUserId: "auth-123",
+    firstName: overrides.firstName ?? "Test",
+    lastName: overrides.lastName ?? "User",
+    role,
+    hasAvatar: false,
+    lastSeenOn: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  // The mocked auth helpers resolve to whatever the request carries, exactly as
+  // the real ones resolve to the row belonging to the access token.
+  authState.current = { user: { id: "auth-123" }, dbUser };
+
   return {
     db,
     supabase: createMockSupabase() as RequestContext["supabase"],
     headers: new Headers({ Authorization: "Bearer test-token" }),
     accessToken: "test-token",
     user: { id: "auth-123" },
-    dbUser: {
-      id: userId,
-      authUserId: "auth-123",
-      firstName: overrides.firstName ?? "Test",
-      lastName: overrides.lastName ?? "User",
-      role,
-      hasAvatar: false,
-      lastSeenOn: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+    dbUser,
   };
 }
 
