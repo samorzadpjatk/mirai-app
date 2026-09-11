@@ -21,6 +21,7 @@ import {
 import { type DB, createDb } from "@mirai-app/db";
 import { type SupabaseClient, createSupabaseClient } from "@mirai-app/supabase";
 import { logger } from "../utils/logger";
+import { createTimingInterceptor } from "./timing";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization = headers.get("authorization") ?? headers.get("Authorization");
@@ -130,7 +131,18 @@ const base = os.$context<ORPCContext>();
 /**
  * Base procedure
  */
-const baseProcedure = base;
+// Every procedure is timed. Nothing else on the request path records how long a
+// call took -- Kong only sees Supabase traffic and the reverse proxy runs on a
+// host we cannot read -- so without this a slow screen cannot be attributed to
+// any particular call. Attached to the base builder so a new router cannot
+// forget it, and placed before the auth middleware so the reported time includes
+// authentication.
+// The cast is confined to this line: the middleware only measures elapsed time
+// and returns oRPC's own result untouched, but its pass-through signature does
+// not line up with the exact `MiddlewareResult` context generic oRPC infers here.
+const baseProcedure = base.use(
+  createTimingInterceptor({ logger }) as unknown as Parameters<typeof base.use>[0],
+);
 
 /**
  * Public (unauthenticated) procedure
