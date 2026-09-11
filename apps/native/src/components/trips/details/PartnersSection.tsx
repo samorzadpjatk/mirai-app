@@ -11,7 +11,7 @@ function PartnerLogo({ sponsor }: { sponsor: Partner }) {
     <CachedImage
       testID="partner-logo"
       storagePath={sponsor.logoPath}
-      transform="thumbnail"
+      transform="logo"
       style={[
         styles.logo,
         sponsor.height ? { height: sponsor.height } : undefined,

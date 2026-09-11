@@ -86,10 +86,18 @@ describe("IMAGE_TRANSFORMS presets", () => {
       "avatar",
       "feedCard",
       "hero",
+      "logo",
       "profileAvatar",
       "thumbnail",
       "tripTile",
     ]);
+  });
+
+  it("fits a wide logo inside the box instead of cropping it to a square", () => {
+    // A sponsor wordmark is roughly 6.5:1. A "cover" square keeps the middle
+    // sixth of the width, which is what shrank the Netcompany logo to two letters.
+    expect(IMAGE_TRANSFORMS.logo.resize).toBe("contain");
+    expect(IMAGE_TRANSFORMS.logo.width).toBe(IMAGE_TRANSFORMS.logo.height);
   });
 
   it("keeps every preset small enough to beat the original download", () => {

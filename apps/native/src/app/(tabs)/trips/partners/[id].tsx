@@ -31,7 +31,7 @@ export default function PartnerDetailScreen() {
         <View style={styles.logoWrapper}>
           <CachedImage
             storagePath={sponsor?.logoPath ?? undefined}
-            transform="thumbnail"
+            transform="logo"
             style={styles.logo}
             contentFit="contain"
           />

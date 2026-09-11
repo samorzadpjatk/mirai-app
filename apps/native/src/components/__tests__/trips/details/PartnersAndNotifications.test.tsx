@@ -1,5 +1,7 @@
 import type { TripDetailTripSponsor } from "@mirai-app/orpc";
 import { screen, userEvent, waitFor } from "@testing-library/react-native";
+import { createDownloadUrlHandler } from "~/test-utils/msw/handlers";
+import { server } from "~/test-utils/msw/server";
 import { NotificationsHeader } from "../../../notifications/NotificationsHeader";
 import { type Partner, PartnersSection, toPartners } from "../../../trips/details/PartnersSection";
 import { renderWithProviders } from "../../helpers/renderWithProviders";
@@ -63,6 +65,39 @@ describe("PartnersSection", () => {
     await waitFor(() => expect(screen.getByTestId("partner-logo")).toBeOnTheScreen());
     await user.press(screen.getByTestId("partner-logo"));
     expect(useMockPush()).toHaveBeenCalledWith("/trips/partners/partner-1");
+  });
+
+  it("asks for the logo variant so a wide wordmark is not cropped to a square", async () => {
+    const inputs: Record<string, unknown>[] = [];
+    server.use(
+      createDownloadUrlHandler((input) => {
+        inputs.push(input);
+        return { signedUrl: "https://cdn.example.com/netcompany.webp" };
+      }),
+    );
+
+    renderWithProviders(
+      <PartnersSection
+        sponsors={[
+          {
+            id: "partner-1",
+            name: "Netcompany",
+            logoPath: "sponsors/netcompany.png",
+            description: "Description 1",
+            height: null,
+            offsetX: null,
+            offsetY: null,
+          },
+        ]}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(inputs[0]).toMatchObject({
+        storagePath: "sponsors/netcompany.png",
+        transform: "logo",
+      }),
+    );
   });
 });
 

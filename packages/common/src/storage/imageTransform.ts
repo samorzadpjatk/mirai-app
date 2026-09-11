@@ -22,8 +22,14 @@ export const IMAGE_TRANSFORMS = {
   avatar: { width: 120, height: 120, resize: "cover", quality: 70 },
   /** 100x100 avatar on the profile header, at 3x. */
   profileAvatar: { width: 300, height: 300, resize: "cover", quality: 70 },
-  /** 72-80px square thumbnails: submission circles, sponsor logos, list tiles. */
+  /** 72-80px square thumbnails: submission circles, list tiles. */
   thumbnail: { width: 240, height: 240, resize: "cover", quality: 70 },
+  /**
+   * Sponsor wordmarks, in the 28px partner strip and the 220px detail header.
+   * A logo is wide -- Netcompany is 3676x561 -- so it gets `contain`: `cover`
+   * would fill the square by cropping away everything but the middle sixth.
+   */
+  logo: { width: 660, height: 660, resize: "contain", quality: 70 },
   /** 130x52 trip switcher tile on the community header, at 3x. */
   tripTile: { width: 390, height: 156, resize: "cover", quality: 70 },
   /** Full-width photo inside a feed card. */
