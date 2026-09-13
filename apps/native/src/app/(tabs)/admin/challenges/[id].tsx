@@ -36,6 +36,11 @@ export default function EditChallengeScreen() {
   const { data: challenge, isLoading: isChallengeLoading } = useQuery({
     ...challengeQueryOptions,
     enabled: Boolean(challengeId) && Boolean(tripId),
+    // The client defaults to `refetchOnMount: false`, which is wrong for an editor:
+    // it would hydrate the form from whatever the cache last saw and then post that
+    // back on save, overwriting anything changed since.
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const formState = useChallengeForm({
@@ -108,6 +113,20 @@ export default function EditChallengeScreen() {
       return;
     }
 
+    // Only send the status when the admin actually moved it. The form carries every
+    // field, so replaying an untouched status would undo a lifecycle change made
+    // elsewhere -- or one made a moment earlier from this very screen.
+    const statusToPersist =
+      form.status !== formState.initialStatus
+        ? (form.status as
+            | "HIDDEN"
+            | "VISIBLE"
+            | "ACTIVE"
+            | "VOTING_PHASE"
+            | "COMPLETED"
+            | "CANCELLED")
+        : undefined;
+
     const normalizedImage = form.image.trim();
     const imageToPersist =
       normalizedImage.length > 0 && normalizedImage !== formState.initialImage
@@ -151,13 +170,7 @@ export default function EditChallengeScreen() {
         thirdPlacePoints: formState.showPodiumPoints
           ? toOptionalInt(form.thirdPlacePoints)
           : undefined,
-        status: form.status as
-          | "HIDDEN"
-          | "VISIBLE"
-          | "ACTIVE"
-          | "VOTING_PHASE"
-          | "COMPLETED"
-          | "CANCELLED",
+        status: statusToPersist,
         startTime: form.isRecurring ? undefined : formatIso(form.startTime) || undefined,
         endTime: form.isRecurring ? undefined : formatIso(form.endTime) || undefined,
         votingDurationHours: formState.isPeerVoting

@@ -63,6 +63,7 @@ const baseFormState = (overrides: Partial<FormState> = {}): FormState => {
     showLocationPicker: false,
     isQrScannerOpen: false,
     initialImage: "",
+    initialStatus: "",
     initializedChallengeId: "",
     uploadStatus: "idle",
     uploadProgress: { percent: null, bytesTotal: null, bytesUploaded: 0 },
