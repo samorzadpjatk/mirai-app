@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -91,9 +92,8 @@ export default function ChallengeSubmissionsScreen() {
           queryKey: submissionsQueryOptions.queryKey,
         });
         if (tripId) {
-          await queryClient.invalidateQueries({
-            queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } }).queryKey,
-          });
+          // The list is an infinite query, so a `queryOptions` key never matches it.
+          await invalidateChallengeQueries(queryClient);
         }
       },
       onError: (error) => {

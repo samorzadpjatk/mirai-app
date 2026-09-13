@@ -1,9 +1,8 @@
 import { IMAGE_TRANSFORMS, resolveStorageUrl } from "@mirai-app/common/storage";
 import type { DB } from "@mirai-app/db";
-import { challenges } from "@mirai-app/db";
+import { challengeRecurrence, challenges } from "@mirai-app/db";
 import type { SupabaseClient } from "@mirai-app/supabase";
-import { and, eq } from "drizzle-orm";
-import { ensureRecurringInstancesForTrip } from "../../../utils/recurringChallenges";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { getActivitiesCursorPage } from "../activityFeed/queries";
 import type { Activity } from "../activityFeed/types";
 import { ensureTripParticipant, updateUserLastSeenOn } from "../activityFeed/utils";
@@ -67,10 +66,17 @@ export async function resolveAvatarUrls(
 }
 
 async function getActiveChallenges(context: { db: DB; supabase: SupabaseClient }, tripId: string) {
-  await ensureRecurringInstancesForTrip({ tx: context.db, tripId });
   await activateVisibleChallenges(context.db, { tripId });
 
-  const where = and(eq(challenges.tripId, tripId), eq(challenges.status, "ACTIVE"));
+  // A recurring template is scaffolding, not a challenge anyone can submit to; only the
+  // daily instances it generates belong on the participant's active list. The LEFT JOIN
+  // leaves `is_recurring` NULL for challenges with no recurrence row, which are plain
+  // one-offs and must stay visible.
+  const where = and(
+    eq(challenges.tripId, tripId),
+    eq(challenges.status, "ACTIVE"),
+    or(eq(challengeRecurrence.isRecurring, false), isNull(challengeRecurrence.isRecurring)),
+  );
   const rows = await fetchChallengesWithRelations(context.db, where);
   const resolved = await resolveChallengeImages(context.supabase, rows);
 

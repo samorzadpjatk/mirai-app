@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -42,6 +43,7 @@ interface ChallengeItem {
   participantGroupsCount: number;
   pendingSubmissionsCount: number;
   autoApprove: boolean;
+  isRecurring: boolean;
 }
 
 const statusFilters = [
@@ -200,6 +202,11 @@ export default function AdminChallengesScreen() {
               limit: PAGE_SIZE,
               offset,
             },
+            // A recurring challenge is stored as a template plus generated daily
+            // instances, and only the instances reach participants. Without the
+            // template in this list there is no row to edit or delete, so the
+            // generated ones look like debris that cannot be removed.
+            includeRecurringTemplates: true,
           };
         },
         enabled: !!tripId,
@@ -247,9 +254,9 @@ export default function AdminChallengesScreen() {
   const deleteChallengeMutation = useMutation(
     orpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: orpc.challenge.getAllByTrip.queryOptions({ input: { tripId } }).queryKey,
-        });
+        // The list is an infinite query; a `queryOptions` key carries `type: "query"`
+        // and never matches it, which left deleted challenges on screen.
+        await invalidateChallengeQueries(queryClient);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to delete challenge: ${error.message}`);
@@ -272,6 +279,7 @@ export default function AdminChallengesScreen() {
       participantGroupsCount: challenge.participantGroupsCount ?? 0,
       pendingSubmissionsCount: challenge.pendingSubmissionsCount ?? 0,
       autoApprove: Boolean(challenge.autoApprove),
+      isRecurring: Boolean(challenge.isRecurring),
     }));
   }, [challengesData]);
 
@@ -287,7 +295,11 @@ export default function AdminChallengesScreen() {
   };
 
   const handleDeleteChallenge = (id: string) => {
-    Alert.alert("Delete Challenge", "Are you sure you want to delete this challenge?", [
+    const target = challenges.find((challenge) => challenge.id === id);
+    const message = target?.isRecurring
+      ? "This is the template of a recurring challenge. Deleting it stops new daily instances from being generated; the days already generated stay and have to be deleted one by one."
+      : "Are you sure you want to delete this challenge?";
+    Alert.alert("Delete Challenge", message, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",

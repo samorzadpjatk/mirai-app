@@ -298,6 +298,13 @@ export function ChallengeFormFields({
           />
         </View>
 
+        {form.isRecurring && form.status === "HIDDEN" ? (
+          <Text style={styles.hint}>
+            Daily instances are generated once the status is Visible. While it stays Hidden this
+            saves the template only, and participants see nothing.
+          </Text>
+        ) : null}
+
         {form.isRecurring ? (
           <>
             <FormField label="Daily Time Window">
