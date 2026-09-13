@@ -235,6 +235,51 @@ describe("challenge handlers — PGLite integration", () => {
       expect(textRows[0].expectedPhrase).toBe("secret phrase");
     });
 
+    it("places the daily window on the Polish wall clock, not the server's", async () => {
+      // The staff picks 09:00-18:00 on a phone in Poland. September is CEST
+      // (UTC+2), so those are 07:00Z and 16:00Z. The deployed image runs in UTC,
+      // where `Date#setHours` would have produced 09:00Z and 18:00Z -- two hours
+      // late for everyone on the trip.
+      const template = await createChallenge(baseContext(), {
+        tripId: "trip-1",
+        name: "Poranna zbiorka",
+        submissionType: "IMAGE",
+        scoringCategory: "SPEED",
+        status: "VISIBLE",
+        isRecurring: true,
+        recurringDays: 2,
+        dailyStartTime: "09:00",
+        dailyEndTime: "18:00",
+        startTime: new Date("2026-09-16T12:00:00Z"),
+      });
+
+      // The template spans whole Polish days: 16.09 00:00 through 17.09 23:59:59.999.
+      expect(template.startTime?.toISOString()).toBe("2026-09-15T22:00:00.000Z");
+      expect(template.endTime?.toISOString()).toBe("2026-09-17T21:59:59.999Z");
+
+      const instances = await testDb.db
+        .select({
+          name: challenges.name,
+          startTime: challenges.startTime,
+          endTime: challenges.endTime,
+        })
+        .from(challenges)
+        .innerJoin(challengeRecurrence, eq(challenges.id, challengeRecurrence.challengeId))
+        .where(eq(challengeRecurrence.isRecurring, false))
+        .orderBy(challenges.startTime);
+
+      expect(
+        instances.map((instance) => [
+          instance.name,
+          instance.startTime?.toISOString(),
+          instance.endTime?.toISOString(),
+        ]),
+      ).toEqual([
+        ["Poranna zbiorka #1", "2026-09-16T07:00:00.000Z", "2026-09-16T16:00:00.000Z"],
+        ["Poranna zbiorka #2", "2026-09-17T07:00:00.000Z", "2026-09-17T16:00:00.000Z"],
+      ]);
+    });
+
     it("creates a recurring QR_CODE challenge with expected value (covers line 189 left branch)", async () => {
       const result = await createChallenge(baseContext(), {
         tripId: "trip-1",

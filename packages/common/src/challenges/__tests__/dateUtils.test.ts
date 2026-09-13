@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getZonedParts } from "../../utils/timezone";
 import {
   DAY_MS,
   HOUR_MS,
@@ -15,13 +16,22 @@ import {
 } from "../dateUtils";
 
 describe("startOfDay", () => {
-  it("resets time to midnight", () => {
+  // Asserted on the Polish clock rather than the process clock: the server runs
+  // in UTC, and a day that started at UTC midnight would open every recurring
+  // challenge two hours late in summer.
+  it("resets time to midnight in Poland", () => {
     const date = new Date("2024-06-15T14:30:45.500Z");
     const result = startOfDay(date);
-    expect(result.getHours()).toBe(0);
-    expect(result.getMinutes()).toBe(0);
-    expect(result.getSeconds()).toBe(0);
+    expect(getZonedParts(result)).toMatchObject({
+      year: 2024,
+      month: 6,
+      day: 15,
+      hour: 0,
+      minute: 0,
+      second: 0,
+    });
     expect(result.getMilliseconds()).toBe(0);
+    expect(result.toISOString()).toBe("2024-06-14T22:00:00.000Z");
   });
 
   it("does not mutate input", () => {
@@ -33,13 +43,19 @@ describe("startOfDay", () => {
 });
 
 describe("endOfDay", () => {
-  it("sets time to end of day", () => {
+  it("sets time to end of day in Poland", () => {
     const date = new Date("2024-06-15T08:00:00.000Z");
     const result = endOfDay(date);
-    expect(result.getHours()).toBe(23);
-    expect(result.getMinutes()).toBe(59);
-    expect(result.getSeconds()).toBe(59);
+    expect(getZonedParts(result)).toMatchObject({
+      year: 2024,
+      month: 6,
+      day: 15,
+      hour: 23,
+      minute: 59,
+      second: 59,
+    });
     expect(result.getMilliseconds()).toBe(999);
+    expect(result.toISOString()).toBe("2024-06-15T21:59:59.999Z");
   });
 
   it("does not mutate input", () => {
@@ -54,13 +70,13 @@ describe("addDays", () => {
   it("adds days to a date", () => {
     const date = new Date("2024-06-15T00:00:00Z");
     const result = addDays(date, 5);
-    expect(result.getDate()).toBe(20);
+    expect(getZonedParts(result).day).toBe(20);
   });
 
   it("subtracts days when negative", () => {
     const date = new Date("2024-06-15T00:00:00Z");
     const result = addDays(date, -3);
-    expect(result.getDate()).toBe(12);
+    expect(getZonedParts(result).day).toBe(12);
   });
 
   it("does not mutate input", () => {

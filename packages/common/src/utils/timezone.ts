@@ -1,12 +1,18 @@
 /**
- * Time-zone helpers for notification scheduling.
+ * Time-zone helpers for anything an admin picks off a wall clock.
  *
- * Admins pick a schedule's hour and minute on their phone, i.e. in Poland's
- * civil time zone. The database stores absolute instants (`timestamptz`), so a
- * wall-clock time has to be converted with the UTC offset that is actually in
- * effect on that day — a hard-coded +1/+2 shift breaks twice a year on DST
- * transitions, and stamping the picked hour straight onto UTC (the previous
- * behaviour) sends every notification one or two hours late.
+ * Admins pick hours and minutes on their phone, i.e. in Poland's civil time
+ * zone. The database stores absolute instants (`timestamptz`), so a wall-clock
+ * time has to be converted with the UTC offset that is actually in effect on
+ * that day — a hard-coded +1/+2 shift breaks twice a year on DST transitions,
+ * and stamping the picked hour straight onto UTC (the previous behaviour) sends
+ * every notification one or two hours late.
+ *
+ * These live outside `notifications/` because recurring challenge windows have
+ * the same problem: their daily start and end are wall-clock times too. Nothing
+ * here reads the process time zone, which is the point — the server runs in UTC
+ * (the distroless image sets no `TZ`), so `Date#setHours` would silently place
+ * every window two hours off in summer.
  */
 
 export const APP_TIME_ZONE = "Europe/Warsaw";
@@ -148,4 +154,52 @@ export function previousZonedDayAtTime(
     timeZone,
   );
   return zonedDateAtTime(anchor, hour, minute, timeZone);
+}
+
+/**
+ * The instant at which the zone-local calendar day of `date` begins (00:00).
+ */
+export function zonedStartOfDay(date: Date, timeZone: string = APP_TIME_ZONE): Date {
+  const { year, month, day } = getZonedParts(date, timeZone);
+  return zonedWallClockToUtc({ year, month, day, hour: 0, minute: 0 }, timeZone);
+}
+
+/**
+ * The last millisecond of the zone-local calendar day of `date` (23:59:59.999).
+ */
+export function zonedEndOfDay(date: Date, timeZone: string = APP_TIME_ZONE): Date {
+  const { year, month, day } = getZonedParts(date, timeZone);
+  const endMinute = zonedWallClockToUtc({ year, month, day, hour: 23, minute: 59 }, timeZone);
+  return new Date(endMinute.getTime() + 59 * 1000 + 999);
+}
+
+/**
+ * A whole number identifying the zone-local calendar day, so that two instants
+ * can be compared and subtracted by day.
+ *
+ * Subtracting instants and dividing by 24h is wrong across a DST boundary,
+ * where a local day lasts 23 or 25 hours; this counts calendar days instead.
+ */
+export function zonedDayNumber(date: Date, timeZone: string = APP_TIME_ZONE): number {
+  const { year, month, day } = getZonedParts(date, timeZone);
+  return Math.round(Date.UTC(year, month - 1, day) / (24 * HOUR_MS));
+}
+
+/**
+ * `days` zone-local calendar days after `date`, keeping the same wall-clock
+ * time. Month ends and leap years are handled by `Date.UTC` normalisation.
+ */
+export function addZonedDays(date: Date, days: number, timeZone: string = APP_TIME_ZONE): Date {
+  const parts = getZonedParts(date, timeZone);
+  const shifted = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return zonedWallClockToUtc(
+    {
+      year: shifted.getUTCFullYear(),
+      month: shifted.getUTCMonth() + 1,
+      day: shifted.getUTCDate(),
+      hour: parts.hour,
+      minute: parts.minute,
+    },
+    timeZone,
+  );
 }

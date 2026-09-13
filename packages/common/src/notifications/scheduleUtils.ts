@@ -1,5 +1,10 @@
+import {
+  APP_TIME_ZONE,
+  getZonedParts,
+  zonedDateAtTime,
+  zonedWallClockToUtc,
+} from "../utils/timezone";
 import { resolveAuthEmail } from "./authUtils";
-import { APP_TIME_ZONE, getZonedParts, zonedDateAtTime, zonedWallClockToUtc } from "./timezone";
 
 export interface ScheduledNotificationTemplate {
   key: "daily_morning" | "daily_evening";

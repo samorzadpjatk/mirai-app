@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   APP_TIME_ZONE,
+  addZonedDays,
   getTimeZoneOffsetMs,
   getZonedParts,
   previousZonedDayAtTime,
   zonedDateAtTime,
   zonedDateKey,
+  zonedDayNumber,
+  zonedEndOfDay,
+  zonedStartOfDay,
   zonedWallClockToUtc,
 } from "../timezone";
 
@@ -140,5 +144,65 @@ describe("previousZonedDayAtTime", () => {
     const result = previousZonedDayAtTime(new Date("2024-10-28T05:00:00Z"), 7, 30);
     expect(zonedDateKey(result)).toBe("2024-10-27");
     expect(getZonedParts(result)).toMatchObject({ hour: 7, minute: 30 });
+  });
+});
+
+describe("zonedStartOfDay / zonedEndOfDay", () => {
+  it("anchors a summer day on Polish midnight, not UTC midnight", () => {
+    // CEST is UTC+2, so the Polish day starts at 22:00Z the evening before.
+    const result = zonedStartOfDay(new Date("2026-09-16T12:00:00Z"));
+    expect(result.toISOString()).toBe("2026-09-15T22:00:00.000Z");
+  });
+
+  it("anchors a winter day on Polish midnight", () => {
+    const result = zonedStartOfDay(new Date("2026-01-15T12:00:00Z"));
+    expect(result.toISOString()).toBe("2026-01-14T23:00:00.000Z");
+  });
+
+  it("ends the day one millisecond before the next one starts", () => {
+    const reference = new Date("2026-09-16T12:00:00Z");
+    const end = zonedEndOfDay(reference);
+    expect(end.toISOString()).toBe("2026-09-16T21:59:59.999Z");
+    expect(zonedStartOfDay(new Date(end.getTime() + 1)).getTime()).toBe(end.getTime() + 1);
+  });
+
+  it("covers 25 hours on the fall-back day", () => {
+    const reference = new Date("2026-10-25T12:00:00Z");
+    const span = zonedEndOfDay(reference).getTime() - zonedStartOfDay(reference).getTime();
+    expect(Math.round(span / (60 * 60 * 1000))).toBe(25);
+  });
+});
+
+describe("zonedDayNumber", () => {
+  it("gives consecutive numbers to consecutive Polish days", () => {
+    const first = zonedDayNumber(new Date("2026-09-16T12:00:00Z"));
+    const second = zonedDayNumber(new Date("2026-09-17T12:00:00Z"));
+    expect(second - first).toBe(1);
+  });
+
+  it("counts one day across the fall-back night, which lasts 25 hours", () => {
+    const before = zonedDayNumber(new Date("2026-10-25T00:30:00Z"));
+    const after = zonedDayNumber(new Date("2026-10-26T00:30:00Z"));
+    expect(after - before).toBe(1);
+  });
+
+  it("puts 23:30 Polish time on the same day as noon", () => {
+    // 21:30Z is already the next UTC day boundary case in winter; in summer it
+    // is still the same Polish day, which is what the day index must follow.
+    expect(zonedDayNumber(new Date("2026-09-16T21:30:00Z"))).toBe(
+      zonedDayNumber(new Date("2026-09-16T10:00:00Z")),
+    );
+  });
+});
+
+describe("addZonedDays", () => {
+  it("keeps the wall-clock time across a DST change", () => {
+    const result = addZonedDays(new Date("2026-10-24T07:00:00Z"), 2);
+    expect(getZonedParts(result)).toMatchObject({ month: 10, day: 26, hour: 9 });
+  });
+
+  it("rolls over a month end", () => {
+    const result = addZonedDays(new Date("2026-09-30T10:00:00Z"), 1);
+    expect(getZonedParts(result)).toMatchObject({ month: 10, day: 1 });
   });
 });
