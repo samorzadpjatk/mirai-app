@@ -69,6 +69,9 @@ export const challengeRouter = createORPCRouter({
             offset: z.number().int().min(0).default(0),
           })
           .optional(),
+        // Optional on purpose: participants keep running app builds that never send it,
+        // and without it the result is byte-identical to the previous behaviour.
+        includeRecurringTemplates: z.boolean().optional(),
       }),
     )
     .handler(handleGetAllByTrip),

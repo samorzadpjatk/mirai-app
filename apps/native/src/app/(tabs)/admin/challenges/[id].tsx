@@ -1,4 +1,5 @@
 import { orpc } from "@mirai-app/orpc/client";
+import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -52,7 +53,11 @@ export default function EditChallengeScreen() {
 
   const updateChallengeMutation = useMutation(
     orpc.challenge.update.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Invalidate the lists too, not just this one challenge: they are infinite
+        // queries under a different key shape and would otherwise keep showing the
+        // pre-edit row.
+        await invalidateChallengeQueries(queryClient);
         Alert.alert("Saved", "Challenge updated successfully.", [
           {
             text: "OK",

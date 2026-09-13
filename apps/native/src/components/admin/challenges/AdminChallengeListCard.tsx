@@ -23,6 +23,7 @@ interface ChallengeItem {
   participantGroupsCount: number;
   pendingSubmissionsCount: number;
   autoApprove: boolean;
+  isRecurring: boolean;
 }
 
 interface JudgedStaffProgress {
@@ -264,6 +265,12 @@ export function AdminChallengeListCard({
     backgroundColor: "rgba(34,197,94,0.12)",
   };
 
+  const templateTagStyle = {
+    ...styles.tag,
+    borderColor: "rgba(168,85,247,0.45)",
+    backgroundColor: "rgba(168,85,247,0.14)",
+  };
+
   const staffProgressStyle = {
     ...styles.statusIndicator,
     borderColor: "rgba(14,165,233,0.45)",
@@ -353,6 +360,20 @@ export function AdminChallengeListCard({
             </Text>
           </View>
 
+          {challenge.isRecurring ? (
+            <View style={templateTagStyle}>
+              <Ionicons name="repeat" size={12} color="#c084fc" />
+              <Text
+                style={{
+                  ...styles.tagText,
+                  color: "#c084fc",
+                }}
+              >
+                Template
+              </Text>
+            </View>
+          ) : null}
+
           <View style={participantsTagStyle}>
             <Ionicons name="people" size={12} color="#22c55e" />
             <Text
@@ -399,7 +420,10 @@ export function AdminChallengeListCard({
         </View>
 
         <View style={styles.actionButtons}>
-          {challenge.scoringCategory === "JUDGED_STAFF" ? (
+          {/* A template collects no submissions of its own -- they belong to the daily
+              instances it generates. Opening the submission screens with a template id
+              would make the server resolve it to one of those instances instead. */}
+          {challenge.isRecurring ? null : challenge.scoringCategory === "JUDGED_STAFF" ? (
             <TouchableOpacity
               style={[styles.actionButton, { opacity: isStaffVotingAvailable ? 1 : 0.45 }]}
               disabled={!isStaffVotingAvailable}
@@ -427,7 +451,11 @@ export function AdminChallengeListCard({
             <Ionicons name="create" size={20} color={colors.gray400} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleDelete}
+            testID={`delete-challenge-${challenge.id}`}
+          >
             <Ionicons name="trash" size={20} color={colors.gray400} />
           </TouchableOpacity>
         </View>

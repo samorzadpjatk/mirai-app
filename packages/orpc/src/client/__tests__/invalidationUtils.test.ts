@@ -1,3 +1,4 @@
+import { generateOperationKey } from "@orpc/tanstack-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -218,6 +219,38 @@ describe("invalidateChallengeQueries", () => {
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
       predicate: expect.any(Function),
     });
+  });
+
+  // The admin challenge list is a `useInfiniteQuery`. oRPC stamps `type: "infinite"` into
+  // its key while `queryOptions(...).queryKey` stamps `type: "query"`, so invalidating by
+  // that key silently matched nothing and deleted challenges stayed on screen. These
+  // helpers match on the operation path instead, which covers both.
+  it("matches both the query and the infinite key shape of the same operation", async () => {
+    const path = ["challenge", "getAllByTrip"];
+    const infiniteKey = generateOperationKey(path, {
+      input: { tripId: "trip-1", pagination: { limit: 30, offset: 0 } },
+      type: "infinite",
+    });
+    const queryKey = generateOperationKey(path, {
+      input: { tripId: "trip-1" },
+      type: "query",
+    });
+    const unrelatedKey = generateOperationKey(["reward", "getByTrip"], {
+      input: { tripId: "trip-1" },
+      type: "query",
+    });
+
+    expect(infiniteKey).not.toEqual(queryKey);
+
+    await invalidateChallengeQueries(mockQueryClient as MockQueryClientType);
+
+    const predicate = mockQueryClient.invalidateQueries.mock.calls[0]?.[0]?.predicate as (
+      query: unknown,
+    ) => boolean;
+
+    expect(predicate({ queryKey: infiniteKey })).toBe(true);
+    expect(predicate({ queryKey })).toBe(true);
+    expect(predicate({ queryKey: unrelatedKey })).toBe(false);
   });
 });
 

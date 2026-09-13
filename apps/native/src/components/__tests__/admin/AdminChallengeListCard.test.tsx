@@ -15,6 +15,7 @@ describe("AdminChallengeListCard", () => {
     participantGroupsCount: 5,
     pendingSubmissionsCount: 2,
     autoApprove: false,
+    isRecurring: false,
   };
 
   const mockOnDelete = jest.fn();

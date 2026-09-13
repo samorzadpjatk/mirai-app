@@ -1,5 +1,6 @@
 import { orpc } from "@mirai-app/orpc/client";
-import { useMutation } from "@tanstack/react-query";
+import { invalidateChallengeQueries } from "@mirai-app/orpc/client/query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Alert, StyleSheet, Text, View } from "react-native";
@@ -18,6 +19,7 @@ import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const styles = useThemedStyles(makeStyles);
 
   const tripId = typeof params.tripId === "string" ? params.tripId : (params.tripId?.[0] ?? "");
@@ -31,7 +33,11 @@ export default function NewChallengeScreen() {
 
   const createChallengeMutation = useMutation(
     orpc.challenge.create.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        // The query client runs with `refetchOnMount: false`, so returning to the list
+        // does not reload it: without this the new challenge stays invisible until a
+        // manual pull-to-refresh, which reads as "the challenge was never created".
+        await invalidateChallengeQueries(queryClient);
         Alert.alert("Saved", "Challenge created successfully.", [
           {
             text: "OK",
