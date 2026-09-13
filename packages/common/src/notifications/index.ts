@@ -8,7 +8,7 @@ export {
   getTemplateScheduleDates,
   normalizeScheduleWindow,
 } from "./scheduleUtils";
-export type { ZonedDateParts } from "./timezone";
+export type { ZonedDateParts } from "../utils/timezone";
 export {
   APP_TIME_ZONE,
   getZonedParts,
@@ -17,7 +17,7 @@ export {
   zonedDateAtTime,
   zonedDateKey,
   previousZonedDayAtTime,
-} from "./timezone";
+} from "../utils/timezone";
 export type { ExecutableSchedule, ResolveDueOccurrenceOptions } from "./scheduleExecution";
 export {
   DEFAULT_SCHEDULE_GRACE_MINUTES,

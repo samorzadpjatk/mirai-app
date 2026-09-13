@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getZonedParts } from "../../utils/timezone";
 import {
   attachCreatedByEmail,
   getNextScheduledStartDate,
@@ -6,7 +7,6 @@ import {
   normalizeScheduleWindow,
   toOptionalString,
 } from "../scheduleUtils";
-import { getZonedParts } from "../timezone";
 
 // Hours and minutes are Europe/Warsaw wall-clock values, so assertions read
 // them back in that zone rather than through the process time zone.

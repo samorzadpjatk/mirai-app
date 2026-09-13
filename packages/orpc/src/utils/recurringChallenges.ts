@@ -1,4 +1,10 @@
 import {
+  addZonedDays,
+  zonedDateAtTime,
+  zonedDayNumber,
+  zonedStartOfDay,
+} from "@mirai-app/common/utils";
+import {
   challengeLocationMatch,
   challengeQrCode,
   challengeRecurrence,
@@ -8,19 +14,15 @@ import {
 import type { DB, TransactionDB } from "@mirai-app/db";
 import { and, eq, getTableColumns } from "drizzle-orm";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+/**
+ * Every day boundary and clock time below is the one an admin in Poland reads
+ * off a wall clock, resolved through `APP_TIME_ZONE`. `Date#setHours` would use
+ * the process time zone instead, which is UTC in the deployed image: a window
+ * saved as 09:00–18:00 would have opened at 11:00 and closed at 20:00 local.
+ */
+const startOfDay = (date: Date) => zonedStartOfDay(date);
 
-const startOfDay = (date: Date) => {
-  const value = new Date(date);
-  value.setHours(0, 0, 0, 0);
-  return value;
-};
-
-const addDays = (date: Date, days: number) => {
-  const value = new Date(date);
-  value.setDate(value.getDate() + days);
-  return value;
-};
+const addDays = (date: Date, days: number) => addZonedDays(date, days);
 
 const parseClock = (value?: string | null) => {
   if (!value) return null;
@@ -49,13 +51,12 @@ const toDailyBounds = (params: {
   const endClock = parseClock(params.dailyEndTime);
   if (!startClock || !endClock) return null;
 
-  const start = new Date(params.baseDate);
-  start.setHours(startClock.hours, startClock.minutes, 0, 0);
+  const start = zonedDateAtTime(params.baseDate, startClock.hours, startClock.minutes);
 
-  const end = new Date(params.baseDate);
-  end.setHours(endClock.hours, endClock.minutes, 0, 0);
+  let end = zonedDateAtTime(params.baseDate, endClock.hours, endClock.minutes);
+  // A window like 20:00-02:00 ends on the next calendar day.
   if (end.getTime() <= start.getTime()) {
-    end.setDate(end.getDate() + 1);
+    end = zonedDateAtTime(addZonedDays(params.baseDate, 1), endClock.hours, endClock.minutes);
   }
 
   return { start, end };
@@ -150,7 +151,7 @@ const findInstanceForDay = async (params: {
     return null;
   }
 
-  const dayIndex = Math.floor((today.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
+  const dayIndex = zonedDayNumber(today) - zonedDayNumber(anchorDay) + 1;
 
   return await params.tx
     .select({ id: challenges.id, status: challenges.status })
@@ -185,7 +186,7 @@ export const precreateRecurringInstancesForTemplate = async (params: {
     return [];
   }
 
-  const daysCount = Math.floor((endDay.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
+  const daysCount = zonedDayNumber(endDay) - zonedDayNumber(anchorDay) + 1;
   const now = params.now ?? new Date();
   const results: { id: string; status: string; created: boolean }[] = [];
 

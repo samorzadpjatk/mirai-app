@@ -1,32 +1,29 @@
+import { addZonedDays, zonedDayNumber, zonedEndOfDay, zonedStartOfDay } from "../utils/timezone";
+
 export const MAX_RECURRING_DAYS = 30;
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const HOUR_MS = 60 * 60 * 1000;
 export const MAX_PEER_VOTING_DURATION_HOURS = 24 * 30;
 
-export const startOfDay = (date: Date) => {
-  const value = new Date(date);
-  value.setHours(0, 0, 0, 0);
-  return value;
-};
+/**
+ * Day boundaries are the ones an admin in Poland sees on a calendar, not the
+ * ones the server's own clock happens to be on. `Date#setHours` would read the
+ * process time zone, which is UTC in the deployed image — a recurring window
+ * anchored on "today" would then start at 02:00 Polish time in summer.
+ */
+export const startOfDay = (date: Date) => zonedStartOfDay(date);
 
-export const endOfDay = (date: Date) => {
-  const value = new Date(date);
-  value.setHours(23, 59, 59, 999);
-  return value;
-};
+export const endOfDay = (date: Date) => zonedEndOfDay(date);
 
-export const addDays = (date: Date, days: number) => {
-  const value = new Date(date);
-  value.setDate(value.getDate() + days);
-  return value;
-};
+export const addDays = (date: Date, days: number) => addZonedDays(date, days);
 
 export const inferRecurringDaysFromWindow = (startTime?: Date | null, endTime?: Date | null) => {
   if (!startTime || !endTime) return null;
-  const start = startOfDay(startTime);
-  const end = startOfDay(endTime);
-  if (end.getTime() < start.getTime()) return null;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  // Counted as calendar days rather than elapsed milliseconds: a Polish day is
+  // 23 or 25 hours long on the two DST changeovers.
+  const days = zonedDayNumber(endTime) - zonedDayNumber(startTime);
+  if (days < 0) return null;
+  return days + 1;
 };
 
 export const resolveRecurringDays = (params: {
