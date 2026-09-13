@@ -57,6 +57,7 @@ const mockFormState = {
   handleScoringChange: jest.fn(),
   handleSubmissionTypeChange: jest.fn(),
   initialImage: "",
+  initialStatus: "",
   initializedChallengeId: "",
   isQrScannerOpen: false,
   openQrScanner: mockOpenQrScanner,

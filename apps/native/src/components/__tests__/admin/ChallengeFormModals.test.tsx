@@ -146,6 +146,7 @@ describe("ChallengeFormModals", () => {
     statusLabel: "Draft",
     canUsePeerVoting: false,
     initialImage: "",
+    initialStatus: "",
     initializedChallengeId: "",
     uploadError: null,
     uploadProgress: { percent: null, bytesUploaded: 0, bytesTotal: null },

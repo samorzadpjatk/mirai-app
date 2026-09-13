@@ -100,6 +100,15 @@ export function useChallengeForm({
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [initialImage, setInitialImage] = useState<string>("");
+  /**
+   * The status the challenge had when this form was hydrated.
+   *
+   * The form posts every field on save, so a status the admin never touched would
+   * be written back verbatim. That is how an ACTIVE challenge silently returned to
+   * VISIBLE: the screen had been hydrated from a stale cache, and saving an
+   * unrelated edit replayed the old lifecycle status over the new one.
+   */
+  const [initialStatus, setInitialStatus] = useState<string>("");
 
   // Derived state
   const isPeerVoting = form.scoringCategory === "PEER_VOTING";
@@ -375,6 +384,7 @@ export function useChallengeForm({
     setForm(newFormState);
     setImagePreviewUri(nextImage ?? "");
     setInitialImage(nextImage);
+    setInitialStatus(challenge.status ?? "HIDDEN");
     if (challengeId) {
       setInitializedChallengeId(challengeId);
     }
@@ -391,6 +401,7 @@ export function useChallengeForm({
     showLocationPicker,
     isQrScannerOpen,
     initialImage,
+    initialStatus,
     initializedChallengeId,
     uploadStatus,
     uploadProgress,
