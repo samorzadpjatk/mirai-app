@@ -16,69 +16,48 @@ resources:
     storagePath: "images/trips/integral/hero-bg.png"
     sortOrder: 0
 
-  # Zdjęcie ośrodka Kacze Stawy w Łebie — tło kafelka z mapą (kwadrat,
-  # renderowany z opacity 0.4). Zdjęcie lotnicze ośrodka, dostarczone przez
-  # organizatora; przekodowane do JPEG (1000x750, 358 KB) zamiast PNG 1,6 MB,
-  # bo kafelek i tak renderuje się w ~180 pt.
-  - type: map_bg_image
-    label: "Kacze Stawy"
-    storagePath: "images/trips/integral/kacze-stawy.jpg"
-    sortOrder: 1
-
-  - type: interactive_map
-    label: "Mapa ośrodka"
-    description: "Plan ośrodka Kacze Stawy i okolic Łeby."
-    # TODO(integral): podmień na prawdziwy adres mapy wyprawy.
-    url: "https://example.com/integral-map"
-    iconName: "compass"
-    sortOrder: 2
-
+  # Infopack od organizatorów (Canva, 18 stron A4): podział na floty, plan
+  # wyjazdu i lista rzeczy do spakowania. Oryginał ważył 25 MB, w repo leży
+  # wersja przepuszczona przez Ghostscript (/ebook, 150 dpi, 1,1 MB) — kafelek
+  # pobiera plik na telefon, więc oryginał byłby nie do przyjęcia w terenie.
   - type: infopack
-    label: "Przewodnik uczestnika"
-    description: "Jak pobrać MIRAI, zalogować się kodem z e-maila i poruszać się po zakładkach aplikacji."
-    storagePath: "public/integral/Integral2026-Przewodnik-Uczestnika.pdf"
-    fileName: "Integral2026-Przewodnik-Uczestnika"
+    label: "Infopack"
+    description: "Podział na floty, plan wyjazdu i lista rzeczy do spakowania."
+    storagePath: "public/integral/Integral2026-Infopack.pdf"
+    fileName: "Integral2026-Infopack"
     iconName: "book"
-    sortOrder: 3
+    sortOrder: 1
 
   - type: whatsapp
     label: "Załoga (WhatsApp)"
     description: "Grupa wyjazdowa — ogłoszenia kadry i bieżące ustalenia."
-    # TODO(integral): podmień na prawdziwy link zapraszający do grupy WhatsApp.
-    url: "https://example.com/integral-whatsapp"
+    url: "https://chat.whatsapp.com/C8fsg6nLgcZ4iUKkjbRdTp"
     iconName: "boat"
-    sortOrder: 4
+    sortOrder: 2
 
-  - type: sos
-    label: "SOS"
-    description: "W razie nagłego wypadku zawołaj kadrę i dzwoń na 112. Podaj, że jesteś na wyjeździe Integral w ośrodku Kacze Stawy w Łebie."
-    iconName: "alert-circle"
-    value: "112"
-    sortOrder: 5
+  # Kafelek dzwoni pod `value`; `description` to wersja do wyświetlenia, więc
+  # obie wartości trzeba podmienić razem.
+  # TODO(integral): wstaw numer dyżurny kadry zamiast zaślepki.
+  - type: contact
+    label: "Kontakt"
+    description: "+48 000 000 000"
+    iconName: "call"
+    value: "+48000000000"
+    sortOrder: 3
 
-# TODO(integral): cała sekcja poniżej to nadal dane przykładowe. Ubezpieczyciel,
-# numer polisy, numer umowy generalnej i numer telefonu muszą pochodzić od
-# organizatorów — do tego czasu ekran pokazuje instrukcję z fikcyjnym numerem.
-insurance:
-  label: "Ubezpieczenie / Kontakt"
-  phoneNumber: "+48123456789"
-  phoneDisplay: "+48 123 456 789"
-  policyNumber: "INTEGRAL2026"
-  contractNumber: "INTEGRAL-SSPJ"
-  providerName: "Przykładowy Ubezpieczyciel"
-  steps:
-    - stepNumber: 1
-      title: "Krok 1"
-      text: "Poproś o pomoc kadrę wyjazdu lub najbliższą osobę z obsługi ośrodka. W razie poważnego wypadku dzwoń na 112."
-    - stepNumber: 2
-      title: "Krok 2"
-      text: "Skontaktuj się z ubezpieczycielem pod numerem +48 123 456 789. Podaj:"
-      requiredInfo:
-        - "imienia i nazwiska"
-        - "daty urodzenia"
-        - "numeru polisy: INTEGRAL2026"
-        - "numeru umowy generalnej: INTEGRAL-SSPJ"
-      exampleCall: "Jestem na wyjeździe Integral w Łebie, doznałem kontuzji, potrzebuję pomocy."
-    - stepNumber: 3
-      title: "Krok 3"
-      text: "Poinformuj kadrę o sytuacji i zadzwoń na podany numer kontaktowy."
+# Mapa ośrodka wróci tutaj, gdy organizatorzy dostarczą plan Kaczych Stawów.
+# Do tego czasu kafelek mapy się nie renderuje — placeholderowy adres
+# example.com otwierał w WebView pustą stronę, a tło kafelka (kacze-stawy.jpg,
+# 358 KB) pobierało się przy każdym wejściu na ekran po nic.
+#
+#   - type: map_bg_image
+#     label: "Kacze Stawy"
+#     storagePath: "images/trips/integral/kacze-stawy.jpg"
+#     sortOrder: 4
+#
+#   - type: interactive_map
+#     label: "Mapa ośrodka"
+#     description: "Plan ośrodka Kacze Stawy i okolic Łeby."
+#     url: "TODO(integral)"
+#     iconName: "compass"
+#     sortOrder: 5

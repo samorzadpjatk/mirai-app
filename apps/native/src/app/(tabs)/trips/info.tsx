@@ -27,7 +27,6 @@ import { borderRadius, colors, spacing, typography } from "../../../styles";
 export default function TripInfoScreen() {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
-  const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfModalTitle, setPdfModalTitle] = useState("");
   const [pdfModalUri, setPdfModalUri] = useState<string>("");
   const styles = useThemedStyles(makeStyles);
@@ -37,28 +36,19 @@ export default function TripInfoScreen() {
   const { selectedTripId } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { getResource, resources, insurance, isLoading, isError } = useTripResources(tripId);
+  const { getResource, resources, isLoading, isError } = useTripResources(tripId);
   const { trip } = useTripDetails(tripId);
 
   // File download hooks for images and PDFs
-  const heroImageDownload = useFileDownload();
   const mapBgImageDownload = useFileDownload();
   const mapPdfDownload = useFileDownload();
   const infopackDownload = useFileDownload();
 
-  const { download: downloadHero } = heroImageDownload;
   const { download: downloadMapBg } = mapBgImageDownload;
 
   useEffect(() => {
     if (!isLoading) {
-      const heroResource = getResource("HERO_IMAGE");
       const mapBgResource = getResource("MAP_BG_IMAGE");
-
-      if (heroResource?.storagePath) {
-        downloadHero({ storagePath: heroResource.storagePath }).catch(() => {
-          /* no-op */
-        });
-      }
 
       if (mapBgResource?.storagePath) {
         downloadMapBg({ storagePath: mapBgResource.storagePath }).catch(() => {
@@ -66,7 +56,7 @@ export default function TripInfoScreen() {
         });
       }
     }
-  }, [tripId, isLoading, getResource, downloadHero, downloadMapBg]);
+  }, [tripId, isLoading, getResource, downloadMapBg]);
 
   // Check if PDFs are downloaded on component mount
   useEffect(() => {
@@ -95,12 +85,20 @@ export default function TripInfoScreen() {
   const pdfMapResource = getResource("PDF_MAP");
   const infopackResource = getResource("INFOPACK");
   const whatsappResource = getResource("WHATSAPP");
-  const sosResource = getResource("SOS");
+  const contactResource = getResource("CONTACT");
 
   const handleWhatsAppPress = () => {
     if (whatsappResource?.url) {
       Linking.openURL(whatsappResource.url).catch(() => {
         /* no-op */
+      });
+    }
+  };
+
+  const handleContactPress = () => {
+    if (contactResource?.value) {
+      Linking.openURL(`tel:${contactResource.value}`).catch(() => {
+        Alert.alert("Błąd", "Nie udało się rozpocząć połączenia.");
       });
     }
   };
@@ -117,14 +115,6 @@ export default function TripInfoScreen() {
       } catch {
         Alert.alert("Error", "Could not open the infopack. Please try again later.");
       }
-    }
-  };
-
-  const handleSosPress = () => {
-    if (sosResource?.description) {
-      Alert.alert("Numer alarmowy", sosResource.description);
-    } else {
-      Alert.alert("Numer alarmowy", "W razie nagłego wypadku zadzwoń na 112.");
     }
   };
 
@@ -147,30 +137,11 @@ export default function TripInfoScreen() {
     }
   };
 
-  const handleInsurancePress = () => {
-    setIsInsuranceModalVisible(true);
-  };
-
-  const handleInsuranceCallPress = () => {
-    if (insurance?.phoneNumber) {
-      Linking.openURL(`tel:${insurance.phoneNumber}`).catch(() => {
-        Alert.alert("Błąd", "Nie udało się rozpocząć połączenia.");
-      });
-    }
-  };
-
-  const handleInsuranceCopyPress = () => {
-    if (insurance?.phoneDisplay) {
-      Alert.alert("Numer alarmowy", insurance.phoneDisplay);
-    }
-  };
-
   const interactiveMapUrl = interactiveMapResource?.url ?? "";
   const heroTitle = trip?.name ?? (heroResource?.label || "Trip Info");
   const heroSubtitle = formatTripDateRange(trip?.startDate, trip?.endDate);
   const heroBadge = trip ? getTripStatus(trip.startDate, trip.endDate) : null;
-  const hasResources = resources.length > 0 || Boolean(insurance);
-  const hasEssentialResources = Boolean(sosResource) || Boolean(insurance);
+  const hasResources = resources.length > 0;
 
   return (
     <>
@@ -187,7 +158,7 @@ export default function TripInfoScreen() {
             title={heroTitle}
             subtitle={heroSubtitle}
             badge={heroBadge}
-            imageUri={heroImageDownload.file?.uri}
+            imageStoragePath={heroResource?.storagePath ?? trip?.backgroundImagePath}
           />
 
           {hasResources ? null : (
@@ -200,61 +171,64 @@ export default function TripInfoScreen() {
 
           {/* Main Bento Grid */}
           <View style={styles.bentoGrid}>
-            {/* Map Tiles Row */}
-            <View style={styles.gridRow}>
-              {/* Interactive Map */}
-              {interactiveMapUrl ? (
-                <InteractiveMapTile
-                  label={interactiveMapResource?.label || "Interactive Map"}
-                  subtitle={interactiveMapResource?.description}
-                  iconName={getIconName(interactiveMapResource?.iconName, "map")}
-                  backgroundUri={mapBgImageDownload.file?.uri}
-                  onPress={handleMapPress}
-                />
-              ) : null}
+            {/* Map Tiles Row — omitted entirely when the trip has no map, so
+                the grid does not open with an empty gap. */}
+            {interactiveMapUrl || pdfMapResource ? (
+              <View testID="trip-info-map-row" style={styles.gridRow}>
+                {/* Interactive Map */}
+                {interactiveMapUrl ? (
+                  <InteractiveMapTile
+                    label={interactiveMapResource?.label || "Interactive Map"}
+                    subtitle={interactiveMapResource?.description}
+                    iconName={getIconName(interactiveMapResource?.iconName, "map")}
+                    backgroundUri={mapBgImageDownload.file?.uri}
+                    onPress={handleMapPress}
+                  />
+                ) : null}
 
-              {/* PDF Map */}
-              {pdfMapResource ? (
-                <TouchableOpacity
-                  testID="trip-info-pdf-map-tile"
-                  style={styles.mapTile}
-                  onPress={() => void handlePdfMapPress()}
-                  activeOpacity={0.8}
-                  disabled={mapPdfDownload.status === "loading"}
-                >
-                  <View style={styles.pdfMapContent}>
-                    <View style={styles.pdfMapIconWrapper}>
-                      <Ionicons
-                        name={getIconName(pdfMapResource.iconName, "document-text")}
-                        size={28}
-                        color={colors.white}
-                      />
-                    </View>
-                    <View style={styles.pdfMapTextContainer}>
-                      <View style={styles.pdfMapTitleRow}>
-                        <Text style={styles.mapTitle}>{pdfMapResource.label || "PDF Map"}</Text>
-                        {mapPdfDownload.file ? (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={14}
-                            color={colors.statusCompleted}
-                          />
-                        ) : (
-                          <Ionicons name="download" size={14} color={colors.slate400} />
-                        )}
+                {/* PDF Map */}
+                {pdfMapResource ? (
+                  <TouchableOpacity
+                    testID="trip-info-pdf-map-tile"
+                    style={styles.mapTile}
+                    onPress={() => void handlePdfMapPress()}
+                    activeOpacity={0.8}
+                    disabled={mapPdfDownload.status === "loading"}
+                  >
+                    <View style={styles.pdfMapContent}>
+                      <View style={styles.pdfMapIconWrapper}>
+                        <Ionicons
+                          name={getIconName(pdfMapResource.iconName, "document-text")}
+                          size={28}
+                          color={colors.white}
+                        />
                       </View>
-                      <Text style={styles.pdfMapSubtitle}>
-                        {mapPdfDownload.status === "loading"
-                          ? "Downloading..."
-                          : mapPdfDownload.file
-                            ? "Downloaded"
-                            : "Tap to Download"}
-                      </Text>
+                      <View style={styles.pdfMapTextContainer}>
+                        <View style={styles.pdfMapTitleRow}>
+                          <Text style={styles.mapTitle}>{pdfMapResource.label || "PDF Map"}</Text>
+                          {mapPdfDownload.file ? (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={14}
+                              color={colors.statusCompleted}
+                            />
+                          ) : (
+                            <Ionicons name="download" size={14} color={colors.slate400} />
+                          )}
+                        </View>
+                        <Text style={styles.pdfMapSubtitle}>
+                          {mapPdfDownload.status === "loading"
+                            ? "Downloading..."
+                            : mapPdfDownload.file
+                              ? "Downloaded"
+                              : "Tap to Download"}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
 
             {/* Grid Row */}
             <View style={styles.gridRow}>
@@ -325,44 +299,29 @@ export default function TripInfoScreen() {
               ) : null}
             </View>
 
-            {/* Section Header */}
-            {hasEssentialResources ? (
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Essential Resources</Text>
-                <View style={styles.sectionDivider} />
-              </View>
-            ) : null}
-
-            {/* Smaller Action Tiles */}
-            <View style={styles.resourceGrid}>
-              {sosResource ? (
-                <TouchableOpacity
-                  testID="trip-info-sos-tile"
-                  style={styles.resourceTile}
-                  onPress={handleSosPress}
-                  activeOpacity={0.8}
-                >
+            {/* Contact Tile */}
+            {contactResource?.value ? (
+              <TouchableOpacity
+                testID="trip-info-contact-tile"
+                style={styles.contactTile}
+                onPress={handleContactPress}
+                activeOpacity={0.8}
+              >
+                <View style={styles.bentoIconWrapper}>
                   <Ionicons
-                    name={getIconName(sosResource.iconName, "alert-circle")}
-                    size={24}
-                    color={palette.primary}
+                    name={getIconName(contactResource.iconName, "call")}
+                    size={28}
+                    color={colors.white}
                   />
-                  <Text style={styles.resourceText}>{sosResource.label || "SOS"}</Text>
-                </TouchableOpacity>
-              ) : null}
-
-              {insurance ? (
-                <TouchableOpacity
-                  testID="trip-info-insurance-tile"
-                  style={styles.resourceTile}
-                  onPress={handleInsurancePress}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="medkit" size={24} color={palette.primary} />
-                  <Text style={styles.resourceText}>{insurance.label || "Insurance"}</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
+                </View>
+                <View style={styles.bentoContent}>
+                  <Text style={styles.bentoTitle}>{contactResource.label || "Kontakt"}</Text>
+                  <Text style={styles.contactNumber}>
+                    {contactResource.description || contactResource.value}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </ScrollView>
 
@@ -419,84 +378,6 @@ export default function TripInfoScreen() {
             />
           )}
         </FullScreenModal>
-
-        {/* Insurance Modal */}
-        {insurance && (
-          <FullScreenModal
-            visible={isInsuranceModalVisible}
-            title={insurance.label}
-            onClose={() => setIsInsuranceModalVisible(false)}
-          >
-            <ScrollView
-              style={styles.insuranceScroll}
-              contentContainerStyle={styles.insuranceContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.insuranceActions}>
-                <TouchableOpacity
-                  style={styles.insuranceActionButton}
-                  onPress={handleInsuranceCallPress}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="call" size={18} color={colors.backgroundDark} />
-                  <Text style={styles.insuranceActionText}>Zadzwoń</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.insuranceActionSecondary}
-                  onPress={handleInsuranceCopyPress}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="copy-outline" size={18} color={palette.primary} />
-                  <Text style={styles.insuranceActionSecondaryText}>Kopiuj numer</Text>
-                </TouchableOpacity>
-              </View>
-
-              {insurance.steps?.map((step) => (
-                <View key={step.id} style={styles.insuranceCard}>
-                  <Text style={styles.insuranceCardTitle}>{step.title}</Text>
-                  <Text style={styles.insuranceText}>{step.text}</Text>
-
-                  {step.requiredInfo && step.requiredInfo.length > 0 && (
-                    <>
-                      <Text style={styles.insuranceLabel}>
-                        Podczas rozmowy konieczne będzie podanie:
-                      </Text>
-                      {step.requiredInfo.map((info, index) => (
-                        <Text key={index} style={styles.insuranceListItem}>
-                          - {info}
-                        </Text>
-                      ))}
-                    </>
-                  )}
-
-                  {step.exampleCall && (
-                    <>
-                      <Text style={styles.insuranceLabel}>
-                        Następnie krótko opiszcie sytuację, np.:
-                      </Text>
-                      <Text style={styles.insuranceQuote}>"{step.exampleCall}"</Text>
-                    </>
-                  )}
-
-                  {step.additionalText && (
-                    <Text style={styles.insuranceText}>{step.additionalText}</Text>
-                  )}
-                </View>
-              ))}
-
-              {insurance.hospitalName && (
-                <View style={styles.insuranceCard}>
-                  <Text style={styles.insuranceCardTitle}>Szpital</Text>
-                  <Text style={styles.insuranceText}>
-                    Najbliższy szpital to {insurance.hospitalName}
-                    {insurance.hospitalAddress && `, znajduje się w ${insurance.hospitalAddress}`}
-                    {insurance.hospitalDistance && ` (${insurance.hospitalDistance})`}
-                  </Text>
-                </View>
-              )}
-            </ScrollView>
-          </FullScreenModal>
-        )}
       </View>
     </>
   );
@@ -641,53 +522,28 @@ const makeStyles = (palette: ThemePalette) =>
       color: colors.slate400,
       lineHeight: 14,
     },
+    // The contact tile is the only full-width tile: a square one would take
+    // half the screen for a single phone number.
+    contactTile: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      backgroundColor: palette.cardDark,
+      borderRadius: borderRadius.xl,
+      borderWidth: 1,
+      borderColor: palette.primaryOpacity20,
+      padding: spacing.xl,
+    },
+    contactNumber: {
+      fontSize: typography.sm,
+      fontWeight: typography.medium,
+      color: palette.primaryOpacity80,
+    },
     whatsappSubtitle: {
       fontSize: 10,
       color: palette.accentMagenta,
       fontWeight: typography.medium,
       lineHeight: 14,
-    },
-
-    // Section Header
-    sectionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.md,
-      paddingTop: spacing.lg,
-    },
-    sectionTitle: {
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      color: colors.slate500,
-      textTransform: "uppercase",
-      letterSpacing: 2,
-    },
-    sectionDivider: {
-      flex: 1,
-      height: 1,
-      backgroundColor: "rgba(255, 255, 255, 0.05)",
-    },
-
-    // Resource Grid
-    resourceGrid: {
-      flexDirection: "row",
-      gap: spacing.md,
-    },
-    resourceTile: {
-      flex: 1,
-      backgroundColor: "rgba(39, 41, 53, 0.5)",
-      borderRadius: borderRadius.lg,
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.05)",
-      padding: spacing.lg,
-      alignItems: "center",
-      gap: spacing.sm,
-    },
-    resourceText: {
-      fontSize: 10,
-      fontWeight: typography.bold,
-      color: colors.white,
-      textTransform: "uppercase",
     },
 
     webView: {
@@ -698,92 +554,5 @@ const makeStyles = (palette: ThemePalette) =>
       flex: 1,
       width: Dimensions.get("window").width,
       backgroundColor: colors.backgroundDark,
-    },
-    insuranceScroll: {
-      flex: 1,
-    },
-    insuranceContent: {
-      padding: spacing.lg,
-      paddingBottom: 96,
-      gap: spacing.md,
-    },
-    insuranceActions: {
-      flexDirection: "row",
-      gap: spacing.md,
-    },
-    insuranceActionButton: {
-      flex: 1,
-      flexDirection: "row",
-      gap: spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: spacing.md,
-      borderRadius: borderRadius.full,
-      backgroundColor: palette.primary,
-    },
-    insuranceActionText: {
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      color: colors.backgroundDark,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-    },
-    insuranceActionSecondary: {
-      flex: 1,
-      flexDirection: "row",
-      gap: spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: spacing.md,
-      borderRadius: borderRadius.full,
-      borderWidth: 1,
-      borderColor: palette.primaryOpacity30,
-      backgroundColor: "rgba(39, 41, 53, 0.4)",
-    },
-    insuranceActionSecondaryText: {
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      color: palette.primary,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-    },
-    insuranceCard: {
-      borderRadius: borderRadius.lg,
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.06)",
-      backgroundColor: "rgba(39, 41, 53, 0.5)",
-      padding: spacing.lg,
-      gap: spacing.sm,
-    },
-    insuranceCardTitle: {
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      color: palette.primary,
-      textTransform: "uppercase",
-      letterSpacing: 1.5,
-    },
-    insuranceText: {
-      fontSize: typography.sm,
-      color: colors.white,
-      lineHeight: 22,
-    },
-    insuranceLabel: {
-      fontSize: typography.xs,
-      fontWeight: typography.bold,
-      color: colors.slate400,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-    },
-    insuranceListItem: {
-      fontSize: typography.sm,
-      color: colors.white,
-      lineHeight: 22,
-      paddingLeft: spacing.sm,
-    },
-    insuranceQuote: {
-      fontSize: typography.sm,
-      color: palette.primaryOpacity80,
-      lineHeight: 22,
-      fontStyle: "italic",
     },
   });

@@ -42,8 +42,10 @@ describe("TripInfoHero", () => {
     expect(screen.queryByTestId("trip-info-hero-badge")).toBeNull();
   });
 
-  it("should render the seeded hero image when one is downloaded", () => {
-    renderWithProviders(<TripInfoHero title="Integral 2026" imageUri="file:///hero-bg.png" />);
+  it("should render the seeded hero image when the trip has one", () => {
+    renderWithProviders(
+      <TripInfoHero title="Integral 2026" imageStoragePath="images/trips/integral/hero-bg.png" />,
+    );
 
     expect(screen.getByTestId("trip-info-hero-image")).toBeOnTheScreen();
   });
