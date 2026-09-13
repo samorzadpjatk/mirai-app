@@ -6,6 +6,7 @@ export const TRIP_RESOURCE_TYPES = {
   INFOPACK: "infopack",
   WHATSAPP: "whatsapp",
   SOS: "sos",
+  CONTACT: "contact",
 } as const;
 
 export type TripResourceType = (typeof TRIP_RESOURCE_TYPES)[keyof typeof TRIP_RESOURCE_TYPES];

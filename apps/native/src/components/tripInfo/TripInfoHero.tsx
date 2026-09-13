@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { CachedImage } from "~/components/common/CachedImage";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
@@ -10,8 +11,8 @@ interface TripInfoHeroProps {
   subtitle?: string | null;
   /** Trip status badge ("Ongoing", "Upcoming", "Past"). */
   badge?: string | null;
-  /** Local URI of the downloaded hero image; omitted while it is unavailable. */
-  imageUri?: string | null;
+  /** Storage path of the seeded hero image; omitted when the trip has none. */
+  imageStoragePath?: string | null;
 }
 
 /**
@@ -19,7 +20,7 @@ interface TripInfoHeroProps {
  * the trip the card degrades to a themed panel instead of borrowing an
  * unrelated stock photo.
  */
-export function TripInfoHero({ title, subtitle, badge, imageUri }: TripInfoHeroProps) {
+export function TripInfoHero({ title, subtitle, badge, imageStoragePath }: TripInfoHeroProps) {
   const styles = useThemedStyles(makeStyles);
 
   const content: ReactNode = (
@@ -47,7 +48,7 @@ export function TripInfoHero({ title, subtitle, badge, imageUri }: TripInfoHeroP
     </>
   );
 
-  if (!imageUri) {
+  if (!imageStoragePath) {
     return (
       <View testID="trip-info-hero" style={[styles.heroCard, styles.heroCardPlain]}>
         {content}
@@ -57,14 +58,14 @@ export function TripInfoHero({ title, subtitle, badge, imageUri }: TripInfoHeroP
 
   return (
     <View testID="trip-info-hero" style={styles.heroCard}>
-      <ImageBackground
+      <CachedImage
         testID="trip-info-hero-image"
-        source={{ uri: imageUri }}
+        storagePath={imageStoragePath}
+        transform="hero"
         style={styles.heroImage}
-        imageStyle={styles.heroImageRadius}
-      >
-        {content}
-      </ImageBackground>
+        contentFit="cover"
+      />
+      {content}
     </View>
   );
 }
@@ -82,10 +83,7 @@ const makeStyles = (palette: ThemePalette) =>
       borderColor: palette.primaryOpacity20,
     },
     heroImage: {
-      width: "100%",
-      height: "100%",
-    },
-    heroImageRadius: {
+      ...StyleSheet.absoluteFillObject,
       borderRadius: borderRadius.xl,
     },
     heroOverlay: {
