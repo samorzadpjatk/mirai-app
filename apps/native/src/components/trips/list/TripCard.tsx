@@ -54,7 +54,6 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             </View>
           </View>
           <Text style={styles.tripTitle}>{trip.name}</Text>
-          {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
           <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
           {trip.groups && trip.groups.length > 0 && (
             <Text style={styles.tripGroups}>
@@ -89,7 +88,6 @@ export function TripCard({ trip, onPress }: TripCardProps) {
           </View>
         </View>
         <Text style={styles.tripTitle}>{trip.name}</Text>
-        {trip.description ? <Text style={styles.tripSubtitle}>{trip.description}</Text> : null}
         <Text style={styles.tripDate}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
         {trip.groups && trip.groups.length > 0 && (
           <Text style={styles.tripGroups}>
@@ -175,11 +173,6 @@ const makeStyles = (palette: ThemePalette) =>
       fontWeight: typography.bold,
       color: colors.white,
       marginBottom: spacing.xs,
-    },
-    tripSubtitle: {
-      fontSize: typography.base,
-      color: palette.primaryOpacity80,
-      marginBottom: spacing.sm,
     },
     tripDate: {
       fontSize: typography.sm,

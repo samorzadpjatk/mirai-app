@@ -74,7 +74,6 @@ export default function TripDetailsScreen() {
           {/* Hero Image */}
           <TripHeroCard
             name={trip.name}
-            description={trip.description}
             startDate={trip.startDate}
             endDate={trip.endDate}
             backgroundImagePath={trip.backgroundImagePath}
