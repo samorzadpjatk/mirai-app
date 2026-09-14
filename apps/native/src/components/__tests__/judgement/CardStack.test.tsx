@@ -1,6 +1,7 @@
 import { fireEvent } from "@testing-library/react-native";
 import React from "react";
 import { Alert, View } from "react-native";
+import { runOnJS, withSpring, withTiming } from "react-native-reanimated";
 import { CardStack } from "../../judgement/CardStack";
 import { renderWithProviders } from "../helpers/renderWithProviders";
 
@@ -53,14 +54,27 @@ jest.mock("~/stores/judgement/judgementStores", () => ({
   },
 }));
 
+// Shared values created during a render, in creation order: [translateX, translateY].
+const mockSharedValues: { value: number }[] = [];
+
 jest.mock("react-native-reanimated", () => {
   const React = require("react");
   return {
-    useSharedValue: jest.fn().mockReturnValue({ value: 0 }),
+    useSharedValue: jest.fn().mockImplementation((initial: number) => {
+      const sharedValue = { value: initial };
+      mockSharedValues.push(sharedValue);
+      return sharedValue;
+    }),
     useAnimatedStyle: jest.fn().mockReturnValue({}),
     withSpring: jest.fn().mockReturnValue({ value: 0 }),
     withTiming: jest.fn().mockReturnValue({ value: 0 }),
     interpolate: jest.fn().mockReturnValue(0),
+    // Stands in for the thread hop: records the target and forwards the call.
+    runOnJS: jest.fn(
+      (fn: (...args: unknown[]) => unknown) =>
+        (...args: unknown[]) =>
+          fn(...args),
+    ),
     Extrapolation: { CLAMP: "clamp" },
     default: {
       View: ({ children }: { children: React.ReactNode }) => {
@@ -70,6 +84,12 @@ jest.mock("react-native-reanimated", () => {
   };
 });
 
+// Pan callbacks registered by the component, so tests can run them like the UI thread would.
+const mockPanCallbacks: {
+  onUpdate?: (event: { translationX: number; translationY: number }) => void;
+  onEnd?: () => void;
+} = {};
+
 jest.mock("react-native-gesture-handler", () => {
   const React = require("react");
   return {
@@ -77,8 +97,14 @@ jest.mock("react-native-gesture-handler", () => {
       Pan: jest.fn().mockReturnValue({
         enabled: jest.fn().mockReturnThis(),
         minDistance: jest.fn().mockReturnThis(),
-        onUpdate: jest.fn().mockReturnThis(),
-        onEnd: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn(function (this: unknown, callback: () => void) {
+          mockPanCallbacks.onUpdate = callback as typeof mockPanCallbacks.onUpdate;
+          return this;
+        }),
+        onEnd: jest.fn(function (this: unknown, callback: () => void) {
+          mockPanCallbacks.onEnd = callback;
+          return this;
+        }),
       }),
     },
     GestureDetector: ({ children }: { children: React.ReactNode }) => {
@@ -157,6 +183,9 @@ describe("CardStack", () => {
       challengeScoringCategory: "JUDGED_STAFF",
     };
     jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    mockSharedValues.length = 0;
+    mockPanCallbacks.onUpdate = undefined;
+    mockPanCallbacks.onEnd = undefined;
   });
 
   afterEach(() => {
@@ -291,5 +320,83 @@ describe("CardStack", () => {
 
     fireEvent.press(getByTestId("reject-confirm-button"));
     expect(getByText("Reject submission")).toBeTruthy();
+  });
+
+  /**
+   * The pan callbacks are workletized by react-native-worklets, so their body runs on the UI
+   * thread. Calling a plain JS function from there kills the app with "Tried to synchronously
+   * call a non-worklet function on the UI thread", which is exactly how swiping a card crashed.
+   * Every hop back into JS must therefore go through runOnJS.
+   */
+  describe("pan gesture end (runs on the UI thread)", () => {
+    const SWIPE_PAST_THRESHOLD = 9999;
+
+    const renderWithSwipe = (distanceX: number) => {
+      const rendered = renderWithProviders(<CardStack {...defaultProps} />);
+      const [translateX] = mockSharedValues;
+      if (!translateX) throw new Error("translateX shared value was never created");
+      translateX.value = distanceX;
+      return rendered;
+    };
+
+    const runPanEnd = () => {
+      if (!mockPanCallbacks.onEnd) throw new Error("onEnd callback was never registered");
+      mockPanCallbacks.onEnd();
+    };
+
+    it("should approve a right swipe through runOnJS instead of calling JS directly", () => {
+      mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
+      mockUseJudgementReturn.challengeScoringCategory = "AUTO_APPROVED";
+      renderWithSwipe(SWIPE_PAST_THRESHOLD);
+
+      runPanEnd();
+
+      expect(runOnJS).toHaveBeenCalledTimes(1);
+      expect(withTiming).toHaveBeenCalledWith(
+        expect.any(Number),
+        { duration: 220 },
+        expect.any(Function),
+      );
+      expect((withTiming as jest.Mock).mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it("should open the reject flow of a left swipe through runOnJS", () => {
+      mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
+      mockUseJudgementReturn.challengeScoringCategory = "AUTO_APPROVED";
+      renderWithSwipe(-SWIPE_PAST_THRESHOLD);
+
+      runPanEnd();
+
+      expect(runOnJS).toHaveBeenCalledTimes(1);
+      expect((withTiming as jest.Mock).mock.calls[0]?.[0]).toBeLessThan(0);
+    });
+
+    it("should spring the card back through runOnJS when the swipe is too short", () => {
+      mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
+      mockUseJudgementReturn.challengeScoringCategory = "AUTO_APPROVED";
+      renderWithSwipe(1);
+
+      runPanEnd();
+
+      expect(runOnJS).toHaveBeenCalledTimes(1);
+      expect(withSpring).toHaveBeenCalled();
+      expect(withTiming).not.toHaveBeenCalled();
+    });
+
+    it("should spring back and open podium selection through runOnJS for judged staff", () => {
+      mockUseJudgementReturn.currentSubmission = baseSubmission({ id: "sub-1" });
+      mockUseJudgementReturn.challengeScoringCategory = "JUDGED_STAFF";
+      renderWithSwipe(SWIPE_PAST_THRESHOLD);
+
+      runPanEnd();
+
+      expect(runOnJS).toHaveBeenCalledTimes(2);
+      expect(withSpring).toHaveBeenCalled();
+      expect(Alert.alert).toHaveBeenCalledWith(
+        "Approve submission",
+        "Select podium place",
+        expect.any(Array),
+      );
+    });
   });
 });

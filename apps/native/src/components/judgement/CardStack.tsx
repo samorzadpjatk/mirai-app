@@ -128,6 +128,21 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
     ]);
   }, [animateDecision, currentSubmission, isJudgedStaff, isReviewing, reviewCurrent, width]);
 
+  // The pan callbacks below are workletized, so they run on the UI thread and may only reach
+  // these functions through runOnJS. Passing a function as a runOnJS argument does not survive
+  // the thread hop, so each handler closes over what it needs and takes none.
+  const handleSpringBack = useCallback(() => {
+    springBack();
+  }, [springBack]);
+
+  const handleSwipeApprove = useCallback(() => {
+    animateApproveSwipe(width, reviewCurrent);
+  }, [animateApproveSwipe, reviewCurrent, width]);
+
+  const handleSwipeReject = useCallback(() => {
+    animateRejectSwipe(width, openRejectModal);
+  }, [animateRejectSwipe, openRejectModal, width]);
+
   const canSubmitRejectResult = canSubmitReject(rejectionReason, isReviewing);
 
   const confirmReject = useCallback(() => {
@@ -158,15 +173,15 @@ const CardStack = ({ tripId, challengeId }: CardStackProps) => {
 
       if (shouldApprove) {
         if (isJudgedStaff) {
-          springBack();
+          runOnJS(handleSpringBack)();
           runOnJS(openApproveSelection)();
           return;
         }
-        animateApproveSwipe(width, reviewCurrent);
+        runOnJS(handleSwipeApprove)();
       } else if (shouldReject) {
-        animateRejectSwipe(width, openRejectModal);
+        runOnJS(handleSwipeReject)();
       } else {
-        springBack();
+        runOnJS(handleSpringBack)();
       }
     });
 
