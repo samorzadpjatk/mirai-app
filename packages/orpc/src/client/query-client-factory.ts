@@ -4,12 +4,20 @@ export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000,
-        // Disable aggressive polling; rely on staleTime + manual invalidation
+        staleTime: 30 * 1000,
+        // No global polling: `requireAuth` spends two GoTrue round-trips per
+        // procedure, so an interval would multiply that across every mounted
+        // query. Screens that need live numbers set their own interval.
         refetchInterval: false,
-        // Disable window focus refetch (mobile apps don't have "windows")
-        refetchOnWindowFocus: false,
-        refetchOnMount: false,
+        // These three are the only way a mounted screen gets back to the
+        // server. With them off, an admin could award coins and every other
+        // device kept rendering the balance it happened to cache -- the app
+        // looked like the award never landed. `focusManager` has no native
+        // signal of its own in React Native: `useAppStateRefresh` feeds it
+        // `AppState`, without which `refetchOnWindowFocus` never fires here.
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
         // Retry with exponential backoff and jitter; don't retry on 4xx client errors
         retry: (failureCount, error) => {
           const statusCode = (error as { status?: number })?.status;

@@ -29,8 +29,18 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack }),
 }));
 
+const mockGroupsWrapper = {
+  current: [{ id: "group-1", name: "Test Group", coins: 100 }] as Array<{
+    id: string;
+    name: string;
+    coins: number;
+  }>,
+};
+
 jest.mock("~/hooks/admin/useAdminCoins", () => ({
   useAdminCoins: () => ({
+    groups: mockGroupsWrapper.current,
+    groupsLoading: false,
     addCoins: mockAddCoins,
     removeCoins: mockRemoveCoins,
     isAddingCoins: false,
@@ -90,6 +100,7 @@ describe("CoinOperationScreen", () => {
       groupName: "Test Group",
       groupCoins: "100",
     };
+    mockGroupsWrapper.current = [{ id: "group-1", name: "Test Group", coins: 100 }];
   });
 
   it("renders group summary", () => {
@@ -121,6 +132,24 @@ describe("CoinOperationScreen", () => {
     fireEvent.changeText(getByPlaceholderText("Describe why you are removing coins"), "Penalty");
     fireEvent.press(getAllByText("Remove Coins")[1]!);
     await waitFor(() => expect(mockRemoveCoins).toHaveBeenCalledWith("group-1", 25, "Penalty"));
+  });
+
+  // The balance used to be read from the navigation params, so it froze at
+  // whatever the list happened to show when the row was tapped -- the screen
+  // could tell a moderator a group had 100 coins right after they awarded it
+  // another 150.
+  it("shows the balance the server reports, not the one it was navigated with", () => {
+    mockGroupsWrapper.current = [{ id: "group-1", name: "Test Group", coins: 250 }];
+    const { getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
+
+    expect(getByDisplayValue("250 coins")).toBeTruthy();
+  });
+
+  it("falls back to the navigated balance until the group list arrives", () => {
+    mockGroupsWrapper.current = [];
+    const { getByDisplayValue } = renderWithProviders(<CoinOperationScreen operation="add" />);
+
+    expect(getByDisplayValue("100 coins")).toBeTruthy();
   });
 
   it("shows missing params error", () => {

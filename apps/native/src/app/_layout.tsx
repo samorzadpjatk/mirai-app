@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoadingScreen from "~/components/LoadingScreen";
 import { useAutoPushSubscription, useNotificationResponse } from "~/hooks/notifications";
+import { useAppStateRefresh } from "~/hooks/ui";
 import { LocationStoreProvider } from "~/stores/location";
 
 function initNotifications(): void {
@@ -225,6 +226,11 @@ export default function RootLayout() {
   // had to be parsed before a single React element existed. Headers fall back to the
   // system font for the few frames before the face is registered.
   useFonts({ IBMPlexSans_600SemiBold });
+
+  // React Query's focus detection is a browser API, so it is inert here until
+  // `AppState` drives it. Mounted above the providers because the focus manager
+  // is a module singleton, not context.
+  useAppStateRefresh();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

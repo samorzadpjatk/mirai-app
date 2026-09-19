@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, Text, TextInput, View } from "react-native";
+import { FlatList, RefreshControl, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
@@ -23,7 +23,7 @@ export default function AdminCoinsScreen() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { groups, groupsLoading } = useAdminCoins(tripId ?? "");
+  const { groups, groupsLoading, refetchGroups, isRefetchingGroups } = useAdminCoins(tripId ?? "");
 
   const filteredGroups = useMemo(() => {
     return (
@@ -301,6 +301,13 @@ export default function AdminCoinsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 96 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingGroups}
+              onRefresh={refetchGroups}
+              tintColor={palette.primary}
+            />
+          }
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: spacing.xxl }}>
               <Ionicons name="cash" size={48} color={palette.textSecondary} />

@@ -21,7 +21,12 @@ export function useAdminCoins(tripId: string) {
   const queryClient = useQueryClient();
 
   const groupsQuery = orpc.group.getGroupList.queryOptions({ input: { tripId } });
-  const { data: groups, isLoading: groupsLoading } = useQuery(groupsQuery);
+  const {
+    data: groups,
+    isLoading: groupsLoading,
+    refetch: refetchGroups,
+    isRefetching: isRefetchingGroups,
+  } = useQuery(groupsQuery);
 
   const coinsMutation = useMutation(
     orpc.group.addCoins.mutationOptions({
@@ -58,6 +63,11 @@ export function useAdminCoins(tripId: string) {
   return {
     groups: groups ?? [],
     groupsLoading,
+    // Exposed so the list can offer a pull: invalidation only reaches the
+    // device that made the change, and a second moderator watching the same
+    // trip has no other way to ask for the current balances.
+    refetchGroups,
+    isRefetchingGroups,
     addCoins,
     removeCoins,
     isAddingCoins: coinsMutation.isPending,

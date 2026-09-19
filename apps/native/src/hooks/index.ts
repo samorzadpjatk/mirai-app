@@ -18,4 +18,4 @@ export {
 export { useImageUrl } from "./images";
 export { useSupabase } from "./supabase";
 export { useTripDetails, useSelectedTrip, useTrips, useTripResources } from "./trips";
-export { usePanelAnimation, useShareModal } from "./ui";
+export { useAppStateRefresh, usePanelAnimation, useShareModal } from "./ui";

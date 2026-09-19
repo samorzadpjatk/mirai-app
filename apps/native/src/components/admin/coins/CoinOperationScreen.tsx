@@ -38,7 +38,7 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
     () => (typeof params.groupName === "string" ? params.groupName : (params.groupName?.[0] ?? "")),
     [params.groupName],
   );
-  const groupCoins = useMemo(
+  const navigatedCoins = useMemo(
     () =>
       typeof params.groupCoins === "string" ? params.groupCoins : (params.groupCoins?.[0] ?? "0"),
     [params.groupCoins],
@@ -47,8 +47,14 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  const { addCoins, removeCoins, isAddingCoins, isRemovingCoins } = useAdminCoins(tripId);
+  const { groups, addCoins, removeCoins, isAddingCoins, isRemovingCoins } = useAdminCoins(tripId);
   const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
+
+  // The navigated value is only a seed for the first frame. It was captured
+  // when the row was tapped, so on its own it keeps showing a balance that a
+  // concurrent award has already moved on from.
+  const liveCoins = groups.find((group) => group.id === groupId)?.coins;
+  const groupCoins = liveCoins === undefined ? navigatedCoins : String(liveCoins);
 
   const submit = async () => {
     const numericAmount = Number.parseInt(amount, 10);
