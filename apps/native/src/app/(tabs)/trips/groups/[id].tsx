@@ -3,7 +3,16 @@ import { formatDisplayName, getInitials } from "@mirai-app/common/users";
 import { orpc } from "@mirai-app/orpc/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback } from "react";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { DeckBackground } from "~/components/common/DeckBackground";
 import { ErrorState } from "~/components/common/ui";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
@@ -33,6 +42,8 @@ export default function GroupDetailsScreen() {
     isLoading: groupLoading,
     isError: isGroupError,
     error: groupError,
+    refetch: refetchGroup,
+    isRefetching: isRefetchingGroup,
   } = useQuery({
     ...orpc.group.getById.queryOptions({ input: { id: groupId ?? "" } }),
     enabled: !!groupId,
@@ -68,7 +79,7 @@ export default function GroupDetailsScreen() {
     enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup,
   });
 
-  const { data: transactions } = useQuery({
+  const { data: transactions, refetch: refetchTransactions } = useQuery({
     ...orpc.coinTransaction.getCoinTransactions.queryOptions({
       input: {
         tripId: tripId,
@@ -78,10 +89,17 @@ export default function GroupDetailsScreen() {
     }),
     enabled: !!groupId && !!group?.trip?.id,
   });
-  const { data: rankingData } = useQuery({
+  const { data: rankingData, refetch: refetchRanking } = useQuery({
     ...orpc.group.ranking.queryOptions({ input: { tripId: tripId } }),
     enabled: !!group?.trip?.id,
   });
+
+  // The balance, its transaction log and the standing all move together when an
+  // admin awards coins, so a pull refreshes the three as one gesture rather
+  // than leaving the screen half updated.
+  const handleRefresh = useCallback(() => {
+    void Promise.all([refetchGroup(), refetchTransactions(), refetchRanking()]);
+  }, [refetchGroup, refetchTransactions, refetchRanking]);
   const leaveGroupMutation = useMutation(
     orpc.group.leaveMyGroup.mutationOptions({
       onSuccess: async () => {
@@ -295,6 +313,13 @@ export default function GroupDetailsScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetchingGroup}
+            onRefresh={handleRefresh}
+            tintColor={palette.primary}
+          />
+        }
       >
         {/* Hero Card */}
         <GroupDetailsHero name={group.name} imageUrl={group.image} />

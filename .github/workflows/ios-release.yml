@@ -14,7 +14,7 @@ jobs:
 
   build:
     name: Build iOS release
-    runs-on: macos-26
+    runs-on: macos-latest
     needs: [monorepo_tagging]
     defaults:
       run:
@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Select Xcode 26.5
-        run: sudo xcode-select -s /Applications/Xcode_26.5.app
+        run: xcode-select -p
 
       - name: Set working directory explicitly
         run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV

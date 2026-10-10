@@ -42,10 +42,10 @@ describe("TripCard", () => {
     expect(screen.getByText("Summer Adventure")).toBeOnTheScreen();
   });
 
-  it("should render trip description", () => {
+  it("should not render the trip description", () => {
     renderWithProviders(<TripCard trip={mockTrip} onPress={noop} />);
 
-    expect(screen.getByText("An amazing summer trip")).toBeOnTheScreen();
+    expect(screen.queryByText("An amazing summer trip")).toBeNull();
   });
 
   it("should render trip dates", () => {
@@ -97,13 +97,6 @@ describe("TripCard", () => {
 
     fireEvent.press(screen.getByText("Summer Adventure"));
     expect(onPress).toHaveBeenCalledTimes(1);
-  });
-
-  it("should not render description when not provided", () => {
-    const tripWithoutDescription = { ...mockTrip, description: undefined };
-    renderWithProviders(<TripCard trip={tripWithoutDescription} onPress={noop} />);
-
-    expect(screen.queryByText("An amazing summer trip")).toBeNull();
   });
 
   it("should not render groups text when no groups", () => {

@@ -15,20 +15,7 @@ describe("TripHeroCard", () => {
     expect(screen.getByText("Summer Adventure")).toBeOnTheScreen();
   });
 
-  it("should render trip description when provided", () => {
-    renderWithProviders(
-      <TripHeroCard
-        name="Summer Adventure"
-        description="An amazing summer trip"
-        startDate={new Date("2024-07-01")}
-        endDate={new Date("2024-07-07")}
-      />,
-    );
-
-    expect(screen.getByText("An amazing summer trip")).toBeOnTheScreen();
-  });
-
-  it("should not render description when not provided", () => {
+  it("should not render the trip description", () => {
     renderWithProviders(
       <TripHeroCard
         name="Summer Adventure"
@@ -108,19 +95,5 @@ describe("TripHeroCard", () => {
     );
 
     expect(screen.getByText("Trip With Background")).toBeOnTheScreen();
-  });
-
-  it("should handle null description", () => {
-    renderWithProviders(
-      <TripHeroCard
-        name="Trip With Null Description"
-        description={null}
-        startDate={new Date("2024-07-01")}
-        endDate={new Date("2024-07-07")}
-      />,
-    );
-
-    expect(screen.queryByText("Some description")).toBeNull();
-    expect(screen.getByText("Trip With Null Description")).toBeOnTheScreen();
   });
 });

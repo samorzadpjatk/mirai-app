@@ -7,24 +7,36 @@ describe("makeQueryClient configuration", () => {
     expect(queryClient).toBeInstanceOf(QueryClient);
   });
 
-  it("should not refetch on window focus", () => {
+  // A coin award lands on the server, the screen keeps showing the old balance,
+  // and the moderator reports that "the points did not go through". Every one of
+  // these four defaults used to be off, which left a mounted screen with no way
+  // back to the server short of restarting the app.
+  it("should refetch on window focus", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    expect(defaultedOptions.refetchOnWindowFocus).toBe(false);
+    expect(defaultedOptions.refetchOnWindowFocus).toBe(true);
   });
 
+  it("should refetch stale data when a screen mounts", () => {
+    const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
+    expect(defaultedOptions.refetchOnMount).toBe(true);
+  });
+
+  it("should refetch after the connection comes back", () => {
+    const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
+    expect(defaultedOptions.refetchOnReconnect).toBe(true);
+  });
+
+  // Polling stays off: `requireAuth` costs two GoTrue round-trips per procedure,
+  // so a global interval would multiply that across every mounted query. Focus,
+  // mount and reconnect are the triggers; screens that need live numbers opt in.
   it("should disable refetch interval", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
     expect(defaultedOptions.refetchInterval).toBe(false);
   });
 
-  it("should not refetch on mount", () => {
+  it("should have staleTime of 30 seconds", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    expect(defaultedOptions.refetchOnMount).toBe(false);
-  });
-
-  it("should have staleTime of 60 seconds", () => {
-    const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
-    expect(defaultedOptions.staleTime).toBe(60 * 1000);
+    expect(defaultedOptions.staleTime).toBe(30 * 1000);
   });
 
   it("should not retry 400 client errors", () => {

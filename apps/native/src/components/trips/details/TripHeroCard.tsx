@@ -5,7 +5,6 @@ import { type ThemePalette, useThemedStyles } from "~/theme/TripThemeProvider";
 
 interface TripHeroCardProps {
   name: string;
-  description?: string | null;
   startDate: Date | string;
   endDate: Date | string;
   imageUrl?: string;
@@ -27,7 +26,6 @@ function buildImageSource(imageUrl?: string) {
 
 export function TripHeroCard({
   name,
-  description,
   startDate,
   endDate,
   imageUrl,
@@ -45,7 +43,6 @@ export function TripHeroCard({
             <Text style={styles.heroBadgeText}>{getTripStatus(startDate, endDate)}</Text>
           </View>
           <Text style={styles.heroTitle}>{name}</Text>
-          {description ? <Text style={styles.heroSubtitle}>{description}</Text> : null}
         </View>
       </View>
     );
@@ -67,7 +64,6 @@ export function TripHeroCard({
           <Text style={styles.heroBadgeText}>{getTripStatus(startDate, endDate)}</Text>
         </View>
         <Text style={styles.heroTitle}>{name}</Text>
-        {description ? <Text style={styles.heroSubtitle}>{description}</Text> : null}
       </View>
     </View>
   );
@@ -122,10 +118,5 @@ const makeStyles = (palette: ThemePalette) =>
       fontSize: typography.xxxl + 6,
       fontWeight: typography.bold,
       color: palette.white,
-    },
-    heroSubtitle: {
-      fontSize: typography.base,
-      fontWeight: typography.medium,
-      color: palette.primaryOpacity80,
     },
   });
