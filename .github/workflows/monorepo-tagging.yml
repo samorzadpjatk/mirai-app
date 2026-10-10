@@ -25,7 +25,7 @@ permissions:
 jobs:
   compute_and_publish_tag:
     name: Compute and publish release tag
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       semver_tag: ${{ steps.publish.outputs.semver_tag }}
       previous_tag: ${{ steps.publish.outputs.previous_tag }}
