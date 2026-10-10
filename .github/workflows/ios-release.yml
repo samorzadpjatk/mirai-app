@@ -14,7 +14,7 @@ jobs:
 
   build:
     name: Build iOS release
-    runs-on: self-hosted
+    runs-on: macos-latest
     needs: [monorepo_tagging]
     defaults:
       run:
@@ -41,8 +41,8 @@ jobs:
 
       - name: Record release tag metadata
         run: |
-          echo "RELEASE_TAG=v15.14.10" >> "$GITHUB_ENV"
-          echo "PREVIOUS_RELEASE_TAG=v15.14.9" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=${{ needs.monorepo_tagging.outputs.semver_tag }}" >> "$GITHUB_ENV"
+          echo "PREVIOUS_RELEASE_TAG=${{ needs.monorepo_tagging.outputs.previous_tag }}" >> "$GITHUB_ENV"
           echo "TAG_CREATED=${{ needs.monorepo_tagging.outputs.tag_created }}" >> "$GITHUB_ENV"
           echo "TAG_REFRESHED=${{ needs.monorepo_tagging.outputs.tag_refreshed }}" >> "$GITHUB_ENV"
 
