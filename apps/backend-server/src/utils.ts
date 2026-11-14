@@ -275,10 +275,6 @@ export async function hashAccessToken(token: string | null): Promise<string | nu
     .join("");
 }
 
-// How often idle buckets are dropped. Every access token gets its own bucket and
-// tokens rotate hourly, so without a sweep the maps only ever grow.
-export const RATE_LIMIT_SWEEP_INTERVAL_MS = RATE_LIMIT_WINDOW_MS;
-
 export class RateLimiter {
   private readonly buckets = new Map<BucketType, Map<string, BucketState>>();
   private lastSweep: number | null = null;
@@ -341,15 +337,17 @@ export class RateLimiter {
     return { allowed: false, retryAfter };
   }
 
-  // A bucket that has refilled to capacity behaves exactly like one that was never
-  // created, so dropping it changes no decision.
+  // Runs at most once per window. Every access token gets its own bucket and tokens
+  // rotate hourly, so without it the maps only ever grow. A bucket that has refilled
+  // to capacity behaves exactly like one that was never created, so dropping it
+  // changes no decision.
   private sweep(now: number): void {
     if (this.lastSweep === null) {
       this.lastSweep = now;
       return;
     }
 
-    if (now - this.lastSweep < RATE_LIMIT_SWEEP_INTERVAL_MS) {
+    if (now - this.lastSweep < RATE_LIMIT_WINDOW_MS) {
       return;
     }
 

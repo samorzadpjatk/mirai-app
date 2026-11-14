@@ -6,7 +6,6 @@ import {
   DEFAULT_IP_REFILL_INTERVAL_MS,
   DEFAULT_USER_BUCKET_CAPACITY,
   DEFAULT_USER_REFILL_INTERVAL_MS,
-  RATE_LIMIT_SWEEP_INTERVAL_MS,
   RATE_LIMIT_WINDOW_MS,
   RateLimiter,
   TEN_MB,
@@ -214,13 +213,13 @@ describe("RateLimiter", () => {
     limiter.check("user", "old-token-2", 0);
     expect(limiter.size).toBe(2);
 
-    limiter.check("user", "fresh-token", RATE_LIMIT_SWEEP_INTERVAL_MS);
+    limiter.check("user", "fresh-token", RATE_LIMIT_WINDOW_MS);
     expect(limiter.size).toBe(1);
   });
 
   it("should keep buckets that are still draining after a sweep", () => {
     const limiter = new RateLimiter({ user: { capacity: 100, refillInterval: 1000 } });
-    const drainedAt = RATE_LIMIT_SWEEP_INTERVAL_MS - 1;
+    const drainedAt = RATE_LIMIT_WINDOW_MS - 1;
 
     limiter.check("user", "init", 0);
     for (let index = 0; index < 100; index++) {
