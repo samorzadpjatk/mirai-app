@@ -54,6 +54,7 @@ export function createServer(opts: ServerOptions) {
     const headers: Record<string, string | undefined> = {
       "x-forwarded-for": c.req.header("x-forwarded-for"),
       "x-real-ip": c.req.header("x-real-ip"),
+      "cf-connecting-ip": c.req.header("cf-connecting-ip"),
     };
     const ip = getClientIp(headers);
     const { allowed, retryAfter } = limiter.check("ip", ip);

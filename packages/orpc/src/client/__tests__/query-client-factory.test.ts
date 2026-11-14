@@ -1,6 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { getQueryClient, makeQueryClient, queryClient } from "../query-client-factory";
+import {
+  getQueryClient,
+  getRetryAfterMs,
+  makeQueryClient,
+  queryClient,
+} from "../query-client-factory";
 
 describe("makeQueryClient configuration", () => {
   it("should export a QueryClient instance", () => {
@@ -103,33 +108,45 @@ describe("makeQueryClient configuration", () => {
     expect(retryFn(3, error)).toBe(false);
   });
 
-  it("should use longer base delay for 429 errors", () => {
+  // The server's bucket refills a token every few dozen milliseconds and asks for
+  // a one-second wait. A 5 s floor on 429 kept a screen spinning for up to 35 s
+  // across three retries after it brushed the limit once.
+  it("should back off a 429 like any other failure when the server sends no retryAfter", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
     const retryDelayFn = defaultedOptions.retryDelay as (
       attemptIndex: number,
       error: unknown,
     ) => number;
-    const rateLimitError = { status: 429 };
-    const serverError = { status: 500 };
 
-    const rateLimitDelay = retryDelayFn(0, rateLimitError);
-    const serverDelay = retryDelayFn(0, serverError);
-
-    expect(rateLimitDelay).toBeGreaterThanOrEqual(2500);
-    expect(serverDelay).toBeGreaterThanOrEqual(500);
-    expect(rateLimitDelay).toBeGreaterThan(serverDelay);
+    for (let run = 0; run < 20; run++) {
+      const delay = retryDelayFn(0, { status: 429 });
+      expect(delay).toBeGreaterThanOrEqual(500);
+      expect(delay).toBeLessThanOrEqual(1000);
+    }
   });
 
-  it("should cap retry delay at 30 seconds", () => {
+  it("should never retry a 429 sooner than the server's retryAfter", () => {
     const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
     const retryDelayFn = defaultedOptions.retryDelay as (
       attemptIndex: number,
       error: unknown,
     ) => number;
-    const error = { status: 500 };
+    const error = { status: 429, data: { retryAfter: 3 } };
 
-    const delay = retryDelayFn(10, error);
-    expect(delay).toBeLessThanOrEqual(30_000);
+    for (let run = 0; run < 20; run++) {
+      expect(retryDelayFn(0, error)).toBeGreaterThanOrEqual(3000);
+    }
+  });
+
+  it("should cap retry delay at 10 seconds", () => {
+    const defaultedOptions = queryClient.defaultQueryOptions({ queryKey: ["test"] });
+    const retryDelayFn = defaultedOptions.retryDelay as (
+      attemptIndex: number,
+      error: unknown,
+    ) => number;
+
+    expect(retryDelayFn(10, { status: 500 })).toBeLessThanOrEqual(10_000);
+    expect(retryDelayFn(0, { status: 429, data: { retryAfter: 120 } })).toBe(10_000);
   });
 
   it("should apply jitter to retry delays", () => {
@@ -143,6 +160,23 @@ describe("makeQueryClient configuration", () => {
     const delays = Array.from({ length: 20 }, () => retryDelayFn(1, error));
     const allEqual = delays.every((d) => d === delays[0]);
     expect(allEqual).toBe(false);
+  });
+});
+
+describe("getRetryAfterMs", () => {
+  it("should convert the server's retryAfter seconds to milliseconds", () => {
+    expect(getRetryAfterMs({ status: 429, data: { retryAfter: 2 } })).toBe(2000);
+  });
+
+  it.each([
+    ["no data", { status: 429 }],
+    ["plain-text 429 body", { status: 429, data: { body: "Too Many Requests" } }],
+    ["non-numeric value", { data: { retryAfter: "5" } }],
+    ["negative value", { data: { retryAfter: -1 } }],
+    ["null error", null],
+    ["undefined error", undefined],
+  ])("should return 0 for %s", (_label, error) => {
+    expect(getRetryAfterMs(error)).toBe(0);
   });
 });
 

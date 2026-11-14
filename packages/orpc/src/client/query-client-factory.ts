@@ -1,5 +1,20 @@
 import { QueryClient } from "@tanstack/react-query";
 
+const RETRY_BASE_DELAY_MS = 1000;
+const MAX_RETRY_DELAY_MS = 10_000;
+
+/**
+ * The backend's per-user limiter answers 429 with `data.retryAfter` in seconds.
+ * Anything else (including the IP limiter's plain-text 429) yields 0.
+ */
+export function getRetryAfterMs(error: unknown): number {
+  const retryAfter = (error as { data?: { retryAfter?: unknown } } | null)?.data?.retryAfter;
+  if (typeof retryAfter !== "number" || !Number.isFinite(retryAfter) || retryAfter <= 0) {
+    return 0;
+  }
+  return retryAfter * 1000;
+}
+
 export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -29,12 +44,14 @@ export function makeQueryClient() {
           return failureCount < 3;
         },
         retryDelay: (attemptIndex, error) => {
-          const statusCode = (error as { status?: number })?.status;
-          // For 429 rate limit errors, use longer delays
-          const baseDelay = statusCode === 429 ? 5000 : 1000;
-          const exponential = baseDelay * 2 ** attemptIndex;
-          const jitter = exponential * (0.5 + Math.random() * 0.5);
-          return Math.min(jitter, 30000);
+          // A 429 used to start at a flat 5 s (then 10 s, 20 s) while the server
+          // asks for one second: the bucket refills a token every few dozen ms. A
+          // screen that brushed the limit sat on a spinner for half a minute. Back
+          // off from one second like any other failure, and never retry sooner
+          // than the `retryAfter` the server sent.
+          const exponential = RETRY_BASE_DELAY_MS * 2 ** attemptIndex;
+          const jittered = exponential * (0.5 + Math.random() * 0.5);
+          return Math.min(Math.max(jittered, getRetryAfterMs(error)), MAX_RETRY_DELAY_MS);
         },
       },
     },
