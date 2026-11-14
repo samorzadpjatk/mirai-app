@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import LoadingScreen from "~/components/LoadingScreen";
 import { useAutoPushSubscription, useNotificationResponse } from "~/hooks/notifications";
+import { usePersistedQueryCache } from "~/hooks/queryCache/usePersistedQueryCache";
 import { useAppStateRefresh } from "~/hooks/ui";
 import { LocationStoreProvider } from "~/stores/location";
 
@@ -130,6 +131,8 @@ function App() {
   const isSessionLoading = useSessionLoading();
   const session = useSession();
   const { selectedTripId } = useSelectedTrip();
+  // Paints the last known feed on a cold start while the network catches up.
+  usePersistedQueryCache(isSessionLoading ? undefined : (session?.user?.id ?? null));
 
   useEffect(() => {
     return () => {
