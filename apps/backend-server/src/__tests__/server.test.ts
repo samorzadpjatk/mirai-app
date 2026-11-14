@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as ServerModule from "../server";
+import { DEFAULT_IP_BUCKET_CAPACITY, DEFAULT_USER_BUCKET_CAPACITY } from "../utils";
 
 const extractAccessToken = (headers: Headers): string | null => {
   const authorization = headers.get("authorization") ?? headers.get("Authorization");
@@ -192,7 +193,7 @@ describe("createServer", () => {
     const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
 
     try {
-      for (let i = 0; i < 1201; i++) {
+      for (let i = 0; i < DEFAULT_IP_BUCKET_CAPACITY; i++) {
         await app.request("/health", { headers: { "x-forwarded-for": ip } });
       }
 
@@ -200,6 +201,33 @@ describe("createServer", () => {
       expect(res.status).toBe(429);
       expect(res.headers.get("retry-after")).toBeTruthy();
       expect(await res.text()).toBe("Too Many Requests");
+    } finally {
+      dateNowSpy.mockRestore();
+    }
+  });
+
+  // Two people routed through the same Cloudflare edge used to share one bucket:
+  // whoever drained it took everyone else on that edge down with them.
+  it("should not let one client behind a Cloudflare edge throttle another", async () => {
+    const { app } = createServer({ dev: true, port: 3013, prefix: "/api/orpc", host: "127.0.0.1" });
+    const edge = "172.68.10.20";
+    const now = Date.now();
+    const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
+    const headersFor = (client: string) => ({
+      "x-forwarded-for": edge,
+      "cf-connecting-ip": client,
+    });
+
+    try {
+      for (let i = 0; i < DEFAULT_IP_BUCKET_CAPACITY; i++) {
+        await app.request("/health", { headers: headersFor("198.51.100.1") });
+      }
+
+      const noisy = await app.request("/health", { headers: headersFor("198.51.100.1") });
+      expect(noisy.status).toBe(429);
+
+      const quiet = await app.request("/health", { headers: headersFor("198.51.100.2") });
+      expect(quiet.status).toBe(200);
     } finally {
       dateNowSpy.mockRestore();
     }
@@ -214,7 +242,7 @@ describe("createServer", () => {
     const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now);
 
     try {
-      for (let i = 0; i < 401; i++) {
+      for (let i = 0; i < DEFAULT_USER_BUCKET_CAPACITY; i++) {
         await app.request("/api/orpc/ping", {
           method: "POST",
           headers: {

@@ -171,29 +171,26 @@ Access: `/api/orpc/v1.user.list`, `/api/orpc/v2.user.list`
 
 ## Rate Limiting
 
-### Implementation (in `src/server.ts`)
+Token buckets live in `src/utils.ts` (`RateLimiter`, `createRateLimiter`) and are wired in `src/server.ts`.
 
-Rate limiting and security headers are built into the Hono middleware stack:
+| Bucket | Key | Counts | Capacity / refill |
+|---|---|---|---|
+| IP | client IP (see below) | HTTP requests (one batch = one request) | 3000 / minute |
+| User | `sha256(accessToken)` | oRPC procedures (each batch item) | 1200 / minute |
 
-```typescript
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-
-const app = new Hono();
-
-// Rate limiting
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-app.use("*", async (c, next) => {
-  const ip = getClientIp(c);
-  const { allowed, retryAfter } = checkRateLimit(ip, path);
-  if (!allowed) {
-    c.header("Retry-After", String(retryAfter));
-    return c.text("Too Many Requests", 429);
-  }
-  await next();
-});
-```
+- The IP bucket is a flood guard, not a per-person quota: trip groups share hotel/coach Wi-Fi and
+  mobile carriers use CGNAT, so many legitimate users arrive from one address.
+- **Client IP behind Cloudflare.** Production runs client → Cloudflare → Caddy → server, so the
+  nearest public hop in `X-Forwarded-For` is a Cloudflare edge. When that hop is in Cloudflare's
+  published ranges, the key is `CF-Connecting-IP`; otherwise the rightmost non-internal
+  `X-Forwarded-For` hop, then `X-Real-IP`. Update `CLOUDFLARE_IPV4_RANGES` /
+  `CLOUDFLARE_IPV6_RANGES` if https://www.cloudflare.com/ips/ changes.
+- Rejections return 429: the IP bucket as plain text with a `Retry-After` header, the user bucket
+  as `TOO_MANY_REQUESTS` with `data.retryAfter` (seconds).
+- Buckets that have refilled to capacity are swept once a minute, so rotated access tokens do not
+  accumulate in memory.
+- Client side (`packages/orpc/src/client/query-client-factory.ts`): queries retry 429 with the same
+  1 s exponential backoff as other failures, never sooner than `data.retryAfter`, capped at 10 s.
 
 ## CORS Configuration
 

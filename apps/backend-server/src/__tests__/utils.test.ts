@@ -16,6 +16,7 @@ import {
   getClientIp,
   getWsEnvConfig,
   hashAccessToken,
+  isCloudflareIp,
   parseWsAuthMessage,
 } from "../utils";
 
@@ -59,6 +60,80 @@ describe("getClientIp", () => {
   it("should treat ::1 as internal", () => {
     const headers = { "x-forwarded-for": "::1, 203.0.113.10" };
     expect(getClientIp(headers)).toBe("203.0.113.10");
+  });
+
+  // Production: client -> Cloudflare -> Caddy -> server. Caddy reports the
+  // Cloudflare edge as the peer, and every user behind that edge used to share
+  // a single bucket.
+  it("should key on CF-Connecting-IP when the proxy peer is a Cloudflare edge", () => {
+    const first = {
+      "x-forwarded-for": "172.68.10.20",
+      "cf-connecting-ip": "198.51.100.1",
+    };
+    const second = {
+      "x-forwarded-for": "172.68.10.20",
+      "cf-connecting-ip": "198.51.100.2",
+    };
+    expect(getClientIp(first)).toBe("198.51.100.1");
+    expect(getClientIp(second)).toBe("198.51.100.2");
+  });
+
+  it("should key on CF-Connecting-IP when Caddy appends the edge after the client", () => {
+    const headers = {
+      "x-forwarded-for": "198.51.100.1, 2606:4700:10::ac43:1",
+      "cf-connecting-ip": "198.51.100.1",
+    };
+    expect(getClientIp(headers)).toBe("198.51.100.1");
+  });
+
+  it("should ignore CF-Connecting-IP from a peer that is not Cloudflare", () => {
+    const headers = {
+      "x-forwarded-for": "203.0.113.50",
+      "cf-connecting-ip": "198.51.100.99",
+    };
+    expect(getClientIp(headers)).toBe("203.0.113.50");
+  });
+
+  it("should fall back to the Cloudflare edge when CF-Connecting-IP is missing", () => {
+    const headers = { "x-forwarded-for": "172.68.10.20", "cf-connecting-ip": "  " };
+    expect(getClientIp(headers)).toBe("172.68.10.20");
+  });
+
+  it("should ignore CF-Connecting-IP when no proxy header is present", () => {
+    expect(getClientIp({ "cf-connecting-ip": "198.51.100.1" })).toBe("unknown");
+  });
+});
+
+describe("isCloudflareIp", () => {
+  it.each([
+    "172.64.0.1",
+    "172.71.255.255",
+    "104.16.0.1",
+    "162.159.1.1",
+    "141.101.64.10",
+    "2606:4700::1",
+    "2a06:98c7:ffff::1",
+    "[2400:cb00::1]:443",
+    "172.68.10.20:443",
+  ])("should match Cloudflare address %s", (ip) => {
+    expect(isCloudflareIp(ip)).toBe(true);
+  });
+
+  it.each([
+    "172.72.0.1",
+    "172.16.0.1",
+    "203.0.113.5",
+    "8.8.8.8",
+    "2606:4701::1",
+    "2a06:98c8::1",
+    "::1",
+    "not-an-ip",
+    "1.2.3",
+    "256.1.1.1",
+    "2606:4700::1::2",
+    "",
+  ])("should not match %s", (ip) => {
+    expect(isCloudflareIp(ip)).toBe(false);
   });
 });
 
@@ -127,6 +202,35 @@ describe("RateLimiter", () => {
   it("should allow missing bucket type without limits", () => {
     const limiter = new RateLimiter({ ip: { capacity: 1, refillInterval: 1000 } });
     expect(limiter.check("user", "user-a", 0)).toEqual({ allowed: true, retryAfter: 0 });
+  });
+
+  // Every access token gets a bucket and tokens rotate hourly; without eviction
+  // the map grows for as long as the process lives.
+  it("should drop buckets that have refilled to capacity", () => {
+    const limiter = new RateLimiter({ user: { capacity: 2, refillInterval: 1000 } });
+
+    limiter.check("user", "old-token-1", 0);
+    limiter.check("user", "old-token-2", 0);
+    expect(limiter.size).toBe(2);
+
+    limiter.check("user", "fresh-token", RATE_LIMIT_WINDOW_MS);
+    expect(limiter.size).toBe(1);
+  });
+
+  it("should keep buckets that are still draining after a sweep", () => {
+    const limiter = new RateLimiter({ user: { capacity: 100, refillInterval: 1000 } });
+    const drainedAt = RATE_LIMIT_WINDOW_MS - 1;
+
+    limiter.check("user", "init", 0);
+    for (let index = 0; index < 100; index++) {
+      limiter.check("user", "busy-token", drainedAt);
+    }
+    expect(limiter.check("user", "busy-token", drainedAt).allowed).toBe(false);
+
+    // The sweep runs on this call; one refill tick is nowhere near capacity, so the
+    // drained bucket survives and still limits.
+    expect(limiter.check("user", "busy-token", drainedAt + 1000).allowed).toBe(true);
+    expect(limiter.check("user", "busy-token", drainedAt + 1000).allowed).toBe(false);
   });
 });
 
@@ -354,8 +458,8 @@ describe("constants", () => {
   it("should have correct constant values", () => {
     expect(TEN_MB).toBe(10 * 1024 * 1024);
     expect(RATE_LIMIT_WINDOW_MS).toBe(60000);
-    expect(DEFAULT_IP_BUCKET_CAPACITY).toBe(1200);
-    expect(DEFAULT_USER_BUCKET_CAPACITY).toBe(400);
+    expect(DEFAULT_IP_BUCKET_CAPACITY).toBe(3000);
+    expect(DEFAULT_USER_BUCKET_CAPACITY).toBe(1200);
     expect(DEFAULT_AUTH_BUCKET_CAPACITY).toBe(30);
   });
 });
