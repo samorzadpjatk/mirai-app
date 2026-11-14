@@ -1,4 +1,4 @@
-import type { ImageTransformName } from "@mirai-app/common/storage";
+import { type ImageTransformName, buildImageDiskCacheKey } from "@mirai-app/common/storage";
 import { Image, type ImageProps } from "expo-image";
 import { ActivityIndicator, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useImageUrl } from "~/hooks/images";
@@ -26,7 +26,14 @@ function StorageCachedImage({
 }: CachedImageProps & { storagePath: string }) {
   const { data: urlData, isLoading } = useImageUrl(storagePath, cacheKey, transform);
 
-  const resolvedSource = urlData?.signedUrl ? { uri: urlData.signedUrl } : undefined;
+  // The signed URL changes every time it is issued; without a stable `cacheKey` the
+  // disk cache never hit after a restart and every photo was downloaded again.
+  const diskCacheKey = buildImageDiskCacheKey(storagePath, cacheKey, transform);
+  const resolvedSource = urlData?.signedUrl
+    ? diskCacheKey
+      ? { uri: urlData.signedUrl, cacheKey: diskCacheKey }
+      : { uri: urlData.signedUrl }
+    : undefined;
   const hasSource = Boolean(resolvedSource);
 
   return (

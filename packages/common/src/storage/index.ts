@@ -8,6 +8,7 @@ export {
 export type { StandardBucket } from "./standard";
 export { IMAGE_TRANSFORMS } from "./imageTransform";
 export type { ImageTransform, ImageTransformName } from "./imageTransform";
+export { buildImageDiskCacheKey } from "./imageCacheKey";
 export {
   DEFAULT_SIGNED_URL_SECONDS,
   resolveStorageUrl,
