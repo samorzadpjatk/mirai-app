@@ -176,8 +176,8 @@ jobs:
           ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
-          IOS_ASC_KEY_ID: ${{ vars.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ vars.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID || vars.IOS_ASC_ISSUER_ID }}
 
       - name: Materialize credentials.json from secret values
         run: |
@@ -216,7 +216,7 @@ jobs:
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
           IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ vars.IOS_ASC_KEY_ID }}.json
+          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}.json
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
       - name: Upload iOS release artifact + metadata
@@ -317,8 +317,8 @@ jobs:
           ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
-          IOS_ASC_KEY_ID: ${{ vars.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ vars.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID || vars.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to external testing
         id: submit
@@ -347,7 +347,7 @@ jobs:
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
           IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ vars.IOS_ASC_KEY_ID }}.json
+          IOS_ASC_API_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/api_key_${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}.json
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
 
   submit_production:
@@ -412,8 +412,8 @@ jobs:
           ' "$WORKDIR/credentials/ios/api_key_${IOS_ASC_KEY_ID}.json"
         env:
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
-          IOS_ASC_KEY_ID: ${{ vars.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ vars.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID || vars.IOS_ASC_ISSUER_ID }}
 
       - name: Submit iOS release to App Store
         id: submit
@@ -444,6 +444,6 @@ jobs:
           IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
           IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
-          IOS_ASC_KEY_ID: ${{ vars.IOS_ASC_KEY_ID }}
-          IOS_ASC_ISSUER_ID: ${{ vars.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID || vars.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID || vars.IOS_ASC_ISSUER_ID }}
           IOS_ASC_KEY_PATH: ${{ env.WORKDIR }}/credentials/ios/asc-api-key.p8
